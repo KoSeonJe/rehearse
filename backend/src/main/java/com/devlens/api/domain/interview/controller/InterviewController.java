@@ -39,4 +39,13 @@ public class InterviewController {
         UpdateStatusResponse response = interviewService.updateStatus(id, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
+
+    @PostMapping("/{id}/follow-up")
+    public ResponseEntity<ApiResponse<FollowUpResponse>> generateFollowUp(
+            @PathVariable Long id,
+            @Valid @RequestBody FollowUpRequest request) {
+
+        FollowUpResponse response = interviewService.generateFollowUp(id, request);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 }

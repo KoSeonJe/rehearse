@@ -5,6 +5,7 @@ import com.devlens.api.domain.interview.entity.*;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -183,6 +184,57 @@ class InterviewServiceTest {
                     BusinessException be = (BusinessException) ex;
                     assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                     assertThat(be.getCode()).isEqualTo("INTERVIEW_002");
+                });
+    }
+
+    @Test
+    @DisplayName("후속 질문 생성 성공")
+    void generateFollowUp_success() {
+        // given
+        Interview interview = createMockInterview();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+
+        GeneratedFollowUp followUp = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
+        ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
+        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+
+        given(claudeApiClient.generateFollowUpQuestion(anyString(), anyString(), any()))
+                .willReturn(followUp);
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
+        ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
+        ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
+
+        // when
+        FollowUpResponse response = interviewService.generateFollowUp(1L, request);
+
+        // then
+        assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
+        assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
+        assertThat(response.getType()).isEqualTo("DEEP_DIVE");
+    }
+
+    @Test
+    @DisplayName("진행 중이 아닌 면접에서 후속질문 생성 시 예외 발생")
+    void generateFollowUp_notInProgress() {
+        // given
+        Interview interview = createMockInterview(); // status = READY
+        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionContent", "질문");
+        ReflectionTestUtils.setField(request, "answerText", "답변");
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_003");
                 });
     }
 

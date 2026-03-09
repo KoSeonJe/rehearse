@@ -7,6 +7,7 @@ import com.devlens.api.domain.interview.entity.InterviewStatus;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -83,6 +84,32 @@ public class InterviewService {
         log.info("면접 세션 상태 변경: id={}, newStatus={}", id, request.getStatus());
 
         return UpdateStatusResponse.from(interview);
+    }
+
+    public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request) {
+        Interview interview = findInterviewById(id);
+
+        if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
+            throw new BusinessException(
+                    HttpStatus.CONFLICT,
+                    "INTERVIEW_003",
+                    "진행 중인 면접에서만 후속 질문을 생성할 수 있습니다."
+            );
+        }
+
+        GeneratedFollowUp followUp = claudeApiClient.generateFollowUpQuestion(
+                request.getQuestionContent(),
+                request.getAnswerText(),
+                request.getNonVerbalSummary()
+        );
+
+        log.info("후속 질문 생성 완료: interviewId={}, type={}", id, followUp.getType());
+
+        return FollowUpResponse.builder()
+                .question(followUp.getQuestion())
+                .reason(followUp.getReason())
+                .type(followUp.getType())
+                .build();
     }
 
     private Interview findInterviewById(Long id) {
