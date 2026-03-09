@@ -12,7 +12,7 @@ import com.devlens.api.domain.interview.entity.InterviewStatus;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
-import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFeedback;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +48,7 @@ class FeedbackServiceTest {
     private InterviewRepository interviewRepository;
 
     @Mock
-    private ClaudeApiClient claudeApiClient;
+    private AiClient aiClient;
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -67,7 +67,7 @@ class FeedbackServiceTest {
         ReflectionTestUtils.setField(gf, "content", "답변이 다소 추상적입니다.");
         ReflectionTestUtils.setField(gf, "suggestion", "구체적인 예시를 들어 설명하세요.");
 
-        given(claudeApiClient.generateFeedback(anyString())).willReturn(List.of(gf));
+        given(aiClient.generateFeedback(anyString())).willReturn(List.of(gf));
         given(feedbackRepository.saveAll(anyList())).willAnswer(invocation -> {
             List<Feedback> feedbacks = invocation.getArgument(0);
             for (int i = 0; i < feedbacks.size(); i++) {

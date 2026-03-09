@@ -6,7 +6,7 @@ import com.devlens.api.domain.interview.entity.InterviewQuestion;
 import com.devlens.api.domain.interview.entity.InterviewStatus;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
-import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import java.util.List;
 public class InterviewService {
 
     private final InterviewRepository interviewRepository;
-    private final ClaudeApiClient claudeApiClient;
+    private final AiClient aiClient;
 
     @Transactional
     public InterviewResponse createInterview(CreateInterviewRequest request) {
@@ -36,7 +36,7 @@ public class InterviewService {
                 .build();
 
         // 2. Claude API로 질문 생성
-        List<GeneratedQuestion> generatedQuestions = claudeApiClient.generateQuestions(
+        List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(
                 request.getPosition(),
                 request.getLevel(),
                 request.getInterviewType()
@@ -97,7 +97,7 @@ public class InterviewService {
             );
         }
 
-        GeneratedFollowUp followUp = claudeApiClient.generateFollowUpQuestion(
+        GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(
                 request.getQuestionContent(),
                 request.getAnswerText(),
                 request.getNonVerbalSummary()

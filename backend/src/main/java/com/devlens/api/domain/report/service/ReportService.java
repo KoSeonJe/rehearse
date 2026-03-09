@@ -8,7 +8,7 @@ import com.devlens.api.domain.report.dto.ReportResponse;
 import com.devlens.api.domain.report.entity.InterviewReport;
 import com.devlens.api.domain.report.repository.ReportRepository;
 import com.devlens.api.global.exception.BusinessException;
-import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final FeedbackRepository feedbackRepository;
     private final InterviewRepository interviewRepository;
-    private final ClaudeApiClient claudeApiClient;
+    private final AiClient aiClient;
 
     public ReportResponse getReport(Long interviewId) {
         InterviewReport report = reportRepository.findByInterviewId(interviewId)
@@ -54,7 +54,7 @@ public class ReportService {
                 .map(f -> String.format("[%s/%s] %s", f.getCategory(), f.getSeverity(), f.getContent()))
                 .collect(Collectors.joining("\n"));
 
-        GeneratedReport generated = claudeApiClient.generateReport(feedbackSummary);
+        GeneratedReport generated = aiClient.generateReport(feedbackSummary);
 
         InterviewReport report = InterviewReport.builder()
                 .interview(interview)
