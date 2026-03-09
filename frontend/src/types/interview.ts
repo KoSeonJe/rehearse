@@ -68,6 +68,22 @@ export interface InterviewReport {
   improvements: string[]
 }
 
+// 후속 질문 관련 타입
+
+export type FollowUpType = 'DEEP_DIVE' | 'CLARIFICATION' | 'CHALLENGE' | 'APPLICATION'
+
+export interface FollowUpRequest {
+  questionContent: string
+  answerText: string
+  nonVerbalSummary?: string
+}
+
+export interface FollowUpResponse {
+  question: string
+  reason: string
+  type: FollowUpType
+}
+
 // 면접 진행 관련 타입
 
 export type NonVerbalEventType = 'gaze' | 'expression' | 'posture' | 'voice'

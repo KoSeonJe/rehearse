@@ -6,6 +6,8 @@ import type {
   CreateInterviewRequest,
   UpdateInterviewStatusRequest,
   UpdateInterviewStatusResponse,
+  FollowUpRequest,
+  FollowUpResponse,
 } from '@/types/interview'
 
 export const useCreateInterview = () => {
@@ -50,5 +52,21 @@ export const useUpdateInterviewStatus = () => {
         queryKey: ['interviews', String(variables.id)],
       })
     },
+  })
+}
+
+export const useFollowUpQuestion = () => {
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      data: FollowUpRequest
+    }) =>
+      apiClient.post<ApiResponse<FollowUpResponse>>(
+        `/api/v1/interviews/${id}/follow-up`,
+        data,
+      ),
   })
 }

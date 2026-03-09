@@ -5,6 +5,7 @@ import type {
   NonVerbalEvent,
   VoiceEvent,
   QuestionAnswer,
+  FollowUpResponse,
 } from '../types/interview'
 
 export type InterviewPhase = 'preparing' | 'ready' | 'recording' | 'paused' | 'completed'
@@ -26,6 +27,9 @@ interface InterviewState {
 
   nonVerbalEvents: NonVerbalEvent[]
   voiceEvents: VoiceEvent[]
+
+  followUpQuestions: Map<number, FollowUpResponse>
+  isFollowUpLoading: boolean
 }
 
 interface InterviewActions {
@@ -45,6 +49,8 @@ interface InterviewActions {
   setVideoBlob: (blob: Blob) => void
   setElapsedTime: (time: number) => void
   completeInterview: () => void
+  addFollowUpQuestion: (questionIndex: number, followUp: FollowUpResponse) => void
+  setFollowUpLoading: (loading: boolean) => void
   reset: () => void
 }
 
@@ -65,6 +71,9 @@ const initialState: InterviewState = {
 
   nonVerbalEvents: [],
   voiceEvents: [],
+
+  followUpQuestions: new Map(),
+  isFollowUpLoading: false,
 }
 
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
@@ -185,6 +194,15 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   setElapsedTime: (time) => set({ elapsedTime: time }),
 
   completeInterview: () => set({ phase: 'completed' }),
+
+  addFollowUpQuestion: (questionIndex, followUp) => {
+    const { followUpQuestions } = get()
+    const updated = new Map(followUpQuestions)
+    updated.set(questionIndex, followUp)
+    set({ followUpQuestions: updated })
+  },
+
+  setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
   reset: () => {
     const prevUrl = get().videoBlobUrl

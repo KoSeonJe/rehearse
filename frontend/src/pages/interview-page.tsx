@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
-import { useInterview, useUpdateInterviewStatus } from '../hooks/use-interviews'
+import { useInterview, useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
 import useMediaStream from '../hooks/use-media-stream'
 import useMediaRecorder from '../hooks/use-media-recorder'
 import useSpeechRecognition from '../hooks/use-speech-recognition'
@@ -22,6 +22,7 @@ const InterviewPage = () => {
   const { data: response } = useInterview(interviewId)
   const interview = response?.data
   const updateStatus = useUpdateInterviewStatus()
+  const followUpMutation = useFollowUpQuestion()
 
   const {
     questions,
@@ -41,6 +42,10 @@ const InterviewPage = () => {
     addVoiceEvent,
     setVideoBlob,
     completeInterview,
+    followUpQuestions,
+    isFollowUpLoading,
+    addFollowUpQuestion,
+    setFollowUpLoading,
     reset,
   } = useInterviewStore()
 
@@ -106,12 +111,41 @@ const InterviewPage = () => {
     audio.start(mediaStream.stream)
   }, [mediaStream.stream, startRecording, recorder, stt, audio, currentQuestionIndex])
 
-  // 답변 완료
+  // 답변 완료 + 후속질문 요청
   const handleStopAnswer = useCallback(() => {
     stopRecording()
     stt.stop()
     recorder.pause()
-  }, [stopRecording, stt, recorder])
+
+    // 현재 질문에 대한 답변 텍스트 수집
+    const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
+    const answerText = currentAnswer?.transcripts
+      .filter((t) => t.isFinal)
+      .map((t) => t.text)
+      .join(' ')
+
+    if (answerText && interview) {
+      setFollowUpLoading(true)
+      followUpMutation.mutate(
+        {
+          id: interview.id,
+          data: {
+            questionContent: questions[currentQuestionIndex].content,
+            answerText,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            addFollowUpQuestion(currentQuestionIndex, res.data)
+            setFollowUpLoading(false)
+          },
+          onError: () => {
+            setFollowUpLoading(false)
+          },
+        },
+      )
+    }
+  }, [stopRecording, stt, recorder, currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
 
   // 면접 종료
   const handleFinishInterview = useCallback(async () => {
@@ -198,6 +232,8 @@ const InterviewPage = () => {
           question={currentQuestion}
           currentIndex={currentQuestionIndex}
           totalCount={questions.length}
+          followUp={followUpQuestions.get(currentQuestionIndex)}
+          isFollowUpLoading={isFollowUpLoading}
         />
 
         <VideoPreview stream={mediaStream.stream} isRecording={phase === 'recording'} />
