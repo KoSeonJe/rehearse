@@ -13,6 +13,7 @@ import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -22,7 +23,8 @@ import java.util.List;
 
 @Slf4j
 @Component
-public class ClaudeApiClient {
+@ConditionalOnExpression("!'${claude.api-key:}'.isEmpty()")
+public class ClaudeApiClient implements AiClient {
 
     private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";

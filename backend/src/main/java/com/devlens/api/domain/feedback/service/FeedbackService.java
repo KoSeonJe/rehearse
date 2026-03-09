@@ -8,7 +8,7 @@ import com.devlens.api.domain.interview.entity.Interview;
 import com.devlens.api.domain.interview.entity.InterviewStatus;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
-import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFeedback;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,7 +29,7 @@ public class FeedbackService {
     private final FeedbackRepository feedbackRepository;
     private final InterviewAnswerRepository interviewAnswerRepository;
     private final InterviewRepository interviewRepository;
-    private final ClaudeApiClient claudeApiClient;
+    private final AiClient aiClient;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -59,7 +59,7 @@ public class FeedbackService {
 
         // Claude API로 피드백 생성
         String answersJson = serializeAnswers(request.getAnswers());
-        List<GeneratedFeedback> generatedFeedbacks = claudeApiClient.generateFeedback(answersJson);
+        List<GeneratedFeedback> generatedFeedbacks = aiClient.generateFeedback(answersJson);
 
         // 피드백 저장
         List<Feedback> feedbacks = generatedFeedbacks.stream()

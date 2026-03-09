@@ -4,7 +4,7 @@ import com.devlens.api.domain.interview.dto.*;
 import com.devlens.api.domain.interview.entity.*;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
-import com.devlens.api.infra.ai.ClaudeApiClient;
+import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
@@ -33,7 +33,7 @@ class InterviewServiceTest {
     private InterviewRepository interviewRepository;
 
     @Mock
-    private ClaudeApiClient claudeApiClient;
+    private AiClient aiClient;
 
     @Test
     @DisplayName("면접 세션 생성 시 Claude API로 질문을 생성하고 저장한다")
@@ -46,7 +46,7 @@ class InterviewServiceTest {
 
         List<GeneratedQuestion> generatedQuestions = createMockGeneratedQuestions();
 
-        given(claudeApiClient.generateQuestions(
+        given(aiClient.generateQuestions(
                 eq("백엔드 개발자"), eq(InterviewLevel.JUNIOR), eq(InterviewType.CS)))
                 .willReturn(generatedQuestions);
 
@@ -135,7 +135,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
         ReflectionTestUtils.setField(request, "interviewType", InterviewType.CS);
 
-        given(claudeApiClient.generateQuestions(anyString(), any(), any()))
+        given(aiClient.generateQuestions(anyString(), any(), any()))
                 .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "Claude API 호출 실패"));
 
         // when & then
@@ -200,7 +200,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
 
-        given(claudeApiClient.generateFollowUpQuestion(anyString(), anyString(), any()))
+        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any()))
                 .willReturn(followUp);
 
         FollowUpRequest request = new FollowUpRequest();
