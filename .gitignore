@@ -1,0 +1,38 @@
+# === Frontend ===
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.tsbuildinfo
+
+# === Backend ===
+build/
+.gradle/
+!gradle/wrapper/gradle-wrapper.jar
+*.jar
+*.war
+application-local.yml
+
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === OMC (세션/상태는 로컬 전용) ===
+.omc/sessions/
+.omc/state/
+
+# === 민감 정보 ===
+*.key
+*.pem
+*.p12
+credentials.*
+secrets.*
