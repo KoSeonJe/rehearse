@@ -86,7 +86,7 @@ public class InterviewService {
     }
 
     private Interview findInterviewById(Long id) {
-        return interviewRepository.findById(id)
+        return interviewRepository.findByIdWithQuestions(id)
                 .orElseThrow(() -> new BusinessException(
                         HttpStatus.NOT_FOUND,
                         "INTERVIEW_001",

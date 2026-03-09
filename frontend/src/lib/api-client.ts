@@ -4,6 +4,29 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown
 }
 
+interface ApiErrorBody {
+  success: false
+  status: number
+  code: string
+  message: string
+  errors: Array<{ field: string; value: string; reason: string }>
+  timestamp: string
+}
+
+export class ApiError extends Error {
+  readonly status: number
+  readonly code: string
+  readonly errors: Array<{ field: string; value: string; reason: string }>
+
+  constructor(status: number, body: ApiErrorBody) {
+    super(body.message)
+    this.name = 'ApiError'
+    this.status = status
+    this.code = body.code
+    this.errors = body.errors ?? []
+  }
+}
+
 class ApiClient {
   private baseUrl: string
 
@@ -24,7 +47,20 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`)
+      let errorBody: ApiErrorBody
+      try {
+        errorBody = (await response.json()) as ApiErrorBody
+      } catch {
+        throw new ApiError(response.status, {
+          success: false,
+          status: response.status,
+          code: 'UNKNOWN_ERROR',
+          message: response.statusText || '알 수 없는 오류가 발생했습니다.',
+          errors: [],
+          timestamp: new Date().toISOString(),
+        })
+      }
+      throw new ApiError(response.status, errorBody)
     }
 
     return response.json() as Promise<T>

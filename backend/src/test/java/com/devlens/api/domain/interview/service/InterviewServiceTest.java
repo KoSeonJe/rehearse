@@ -78,7 +78,7 @@ class InterviewServiceTest {
     @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
     void getInterview_notFound() {
         // given
-        given(interviewRepository.findById(999L)).willReturn(Optional.empty());
+        given(interviewRepository.findByIdWithQuestions(999L)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> interviewService.getInterview(999L))
@@ -96,7 +96,7 @@ class InterviewServiceTest {
         // given
         Interview interview = createMockInterview();
 
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
 
         // when
         InterviewResponse response = interviewService.getInterview(1L);
@@ -112,7 +112,7 @@ class InterviewServiceTest {
     void updateStatus_readyToInProgress() {
         // given
         Interview interview = createMockInterview();
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
@@ -130,7 +130,7 @@ class InterviewServiceTest {
     void updateStatus_invalidTransition() {
         // given
         Interview interview = createMockInterview();
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.COMPLETED);

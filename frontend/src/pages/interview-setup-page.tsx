@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/text-input'
 import { SelectionCard } from '@/components/ui/selection-card'
 import { useCreateInterview } from '@/hooks/use-interviews'
-import type { Level, InterviewType, ApiErrorResponse } from '@/types/interview'
+import { ApiError } from '@/lib/api-client'
+import type { Level, InterviewType } from '@/types/interview'
 import { LEVEL_LABELS, INTERVIEW_TYPE_LABELS } from '@/types/interview'
 
 const LEVELS: Level[] = ['JUNIOR', 'MID', 'SENIOR']
@@ -42,22 +43,19 @@ export const InterviewSetupPage = () => {
           navigate(`/interview/${response.data.id}/ready`)
         },
         onError: (error) => {
-          try {
-            const parsed: ApiErrorResponse = JSON.parse(
-              error.message.replace('API Error: ', ''),
-            )
-            if (parsed.errors && parsed.errors.length > 0) {
+          if (error instanceof ApiError) {
+            if (error.errors.length > 0) {
               const errors: Record<string, string> = {}
-              for (const err of parsed.errors) {
+              for (const err of error.errors) {
                 errors[err.field] = err.reason
               }
               setFieldErrors(errors)
             } else {
               setServerError(
-                parsed.message || '오류가 발생했습니다. 다시 시도해주세요.',
+                error.message || '오류가 발생했습니다. 다시 시도해주세요.',
               )
             }
-          } catch {
+          } else {
             setServerError('오류가 발생했습니다. 다시 시도해주세요.')
           }
         },

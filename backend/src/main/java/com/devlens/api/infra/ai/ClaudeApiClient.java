@@ -8,6 +8,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.client.ClientHttpRequestFactories;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -15,6 +17,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.time.Duration;
 import java.util.List;
 
 @Slf4j
@@ -34,8 +37,13 @@ public class ClaudeApiClient {
             ObjectMapper objectMapper,
             @Value("${claude.api-key}") String apiKey,
             @Value("${claude.model:claude-sonnet-4-20250514}") String model) {
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofSeconds(5))
+                .withReadTimeout(Duration.ofSeconds(30));
+
         this.restClient = restClientBuilder
                 .baseUrl(ANTHROPIC_API_URL)
+                .requestFactory(ClientHttpRequestFactories.get(settings))
                 .build();
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;

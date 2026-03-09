@@ -10,6 +10,10 @@ spring:
       ddl-auto: validate
     show-sql: false
 
+claude:
+  api-key: ${CLAUDE_API_KEY}
+  model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
+
 logging:
   level:
     com.devlens.api: INFO
