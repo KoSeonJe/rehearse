@@ -37,7 +37,7 @@ export const TextInput = ({
           'w-full rounded-button border bg-white px-4 py-3 text-base text-text-primary',
           'placeholder:text-text-tertiary',
           'focus:outline-none focus:ring-1',
-          'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-text-tertiary',
+          'disabled:cursor-not-allowed disabled:bg-background disabled:text-text-tertiary',
           'transition-colors duration-150',
           error
             ? 'border-error focus:border-error focus:ring-error'

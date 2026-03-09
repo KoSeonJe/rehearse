@@ -14,13 +14,13 @@ const variantStyles: Record<ButtonVariant, string> = {
   primary: [
     'bg-accent text-white',
     'hover:bg-accent-hover active:bg-accent-hover',
-    'disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
     'px-6 py-3 rounded-button',
   ].join(' '),
   secondary: [
     'bg-white text-text-primary border border-border',
-    'hover:bg-gray-50',
-    'disabled:bg-gray-50 disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed',
+    'hover:bg-background',
+    'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed',
     'px-6 py-3 rounded-button',
   ].join(' '),
   ghost: [
@@ -32,7 +32,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   cta: [
     'bg-accent text-white',
     'hover:bg-accent-hover active:bg-accent-hover',
-    'disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
     'px-8 py-4 text-lg rounded-button',
   ].join(' '),
 }

@@ -3,6 +3,7 @@ import { BackLink } from '@/components/ui/back-link'
 import { Button } from '@/components/ui/button'
 import { QuestionCard } from '@/components/interview/question-card'
 import { QuestionCardSkeleton } from '@/components/interview/question-card-skeleton'
+import { Character } from '@/components/ui/character'
 import {
   useInterview,
   useCreateInterview,
@@ -66,12 +67,13 @@ export const InterviewReadyPage = () => {
     const is404 = error?.message?.includes('404')
 
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <header className="px-4 pt-6 sm:px-6 lg:px-8">
           <BackLink to="/interview/setup" label="설정으로 돌아가기" />
         </header>
         <main className="mx-auto max-w-2xl px-4 pt-12 text-center sm:px-6">
-          <p className="text-lg text-gray-900">
+          <Character mood="confused" size={80} className="mx-auto mb-4" />
+          <p className="text-lg text-text-primary">
             {is404
               ? '세션을 찾을 수 없습니다.'
               : '오류가 발생했습니다. 다시 시도해주세요.'}
@@ -90,7 +92,7 @@ export const InterviewReadyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <header className="px-4 pt-6 sm:px-6 lg:px-8">
         <BackLink to="/interview/setup" label="설정으로 돌아가기" />
       </header>
@@ -99,15 +101,15 @@ export const InterviewReadyPage = () => {
         <section>
           {isLoading ? (
             <>
-              <div className="h-8 w-48 animate-pulse rounded bg-gray-200" aria-hidden="true" />
-              <div className="mt-2 h-5 w-64 animate-pulse rounded bg-gray-200" aria-hidden="true" />
+              <div className="h-8 w-48 animate-pulse rounded bg-border" aria-hidden="true" />
+              <div className="mt-2 h-5 w-64 animate-pulse rounded bg-border" aria-hidden="true" />
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-semibold text-text-primary">
                 면접 준비 완료
               </h1>
-              <p className="mt-1 text-sm text-gray-500">{summaryText}</p>
+              <p className="mt-1 text-sm text-text-secondary">{summaryText}</p>
             </>
           )}
         </section>
@@ -156,7 +158,7 @@ export const InterviewReadyPage = () => {
             </Button>
             {(updateStatus.isError || createInterview.isError) && (
               <p
-                className="mt-2 text-center text-sm text-red-600"
+                className="mt-2 text-center text-sm text-error"
                 role="alert"
               >
                 오류가 발생했습니다. 다시 시도해주세요.

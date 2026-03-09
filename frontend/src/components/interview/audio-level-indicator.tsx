@@ -9,7 +9,7 @@ const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
   return (
     <div className="flex items-center gap-1.5">
       <svg
-        className="h-4 w-4 text-slate-400"
+        className="h-4 w-4 text-text-tertiary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -26,7 +26,7 @@ const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
           <div
             key={i}
             className={`w-1 rounded-full transition-all duration-75 ${
-              i < activeBars ? 'bg-emerald-500' : 'bg-slate-200'
+              i < activeBars ? 'bg-success' : 'bg-border'
             }`}
             style={{ height: `${8 + i * 1.5}px` }}
           />

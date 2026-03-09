@@ -1,5 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useReport } from '../hooks/use-report'
+import { LogoIcon } from '@/components/ui/logo-icon'
+import { Button } from '@/components/ui/button'
+import { Character } from '@/components/ui/character'
 import ScoreCard from '../components/review/score-card'
 import ImprovementList from '../components/review/improvement-list'
 
@@ -10,27 +13,25 @@ const InterviewReportPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-3 border-slate-300 border-t-slate-900" />
-          <p className="text-sm text-slate-500">리포트를 생성하고 있습니다...</p>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+        <Character mood="thinking" size={100} className="mx-auto" />
+        <p className="mt-4 text-sm text-text-secondary">리포트를 생성하고 있습니다...</p>
       </div>
     )
   }
 
   if (isError || !response?.data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="space-y-4 text-center">
-          <p className="text-lg font-medium text-slate-900">리포트를 불러올 수 없습니다</p>
-          <button
-            onClick={() => navigate('/')}
-            className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            홈으로 돌아가기
-          </button>
-        </div>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
+        <Character mood="confused" size={100} className="mx-auto" />
+        <p className="mt-4 text-lg font-medium text-text-primary">리포트를 불러올 수 없습니다</p>
+        <Button
+          variant="secondary"
+          className="mt-4"
+          onClick={() => navigate('/')}
+        >
+          홈으로 돌아가기
+        </Button>
       </div>
     )
   }
@@ -38,27 +39,28 @@ const InterviewReportPage = () => {
   const report = response.data
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+      <header className="border-b border-border bg-surface px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-slate-900">Rehearse</h1>
-            <span className="text-sm text-slate-500">종합 리포트</span>
+            <LogoIcon size={28} />
+            <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
+            <span className="text-sm text-text-secondary">종합 리포트</span>
           </div>
           <div className="flex items-center gap-3">
-            <button
+            <Button
+              variant="secondary"
               onClick={() => navigate(`/interview/${id}/review`)}
-              className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               피드백 리뷰
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
               onClick={() => navigate('/')}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
             >
               홈으로
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -68,10 +70,10 @@ const InterviewReportPage = () => {
         <ScoreCard score={report.overallScore} />
 
         {/* 요약 */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-3 text-sm font-semibold text-slate-900">종합 평가</h2>
-          <p className="text-sm leading-relaxed text-slate-700">{report.summary}</p>
-          <p className="mt-3 text-xs text-slate-400">
+        <div className="rounded-card border border-border bg-surface p-6">
+          <h2 className="mb-3 text-sm font-semibold text-text-primary">종합 평가</h2>
+          <p className="text-sm leading-relaxed text-text-secondary">{report.summary}</p>
+          <p className="mt-3 text-xs text-text-tertiary">
             총 {report.feedbackCount}개의 피드백을 기반으로 분석되었습니다.
           </p>
         </div>
@@ -91,16 +93,16 @@ const InterviewReportPage = () => {
         </div>
 
         {/* 다음 단계 */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
-          <p className="mb-4 text-sm text-slate-600">
+        <div className="rounded-card border border-border bg-surface p-6 text-center">
+          <p className="mb-4 text-sm text-text-secondary">
             더 자세한 피드백을 확인하고 싶다면 타임스탬프 리뷰를 확인하세요.
           </p>
-          <button
+          <Button
+            variant="primary"
             onClick={() => navigate(`/interview/${id}/review`)}
-            className="rounded-xl bg-slate-900 px-8 py-3 text-sm font-medium text-white hover:bg-slate-800"
           >
             타임스탬프 피드백 리뷰 보기
-          </button>
+          </Button>
         </div>
       </main>
     </div>

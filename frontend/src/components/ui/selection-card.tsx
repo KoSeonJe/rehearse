@@ -39,9 +39,9 @@ export const SelectionCard = ({
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         selected
           ? 'border-accent bg-accent-light'
-          : 'border-border bg-white hover:border-gray-300 hover:shadow-sm',
+          : 'border-border bg-white hover:border-text-tertiary hover:shadow-sm',
         disabled
-          ? 'cursor-not-allowed border-border bg-gray-50 text-text-tertiary'
+          ? 'cursor-not-allowed border-border bg-background text-text-tertiary'
           : '',
       ]
         .filter(Boolean)
