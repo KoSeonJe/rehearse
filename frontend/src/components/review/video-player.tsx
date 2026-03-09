@@ -18,7 +18,7 @@ const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
 
   return (
     <video
-      ref={videoRef}
+      ref={videoRef as React.RefObject<HTMLVideoElement>}
       src={videoBlobUrl}
       controls
       className="w-full rounded-xl bg-black"
