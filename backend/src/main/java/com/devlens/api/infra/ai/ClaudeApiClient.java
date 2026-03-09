@@ -39,7 +39,7 @@ public class ClaudeApiClient {
             @Value("${claude.model:claude-sonnet-4-20250514}") String model) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(Duration.ofSeconds(5))
-                .withReadTimeout(Duration.ofSeconds(30));
+                .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
                 .baseUrl(ANTHROPIC_API_URL)
@@ -51,12 +51,55 @@ public class ClaudeApiClient {
     }
 
     public List<GeneratedQuestion> generateQuestions(String position, InterviewLevel level, InterviewType interviewType) {
-        String systemPrompt = buildSystemPrompt();
-        String userPrompt = buildUserPrompt(position, level, interviewType);
+        String systemPrompt = buildQuestionSystemPrompt();
+        String userPrompt = buildQuestionUserPrompt(position, level, interviewType);
 
+        String text = callClaudeApi(systemPrompt, userPrompt, 2048);
+        GeneratedQuestionsWrapper wrapper = parseJsonResponse(text, GeneratedQuestionsWrapper.class);
+
+        if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
+            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI가 생성한 질문을 파싱할 수 없습니다.");
+        }
+
+        return wrapper.getQuestions();
+    }
+
+    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText, String nonVerbalSummary) {
+        String systemPrompt = """
+                당신은 한국 IT 기업의 시니어 개발자 면접관입니다.
+                면접자의 답변을 바탕으로 더 깊이 있는 후속 질문을 생성합니다.
+
+                후속 질문 유형:
+                - DEEP_DIVE: 답변의 특정 부분을 더 깊이 파고드는 질문
+                - CLARIFICATION: 모호한 답변을 명확히 하기 위한 질문
+                - CHALLENGE: 답변의 논리적 허점이나 대안을 탐색하는 질문
+                - APPLICATION: 답변 내용을 다른 상황에 적용해보는 질문
+
+                반드시 아래 JSON 형식으로만 응답하세요:
+                {
+                  "question": "후속 질문 내용",
+                  "reason": "이 질문을 하는 이유",
+                  "type": "DEEP_DIVE|CLARIFICATION|CHALLENGE|APPLICATION"
+                }
+                """;
+
+        String userPrompt = String.format("""
+                원래 질문: %s
+                면접자 답변: %s
+                비언어적 관찰: %s
+
+                위 답변에 대한 후속 질문을 생성해주세요.
+                """, questionContent, answerText,
+                nonVerbalSummary != null ? nonVerbalSummary : "관찰 데이터 없음");
+
+        String text = callClaudeApi(systemPrompt, userPrompt, 1024);
+        return parseJsonResponse(text, GeneratedFollowUp.class);
+    }
+
+    private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
         ClaudeRequest request = ClaudeRequest.builder()
                 .model(model)
-                .maxTokens(2048)
+                .maxTokens(maxTokens)
                 .system(systemPrompt)
                 .messages(List.of(
                         ClaudeRequest.Message.builder()
@@ -75,7 +118,7 @@ public class ClaudeApiClient {
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                         log.error("Claude API 클라이언트 에러: status={}", res.getStatusCode());
-                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "AI 질문 생성에 실패했습니다.");
+                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "AI 요청에 실패했습니다.");
                     })
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
                         log.error("Claude API 서버 에러: status={}", res.getStatusCode());
@@ -87,8 +130,7 @@ public class ClaudeApiClient {
                 throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_003", "AI 응답이 비어있습니다.");
             }
 
-            String text = response.getContent().get(0).getText();
-            return parseQuestions(text);
+            return response.getContent().get(0).getText();
 
         } catch (RestClientException e) {
             log.error("Claude API 호출 실패", e);
@@ -96,34 +138,29 @@ public class ClaudeApiClient {
         }
     }
 
-    private List<GeneratedQuestion> parseQuestions(String text) {
+    private <T> T parseJsonResponse(String text, Class<T> clazz) {
         try {
-            // Claude 응답에서 JSON 블록 추출 (```json ... ``` 형태일 수 있음)
-            String json = text;
-            if (json.contains("```json")) {
-                json = json.substring(json.indexOf("```json") + 7);
-                json = json.substring(0, json.indexOf("```"));
-            } else if (json.contains("```")) {
-                json = json.substring(json.indexOf("```") + 3);
-                json = json.substring(0, json.indexOf("```"));
-            }
-            json = json.trim();
-
-            GeneratedQuestionsWrapper wrapper = objectMapper.readValue(json, GeneratedQuestionsWrapper.class);
-
-            if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
-                throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI가 생성한 질문을 파싱할 수 없습니다.");
-            }
-
-            return wrapper.getQuestions();
-
+            String json = extractJson(text);
+            return objectMapper.readValue(json, clazz);
         } catch (JsonProcessingException e) {
             log.error("Claude 응답 JSON 파싱 실패: {}", text, e);
-            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI가 생성한 질문을 파싱할 수 없습니다.");
+            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 응답을 파싱할 수 없습니다.");
         }
     }
 
-    private String buildSystemPrompt() {
+    private String extractJson(String text) {
+        String json = text;
+        if (json.contains("```json")) {
+            json = json.substring(json.indexOf("```json") + 7);
+            json = json.substring(0, json.indexOf("```"));
+        } else if (json.contains("```")) {
+            json = json.substring(json.indexOf("```") + 3);
+            json = json.substring(0, json.indexOf("```"));
+        }
+        return json.trim();
+    }
+
+    private String buildQuestionSystemPrompt() {
         return """
                 당신은 한국 IT 기업의 시니어 개발자 면접관입니다.
                 주어진 직무, 레벨, 면접 유형에 맞는 면접 질문을 생성해야 합니다.
@@ -152,7 +189,7 @@ public class ClaudeApiClient {
                 """;
     }
 
-    private String buildUserPrompt(String position, InterviewLevel level, InterviewType interviewType) {
+    private String buildQuestionUserPrompt(String position, InterviewLevel level, InterviewType interviewType) {
         String levelKorean = switch (level) {
             case JUNIOR -> "주니어";
             case MID -> "미드레벨";
