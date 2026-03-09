@@ -126,6 +126,47 @@ class InterviewServiceTest {
     }
 
     @Test
+    @DisplayName("Claude API 호출 실패 시 예외가 전파된다")
+    void createInterview_claudeApiFail() {
+        // given
+        CreateInterviewRequest request = new CreateInterviewRequest();
+        ReflectionTestUtils.setField(request, "position", "백엔드 개발자");
+        ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+        ReflectionTestUtils.setField(request, "interviewType", InterviewType.CS);
+
+        given(claudeApiClient.generateQuestions(anyString(), any(), any()))
+                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "Claude API 호출 실패"));
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.createInterview(request))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY);
+                    assertThat(be.getCode()).isEqualTo("AI_001");
+                });
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 면접 세션 상태 변경 시 BusinessException이 발생한다")
+    void updateStatus_notFound() {
+        // given
+        given(interviewRepository.findByIdWithQuestions(999L)).willReturn(Optional.empty());
+
+        UpdateStatusRequest request = new UpdateStatusRequest();
+        ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.updateStatus(999L, request))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
+                });
+    }
+
+    @Test
     @DisplayName("READY -> COMPLETED 잘못된 상태 전이 시 BusinessException이 발생한다")
     void updateStatus_invalidTransition() {
         // given

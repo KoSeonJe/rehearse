@@ -76,7 +76,7 @@
 ---
 
 ### [ISS-005] InterviewService 테스트 커버리지 부족
-- **상태**: 🔴 Open
+- **상태**: 🟢 Resolved
 - **발견일**: 2026-03-10
 - **발견자**: QA
 - **심각도**: Medium
@@ -84,4 +84,4 @@
 - **재현 방법**: 해당 없음 (테스트 누락)
 - **위치**: `backend/src/test/java/com/devlens/api/domain/interview/service/InterviewServiceTest.java`
 - **담당**: Backend
-- **해결**: (미해결)
+- **해결**: Service 테스트에 Claude API 실패/updateStatus 404 케이스 추가, InterviewController MockMvc 통합 테스트 10건 작성
