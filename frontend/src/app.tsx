@@ -3,6 +3,7 @@ import { HomePage } from '@/pages/home-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
 import InterviewPage from '@/pages/interview-page'
+import InterviewCompletePage from '@/pages/interview-complete-page'
 
 export const App = () => {
   return (
@@ -11,6 +12,7 @@ export const App = () => {
       <Route path="/interview/setup" element={<InterviewSetupPage />} />
       <Route path="/interview/:id/ready" element={<InterviewReadyPage />} />
       <Route path="/interview/:id/conduct" element={<InterviewPage />} />
+      <Route path="/interview/:id/complete" element={<InterviewCompletePage />} />
     </Routes>
   )
 }

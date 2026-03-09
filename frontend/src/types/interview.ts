@@ -52,20 +52,40 @@ export interface ApiErrorResponse {
 }
 
 export interface TimestampFeedback {
-  id: string
+  id: number
   timestampSeconds: number
   category: 'VERBAL' | 'NON_VERBAL' | 'CONTENT'
-  content: string
   severity: 'INFO' | 'WARNING' | 'SUGGESTION'
+  content: string
+  suggestion: string | null
+}
+
+export interface FeedbackListResponse {
+  interviewId: number
+  feedbacks: TimestampFeedback[]
+  totalCount: number
+}
+
+export interface AnswerData {
+  questionIndex: number
+  questionContent: string
+  answerText: string
+  nonVerbalSummary?: string
+  voiceSummary?: string
+}
+
+export interface GenerateFeedbackRequest {
+  answers: AnswerData[]
 }
 
 export interface InterviewReport {
-  id: string
-  sessionId: string
+  id: number
+  interviewId: number
   overallScore: number
-  feedbacks: TimestampFeedback[]
   summary: string
+  strengths: string[]
   improvements: string[]
+  feedbackCount: number
 }
 
 // 후속 질문 관련 타입
