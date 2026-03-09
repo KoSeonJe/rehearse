@@ -52,7 +52,7 @@ const InterviewReviewPage = () => {
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-slate-900">DevLens</h1>
+            <h1 className="text-lg font-bold text-slate-900">Rehearse</h1>
             <span className="text-sm text-slate-500">피드백 리뷰</span>
           </div>
           <div className="flex items-center gap-3">

@@ -6,7 +6,7 @@ export const HomePage = () => {
     <main className="flex min-h-screen items-center justify-center bg-gray-50">
       <div className="px-4 text-center sm:px-6">
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-          DevLens
+          Rehearse
         </h1>
         <p className="mx-auto mt-3 max-w-md text-base text-gray-600 sm:text-lg">
           AI 기반 개발자 모의면접 플랫폼

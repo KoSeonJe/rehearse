@@ -1,6 +1,6 @@
 spring:
   application:
-    name: devlens-api
+    name: rehearse-api
   profiles:
     active: dev
 

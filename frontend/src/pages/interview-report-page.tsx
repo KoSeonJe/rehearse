@@ -43,7 +43,7 @@ const InterviewReportPage = () => {
       <header className="border-b border-slate-200 bg-white px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-slate-900">DevLens</h1>
+            <h1 className="text-lg font-bold text-slate-900">Rehearse</h1>
             <span className="text-sm text-slate-500">종합 리포트</span>
           </div>
           <div className="flex items-center gap-3">

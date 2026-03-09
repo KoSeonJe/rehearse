@@ -1,4 +1,4 @@
-# DevLens 프로젝트 실행 가이드
+# Rehearse 프로젝트 실행 가이드
 
 ## 사전 요구사항
 
@@ -100,5 +100,5 @@ npx tsc --noEmit       # 타입 체크만
 
 ### H2 콘솔 접속
 - URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:devlens`
+- JDBC URL: `jdbc:h2:mem:rehearse`
 - Username: `sa`, Password: (없음)
