@@ -68,6 +68,46 @@ export interface InterviewReport {
   improvements: string[]
 }
 
+// 면접 진행 관련 타입
+
+export type NonVerbalEventType = 'gaze' | 'expression' | 'posture' | 'voice'
+export type Severity = 'high' | 'medium' | 'low'
+
+export interface NonVerbalEvent {
+  timestamp: number
+  type: NonVerbalEventType
+  severity: Severity
+  data: {
+    description: string
+    value?: number
+    duration?: number
+  }
+}
+
+export interface TranscriptSegment {
+  questionIndex: number
+  text: string
+  startTime: number
+  endTime: number
+  isFinal: boolean
+}
+
+export interface VoiceEvent {
+  timestamp: number
+  type: 'silence' | 'fast_speech' | 'low_volume' | 'high_volume'
+  duration: number
+  value?: number
+}
+
+export interface QuestionAnswer {
+  questionIndex: number
+  startTime: number
+  endTime: number
+  transcripts: TranscriptSegment[]
+  nonVerbalEvents: NonVerbalEvent[]
+  voiceEvents: VoiceEvent[]
+}
+
 export const LEVEL_LABELS: Record<Level, { label: string; description: string }> = {
   JUNIOR: { label: '주니어', description: '0-3년차' },
   MID: { label: '미드', description: '3-7년차' },

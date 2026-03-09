@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import { HomePage } from '@/pages/home-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
+import InterviewPage from '@/pages/interview-page'
 
 export const App = () => {
   return (
@@ -9,6 +10,7 @@ export const App = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/interview/setup" element={<InterviewSetupPage />} />
       <Route path="/interview/:id/ready" element={<InterviewReadyPage />} />
+      <Route path="/interview/:id/conduct" element={<InterviewPage />} />
     </Routes>
   )
 }

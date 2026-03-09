@@ -33,7 +33,7 @@ export const InterviewReadyPage = () => {
       { id: interview.id, data: { status: 'IN_PROGRESS' } },
       {
         onSuccess: () => {
-          navigate(`/interview/${interview.id}/session`)
+          navigate(`/interview/${interview.id}/conduct`)
         },
       },
     )
