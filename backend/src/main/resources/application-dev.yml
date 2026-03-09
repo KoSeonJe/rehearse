@@ -15,6 +15,10 @@ spring:
       ddl-auto: create-drop
     show-sql: true
 
+claude:
+  api-key: ${CLAUDE_API_KEY:}
+  model: claude-sonnet-4-20250514
+
 logging:
   level:
     com.devlens.api: DEBUG
