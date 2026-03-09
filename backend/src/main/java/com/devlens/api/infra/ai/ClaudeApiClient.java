@@ -96,6 +96,50 @@ public class ClaudeApiClient {
         return parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
+    public List<GeneratedFeedback> generateFeedback(String answersJson) {
+        String systemPrompt = """
+                당신은 면접 코치입니다. 면접자의 답변과 비언어적 데이터를 분석하여 타임스탬프 기반 피드백을 생성합니다.
+
+                피드백 카테고리:
+                - VERBAL: 언어적 피드백 (답변 내용, 논리성, 구체성)
+                - NON_VERBAL: 비언어적 피드백 (시선, 자세, 표정)
+                - CONTENT: 내용 피드백 (기술적 정확성, 깊이)
+
+                심각도:
+                - INFO: 긍정적 관찰 또는 중립 정보
+                - WARNING: 개선이 필요한 주의 사항
+                - SUGGESTION: 구체적 개선 제안
+
+                반드시 아래 JSON 형식으로만 응답하세요:
+                {
+                  "feedbacks": [
+                    {
+                      "timestampSeconds": 0.0,
+                      "category": "VERBAL|NON_VERBAL|CONTENT",
+                      "severity": "INFO|WARNING|SUGGESTION",
+                      "content": "피드백 내용",
+                      "suggestion": "개선 제안 (선택)"
+                    }
+                  ]
+                }
+                """;
+
+        String userPrompt = String.format("""
+                아래는 면접 답변 데이터입니다. 각 답변에 대해 타임스탬프 기반 피드백을 생성해주세요.
+
+                %s
+                """, answersJson);
+
+        String text = callClaudeApi(systemPrompt, userPrompt, 4096);
+        GeneratedFeedbackWrapper wrapper = parseJsonResponse(text, GeneratedFeedbackWrapper.class);
+
+        if (wrapper.getFeedbacks() == null || wrapper.getFeedbacks().isEmpty()) {
+            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_006", "AI 피드백을 생성할 수 없습니다.");
+        }
+
+        return wrapper.getFeedbacks();
+    }
+
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
         ClaudeRequest request = ClaudeRequest.builder()
                 .model(model)
