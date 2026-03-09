@@ -32,7 +32,6 @@ const InterviewPage = () => {
     answers,
     currentTranscript,
     setInterview,
-    setPhase,
     startRecording,
     stopRecording,
     nextQuestion,
@@ -46,7 +45,6 @@ const InterviewPage = () => {
     isFollowUpLoading,
     addFollowUpQuestion,
     setFollowUpLoading,
-    reset,
   } = useInterviewStore()
 
   const mediaStream = useMediaStream()
