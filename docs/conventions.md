@@ -4,6 +4,30 @@
 
 ---
 
+## 브랜치 전략
+
+```
+main (프로덕션) ← develop (통합) ← feat/{기능}-be, feat/{기능}-fe
+```
+
+| 브랜치 | 용도 | 머지 방식 |
+|--------|------|-----------|
+| `main` | 프로덕션 릴리스 | Merge Commit (마일스톤 단위) |
+| `develop` | 통합 개발 (default) | — |
+| `feat/{기능}-be` | Backend 기능 개발 | Squash Merge → develop |
+| `feat/{기능}-fe` | Frontend 기능 개발 | Squash Merge → develop |
+| `fix/{버그명}` | 버그 수정 | Squash Merge → develop |
+
+### PR 규칙
+
+- **제목**: `[BE|FE] {type}: {한국어 요약}`
+- **크기**: 파일 10개 이하, 300줄 이하 권장
+- **Backend/Frontend 혼합 금지** — 별도 PR로 분리
+- Backend PR 먼저 머지 → Frontend PR이 연동
+- 기능 브랜치는 항상 `develop`에서 분기
+
+---
+
 ## 커밋 규칙
 
 ### 커밋 단위
