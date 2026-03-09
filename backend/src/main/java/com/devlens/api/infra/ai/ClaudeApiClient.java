@@ -161,8 +161,9 @@ public class ClaudeApiClient {
                     .body(request)
                     .retrieve()
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                        log.error("Claude API 클라이언트 에러: status={}", res.getStatusCode());
-                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "AI 요청에 실패했습니다.");
+                        String body = new String(res.getBody().readAllBytes());
+                        log.error("Claude API 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
+                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "AI 요청에 실패했습니다: " + body);
                     })
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
                         log.error("Claude API 서버 에러: status={}", res.getStatusCode());
