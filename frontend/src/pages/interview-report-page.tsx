@@ -3,10 +3,10 @@ import { useReport } from '../hooks/use-report'
 import { LogoIcon } from '@/components/ui/logo-icon'
 import { Button } from '@/components/ui/button'
 import { Character } from '@/components/ui/character'
-import ScoreCard from '../components/review/score-card'
-import ImprovementList from '../components/review/improvement-list'
+import { ScoreCard } from '../components/review/score-card'
+import { ImprovementList } from '../components/review/improvement-list'
 
-const InterviewReportPage = () => {
+export const InterviewReportPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: response, isLoading, isError } = useReport(id ?? '')
@@ -109,5 +109,3 @@ const InterviewReportPage = () => {
     </div>
   )
 }
-
-export default InterviewReportPage

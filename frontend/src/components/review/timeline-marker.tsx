@@ -19,7 +19,7 @@ const formatTime = (seconds: number): string => {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-const TimelineMarker = ({ feedback, totalDuration, isSelected, onClick }: TimelineMarkerProps) => {
+export const TimelineMarker = ({ feedback, totalDuration, isSelected, onClick }: TimelineMarkerProps) => {
   const position = totalDuration > 0 ? (feedback.timestampSeconds / totalDuration) * 100 : 0
 
   return (
@@ -39,4 +39,3 @@ const TimelineMarker = ({ feedback, totalDuration, isSelected, onClick }: Timeli
   )
 }
 
-export default TimelineMarker

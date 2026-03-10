@@ -6,11 +6,11 @@ import { useVideoSync } from '../hooks/use-video-sync'
 import { LogoIcon } from '@/components/ui/logo-icon'
 import { Button } from '@/components/ui/button'
 import { Character } from '@/components/ui/character'
-import VideoPlayer from '../components/review/video-player'
-import FeedbackTimeline from '../components/review/feedback-timeline'
-import FeedbackPanel from '../components/review/feedback-panel'
+import { VideoPlayer } from '../components/review/video-player'
+import { FeedbackTimeline } from '../components/review/feedback-timeline'
+import { FeedbackPanel } from '../components/review/feedback-panel'
 
-const InterviewReviewPage = () => {
+export const InterviewReviewPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: response, isLoading } = useFeedbacks(id ?? '')
@@ -102,5 +102,3 @@ const InterviewReviewPage = () => {
     </div>
   )
 }
-
-export default InterviewReviewPage

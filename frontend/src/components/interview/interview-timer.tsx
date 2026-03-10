@@ -18,7 +18,7 @@ const formatTime = (ms: number): string => {
     : `${pad(minutes)}:${pad(seconds)}`
 }
 
-const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
+export const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   const displayRef = useRef<HTMLSpanElement>(null)
   const onTickRef = useRef(onTick)
   onTickRef.current = onTick
@@ -54,4 +54,3 @@ const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   )
 }
 
-export default InterviewTimer

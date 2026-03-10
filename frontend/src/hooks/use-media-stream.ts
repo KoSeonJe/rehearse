@@ -24,7 +24,7 @@ const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   noiseSuppression: true,
 }
 
-const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamReturn => {
+export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamReturn => {
   const [stream, setStream] = useState<MediaStream | null>(null)
   const [isActive, setIsActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -75,4 +75,3 @@ const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamReturn =
   return { stream, isActive, error, start, stop }
 }
 
-export default useMediaStream

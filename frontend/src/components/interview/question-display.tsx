@@ -15,7 +15,7 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
   APPLICATION: '적용',
 }
 
-const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {
+export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {
   return (
     <div className="space-y-3">
       <div className="rounded-card border border-border bg-surface p-6">
@@ -62,4 +62,3 @@ const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollo
   )
 }
 
-export default QuestionDisplay

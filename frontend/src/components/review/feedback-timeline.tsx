@@ -1,5 +1,5 @@
 import { useReviewStore } from '../../stores/review-store'
-import TimelineMarker from './timeline-marker'
+import { TimelineMarker } from './timeline-marker'
 
 interface FeedbackTimelineProps {
   totalDuration: number
@@ -12,7 +12,7 @@ const formatTime = (seconds: number): string => {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-const FeedbackTimeline = ({ totalDuration, onSeekToFeedback }: FeedbackTimelineProps) => {
+export const FeedbackTimeline = ({ totalDuration, onSeekToFeedback }: FeedbackTimelineProps) => {
   const { feedbacks, currentTime, selectedFeedbackId } = useReviewStore()
 
   const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0
@@ -56,4 +56,3 @@ const FeedbackTimeline = ({ totalDuration, onSeekToFeedback }: FeedbackTimelineP
   )
 }
 
-export default FeedbackTimeline

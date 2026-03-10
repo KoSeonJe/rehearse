@@ -11,7 +11,7 @@ interface InterviewControlsProps {
   onFinishInterview: () => void
 }
 
-const InterviewControls = ({
+export const InterviewControls = ({
   phase,
   currentIndex,
   totalQuestions,
@@ -81,4 +81,3 @@ const InterviewControls = ({
   )
 }
 
-export default InterviewControls

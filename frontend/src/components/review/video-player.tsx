@@ -5,7 +5,7 @@ interface VideoPlayerProps {
   videoRef: RefObject<HTMLVideoElement | null>
 }
 
-const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
+export const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
   const { videoBlobUrl } = useInterviewStore()
 
   if (!videoBlobUrl) {
@@ -27,4 +27,3 @@ const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
   )
 }
 
-export default VideoPlayer

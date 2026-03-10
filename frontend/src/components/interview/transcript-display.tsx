@@ -3,7 +3,7 @@ interface TranscriptDisplayProps {
   finalTexts: string[]
 }
 
-const TranscriptDisplay = ({ interimText, finalTexts }: TranscriptDisplayProps) => {
+export const TranscriptDisplay = ({ interimText, finalTexts }: TranscriptDisplayProps) => {
   const hasContent = finalTexts.length > 0 || interimText
 
   return (
@@ -28,4 +28,3 @@ const TranscriptDisplay = ({ interimText, finalTexts }: TranscriptDisplayProps) 
   )
 }
 
-export default TranscriptDisplay

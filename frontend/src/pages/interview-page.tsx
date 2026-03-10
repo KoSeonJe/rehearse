@@ -1,31 +1,28 @@
-import { useCallback, useEffect, useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
-import { useInterview, useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
-import useMediaStream from '../hooks/use-media-stream'
-import useMediaRecorder from '../hooks/use-media-recorder'
-import useSpeechRecognition from '../hooks/use-speech-recognition'
-import useAudioAnalyzer from '../hooks/use-audio-analyzer'
+import { useInterview } from '../hooks/use-interviews'
+import { useMediaStream } from '../hooks/use-media-stream'
+import { useMediaRecorder } from '../hooks/use-media-recorder'
+import { useSpeechRecognition } from '../hooks/use-speech-recognition'
+import { useAudioAnalyzer } from '../hooks/use-audio-analyzer'
+import { useInterviewSession } from '../hooks/use-interview-session'
 import { Button } from '@/components/ui/button'
 import { LogoIcon } from '@/components/ui/logo-icon'
 import { Character } from '@/components/ui/character'
-import VideoPreview from '../components/interview/video-preview'
-import QuestionDisplay from '../components/interview/question-display'
-import TranscriptDisplay from '../components/interview/transcript-display'
-import InterviewControls from '../components/interview/interview-controls'
-import AudioLevelIndicator from '../components/interview/audio-level-indicator'
-import InterviewTimer from '../components/interview/interview-timer'
-import type { TranscriptSegment, VoiceEvent } from '../types/interview'
+import { VideoPreview } from '../components/interview/video-preview'
+import { QuestionDisplay } from '../components/interview/question-display'
+import { TranscriptDisplay } from '../components/interview/transcript-display'
+import { InterviewControls } from '../components/interview/interview-controls'
+import { AudioLevelIndicator } from '../components/interview/audio-level-indicator'
+import { InterviewTimer } from '../components/interview/interview-timer'
 
-const InterviewPage = () => {
+export const InterviewPage = () => {
   const { id } = useParams<{ id: string }>()
-  const navigate = useNavigate()
   const interviewId = id ?? ''
 
   const { data: response } = useInterview(interviewId)
   const interview = response?.data
-  const updateStatus = useUpdateInterviewStatus()
-  const followUpMutation = useFollowUpQuestion()
 
   const {
     questions,
@@ -34,20 +31,10 @@ const InterviewPage = () => {
     startTime,
     answers,
     currentTranscript,
-    setInterview,
-    startRecording,
-    stopRecording,
     nextQuestion,
     prevQuestion,
-    setCurrentTranscript,
-    addTranscript,
-    addVoiceEvent,
-    setVideoBlob,
-    completeInterview,
     followUpQuestions,
     isFollowUpLoading,
-    addFollowUpQuestion,
-    setFollowUpLoading,
   } = useInterviewStore()
 
   const mediaStream = useMediaStream()
@@ -55,125 +42,19 @@ const InterviewPage = () => {
   const stt = useSpeechRecognition()
   const audio = useAudioAnalyzer()
 
-  // 면접 데이터 로드
-  useEffect(() => {
-    if (interview && phase === 'preparing') {
-      setInterview(interview.id, interview.questions)
-    }
-  }, [interview, phase, setInterview])
-
-  // STT 콜백 등록
-  useEffect(() => {
-    stt.onFinalResult((segment: TranscriptSegment) => {
-      addTranscript(segment)
-    })
-  }, [stt, addTranscript])
-
-  // 음성 이벤트 콜백 등록
-  useEffect(() => {
-    audio.onVoiceEvent((event: VoiceEvent) => {
-      addVoiceEvent(event)
-    })
-  }, [audio, addVoiceEvent])
-
-  // interim text 동기화
-  useEffect(() => {
-    setCurrentTranscript(stt.interimText)
-  }, [stt.interimText, setCurrentTranscript])
-
-  // 카메라 시작
-  const handlePrepare = useCallback(async () => {
-    await mediaStream.start()
-  }, [mediaStream])
-
-  useEffect(() => {
-    if (phase === 'ready' && !mediaStream.isActive) {
-      handlePrepare()
-    }
-  }, [phase, mediaStream.isActive, handlePrepare])
-
-  // 상태를 IN_PROGRESS로 변경
-  useEffect(() => {
-    if (phase === 'ready' && interview?.status === 'READY') {
-      updateStatus.mutate({ id: interview.id, data: { status: 'IN_PROGRESS' } })
-    }
-  }, [phase, interview?.status, interviewId, updateStatus])
-
-  // 답변 시작
-  const handleStartAnswer = useCallback(() => {
-    if (!mediaStream.stream) return
-    startRecording()
-    if (!recorder.isRecording) {
-      recorder.start(mediaStream.stream)
-    } else {
-      recorder.resume()
-    }
-    stt.start(currentQuestionIndex)
-    audio.start(mediaStream.stream)
-  }, [mediaStream.stream, startRecording, recorder, stt, audio, currentQuestionIndex])
-
-  // 답변 완료 + 후속질문 요청
-  const handleStopAnswer = useCallback(() => {
-    stopRecording()
-    stt.stop()
-    recorder.pause()
-
-    // 현재 질문에 대한 답변 텍스트 수집
-    const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
-    const answerText = currentAnswer?.transcripts
-      .filter((t) => t.isFinal)
-      .map((t) => t.text)
-      .join(' ')
-
-    if (answerText && interview) {
-      setFollowUpLoading(true)
-      followUpMutation.mutate(
-        {
-          id: interview.id,
-          data: {
-            questionContent: questions[currentQuestionIndex].content,
-            answerText,
-          },
-        },
-        {
-          onSuccess: (res) => {
-            addFollowUpQuestion(currentQuestionIndex, res.data)
-            setFollowUpLoading(false)
-          },
-          onError: () => {
-            setFollowUpLoading(false)
-          },
-        },
-      )
-    }
-  }, [stopRecording, stt, recorder, currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
-
-  // 면접 종료
-  const handleFinishInterview = useCallback(async () => {
-    if (!interview) return
-
-    stt.stop()
-    audio.stop()
-
-    const blob = await recorder.stop()
-    setVideoBlob(blob)
-    completeInterview()
-
-    updateStatus.mutate({ id: interview.id, data: { status: 'COMPLETED' } })
-
-    mediaStream.stop()
-    navigate(`/interview/${interview.id}/complete`)
-  }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
-
-  // 클린업
-  useEffect(() => {
-    return () => {
-      mediaStream.stop()
-      audio.stop()
-      stt.stop()
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  const {
+    handlePrepare,
+    handleStartAnswer,
+    handleStopAnswer,
+    handleFinishInterview,
+  } = useInterviewSession({
+    interviewId,
+    interview,
+    mediaStream,
+    recorder,
+    stt,
+    audio,
+  })
 
   const currentQuestion = questions[currentQuestionIndex]
   const currentAnswer = answers[currentQuestionIndex]
@@ -262,5 +143,3 @@ const InterviewPage = () => {
     </div>
   )
 }
-
-export default InterviewPage

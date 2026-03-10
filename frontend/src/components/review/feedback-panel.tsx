@@ -65,7 +65,7 @@ const FeedbackCard = ({
   )
 }
 
-const FeedbackPanel = ({ onSeekToFeedback }: FeedbackPanelProps) => {
+export const FeedbackPanel = ({ onSeekToFeedback }: FeedbackPanelProps) => {
   const { feedbacks, currentTime, selectedFeedbackId } = useReviewStore()
 
   const sortedFeedbacks = useMemo(
@@ -96,4 +96,3 @@ const FeedbackPanel = ({ onSeekToFeedback }: FeedbackPanelProps) => {
   )
 }
 
-export default FeedbackPanel

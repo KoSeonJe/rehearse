@@ -8,7 +8,7 @@ interface UseMediaRecorderReturn {
   resume: () => void
 }
 
-const useMediaRecorder = (): UseMediaRecorderReturn => {
+export const useMediaRecorder = (): UseMediaRecorderReturn => {
   const [isRecording, setIsRecording] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
@@ -67,4 +67,3 @@ const useMediaRecorder = (): UseMediaRecorderReturn => {
   return { isRecording, start, stop, pause, resume }
 }
 
-export default useMediaRecorder

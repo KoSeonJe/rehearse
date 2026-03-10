@@ -2,11 +2,11 @@ import { Routes, Route } from 'react-router-dom'
 import { HomePage } from '@/pages/home-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
-import InterviewPage from '@/pages/interview-page'
-import InterviewCompletePage from '@/pages/interview-complete-page'
-import InterviewReviewPage from '@/pages/interview-review-page'
-import InterviewReportPage from '@/pages/interview-report-page'
-import OnboardingPage from '@/pages/onboarding-page'
+import { InterviewPage } from '@/pages/interview-page'
+import { InterviewCompletePage } from '@/pages/interview-complete-page'
+import { InterviewReviewPage } from '@/pages/interview-review-page'
+import { InterviewReportPage } from '@/pages/interview-report-page'
+import { OnboardingPage } from '@/pages/onboarding-page'
 
 export const App = () => {
   return (

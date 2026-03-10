@@ -4,7 +4,7 @@ interface ImprovementListProps {
   variant: 'strength' | 'improvement'
 }
 
-const ImprovementList = ({ title, items, variant }: ImprovementListProps) => {
+export const ImprovementList = ({ title, items, variant }: ImprovementListProps) => {
   const isStrength = variant === 'strength'
 
   return (
@@ -34,4 +34,3 @@ const ImprovementList = ({ title, items, variant }: ImprovementListProps) => {
   )
 }
 
-export default ImprovementList

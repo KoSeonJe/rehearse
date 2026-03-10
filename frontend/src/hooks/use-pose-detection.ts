@@ -12,7 +12,7 @@ interface UsePoseDetectionReturn {
   onEvent: (callback: (event: NonVerbalEvent) => void) => void
 }
 
-const usePoseDetection = (): UsePoseDetectionReturn => {
+export const usePoseDetection = (): UsePoseDetectionReturn => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const landmarkerRef = useRef<PoseLandmarker | null>(null)
@@ -107,4 +107,3 @@ const usePoseDetection = (): UsePoseDetectionReturn => {
   return { isLoaded, isRunning, start, stop, onEvent }
 }
 
-export default usePoseDetection

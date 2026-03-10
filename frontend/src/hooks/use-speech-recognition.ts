@@ -34,7 +34,7 @@ declare global {
   }
 }
 
-const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
+export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false)
   const [interimText, setInterimText] = useState('')
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
@@ -154,4 +154,3 @@ const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   return { isListening, isSupported, interimText, start, stop, onFinalResult }
 }
 
-export default useSpeechRecognition

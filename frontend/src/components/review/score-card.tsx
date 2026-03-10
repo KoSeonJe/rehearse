@@ -16,7 +16,7 @@ const getScoreLabel = (score: number): string => {
   return '개선 필요'
 }
 
-const ScoreCard = ({ score }: ScoreCardProps) => {
+export const ScoreCard = ({ score }: ScoreCardProps) => {
   const color = getScoreColor(score)
 
   return (
@@ -36,4 +36,3 @@ const ScoreCard = ({ score }: ScoreCardProps) => {
   )
 }
 
-export default ScoreCard

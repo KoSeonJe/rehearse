@@ -5,7 +5,7 @@ interface VideoPreviewProps {
   isRecording: boolean
 }
 
-const VideoPreview = ({ stream, isRecording }: VideoPreviewProps) => {
+export const VideoPreview = ({ stream, isRecording }: VideoPreviewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -38,4 +38,3 @@ const VideoPreview = ({ stream, isRecording }: VideoPreviewProps) => {
   )
 }
 
-export default VideoPreview
