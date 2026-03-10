@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useReviewStore } from '../stores/review-store'
 import { useFeedbacks } from '../hooks/use-feedback'
 import { useVideoSync } from '../hooks/use-video-sync'
-import { LogoIcon } from '@/components/ui/logo-icon'
-import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { VideoPlayer } from '../components/review/video-player'
 import { FeedbackTimeline } from '../components/review/feedback-timeline'
@@ -43,37 +42,35 @@ export const InterviewReviewPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background">
-        <Character mood="thinking" size={100} className="mx-auto" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white">
+        <Character mood="thinking" size={160} className="mx-auto" />
         <p className="mt-4 text-text-secondary">피드백을 불러오는 중...</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <LogoIcon size={28} />
-            <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
-            <span className="hidden text-sm text-text-secondary sm:inline">피드백 리뷰</span>
+            <Logo size={60} />
+            <span className="font-black text-text-primary">피드백 리뷰</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button
-              variant="secondary"
+            <button
               onClick={() => navigate(`/interview/${id}/report`)}
-              className="hidden sm:inline-flex"
+              className="hidden rounded-[24px] bg-surface px-6 py-3 text-sm font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95 sm:inline-flex"
             >
               종합 리포트
-            </Button>
-            <Button
-              variant="primary"
+            </button>
+            <button
               onClick={() => navigate('/')}
+              className="rounded-[24px] bg-accent px-6 py-3 text-sm font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95"
             >
               홈으로
-            </Button>
+            </button>
           </div>
         </div>
       </header>
@@ -91,8 +88,8 @@ export const InterviewReviewPage = () => {
 
         {/* 우측: 피드백 패널 */}
         <div className="w-full lg:w-2/5">
-          <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-card border border-border bg-surface p-4">
-            <h2 className="mb-4 text-sm font-semibold text-text-primary">
+          <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-[32px] bg-surface p-6">
+            <h2 className="mb-4 text-sm font-black uppercase tracking-widest text-text-tertiary">
               피드백 ({response?.data?.totalCount ?? 0}개)
             </h2>
             <FeedbackPanel onSeekToFeedback={seekToFeedback} />

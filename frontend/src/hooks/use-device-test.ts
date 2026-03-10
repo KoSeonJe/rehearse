@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { DevicePermissions } from '@/components/onboarding/types'
+import type { DevicePermissions } from '@/types/device'
 
 export const useDeviceTest = (active: boolean) => {
   const [permissions, setPermissions] = useState<DevicePermissions>({

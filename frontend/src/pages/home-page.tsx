@@ -1,205 +1,189 @@
 import { useNavigate } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
-import { EditIcon } from '@/components/icons/edit-icon'
-import { EyeIcon } from '@/components/icons/eye-icon'
-import { VideoIcon } from '@/components/icons/video-icon'
-
-const FeatureCard = ({
-  icon,
-  title,
-  description,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-}) => (
-  <div
-    className="rounded-card border border-border bg-surface p-6 transition-shadow duration-200 hover:shadow-md"
-    role="article"
-  >
-    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-accent-light text-accent">
-      {icon}
-    </div>
-    <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
-    <p className="mt-2 text-sm leading-relaxed text-text-secondary">
-      {description}
-    </p>
-  </div>
-)
-
-const StepItem = ({
-  step,
-  title,
-  description,
-}: {
-  step: number
-  title: string
-  description: string
-}) => (
-  <div className="flex flex-col items-center text-center">
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
-      {step}
-    </div>
-    <h3 className="text-base font-semibold text-text-primary">{title}</h3>
-    <p className="mt-2 max-w-xs text-sm leading-relaxed text-text-secondary">
-      {description}
-    </p>
-  </div>
-)
 
 export const HomePage = () => {
   const navigate = useNavigate()
   const { ref: heroRef, style: heroStyle } = useFadeInOnScroll<HTMLElement>()
-  const { ref: featuresRef, style: featuresStyle } = useFadeInOnScroll<HTMLElement>()
-  const { ref: stepsRef, style: stepsStyle } = useFadeInOnScroll<HTMLElement>()
+  const { ref: journeyRef, style: journeyStyle } = useFadeInOnScroll<HTMLElement>()
   const { ref: ctaRef, style: ctaStyle } = useFadeInOnScroll<HTMLElement>()
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* ─── Header ─── */}
-      <header className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+    <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />
-            <span className="text-lg font-bold text-text-primary">
+            <span className="text-xl font-extrabold tracking-tight text-text-primary">
               리허설
             </span>
           </div>
-          <nav aria-label="메인 네비게이션">
-            <Button variant="primary" className="px-4 py-2 text-sm" onClick={() => navigate('/interview/setup')}>
-              시작하기
-            </Button>
-          </nav>
+          <button 
+            className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95"
+            onClick={() => navigate('/interview/setup')}
+          >
+            시작하기
+          </button>
         </div>
       </header>
 
       <main>
-        {/* ─── Hero ─── */}
+        {/* Hero Section */}
         <section
           ref={heroRef}
           style={heroStyle}
-          className="px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20 md:pt-28"
+          className="mx-auto max-w-4xl px-5 pt-20 text-center md:pt-32"
         >
-          <div className="mx-auto max-w-5xl text-center">
-            <div className="mb-8 flex justify-center">
-              <div className="animate-float">
-                <Character mood="happy" size={160} />
+          <div className="flex flex-col items-center justify-center gap-4">
+            <Logo size={120} />
+            <h1 className="mt-4 text-[40px] font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-[64px]">
+              준비한 만큼 보여줄 수 있게<br />
+              <span className="text-accent">면접 연습, 리허설해 보세요.</span>
+            </h1>
+          </div>
+          <p className="mt-10 text-lg font-medium leading-relaxed text-text-secondary md:text-xl">
+            단순한 연습을 넘어, 합격의 경험을 미리 시뮬레이션합니다.<br className="hidden md:block" />
+            <span className="text-text-primary font-bold">실제 우리가 만든 화면들</span>과 함께 면접 여정을 확인해 보세요.
+          </p>
+          <div className="mt-12">
+            <button 
+              className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20"
+              onClick={() => navigate('/interview/setup')}
+            >
+              면접 여정 시작하기
+            </button>
+          </div>
+        </section>
+
+        {/* The Real Journey Section — 실제 만든 페이지 디자인 재현 */}
+        <section
+          ref={journeyRef}
+          style={journeyStyle}
+          className="mx-auto max-w-5xl px-5 py-32"
+        >
+          <div className="text-center mb-24">
+            <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">The Real Experience</p>
+            <h2 className="text-3xl font-extrabold tracking-tighter text-text-primary md:text-4xl">
+              합격까지의 모든 과정,<br />
+              <span className="text-accent">직접 보여드릴게요.</span>
+            </h2>
+          </div>
+
+          <div className="space-y-40">
+            {/* Step 1: Setup Page Mockup */}
+            <div className="flex flex-col md:flex-row items-center gap-16">
+              <div className="flex-1 space-y-6">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black">1</div>
+                <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">나만을 위한 면접 설정</h3>
+                <p className="text-lg font-medium text-text-secondary leading-relaxed">
+                  백엔드, 프론트엔드 등 직무를 선택하면<br />
+                  AI가 이력서를 분석해 1:1 맞춤 질문을 준비합니다.
+                </p>
+              </div>
+              <div className="flex-1 w-full max-w-[440px] rounded-[32px] bg-surface p-6 border border-border shadow-toss rotate-2">
+                <div className="space-y-4">
+                  <div className="h-14 rounded-[20px] bg-white border border-border flex items-center px-5 text-sm font-bold text-text-tertiary">
+                    예: 시니어 백엔드 엔지니어
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="h-16 rounded-[20px] bg-accent flex items-center justify-center text-[10px] font-black text-white">MID</div>
+                    <div className="h-16 rounded-[20px] bg-white border border-border flex items-center justify-center text-[10px] font-bold text-text-tertiary">SENIOR</div>
+                    <div className="h-16 rounded-[20px] bg-white border border-border flex items-center justify-center text-[10px] font-bold text-text-tertiary">LEAD</div>
+                  </div>
+                </div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl md:text-5xl">
-              면접, 다시 한 번.
-            </h1>
-            <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-text-secondary sm:text-lg">
-              AI가 면접을 녹화하고 분석합니다.
-              <br className="hidden sm:block" />
-              타임스탬프 기반 피드백으로 정확히 어디를 고쳐야 하는지 알려드립니다.
-            </p>
-            <div className="mt-10">
-              <Button variant="cta" className="w-full sm:w-auto" onClick={() => navigate('/interview/setup')}>
-                면접 시작하기
-              </Button>
+
+            {/* Step 2: Conduct Page Mockup */}
+            <div className="flex flex-col md:flex-row-reverse items-center gap-16">
+              <div className="flex-1 space-y-6 md:text-right">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black md:ml-auto">2</div>
+                <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">몰입도 높은 AI 면접</h3>
+                <p className="text-lg font-medium text-text-secondary leading-relaxed">
+                  친절한 AI 캐릭터와 대화하며 실전처럼 연습하세요.<br />
+                  음성 감지 시스템이 당신의 답변을 경청합니다.
+                </p>
+              </div>
+              <div className="flex-1 w-full max-w-[480px] rounded-[32px] bg-white p-6 border border-border shadow-toss-lg -rotate-2">
+                <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden flex items-center justify-center border border-slate-100">
+                  {/* Spotlight */}
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.08),transparent_70%)]" />
+                  
+                  {/* Character */}
+                  <div className="relative z-10 drop-shadow-2xl">
+                    <Character mood="happy" size={120} />
+                  </div>
+                  
+                  {/* HUD */}
+                  <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200">
+                    <div className="flex items-end gap-0.5 h-3">
+                      {[1, 2, 3, 4].map(i => <div key={i} className="w-[2px] bg-accent rounded-full h-full animate-pulse" />)}
+                    </div>
+                    <span className="text-[8px] font-black text-text-primary uppercase tracking-wider">Recording</span>
+                  </div>
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <div className="h-12 w-32 rounded-[20px] bg-text-primary flex items-center justify-center text-xs font-black text-white shadow-lg">답변 완료</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Report Page Mockup */}
+            <div className="flex flex-col md:flex-row items-center gap-16">
+              <div className="flex-1 space-y-6">
+                <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black">3</div>
+                <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">데이터로 증명되는 성장</h3>
+                <p className="text-lg font-medium text-text-secondary leading-relaxed">
+                  면접이 끝나면 종합 점수와 정밀 피드백을 받습니다.<br />
+                  합격을 위한 구체적인 가이드를 확인하세요.
+                </p>
+              </div>
+              <div className="flex-1 w-full max-w-[440px] rounded-[32px] bg-white border border-border p-8 shadow-toss rotate-1">
+                <div className="text-center mb-8">
+                  <span className="text-6xl font-black tracking-tighter text-text-primary">88</span>
+                  <span className="text-xl font-bold text-text-tertiary ml-1">/ 100</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="rounded-2xl bg-success/5 border border-success/10 p-4 flex items-center gap-3">
+                    <span className="text-success">✓</span>
+                    <span className="text-xs font-bold text-text-primary">기술적 부채 해결 경험을 잘 설명하셨어요.</span>
+                  </div>
+                  <div className="rounded-2xl bg-accent/5 border border-accent/10 p-4 flex items-center gap-3">
+                    <span className="text-accent">!</span>
+                    <span className="text-xs font-bold text-text-primary">시선 처리를 조금 더 안정적으로 개선해보세요.</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* ─── Value Propositions ─── */}
-        <section
-          ref={featuresRef}
-          style={featuresStyle}
-          className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
-          aria-labelledby="features-heading"
-        >
-          <div className="mx-auto max-w-5xl">
-            <h2
-              id="features-heading"
-              className="mb-10 text-center text-2xl font-bold text-text-primary sm:mb-12 sm:text-3xl"
-            >
-              왜 리허설인가요?
-            </h2>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              <FeatureCard
-                icon={<EditIcon />}
-                title="AI 맞춤 질문 생성"
-                description="이력서를 기반으로 직무와 경력에 맞는 면접 질문을 생성합니다. 답변에 따라 후속 질문까지 이어집니다."
-              />
-              <FeatureCard
-                icon={<EyeIcon />}
-                title="비언어 분석"
-                description="시선, 표정, 자세를 실시간으로 추적합니다. 면접에서 놓치기 쉬운 비언어적 습관을 객관적으로 확인하세요."
-              />
-              <FeatureCard
-                icon={<VideoIcon />}
-                title="타임스탬프 피드백"
-                description="녹화 영상과 AI 피드백이 타임스탬프로 동기화됩니다. 영상을 재생하며 정확한 시점의 피드백을 확인하세요."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ─── How It Works ─── */}
-        <section
-          ref={stepsRef}
-          style={stepsStyle}
-          className="px-4 py-16 sm:px-6 sm:py-20"
-          aria-labelledby="steps-heading"
-        >
-          <div className="mx-auto max-w-5xl">
-            <h2
-              id="steps-heading"
-              className="mb-10 text-center text-2xl font-bold text-text-primary sm:mb-12 sm:text-3xl"
-            >
-              어떻게 사용하나요?
-            </h2>
-            <div className="grid gap-10 sm:grid-cols-3 sm:gap-6">
-              <StepItem
-                step={1}
-                title="면접 설정"
-                description="직무와 경력 레벨을 선택하고, 이력서를 입력하면 AI가 맞춤 질문을 준비합니다."
-              />
-              <StepItem
-                step={2}
-                title="AI와 면접 진행"
-                description="카메라와 마이크를 켜고 실제 면접처럼 진행합니다. 영상 녹화와 분석이 동시에 이루어집니다."
-              />
-              <StepItem
-                step={3}
-                title="피드백 리뷰"
-                description="녹화 영상을 재생하며 타임스탬프에 맞춰 언어적, 비언어적 피드백을 확인합니다."
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Bottom CTA ─── */}
+        {/* Final CTA */}
         <section
           ref={ctaRef}
           style={ctaStyle}
-          className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
+          className="mx-auto max-w-4xl px-5 py-32 text-center"
         >
-          <div className="mx-auto max-w-md text-center">
-            <Character mood="default" size={100} className="mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-text-primary sm:text-3xl">
-              준비되셨나요?
-            </h2>
-            <p className="mt-3 text-base text-text-secondary">
-              지금 바로 AI 모의면접을 시작하세요.
-            </p>
-            <div className="mt-8">
-              <Button variant="cta" className="w-full sm:w-auto" onClick={() => navigate('/interview/setup')}>
-                지금 시작하기
-              </Button>
-            </div>
+          <h2 className="text-3xl font-extrabold leading-snug text-text-primary md:text-4xl">
+            준비는 끝났습니다.<br />
+            이제 합격할 차례예요.
+          </h2>
+          <div className="mt-12">
+            <button 
+              className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95"
+              onClick={() => navigate('/interview/setup')}
+            >
+              지금 바로 리허설 시작하기
+            </button>
           </div>
         </section>
       </main>
 
-      {/* ─── Footer ─── */}
-      <footer className="border-t border-border px-4 py-8 sm:px-6">
-        <p className="text-center text-sm text-text-tertiary">
-          &copy; 2026 리허설(Rehearse). AI 기반 개발자 모의면접 플랫폼.
+      <footer className="border-t border-border py-12 text-center">
+        <p className="text-xs font-bold text-text-tertiary">
+          &copy; 2026 리허설. 당신의 합격을 위해 만들었습니다.
         </p>
       </footer>
     </div>

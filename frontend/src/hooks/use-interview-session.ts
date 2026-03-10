@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
@@ -48,6 +48,7 @@ export const useInterviewSession = ({
   const updateStatus = useUpdateInterviewStatus()
   const followUpMutation = useFollowUpQuestion()
   const [vadEnabled, setVadEnabled] = useState(false)
+  const autoTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const {
     questions,
@@ -63,12 +64,51 @@ export const useInterviewSession = ({
     completeInterview,
     addFollowUpQuestion,
     setFollowUpLoading,
+    setAutoTransitionMessage,
+    nextQuestion,
   } = useInterviewStore()
+
+  // 답변 처리 로직 (후속질문 요청)
+  const processAnswer = useCallback(() => {
+    const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
+    const answerText = currentAnswer?.transcripts
+      .filter((t) => t.isFinal)
+      .map((t) => t.text)
+      .join(' ')
+
+    if (answerText && interview) {
+      setFollowUpLoading(true)
+      followUpMutation.mutate(
+        {
+          id: interview.id,
+          data: {
+            questionContent: questions[currentQuestionIndex].content,
+            answerText,
+          },
+        },
+        {
+          onSuccess: (res) => {
+            addFollowUpQuestion(currentQuestionIndex, res.data)
+            setFollowUpLoading(false)
+          },
+          onError: () => {
+            setFollowUpLoading(false)
+          },
+        },
+      )
+    }
+  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
 
   // VAD: 음성 감지 시 자동 녹음 시작/일시정지
   const { isActive: isVadActive, updateAudioLevel } = useVad({
     enabled: vadEnabled,
     onSpeechStart: () => {
+      // 자동 전환 타이머가 있으면 취소 (다시 말하기 시작)
+      if (autoTransitionTimerRef.current) {
+        clearTimeout(autoTransitionTimerRef.current)
+        autoTransitionTimerRef.current = null
+        setAutoTransitionMessage(null)
+      }
       if (phase === 'ready' || phase === 'paused') {
         doStartAnswer()
       }
@@ -78,6 +118,26 @@ export const useInterviewSession = ({
         stopRecording()
         stt.stop()
         recorder.pause()
+        processAnswer()
+
+        const state = useInterviewStore.getState()
+        const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
+
+        // 2.5초 후 자동 전환
+        setAutoTransitionMessage(
+          isLastQuestion ? '면접을 마무리합니다...' : '다음 질문으로 넘어갑니다...',
+        )
+
+        autoTransitionTimerRef.current = setTimeout(() => {
+          setAutoTransitionMessage(null)
+          autoTransitionTimerRef.current = null
+
+          if (isLastQuestion) {
+            handleFinishInterviewInternal()
+          } else {
+            nextQuestion()
+          }
+        }, 2500)
       }
     },
   })
@@ -151,44 +211,24 @@ export const useInterviewSession = ({
     doStartAnswer()
   }, [doStartAnswer])
 
-  // 답변 완료 + 후속질문 요청
+  // 수동 답변 완료 + 후속질문 요청 (자동 이동 없음)
   const handleStopAnswer = useCallback(() => {
+    // 자동 전환 타이머가 있으면 취소
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current)
+      autoTransitionTimerRef.current = null
+      setAutoTransitionMessage(null)
+    }
+
     setVadEnabled(false)
     stopRecording()
     stt.stop()
     recorder.pause()
+    processAnswer()
+  }, [stopRecording, stt, recorder, processAnswer, setAutoTransitionMessage])
 
-    const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
-    const answerText = currentAnswer?.transcripts
-      .filter((t) => t.isFinal)
-      .map((t) => t.text)
-      .join(' ')
-
-    if (answerText && interview) {
-      setFollowUpLoading(true)
-      followUpMutation.mutate(
-        {
-          id: interview.id,
-          data: {
-            questionContent: questions[currentQuestionIndex].content,
-            answerText,
-          },
-        },
-        {
-          onSuccess: (res) => {
-            addFollowUpQuestion(currentQuestionIndex, res.data)
-            setFollowUpLoading(false)
-          },
-          onError: () => {
-            setFollowUpLoading(false)
-          },
-        },
-      )
-    }
-  }, [stopRecording, stt, recorder, currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
-
-  // 면접 종료
-  const handleFinishInterview = useCallback(async () => {
+  // 면접 종료 (내부용 — VAD 자동 전환에서 호출)
+  const handleFinishInterviewInternal = useCallback(async () => {
     if (!interview) return
 
     setVadEnabled(false)
@@ -212,12 +252,27 @@ export const useInterviewSession = ({
         },
       },
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
+
+  // 면접 종료 (수동 — 버튼 클릭)
+  const handleFinishInterview = useCallback(async () => {
+    // 자동 전환 타이머가 있으면 취소
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current)
+      autoTransitionTimerRef.current = null
+      setAutoTransitionMessage(null)
+    }
+
+    await handleFinishInterviewInternal()
+  }, [handleFinishInterviewInternal, setAutoTransitionMessage])
 
   // 클린업
   useEffect(() => {
     return () => {
+      if (autoTransitionTimerRef.current) {
+        clearTimeout(autoTransitionTimerRef.current)
+      }
       mediaStream.stop()
       audio.stop()
       stt.stop()

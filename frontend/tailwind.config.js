@@ -15,37 +15,45 @@ export default {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        border: '#E8E8E8',
+        background: '#FFFFFF',
+        surface: '#F8FAFC',
+        border: '#E2E8F0',
         text: {
-          primary: '#191F28',
-          secondary: '#6B7684',
-          tertiary: '#AEB5BC',
+          primary: '#0F172A',   // Deep Charcoal (Our Signature Text)
+          secondary: '#475569',
+          tertiary: '#94A3B8',
         },
         accent: {
-          DEFAULT: '#FF6B4A',
-          hover: '#E5593B',
-          light: '#FFF0ED',
+          DEFAULT: '#6366F1',   // Electric Violet (Our Brand Signature)
+          hover: '#4F46E5',
+          light: '#EEF2FF',
         },
-        success: { DEFAULT: '#00C48C', light: '#E8FAF4' },
-        warning: { DEFAULT: '#FFB84D', light: '#FFF6E5' },
-        error: { DEFAULT: '#F04452', light: '#FFF0F1' },
-        info: { DEFAULT: '#3182F6', light: '#EBF4FF' },
+        success: { DEFAULT: '#10B981', light: '#ECFDF5' },
+        warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
+        error: { DEFAULT: '#EF4444', light: '#FEF2F2' },
+      },
+      boxShadow: {
+        'toss': '0 8px 16px 0 rgba(0, 0, 0, 0.04)',
+        'toss-lg': '0 16px 32px 0 rgba(0, 0, 0, 0.08)',
       },
       borderRadius: {
-        card: '12px',
-        button: '8px',
+        card: '20px',    // Toss uses more rounded corners
+        button: '24px',
         badge: '999px',
       },
       keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-6px)' },
+        'fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(4px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'progress-loading': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(400%)' },
         },
       },
       animation: {
-        float: 'float 3s ease-in-out infinite',
+        'fade-in': 'fade-in 0.3s ease-out',
+        'progress-loading': 'progress-loading 1.5s ease-in-out infinite',
       },
     },
   },
