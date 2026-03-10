@@ -44,6 +44,7 @@ public class InterviewService {
                 .positionDetail(request.getPositionDetail())
                 .level(request.getLevel())
                 .interviewTypes(request.getInterviewTypes())
+                .csSubTopics(request.getCsSubTopics())
                 .durationMinutes(request.getDurationMinutes())
                 .build();
 

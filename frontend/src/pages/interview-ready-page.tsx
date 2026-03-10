@@ -1,27 +1,33 @@
-import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackLink } from '@/components/ui/back-link'
 import { Logo } from '@/components/ui/logo'
-import { QuestionCardSkeleton } from '@/components/interview/question-card-skeleton'
 import { DeviceTestSection } from '@/components/interview/device-test-section'
 import { Character } from '@/components/ui/character'
-import {
-  useInterview,
-  useCreateInterview,
-  useUpdateInterviewStatus,
-} from '@/hooks/use-interviews'
+import { useInterview, useUpdateInterviewStatus } from '@/hooks/use-interviews'
 import { useDeviceTest } from '@/hooks/use-device-test'
-import { LEVEL_LABELS, INTERVIEW_TYPE_LABELS } from '@/types/interview'
+import {
+  LEVEL_LABELS,
+  INTERVIEW_TYPE_LABELS,
+  CS_SUB_TOPIC_LABELS,
+} from '@/types/interview'
+import type { CsSubTopic } from '@/types/interview'
 
 export const InterviewReadyPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [showDeviceTest, setShowDeviceTest] = useState(false)
 
   const { data: response, isLoading, isError, error } = useInterview(id ?? '')
   const updateStatus = useUpdateInterviewStatus()
-  const createInterview = useCreateInterview()
-  const { permissions, micLevel, videoRef } = useDeviceTest(showDeviceTest)
+  const {
+    state,
+    micLevel,
+    videoRef,
+    allPassed,
+    startCameraTest,
+    startMicTest,
+    startSpeakerTest,
+    confirmSpeaker,
+  } = useDeviceTest()
 
   const interview = response?.data
 
@@ -30,24 +36,6 @@ export const InterviewReadyPage = () => {
     updateStatus.mutate(
       { id: interview.id, data: { status: 'IN_PROGRESS' } },
       { onSuccess: () => navigate(`/interview/${interview.id}/conduct`) },
-    )
-  }
-
-  const handleRegenerateQuestions = () => {
-    if (!interview) return
-    createInterview.mutate(
-      {
-        request: {
-          position: interview.position,
-          level: interview.level,
-          interviewTypes: interview.interviewTypes,
-        },
-      },
-      {
-        onSuccess: (newResponse) => {
-          navigate(`/interview/${newResponse.data.id}/ready`, { replace: true })
-        },
-      },
     )
   }
 
@@ -90,32 +78,37 @@ export const InterviewReadyPage = () => {
         <BackLink to="/interview/setup" />
       </header>
 
-      <main className="mx-auto max-w-2xl px-5 pb-32 pt-16 md:px-8">
-        {/* Intro */}
+      <main className="mx-auto max-w-3xl px-5 pb-32 pt-16 md:px-8">
+        {/* Intro + Tags */}
         <section className="mb-12">
           <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
-            Ready to Start
+            Device Check
           </p>
           <h1 className="text-4xl font-extrabold tracking-tighter text-text-primary sm:text-5xl">
-            준비가 모두<br />
-            <span className="text-accent">끝났습니다.</span>
+            장치를 확인하고<br />
+            <span className="text-accent">시작하세요.</span>
           </h1>
 
           {interview && (
-            <div className="mt-8 flex flex-wrap gap-2">
-              <span className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
+            <div className="mt-6 flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <span className="shrink-0 rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                 {interview.position}
               </span>
-              <span className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
+              <span className="shrink-0 rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                 {LEVEL_LABELS[interview.level].label}
               </span>
               {interview.interviewTypes.map((type) => (
-                <span key={type} className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
+                <span key={type} className="shrink-0 rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                   {INTERVIEW_TYPE_LABELS[type].label}
                 </span>
               ))}
+              {interview.csSubTopics?.map((topic) => (
+                <span key={topic} className="shrink-0 rounded-full bg-accent/10 px-4 py-2 text-xs font-bold text-accent">
+                  {CS_SUB_TOPIC_LABELS[topic as CsSubTopic] ?? topic}
+                </span>
+              ))}
               {interview.durationMinutes && (
-                <span className="rounded-full bg-accent/10 px-4 py-2 text-xs font-bold text-accent">
+                <span className="shrink-0 rounded-full bg-accent/10 px-4 py-2 text-xs font-bold text-accent">
                   {interview.durationMinutes}분
                 </span>
               )}
@@ -123,87 +116,45 @@ export const InterviewReadyPage = () => {
           )}
         </section>
 
-        {/* Questions List */}
-        <section className="space-y-6">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="text-xs font-black uppercase tracking-widest text-text-tertiary">
-              면접 질문 목록
-            </h2>
-            <span className="text-[10px] font-bold text-text-tertiary">
-              총 {interview?.questions.length || 0}개
-            </span>
-          </div>
-
-          <ol className="space-y-4">
-            {isLoading
-              ? Array.from({ length: 3 }, (_, i) => <QuestionCardSkeleton key={i} />)
-              : interview?.questions
-                  .slice()
-                  .sort((a, b) => a.order - b.order)
-                  .map((question) => (
-                    <div key={question.id} className="group relative rounded-[24px] bg-surface p-6 transition-all hover:bg-white hover:shadow-toss border border-transparent hover:border-border">
-                      <div className="flex items-start gap-4">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-[10px] font-black text-accent shadow-sm">
-                          {question.order + 1}
-                        </span>
-                        <p className="text-[15px] font-bold leading-relaxed text-text-primary">
-                          {question.content}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-          </ol>
-        </section>
-
-        {/* Device Test Section */}
+        {/* Device Test — Main Content */}
         {!isLoading && (
-          <section className="mt-16">
-            <button
-              onClick={() => setShowDeviceTest((prev) => !prev)}
-              className="flex w-full items-center justify-between rounded-[24px] bg-surface px-6 py-5 transition-all hover:bg-slate-100 border border-transparent hover:border-border"
-            >
-              <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent/10 text-sm">
-                  {showDeviceTest ? '🎥' : '📷'}
-                </span>
-                <span className="text-sm font-bold text-text-primary">
-                  카메라 / 마이크 테스트
-                </span>
-              </div>
-              <span className="text-xs font-bold text-text-tertiary">
-                {showDeviceTest ? '접기' : '펼치기'}
+          <section>
+            <div className="mb-6 flex items-center gap-2 px-1">
+              <h2 className="text-xs font-black uppercase tracking-widest text-text-tertiary">
+                장치 테스트
+              </h2>
+              <span className="text-[10px] font-bold text-text-tertiary">
+                — 3개 모두 통과해야 시작할 수 있어요
               </span>
-            </button>
+            </div>
 
-            {showDeviceTest && (
-              <div className="mt-6 rounded-[24px] border border-border bg-white p-6 shadow-toss">
-                <DeviceTestSection
-                  permissions={permissions}
-                  micLevel={micLevel}
-                  videoRef={videoRef}
-                />
-              </div>
-            )}
+            <DeviceTestSection
+              state={state}
+              micLevel={micLevel}
+              videoRef={videoRef}
+              onCameraTest={startCameraTest}
+              onMicTest={startMicTest}
+              onSpeakerTest={startSpeakerTest}
+              onConfirmSpeaker={confirmSpeaker}
+            />
           </section>
         )}
 
-        {/* Action Area */}
+        {/* Start Button */}
         {!isLoading && (
-          <div className="mt-20 space-y-4">
+          <div className="mt-16">
             <button
               onClick={handleStartInterview}
-              disabled={updateStatus.isPending}
-              className="h-18 w-full rounded-[24px] bg-accent py-5 text-xl font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50"
+              disabled={!allPassed || updateStatus.isPending}
+              className="h-18 w-full rounded-[24px] bg-accent py-5 text-xl font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {updateStatus.isPending ? '시작하는 중...' : '면접 시작하기'}
             </button>
-            <button
-              onClick={handleRegenerateQuestions}
-              disabled={createInterview.isPending}
-              className="h-16 w-full rounded-[24px] bg-surface py-4 text-base font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95 disabled:opacity-50"
-            >
-              {createInterview.isPending ? '다시 생성 중...' : '질문이 맘에 안 드나요? 다시 생성하기'}
-            </button>
+            {!allPassed && (
+              <p className="mt-3 text-center text-xs font-bold text-text-tertiary">
+                카메라, 마이크, 스피커 테스트를 모두 완료해주세요
+              </p>
+            )}
           </div>
         )}
       </main>

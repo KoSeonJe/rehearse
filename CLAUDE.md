@@ -50,6 +50,9 @@
   - 타입: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
   - 예: `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
 - PR scope: per feature or per issue
+- **BE/FE 분리 PR**: 백엔드와 프론트엔드 작업은 별도 PR로 분리하여 올린다
+  - 예: `[BE] feat: 면접 생성 API` → `[FE] feat: 면접 Setup 위저드 UI`
+  - BE PR 먼저 머지 후 FE PR 올리는 것을 권장
 - Branches: `feat/{name}`, `fix/{name}`
 
 ---
@@ -69,6 +72,7 @@
 - Direct Claude API calls from frontend (API key exposure)
 - Implementing MVP DON'T features
 - Unnecessary library additions (prefer browser-native APIs)
+- 스펙 문서(`.omc/plans/`) 없이 `src/` 코드 수정 시작하기 — 반드시 스펙 먼저 작성/확인 후 구현
 
 ---
 
