@@ -50,7 +50,7 @@ export const InterviewControls = ({
             <div className="flex items-center gap-3">
               {isVadActive && (
                 <span className="flex items-center gap-2 text-xs text-text-secondary">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-accent" />
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
                   음성 감지 중
                 </span>
               )}

@@ -15,18 +15,18 @@ export default {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        background: '#FAFAFA',
+        background: '#F7F8FA',
         surface: '#FFFFFF',
-        border: '#E8E8E8',
+        border: '#E5E8EB',
         text: {
           primary: '#191F28',
           secondary: '#6B7684',
           tertiary: '#AEB5BC',
         },
         accent: {
-          DEFAULT: '#FF6B4A',
-          hover: '#E5593B',
-          light: '#FFF0ED',
+          DEFAULT: '#191F28',
+          hover: '#333D4B',
+          light: '#F2F4F6',
         },
         success: { DEFAULT: '#00C48C', light: '#E8FAF4' },
         warning: { DEFAULT: '#FFB84D', light: '#FFF6E5' },
@@ -38,15 +38,8 @@ export default {
         button: '8px',
         badge: '999px',
       },
-      keyframes: {
-        float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-6px)' },
-        },
-      },
-      animation: {
-        float: 'float 3s ease-in-out infinite',
-      },
+      keyframes: {},
+      animation: {},
     },
   },
   plugins: [],

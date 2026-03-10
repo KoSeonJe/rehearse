@@ -9,7 +9,10 @@ interface StepJobFieldProps {
 export const StepJobField = ({ selected, onSelect }: StepJobFieldProps) => {
   return (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-semibold text-text-primary">
+      <p className="font-mono text-xs uppercase tracking-widest text-text-tertiary">
+        step 1
+      </p>
+      <h1 className="mt-3 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
         어떤 면접을 준비하세요?
       </h1>
       <p className="mt-2 text-sm text-text-secondary">
@@ -30,10 +33,10 @@ export const StepJobField = ({ selected, onSelect }: StepJobFieldProps) => {
             onClick={() => onSelect(option.id)}
             className={[
               'flex flex-col items-center gap-2 rounded-card border p-4 transition-all duration-150',
-              'hover:border-accent/40 hover:bg-accent-light/30',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+              'hover:border-text-primary/20 hover:bg-accent-light',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2',
               selected === option.id
-                ? 'border-accent bg-accent-light/20 text-accent'
+                ? 'border-text-primary bg-accent-light text-text-primary'
                 : 'border-border bg-surface text-text-secondary',
             ].join(' ')}
           >

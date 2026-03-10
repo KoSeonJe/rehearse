@@ -28,7 +28,10 @@ const PermissionBadge = ({ status, label }: { status: PermissionStatus; label: s
 export const StepDeviceTest = ({ permissions, micLevel, videoRef }: StepDeviceTestProps) => {
   return (
     <div className="flex flex-col items-center">
-      <h1 className="text-2xl font-semibold text-text-primary">
+      <p className="font-mono text-xs uppercase tracking-widest text-text-tertiary">
+        step 2
+      </p>
+      <h1 className="mt-3 text-2xl font-bold tracking-tight text-text-primary sm:text-3xl">
         카메라 &amp; 마이크 테스트
       </h1>
       <p className="mt-2 text-sm text-text-secondary">
@@ -73,7 +76,7 @@ export const StepDeviceTest = ({ permissions, micLevel, videoRef }: StepDeviceTe
         </div>
         <div className="h-2 w-full overflow-hidden rounded-badge bg-border">
           <div
-            className="h-full rounded-badge bg-accent transition-all duration-75"
+            className="h-full rounded-badge bg-success transition-all duration-75"
             style={{ width: `${Math.min(micLevel, 100)}%` }}
           />
         </div>
