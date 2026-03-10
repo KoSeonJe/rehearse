@@ -1,6 +1,6 @@
 # UX 개선
 
-- **Status**: In Progress
+- **Status**: Completed
 - **Created**: 2026-03-10
 - **Branch**: feat/ux-improvements
 
