@@ -2,7 +2,7 @@ interface AudioLevelIndicatorProps {
   level: number
 }
 
-const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
+export const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
   const bars = 12
   const activeBars = Math.round(level * bars)
 
@@ -37,4 +37,3 @@ const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
   )
 }
 
-export default AudioLevelIndicator

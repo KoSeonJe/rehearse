@@ -54,6 +54,15 @@ interface InterviewActions {
   reset: () => void
 }
 
+const updateCurrentAnswer = (
+  state: InterviewState,
+  updater: (answer: QuestionAnswer) => QuestionAnswer,
+): QuestionAnswer[] => {
+  const updated = [...state.answers]
+  updated[state.currentQuestionIndex] = updater(updated[state.currentQuestionIndex])
+  return updated
+}
+
 const initialState: InterviewState = {
   interviewId: null,
   questions: [],
@@ -102,28 +111,21 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   startRecording: () => {
     const now = Date.now()
-    const { currentQuestionIndex, answers } = get()
-    const updated = [...answers]
-    updated[currentQuestionIndex] = {
-      ...updated[currentQuestionIndex],
-      startTime: now,
-    }
+    const state = get()
     set({
       phase: 'recording',
-      startTime: get().startTime ?? now,
-      answers: updated,
+      startTime: state.startTime ?? now,
+      answers: updateCurrentAnswer(state, (a) => ({ ...a, startTime: now })),
     })
   },
 
   stopRecording: () => {
     const now = Date.now()
-    const { currentQuestionIndex, answers } = get()
-    const updated = [...answers]
-    updated[currentQuestionIndex] = {
-      ...updated[currentQuestionIndex],
-      endTime: now,
-    }
-    set({ phase: 'paused', answers: updated })
+    const state = get()
+    set({
+      phase: 'paused',
+      answers: updateCurrentAnswer(state, (a) => ({ ...a, endTime: now })),
+    })
   },
 
   nextQuestion: () => {
@@ -150,38 +152,35 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   setCurrentTranscript: (text) => set({ currentTranscript: text }),
 
   addTranscript: (segment) => {
-    const { answers, currentQuestionIndex } = get()
-    const updated = [...answers]
-    updated[currentQuestionIndex] = {
-      ...updated[currentQuestionIndex],
-      transcripts: [...updated[currentQuestionIndex].transcripts, segment],
-    }
-    set({ answers: updated, currentTranscript: '' })
+    const state = get()
+    set({
+      answers: updateCurrentAnswer(state, (a) => ({
+        ...a,
+        transcripts: [...a.transcripts, segment],
+      })),
+      currentTranscript: '',
+    })
   },
 
   addNonVerbalEvent: (event) => {
-    const { nonVerbalEvents, answers, currentQuestionIndex } = get()
-    const updated = [...answers]
-    updated[currentQuestionIndex] = {
-      ...updated[currentQuestionIndex],
-      nonVerbalEvents: [...updated[currentQuestionIndex].nonVerbalEvents, event],
-    }
+    const state = get()
     set({
-      nonVerbalEvents: [...nonVerbalEvents, event],
-      answers: updated,
+      nonVerbalEvents: [...state.nonVerbalEvents, event],
+      answers: updateCurrentAnswer(state, (a) => ({
+        ...a,
+        nonVerbalEvents: [...a.nonVerbalEvents, event],
+      })),
     })
   },
 
   addVoiceEvent: (event) => {
-    const { voiceEvents, answers, currentQuestionIndex } = get()
-    const updated = [...answers]
-    updated[currentQuestionIndex] = {
-      ...updated[currentQuestionIndex],
-      voiceEvents: [...updated[currentQuestionIndex].voiceEvents, event],
-    }
+    const state = get()
     set({
-      voiceEvents: [...voiceEvents, event],
-      answers: updated,
+      voiceEvents: [...state.voiceEvents, event],
+      answers: updateCurrentAnswer(state, (a) => ({
+        ...a,
+        voiceEvents: [...a.voiceEvents, event],
+      })),
     })
   },
 

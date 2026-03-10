@@ -12,7 +12,7 @@ const SILENCE_THRESHOLD = -50
 const SILENCE_DURATION_MS = 3000
 const ANALYSIS_INTERVAL_MS = 100
 
-const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
+export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
   const [audioLevel, setAudioLevel] = useState(0)
   const contextRef = useRef<AudioContext | null>(null)
   const analyzerRef = useRef<AnalyserNode | null>(null)
@@ -114,4 +114,3 @@ const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
   return { audioLevel, start, stop, onVoiceEvent }
 }
 
-export default useAudioAnalyzer

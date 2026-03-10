@@ -6,7 +6,7 @@ import { Character } from '@/components/ui/character'
 import { Button } from '@/components/ui/button'
 import type { AnswerData } from '../types/interview'
 
-const InterviewCompletePage = () => {
+export const InterviewCompletePage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const interviewId = Number(id)
@@ -124,5 +124,3 @@ const InterviewCompletePage = () => {
     </div>
   )
 }
-
-export default InterviewCompletePage

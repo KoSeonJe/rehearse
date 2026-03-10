@@ -12,7 +12,7 @@ interface UseFaceMeshReturn {
   onEvent: (callback: (event: NonVerbalEvent) => void) => void
 }
 
-const useFaceMesh = (): UseFaceMeshReturn => {
+export const useFaceMesh = (): UseFaceMeshReturn => {
   const [isLoaded, setIsLoaded] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
   const landmarkerRef = useRef<FaceLandmarker | null>(null)
@@ -109,4 +109,3 @@ const useFaceMesh = (): UseFaceMeshReturn => {
   return { isLoaded, isRunning, start, stop, onEvent }
 }
 
-export default useFaceMesh
