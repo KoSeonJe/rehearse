@@ -18,7 +18,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     'px-6 py-3 rounded-button',
   ].join(' '),
   secondary: [
-    'bg-white text-text-primary border border-border',
+    'bg-surface text-text-primary border border-border',
     'hover:bg-background active:scale-[0.98]',
     'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed disabled:scale-100',
     'px-6 py-3 rounded-button',

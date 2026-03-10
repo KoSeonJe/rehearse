@@ -54,7 +54,7 @@ const InterviewControls = ({
           <span aria-hidden="true">← </span>이전 질문
         </button>
 
-        <div className="flex gap-1.5">
+        <div className="flex gap-1.5" aria-label={`질문 ${currentIndex + 1} / ${totalQuestions}`} role="status">
           {Array.from({ length: totalQuestions }).map((_, i) => (
             <div
               key={i}

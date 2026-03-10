@@ -150,6 +150,8 @@ const InterviewPage = () => {
 
   // 면접 종료
   const handleFinishInterview = useCallback(async () => {
+    if (!interview) return
+
     stt.stop()
     audio.stop()
 
@@ -157,10 +159,10 @@ const InterviewPage = () => {
     setVideoBlob(blob)
     completeInterview()
 
-    updateStatus.mutate({ id: interview!.id, data: { status: 'COMPLETED' } })
+    updateStatus.mutate({ id: interview.id, data: { status: 'COMPLETED' } })
 
     mediaStream.stop()
-    navigate(`/interview/${interview!.id}/complete`)
+    navigate(`/interview/${interview.id}/complete`)
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
 
   // 클린업

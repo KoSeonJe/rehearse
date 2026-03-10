@@ -406,6 +406,7 @@ const useDeviceTest = (active: boolean) => {
         source.connect(analyser)
 
         const dataArray = new Uint8Array(analyser.frequencyBinCount)
+        let prevLevel = 0
 
         const tick = () => {
           if (cancelled) return
@@ -415,20 +416,19 @@ const useDeviceTest = (active: boolean) => {
             sum += dataArray[i]
           }
           const avg = sum / dataArray.length
-          setMicLevel((avg / 255) * 100)
+          const newLevel = Math.round((avg / 255) * 100)
+          if (Math.abs(newLevel - prevLevel) >= 2) {
+            prevLevel = newLevel
+            setMicLevel(newLevel)
+          }
           animFrameRef.current = requestAnimationFrame(tick)
         }
         tick()
 
         setPermissions((prev) => ({ ...prev, microphone: 'granted' }))
-      } catch (err) {
+      } catch {
         if (cancelled) return
-        const error = err as DOMException
-        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-          setPermissions({ camera: 'denied', microphone: 'denied' })
-        } else {
-          setPermissions({ camera: 'denied', microphone: 'denied' })
-        }
+        setPermissions({ camera: 'denied', microphone: 'denied' })
       }
     }
 

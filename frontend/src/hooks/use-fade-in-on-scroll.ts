@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 
 interface UseFadeInOnScrollOptions {
   threshold?: number
-  duration?: number
 }
 
 export const useFadeInOnScroll = <T extends HTMLElement = HTMLDivElement>(

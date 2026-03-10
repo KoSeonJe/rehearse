@@ -39,7 +39,7 @@ export const SelectionCard = ({
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         selected
           ? 'border-accent bg-accent-light'
-          : 'border-border bg-white hover:border-text-tertiary hover:shadow-md hover:-translate-y-0.5',
+          : 'border-border bg-surface hover:border-text-tertiary hover:shadow-md hover:-translate-y-0.5',
         disabled
           ? 'cursor-not-allowed border-border bg-background text-text-tertiary'
           : '',

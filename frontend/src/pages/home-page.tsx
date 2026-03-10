@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
@@ -48,6 +48,7 @@ const StepItem = ({
 )
 
 export const HomePage = () => {
+  const navigate = useNavigate()
   const heroFade = useFadeInOnScroll<HTMLElement>()
   const featuresFade = useFadeInOnScroll<HTMLElement>()
   const stepsFade = useFadeInOnScroll<HTMLElement>()
@@ -65,11 +66,9 @@ export const HomePage = () => {
             </span>
           </div>
           <nav aria-label="메인 네비게이션">
-            <Link to="/interview/setup">
-              <Button variant="primary" className="px-4 py-2 text-sm">
-                시작하기
-              </Button>
-            </Link>
+            <Button variant="primary" className="px-4 py-2 text-sm" onClick={() => navigate('/interview/setup')}>
+              시작하기
+            </Button>
           </nav>
         </div>
       </header>
@@ -96,11 +95,9 @@ export const HomePage = () => {
               타임스탬프 기반 피드백으로 정확히 어디를 고쳐야 하는지 알려드립니다.
             </p>
             <div className="mt-10">
-              <Link to="/interview/setup">
-                <Button variant="cta" className="w-full sm:w-auto">
-                  면접 시작하기
-                </Button>
-              </Link>
+              <Button variant="cta" className="w-full sm:w-auto" onClick={() => navigate('/interview/setup')}>
+                면접 시작하기
+              </Button>
             </div>
           </div>
         </section>
@@ -234,11 +231,9 @@ export const HomePage = () => {
               지금 바로 AI 모의면접을 시작하세요.
             </p>
             <div className="mt-8">
-              <Link to="/interview/setup">
-                <Button variant="cta" className="w-full sm:w-auto">
-                  지금 시작하기
-                </Button>
-              </Link>
+              <Button variant="cta" className="w-full sm:w-auto" onClick={() => navigate('/interview/setup')}>
+                지금 시작하기
+              </Button>
             </div>
           </div>
         </section>

@@ -91,7 +91,7 @@ const InterviewReviewPage = () => {
 
         {/* 우측: 피드백 패널 */}
         <div className="w-full lg:w-2/5">
-          <div className="lg:sticky lg:top-6 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-card border border-border bg-surface p-4">
+          <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-card border border-border bg-surface p-4">
             <h2 className="mb-4 text-sm font-semibold text-text-primary">
               피드백 ({response?.data?.totalCount ?? 0}개)
             </h2>
