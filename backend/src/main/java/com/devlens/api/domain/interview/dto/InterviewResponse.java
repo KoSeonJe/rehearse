@@ -16,6 +16,7 @@ public class InterviewResponse {
     private final String positionDetail;
     private final InterviewLevel level;
     private final List<InterviewType> interviewTypes;
+    private final List<String> csSubTopics;
     private final InterviewStatus status;
     private final Integer durationMinutes;
     private final List<QuestionResponse> questions;
@@ -32,6 +33,7 @@ public class InterviewResponse {
                 .positionDetail(interview.getPositionDetail())
                 .level(interview.getLevel())
                 .interviewTypes(interview.getInterviewTypeList())
+                .csSubTopics(interview.getCsSubTopicList())
                 .status(interview.getStatus())
                 .durationMinutes(interview.getDurationMinutes())
                 .questions(questionResponses)
