@@ -199,10 +199,19 @@ export const useInterviewSession = ({
     setVideoBlob(blob)
     completeInterview()
 
-    updateStatus.mutate({ id: interview.id, data: { status: 'COMPLETED' } })
-
     mediaStream.stop()
-    navigate(`/interview/${interview.id}/complete`)
+
+    updateStatus.mutate(
+      { id: interview.id, data: { status: 'COMPLETED' } },
+      {
+        onSuccess: () => {
+          navigate(`/interview/${interview.id}/complete`)
+        },
+        onError: () => {
+          navigate(`/interview/${interview.id}/complete`)
+        },
+      },
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
 
