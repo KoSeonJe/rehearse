@@ -4,6 +4,7 @@ import com.devlens.api.domain.interview.dto.*;
 import com.devlens.api.domain.interview.entity.Interview;
 import com.devlens.api.domain.interview.entity.InterviewQuestion;
 import com.devlens.api.domain.interview.entity.InterviewStatus;
+import com.devlens.api.domain.interview.exception.InterviewErrorCode;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
@@ -11,7 +12,6 @@ import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +24,7 @@ import java.util.List;
 public class InterviewService {
 
     private final InterviewRepository interviewRepository;
+    private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
 
     @Transactional
@@ -63,22 +64,18 @@ public class InterviewService {
     }
 
     public InterviewResponse getInterview(Long id) {
-        Interview interview = findInterviewById(id);
+        Interview interview = interviewFinder.findByIdWithQuestions(id);
         return InterviewResponse.from(interview);
     }
 
     @Transactional
     public UpdateStatusResponse updateStatus(Long id, UpdateStatusRequest request) {
-        Interview interview = findInterviewById(id);
+        Interview interview = interviewFinder.findByIdWithQuestions(id);
 
         try {
             interview.updateStatus(request.getStatus());
         } catch (IllegalStateException e) {
-            throw new BusinessException(
-                    HttpStatus.CONFLICT,
-                    "INTERVIEW_002",
-                    e.getMessage()
-            );
+            throw new BusinessException(InterviewErrorCode.INVALID_STATUS_TRANSITION);
         }
 
         log.info("면접 세션 상태 변경: id={}, newStatus={}", id, request.getStatus());
@@ -87,14 +84,10 @@ public class InterviewService {
     }
 
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request) {
-        Interview interview = findInterviewById(id);
+        Interview interview = interviewFinder.findByIdWithQuestions(id);
 
         if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
-            throw new BusinessException(
-                    HttpStatus.CONFLICT,
-                    "INTERVIEW_003",
-                    "진행 중인 면접에서만 후속 질문을 생성할 수 있습니다."
-            );
+            throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
         }
 
         GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(
@@ -110,14 +103,5 @@ public class InterviewService {
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .build();
-    }
-
-    private Interview findInterviewById(Long id) {
-        return interviewRepository.findByIdWithQuestions(id)
-                .orElseThrow(() -> new BusinessException(
-                        HttpStatus.NOT_FOUND,
-                        "INTERVIEW_001",
-                        "면접 세션을 찾을 수 없습니다."
-                ));
     }
 }

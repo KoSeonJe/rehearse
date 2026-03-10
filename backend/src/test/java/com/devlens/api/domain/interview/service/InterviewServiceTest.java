@@ -17,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -31,6 +30,9 @@ class InterviewServiceTest {
 
     @Mock
     private InterviewRepository interviewRepository;
+
+    @Mock
+    private InterviewFinder interviewFinder;
 
     @Mock
     private AiClient aiClient;
@@ -79,7 +81,8 @@ class InterviewServiceTest {
     @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
     void getInterview_notFound() {
         // given
-        given(interviewRepository.findByIdWithQuestions(999L)).willReturn(Optional.empty());
+        given(interviewFinder.findByIdWithQuestions(999L))
+                .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         // when & then
         assertThatThrownBy(() -> interviewService.getInterview(999L))
@@ -97,7 +100,7 @@ class InterviewServiceTest {
         // given
         Interview interview = createMockInterview();
 
-        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
         // when
         InterviewResponse response = interviewService.getInterview(1L);
@@ -113,7 +116,7 @@ class InterviewServiceTest {
     void updateStatus_readyToInProgress() {
         // given
         Interview interview = createMockInterview();
-        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
@@ -152,7 +155,8 @@ class InterviewServiceTest {
     @DisplayName("존재하지 않는 면접 세션 상태 변경 시 BusinessException이 발생한다")
     void updateStatus_notFound() {
         // given
-        given(interviewRepository.findByIdWithQuestions(999L)).willReturn(Optional.empty());
+        given(interviewFinder.findByIdWithQuestions(999L))
+                .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
@@ -172,7 +176,7 @@ class InterviewServiceTest {
     void updateStatus_invalidTransition() {
         // given
         Interview interview = createMockInterview();
-        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.COMPLETED);
@@ -193,7 +197,7 @@ class InterviewServiceTest {
         // given
         Interview interview = createMockInterview();
         interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
@@ -222,7 +226,7 @@ class InterviewServiceTest {
     void generateFollowUp_notInProgress() {
         // given
         Interview interview = createMockInterview(); // status = READY
-        given(interviewRepository.findByIdWithQuestions(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionContent", "질문");
