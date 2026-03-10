@@ -7,7 +7,7 @@ import { NetworkIcon } from '@/components/icons/network-icon'
 import { SmartphoneIcon } from '@/components/icons/smartphone-icon'
 import type { JobOption } from './types'
 
-export const TOTAL_STEPS = 3
+export const TOTAL_STEPS = 2
 
 export const JOB_OPTIONS: JobOption[] = [
   {

@@ -34,10 +34,7 @@ export const useDeviceTest = (active: boolean) => {
   }, [])
 
   useEffect(() => {
-    if (!active) {
-      cleanup()
-      return
-    }
+    if (!active) return
 
     let cancelled = false
 

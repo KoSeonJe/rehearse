@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { StepJobField } from '@/components/onboarding/step-job-field'
 import { StepDeviceTest } from '@/components/onboarding/step-device-test'
-import { StepGuide } from '@/components/onboarding/step-guide'
 import { ProgressBar } from '@/components/onboarding/progress-bar'
-import { TOTAL_STEPS, GUIDE_SLIDES } from '@/components/onboarding/constants'
+import { TOTAL_STEPS } from '@/components/onboarding/constants'
 import { useDeviceTest } from '@/hooks/use-device-test'
 import type { JobField } from '@/components/onboarding/types'
 
@@ -13,31 +12,25 @@ export const OnboardingPage = () => {
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [selectedJob, setSelectedJob] = useState<JobField | null>(null)
-  const [slideIndex, setSlideIndex] = useState(0)
   const [contentVisible, setContentVisible] = useState(true)
-  const prevStepRef = useRef(0)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const { permissions, micLevel, videoRef } = useDeviceTest(step === 1)
 
-  // 스텝 변경 시 fade-out → fade-in 트랜지션
-  useEffect(() => {
-    if (step !== prevStepRef.current) {
-      setContentVisible(false)
-      const timer = setTimeout(() => {
-        setContentVisible(true)
-      }, 150)
-      prevStepRef.current = step
-      return () => clearTimeout(timer)
-    }
-  }, [step])
+  const changeStep = useCallback((newStep: number) => {
+    setContentVisible(false)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => {
+      setStep(newStep)
+      setContentVisible(true)
+    }, 150)
+  }, [])
 
   const canProceed = (): boolean => {
     switch (step) {
       case 0:
         return selectedJob !== null
       case 1:
-        return true // 권한 없어도 진행 가능
-      case 2:
         return true
       default:
         return false
@@ -46,30 +39,20 @@ export const OnboardingPage = () => {
 
   const handleNext = () => {
     if (step === TOTAL_STEPS - 1) {
-      // 마지막 슬라이드가 아니면 다음 슬라이드
-      if (slideIndex < GUIDE_SLIDES.length - 1) {
-        setSlideIndex(slideIndex + 1)
-        return
-      }
-      // 마지막 슬라이드 -> 시작하기
       navigate('/interview/setup')
       return
     }
-    setStep(step + 1)
+    changeStep(step + 1)
   }
 
   const handlePrev = () => {
-    if (step === 2 && slideIndex > 0) {
-      setSlideIndex(slideIndex - 1)
-      return
-    }
     if (step > 0) {
-      setStep(step - 1)
+      changeStep(step - 1)
     }
   }
 
-  const isLastSlide = step === 2 && slideIndex === GUIDE_SLIDES.length - 1
-  const nextLabel = isLastSlide ? '시작하기' : '다음'
+  const isLastStep = step === TOTAL_STEPS - 1
+  const nextLabel = isLastStep ? '시작하기' : '다음'
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -103,9 +86,6 @@ export const OnboardingPage = () => {
               micLevel={micLevel}
               videoRef={videoRef}
             />
-          )}
-          {step === 2 && (
-            <StepGuide slideIndex={slideIndex} onSlideChange={setSlideIndex} />
           )}
         </div>
       </main>

@@ -52,10 +52,10 @@ const StepItem = ({
 
 export const HomePage = () => {
   const navigate = useNavigate()
-  const heroFade = useFadeInOnScroll<HTMLElement>()
-  const featuresFade = useFadeInOnScroll<HTMLElement>()
-  const stepsFade = useFadeInOnScroll<HTMLElement>()
-  const ctaFade = useFadeInOnScroll<HTMLElement>()
+  const { ref: heroRef, style: heroStyle } = useFadeInOnScroll<HTMLElement>()
+  const { ref: featuresRef, style: featuresStyle } = useFadeInOnScroll<HTMLElement>()
+  const { ref: stepsRef, style: stepsStyle } = useFadeInOnScroll<HTMLElement>()
+  const { ref: ctaRef, style: ctaStyle } = useFadeInOnScroll<HTMLElement>()
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,8 +79,8 @@ export const HomePage = () => {
       <main>
         {/* ─── Hero ─── */}
         <section
-          ref={heroFade.ref}
-          style={heroFade.style}
+          ref={heroRef}
+          style={heroStyle}
           className="px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20 md:pt-28"
         >
           <div className="mx-auto max-w-5xl text-center">
@@ -107,8 +107,8 @@ export const HomePage = () => {
 
         {/* ─── Value Propositions ─── */}
         <section
-          ref={featuresFade.ref}
-          style={featuresFade.style}
+          ref={featuresRef}
+          style={featuresStyle}
           className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
           aria-labelledby="features-heading"
         >
@@ -141,8 +141,8 @@ export const HomePage = () => {
 
         {/* ─── How It Works ─── */}
         <section
-          ref={stepsFade.ref}
-          style={stepsFade.style}
+          ref={stepsRef}
+          style={stepsStyle}
           className="px-4 py-16 sm:px-6 sm:py-20"
           aria-labelledby="steps-heading"
         >
@@ -175,8 +175,8 @@ export const HomePage = () => {
 
         {/* ─── Bottom CTA ─── */}
         <section
-          ref={ctaFade.ref}
-          style={ctaFade.style}
+          ref={ctaRef}
+          style={ctaStyle}
           className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
         >
           <div className="mx-auto max-w-md text-center">
