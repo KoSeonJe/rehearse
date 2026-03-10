@@ -13,26 +13,26 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 const variantStyles: Record<ButtonVariant, string> = {
   primary: [
     'bg-accent text-white',
-    'hover:bg-accent-hover active:bg-accent-hover',
-    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'hover:bg-accent-hover hover:shadow-md active:bg-accent-hover active:scale-[0.98]',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100',
     'px-6 py-3 rounded-button',
   ].join(' '),
   secondary: [
-    'bg-white text-text-primary border border-border',
-    'hover:bg-background',
-    'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed',
+    'bg-surface text-text-primary border border-border',
+    'hover:bg-background active:scale-[0.98]',
+    'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed disabled:scale-100',
     'px-6 py-3 rounded-button',
   ].join(' '),
   ghost: [
     'bg-transparent text-text-secondary',
-    'hover:bg-[#F5F5F5]',
-    'disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'hover:bg-background active:scale-[0.98]',
+    'disabled:text-text-tertiary disabled:cursor-not-allowed disabled:scale-100',
     'px-4 py-2 rounded-button',
   ].join(' '),
   cta: [
     'bg-accent text-white',
-    'hover:bg-accent-hover active:bg-accent-hover',
-    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'hover:bg-accent-hover hover:shadow-md active:bg-accent-hover active:scale-[0.98]',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100',
     'px-8 py-4 text-lg rounded-button',
   ].join(' '),
 }
@@ -51,7 +51,7 @@ export const Button = ({
   return (
     <button
       className={[
-        'inline-flex items-center justify-center font-medium transition-colors duration-150',
+        'inline-flex items-center justify-center font-medium transition-all duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         variantStyles[variant],
         fullWidth ? 'w-full' : '',

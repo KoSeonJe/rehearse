@@ -53,17 +53,18 @@ const InterviewReviewPage = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-surface px-6 py-4">
+      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <div className="flex items-center gap-3">
             <LogoIcon size={28} />
             <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
-            <span className="text-sm text-text-secondary">피드백 리뷰</span>
+            <span className="hidden text-sm text-text-secondary sm:inline">피드백 리뷰</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="secondary"
               onClick={() => navigate(`/interview/${id}/report`)}
+              className="hidden sm:inline-flex"
             >
               종합 리포트
             </Button>
@@ -78,7 +79,7 @@ const InterviewReviewPage = () => {
       </header>
 
       {/* Main content - 좌60% 비디오 + 우40% 피드백 */}
-      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-6 py-6 lg:flex-row">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row">
         {/* 좌측: 비디오 + 타임라인 */}
         <div className="w-full space-y-4 lg:w-3/5">
           <VideoPlayer videoRef={videoRef} />
@@ -90,7 +91,7 @@ const InterviewReviewPage = () => {
 
         {/* 우측: 피드백 패널 */}
         <div className="w-full lg:w-2/5">
-          <div className="sticky top-6 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-card border border-border bg-surface p-4">
+          <div className="lg:sticky lg:top-6 lg:max-h-[calc(100vh-8rem)] overflow-y-auto rounded-card border border-border bg-surface p-4">
             <h2 className="mb-4 text-sm font-semibold text-text-primary">
               피드백 ({response?.data?.totalCount ?? 0}개)
             </h2>

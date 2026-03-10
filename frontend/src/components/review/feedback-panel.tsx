@@ -40,7 +40,7 @@ const FeedbackCard = ({
   return (
     <button
       onClick={onClick}
-      className={`w-full rounded-xl border p-4 text-left transition-all ${severity.bg} ${
+      className={`w-full rounded-card border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${severity.bg} ${
         isSelected ? 'ring-2 ring-accent' : ''
       } ${isActive ? 'opacity-100' : 'opacity-60'}`}
     >

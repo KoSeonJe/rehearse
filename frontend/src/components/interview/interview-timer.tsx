@@ -20,7 +20,8 @@ const formatTime = (ms: number): string => {
 
 const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   const displayRef = useRef<HTMLSpanElement>(null)
-  const rafRef = useRef<number | null>(null)
+  const onTickRef = useRef(onTick)
+  onTickRef.current = onTick
 
   useEffect(() => {
     if (!startTime) return
@@ -30,20 +31,22 @@ const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
       if (displayRef.current) {
         displayRef.current.textContent = formatTime(elapsed)
       }
-      onTick?.(elapsed)
-      rafRef.current = requestAnimationFrame(tick)
+      onTickRef.current?.(elapsed)
     }
 
     tick()
+    const intervalId = setInterval(tick, 1000)
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+      clearInterval(intervalId)
     }
-  }, [startTime, onTick])
+  }, [startTime])
 
   return (
     <span
       ref={displayRef}
+      role="timer"
+      aria-label="면접 경과 시간"
       className="font-mono text-sm tabular-nums text-text-secondary"
     >
       00:00

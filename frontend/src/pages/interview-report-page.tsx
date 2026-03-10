@@ -41,17 +41,18 @@ const InterviewReportPage = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-surface px-6 py-4">
+      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
             <LogoIcon size={28} />
             <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
-            <span className="text-sm text-text-secondary">종합 리포트</span>
+            <span className="hidden text-sm text-text-secondary sm:inline">종합 리포트</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button
               variant="secondary"
               onClick={() => navigate(`/interview/${id}/review`)}
+              className="hidden sm:inline-flex"
             >
               피드백 리뷰
             </Button>
@@ -66,7 +67,7 @@ const InterviewReportPage = () => {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto w-full max-w-3xl space-y-6 px-6 py-8">
+      <main className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <ScoreCard score={report.overallScore} />
 
         {/* 요약 */}
