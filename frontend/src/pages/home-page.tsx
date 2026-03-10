@@ -13,19 +13,13 @@ export const HomePage = () => {
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
       {/* Navigation */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
+        <div className="mx-auto flex h-16 max-w-5xl items-center px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">
               리허설
             </span>
           </div>
-          <button 
-            className="rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-white transition-transform active:scale-95"
-            onClick={() => navigate('/interview/setup')}
-          >
-            시작하기
-          </button>
         </div>
       </header>
 
@@ -38,26 +32,26 @@ export const HomePage = () => {
         >
           <div className="flex flex-col items-center justify-center gap-4">
             <Logo size={120} />
-            <h1 className="mt-4 text-[40px] font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-[64px]">
+            <h1 className="mt-4 text-3xl font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-[40px]">
               준비한 만큼 보여줄 수 있게<br />
               <span className="text-accent">면접 연습, 리허설해 보세요.</span>
             </h1>
           </div>
           <p className="mt-10 text-lg font-medium leading-relaxed text-text-secondary md:text-xl">
-            단순한 연습을 넘어, 합격의 경험을 미리 시뮬레이션합니다.<br className="hidden md:block" />
-            <span className="text-text-primary font-bold">실제 우리가 만든 화면들</span>과 함께 면접 여정을 확인해 보세요.
+            AI가 이력서를 분석해 맞춤 질문을 만들고,<br className="hidden md:block" />
+            답변의 매 순간을 피드백합니다. 지금 바로 체험해 보세요.
           </p>
           <div className="mt-12">
-            <button 
+            <button
               className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20"
               onClick={() => navigate('/interview/setup')}
             >
-              면접 여정 시작하기
+              무료로 체험하기
             </button>
           </div>
         </section>
 
-        {/* The Real Journey Section — 실제 만든 페이지 디자인 재현 */}
+        {/* The Real Journey Section */}
         <section
           ref={journeyRef}
           style={journeyStyle}
@@ -66,8 +60,7 @@ export const HomePage = () => {
           <div className="text-center mb-24">
             <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">The Real Experience</p>
             <h2 className="text-3xl font-extrabold tracking-tighter text-text-primary md:text-4xl">
-              합격까지의 모든 과정,<br />
-              <span className="text-accent">직접 보여드릴게요.</span>
+              왜 리허설일까요?
             </h2>
           </div>
 
@@ -88,9 +81,9 @@ export const HomePage = () => {
                     예: 시니어 백엔드 엔지니어
                   </div>
                   <div className="grid grid-cols-3 gap-2">
-                    <div className="h-16 rounded-[20px] bg-accent flex items-center justify-center text-[10px] font-black text-white">MID</div>
+                    <div className="h-16 rounded-[20px] bg-accent flex items-center justify-center text-[10px] font-black text-white">JUNIOR</div>
+                    <div className="h-16 rounded-[20px] bg-white border border-border flex items-center justify-center text-[10px] font-bold text-text-tertiary">MID</div>
                     <div className="h-16 rounded-[20px] bg-white border border-border flex items-center justify-center text-[10px] font-bold text-text-tertiary">SENIOR</div>
-                    <div className="h-16 rounded-[20px] bg-white border border-border flex items-center justify-center text-[10px] font-bold text-text-tertiary">LEAD</div>
                   </div>
                 </div>
               </div>
@@ -102,7 +95,7 @@ export const HomePage = () => {
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black md:ml-auto">2</div>
                 <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">몰입도 높은 AI 면접</h3>
                 <p className="text-lg font-medium text-text-secondary leading-relaxed">
-                  친절한 AI 캐릭터와 대화하며 실전처럼 연습하세요.<br />
+                  AI 면접관과 실전처럼 대화하며 연습하세요.<br />
                   음성 감지 시스템이 당신의 답변을 경청합니다.
                 </p>
               </div>
@@ -110,12 +103,12 @@ export const HomePage = () => {
                 <div className="relative aspect-video rounded-2xl bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden flex items-center justify-center border border-slate-100">
                   {/* Spotlight */}
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.08),transparent_70%)]" />
-                  
+
                   {/* Character */}
                   <div className="relative z-10 drop-shadow-2xl">
                     <Character mood="happy" size={120} />
                   </div>
-                  
+
                   {/* HUD */}
                   <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200">
                     <div className="flex items-end gap-0.5 h-3">
@@ -124,9 +117,9 @@ export const HomePage = () => {
                     <span className="text-[8px] font-black text-text-primary uppercase tracking-wider">Recording</span>
                   </div>
                 </div>
-                <div className="mt-6 flex justify-center">
-                  <div className="h-12 w-32 rounded-[20px] bg-text-primary flex items-center justify-center text-xs font-black text-white shadow-lg">답변 완료</div>
-                </div>
+                <p className="mt-4 text-center text-xs font-medium text-text-tertiary">
+                  음성을 감지하면 자동으로 다음 질문으로 넘어갑니다
+                </p>
               </div>
             </div>
 
@@ -134,25 +127,31 @@ export const HomePage = () => {
             <div className="flex flex-col md:flex-row items-center gap-16">
               <div className="flex-1 space-y-6">
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black">3</div>
-                <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">데이터로 증명되는 성장</h3>
+                <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">매 순간을 분석하는<br />타임스탬프 피드백</h3>
                 <p className="text-lg font-medium text-text-secondary leading-relaxed">
-                  면접이 끝나면 종합 점수와 정밀 피드백을 받습니다.<br />
-                  합격을 위한 구체적인 가이드를 확인하세요.
+                  녹화된 영상과 함께 답변의 특정 시점마다 피드백을 제공합니다.<br />
+                  시선, 표정, 목소리까지 비언어적 요소도 놓치지 않습니다.
                 </p>
               </div>
               <div className="flex-1 w-full max-w-[440px] rounded-[32px] bg-white border border-border p-8 shadow-toss rotate-1">
-                <div className="text-center mb-8">
-                  <span className="text-6xl font-black tracking-tighter text-text-primary">88</span>
-                  <span className="text-xl font-bold text-text-tertiary ml-1">/ 100</span>
-                </div>
                 <div className="space-y-3">
-                  <div className="rounded-2xl bg-success/5 border border-success/10 p-4 flex items-center gap-3">
-                    <span className="text-success">✓</span>
-                    <span className="text-xs font-bold text-text-primary">기술적 부채 해결 경험을 잘 설명하셨어요.</span>
+                  <div className="rounded-2xl bg-surface border border-border p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">0:42</span>
+                      <span className="text-[10px] font-bold text-text-tertiary">답변 분석</span>
+                    </div>
+                    <p className="text-xs font-bold text-text-primary leading-relaxed">
+                      기술적 부채 해결 경험을 구체적으로 잘 설명하셨어요. STAR 기법이 자연스럽게 녹아있습니다.
+                    </p>
                   </div>
-                  <div className="rounded-2xl bg-accent/5 border border-accent/10 p-4 flex items-center gap-3">
-                    <span className="text-accent">!</span>
-                    <span className="text-xs font-bold text-text-primary">시선 처리를 조금 더 안정적으로 개선해보세요.</span>
+                  <div className="rounded-2xl bg-surface border border-border p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">1:15</span>
+                      <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">시선 처리</span>
+                    </div>
+                    <p className="text-xs font-bold text-text-primary leading-relaxed">
+                      이 구간에서 시선이 아래로 향했어요. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -167,15 +166,15 @@ export const HomePage = () => {
           className="mx-auto max-w-4xl px-5 py-32 text-center"
         >
           <h2 className="text-3xl font-extrabold leading-snug text-text-primary md:text-4xl">
-            준비는 끝났습니다.<br />
-            이제 합격할 차례예요.
+            당신의 면접, 이제 혼자 고민하지 마세요.<br />
+            리허설이 함께합니다.
           </h2>
           <div className="mt-12">
-            <button 
+            <button
               className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95"
               onClick={() => navigate('/interview/setup')}
             >
-              지금 바로 리허설 시작하기
+              무료로 체험하기
             </button>
           </div>
         </section>

@@ -8,12 +8,14 @@ import com.devlens.api.domain.interview.exception.InterviewErrorCode;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
+import com.devlens.api.infra.ai.PdfTextExtractor;
 import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -26,24 +28,37 @@ public class InterviewService {
     private final InterviewRepository interviewRepository;
     private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
+    private final PdfTextExtractor pdfTextExtractor;
 
     @Transactional
-    public InterviewResponse createInterview(CreateInterviewRequest request) {
-        // 1. Interview 엔티티 생성
+    public InterviewResponse createInterview(CreateInterviewRequest request, MultipartFile resumeFile) {
+        // 1. PDF에서 텍스트 추출 (resumeFile != null일 때)
+        String resumeText = null;
+        if (resumeFile != null && !resumeFile.isEmpty()) {
+            resumeText = pdfTextExtractor.extract(resumeFile);
+        }
+
+        // 2. Interview 엔티티 생성 (resume 저장 안함)
         Interview interview = Interview.builder()
                 .position(request.getPosition())
+                .positionDetail(request.getPositionDetail())
                 .level(request.getLevel())
-                .interviewType(request.getInterviewType())
+                .interviewTypes(request.getInterviewTypes())
+                .durationMinutes(request.getDurationMinutes())
                 .build();
 
-        // 2. Claude API로 질문 생성
+        // 3. Claude API로 질문 생성 (resumeText는 프롬프트에만 사용, 1회성)
         List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(
                 request.getPosition(),
+                request.getPositionDetail(),
                 request.getLevel(),
-                request.getInterviewType()
+                request.getInterviewTypes(),
+                request.getCsSubTopics(),
+                resumeText,
+                request.getDurationMinutes()
         );
 
-        // 3. 질문 엔티티 변환 및 연결
+        // 4. 질문 엔티티 변환 및 연결
         for (GeneratedQuestion gq : generatedQuestions) {
             InterviewQuestion question = InterviewQuestion.builder()
                     .questionOrder(gq.getOrder())
@@ -54,11 +69,11 @@ public class InterviewService {
             interview.addQuestion(question);
         }
 
-        // 4. 저장
+        // 5. 저장
         Interview saved = interviewRepository.save(interview);
 
-        log.info("면접 세션 생성 완료: id={}, position={}, level={}, type={}",
-                saved.getId(), saved.getPosition(), saved.getLevel(), saved.getInterviewType());
+        log.info("면접 세션 생성 완료: id={}, position={}, level={}, types={}",
+                saved.getId(), saved.getPosition(), saved.getLevel(), saved.getInterviewTypes());
 
         return InterviewResponse.from(saved);
     }

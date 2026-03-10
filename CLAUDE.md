@@ -45,6 +45,10 @@
 ## Commit / PR Rules
 
 - Commit messages: Korean, conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
+- PR title: `[영역] 타입: 한줄 설명`
+  - 영역: `[FE]`, `[BE]`, `[FE/BE]`, 생략(docs/chore)
+  - 타입: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+  - 예: `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
 - PR scope: per feature or per issue
 - Branches: `feat/{name}`, `fix/{name}`
 

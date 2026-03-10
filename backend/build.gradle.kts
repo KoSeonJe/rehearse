@@ -41,6 +41,9 @@ dependencies {
     // JSON
     implementation("com.fasterxml.jackson.core:jackson-databind")
 
+    // PDF
+    implementation("org.apache.pdfbox:pdfbox:3.0.4")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

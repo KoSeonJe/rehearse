@@ -11,7 +11,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "interview")
@@ -24,16 +26,22 @@ public class Interview {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
-    private String position;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private Position position;
+
+    @Column(length = 100)
+    private String positionDetail;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private InterviewLevel level;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "interview_type", nullable = false, length = 20)
-    private InterviewType interviewType;
+    @Column(name = "interview_types", nullable = false, length = 200)
+    private String interviewTypes;
+
+    @Column(nullable = false)
+    private Integer durationMinutes;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -52,11 +60,24 @@ public class Interview {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Interview(String position, InterviewLevel level, InterviewType interviewType) {
+    public Interview(Position position, String positionDetail, InterviewLevel level, List<InterviewType> interviewTypes, Integer durationMinutes) {
         this.position = position;
+        this.positionDetail = positionDetail;
         this.level = level;
-        this.interviewType = interviewType;
+        this.interviewTypes = interviewTypes.stream()
+                .map(Enum::name)
+                .collect(Collectors.joining(","));
+        this.durationMinutes = durationMinutes;
         this.status = InterviewStatus.READY;
+    }
+
+    public List<InterviewType> getInterviewTypeList() {
+        if (interviewTypes == null || interviewTypes.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(interviewTypes.split(","))
+                .map(InterviewType::valueOf)
+                .toList();
     }
 
     public void addQuestion(InterviewQuestion question) {

@@ -36,7 +36,13 @@ export const InterviewReadyPage = () => {
   const handleRegenerateQuestions = () => {
     if (!interview) return
     createInterview.mutate(
-      { position: interview.position, level: interview.level, interviewType: interview.interviewType },
+      {
+        request: {
+          position: interview.position,
+          level: interview.level,
+          interviewTypes: interview.interviewTypes,
+        },
+      },
       {
         onSuccess: (newResponse) => {
           navigate(`/interview/${newResponse.data.id}/ready`, { replace: true })
@@ -103,9 +109,16 @@ export const InterviewReadyPage = () => {
               <span className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                 {LEVEL_LABELS[interview.level].label}
               </span>
-              <span className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
-                {INTERVIEW_TYPE_LABELS[interview.interviewType].label}
-              </span>
+              {interview.interviewTypes.map((type) => (
+                <span key={type} className="rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
+                  {INTERVIEW_TYPE_LABELS[type].label}
+                </span>
+              ))}
+              {interview.durationMinutes && (
+                <span className="rounded-full bg-accent/10 px-4 py-2 text-xs font-bold text-accent">
+                  {interview.durationMinutes}분
+                </span>
+              )}
             </div>
           )}
         </section>

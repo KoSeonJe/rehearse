@@ -5,6 +5,7 @@ import com.devlens.api.domain.interview.entity.*;
 import com.devlens.api.domain.interview.repository.InterviewRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
+import com.devlens.api.infra.ai.PdfTextExtractor;
 import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
@@ -37,19 +38,24 @@ class InterviewServiceTest {
     @Mock
     private AiClient aiClient;
 
+    @Mock
+    private PdfTextExtractor pdfTextExtractor;
+
     @Test
     @DisplayName("면접 세션 생성 시 Claude API로 질문을 생성하고 저장한다")
     void createInterview_success() {
         // given
         CreateInterviewRequest request = new CreateInterviewRequest();
-        ReflectionTestUtils.setField(request, "position", "백엔드 개발자");
+        ReflectionTestUtils.setField(request, "position", Position.BACKEND);
         ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
-        ReflectionTestUtils.setField(request, "interviewType", InterviewType.CS);
+        ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
+        ReflectionTestUtils.setField(request, "durationMinutes", 30);
 
         List<GeneratedQuestion> generatedQuestions = createMockGeneratedQuestions();
 
         given(aiClient.generateQuestions(
-                eq("백엔드 개발자"), eq(InterviewLevel.JUNIOR), eq(InterviewType.CS)))
+                eq(Position.BACKEND), isNull(), eq(InterviewLevel.JUNIOR),
+                eq(List.of(InterviewType.CS_FUNDAMENTAL)), isNull(), isNull(), eq(30)))
                 .willReturn(generatedQuestions);
 
         given(interviewRepository.save(any(Interview.class)))
@@ -63,13 +69,13 @@ class InterviewServiceTest {
                 });
 
         // when
-        InterviewResponse response = interviewService.createInterview(request);
+        InterviewResponse response = interviewService.createInterview(request, null);
 
         // then
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPosition()).isEqualTo("백엔드 개발자");
+        assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
         assertThat(response.getLevel()).isEqualTo(InterviewLevel.JUNIOR);
-        assertThat(response.getInterviewType()).isEqualTo(InterviewType.CS);
+        assertThat(response.getInterviewTypes()).containsExactly(InterviewType.CS_FUNDAMENTAL);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
         assertThat(response.getQuestions()).hasSize(2);
         assertThat(response.getQuestions().get(0).getContent()).isEqualTo("HashMap과 TreeMap의 차이점은?");
@@ -107,7 +113,7 @@ class InterviewServiceTest {
 
         // then
         assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPosition()).isEqualTo("백엔드 개발자");
+        assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
     }
 
@@ -134,15 +140,15 @@ class InterviewServiceTest {
     void createInterview_claudeApiFail() {
         // given
         CreateInterviewRequest request = new CreateInterviewRequest();
-        ReflectionTestUtils.setField(request, "position", "백엔드 개발자");
+        ReflectionTestUtils.setField(request, "position", Position.BACKEND);
         ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
-        ReflectionTestUtils.setField(request, "interviewType", InterviewType.CS);
+        ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
 
-        given(aiClient.generateQuestions(anyString(), any(), any()))
+        given(aiClient.generateQuestions(any(), any(), any(), anyList(), any(), any(), any()))
                 .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "Claude API 호출 실패"));
 
         // when & then
-        assertThatThrownBy(() -> interviewService.createInterview(request))
+        assertThatThrownBy(() -> interviewService.createInterview(request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -244,9 +250,10 @@ class InterviewServiceTest {
 
     private Interview createMockInterview() {
         Interview interview = Interview.builder()
-                .position("백엔드 개발자")
+                .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
-                .interviewType(InterviewType.CS)
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
         return interview;

@@ -2,7 +2,11 @@ package com.devlens.api.infra.ai;
 
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.Position;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ClaudePromptBuilder {
@@ -12,10 +16,31 @@ public class ClaudePromptBuilder {
                 당신은 한국 IT 기업의 시니어 개발자 면접관입니다.
                 주어진 직무, 레벨, 면접 유형에 맞는 면접 질문을 생성해야 합니다.
 
-                면접 유형별 가이드:
-                - CS: 자료구조, 알고리즘, 운영체제, 네트워크, 데이터베이스 관련 기초 질문
-                - SYSTEM_DESIGN: 시스템 스케일링, 아키텍처 설계, 트레이드오프 분석 질문
+                면접 유형별 출제 가이드:
+                - CS_FUNDAMENTAL: CS 기초 (자료구조, 알고리즘, 운영체제, 네트워크, 데이터베이스)
                 - BEHAVIORAL: STAR 기법 기반 경험 질문 (상황, 과제, 행동, 결과)
+                - RESUME_BASED: 이력서/포트폴리오 기반 맞춤 질문
+                - JAVA_SPRING: Java/Spring 프레임워크 심화 (JVM, Spring IoC/AOP, JPA, 트랜잭션)
+                - SYSTEM_DESIGN: 시스템 아키텍처 설계, 스케일링, 트레이드오프 분석
+                - FULLSTACK_JS: Node.js + React 풀스택, API 설계, DB 연동, 배포
+                - REACT_COMPONENT: React 컴포넌트 설계, 상태 관리, 렌더링 최적화
+                - BROWSER_PERFORMANCE: 브라우저 렌더링, 웹 성능 최적화, 번들 최적화
+                - INFRA_CICD: 인프라 구성, CI/CD 파이프라인, 컨테이너 오케스트레이션
+                - CLOUD: 클라우드 아키텍처 (AWS/GCP/Azure), 서버리스, IaC
+                - DATA_PIPELINE: 데이터 수집/처리/적재 파이프라인, ETL/ELT, 스트리밍
+                - SQL_MODELING: SQL 쿼리 최적화, 데이터 모델링, 정규화/반정규화
+
+                CS 세부 주제가 지정된 경우 해당 주제에서만 출제하세요:
+                - DATA_STRUCTURE: 자료구조와 알고리즘
+                - OS: 운영체제 (프로세스, 스레드, 메모리, 스케줄링)
+                - NETWORK: 네트워크 (TCP/IP, HTTP, DNS, 보안)
+                - DATABASE: 데이터베이스 (인덱스, 트랜잭션, 정규화, 쿼리 최적화)
+
+                질문 수 규칙:
+                - 면접 시간이 설정된 경우: (면접 시간(분) / 5) 반올림 (최소 2개, 최대 24개)
+                - 유형별로 균등 배분
+
+                이력서가 제공된 경우 RESUME_BASED 유형의 질문은 이력서 내용을 기반으로 맞춤 생성하세요.
 
                 레벨별 난이도:
                 - JUNIOR: 기본 개념 이해도 확인, 실무 경험보다 학습 의지
@@ -36,27 +61,91 @@ public class ClaudePromptBuilder {
                 """;
     }
 
-    public String buildQuestionUserPrompt(String position, InterviewLevel level, InterviewType interviewType) {
+    public String buildQuestionUserPrompt(Position position, String positionDetail,
+                                           InterviewLevel level, List<InterviewType> interviewTypes,
+                                           List<String> csSubTopics, String resumeText,
+                                           Integer durationMinutes) {
+        String positionKorean = switch (position) {
+            case BACKEND -> "백엔드 개발자";
+            case FRONTEND -> "프론트엔드 개발자";
+            case DEVOPS -> "데브옵스 엔지니어";
+            case DATA_ENGINEER -> "데이터 엔지니어";
+            case FULLSTACK -> "풀스택 개발자";
+        };
+
         String levelKorean = switch (level) {
             case JUNIOR -> "주니어";
             case MID -> "미드레벨";
             case SENIOR -> "시니어";
         };
 
-        String typeKorean = switch (interviewType) {
-            case CS -> "CS 기초";
-            case SYSTEM_DESIGN -> "시스템 설계";
-            case BEHAVIORAL -> "Behavioral (인성/경험)";
-        };
+        String typesKorean = interviewTypes.stream()
+                .map(this::interviewTypeToKorean)
+                .collect(Collectors.joining(", "));
 
-        return String.format("""
+        int questionCount;
+        if (durationMinutes != null) {
+            questionCount = (int) Math.round((double) durationMinutes / 5);
+            questionCount = Math.max(2, Math.min(questionCount, 24));
+        } else {
+            questionCount = interviewTypes.size() == 1 ? 5 : interviewTypes.size() == 2 ? 6 : 8;
+        }
+
+        StringBuilder prompt = new StringBuilder();
+        prompt.append(String.format("""
                 직무: %s
                 레벨: %s
                 면접 유형: %s
+                질문 수: %d개
 
-                위 조건에 맞는 면접 질문 5개와 각 질문별 평가 기준을 생성해주세요.
-                각 질문의 카테고리는 면접 유형의 세부 분야로 지정해주세요.
-                """, position, levelKorean, typeKorean);
+                """, positionKorean, levelKorean, typesKorean, questionCount));
+
+        if (csSubTopics != null && !csSubTopics.isEmpty() && interviewTypes.contains(InterviewType.CS_FUNDAMENTAL)) {
+            String subTopicsKorean = csSubTopics.stream()
+                    .map(this::csSubTopicToKorean)
+                    .collect(Collectors.joining(", "));
+            prompt.append(String.format("CS 세부 주제: %s\n\n", subTopicsKorean));
+        }
+
+        if (resumeText != null && !resumeText.isBlank()) {
+            prompt.append(String.format("""
+                    이력서/포트폴리오:
+                    %s
+
+                    """, resumeText));
+        }
+
+        prompt.append("위 조건에 맞는 면접 질문과 각 질문별 평가 기준을 생성해주세요.\n");
+        prompt.append("각 질문의 카테고리는 면접 유형의 세부 분야로 지정해주세요.\n");
+
+        return prompt.toString();
+    }
+
+    private String interviewTypeToKorean(InterviewType type) {
+        return switch (type) {
+            case CS_FUNDAMENTAL -> "CS 기초";
+            case BEHAVIORAL -> "Behavioral (인성/경험)";
+            case RESUME_BASED -> "이력서/포트폴리오 기반";
+            case JAVA_SPRING -> "Java/Spring 심화";
+            case SYSTEM_DESIGN -> "시스템 설계";
+            case FULLSTACK_JS -> "Node.js + React 풀스택";
+            case REACT_COMPONENT -> "React/컴포넌트 설계";
+            case BROWSER_PERFORMANCE -> "브라우저/웹 성능";
+            case INFRA_CICD -> "인프라/CI-CD";
+            case CLOUD -> "클라우드 아키텍처";
+            case DATA_PIPELINE -> "데이터 파이프라인";
+            case SQL_MODELING -> "SQL/데이터 모델링";
+        };
+    }
+
+    private String csSubTopicToKorean(String subTopic) {
+        return switch (subTopic) {
+            case "DATA_STRUCTURE" -> "자료구조/알고리즘";
+            case "OS" -> "운영체제";
+            case "NETWORK" -> "네트워크";
+            case "DATABASE" -> "데이터베이스";
+            default -> subTopic;
+        };
     }
 
     public String buildFollowUpSystemPrompt() {
