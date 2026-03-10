@@ -47,6 +47,7 @@ export const InterviewPage = () => {
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
+    isVadActive,
   } = useInterviewSession({
     interviewId,
     interview,
@@ -109,8 +110,8 @@ export const InterviewPage = () => {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      {/* Main content — pb-28 for fixed mobile controls */}
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8">
         <QuestionDisplay
           question={currentQuestion}
           currentIndex={currentQuestionIndex}
@@ -133,6 +134,7 @@ export const InterviewPage = () => {
           phase={phase}
           currentIndex={currentQuestionIndex}
           totalQuestions={questions.length}
+          isVadActive={isVadActive}
           onStartAnswer={handleStartAnswer}
           onStopAnswer={handleStopAnswer}
           onNextQuestion={nextQuestion}

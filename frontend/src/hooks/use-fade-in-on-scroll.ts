@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 interface UseFadeInOnScrollOptions {
   threshold?: number
@@ -8,29 +8,26 @@ export const useFadeInOnScroll = <T extends HTMLElement = HTMLDivElement>(
   options: UseFadeInOnScrollOptions = {},
 ) => {
   const { threshold = 0.1 } = options
-  const ref = useRef<T>(null)
   const [isVisible, setIsVisible] = useState(false)
 
-  useEffect(() => {
-    const element = ref.current
-    if (!element) return
+  const ref = useCallback(
+    (node: T | null) => {
+      if (!node) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.unobserve(element)
-        }
-      },
-      { threshold },
-    )
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            setIsVisible(true)
+            observer.unobserve(node)
+          }
+        },
+        { threshold },
+      )
 
-    observer.observe(element)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [threshold])
+      observer.observe(node)
+    },
+    [threshold],
+  )
 
   const style: React.CSSProperties = {
     opacity: isVisible ? 1 : 0,

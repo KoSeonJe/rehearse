@@ -17,8 +17,8 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
 
 export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {
   return (
-    <div className="space-y-3">
-      <div className="rounded-card border border-border bg-surface p-6">
+    <div className="sticky top-20 z-10 space-y-3">
+      <div className="rounded-card border border-border bg-surface p-6 shadow-sm">
         <div className="mb-3 flex items-center gap-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
             {currentIndex + 1}
@@ -61,4 +61,3 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
     </div>
   )
 }
-

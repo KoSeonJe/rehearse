@@ -21,7 +21,10 @@ const formatTime = (ms: number): string => {
 export const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   const displayRef = useRef<HTMLSpanElement>(null)
   const onTickRef = useRef(onTick)
-  onTickRef.current = onTick
+
+  useEffect(() => {
+    onTickRef.current = onTick
+  })
 
   useEffect(() => {
     if (!startTime) return

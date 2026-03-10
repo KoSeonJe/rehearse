@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useReviewStore } from '../../stores/review-store'
 import type { TimestampFeedback } from '../../types/interview'
 
@@ -35,14 +35,25 @@ const FeedbackCard = ({
   isSelected: boolean
   onClick: () => void
 }) => {
+  const cardRef = useRef<HTMLButtonElement>(null)
   const severity = SEVERITY_STYLES[feedback.severity] ?? SEVERITY_STYLES.INFO
+
+  useEffect(() => {
+    if (isActive && cardRef.current) {
+      cardRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      })
+    }
+  }, [isActive])
 
   return (
     <button
+      ref={cardRef}
       onClick={onClick}
-      className={`w-full rounded-card border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${severity.bg} ${
+      className={`w-full rounded-card border-l-4 border p-4 text-left transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 ${severity.bg} ${
         isSelected ? 'ring-2 ring-accent' : ''
-      } ${isActive ? 'opacity-100' : 'opacity-60'}`}
+      } ${isActive ? 'border-l-accent opacity-100 shadow-sm' : 'border-l-transparent opacity-50'}`}
     >
       <div className="mb-2 flex items-center gap-2">
         <span className="text-xs font-medium text-text-secondary">
@@ -95,4 +106,3 @@ export const FeedbackPanel = ({ onSeekToFeedback }: FeedbackPanelProps) => {
     </div>
   )
 }
-

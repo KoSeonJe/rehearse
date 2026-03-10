@@ -1,7 +1,8 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
+import { useVad } from './use-vad'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
 
 interface UseInterviewSessionParams {
@@ -28,6 +29,7 @@ interface UseInterviewSessionParams {
     onFinalResult: (callback: (segment: TranscriptSegment) => void) => void
   }
   audio: {
+    audioLevel: number
     start: (stream: MediaStream) => void
     stop: () => void
     onVoiceEvent: (callback: (event: VoiceEvent) => void) => void
@@ -45,6 +47,7 @@ export const useInterviewSession = ({
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
   const followUpMutation = useFollowUpQuestion()
+  const [vadEnabled, setVadEnabled] = useState(false)
 
   const {
     questions,
@@ -61,6 +64,28 @@ export const useInterviewSession = ({
     addFollowUpQuestion,
     setFollowUpLoading,
   } = useInterviewStore()
+
+  // VAD: 음성 감지 시 자동 녹음 시작/일시정지
+  const { isActive: isVadActive, updateAudioLevel } = useVad({
+    enabled: vadEnabled,
+    onSpeechStart: () => {
+      if (phase === 'ready' || phase === 'paused') {
+        doStartAnswer()
+      }
+    },
+    onSpeechEnd: () => {
+      if (phase === 'recording') {
+        stopRecording()
+        stt.stop()
+        recorder.pause()
+      }
+    },
+  })
+
+  // 오디오 레벨을 VAD에 전달
+  useEffect(() => {
+    updateAudioLevel(audio.audioLevel)
+  }, [audio.audioLevel, updateAudioLevel])
 
   // 면접 데이터 로드
   useEffect(() => {
@@ -104,10 +129,11 @@ export const useInterviewSession = ({
     if (phase === 'ready' && interview?.status === 'READY') {
       updateStatus.mutate({ id: interview.id, data: { status: 'IN_PROGRESS' } })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, interview?.status, interviewId, updateStatus])
 
-  // 답변 시작
-  const handleStartAnswer = useCallback(() => {
+  // 실제 답변 시작 로직
+  const doStartAnswer = useCallback(() => {
     if (!mediaStream.stream) return
     startRecording()
     if (!recorder.isRecording) {
@@ -119,13 +145,19 @@ export const useInterviewSession = ({
     audio.start(mediaStream.stream)
   }, [mediaStream.stream, startRecording, recorder, stt, audio, currentQuestionIndex])
 
+  // "준비 완료" 버튼 → VAD 활성화 + 답변 시작
+  const handleStartAnswer = useCallback(() => {
+    setVadEnabled(true)
+    doStartAnswer()
+  }, [doStartAnswer])
+
   // 답변 완료 + 후속질문 요청
   const handleStopAnswer = useCallback(() => {
+    setVadEnabled(false)
     stopRecording()
     stt.stop()
     recorder.pause()
 
-    // 현재 질문에 대한 답변 텍스트 수집
     const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
     const answerText = currentAnswer?.transcripts
       .filter((t) => t.isFinal)
@@ -159,6 +191,7 @@ export const useInterviewSession = ({
   const handleFinishInterview = useCallback(async () => {
     if (!interview) return
 
+    setVadEnabled(false)
     stt.stop()
     audio.stop()
 
@@ -170,6 +203,7 @@ export const useInterviewSession = ({
 
     mediaStream.stop()
     navigate(`/interview/${interview.id}/complete`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
 
   // 클린업
@@ -187,5 +221,6 @@ export const useInterviewSession = ({
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
+    isVadActive,
   }
 }

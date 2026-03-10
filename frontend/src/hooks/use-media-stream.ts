@@ -29,6 +29,8 @@ export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamR
   const [isActive, setIsActive] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const video = options?.video
+  const audio = options?.audio
 
   const stop = useCallback(() => {
     if (streamRef.current) {
@@ -43,8 +45,8 @@ export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamR
     try {
       setError(null)
       const constraints: MediaStreamConstraints = {
-        video: options?.video ?? DEFAULT_VIDEO_CONSTRAINTS,
-        audio: options?.audio ?? DEFAULT_AUDIO_CONSTRAINTS,
+        video: video ?? DEFAULT_VIDEO_CONSTRAINTS,
+        audio: audio ?? DEFAULT_AUDIO_CONSTRAINTS,
       }
 
       const mediaStream = await navigator.mediaDevices.getUserMedia(constraints)
@@ -62,7 +64,7 @@ export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamR
           : '알 수 없는 오류가 발생했습니다.'
       setError(message)
     }
-  }, [options?.video, options?.audio])
+  }, [video, audio])
 
   useEffect(() => {
     return () => {
