@@ -4,10 +4,7 @@ import com.devlens.api.domain.feedback.entity.Feedback;
 import com.devlens.api.domain.feedback.entity.FeedbackCategory;
 import com.devlens.api.domain.feedback.entity.FeedbackSeverity;
 import com.devlens.api.domain.feedback.repository.FeedbackRepository;
-import com.devlens.api.domain.interview.entity.Interview;
-import com.devlens.api.domain.interview.entity.InterviewLevel;
-import com.devlens.api.domain.interview.entity.InterviewStatus;
-import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.*;
 import com.devlens.api.domain.interview.service.InterviewFinder;
 import com.devlens.api.domain.report.dto.ReportResponse;
 import com.devlens.api.domain.report.entity.InterviewReport;
@@ -170,9 +167,9 @@ class ReportServiceTest {
 
     private Interview createCompletedInterview() {
         Interview interview = Interview.builder()
-                .position("백엔드 개발자")
+                .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
-                .interviewType(InterviewType.CS)
+                .interviewTypes(java.util.List.of(InterviewType.CS_FUNDAMENTAL))
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
         interview.updateStatus(InterviewStatus.IN_PROGRESS);

@@ -3,9 +3,7 @@ package com.devlens.api.domain.interview.controller;
 import com.devlens.api.domain.interview.dto.InterviewResponse;
 import com.devlens.api.domain.interview.dto.QuestionResponse;
 import com.devlens.api.domain.interview.dto.UpdateStatusResponse;
-import com.devlens.api.domain.interview.entity.InterviewLevel;
-import com.devlens.api.domain.interview.entity.InterviewStatus;
-import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.*;
 import com.devlens.api.domain.interview.service.InterviewService;
 import com.devlens.api.global.exception.BusinessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -44,85 +43,70 @@ class InterviewControllerTest {
     void createInterview_success() throws Exception {
         // given
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewService.createInterview(any())).willReturn(response);
+        given(interviewService.createInterview(any(), any())).willReturn(response);
 
-        String requestBody = """
+        String requestJson = """
                 {
-                    "position": "백엔드 개발자",
+                    "position": "BACKEND",
                     "level": "JUNIOR",
-                    "interviewType": "CS"
+                    "interviewTypes": ["CS_FUNDAMENTAL"],
+                    "durationMinutes": 30
                 }
                 """;
 
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+
         // when & then
-        mockMvc.perform(post("/api/v1/interviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        mockMvc.perform(multipart("/api/v1/interviews")
+                        .file(requestPart))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(1))
-                .andExpect(jsonPath("$.data.position").value("백엔드 개발자"))
+                .andExpect(jsonPath("$.data.position").value("BACKEND"))
                 .andExpect(jsonPath("$.data.level").value("JUNIOR"))
-                .andExpect(jsonPath("$.data.interviewType").value("CS"))
+                .andExpect(jsonPath("$.data.interviewTypes[0]").value("CS_FUNDAMENTAL"))
                 .andExpect(jsonPath("$.data.status").value("READY"))
                 .andExpect(jsonPath("$.data.questions").isArray())
                 .andExpect(jsonPath("$.data.questions.length()").value(2));
     }
 
     @Test
-    @DisplayName("POST /api/v1/interviews - position 빈값 시 400 VALIDATION_ERROR")
-    void createInterview_blankPosition() throws Exception {
-        String requestBody = """
+    @DisplayName("POST /api/v1/interviews - interviewTypes 빈 배열 시 400")
+    void createInterview_emptyInterviewTypes() throws Exception {
+        String requestJson = """
                 {
-                    "position": "",
+                    "position": "BACKEND",
                     "level": "JUNIOR",
-                    "interviewType": "CS"
+                    "interviewTypes": []
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/interviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+
+        mockMvc.perform(multipart("/api/v1/interviews")
+                        .file(requestPart))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors").isArray())
-                .andExpect(jsonPath("$.errors[0].field").value("position"));
-    }
-
-    @Test
-    @DisplayName("POST /api/v1/interviews - position 100자 초과 시 400")
-    void createInterview_positionTooLong() throws Exception {
-        String longPosition = "a".repeat(101);
-        String requestBody = String.format("""
-                {
-                    "position": "%s",
-                    "level": "JUNIOR",
-                    "interviewType": "CS"
-                }
-                """, longPosition);
-
-        mockMvc.perform(post("/api/v1/interviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.errors[0].field").value("position"));
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
     @Test
     @DisplayName("POST /api/v1/interviews - level 누락 시 400")
     void createInterview_missingLevel() throws Exception {
-        String requestBody = """
+        String requestJson = """
                 {
-                    "position": "백엔드 개발자",
-                    "interviewType": "CS"
+                    "position": "BACKEND",
+                    "interviewTypes": ["CS_FUNDAMENTAL"]
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/interviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+
+        mockMvc.perform(multipart("/api/v1/interviews")
+                        .file(requestPart))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
@@ -130,20 +114,23 @@ class InterviewControllerTest {
     @Test
     @DisplayName("POST /api/v1/interviews - Claude API 실패 시 502")
     void createInterview_claudeApiFail() throws Exception {
-        given(interviewService.createInterview(any()))
+        given(interviewService.createInterview(any(), any()))
                 .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "Claude API 호출 실패"));
 
-        String requestBody = """
+        String requestJson = """
                 {
-                    "position": "백엔드 개발자",
+                    "position": "BACKEND",
                     "level": "JUNIOR",
-                    "interviewType": "CS"
+                    "interviewTypes": ["CS_FUNDAMENTAL"],
+                    "durationMinutes": 30
                 }
                 """;
 
-        mockMvc.perform(post("/api/v1/interviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
+        MockMultipartFile requestPart = new MockMultipartFile(
+                "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+
+        mockMvc.perform(multipart("/api/v1/interviews")
+                        .file(requestPart))
                 .andExpect(status().isBadGateway())
                 .andExpect(jsonPath("$.code").value("AI_001"))
                 .andExpect(jsonPath("$.message").value("Claude API 호출 실패"));
@@ -233,10 +220,11 @@ class InterviewControllerTest {
 
         return InterviewResponse.builder()
                 .id(1L)
-                .position("백엔드 개발자")
+                .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
-                .interviewType(InterviewType.CS)
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
                 .status(InterviewStatus.READY)
+                .durationMinutes(30)
                 .questions(List.of(q1, q2))
                 .createdAt(LocalDateTime.of(2026, 3, 10, 14, 30, 0))
                 .build();

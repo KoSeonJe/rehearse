@@ -1,9 +1,6 @@
 package com.devlens.api.domain.interview.dto;
 
-import com.devlens.api.domain.interview.entity.Interview;
-import com.devlens.api.domain.interview.entity.InterviewLevel;
-import com.devlens.api.domain.interview.entity.InterviewStatus;
-import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.*;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,10 +12,12 @@ import java.util.List;
 public class InterviewResponse {
 
     private final Long id;
-    private final String position;
+    private final Position position;
+    private final String positionDetail;
     private final InterviewLevel level;
-    private final InterviewType interviewType;
+    private final List<InterviewType> interviewTypes;
     private final InterviewStatus status;
+    private final Integer durationMinutes;
     private final List<QuestionResponse> questions;
     private final LocalDateTime createdAt;
 
@@ -30,9 +29,11 @@ public class InterviewResponse {
         return InterviewResponse.builder()
                 .id(interview.getId())
                 .position(interview.getPosition())
+                .positionDetail(interview.getPositionDetail())
                 .level(interview.getLevel())
-                .interviewType(interview.getInterviewType())
+                .interviewTypes(interview.getInterviewTypeList())
                 .status(interview.getStatus())
+                .durationMinutes(interview.getDurationMinutes())
                 .questions(questionResponses)
                 .createdAt(interview.getCreatedAt())
                 .build();

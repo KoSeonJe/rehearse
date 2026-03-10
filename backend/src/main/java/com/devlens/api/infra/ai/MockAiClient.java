@@ -2,6 +2,7 @@ package com.devlens.api.infra.ai;
 
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.Position;
 import com.devlens.api.infra.ai.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -24,8 +25,20 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public List<GeneratedQuestion> generateQuestions(String position, InterviewLevel level, InterviewType interviewType) {
-        log.info("[Mock] generateQuestions 호출 - position={}, level={}, type={}", position, level, interviewType);
+    public List<GeneratedQuestion> generateQuestions(Position position, String positionDetail,
+                                                      InterviewLevel level, List<InterviewType> interviewTypes,
+                                                      List<String> csSubTopics, String resumeText,
+                                                      Integer durationMinutes) {
+        log.info("[Mock] generateQuestions 호출 - position={}, level={}, types={}, resume={}, duration={}",
+                position, level, interviewTypes, resumeText != null ? "있음" : "없음", durationMinutes);
+
+        int questionCount;
+        if (durationMinutes != null) {
+            questionCount = (int) Math.round((double) durationMinutes / 5);
+            questionCount = Math.max(2, Math.min(questionCount, 5));
+        } else {
+            questionCount = interviewTypes.size() == 1 ? 5 : interviewTypes.size() == 2 ? 6 : 8;
+        }
 
         String json = """
                 [
@@ -37,7 +50,8 @@ public class MockAiClient implements AiClient {
                 ]
                 """;
 
-        return parseJson(json, new TypeReference<>() {});
+        List<GeneratedQuestion> allQuestions = parseJson(json, new TypeReference<>() {});
+        return allQuestions.subList(0, Math.min(questionCount, allQuestions.size()));
     }
 
     @Override

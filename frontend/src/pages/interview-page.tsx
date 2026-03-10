@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useInterview } from '../hooks/use-interviews'
@@ -56,6 +56,8 @@ export const InterviewPage = () => {
     audio,
   })
 
+  const [timeWarning, setTimeWarning] = useState(false)
+
   const currentQuestion = questions[currentQuestionIndex]
   const currentAnswer = answers[currentQuestionIndex]
   const finalTexts = useMemo(
@@ -93,7 +95,12 @@ export const InterviewPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <InterviewTimer startTime={startTime} />
+          <InterviewTimer
+            startTime={startTime}
+            durationMinutes={interview.durationMinutes}
+            onTimeWarning={() => setTimeWarning(true)}
+            onTimeExpired={() => handleFinishInterview()}
+          />
           <div className="h-8 w-[1px] bg-border" />
           <AudioLevelIndicator level={audio.audioLevel} />
         </div>
@@ -144,6 +151,14 @@ export const InterviewPage = () => {
             </div>
 
             <div className="max-w-xl mx-auto w-full">
+              {/* Time Warning Banner */}
+              {timeWarning && (
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-full bg-warning/10 border border-warning/20 px-5 py-2 shadow-toss animate-fade-in">
+                    <span className="text-sm font-bold text-warning">마무리할 시간입니다 - 곧 면접이 종료됩니다</span>
+                  </div>
+                </div>
+              )}
               {/* Auto Transition Toast */}
               {autoTransitionMessage && (
                 <div className="mb-4 flex justify-center">

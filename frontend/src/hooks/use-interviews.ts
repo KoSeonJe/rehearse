@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '@/lib/api-client'
+import { apiClient, ApiError } from '@/lib/api-client'
 import type {
   ApiResponse,
   InterviewSession,
@@ -10,13 +10,52 @@ import type {
   FollowUpResponse,
 } from '@/types/interview'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+
 export const useCreateInterview = () => {
   return useMutation({
-    mutationFn: (data: CreateInterviewRequest) =>
-      apiClient.post<ApiResponse<InterviewSession>>(
-        '/api/v1/interviews',
-        data,
-      ),
+    mutationFn: async ({
+      request,
+      resumeFile,
+    }: {
+      request: CreateInterviewRequest
+      resumeFile?: File | null
+    }) => {
+      const formData = new FormData()
+
+      const requestBlob = new Blob([JSON.stringify(request)], {
+        type: 'application/json',
+      })
+      formData.append('request', requestBlob)
+
+      if (resumeFile) {
+        formData.append('resumeFile', resumeFile)
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/interviews`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        let errorBody
+        try {
+          errorBody = await response.json()
+        } catch {
+          throw new ApiError(response.status, {
+            success: false,
+            status: response.status,
+            code: 'UNKNOWN_ERROR',
+            message: response.statusText || '알 수 없는 오류가 발생했습니다.',
+            errors: [],
+            timestamp: new Date().toISOString(),
+          })
+        }
+        throw new ApiError(response.status, errorBody)
+      }
+
+      return response.json() as Promise<ApiResponse<InterviewSession>>
+    },
   })
 }
 

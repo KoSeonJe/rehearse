@@ -2,6 +2,7 @@ package com.devlens.api.infra.ai;
 
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
+import com.devlens.api.domain.interview.entity.Position;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.dto.*;
 import lombok.extern.slf4j.Slf4j;
@@ -53,11 +54,15 @@ public class ClaudeApiClient implements AiClient {
         this.model = model;
     }
 
-    public List<GeneratedQuestion> generateQuestions(String position, InterviewLevel level, InterviewType interviewType) {
+    @Override
+    public List<GeneratedQuestion> generateQuestions(Position position, String positionDetail,
+                                                      InterviewLevel level, List<InterviewType> interviewTypes,
+                                                      List<String> csSubTopics, String resumeText,
+                                                      Integer durationMinutes) {
         String systemPrompt = promptBuilder.buildQuestionSystemPrompt();
-        String userPrompt = promptBuilder.buildQuestionUserPrompt(position, level, interviewType);
+        String userPrompt = promptBuilder.buildQuestionUserPrompt(position, positionDetail, level, interviewTypes, csSubTopics, resumeText, durationMinutes);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, 2048);
+        String text = callClaudeApi(systemPrompt, userPrompt, 4096);
         GeneratedQuestionsWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedQuestionsWrapper.class);
 
         if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
@@ -67,6 +72,7 @@ public class ClaudeApiClient implements AiClient {
         return wrapper.getQuestions();
     }
 
+    @Override
     public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText, String nonVerbalSummary) {
         String systemPrompt = promptBuilder.buildFollowUpSystemPrompt();
         String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary);
@@ -75,6 +81,7 @@ public class ClaudeApiClient implements AiClient {
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
+    @Override
     public GeneratedReport generateReport(String feedbackSummary) {
         String systemPrompt = promptBuilder.buildReportSystemPrompt();
         String userPrompt = promptBuilder.buildReportUserPrompt(feedbackSummary);
@@ -83,6 +90,7 @@ public class ClaudeApiClient implements AiClient {
         return responseParser.parseJsonResponse(text, GeneratedReport.class);
     }
 
+    @Override
     public List<GeneratedFeedback> generateFeedback(String answersJson) {
         String systemPrompt = promptBuilder.buildFeedbackSystemPrompt();
         String userPrompt = promptBuilder.buildFeedbackUserPrompt(answersJson);
