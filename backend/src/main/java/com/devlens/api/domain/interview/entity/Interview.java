@@ -40,6 +40,9 @@ public class Interview {
     @Column(name = "interview_types", nullable = false, length = 200)
     private String interviewTypes;
 
+    @Column(length = 200)
+    private String csSubTopics;
+
     @Column(nullable = false)
     private Integer durationMinutes;
 
@@ -60,13 +63,14 @@ public class Interview {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Interview(Position position, String positionDetail, InterviewLevel level, List<InterviewType> interviewTypes, Integer durationMinutes) {
+    public Interview(Position position, String positionDetail, InterviewLevel level, List<InterviewType> interviewTypes, List<String> csSubTopics, Integer durationMinutes) {
         this.position = position;
         this.positionDetail = positionDetail;
         this.level = level;
         this.interviewTypes = interviewTypes.stream()
                 .map(Enum::name)
                 .collect(Collectors.joining(","));
+        this.csSubTopics = csSubTopics != null ? String.join(",", csSubTopics) : null;
         this.durationMinutes = durationMinutes;
         this.status = InterviewStatus.READY;
     }
@@ -78,6 +82,13 @@ public class Interview {
         return Arrays.stream(interviewTypes.split(","))
                 .map(InterviewType::valueOf)
                 .toList();
+    }
+
+    public List<String> getCsSubTopicList() {
+        if (csSubTopics == null || csSubTopics.isBlank()) {
+            return List.of();
+        }
+        return Arrays.asList(csSubTopics.split(","));
     }
 
     public void addQuestion(InterviewQuestion question) {
