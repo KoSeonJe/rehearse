@@ -35,23 +35,23 @@ export const SelectionCard = ({
       onClick={() => onSelect(value)}
       onKeyDown={handleKeyDown}
       className={[
-        'cursor-pointer rounded-lg border p-4 text-left transition-all duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2',
+        'cursor-pointer rounded-card border p-4 text-left transition-all duration-150',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         selected
-          ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900'
-          : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50',
+          ? 'border-accent bg-accent-light'
+          : 'border-border bg-white hover:border-text-tertiary hover:shadow-sm',
         disabled
-          ? 'cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400'
+          ? 'cursor-not-allowed border-border bg-background text-text-tertiary'
           : '',
       ]
         .filter(Boolean)
         .join(' ')}
     >
-      <span className="block text-base font-medium text-gray-900">
+      <span className="block text-base font-medium text-text-primary">
         {label}
       </span>
       {description && (
-        <span className="mt-1 block text-sm text-gray-500">{description}</span>
+        <span className="mt-1 block text-sm text-text-secondary">{description}</span>
       )}
     </button>
   )

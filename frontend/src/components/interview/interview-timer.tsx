@@ -44,7 +44,7 @@ const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   return (
     <span
       ref={displayRef}
-      className="font-mono text-sm tabular-nums text-slate-500"
+      className="font-mono text-sm tabular-nums text-text-secondary"
     >
       00:00
     </span>

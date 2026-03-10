@@ -5,7 +5,7 @@ interface SpinnerProps {
 export const Spinner = ({ className = 'h-5 w-5' }: SpinnerProps) => {
   return (
     <div
-      className={`animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
+      className={`animate-spin rounded-full border-2 border-accent border-t-transparent ${className}`}
       role="status"
       aria-label="로딩 중"
     >

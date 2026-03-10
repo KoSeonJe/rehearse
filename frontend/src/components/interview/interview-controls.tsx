@@ -49,7 +49,7 @@ const InterviewControls = ({
         <button
           onClick={onPrevQuestion}
           disabled={isFirst || isRecording}
-          className="text-sm text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+          className="text-sm text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
         >
           ← 이전 질문
         </button>
@@ -60,10 +60,10 @@ const InterviewControls = ({
               key={i}
               className={`h-1.5 w-6 rounded-full transition-colors ${
                 i === currentIndex
-                  ? 'bg-slate-900'
+                  ? 'bg-accent'
                   : i < currentIndex
-                    ? 'bg-slate-400'
-                    : 'bg-slate-200'
+                    ? 'bg-text-tertiary'
+                    : 'bg-border'
               }`}
             />
           ))}
@@ -72,7 +72,7 @@ const InterviewControls = ({
         <button
           onClick={onNextQuestion}
           disabled={isLast || isRecording}
-          className="text-sm text-slate-500 transition-colors hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-30"
+          className="text-sm text-text-secondary transition-colors hover:text-text-primary disabled:cursor-not-allowed disabled:opacity-30"
         >
           다음 질문 →
         </button>

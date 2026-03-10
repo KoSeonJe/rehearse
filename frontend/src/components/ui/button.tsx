@@ -12,28 +12,28 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: [
-    'bg-slate-900 text-white',
-    'hover:bg-slate-800 active:bg-slate-950',
-    'disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed',
-    'px-6 py-3 rounded-md',
+    'bg-accent text-white',
+    'hover:bg-accent-hover active:bg-accent-hover',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'px-6 py-3 rounded-button',
   ].join(' '),
   secondary: [
-    'bg-white text-gray-700 border border-gray-300',
-    'hover:bg-gray-50',
-    'disabled:bg-gray-50 disabled:text-gray-400 disabled:border-gray-200 disabled:cursor-not-allowed',
-    'px-6 py-3 rounded-md',
+    'bg-white text-text-primary border border-border',
+    'hover:bg-background',
+    'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed',
+    'px-6 py-3 rounded-button',
   ].join(' '),
   ghost: [
-    'bg-transparent text-gray-600',
-    'hover:bg-gray-100',
-    'disabled:text-gray-400 disabled:cursor-not-allowed',
-    'px-4 py-2 rounded-md',
+    'bg-transparent text-text-secondary',
+    'hover:bg-[#F5F5F5]',
+    'disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'px-4 py-2 rounded-button',
   ].join(' '),
   cta: [
-    'bg-slate-900 text-white',
-    'hover:bg-slate-800 active:bg-slate-950',
-    'disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed',
-    'px-8 py-4 text-lg rounded-lg',
+    'bg-accent text-white',
+    'hover:bg-accent-hover active:bg-accent-hover',
+    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed',
+    'px-8 py-4 text-lg rounded-button',
   ].join(' '),
 }
 
@@ -52,7 +52,7 @@ export const Button = ({
     <button
       className={[
         'inline-flex items-center justify-center font-medium transition-colors duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         variantStyles[variant],
         fullWidth ? 'w-full' : '',
         className,
@@ -66,7 +66,7 @@ export const Button = ({
     >
       {loading && (
         <Spinner
-          className={`h-5 w-5 mr-2 ${variant === 'ghost' ? 'border-gray-600' : 'border-white'}`}
+          className={`h-5 w-5 mr-2 ${variant === 'ghost' ? 'border-text-secondary' : 'border-white'}`}
         />
       )}
       {children}

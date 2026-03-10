@@ -6,6 +6,8 @@ import useMediaStream from '../hooks/use-media-stream'
 import useMediaRecorder from '../hooks/use-media-recorder'
 import useSpeechRecognition from '../hooks/use-speech-recognition'
 import useAudioAnalyzer from '../hooks/use-audio-analyzer'
+import { LogoIcon } from '@/components/ui/logo-icon'
+import { Character } from '@/components/ui/character'
 import VideoPreview from '../components/interview/video-preview'
 import QuestionDisplay from '../components/interview/question-display'
 import TranscriptDisplay from '../components/interview/transcript-display'
@@ -179,21 +181,22 @@ const InterviewPage = () => {
 
   if (!interview || !currentQuestion) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <p className="text-slate-500">면접 데이터를 불러오는 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-text-secondary">면접 데이터를 불러오는 중...</p>
       </div>
     )
   }
 
   if (mediaStream.error) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="max-w-md space-y-4 text-center">
-          <p className="text-lg font-medium text-slate-900">미디어 접근 오류</p>
-          <p className="text-sm text-slate-600">{mediaStream.error}</p>
+          <Character mood="confused" size={80} className="mx-auto mb-4" />
+          <p className="text-lg font-medium text-text-primary">미디어 접근 오류</p>
+          <p className="text-sm text-text-secondary">{mediaStream.error}</p>
           <button
             onClick={handlePrepare}
-            className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-slate-800"
+            className="rounded-card bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
           >
             다시 시도
           </button>
@@ -203,19 +206,20 @@ const InterviewPage = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white px-6 py-4">
+      <header className="border-b border-border bg-surface px-6 py-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold text-slate-900">DevLens</h1>
-            <span className="text-sm text-slate-500">면접 진행 중</span>
+            <LogoIcon />
+            <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
+            <span className="text-sm text-text-secondary">면접 진행 중</span>
           </div>
           <div className="flex items-center gap-4">
             {phase === 'recording' && (
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-                <span className="text-xs font-medium text-red-600">녹화 중</span>
+                <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
+                <span className="text-xs font-medium text-error">녹화 중</span>
               </div>
             )}
             <InterviewTimer startTime={startTime} />
@@ -239,7 +243,7 @@ const InterviewPage = () => {
         <TranscriptDisplay interimText={currentTranscript} finalTexts={finalTexts} />
 
         {!stt.isSupported && (
-          <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="rounded-card bg-warning-light px-4 py-3 text-sm text-warning">
             이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 브라우저를 권장합니다.
           </div>
         )}

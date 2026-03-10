@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Logo } from '@/components/ui/logo'
 import { BackLink } from '@/components/ui/back-link'
 import { Button } from '@/components/ui/button'
 import { TextInput } from '@/components/ui/text-input'
@@ -64,15 +65,16 @@ export const InterviewSetupPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="px-4 pt-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      <header className="flex items-center gap-3 px-4 pt-6 sm:px-6 lg:px-8">
+        <Logo />
         <BackLink to="/" />
       </header>
 
       <main className="mx-auto max-w-lg px-4 pb-8 pt-6 sm:px-6">
         <section>
-          <h1 className="text-2xl font-semibold text-gray-900">면접 설정</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-semibold text-text-primary">면접 설정</h1>
+          <p className="mt-1 text-sm text-text-secondary">
             맞춤형 면접 질문을 생성합니다.
           </p>
         </section>
@@ -93,7 +95,7 @@ export const InterviewSetupPage = () => {
 
         <section className="mt-6">
           <h2 className="sr-only">레벨 선택</h2>
-          <span className="mb-1.5 block text-sm font-medium text-gray-700">
+          <span className="mb-1.5 block text-sm font-medium text-text-primary">
             레벨
           </span>
           <div
@@ -117,7 +119,7 @@ export const InterviewSetupPage = () => {
 
         <section className="mt-6">
           <h2 className="sr-only">면접 유형 선택</h2>
-          <span className="mb-1.5 block text-sm font-medium text-gray-700">
+          <span className="mb-1.5 block text-sm font-medium text-text-primary">
             면접 유형
           </span>
           <div
@@ -150,7 +152,7 @@ export const InterviewSetupPage = () => {
             {isLoading ? '질문 생성 중...' : '질문 생성하기'}
           </Button>
           {serverError && (
-            <p className="mt-2 text-center text-sm text-red-600" role="alert">
+            <p className="mt-2 text-center text-sm text-error" role="alert">
               {serverError}
             </p>
           )}

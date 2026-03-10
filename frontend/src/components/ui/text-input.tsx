@@ -21,7 +21,7 @@ export const TextInput = ({
       {label && (
         <label
           htmlFor={inputId}
-          className="mb-1.5 block text-sm font-medium text-gray-700"
+          className="mb-1.5 block text-sm font-medium text-text-primary"
         >
           {label}
         </label>
@@ -34,19 +34,19 @@ export const TextInput = ({
         aria-invalid={error ? true : undefined}
         aria-describedby={error && errorId ? errorId : undefined}
         className={[
-          'w-full rounded-md border bg-white px-4 py-3 text-base',
-          'placeholder:text-gray-400',
+          'w-full rounded-button border bg-white px-4 py-3 text-base text-text-primary',
+          'placeholder:text-text-tertiary',
           'focus:outline-none focus:ring-1',
-          'disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400',
+          'disabled:cursor-not-allowed disabled:bg-background disabled:text-text-tertiary',
           'transition-colors duration-150',
           error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-            : 'border-gray-200 focus:border-slate-500 focus:ring-slate-500',
+            ? 'border-error focus:border-error focus:ring-error'
+            : 'border-border focus:border-text-primary focus:ring-text-primary',
         ].join(' ')}
         {...rest}
       />
       {error && (
-        <p id={errorId} className="mt-1 text-sm text-red-600" role="alert">
+        <p id={errorId} className="mt-1 text-sm text-error" role="alert">
           {error}
         </p>
       )}

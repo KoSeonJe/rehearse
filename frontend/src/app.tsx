@@ -6,11 +6,13 @@ import InterviewPage from '@/pages/interview-page'
 import InterviewCompletePage from '@/pages/interview-complete-page'
 import InterviewReviewPage from '@/pages/interview-review-page'
 import InterviewReportPage from '@/pages/interview-report-page'
+import OnboardingPage from '@/pages/onboarding-page'
 
 export const App = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/onboarding" element={<OnboardingPage />} />
       <Route path="/interview/setup" element={<InterviewSetupPage />} />
       <Route path="/interview/:id/ready" element={<InterviewReadyPage />} />
       <Route path="/interview/:id/conduct" element={<InterviewPage />} />

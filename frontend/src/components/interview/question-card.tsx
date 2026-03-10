@@ -6,16 +6,16 @@ interface QuestionCardProps {
 
 export const QuestionCard = ({ question }: QuestionCardProps) => {
   return (
-    <li className="rounded-lg border border-gray-200 bg-white p-5">
+    <li className="rounded-card border border-border bg-surface p-5">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-sm font-medium text-white">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-medium text-white">
           {question.order}
         </span>
-        <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
+        <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
           {question.category}
         </span>
       </div>
-      <p className="mt-3 text-base leading-relaxed text-gray-900">
+      <p className="mt-3 text-base leading-relaxed text-text-primary">
         {question.content}
       </p>
     </li>

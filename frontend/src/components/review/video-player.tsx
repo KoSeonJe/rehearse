@@ -10,8 +10,8 @@ const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
 
   if (!videoBlobUrl) {
     return (
-      <div className="flex aspect-video items-center justify-center rounded-xl bg-slate-100">
-        <p className="text-sm text-slate-500">녹화 영상이 없습니다</p>
+      <div className="flex aspect-video items-center justify-center rounded-card bg-background">
+        <p className="text-sm text-text-secondary">녹화 영상이 없습니다</p>
       </div>
     )
   }
@@ -21,7 +21,7 @@ const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
       ref={videoRef as React.RefObject<HTMLVideoElement>}
       src={videoBlobUrl}
       controls
-      className="w-full rounded-xl bg-black"
+      className="w-full rounded-card bg-black"
     />
   )
 }

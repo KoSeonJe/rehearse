@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 export const QuestionCardSkeleton = () => {
   return (
     <li
-      className="rounded-lg border border-gray-200 bg-white p-5"
+      className="rounded-card border border-border bg-surface p-5"
       aria-hidden="true"
     >
       <div className="flex items-center gap-3">
