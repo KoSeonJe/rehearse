@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useGenerateFeedback } from '../hooks/use-feedback'
 import { Character } from '@/components/ui/character'
-import { Button } from '@/components/ui/button'
 import type { AnswerData } from '../types/interview'
 
 const ANALYSIS_STEPS = [
@@ -104,14 +103,14 @@ export const InterviewCompletePage = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 sm:px-6">
+    <div className="flex min-h-screen items-center justify-center bg-white px-4 text-text-primary sm:px-6">
       <div className="w-full max-w-md space-y-8 text-center">
         {generateFeedback.isPending && (
           <>
-            <Character mood="thinking" size={100} className="mx-auto" />
+            <Character mood="thinking" size={200} className="mx-auto" />
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-text-primary">AI 피드백 생성 중</h1>
-              <p className="text-sm text-text-secondary">
+              <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary">AI 피드백 생성 중</h1>
+              <p className="text-base font-medium text-text-secondary">
                 면접 답변을 분석하고 있습니다. 잠시만 기다려주세요.
               </p>
             </div>
@@ -123,47 +122,45 @@ export const InterviewCompletePage = () => {
 
         {generateFeedback.isSuccess && (
           <>
-            <Character mood="happy" size={100} className="mx-auto" />
+            <Character mood="happy" size={200} className="mx-auto" />
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-text-primary">피드백 생성 완료</h1>
-              <p className="text-sm text-text-secondary">
+              <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary">피드백 생성 완료</h1>
+              <p className="text-base font-medium text-text-secondary">
                 {generateFeedback.data.data.totalCount}개의 피드백이 생성되었습니다.
               </p>
             </div>
             <div className="space-y-3">
-              <Button
-                variant="primary"
-                fullWidth
+              <button
                 onClick={handleViewReview}
+                className="h-16 w-full rounded-[24px] bg-accent font-black text-lg text-white transition-all active:scale-95"
               >
                 타임스탬프 피드백 리뷰
-              </Button>
-              <Button
-                variant="secondary"
-                fullWidth
+              </button>
+              <button
                 onClick={handleViewReport}
+                className="h-16 w-full rounded-[24px] border border-border bg-surface font-bold text-text-primary transition-all active:scale-95"
               >
                 종합 리포트 보기
-              </Button>
+              </button>
             </div>
           </>
         )}
 
         {generateFeedback.isError && (
           <>
-            <Character mood="confused" size={100} className="mx-auto" />
+            <Character mood="confused" size={160} className="mx-auto" />
             <div className="space-y-2">
-              <h1 className="text-2xl font-bold text-text-primary">피드백 생성 실패</h1>
-              <p className="text-sm text-text-secondary">
+              <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary">피드백 생성 실패</h1>
+              <p className="text-base font-medium text-text-secondary">
                 피드백 생성 중 오류가 발생했습니다. 다시 시도해주세요.
               </p>
             </div>
-            <Button
-              variant="secondary"
+            <button
               onClick={() => navigate('/')}
+              className="h-16 w-full rounded-[24px] border border-border bg-surface font-bold text-text-primary transition-all active:scale-95"
             >
               홈으로 돌아가기
-            </Button>
+            </button>
           </>
         )}
       </div>

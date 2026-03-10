@@ -7,11 +7,9 @@ import { useMediaRecorder } from '../hooks/use-media-recorder'
 import { useSpeechRecognition } from '../hooks/use-speech-recognition'
 import { useAudioAnalyzer } from '../hooks/use-audio-analyzer'
 import { useInterviewSession } from '../hooks/use-interview-session'
-import { Button } from '@/components/ui/button'
-import { LogoIcon } from '@/components/ui/logo-icon'
+import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { VideoPreview } from '../components/interview/video-preview'
-import { QuestionDisplay } from '../components/interview/question-display'
 import { TranscriptDisplay } from '../components/interview/transcript-display'
 import { InterviewControls } from '../components/interview/interview-controls'
 import { AudioLevelIndicator } from '../components/interview/audio-level-indicator'
@@ -35,6 +33,7 @@ export const InterviewPage = () => {
     prevQuestion,
     followUpQuestions,
     isFollowUpLoading,
+    autoTransitionMessage,
   } = useInterviewStore()
 
   const mediaStream = useMediaStream()
@@ -66,70 +65,132 @@ export const InterviewPage = () => {
 
   if (!interview || !currentQuestion) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-text-secondary">면접 데이터를 불러오는 중...</p>
-      </div>
-    )
-  }
-
-  if (mediaStream.error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="max-w-md space-y-4 text-center">
-          <Character mood="confused" size={80} className="mx-auto mb-4" />
-          <p className="text-lg font-medium text-text-primary">미디어 접근 오류</p>
-          <p className="text-sm text-text-secondary">{mediaStream.error}</p>
-          <Button variant="primary" onClick={handlePrepare}>
-            다시 시도
-          </Button>
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="text-center space-y-4">
+          <div className="h-1 w-24 bg-accent/20 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-accent animate-progress-loading" />
+          </div>
+          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">Initializing AI Studio</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-screen flex-col bg-white text-text-primary">
       {/* Header */}
-      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LogoIcon />
-            <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
-            <span className="hidden text-sm text-text-secondary sm:inline">면접 진행 중</span>
+      <header className="px-6 py-6 flex items-center justify-between border-b border-border">
+        <div className="flex items-center gap-4">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-lg shadow-accent/20">
+            <Logo size={24} />
           </div>
-          <div className="flex items-center gap-4">
-            {phase === 'recording' && (
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
-                <span className="text-xs font-medium text-error">녹화 중</span>
-              </div>
-            )}
-            <InterviewTimer startTime={startTime} />
-            <AudioLevelIndicator level={audio.audioLevel} />
+          <div>
+            <h1 className="text-sm font-black uppercase tracking-widest text-text-primary">AI Interview Session</h1>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+              <span className="text-[10px] font-bold text-success uppercase tracking-tighter">Live Connection Established</span>
+            </div>
           </div>
+        </div>
+        <div className="flex items-center gap-6">
+          <InterviewTimer startTime={startTime} />
+          <div className="h-8 w-[1px] bg-border" />
+          <AudioLevelIndicator level={audio.audioLevel} />
         </div>
       </header>
 
-      {/* Main content — pb-28 for fixed mobile controls */}
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-6 pb-28 sm:px-6 sm:py-8 sm:pb-8">
-        <QuestionDisplay
-          question={currentQuestion}
-          currentIndex={currentQuestionIndex}
-          totalCount={questions.length}
-          followUp={followUpQuestions.get(currentQuestionIndex)}
-          isFollowUpLoading={isFollowUpLoading}
-        />
+      {/* Dual-View Layout */}
+      <main className="flex-1 flex flex-col lg:flex-row gap-6 p-6 overflow-hidden">
+        {/* Left: AI Interviewer Section */}
+        <div className="flex-1 relative rounded-[32px] overflow-hidden bg-surface border border-border shadow-toss-lg">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30" />
 
-        <VideoPreview stream={mediaStream.stream} isRecording={phase === 'recording'} />
-
-        <TranscriptDisplay interimText={currentTranscript} finalTexts={finalTexts} />
-
-        {!stt.isSupported && (
-          <div className="rounded-card bg-warning-light px-4 py-3 text-sm text-warning">
-            이 브라우저는 음성 인식을 지원하지 않습니다. Chrome 브라우저를 권장합니다.
+          {/* AI Character */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative z-10 text-center">
+              <Character mood={phase === 'recording' ? 'happy' : 'default'} size={240} />
+              <div className="mt-8 space-y-2">
+                <p className="font-mono text-[10px] font-black text-accent uppercase tracking-[0.3em]">AI Interviewer</p>
+                <div className="flex justify-center gap-1">
+                  {[1, 2, 3].map(i => <div key={i} className="h-1 w-4 bg-accent/20 rounded-full" />)}
+                </div>
+              </div>
+            </div>
           </div>
-        )}
 
+          {/* HUD Overlay Elements */}
+          <div className="absolute inset-0 z-20 pointer-events-none p-8 flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <div className="rounded-2xl bg-white/80 backdrop-blur-md border border-border p-4 shadow-toss">
+                <p className="font-mono text-[9px] text-text-tertiary uppercase tracking-widest mb-3">System Analysis</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="h-1 w-12 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-accent w-[85%]" />
+                    </div>
+                    <span className="text-[9px] font-bold text-text-secondary">Emotional Pulse</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="h-1 w-12 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-success w-[92%]" />
+                    </div>
+                    <span className="text-[9px] font-bold text-text-secondary">Logic Consistency</span>
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-full bg-accent px-4 py-1.5 shadow-lg shadow-accent/20">
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">Question {currentQuestionIndex + 1}</span>
+              </div>
+            </div>
+
+            <div className="max-w-xl mx-auto w-full">
+              {/* Auto Transition Toast */}
+              {autoTransitionMessage && (
+                <div className="mb-4 flex justify-center">
+                  <div className="rounded-full bg-accent/10 border border-accent/20 px-5 py-2 shadow-toss animate-fade-in">
+                    <span className="text-sm font-bold text-accent">{autoTransitionMessage}</span>
+                  </div>
+                </div>
+              )}
+              <div className="rounded-[24px] bg-white border border-border p-8 shadow-toss">
+                <p className="text-xl md:text-2xl font-extrabold leading-relaxed text-center tracking-tight text-text-primary">
+                  {currentQuestion.content}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: User Preview & Transcript */}
+        <div className="w-full lg:w-[400px] flex flex-col gap-6">
+          {/* User Video */}
+          <div className="relative aspect-video rounded-[32px] overflow-hidden bg-surface border border-border shadow-toss">
+            <VideoPreview stream={mediaStream.stream} isRecording={phase === 'recording'} />
+            <div className="absolute top-4 right-4">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full border border-border">
+                <div className={`h-1.5 w-1.5 rounded-full ${phase === 'recording' ? 'bg-error animate-pulse' : 'bg-text-tertiary'}`} />
+                <span className="text-[10px] font-black uppercase tracking-tighter text-text-primary">{phase === 'recording' ? 'User Live' : 'Standby'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Transcript Area */}
+          <div className="flex-1 rounded-[32px] bg-surface border border-border p-6 flex flex-col gap-4 overflow-hidden">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Real-time Transcript</span>
+              <div className="flex gap-1">
+                {[1, 2, 3].map(i => <div key={i} className="h-1 w-1 rounded-full bg-text-tertiary/30" />)}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+              <TranscriptDisplay interimText={currentTranscript} finalTexts={finalTexts} />
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Floating Controls */}
+      <div className="p-6">
         <InterviewControls
           phase={phase}
           currentIndex={currentQuestionIndex}
@@ -141,7 +202,7 @@ export const InterviewPage = () => {
           onPrevQuestion={prevQuestion}
           onFinishInterview={handleFinishInterview}
         />
-      </main>
+      </div>
     </div>
   )
 }

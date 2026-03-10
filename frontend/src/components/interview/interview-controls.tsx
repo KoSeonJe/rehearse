@@ -28,58 +28,72 @@ export const InterviewControls = ({
   const isRecording = phase === 'recording'
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface/95 px-4 py-4 backdrop-blur-sm sm:relative sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:backdrop-blur-none">
-      <div className="mx-auto max-w-3xl space-y-4">
-        <div className="flex items-center justify-center gap-3">
+    <div className="fixed bottom-0 left-0 right-0 z-20 bg-white px-6 pb-10 pt-6 sm:relative sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0">
+      <div className="mx-auto max-w-2xl space-y-10">
+        {/* Main Action Area */}
+        <div className="flex items-center justify-center">
           {phase === 'ready' ? (
-            <Button variant="cta" onClick={onStartAnswer}>
-              준비 완료
-            </Button>
+            <button 
+              className="h-16 w-full rounded-[20px] bg-accent text-lg font-extrabold text-white transition-all active:scale-95 sm:w-64"
+              onClick={onStartAnswer}
+            >
+              답변 시작하기
+            </button>
           ) : phase === 'paused' ? (
-            <>
-              <Button variant="cta" onClick={onStartAnswer}>
-                답변 계속
-              </Button>
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+              <button 
+                className="h-16 rounded-[20px] bg-accent px-10 text-lg font-extrabold text-white transition-all active:scale-95"
+                onClick={onStartAnswer}
+              >
+                계속하기
+              </button>
               {isLast && (
-                <Button variant="primary" onClick={onFinishInterview}>
-                  면접 종료
-                </Button>
+                <button 
+                  className="h-16 rounded-[20px] bg-surface px-10 text-lg font-extrabold text-text-primary transition-all active:scale-95"
+                  onClick={onFinishInterview}
+                >
+                  종료하고 결과 보기
+                </button>
               )}
-            </>
+            </div>
           ) : isRecording ? (
-            <div className="flex items-center gap-3">
-              {isVadActive && (
-                <span className="flex items-center gap-2 text-xs text-text-secondary">
-                  <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
-                  음성 감지 중
+            <div className="flex flex-col items-center gap-6">
+              <div className="flex items-center gap-2.5 rounded-full bg-surface px-5 py-2">
+                <div className="h-2 w-2 rounded-full bg-error animate-pulse" />
+                <span className="text-xs font-black text-text-primary tracking-tight">
+                  {isVadActive ? '목소리 감지됨' : '열심히 듣고 있어요'}
                 </span>
-              )}
-              <Button variant="secondary" onClick={onStopAnswer}>
-                답변 완료
-              </Button>
+              </div>
+              <button 
+                className="h-16 w-full rounded-[20px] bg-text-primary px-12 text-lg font-extrabold text-white transition-all active:scale-95 sm:w-auto"
+                onClick={onStopAnswer}
+              >
+                답변 마치기
+              </button>
             </div>
           ) : null}
         </div>
 
+        {/* Toss-style Navigation & Progress */}
         <div className="flex items-center justify-between">
           <button
             onClick={onPrevQuestion}
             disabled={isFirst || isRecording}
-            className="rounded-button text-sm text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-30"
+            className="text-sm font-bold text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-0"
           >
-            <span aria-hidden="true">← </span>이전 질문
+            이전
           </button>
 
-          <div className="flex gap-1.5" aria-label={`질문 ${currentIndex + 1} / ${totalQuestions}`} role="status">
+          <div className="flex items-center gap-1.5" role="status">
             {Array.from({ length: totalQuestions }).map((_, i) => (
               <div
                 key={i}
-                className={`h-1.5 w-6 rounded-full transition-colors ${
+                className={`h-1 rounded-full transition-all duration-500 ${
                   i === currentIndex
-                    ? 'bg-accent'
+                    ? 'w-10 bg-accent'
                     : i < currentIndex
-                      ? 'bg-text-tertiary'
-                      : 'bg-border'
+                      ? 'w-2 bg-text-primary'
+                      : 'w-2 bg-border'
                 }`}
               />
             ))}
@@ -88,9 +102,9 @@ export const InterviewControls = ({
           <button
             onClick={onNextQuestion}
             disabled={isLast || isRecording}
-            className="rounded-button text-sm text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-30"
+            className="text-sm font-bold text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-0"
           >
-            다음 질문<span aria-hidden="true"> →</span>
+            다음
           </button>
         </div>
       </div>

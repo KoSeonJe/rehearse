@@ -30,6 +30,8 @@ interface InterviewState {
 
   followUpQuestions: Map<number, FollowUpResponse>
   isFollowUpLoading: boolean
+
+  autoTransitionMessage: string | null
 }
 
 interface InterviewActions {
@@ -51,6 +53,7 @@ interface InterviewActions {
   completeInterview: () => void
   addFollowUpQuestion: (questionIndex: number, followUp: FollowUpResponse) => void
   setFollowUpLoading: (loading: boolean) => void
+  setAutoTransitionMessage: (msg: string | null) => void
   reset: () => void
 }
 
@@ -83,6 +86,8 @@ const initialState: InterviewState = {
 
   followUpQuestions: new Map(),
   isFollowUpLoading: false,
+
+  autoTransitionMessage: null,
 }
 
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
@@ -202,6 +207,8 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   },
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
+
+  setAutoTransitionMessage: (msg) => set({ autoTransitionMessage: msg }),
 
   reset: () => {
     const prevUrl = get().videoBlobUrl
