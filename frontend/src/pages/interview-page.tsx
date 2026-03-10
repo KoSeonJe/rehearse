@@ -6,6 +6,7 @@ import useMediaStream from '../hooks/use-media-stream'
 import useMediaRecorder from '../hooks/use-media-recorder'
 import useSpeechRecognition from '../hooks/use-speech-recognition'
 import useAudioAnalyzer from '../hooks/use-audio-analyzer'
+import { Button } from '@/components/ui/button'
 import { LogoIcon } from '@/components/ui/logo-icon'
 import { Character } from '@/components/ui/character'
 import VideoPreview from '../components/interview/video-preview'
@@ -194,12 +195,9 @@ const InterviewPage = () => {
           <Character mood="confused" size={80} className="mx-auto mb-4" />
           <p className="text-lg font-medium text-text-primary">미디어 접근 오류</p>
           <p className="text-sm text-text-secondary">{mediaStream.error}</p>
-          <button
-            onClick={handlePrepare}
-            className="rounded-card bg-accent px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover"
-          >
+          <Button variant="primary" onClick={handlePrepare}>
             다시 시도
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -208,12 +206,12 @@ const InterviewPage = () => {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-surface px-6 py-4">
+      <header className="border-b border-border bg-surface px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-3">
             <LogoIcon />
             <h1 className="text-lg font-bold text-text-primary">Rehearse</h1>
-            <span className="text-sm text-text-secondary">면접 진행 중</span>
+            <span className="hidden text-sm text-text-secondary sm:inline">면접 진행 중</span>
           </div>
           <div className="flex items-center gap-4">
             {phase === 'recording' && (
@@ -229,7 +227,7 @@ const InterviewPage = () => {
       </header>
 
       {/* Main content */}
-      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-6 py-8">
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <QuestionDisplay
           question={currentQuestion}
           currentIndex={currentQuestionIndex}

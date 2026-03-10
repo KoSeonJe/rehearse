@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
+import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 const FeatureCard = ({
   icon,
@@ -16,7 +17,7 @@ const FeatureCard = ({
     className="rounded-card border border-border bg-surface p-6 transition-shadow duration-200 hover:shadow-md"
     role="article"
   >
-    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-accent-light">
+    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-card bg-accent-light text-accent">
       {icon}
     </div>
     <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
@@ -47,6 +48,11 @@ const StepItem = ({
 )
 
 export const HomePage = () => {
+  const heroFade = useFadeInOnScroll<HTMLElement>()
+  const featuresFade = useFadeInOnScroll<HTMLElement>()
+  const stepsFade = useFadeInOnScroll<HTMLElement>()
+  const ctaFade = useFadeInOnScroll<HTMLElement>()
+
   return (
     <div className="min-h-screen bg-background">
       {/* ─── Header ─── */}
@@ -70,10 +76,16 @@ export const HomePage = () => {
 
       <main>
         {/* ─── Hero ─── */}
-        <section className="px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20 md:pt-28">
+        <section
+          ref={heroFade.ref}
+          style={heroFade.style}
+          className="px-4 pb-20 pt-16 sm:px-6 sm:pb-24 sm:pt-20 md:pt-28"
+        >
           <div className="mx-auto max-w-5xl text-center">
             <div className="mb-8 flex justify-center">
-              <Character mood="happy" size={160} />
+              <div className="animate-float">
+                <Character mood="happy" size={160} />
+              </div>
             </div>
             <h1 className="text-3xl font-bold tracking-tight text-text-primary sm:text-4xl md:text-5xl">
               면접, 다시 한 번.
@@ -95,6 +107,8 @@ export const HomePage = () => {
 
         {/* ─── Value Propositions ─── */}
         <section
+          ref={featuresFade.ref}
+          style={featuresFade.style}
           className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
           aria-labelledby="features-heading"
         >
@@ -113,7 +127,7 @@ export const HomePage = () => {
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#FF6B4A"
+                    stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -133,7 +147,7 @@ export const HomePage = () => {
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#FF6B4A"
+                    stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -153,7 +167,7 @@ export const HomePage = () => {
                     height="24"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#FF6B4A"
+                    stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -173,6 +187,8 @@ export const HomePage = () => {
 
         {/* ─── How It Works ─── */}
         <section
+          ref={stepsFade.ref}
+          style={stepsFade.style}
           className="px-4 py-16 sm:px-6 sm:py-20"
           aria-labelledby="steps-heading"
         >
@@ -204,7 +220,11 @@ export const HomePage = () => {
         </section>
 
         {/* ─── Bottom CTA ─── */}
-        <section className="bg-surface px-4 py-16 sm:px-6 sm:py-20">
+        <section
+          ref={ctaFade.ref}
+          style={ctaFade.style}
+          className="bg-surface px-4 py-16 sm:px-6 sm:py-20"
+        >
           <div className="mx-auto max-w-md text-center">
             <Character mood="default" size={100} className="mx-auto mb-6" />
             <h2 className="text-2xl font-bold text-text-primary sm:text-3xl">

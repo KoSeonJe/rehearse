@@ -44,6 +44,8 @@ const InterviewTimer = ({ startTime, onTick }: InterviewTimerProps) => {
   return (
     <span
       ref={displayRef}
+      role="timer"
+      aria-label="면접 경과 시간"
       className="font-mono text-sm tabular-nums text-text-secondary"
     >
       00:00

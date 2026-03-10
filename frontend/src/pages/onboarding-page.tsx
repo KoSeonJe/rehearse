@@ -450,8 +450,22 @@ const OnboardingPage = () => {
   const [step, setStep] = useState(0)
   const [selectedJob, setSelectedJob] = useState<JobField | null>(null)
   const [slideIndex, setSlideIndex] = useState(0)
+  const [contentVisible, setContentVisible] = useState(true)
+  const prevStepRef = useRef(0)
 
   const { permissions, micLevel, videoRef } = useDeviceTest(step === 1)
+
+  // 스텝 변경 시 fade-out → fade-in 트랜지션
+  useEffect(() => {
+    if (step !== prevStepRef.current) {
+      setContentVisible(false)
+      const timer = setTimeout(() => {
+        setContentVisible(true)
+      }, 150)
+      prevStepRef.current = step
+      return () => clearTimeout(timer)
+    }
+  }, [step])
 
   const canProceed = (): boolean => {
     switch (step) {
@@ -512,19 +526,24 @@ const OnboardingPage = () => {
 
       {/* Content */}
       <main className="flex flex-1 flex-col items-center justify-center px-4 pb-32 sm:px-6">
-        {step === 0 && (
-          <StepJobField selected={selectedJob} onSelect={setSelectedJob} />
-        )}
-        {step === 1 && (
-          <StepDeviceTest
-            permissions={permissions}
-            micLevel={micLevel}
-            videoRef={videoRef}
-          />
-        )}
-        {step === 2 && (
-          <StepGuide slideIndex={slideIndex} onSlideChange={setSlideIndex} />
-        )}
+        <div
+          className="w-full transition-opacity duration-300 ease-out"
+          style={{ opacity: contentVisible ? 1 : 0 }}
+        >
+          {step === 0 && (
+            <StepJobField selected={selectedJob} onSelect={setSelectedJob} />
+          )}
+          {step === 1 && (
+            <StepDeviceTest
+              permissions={permissions}
+              micLevel={micLevel}
+              videoRef={videoRef}
+            />
+          )}
+          {step === 2 && (
+            <StepGuide slideIndex={slideIndex} onSlideChange={setSlideIndex} />
+          )}
+        </div>
       </main>
 
       {/* Bottom buttons */}

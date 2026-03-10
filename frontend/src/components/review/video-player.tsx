@@ -21,6 +21,7 @@ const VideoPlayer = ({ videoRef }: VideoPlayerProps) => {
       ref={videoRef as React.RefObject<HTMLVideoElement>}
       src={videoBlobUrl}
       controls
+      aria-label="면접 녹화 영상"
       className="w-full rounded-card bg-black"
     />
   )

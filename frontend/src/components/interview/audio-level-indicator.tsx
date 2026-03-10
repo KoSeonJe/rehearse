@@ -7,13 +7,14 @@ const AudioLevelIndicator = ({ level }: AudioLevelIndicatorProps) => {
   const activeBars = Math.round(level * bars)
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5" role="meter" aria-label="마이크 레벨" aria-valuenow={Math.round(level * 100)} aria-valuemin={0} aria-valuemax={100}>
       <svg
         className="h-4 w-4 text-text-tertiary"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"

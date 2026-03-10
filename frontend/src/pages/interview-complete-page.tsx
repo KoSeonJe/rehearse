@@ -58,7 +58,7 @@ const InterviewCompletePage = () => {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 sm:px-6">
       <div className="w-full max-w-md space-y-8 text-center">
         {generateFeedback.isPending && (
           <>
