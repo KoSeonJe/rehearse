@@ -8,6 +8,7 @@
 - Workflows: `docs/workflows.md`
 - Tech stack details: `docs/tech-stack.md`
 - Team workflow: `docs/team-workflow.md`
+- Claude Code 효율 가이드: `docs/claude-code-efficiency-guide.md`
 
 ---
 
@@ -67,10 +68,32 @@
 
 ---
 
+## Decision Framework (Required — All Roles)
+
+Every decision (feature addition, tech introduction, architecture change, design choice) must answer:
+
+1. **Why?** — What problem does this solve? What pain point exists today?
+2. **Goal** — What specific outcome do we want? How do we measure success?
+3. **Evidence** — What data, user feedback, or research supports this decision?
+4. **Trade-offs** — What are we giving up? What alternatives were considered?
+
+This applies to **all roles**: PM, Designer, Frontend, Backend, DevOps, QA.
+
+### Examples
+- Adding a library: Why not use browser-native API? What does the library solve that we can't?
+- New feature: Which user segment needs this? What happens if we don't build it?
+- Tech migration: What's wrong with the current approach? What measurable improvement do we expect?
+- Design change: What user feedback or data drives this? How does it serve the product goal?
+
+### In Spec Documents
+Every `.omc/plans/` spec must include a **"Why"** section before any implementation details.
+
+---
+
 ## Spec-Driven Development (Required)
 
 - All work must start with a spec document in `.omc/plans/`
-  - **New feature**: write spec → review → implement
+  - **New feature**: write spec (including "Why" section) → review → implement
   - **Modify existing**: check related spec → update → implement
   - **After completion**: update spec status to `Completed`
 
