@@ -1,6 +1,7 @@
-export type PermissionStatus = 'idle' | 'granted' | 'denied'
+export type DeviceTestStatus = 'idle' | 'testing' | 'passed' | 'denied'
 
-export interface DevicePermissions {
-  camera: PermissionStatus
-  microphone: PermissionStatus
+export interface DeviceTestState {
+  camera: DeviceTestStatus
+  microphone: DeviceTestStatus
+  speaker: DeviceTestStatus
 }

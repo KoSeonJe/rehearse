@@ -33,6 +33,7 @@ export interface InterviewSession {
   positionDetail?: string | null
   level: Level
   interviewTypes: InterviewType[]
+  csSubTopics?: CsSubTopic[]
   durationMinutes: number
   status: InterviewStatus
   questions: Question[]
