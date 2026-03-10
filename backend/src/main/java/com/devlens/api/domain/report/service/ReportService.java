@@ -3,16 +3,16 @@ package com.devlens.api.domain.report.service;
 import com.devlens.api.domain.feedback.entity.Feedback;
 import com.devlens.api.domain.feedback.repository.FeedbackRepository;
 import com.devlens.api.domain.interview.entity.Interview;
-import com.devlens.api.domain.interview.repository.InterviewRepository;
+import com.devlens.api.domain.interview.service.InterviewFinder;
 import com.devlens.api.domain.report.dto.ReportResponse;
 import com.devlens.api.domain.report.entity.InterviewReport;
+import com.devlens.api.domain.report.exception.ReportErrorCode;
 import com.devlens.api.domain.report.repository.ReportRepository;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,9 +27,10 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final FeedbackRepository feedbackRepository;
-    private final InterviewRepository interviewRepository;
+    private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
 
+    @Transactional
     public ReportResponse getReport(Long interviewId) {
         InterviewReport report = reportRepository.findByInterviewId(interviewId)
                 .orElseGet(() -> generateAndSaveReport(interviewId));
@@ -39,15 +40,12 @@ public class ReportService {
 
     @Transactional
     InterviewReport generateAndSaveReport(Long interviewId) {
-        Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new BusinessException(
-                        HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."
-                ));
+        Interview interview = interviewFinder.findById(interviewId);
 
         List<Feedback> feedbacks = feedbackRepository.findByInterviewIdOrderByTimestampSeconds(interviewId);
 
         if (feedbacks.isEmpty()) {
-            throw new BusinessException(HttpStatus.CONFLICT, "REPORT_001", "피드백이 없어 리포트를 생성할 수 없습니다.");
+            throw new BusinessException(ReportErrorCode.NO_FEEDBACK);
         }
 
         String feedbackSummary = feedbacks.stream()

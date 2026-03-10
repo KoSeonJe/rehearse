@@ -2,11 +2,12 @@ package com.devlens.api.domain.feedback.service;
 
 import com.devlens.api.domain.feedback.dto.*;
 import com.devlens.api.domain.feedback.entity.*;
+import com.devlens.api.domain.feedback.exception.FeedbackErrorCode;
 import com.devlens.api.domain.feedback.repository.FeedbackRepository;
 import com.devlens.api.domain.feedback.repository.InterviewAnswerRepository;
 import com.devlens.api.domain.interview.entity.Interview;
 import com.devlens.api.domain.interview.entity.InterviewStatus;
-import com.devlens.api.domain.interview.repository.InterviewRepository;
+import com.devlens.api.domain.interview.service.InterviewFinder;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFeedback;
@@ -14,7 +15,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,20 +28,16 @@ public class FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
     private final InterviewAnswerRepository interviewAnswerRepository;
-    private final InterviewRepository interviewRepository;
+    private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
     private final ObjectMapper objectMapper;
 
     @Transactional
     public FeedbackListResponse generateFeedback(Long interviewId, GenerateFeedbackRequest request) {
-        Interview interview = findInterviewById(interviewId);
+        Interview interview = interviewFinder.findById(interviewId);
 
         if (interview.getStatus() != InterviewStatus.COMPLETED) {
-            throw new BusinessException(
-                    HttpStatus.CONFLICT,
-                    "FEEDBACK_001",
-                    "완료된 면접에서만 피드백을 생성할 수 있습니다."
-            );
+            throw new BusinessException(FeedbackErrorCode.INTERVIEW_NOT_COMPLETED);
         }
 
         // 답변 저장
@@ -89,7 +85,7 @@ public class FeedbackService {
     }
 
     public FeedbackListResponse getFeedbacks(Long interviewId) {
-        findInterviewById(interviewId);
+        interviewFinder.findById(interviewId);
 
         List<Feedback> feedbacks = feedbackRepository.findByInterviewIdOrderByTimestampSeconds(interviewId);
         List<FeedbackResponse> responses = feedbacks.stream()
@@ -103,20 +99,11 @@ public class FeedbackService {
                 .build();
     }
 
-    private Interview findInterviewById(Long id) {
-        return interviewRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(
-                        HttpStatus.NOT_FOUND,
-                        "INTERVIEW_001",
-                        "면접 세션을 찾을 수 없습니다."
-                ));
-    }
-
     private String serializeAnswers(List<AnswerData> answers) {
         try {
             return objectMapper.writeValueAsString(answers);
         } catch (JsonProcessingException e) {
-            throw new BusinessException(HttpStatus.INTERNAL_SERVER_ERROR, "FEEDBACK_002", "답변 데이터 직렬화에 실패했습니다.");
+            throw new BusinessException(FeedbackErrorCode.SERIALIZATION_FAILED);
         }
     }
 }

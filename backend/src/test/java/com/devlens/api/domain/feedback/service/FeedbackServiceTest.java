@@ -10,7 +10,7 @@ import com.devlens.api.domain.interview.entity.Interview;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewStatus;
 import com.devlens.api.domain.interview.entity.InterviewType;
-import com.devlens.api.domain.interview.repository.InterviewRepository;
+import com.devlens.api.domain.interview.service.InterviewFinder;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.AiClient;
 import com.devlens.api.infra.ai.dto.GeneratedFeedback;
@@ -26,7 +26,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -45,7 +44,7 @@ class FeedbackServiceTest {
     private InterviewAnswerRepository interviewAnswerRepository;
 
     @Mock
-    private InterviewRepository interviewRepository;
+    private InterviewFinder interviewFinder;
 
     @Mock
     private AiClient aiClient;
@@ -58,7 +57,7 @@ class FeedbackServiceTest {
     void generateFeedback_success() {
         // given
         Interview interview = createCompletedInterview();
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         GeneratedFeedback gf = new GeneratedFeedback();
         ReflectionTestUtils.setField(gf, "timestampSeconds", 15.5);
@@ -96,7 +95,7 @@ class FeedbackServiceTest {
     void generateFeedback_notCompleted() {
         // given
         Interview interview = createMockInterview(); // status = READY
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         GenerateFeedbackRequest request = createFeedbackRequest();
 
@@ -115,7 +114,7 @@ class FeedbackServiceTest {
     void getFeedbacks_success() {
         // given
         Interview interview = createCompletedInterview();
-        given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         Feedback feedback = Feedback.builder()
                 .interview(interview)

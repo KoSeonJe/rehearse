@@ -1,0 +1,16 @@
+package com.devlens.api.domain.report.exception;
+
+import com.devlens.api.global.exception.ErrorCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@Getter
+@RequiredArgsConstructor
+public enum ReportErrorCode implements ErrorCode {
+    NO_FEEDBACK(HttpStatus.CONFLICT, "REPORT_001", "피드백이 없어 리포트를 생성할 수 없습니다.");
+
+    private final HttpStatus status;
+    private final String code;
+    private final String message;
+}
