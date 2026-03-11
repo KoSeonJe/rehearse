@@ -396,6 +396,7 @@ export const useInterviewSession = ({
 
   return {
     handlePrepare,
+    handleStartAnswer: doStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
     isVadActive,

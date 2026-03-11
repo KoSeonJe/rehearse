@@ -6,6 +6,7 @@ interface InterviewControlsProps {
   totalQuestions: number
   isVadActive?: boolean
   isTtsSpeaking?: boolean
+  onStartAnswer: () => void
   onStopAnswer: () => void
   onFinishInterview: () => void
 }
@@ -16,6 +17,7 @@ export const InterviewControls = ({
   totalQuestions,
   isVadActive,
   isTtsSpeaking,
+  onStartAnswer,
   onStopAnswer,
   onFinishInterview,
 }: InterviewControlsProps) => {
@@ -40,44 +42,80 @@ export const InterviewControls = ({
       <div className="mx-auto max-w-2xl space-y-10">
         {/* Main Action Area */}
         <div className="flex items-center justify-center">
-          {phase === 'ready' ? (
+          {phase === 'greeting' ? (
             <div className="flex flex-col items-center gap-3">
-              <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
-                {isTtsSpeaking ? (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                    <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
-                  </>
-                ) : (
-                  <>
+              {isTtsSpeaking ? (
+                <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-sm font-bold text-text-secondary">AI 면접관이 인사하고 있어요</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
                     <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
                     <span className="text-sm font-bold text-text-secondary">말씀하시면 자동으로 시작됩니다</span>
-                  </>
-                )}
-              </div>
+                  </div>
+                  <button
+                    className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+                    onClick={onStartAnswer}
+                  >
+                    답변 시작
+                  </button>
+                </>
+              )}
+            </div>
+          ) : phase === 'ready' ? (
+            <div className="flex flex-col items-center gap-3">
+              {isTtsSpeaking ? (
+                <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                    <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                    <span className="text-sm font-bold text-text-secondary">말씀하시면 자동으로 시작됩니다</span>
+                  </div>
+                  <button
+                    className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+                    onClick={onStartAnswer}
+                  >
+                    답변 시작
+                  </button>
+                </>
+              )}
             </div>
           ) : phase === 'paused' ? (
-            <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-              <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
-                {isTtsSpeaking ? (
-                  <>
-                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-                    <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
-                  </>
-                ) : (
-                  <>
+            <div className="flex flex-col items-center gap-3">
+              {isTtsSpeaking ? (
+                <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                  <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                  <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
                     <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
                     <span className="text-sm font-bold text-text-secondary">말씀하시면 자동으로 이어갑니다</span>
-                  </>
-                )}
-              </div>
-              {isLast && (
-                <button
-                  className="h-12 rounded-[16px] bg-surface px-8 text-sm font-extrabold text-text-primary transition-all active:scale-95"
-                  onClick={onFinishInterview}
-                >
-                  종료하고 결과 보기
-                </button>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+                      onClick={onStartAnswer}
+                    >
+                      답변 시작
+                    </button>
+                    {isLast && (
+                      <button
+                        className="h-12 rounded-[16px] bg-surface px-8 text-sm font-extrabold text-text-primary transition-all active:scale-95"
+                        onClick={onFinishInterview}
+                      >
+                        종료하고 결과 보기
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           ) : isRecording ? (

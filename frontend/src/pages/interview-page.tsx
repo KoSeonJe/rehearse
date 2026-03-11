@@ -41,6 +41,7 @@ export const InterviewPage = () => {
 
   const {
     handlePrepare,
+    handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
     isVadActive,
@@ -197,6 +198,7 @@ export const InterviewPage = () => {
           totalQuestions={questions.length}
           isVadActive={isVadActive}
           isTtsSpeaking={isTtsSpeaking}
+          onStartAnswer={handleStartAnswer}
           onStopAnswer={handleStopAnswer}
           onFinishInterview={handleFinishInterview}
         />
