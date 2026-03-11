@@ -6,6 +6,7 @@ import type {
   VoiceEvent,
   QuestionAnswer,
   FollowUpResponse,
+  InterviewEvent,
 } from '../types/interview'
 
 export type InterviewPhase = 'preparing' | 'ready' | 'recording' | 'paused' | 'completed'
@@ -32,6 +33,7 @@ interface InterviewState {
   isFollowUpLoading: boolean
 
   autoTransitionMessage: string | null
+  interviewEvents: InterviewEvent[]
 }
 
 interface InterviewActions {
@@ -54,6 +56,7 @@ interface InterviewActions {
   addFollowUpQuestion: (questionIndex: number, followUp: FollowUpResponse) => void
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
+  addInterviewEvent: (event: InterviewEvent) => void
   reset: () => void
 }
 
@@ -88,6 +91,7 @@ const initialState: InterviewState = {
   isFollowUpLoading: false,
 
   autoTransitionMessage: null,
+  interviewEvents: [],
 }
 
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
@@ -209,6 +213,11 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
   setAutoTransitionMessage: (msg) => set({ autoTransitionMessage: msg }),
+
+  addInterviewEvent: (event) => {
+    const { interviewEvents } = get()
+    set({ interviewEvents: [...interviewEvents, event] })
+  },
 
   reset: () => {
     const prevUrl = get().videoBlobUrl

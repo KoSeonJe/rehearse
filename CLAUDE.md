@@ -45,14 +45,14 @@
 ## Commit / PR Rules
 
 - Commit messages: Korean, conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
-- PR title: `[영역] 타입: 한줄 설명`
-  - 영역: `[FE]`, `[BE]`, `[FE/BE]`, 생략(docs/chore)
-  - 타입: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
-  - 예: `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
+- PR title: `[Scope] type: short description` (in Korean)
+  - Scope: `[FE]`, `[BE]`, `[FE/BE]`, omit for docs/chore
+  - Type: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+  - e.g. `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
 - PR scope: per feature or per issue
-- **BE/FE 분리 PR**: 백엔드와 프론트엔드 작업은 별도 PR로 분리하여 올린다
-  - 예: `[BE] feat: 면접 생성 API` → `[FE] feat: 면접 Setup 위저드 UI`
-  - BE PR 먼저 머지 후 FE PR 올리는 것을 권장
+- **Separate BE/FE PRs**: backend and frontend work must be in separate PRs
+  - e.g. `[BE] feat: 면접 생성 API` → `[FE] feat: 면접 Setup 위저드 UI`
+  - Merge BE PR first, then create FE PR
 - Branches: `feat/{name}`, `fix/{name}`
 
 ---
@@ -72,29 +72,20 @@
 - Direct Claude API calls from frontend (API key exposure)
 - Implementing MVP DON'T features
 - Unnecessary library additions (prefer browser-native APIs)
-- 스펙 문서(`.omc/plans/`) 없이 `src/` 코드 수정 시작하기 — 반드시 스펙 먼저 작성/확인 후 구현
+- Modifying `src/` without a spec document in `.omc/plans/` — always write/check spec first
 
 ---
 
-## Decision Framework (Required — All Roles)
+## Decision Framework (Required)
 
-Every decision (feature addition, tech introduction, architecture change, design choice) must answer:
+Every decision (feature, tech, architecture, design) must answer:
 
-1. **Why?** — What problem does this solve? What pain point exists today?
-2. **Goal** — What specific outcome do we want? How do we measure success?
-3. **Evidence** — What data, user feedback, or research supports this decision?
-4. **Trade-offs** — What are we giving up? What alternatives were considered?
+1. **Why?** — What problem does this solve?
+2. **Goal** — What specific outcome? How to measure success?
+3. **Evidence** — What data or research supports this?
+4. **Trade-offs** — What are we giving up? Alternatives considered?
 
-This applies to **all roles**: PM, Designer, Frontend, Backend, DevOps, QA.
-
-### Examples
-- Adding a library: Why not use browser-native API? What does the library solve that we can't?
-- New feature: Which user segment needs this? What happens if we don't build it?
-- Tech migration: What's wrong with the current approach? What measurable improvement do we expect?
-- Design change: What user feedback or data drives this? How does it serve the product goal?
-
-### In Spec Documents
-Every `.omc/plans/` spec must include a **"Why"** section before any implementation details.
+Every `.omc/plans/` spec must include a **"Why"** section before implementation details.
 
 ---
 
@@ -118,3 +109,28 @@ Every `.omc/plans/` spec must include a **"Why"** section before any implementat
   - **BE implementation**: `backend` / `backend-architect` — API, business logic, DB schema
   - **Others**: `designer`, `qa`, `devops`, `test-engineer`, `debugger`, etc.
 - Run multiple agents **in parallel** for complex tasks to maximize efficiency
+
+### Agent Assignment in Plan Mode (Required)
+
+When writing plans, **each task must specify which agents to use**.
+
+```
+## Task N: {title}
+- Implement: `{agent_name}` — {role}
+- Review: `{agent_name}` — {verification focus}
+```
+
+Example:
+```
+## Task 1: Interview Creation API
+- Implement: `backend` — API endpoints + service logic
+- Review: `architect-reviewer` — layering, SOLID
+
+## Task 2: Setup Wizard UI
+- Implement: `frontend` — components + state management
+- Review: `code-reviewer` — code quality, security
+- Review: `designer` — UI/UX consistency
+```
+
+- A plan without agent assignments is considered **incomplete**
+- Mark parallelizable tasks with `[parallel]` tag

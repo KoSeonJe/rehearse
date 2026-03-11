@@ -8,7 +8,7 @@ import { useSpeechRecognition } from '../hooks/use-speech-recognition'
 import { useAudioAnalyzer } from '../hooks/use-audio-analyzer'
 import { useInterviewSession } from '../hooks/use-interview-session'
 import { Logo } from '@/components/ui/logo'
-import { Character } from '@/components/ui/character'
+import { AudioWaveform } from '../components/interview/audio-waveform'
 import { VideoPreview } from '../components/interview/video-preview'
 import { TranscriptDisplay } from '../components/interview/transcript-display'
 import { InterviewControls } from '../components/interview/interview-controls'
@@ -43,10 +43,10 @@ export const InterviewPage = () => {
 
   const {
     handlePrepare,
-    handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
     isVadActive,
+    isTtsSpeaking,
   } = useInterviewSession({
     interviewId,
     interview,
@@ -72,7 +72,7 @@ export const InterviewPage = () => {
           <div className="h-1 w-24 bg-accent/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-accent animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">Initializing AI Studio</p>
+          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">AI 스튜디오 준비 중</p>
         </div>
       </div>
     )
@@ -87,10 +87,10 @@ export const InterviewPage = () => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-widest text-text-primary">AI Interview Session</h1>
+            <h1 className="text-sm font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-[10px] font-bold text-success uppercase tracking-tighter">Live Connection Established</span>
+              <span className="text-[10px] font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
             </div>
           </div>
         </div>
@@ -112,12 +112,12 @@ export const InterviewPage = () => {
         <div className="flex-1 relative rounded-[32px] overflow-hidden bg-surface border border-border shadow-toss-lg">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-indigo-50/30" />
 
-          {/* AI Character */}
+          {/* AI Waveform */}
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="relative z-10 text-center">
-              <Character mood={phase === 'recording' ? 'happy' : 'default'} size={240} />
+              <AudioWaveform isSpeaking={isTtsSpeaking} size={240} />
               <div className="mt-8 space-y-2">
-                <p className="font-mono text-[10px] font-black text-accent uppercase tracking-[0.3em]">AI Interviewer</p>
+                <p className="font-mono text-[10px] font-black text-accent uppercase tracking-[0.3em]">AI 면접관</p>
                 <div className="flex justify-center gap-1">
                   {[1, 2, 3].map(i => <div key={i} className="h-1 w-4 bg-accent/20 rounded-full" />)}
                 </div>
@@ -127,26 +127,9 @@ export const InterviewPage = () => {
 
           {/* HUD Overlay Elements */}
           <div className="absolute inset-0 z-20 pointer-events-none p-8 flex flex-col justify-between">
-            <div className="flex justify-between items-start">
-              <div className="rounded-2xl bg-white/80 backdrop-blur-md border border-border p-4 shadow-toss">
-                <p className="font-mono text-[9px] text-text-tertiary uppercase tracking-widest mb-3">System Analysis</p>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <div className="h-1 w-12 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-accent w-[85%]" />
-                    </div>
-                    <span className="text-[9px] font-bold text-text-secondary">Emotional Pulse</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-1 w-12 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full bg-success w-[92%]" />
-                    </div>
-                    <span className="text-[9px] font-bold text-text-secondary">Logic Consistency</span>
-                  </div>
-                </div>
-              </div>
+            <div className="flex justify-end items-start">
               <div className="rounded-full bg-accent px-4 py-1.5 shadow-lg shadow-accent/20">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white">Question {currentQuestionIndex + 1}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">질문 {currentQuestionIndex + 1}</span>
               </div>
             </div>
 
@@ -184,7 +167,7 @@ export const InterviewPage = () => {
             <div className="absolute top-4 right-4">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-md rounded-full border border-border">
                 <div className={`h-1.5 w-1.5 rounded-full ${phase === 'recording' ? 'bg-error animate-pulse' : 'bg-text-tertiary'}`} />
-                <span className="text-[10px] font-black uppercase tracking-tighter text-text-primary">{phase === 'recording' ? 'User Live' : 'Standby'}</span>
+                <span className="text-[10px] font-black uppercase tracking-tighter text-text-primary">{phase === 'recording' ? '답변 중' : '대기'}</span>
               </div>
             </div>
           </div>
@@ -192,7 +175,7 @@ export const InterviewPage = () => {
           {/* Transcript Area */}
           <div className="flex-1 rounded-[32px] bg-surface border border-border p-6 flex flex-col gap-4 overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Real-time Transcript</span>
+              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">실시간 음성 인식</span>
               <div className="flex gap-1">
                 {[1, 2, 3].map(i => <div key={i} className="h-1 w-1 rounded-full bg-text-tertiary/30" />)}
               </div>
@@ -211,7 +194,7 @@ export const InterviewPage = () => {
           currentIndex={currentQuestionIndex}
           totalQuestions={questions.length}
           isVadActive={isVadActive}
-          onStartAnswer={handleStartAnswer}
+          isTtsSpeaking={isTtsSpeaking}
           onStopAnswer={handleStopAnswer}
           onNextQuestion={nextQuestion}
           onPrevQuestion={prevQuestion}
