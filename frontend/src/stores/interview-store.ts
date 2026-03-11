@@ -9,7 +9,7 @@ import type {
   InterviewEvent,
 } from '../types/interview'
 
-export type InterviewPhase = 'preparing' | 'ready' | 'recording' | 'paused' | 'completed'
+export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
 
 interface InterviewState {
   interviewId: number | null
@@ -111,7 +111,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       interviewId: id,
       questions,
       answers,
-      phase: 'ready',
+      phase: 'greeting',
       currentQuestionIndex: 0,
     })
   },

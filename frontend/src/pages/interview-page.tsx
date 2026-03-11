@@ -65,7 +65,9 @@ export const InterviewPage = () => {
     [currentAnswer],
   )
 
-  if (!interview || !currentQuestion) {
+  const isGreeting = phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0 && !currentQuestion)
+
+  if (!interview || (!currentQuestion && !isGreeting)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
@@ -129,7 +131,9 @@ export const InterviewPage = () => {
           <div className="absolute inset-0 z-20 pointer-events-none p-8 flex flex-col justify-between">
             <div className="flex justify-end items-start">
               <div className="rounded-full bg-accent px-4 py-1.5 shadow-lg shadow-accent/20">
-                <span className="text-[10px] font-black uppercase tracking-widest text-white">질문 {currentQuestionIndex + 1}</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-white">
+                  {isGreeting ? '자기소개' : `질문 ${currentQuestionIndex + 1}`}
+                </span>
               </div>
             </div>
 
@@ -152,7 +156,7 @@ export const InterviewPage = () => {
               )}
               <div className="rounded-[24px] bg-white border border-border p-8 shadow-toss">
                 <p className="text-xl md:text-2xl font-extrabold leading-relaxed text-center tracking-tight text-text-primary">
-                  {currentQuestion.content}
+                  {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
                 </p>
               </div>
             </div>
