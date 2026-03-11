@@ -85,7 +85,7 @@ export const InterviewTimer = ({ startTime, durationMinutes, onTick, onTimeWarni
       ref={displayRef}
       role="timer"
       aria-label={durationMinutes ? '남은 면접 시간' : '면접 경과 시간'}
-      className="font-mono text-sm tabular-nums text-text-secondary"
+      className="font-mono text-base tabular-nums text-text-secondary transition-colors duration-700"
     >
       {durationMinutes ? formatTime(durationMinutes * 60 * 1000) : '00:00'}
     </span>

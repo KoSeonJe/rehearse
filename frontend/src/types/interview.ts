@@ -166,6 +166,26 @@ export interface QuestionAnswer {
   voiceEvents: VoiceEvent[]
 }
 
+// 면접 이벤트 타입 (타임스탬프 기록용)
+
+export type InterviewEventType =
+  | 'question_start'
+  | 'question_read_tts'
+  | 'answer_start'
+  | 'answer_end'
+  | 'thinking_time_requested'
+  | 'silence_detected'
+  | 'auto_transition'
+  | 'manual_stop'
+  | 'interview_finish'
+
+export interface InterviewEvent {
+  type: InterviewEventType
+  elapsedMs: number
+  questionIndex: number
+  metadata?: Record<string, unknown>
+}
+
 export const POSITION_LABELS: Record<Position, { label: string; description: string }> = {
   BACKEND: { label: '백엔드', description: '서버, API, 데이터베이스' },
   FRONTEND: { label: '프론트엔드', description: 'UI/UX, 브라우저, 반응형' },

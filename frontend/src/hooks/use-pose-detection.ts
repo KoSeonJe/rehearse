@@ -19,6 +19,7 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
   const rafRef = useRef<number | null>(null)
   const callbackRef = useRef<((event: NonVerbalEvent) => void) | null>(null)
   const lastTimeRef = useRef(-1)
+  const FRAME_INTERVAL_MS = 100 // ~10fps 스로틀링 (60fps → 10fps)
 
   useEffect(() => {
     let cancelled = false
@@ -62,7 +63,7 @@ export const usePoseDetection = (): UsePoseDetectionReturn => {
       }
 
       const now = performance.now()
-      if (now === lastTimeRef.current) {
+      if (now - lastTimeRef.current < FRAME_INTERVAL_MS) {
         rafRef.current = requestAnimationFrame(tick)
         return
       }

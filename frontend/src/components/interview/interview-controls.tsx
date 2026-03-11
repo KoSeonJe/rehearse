@@ -1,11 +1,11 @@
-import { Button } from '../ui/button'
+import { useEffect } from 'react'
 
 interface InterviewControlsProps {
   phase: 'preparing' | 'ready' | 'recording' | 'paused' | 'completed'
   currentIndex: number
   totalQuestions: number
   isVadActive?: boolean
-  onStartAnswer: () => void
+  isTtsSpeaking?: boolean
   onStopAnswer: () => void
   onNextQuestion: () => void
   onPrevQuestion: () => void
@@ -17,7 +17,7 @@ export const InterviewControls = ({
   currentIndex,
   totalQuestions,
   isVadActive,
-  onStartAnswer,
+  isTtsSpeaking,
   onStopAnswer,
   onNextQuestion,
   onPrevQuestion,
@@ -27,29 +27,58 @@ export const InterviewControls = ({
   const isLast = currentIndex === totalQuestions - 1
   const isRecording = phase === 'recording'
 
+  // 스페이스바로 답변 완료
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && isRecording && !e.repeat) {
+        e.preventDefault()
+        onStopAnswer()
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isRecording, onStopAnswer])
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 bg-white px-6 pb-10 pt-6 sm:relative sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0">
       <div className="mx-auto max-w-2xl space-y-10">
         {/* Main Action Area */}
         <div className="flex items-center justify-center">
           {phase === 'ready' ? (
-            <button 
-              className="h-16 w-full rounded-[20px] bg-accent text-lg font-extrabold text-white transition-all active:scale-95 sm:w-64"
-              onClick={onStartAnswer}
-            >
-              답변 시작하기
-            </button>
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                {isTtsSpeaking ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                    <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                    <span className="text-sm font-bold text-text-secondary">말씀하시면 자동으로 시작됩니다</span>
+                  </>
+                )}
+              </div>
+            </div>
           ) : phase === 'paused' ? (
-            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-              <button 
-                className="h-16 rounded-[20px] bg-accent px-10 text-lg font-extrabold text-white transition-all active:scale-95"
-                onClick={onStartAnswer}
-              >
-                계속하기
-              </button>
+            <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
+              <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
+                {isTtsSpeaking ? (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
+                    <span className="text-sm font-bold text-text-secondary">AI 면접관이 질문을 읽고 있어요</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
+                    <span className="text-sm font-bold text-text-secondary">말씀하시면 자동으로 이어갑니다</span>
+                  </>
+                )}
+              </div>
               {isLast && (
-                <button 
-                  className="h-16 rounded-[20px] bg-surface px-10 text-lg font-extrabold text-text-primary transition-all active:scale-95"
+                <button
+                  className="h-12 rounded-[16px] bg-surface px-8 text-sm font-extrabold text-text-primary transition-all active:scale-95"
                   onClick={onFinishInterview}
                 >
                   종료하고 결과 보기
@@ -64,12 +93,17 @@ export const InterviewControls = ({
                   {isVadActive ? '목소리 감지됨' : '열심히 듣고 있어요'}
                 </span>
               </div>
-              <button 
-                className="h-16 w-full rounded-[20px] bg-text-primary px-12 text-lg font-extrabold text-white transition-all active:scale-95 sm:w-auto"
-                onClick={onStopAnswer}
-              >
-                답변 마치기
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+                  onClick={onStopAnswer}
+                >
+                  답변 완료
+                </button>
+                <span className="text-[10px] font-bold text-text-tertiary hidden sm:inline">
+                  Space로도 완료
+                </span>
+              </div>
             </div>
           ) : null}
         </div>

@@ -27,6 +27,23 @@ export const useVad = ({
   const onSpeechEndRef = useRef(onSpeechEnd)
   const rafRef = useRef<number | null>(null)
 
+  // Dynamic params as refs — changes don't reset the VAD loop
+  const speechThresholdRef = useRef(speechThreshold)
+  const speechStartDelayRef = useRef(speechStartDelay)
+  const silenceEndDelayRef = useRef(silenceEndDelay)
+
+  useEffect(() => {
+    speechThresholdRef.current = speechThreshold
+  }, [speechThreshold])
+
+  useEffect(() => {
+    speechStartDelayRef.current = speechStartDelay
+  }, [speechStartDelay])
+
+  useEffect(() => {
+    silenceEndDelayRef.current = silenceEndDelay
+  }, [silenceEndDelay])
+
   useEffect(() => {
     onSpeechStartRef.current = onSpeechStart
   })
@@ -52,7 +69,7 @@ export const useVad = ({
     const tick = () => {
       const now = Date.now()
       const level = audioLevelRef.current
-      const isSpeaking = level > speechThreshold
+      const isSpeaking = level > speechThresholdRef.current
       const state = vadStateRef.current
 
       if (isSpeaking) {
@@ -61,7 +78,7 @@ export const useVad = ({
         if (state === 'listening' || state === 'silent') {
           if (!speechStartTimeRef.current) {
             speechStartTimeRef.current = now
-          } else if (now - speechStartTimeRef.current >= speechStartDelay) {
+          } else if (now - speechStartTimeRef.current >= speechStartDelayRef.current) {
             vadStateRef.current = 'speaking'
             onSpeechStartRef.current?.()
           }
@@ -72,7 +89,7 @@ export const useVad = ({
         if (state === 'speaking') {
           if (!silenceStartTimeRef.current) {
             silenceStartTimeRef.current = now
-          } else if (now - silenceStartTimeRef.current >= silenceEndDelay) {
+          } else if (now - silenceStartTimeRef.current >= silenceEndDelayRef.current) {
             vadStateRef.current = 'silent'
             onSpeechEndRef.current?.()
           }
@@ -90,7 +107,7 @@ export const useVad = ({
         rafRef.current = null
       }
     }
-  }, [enabled, speechThreshold, speechStartDelay, silenceEndDelay])
+  }, [enabled])
 
   const updateAudioLevel = useCallback((level: number) => {
     audioLevelRef.current = level

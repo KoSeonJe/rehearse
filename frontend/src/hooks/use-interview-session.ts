@@ -3,7 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
 import { useVad } from './use-vad'
+import { useTts } from './use-tts'
+import { useThinkingTimeDetector } from './use-thinking-time-detector'
+import { useInterviewEventRecorder } from './use-interview-event-recorder'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
+
+const DEFAULT_SILENCE_DELAY = 3000
+const THINKING_SILENCE_DELAY = 25000
 
 interface UseInterviewSessionParams {
   interviewId: string
@@ -47,8 +53,8 @@ export const useInterviewSession = ({
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
   const followUpMutation = useFollowUpQuestion()
-  const [vadEnabled, setVadEnabled] = useState(false)
   const autoTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [currentSilenceDelay, setCurrentSilenceDelay] = useState(DEFAULT_SILENCE_DELAY)
 
   const {
     questions,
@@ -66,7 +72,36 @@ export const useInterviewSession = ({
     setFollowUpLoading,
     setAutoTransitionMessage,
     nextQuestion,
+    addInterviewEvent,
+    reset,
   } = useInterviewStore()
+
+  // 마운트 시 스토어 초기화 (재진입 대응)
+  useEffect(() => {
+    reset()
+  }, [reset])
+
+  // 이벤트 레코더
+  const { recordEvent, getEvents, startRecording: startEventRecording } = useInterviewEventRecorder()
+
+  // VAD 활성화: phase 기반 파생 (별도 state 불필요)
+  const vadEnabled = phase === 'ready' || phase === 'recording' || phase === 'paused'
+
+  // TTS 훅
+  const tts = useTts({
+    onStart: () => {
+      // TTS 재생 중 STT/VAD 에코 방지 — VAD는 enabled=false가 아니라 phase 기반이므로
+      // STT만 정지 (VAD는 TTS 중 audioLevel이 낮으므로 자연스럽게 비활성)
+      stt.stop()
+    },
+    onEnd: () => {
+      // TTS 끝나면 STT 재시작 (stale closure 방지: 최신 상태 직접 읽기)
+      const state = useInterviewStore.getState()
+      if (state.phase === 'recording') {
+        stt.start(state.currentQuestionIndex)
+      }
+    },
+  })
 
   // 답변 처리 로직 (후속질문 요청)
   const processAnswer = useCallback(() => {
@@ -99,9 +134,24 @@ export const useInterviewSession = ({
     }
   }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
 
+  // 실제 답변 시작 로직
+  const doStartAnswer = useCallback(() => {
+    if (!mediaStream.stream) return
+    startRecording()
+    if (!recorder.isRecording) {
+      recorder.start(mediaStream.stream)
+      startEventRecording()
+    } else {
+      recorder.resume()
+    }
+    stt.start(currentQuestionIndex)
+    recordEvent('answer_start', currentQuestionIndex)
+  }, [mediaStream.stream, startRecording, recorder, stt, currentQuestionIndex, recordEvent, startEventRecording])
+
   // VAD: 음성 감지 시 자동 녹음 시작/일시정지
   const { isActive: isVadActive, updateAudioLevel } = useVad({
-    enabled: vadEnabled,
+    enabled: vadEnabled && !tts.isSpeaking,
+    silenceEndDelay: currentSilenceDelay,
     onSpeechStart: () => {
       // 자동 전환 타이머가 있으면 취소 (다시 말하기 시작)
       if (autoTransitionTimerRef.current) {
@@ -118,7 +168,11 @@ export const useInterviewSession = ({
         stopRecording()
         stt.stop()
         recorder.pause()
+        recordEvent('silence_detected', currentQuestionIndex)
         processAnswer()
+
+        // 생각 시간 후 silenceDelay 복원
+        setCurrentSilenceDelay(DEFAULT_SILENCE_DELAY)
 
         const state = useInterviewStore.getState()
         const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
@@ -131,6 +185,7 @@ export const useInterviewSession = ({
         autoTransitionTimerRef.current = setTimeout(() => {
           setAutoTransitionMessage(null)
           autoTransitionTimerRef.current = null
+          recordEvent('auto_transition', state.currentQuestionIndex)
 
           if (isLastQuestion) {
             handleFinishInterviewInternal()
@@ -142,10 +197,32 @@ export const useInterviewSession = ({
     },
   })
 
+  // 생각 시간 감지
+  useThinkingTimeDetector({
+    interimText: stt.interimText,
+    enabled: phase === 'recording',
+    onThinkingTimeRequested: () => {
+      setCurrentSilenceDelay(THINKING_SILENCE_DELAY)
+      recordEvent('thinking_time_requested', currentQuestionIndex)
+      tts.speak('네, 천천히 생각하세요. 준비되면 말씀해 주세요.')
+      setAutoTransitionMessage('생각 시간 모드 — 충분히 생각하세요')
+      setTimeout(() => {
+        setAutoTransitionMessage(null)
+      }, 3000)
+    },
+  })
+
   // 오디오 레벨을 VAD에 전달
   useEffect(() => {
     updateAudioLevel(audio.audioLevel)
   }, [audio.audioLevel, updateAudioLevel])
+
+  // phase가 ready가 되면 오디오 분석기 미리 시작 (VAD가 음성 감지할 수 있도록)
+  useEffect(() => {
+    if ((phase === 'ready' || phase === 'paused') && mediaStream.stream) {
+      audio.start(mediaStream.stream)
+    }
+  }, [phase, mediaStream.stream, audio])
 
   // 면접 데이터 로드
   useEffect(() => {
@@ -153,6 +230,22 @@ export const useInterviewSession = ({
       setInterview(interview.id, interview.questions)
     }
   }, [interview, phase, setInterview])
+
+  // 질문 변경 시 TTS로 읽기 (첫 질문은 인사 포함)
+  useEffect(() => {
+    if (phase === 'ready' || phase === 'paused') {
+      const question = questions[currentQuestionIndex]
+      if (question) {
+        const isFirstQuestion = currentQuestionIndex === 0 && phase === 'ready'
+        const text = isFirstQuestion
+          ? `안녕하세요, 모의 면접을 시작하겠습니다. 첫 번째 질문입니다. ${question.content}`
+          : question.content
+        tts.speak(text)
+        recordEvent('question_read_tts', currentQuestionIndex)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionIndex, questions])
 
   // STT 콜백 등록
   useEffect(() => {
@@ -192,25 +285,6 @@ export const useInterviewSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, interview?.status, interviewId, updateStatus])
 
-  // 실제 답변 시작 로직
-  const doStartAnswer = useCallback(() => {
-    if (!mediaStream.stream) return
-    startRecording()
-    if (!recorder.isRecording) {
-      recorder.start(mediaStream.stream)
-    } else {
-      recorder.resume()
-    }
-    stt.start(currentQuestionIndex)
-    audio.start(mediaStream.stream)
-  }, [mediaStream.stream, startRecording, recorder, stt, audio, currentQuestionIndex])
-
-  // "준비 완료" 버튼 → VAD 활성화 + 답변 시작
-  const handleStartAnswer = useCallback(() => {
-    setVadEnabled(true)
-    doStartAnswer()
-  }, [doStartAnswer])
-
   // 수동 답변 완료 + 후속질문 요청 (자동 이동 없음)
   const handleStopAnswer = useCallback(() => {
     // 자동 전환 타이머가 있으면 취소
@@ -220,20 +294,26 @@ export const useInterviewSession = ({
       setAutoTransitionMessage(null)
     }
 
-    setVadEnabled(false)
     stopRecording()
     stt.stop()
     recorder.pause()
+    recordEvent('manual_stop', currentQuestionIndex)
+    setCurrentSilenceDelay(DEFAULT_SILENCE_DELAY)
     processAnswer()
-  }, [stopRecording, stt, recorder, processAnswer, setAutoTransitionMessage])
+  }, [stopRecording, stt, recorder, processAnswer, setAutoTransitionMessage, recordEvent, currentQuestionIndex])
 
   // 면접 종료 (내부용 — VAD 자동 전환에서 호출)
   const handleFinishInterviewInternal = useCallback(async () => {
     if (!interview) return
 
-    setVadEnabled(false)
+    tts.stop()
     stt.stop()
     audio.stop()
+    recordEvent('interview_finish', currentQuestionIndex)
+
+    // 이벤트를 스토어에 저장
+    const events = getEvents()
+    events.forEach((e) => addInterviewEvent(e))
 
     const blob = await recorder.stop()
     setVideoBlob(blob)
@@ -253,7 +333,7 @@ export const useInterviewSession = ({
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate])
+  }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
 
   // 면접 종료 (수동 — 버튼 클릭)
   const handleFinishInterview = useCallback(async () => {
@@ -273,18 +353,20 @@ export const useInterviewSession = ({
       if (autoTransitionTimerRef.current) {
         clearTimeout(autoTransitionTimerRef.current)
       }
+      tts.stop()
       mediaStream.stop()
       audio.stop()
       stt.stop()
+      reset()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return {
     handlePrepare,
-    handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
     isVadActive,
+    isTtsSpeaking: tts.isSpeaking,
   }
 }
