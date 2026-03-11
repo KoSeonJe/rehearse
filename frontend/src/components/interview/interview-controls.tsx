@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 interface InterviewControlsProps {
-  phase: 'preparing' | 'ready' | 'recording' | 'paused' | 'completed'
+  phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
   currentIndex: number
   totalQuestions: number
   isVadActive?: boolean

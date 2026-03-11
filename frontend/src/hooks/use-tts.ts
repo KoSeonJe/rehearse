@@ -79,5 +79,30 @@ export const useTts = ({
     setIsSpeaking(false)
   }, [])
 
-  return { speak, stop, isSpeaking, isAvailable }
+  // 음성 로드 완료 대기 후 speak (초기 로드 경쟁 조건 해결)
+  const speakWhenReady = useCallback(
+    (text: string) => {
+      if (isAvailable && voiceRef.current) {
+        speak(text)
+        return
+      }
+
+      // 음성이 아직 로드되지 않았으면 voiceschanged 이벤트 대기
+      const onVoicesLoaded = () => {
+        const voices = window.speechSynthesis.getVoices()
+        const koreanVoice = voices.find((v) => v.lang.startsWith('ko'))
+        if (koreanVoice) {
+          voiceRef.current = koreanVoice
+          setIsAvailable(true)
+          speak(text)
+        }
+        window.speechSynthesis.removeEventListener('voiceschanged', onVoicesLoaded)
+      }
+
+      window.speechSynthesis.addEventListener('voiceschanged', onVoicesLoaded)
+    },
+    [isAvailable, speak],
+  )
+
+  return { speak, speakWhenReady, stop, isSpeaking, isAvailable }
 }
