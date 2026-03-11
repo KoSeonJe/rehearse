@@ -29,7 +29,6 @@ export const InterviewPage = () => {
     startTime,
     answers,
     currentTranscript,
-    prevQuestion,
     followUpQuestions,
     isFollowUpLoading,
     autoTransitionMessage,
@@ -43,7 +42,6 @@ export const InterviewPage = () => {
   const {
     handlePrepare,
     handleStopAnswer,
-    handleNextQuestion,
     handleFinishInterview,
     isVadActive,
     isTtsSpeaking,
@@ -200,8 +198,6 @@ export const InterviewPage = () => {
           isVadActive={isVadActive}
           isTtsSpeaking={isTtsSpeaking}
           onStopAnswer={handleStopAnswer}
-          onNextQuestion={handleNextQuestion}
-          onPrevQuestion={prevQuestion}
           onFinishInterview={handleFinishInterview}
         />
       </div>

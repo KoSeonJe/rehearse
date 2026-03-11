@@ -7,8 +7,6 @@ interface InterviewControlsProps {
   isVadActive?: boolean
   isTtsSpeaking?: boolean
   onStopAnswer: () => void
-  onNextQuestion: () => void
-  onPrevQuestion: () => void
   onFinishInterview: () => void
 }
 
@@ -19,11 +17,8 @@ export const InterviewControls = ({
   isVadActive,
   isTtsSpeaking,
   onStopAnswer,
-  onNextQuestion,
-  onPrevQuestion,
   onFinishInterview,
 }: InterviewControlsProps) => {
-  const isFirst = currentIndex === 0
   const isLast = currentIndex === totalQuestions - 1
   const isRecording = phase === 'recording'
 
@@ -108,16 +103,8 @@ export const InterviewControls = ({
           ) : null}
         </div>
 
-        {/* Toss-style Navigation & Progress */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={onPrevQuestion}
-            disabled={isFirst || isRecording}
-            className="text-sm font-bold text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-0"
-          >
-            이전
-          </button>
-
+        {/* Progress Dots */}
+        <div className="flex items-center justify-center">
           <div className="flex items-center gap-1.5" role="status">
             {Array.from({ length: totalQuestions }).map((_, i) => (
               <div
@@ -132,14 +119,6 @@ export const InterviewControls = ({
               />
             ))}
           </div>
-
-          <button
-            onClick={onNextQuestion}
-            disabled={isLast || isRecording}
-            className="text-sm font-bold text-text-tertiary transition-colors hover:text-text-primary disabled:opacity-0"
-          >
-            다음
-          </button>
         </div>
       </div>
     </div>
