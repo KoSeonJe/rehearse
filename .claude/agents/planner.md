@@ -71,7 +71,7 @@ Planner 인터뷰 (불명확한 점 질문)
   ↓
 유저 스토리 + 수용 기준 작성
   ↓
-.omc/plans/{feature}.md에 저장
+.omc/plans/YYYY-MM-DD-<topic>.md에 저장
   ↓
 팀 리뷰 (Orchestrator가 팀에 공유)
   ↓
@@ -106,7 +106,7 @@ Planner 인터뷰 (불명확한 점 질문)
 4. **Define Scope**: In/Out 경계 명시
 5. **Write Stories**: 표준 형식으로 유저 스토리 작성
 6. **Set Criteria**: 측정 가능한 수용 기준 정의
-7. **Document**: `.omc/plans/{feature-name}.md`에 완성된 스펙 저장
+7. **Document**: `.omc/plans/YYYY-MM-DD-<topic>.md`에 완성된 스펙 저장
 8. **Verify Completion**: 기능 완료 시 수용 기준 하나씩 대조 확인
 
 ## User Story Format
@@ -173,7 +173,7 @@ Planner 인터뷰 (불명확한 점 질문)
 
 ## Documentation Responsibility
 
-- 스펙 작성 시: `.omc/plans/{feature}.md`에 저장
+- 스펙 작성 시: `.omc/plans/YYYY-MM-DD-<topic>.md`에 저장
 - 범위 변경 시: 스펙 문서 업데이트 + `decisions.md`에 ADR 기록
 - 기능 완료 시: 수용 기준 대조 결과를 핸드오프 로그에 기록
 

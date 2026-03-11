@@ -8,8 +8,9 @@ import { useThinkingTimeDetector } from './use-thinking-time-detector'
 import { useInterviewEventRecorder } from './use-interview-event-recorder'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
 
-const DEFAULT_SILENCE_DELAY = 3000
+const DEFAULT_SILENCE_DELAY = 2000
 const THINKING_SILENCE_DELAY = 25000
+const AUTO_TRANSITION_DELAY = 1000
 
 interface UseInterviewSessionParams {
   interviewId: string
@@ -129,6 +130,24 @@ export const useInterviewSession = ({
           onSuccess: (res) => {
             addFollowUpQuestion(currentQuestionIndex, res.data)
             setFollowUpLoading(false)
+
+            // Strategy 3: API 응답 도착 시 즉시 전환 (폴백 타이머 취소)
+            if (autoTransitionTimerRef.current) {
+              clearTimeout(autoTransitionTimerRef.current)
+              autoTransitionTimerRef.current = null
+              setAutoTransitionMessage(null)
+
+              const state = useInterviewStore.getState()
+              const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
+
+              recordEvent('api_early_transition', state.currentQuestionIndex)
+
+              if (isLastQuestion) {
+                handleFinishInterviewInternal()
+              } else {
+                nextQuestion()
+              }
+            }
           },
           onError: () => {
             setFollowUpLoading(false)
@@ -136,7 +155,8 @@ export const useInterviewSession = ({
         },
       )
     }
-  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading, setAutoTransitionMessage, recordEvent, nextQuestion])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
@@ -220,7 +240,7 @@ export const useInterviewSession = ({
           } else {
             nextQuestion()
           }
-        }, 2500)
+        }, AUTO_TRANSITION_DELAY)
       }
     },
   })
@@ -336,6 +356,16 @@ export const useInterviewSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, interview?.status, interviewId, updateStatus])
 
+  // 수동 "다음 질문" 버튼 — 자동 전환 타이머 취소 후 이동
+  const handleNextQuestion = useCallback(() => {
+    if (autoTransitionTimerRef.current) {
+      clearTimeout(autoTransitionTimerRef.current)
+      autoTransitionTimerRef.current = null
+      setAutoTransitionMessage(null)
+    }
+    nextQuestion()
+  }, [nextQuestion, setAutoTransitionMessage])
+
   // 수동 답변 완료 + 후속질문 요청 (자동 이동 없음)
   const handleStopAnswer = useCallback(() => {
     // 자동 전환 타이머가 있으면 취소
@@ -416,6 +446,7 @@ export const useInterviewSession = ({
   return {
     handlePrepare,
     handleStopAnswer,
+    handleNextQuestion,
     handleFinishInterview,
     isVadActive,
     isTtsSpeaking: tts.isSpeaking,
