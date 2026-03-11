@@ -1,7 +1,7 @@
 # 음성 면접 시스템 지연(Latency) 최적화 계획
 
 - **작성일**: 2026-03-11
-- **상태**: Draft (검증 완료, 구현 대기)
+- **상태**: Completed (Strategy 0, 1, 3 구현 완료)
 - **선행 조건**: Phase 1-2 버그 수정 완료 후 진행
 - **참고**: `2026-03-11-voice-interview-technical-analysis.md`
 
@@ -41,7 +41,7 @@ API 최적화(스트리밍, 프리페칭)보다 타이머 단축이 압도적으
 
 ## 제안 전략 (우선순위순)
 
-### Strategy 0: autoTransition 타이머 단축 [즉시 적용 가능]
+### Strategy 0: autoTransition 타이머 단축 [Completed]
 
 - **현재**: 2500ms 대기 후 다음 질문으로 전환
 - **개선**: 1000ms로 단축 (사용자가 "다음 질문으로 넘어갑니다" 메시지를 읽을 최소 시간)
@@ -50,7 +50,7 @@ API 최적화(스트리밍, 프리페칭)보다 타이머 단축이 압도적으
 - **변경**: `use-interview-session.ts:215` — `setTimeout(..., 2500)` → `setTimeout(..., 1000)`
 - **난이도**: 1줄 변경
 
-### Strategy 1: 침묵 감지 최적화 [테스트 필요]
+### Strategy 1: 침묵 감지 최적화 [Completed]
 
 - **현재**: `DEFAULT_SILENCE_DELAY = 3000ms`
 - **개선**: 2000ms로 단축 (단계적 테스트: 2500 → 2000 → 1500)
@@ -116,7 +116,7 @@ const FILLER_PHRASES = [
 - **난이도**: 중간 (필러 TTS 분리 + 타이밍 설계)
 - **선행 조건**: Phase 1의 TTS 15초 버그 워크어라운드 완료
 
-### Strategy 3: 후속질문 도착 시 즉시 전환 [설계 필요]
+### Strategy 3: 후속질문 도착 시 즉시 전환 [Completed]
 
 현재 `processAnswer()`와 `autoTransitionTimer`가 병렬 실행되지만, autoTransition은 후속질문 도착 여부와 무관하게 2500ms 후 전환된다.
 

@@ -92,6 +92,7 @@ Every `.omc/plans/` spec must include a **"Why"** section before implementation 
 ## Spec-Driven Development (Required)
 
 - All work must start with a spec document in `.omc/plans/`
+  - **파일명**: `YYYY-MM-DD-<topic>.md` (예: `2026-03-11-latency-optimization.md`)
   - **New feature**: write spec (including "Why" section) → review → implement
   - **Modify existing**: check related spec → update → implement
   - **After completion**: update spec status to `Completed`
