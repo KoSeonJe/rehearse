@@ -3,7 +3,8 @@ import type { VoiceEvent } from '../types/interview'
 
 interface UseAudioAnalyzerReturn {
   audioLevel: number
-  start: (stream: MediaStream) => void
+  audioLevelRef: React.RefObject<number>
+  start: (stream: MediaStream) => Promise<void>
   stop: () => void
   onVoiceEvent: (callback: (event: VoiceEvent) => void) => void
 }
@@ -14,6 +15,7 @@ const ANALYSIS_INTERVAL_MS = 100
 
 export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
   const [audioLevel, setAudioLevel] = useState(0)
+  const audioLevelRef = useRef(0)
   const contextRef = useRef<AudioContext | null>(null)
   const analyzerRef = useRef<AnalyserNode | null>(null)
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
@@ -21,9 +23,15 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
   const callbackRef = useRef<((event: VoiceEvent) => void) | null>(null)
   const silenceStartRef = useRef<number | null>(null)
   const lastAnalysisRef = useRef(0)
+  const frameCountRef = useRef(0)
 
-  const start = useCallback((stream: MediaStream) => {
+  const start = useCallback(async (stream: MediaStream) => {
+    if (contextRef.current) return // 이미 시작됨 — 중복 초기화 방지
+
     const context = new AudioContext()
+    if (context.state === 'suspended') {
+      await context.resume()
+    }
     const analyzer = context.createAnalyser()
     analyzer.fftSize = 256
     analyzer.smoothingTimeConstant = 0.8
@@ -51,7 +59,14 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
       const db = rms > 0 ? 20 * Math.log10(rms) : -100
       const normalized = Math.max(0, Math.min(1, (db + 60) / 60))
 
-      setAudioLevel(normalized)
+      // ref는 매 프레임 업데이트 (VAD에서 지연 없이 접근)
+      audioLevelRef.current = normalized
+
+      // ~10fps로 UI state 업데이트 제한 (불필요한 리렌더 방지)
+      frameCountRef.current++
+      if (frameCountRef.current % 6 === 0) {
+        setAudioLevel(normalized)
+      }
 
       const now = Date.now()
       if (now - lastAnalysisRef.current >= ANALYSIS_INTERVAL_MS) {
@@ -96,6 +111,7 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
       contextRef.current = null
     }
     analyzerRef.current = null
+    audioLevelRef.current = 0
     setAudioLevel(0)
   }, [])
 
@@ -111,6 +127,6 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
     }
   }, [])
 
-  return { audioLevel, start, stop, onVoiceEvent }
+  return { audioLevel, audioLevelRef, start, stop, onVoiceEvent }
 }
 

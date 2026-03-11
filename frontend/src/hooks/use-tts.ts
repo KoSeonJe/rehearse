@@ -7,6 +7,8 @@ interface UseTtsOptions {
   onEnd?: () => void
 }
 
+const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+
 export const useTts = ({
   lang = 'ko-KR',
   rate = 0.95,
@@ -19,6 +21,8 @@ export const useTts = ({
   const isAvailableRef = useRef(false)
   const onStartRef = useRef(onStart)
   const onEndRef = useRef(onEnd)
+  const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pendingVoicesListenerRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     onStartRef.current = onStart
@@ -41,6 +45,10 @@ export const useTts = ({
     window.speechSynthesis.addEventListener('voiceschanged', selectKoreanVoice)
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', selectKoreanVoice)
+      if (pendingVoicesListenerRef.current) {
+        window.speechSynthesis.removeEventListener('voiceschanged', pendingVoicesListenerRef.current)
+        pendingVoicesListenerRef.current = null
+      }
       window.speechSynthesis.cancel()
     }
   }, [])
@@ -56,17 +64,40 @@ export const useTts = ({
       utterance.lang = lang
       utterance.rate = rate
 
+      const clearResumeInterval = () => {
+        if (resumeIntervalRef.current) {
+          clearInterval(resumeIntervalRef.current)
+          resumeIntervalRef.current = null
+        }
+      }
+
       utterance.onstart = () => {
         setIsSpeaking(true)
         onStartRef.current?.()
+
+        // Chrome 15초 자동 중단 버그 워크어라운드
+        // Android에서는 pause()가 완전 종료로 작동하므로 스킵
+        if (!IS_ANDROID) {
+          clearResumeInterval()
+          resumeIntervalRef.current = setInterval(() => {
+            if (window.speechSynthesis.speaking) {
+              window.speechSynthesis.pause()
+              window.speechSynthesis.resume()
+            } else {
+              clearResumeInterval()
+            }
+          }, 14000)
+        }
       }
 
       utterance.onend = () => {
+        clearResumeInterval()
         setIsSpeaking(false)
         onEndRef.current?.()
       }
 
       utterance.onerror = () => {
+        clearResumeInterval()
         setIsSpeaking(false)
         onEndRef.current?.()
       }
@@ -77,6 +108,10 @@ export const useTts = ({
   )
 
   const stop = useCallback(() => {
+    if (resumeIntervalRef.current) {
+      clearInterval(resumeIntervalRef.current)
+      resumeIntervalRef.current = null
+    }
     window.speechSynthesis.cancel()
     setIsSpeaking(false)
   }, [])
@@ -84,6 +119,12 @@ export const useTts = ({
   // 음성 로드 완료 대기 후 speak (초기 로드 경쟁 조건 해결)
   const speakWhenReady = useCallback(
     (text: string) => {
+      // 이전 대기 리스너 정리
+      if (pendingVoicesListenerRef.current) {
+        window.speechSynthesis.removeEventListener('voiceschanged', pendingVoicesListenerRef.current)
+        pendingVoicesListenerRef.current = null
+      }
+
       if (isAvailableRef.current && voiceRef.current) {
         speak(text)
         return
@@ -100,8 +141,10 @@ export const useTts = ({
           speak(text)
         }
         window.speechSynthesis.removeEventListener('voiceschanged', onVoicesLoaded)
+        pendingVoicesListenerRef.current = null
       }
 
+      pendingVoicesListenerRef.current = onVoicesLoaded
       window.speechSynthesis.addEventListener('voiceschanged', onVoicesLoaded)
     },
     [speak],

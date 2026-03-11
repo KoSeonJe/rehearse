@@ -34,6 +34,9 @@ declare global {
   }
 }
 
+const MAX_NETWORK_RETRIES = 3
+const SESSION_TIMEOUT_MS = 65000
+
 export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false)
   const [interimText, setInterimText] = useState('')
@@ -42,6 +45,8 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const questionIndexRef = useRef(0)
   const startTimeRef = useRef(0)
   const shouldRestartRef = useRef(false)
+  const networkRetryCountRef = useRef(0)
+  const sessionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isSupported =
     typeof window !== 'undefined' &&
@@ -86,13 +91,49 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
 
     recognition.onerror = (event: { error: string }) => {
       if (event.error === 'no-speech' || event.error === 'aborted') return
+
+      if (event.error === 'network') {
+        // 네트워크 에러: 지수 백오프 재시도 (최대 3회)
+        if (networkRetryCountRef.current < MAX_NETWORK_RETRIES) {
+          const delay = Math.pow(2, networkRetryCountRef.current) * 1000
+          networkRetryCountRef.current++
+          setTimeout(() => {
+            if (shouldRestartRef.current && recognitionRef.current) {
+              try {
+                recognitionRef.current.start()
+              } catch {
+                setIsListening(false)
+              }
+            }
+          }, delay)
+          return
+        }
+      }
+
       setIsListening(false)
     }
 
     recognition.onend = () => {
+      // 세션 타임아웃 타이머 초기화 (재시작 시 새로 설정)
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current)
+        sessionTimeoutRef.current = null
+      }
+
       if (shouldRestartRef.current) {
+        networkRetryCountRef.current = 0 // 정상 재시작 시 카운터 리셋
         try {
           recognition.start()
+          // 65초 백업 타이머 (onend 미호출 대비)
+          sessionTimeoutRef.current = setTimeout(() => {
+            if (shouldRestartRef.current && recognitionRef.current) {
+              try {
+                recognitionRef.current.stop()
+              } catch {
+                // stop 실패 시 무시
+              }
+            }
+          }, SESSION_TIMEOUT_MS)
         } catch {
           setIsListening(false)
         }
@@ -108,9 +149,21 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
     (questionIndex: number) => {
       if (!isSupported) return
 
+      // 기존 인스턴스 정리 (누수 방지)
+      if (recognitionRef.current) {
+        shouldRestartRef.current = false
+        recognitionRef.current.abort()
+        recognitionRef.current = null
+      }
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current)
+        sessionTimeoutRef.current = null
+      }
+
       questionIndexRef.current = questionIndex
       startTimeRef.current = Date.now()
       shouldRestartRef.current = true
+      networkRetryCountRef.current = 0
 
       const recognition = createRecognition()
       if (!recognition) return
@@ -121,6 +174,17 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
         recognition.start()
         setIsListening(true)
         setInterimText('')
+
+        // 65초 백업 타이머 (onend 미호출 대비)
+        sessionTimeoutRef.current = setTimeout(() => {
+          if (shouldRestartRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.stop()
+            } catch {
+              // stop 실패 시 무시
+            }
+          }
+        }, SESSION_TIMEOUT_MS)
       } catch {
         setIsListening(false)
       }
@@ -130,6 +194,10 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
 
   const stop = useCallback(() => {
     shouldRestartRef.current = false
+    if (sessionTimeoutRef.current) {
+      clearTimeout(sessionTimeoutRef.current)
+      sessionTimeoutRef.current = null
+    }
     if (recognitionRef.current) {
       recognitionRef.current.stop()
       recognitionRef.current = null
@@ -145,6 +213,9 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   useEffect(() => {
     return () => {
       shouldRestartRef.current = false
+      if (sessionTimeoutRef.current) {
+        clearTimeout(sessionTimeoutRef.current)
+      }
       if (recognitionRef.current) {
         recognitionRef.current.abort()
       }

@@ -36,7 +36,8 @@ interface UseInterviewSessionParams {
   }
   audio: {
     audioLevel: number
-    start: (stream: MediaStream) => void
+    audioLevelRef: React.RefObject<number>
+    start: (stream: MediaStream) => Promise<void>
     stop: () => void
     onVoiceEvent: (callback: (event: VoiceEvent) => void) => void
   }
@@ -55,6 +56,7 @@ export const useInterviewSession = ({
   const followUpMutation = useFollowUpQuestion()
   const autoTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const greetingPhaseRef = useRef(false)
+  const ttsEndTimeRef = useRef(0)
   const [currentSilenceDelay, setCurrentSilenceDelay] = useState(DEFAULT_SILENCE_DELAY)
 
   const {
@@ -96,6 +98,7 @@ export const useInterviewSession = ({
       stt.stop()
     },
     onEnd: () => {
+      ttsEndTimeRef.current = Date.now()
       // TTS 끝나면 STT 재시작 (stale closure 방지: 최신 상태 직접 읽기)
       const state = useInterviewStore.getState()
       if (state.phase === 'recording') {
@@ -154,6 +157,11 @@ export const useInterviewSession = ({
     enabled: vadEnabled && !tts.isSpeaking,
     silenceEndDelay: currentSilenceDelay,
     onSpeechStart: () => {
+      // TTS 종료 직후 잔향 무시 (에코 방지 — 300ms 이내 감지는 무시)
+      if (ttsEndTimeRef.current && Date.now() - ttsEndTimeRef.current < 300) {
+        return
+      }
+
       // 자동 전환 타이머가 있으면 취소 (다시 말하기 시작)
       if (autoTransitionTimerRef.current) {
         clearTimeout(autoTransitionTimerRef.current)
@@ -232,14 +240,21 @@ export const useInterviewSession = ({
     },
   })
 
-  // 오디오 레벨을 VAD에 전달
+  // 오디오 레벨을 VAD에 전달 (ref 기반 — React 렌더 사이클 우회)
   useEffect(() => {
-    updateAudioLevel(audio.audioLevel)
-  }, [audio.audioLevel, updateAudioLevel])
+    let rafId: number
+    const syncLevel = () => {
+      updateAudioLevel(audio.audioLevelRef.current)
+      rafId = requestAnimationFrame(syncLevel)
+    }
+    rafId = requestAnimationFrame(syncLevel)
+    return () => cancelAnimationFrame(rafId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateAudioLevel])
 
-  // greeting phase 진입 시 인사 TTS
+  // greeting phase 진입 시 인사 TTS (mediaStream 준비 후 시작)
   useEffect(() => {
-    if (phase === 'greeting') {
+    if (phase === 'greeting' && mediaStream.isActive) {
       greetingPhaseRef.current = true
       tts.speakWhenReady(
         '안녕하세요, 오늘 면접을 진행하게 된 AI 면접관입니다. 면접을 시작하기 전에 간단하게 자기소개 부탁드리겠습니다.',
@@ -247,14 +262,17 @@ export const useInterviewSession = ({
       recordEvent('greeting_tts', 0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase])
+  }, [phase, mediaStream.isActive])
 
   // phase가 greeting/ready가 되면 오디오 분석기 미리 시작 (VAD가 음성 감지할 수 있도록)
   useEffect(() => {
     if ((phase === 'greeting' || phase === 'ready' || phase === 'paused') && mediaStream.stream) {
       audio.start(mediaStream.stream)
     }
-  }, [phase, mediaStream.stream, audio])
+    // audio.start는 useCallback([])으로 안정적 — audio 객체 전체를 deps에 넣으면
+    // audioLevel 변경마다 재실행되어 AudioContext가 무한 생성됨
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, mediaStream.stream, audio.start])
 
   // 면접 데이터 로드
   useEffect(() => {
@@ -283,14 +301,16 @@ export const useInterviewSession = ({
     stt.onFinalResult((segment: TranscriptSegment) => {
       addTranscript(segment)
     })
-  }, [stt, addTranscript])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stt.onFinalResult, addTranscript])
 
   // 음성 이벤트 콜백 등록
   useEffect(() => {
     audio.onVoiceEvent((event: VoiceEvent) => {
       addVoiceEvent(event)
     })
-  }, [audio, addVoiceEvent])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audio.onVoiceEvent, addVoiceEvent])
 
   // interim text 동기화
   useEffect(() => {
