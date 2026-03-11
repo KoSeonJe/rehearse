@@ -16,6 +16,7 @@ export const useTts = ({
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [isAvailable, setIsAvailable] = useState(false)
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
+  const isAvailableRef = useRef(false)
   const onStartRef = useRef(onStart)
   const onEndRef = useRef(onEnd)
 
@@ -31,6 +32,7 @@ export const useTts = ({
       const voices = window.speechSynthesis.getVoices()
       const koreanVoice = voices.find((v) => v.lang.startsWith('ko'))
       voiceRef.current = koreanVoice ?? null
+      isAvailableRef.current = !!koreanVoice
       setIsAvailable(!!koreanVoice)
     }
 
@@ -45,7 +47,7 @@ export const useTts = ({
 
   const speak = useCallback(
     (text: string) => {
-      if (!isAvailable || !voiceRef.current) return
+      if (!isAvailableRef.current || !voiceRef.current) return
 
       window.speechSynthesis.cancel()
 
@@ -71,7 +73,7 @@ export const useTts = ({
 
       window.speechSynthesis.speak(utterance)
     },
-    [isAvailable, lang, rate],
+    [lang, rate],
   )
 
   const stop = useCallback(() => {
@@ -82,7 +84,7 @@ export const useTts = ({
   // 음성 로드 완료 대기 후 speak (초기 로드 경쟁 조건 해결)
   const speakWhenReady = useCallback(
     (text: string) => {
-      if (isAvailable && voiceRef.current) {
+      if (isAvailableRef.current && voiceRef.current) {
         speak(text)
         return
       }
@@ -93,6 +95,7 @@ export const useTts = ({
         const koreanVoice = voices.find((v) => v.lang.startsWith('ko'))
         if (koreanVoice) {
           voiceRef.current = koreanVoice
+          isAvailableRef.current = true
           setIsAvailable(true)
           speak(text)
         }
@@ -101,7 +104,7 @@ export const useTts = ({
 
       window.speechSynthesis.addEventListener('voiceschanged', onVoicesLoaded)
     },
-    [isAvailable, speak],
+    [speak],
   )
 
   return { speak, speakWhenReady, stop, isSpeaking, isAvailable }
