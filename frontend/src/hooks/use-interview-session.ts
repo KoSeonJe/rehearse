@@ -10,7 +10,20 @@ import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview
 
 const DEFAULT_SILENCE_DELAY = 2000
 const THINKING_SILENCE_DELAY = 25000
-const AUTO_TRANSITION_DELAY = 1000
+
+const TRANSITION_PHRASES = [
+  '네, 다음 질문 드리겠습니다.',
+  '네, 알겠습니다. 다음 질문입니다.',
+  '잘 들었습니다. 다음 질문 드릴게요.',
+  '네, 감사합니다. 다음 질문입니다.',
+]
+
+const CLOSING_PHRASES = [
+  '네, 감사합니다. 이것으로 면접을 마치겠습니다. 수고하셨습니다.',
+  '네, 잘 들었습니다. 면접을 마치겠습니다. 수고하셨습니다.',
+]
+
+const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
 interface UseInterviewSessionParams {
   interviewId: string
@@ -55,7 +68,7 @@ export const useInterviewSession = ({
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
   const followUpMutation = useFollowUpQuestion()
-  const autoTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingTtsActionRef = useRef<(() => void) | null>(null)
   const greetingPhaseRef = useRef(false)
   const ttsEndTimeRef = useRef(0)
   const [currentSilenceDelay, setCurrentSilenceDelay] = useState(DEFAULT_SILENCE_DELAY)
@@ -100,7 +113,16 @@ export const useInterviewSession = ({
     },
     onEnd: () => {
       ttsEndTimeRef.current = Date.now()
-      // TTS 끝나면 STT 재시작 (stale closure 방지: 최신 상태 직접 읽기)
+
+      // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
+      if (pendingTtsActionRef.current) {
+        const action = pendingTtsActionRef.current
+        pendingTtsActionRef.current = null
+        action()
+        return
+      }
+
+      // 일반 TTS(질문 읽기) 끝나면 STT 재시작
       const state = useInterviewStore.getState()
       if (state.phase === 'recording') {
         stt.start(state.currentQuestionIndex)
@@ -130,24 +152,6 @@ export const useInterviewSession = ({
           onSuccess: (res) => {
             addFollowUpQuestion(currentQuestionIndex, res.data)
             setFollowUpLoading(false)
-
-            // Strategy 3: API 응답 도착 시 즉시 전환 (폴백 타이머 취소)
-            if (autoTransitionTimerRef.current) {
-              clearTimeout(autoTransitionTimerRef.current)
-              autoTransitionTimerRef.current = null
-              setAutoTransitionMessage(null)
-
-              const state = useInterviewStore.getState()
-              const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
-
-              recordEvent('api_early_transition', state.currentQuestionIndex)
-
-              if (isLastQuestion) {
-                handleFinishInterviewInternal()
-              } else {
-                nextQuestion()
-              }
-            }
           },
           onError: () => {
             setFollowUpLoading(false)
@@ -155,8 +159,7 @@ export const useInterviewSession = ({
         },
       )
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading, setAutoTransitionMessage, recordEvent, nextQuestion])
+  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
@@ -182,12 +185,9 @@ export const useInterviewSession = ({
         return
       }
 
-      // 자동 전환 타이머가 있으면 취소 (다시 말하기 시작)
-      if (autoTransitionTimerRef.current) {
-        clearTimeout(autoTransitionTimerRef.current)
-        autoTransitionTimerRef.current = null
-        setAutoTransitionMessage(null)
-      }
+      // 예약된 전환 액션이 있으면 취소 (다시 말하기 시작)
+      pendingTtsActionRef.current = null
+
       const currentPhase = useInterviewStore.getState().phase
       if (currentPhase === 'greeting') {
         // greeting 중 음성 감지: 녹음 시작 (자기소개 녹음)
@@ -225,22 +225,16 @@ export const useInterviewSession = ({
 
         const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
-        // 2.5초 후 자동 전환
-        setAutoTransitionMessage(
-          isLastQuestion ? '면접을 마무리합니다...' : '다음 질문으로 넘어갑니다...',
-        )
+        // 면접관처럼 즉시 음성 반응 → TTS 끝나면 다음 질문/종료
+        recordEvent('auto_transition', state.currentQuestionIndex)
 
-        autoTransitionTimerRef.current = setTimeout(() => {
-          setAutoTransitionMessage(null)
-          autoTransitionTimerRef.current = null
-          recordEvent('auto_transition', state.currentQuestionIndex)
-
-          if (isLastQuestion) {
-            handleFinishInterviewInternal()
-          } else {
-            nextQuestion()
-          }
-        }, AUTO_TRANSITION_DELAY)
+        if (isLastQuestion) {
+          pendingTtsActionRef.current = () => handleFinishInterviewInternal()
+          tts.speak(pickRandom(CLOSING_PHRASES))
+        } else {
+          pendingTtsActionRef.current = () => nextQuestion()
+          tts.speak(pickRandom(TRANSITION_PHRASES))
+        }
       }
     },
   })
@@ -356,32 +350,24 @@ export const useInterviewSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, interview?.status, interviewId, updateStatus])
 
-  // 수동 "다음 질문" 버튼 — 자동 전환 타이머 취소 후 이동
+  // 폴백: "다음 질문" 버튼 (전환 TTS 중이면 취소 후 즉시 이동)
   const handleNextQuestion = useCallback(() => {
-    if (autoTransitionTimerRef.current) {
-      clearTimeout(autoTransitionTimerRef.current)
-      autoTransitionTimerRef.current = null
-      setAutoTransitionMessage(null)
-    }
+    pendingTtsActionRef.current = null
+    tts.stop()
     nextQuestion()
-  }, [nextQuestion, setAutoTransitionMessage])
+  }, [nextQuestion, tts])
 
-  // 수동 답변 완료 + 후속질문 요청 (자동 이동 없음)
+  // 폴백: "답변 완료" 버튼 (VAD 미감지 시 사용자가 직접 종료)
   const handleStopAnswer = useCallback(() => {
-    // 자동 전환 타이머가 있으면 취소
-    if (autoTransitionTimerRef.current) {
-      clearTimeout(autoTransitionTimerRef.current)
-      autoTransitionTimerRef.current = null
-      setAutoTransitionMessage(null)
-    }
-
+    pendingTtsActionRef.current = null
+    tts.stop()
     stopRecording()
     stt.stop()
     recorder.pause()
     recordEvent('manual_stop', currentQuestionIndex)
     setCurrentSilenceDelay(DEFAULT_SILENCE_DELAY)
     processAnswer()
-  }, [stopRecording, stt, recorder, processAnswer, setAutoTransitionMessage, recordEvent, currentQuestionIndex])
+  }, [stopRecording, stt, recorder, processAnswer, recordEvent, currentQuestionIndex, tts])
 
   // 면접 종료 (내부용 — VAD 자동 전환에서 호출)
   const handleFinishInterviewInternal = useCallback(async () => {
@@ -416,24 +402,16 @@ export const useInterviewSession = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
 
-  // 면접 종료 (수동 — 버튼 클릭)
+  // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
   const handleFinishInterview = useCallback(async () => {
-    // 자동 전환 타이머가 있으면 취소
-    if (autoTransitionTimerRef.current) {
-      clearTimeout(autoTransitionTimerRef.current)
-      autoTransitionTimerRef.current = null
-      setAutoTransitionMessage(null)
-    }
-
+    pendingTtsActionRef.current = null
     await handleFinishInterviewInternal()
-  }, [handleFinishInterviewInternal, setAutoTransitionMessage])
+  }, [handleFinishInterviewInternal])
 
   // 클린업
   useEffect(() => {
     return () => {
-      if (autoTransitionTimerRef.current) {
-        clearTimeout(autoTransitionTimerRef.current)
-      }
+      pendingTtsActionRef.current = null
       tts.stop()
       mediaStream.stop()
       audio.stop()
