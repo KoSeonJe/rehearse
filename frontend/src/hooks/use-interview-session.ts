@@ -5,6 +5,7 @@ import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-inte
 import { useTts } from './use-tts'
 import { useThinkingTimeDetector } from './use-thinking-time-detector'
 import { useInterviewEventRecorder } from './use-interview-event-recorder'
+import { saveVideoBlob } from '../lib/video-storage'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
 
 const TRANSITION_PHRASES = [
@@ -45,7 +46,6 @@ interface UseInterviewSessionParams {
     onFinalResult: (callback: (segment: TranscriptSegment) => void) => void
   }
   audio: {
-    audioLevel: number
     audioLevelRef: React.RefObject<number>
     start: (stream: MediaStream) => Promise<void>
     stop: () => void
@@ -282,6 +282,7 @@ export const useInterviewSession = ({
 
     const blob = await recorder.stop()
     setVideoBlob(blob)
+    saveVideoBlob(interview.id, blob).catch(() => {})
     completeInterview()
 
     mediaStream.stop()

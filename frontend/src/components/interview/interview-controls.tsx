@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 import { useInterviewStore } from '../../stores/interview-store'
 
 interface InterviewControlsProps {
@@ -9,7 +9,7 @@ interface InterviewControlsProps {
   onFinishInterview: () => void
 }
 
-export const InterviewControls = ({
+export const InterviewControls = memo(({
   phase,
   isTtsSpeaking,
   onStartAnswer,
@@ -75,4 +75,6 @@ export const InterviewControls = ({
       </div>
     </div>
   )
-}
+})
+
+InterviewControls.displayName = 'InterviewControls'
