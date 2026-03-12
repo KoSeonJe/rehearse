@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 
 interface VideoPreviewProps {
   stream: MediaStream | null
   isRecording: boolean
 }
 
-export const VideoPreview = ({ stream, isRecording }: VideoPreviewProps) => {
+export const VideoPreview = memo(({ stream, isRecording }: VideoPreviewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -36,5 +36,6 @@ export const VideoPreview = ({ stream, isRecording }: VideoPreviewProps) => {
       )}
     </div>
   )
-}
+})
 
+VideoPreview.displayName = 'VideoPreview'

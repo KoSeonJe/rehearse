@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useInterview } from '../hooks/use-interviews'
@@ -22,16 +22,13 @@ export const InterviewPage = () => {
   const { data: response } = useInterview(interviewId)
   const interview = response?.data
 
-  const {
-    questions,
-    currentQuestionIndex,
-    phase,
-    startTime,
-    answers,
-    currentTranscript,
-    greetingCompleted,
-    autoTransitionMessage,
-  } = useInterviewStore()
+  // 개별 selector로 구독 — currentTranscript/answers 등 빈번한 변경에 의한 리렌더 차단
+  const questions = useInterviewStore((s) => s.questions)
+  const currentQuestionIndex = useInterviewStore((s) => s.currentQuestionIndex)
+  const phase = useInterviewStore((s) => s.phase)
+  const startTime = useInterviewStore((s) => s.startTime)
+  const greetingCompleted = useInterviewStore((s) => s.greetingCompleted)
+  const autoTransitionMessage = useInterviewStore((s) => s.autoTransitionMessage)
 
   const mediaStream = useMediaStream()
   const recorder = useMediaRecorder()
@@ -55,11 +52,6 @@ export const InterviewPage = () => {
   const [timeWarning, setTimeWarning] = useState(false)
 
   const currentQuestion = questions[currentQuestionIndex]
-  const currentAnswer = answers[currentQuestionIndex]
-  const finalTexts = useMemo(
-    () => currentAnswer?.transcripts.filter((t) => t.isFinal).map((t) => t.text) ?? [],
-    [currentAnswer],
-  )
 
   const isGreeting = !greetingCompleted && (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
 
@@ -100,7 +92,7 @@ export const InterviewPage = () => {
             onTimeExpired={() => handleFinishInterview()}
           />
           <div className="h-8 w-[1px] bg-border" />
-          <AudioLevelIndicator level={audio.audioLevel} />
+          <AudioLevelIndicator audioLevelRef={audio.audioLevelRef} />
         </div>
       </header>
 
@@ -181,7 +173,7 @@ export const InterviewPage = () => {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-              <TranscriptDisplay interimText={currentTranscript} finalTexts={finalTexts} />
+              <TranscriptDisplay />
             </div>
           </div>
         </div>
