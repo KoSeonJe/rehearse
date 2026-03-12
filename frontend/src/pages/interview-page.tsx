@@ -29,9 +29,7 @@ export const InterviewPage = () => {
     startTime,
     answers,
     currentTranscript,
-    prevQuestion,
-    followUpQuestions,
-    isFollowUpLoading,
+    greetingCompleted,
     autoTransitionMessage,
   } = useInterviewStore()
 
@@ -41,11 +39,9 @@ export const InterviewPage = () => {
   const audio = useAudioAnalyzer()
 
   const {
-    handlePrepare,
+    handleStartAnswer,
     handleStopAnswer,
-    handleNextQuestion,
     handleFinishInterview,
-    isVadActive,
     isTtsSpeaking,
   } = useInterviewSession({
     interviewId,
@@ -65,7 +61,7 @@ export const InterviewPage = () => {
     [currentAnswer],
   )
 
-  const isGreeting = phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0 && !currentQuestion)
+  const isGreeting = !greetingCompleted && (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
 
   if (!interview || (!currentQuestion && !isGreeting)) {
     return (
@@ -89,10 +85,10 @@ export const InterviewPage = () => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
+            <h1 className="text-base font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-[10px] font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
+              <span className="text-xs font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
             </div>
           </div>
         </div>
@@ -191,19 +187,20 @@ export const InterviewPage = () => {
         </div>
       </main>
 
-      {/* Floating Controls */}
-      <div className="p-6">
-        <InterviewControls
-          phase={phase}
-          currentIndex={currentQuestionIndex}
-          totalQuestions={questions.length}
-          isVadActive={isVadActive}
-          isTtsSpeaking={isTtsSpeaking}
-          onStopAnswer={handleStopAnswer}
-          onNextQuestion={handleNextQuestion}
-          onPrevQuestion={prevQuestion}
-          onFinishInterview={handleFinishInterview}
-        />
+      {/* Floating Controls — 좌측 패널 기준 가운데 정렬 */}
+      <div className="px-6 pb-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <InterviewControls
+              phase={phase}
+              isTtsSpeaking={isTtsSpeaking}
+              onStartAnswer={handleStartAnswer}
+              onStopAnswer={handleStopAnswer}
+              onFinishInterview={handleFinishInterview}
+            />
+          </div>
+          <div className="hidden lg:block lg:w-[400px]" />
+        </div>
       </div>
     </div>
   )

@@ -1,15 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '../stores/interview-store'
 import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
-import { useVad } from './use-vad'
 import { useTts } from './use-tts'
 import { useThinkingTimeDetector } from './use-thinking-time-detector'
 import { useInterviewEventRecorder } from './use-interview-event-recorder'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
-
-const DEFAULT_SILENCE_DELAY = 2000
-const THINKING_SILENCE_DELAY = 25000
 
 const TRANSITION_PHRASES = [
   '네, 다음 질문 드리겠습니다.',
@@ -70,9 +66,6 @@ export const useInterviewSession = ({
   const followUpMutation = useFollowUpQuestion()
   const pendingTtsActionRef = useRef<(() => void) | null>(null)
   const greetingPhaseRef = useRef(false)
-  const ttsEndTimeRef = useRef(0)
-  const [currentSilenceDelay, setCurrentSilenceDelay] = useState(DEFAULT_SILENCE_DELAY)
-
   const {
     questions,
     currentQuestionIndex,
@@ -90,6 +83,7 @@ export const useInterviewSession = ({
     setAutoTransitionMessage,
     nextQuestion,
     addInterviewEvent,
+    clearTranscripts,
     reset,
   } = useInterviewStore()
 
@@ -101,21 +95,19 @@ export const useInterviewSession = ({
   // 이벤트 레코더
   const { recordEvent, getEvents, startRecording: startEventRecording } = useInterviewEventRecorder()
 
-  // VAD 활성화: phase 기반 파생 (별도 state 불필요)
-  const vadEnabled = phase === 'greeting' || phase === 'ready' || phase === 'recording' || phase === 'paused'
-
   // TTS 훅
   const tts = useTts({
     onStart: () => {
-      // TTS 재생 중 STT/VAD 에코 방지 — VAD는 enabled=false가 아니라 phase 기반이므로
-      // STT만 정지 (VAD는 TTS 중 audioLevel이 낮으므로 자연스럽게 비활성)
       stt.stop()
     },
     onEnd: () => {
-      ttsEndTimeRef.current = Date.now()
-
       // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
       if (pendingTtsActionRef.current) {
+        const state = useInterviewStore.getState()
+        if (state.phase !== 'paused' && state.phase !== 'recording' && state.phase !== 'completed') {
+          pendingTtsActionRef.current = null
+          return
+        }
         const action = pendingTtsActionRef.current
         pendingTtsActionRef.current = null
         action()
@@ -163,6 +155,8 @@ export const useInterviewSession = ({
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
+    const currentPhase = useInterviewStore.getState().phase
+    if (currentPhase !== 'ready' && currentPhase !== 'paused' && currentPhase !== 'greeting') return
     if (!mediaStream.stream) return
     startRecording()
     if (!recorder.isRecording) {
@@ -175,76 +169,11 @@ export const useInterviewSession = ({
     recordEvent('answer_start', currentQuestionIndex)
   }, [mediaStream.stream, startRecording, recorder, stt, currentQuestionIndex, recordEvent, startEventRecording])
 
-  // VAD: 음성 감지 시 자동 녹음 시작/일시정지
-  const { isActive: isVadActive, updateAudioLevel } = useVad({
-    enabled: vadEnabled && !tts.isSpeaking,
-    silenceEndDelay: currentSilenceDelay,
-    onSpeechStart: () => {
-      // TTS 종료 직후 잔향 무시 (에코 방지 — 300ms 이내 감지는 무시)
-      if (ttsEndTimeRef.current && Date.now() - ttsEndTimeRef.current < 300) {
-        return
-      }
-
-      // 예약된 전환 액션이 있으면 취소 (다시 말하기 시작)
-      pendingTtsActionRef.current = null
-
-      const currentPhase = useInterviewStore.getState().phase
-      if (currentPhase === 'greeting') {
-        // greeting 중 음성 감지: 녹음 시작 (자기소개 녹음)
-        doStartAnswer()
-      } else if (currentPhase === 'ready' || currentPhase === 'paused') {
-        doStartAnswer()
-      }
-    },
-    onSpeechEnd: () => {
-      const currentPhase = useInterviewStore.getState().phase
-      if (currentPhase === 'recording') {
-        stopRecording()
-        stt.stop()
-        recorder.pause()
-        recordEvent('silence_detected', currentQuestionIndex)
-
-        const state = useInterviewStore.getState()
-
-        // greeting 중 자기소개 완료 → ready로 전환 + 첫 질문 TTS
-        if (greetingPhaseRef.current) {
-          greetingPhaseRef.current = false
-          useInterviewStore.setState({ phase: 'ready' })
-          const firstQuestion = state.questions[0]
-          if (firstQuestion) {
-            tts.speak(`네, 감사합니다. 그럼 본격적으로 면접을 시작하겠습니다. 첫 번째 질문입니다. ${firstQuestion.content}`)
-            recordEvent('question_read_tts', 0)
-          }
-          return
-        }
-
-        processAnswer()
-
-        // 생각 시간 후 silenceDelay 복원
-        setCurrentSilenceDelay(DEFAULT_SILENCE_DELAY)
-
-        const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
-
-        // 면접관처럼 즉시 음성 반응 → TTS 끝나면 다음 질문/종료
-        recordEvent('auto_transition', state.currentQuestionIndex)
-
-        if (isLastQuestion) {
-          pendingTtsActionRef.current = () => handleFinishInterviewInternal()
-          tts.speak(pickRandom(CLOSING_PHRASES))
-        } else {
-          pendingTtsActionRef.current = () => nextQuestion()
-          tts.speak(pickRandom(TRANSITION_PHRASES))
-        }
-      }
-    },
-  })
-
   // 생각 시간 감지
   useThinkingTimeDetector({
     interimText: stt.interimText,
     enabled: phase === 'recording',
     onThinkingTimeRequested: () => {
-      setCurrentSilenceDelay(THINKING_SILENCE_DELAY)
       recordEvent('thinking_time_requested', currentQuestionIndex)
       tts.speak('네, 천천히 생각하세요. 준비되면 말씀해 주세요.')
       setAutoTransitionMessage('생각 시간 모드 — 충분히 생각하세요')
@@ -253,18 +182,6 @@ export const useInterviewSession = ({
       }, 3000)
     },
   })
-
-  // 오디오 레벨을 VAD에 전달 (ref 기반 — React 렌더 사이클 우회)
-  useEffect(() => {
-    let rafId: number
-    const syncLevel = () => {
-      updateAudioLevel(audio.audioLevelRef.current)
-      rafId = requestAnimationFrame(syncLevel)
-    }
-    rafId = requestAnimationFrame(syncLevel)
-    return () => cancelAnimationFrame(rafId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateAudioLevel])
 
   // greeting phase 진입 시 인사 TTS (mediaStream 준비 후 시작)
   useEffect(() => {
@@ -278,7 +195,7 @@ export const useInterviewSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, mediaStream.isActive])
 
-  // phase가 greeting/ready가 되면 오디오 분석기 미리 시작 (VAD가 음성 감지할 수 있도록)
+  // phase가 greeting/ready가 되면 오디오 분석기 미리 시작 (음성 분석용)
   useEffect(() => {
     if ((phase === 'greeting' || phase === 'ready' || phase === 'paused') && mediaStream.stream) {
       audio.start(mediaStream.stream)
@@ -350,26 +267,7 @@ export const useInterviewSession = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, interview?.status, interviewId, updateStatus])
 
-  // 폴백: "다음 질문" 버튼 (전환 TTS 중이면 취소 후 즉시 이동)
-  const handleNextQuestion = useCallback(() => {
-    pendingTtsActionRef.current = null
-    tts.stop()
-    nextQuestion()
-  }, [nextQuestion, tts])
-
-  // 폴백: "답변 완료" 버튼 (VAD 미감지 시 사용자가 직접 종료)
-  const handleStopAnswer = useCallback(() => {
-    pendingTtsActionRef.current = null
-    tts.stop()
-    stopRecording()
-    stt.stop()
-    recorder.pause()
-    recordEvent('manual_stop', currentQuestionIndex)
-    setCurrentSilenceDelay(DEFAULT_SILENCE_DELAY)
-    processAnswer()
-  }, [stopRecording, stt, recorder, processAnswer, recordEvent, currentQuestionIndex, tts])
-
-  // 면접 종료 (내부용 — VAD 자동 전환에서 호출)
+  // 면접 종료 (내부용)
   const handleFinishInterviewInternal = useCallback(async () => {
     if (!interview) return
 
@@ -402,8 +300,51 @@ export const useInterviewSession = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
 
+  // "답변 완료" 버튼 — 전환 로직 통합 (VAD 자동 전환 대체)
+  const handleStopAnswer = useCallback(() => {
+    const state = useInterviewStore.getState()
+    if (state.phase !== 'recording' && state.phase !== 'greeting') return
+    pendingTtsActionRef.current = null
+    tts.stop()
+    stopRecording()
+    stt.stop()
+    recorder.pause()
+    recordEvent('manual_stop', currentQuestionIndex)
+
+    // greeting 중 자기소개 완료 → ready로 전환 + 자막 클리어 + 첫 질문 TTS
+    if (greetingPhaseRef.current) {
+      greetingPhaseRef.current = false
+      clearTranscripts(0)
+      useInterviewStore.setState({ phase: 'ready', greetingCompleted: true })
+      const firstQuestion = state.questions[0]
+      if (firstQuestion) {
+        tts.speak(`네, 감사합니다. 그럼 본격적으로 면접을 시작하겠습니다. 첫 번째 질문입니다. ${firstQuestion.content}`)
+        recordEvent('question_read_tts', 0)
+      }
+      return
+    }
+
+    // 일반 질문: 답변 처리 + 전환 TTS → 다음 질문/종료
+    processAnswer()
+
+    const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
+
+    if (isLastQuestion) {
+      pendingTtsActionRef.current = () => {
+        completeInterview()
+      }
+      tts.speak(pickRandom(CLOSING_PHRASES))
+    } else {
+      pendingTtsActionRef.current = () => nextQuestion()
+      tts.speak(pickRandom(TRANSITION_PHRASES))
+    }
+  }, [stopRecording, stt, recorder, processAnswer, recordEvent, currentQuestionIndex, tts, nextQuestion, completeInterview, clearTranscripts])
+
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
+  const isFinishingRef = useRef(false)
   const handleFinishInterview = useCallback(async () => {
+    if (isFinishingRef.current) return
+    isFinishingRef.current = true
     pendingTtsActionRef.current = null
     await handleFinishInterviewInternal()
   }, [handleFinishInterviewInternal])
@@ -423,10 +364,9 @@ export const useInterviewSession = ({
 
   return {
     handlePrepare,
+    handleStartAnswer: doStartAnswer,
     handleStopAnswer,
-    handleNextQuestion,
     handleFinishInterview,
-    isVadActive,
     isTtsSpeaking: tts.isSpeaking,
   }
 }

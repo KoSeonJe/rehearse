@@ -32,6 +32,7 @@ interface InterviewState {
   followUpQuestions: Map<number, FollowUpResponse>
   isFollowUpLoading: boolean
 
+  greetingCompleted: boolean
   autoTransitionMessage: string | null
   interviewEvents: InterviewEvent[]
 }
@@ -47,6 +48,7 @@ interface InterviewActions {
 
   setCurrentTranscript: (text: string) => void
   addTranscript: (segment: TranscriptSegment) => void
+  clearTranscripts: (questionIndex: number) => void
   addNonVerbalEvent: (event: NonVerbalEvent) => void
   addVoiceEvent: (event: VoiceEvent) => void
 
@@ -90,6 +92,7 @@ const initialState: InterviewState = {
   followUpQuestions: new Map(),
   isFollowUpLoading: false,
 
+  greetingCompleted: false,
   autoTransitionMessage: null,
   interviewEvents: [],
 }
@@ -169,6 +172,15 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       })),
       currentTranscript: '',
     })
+  },
+
+  clearTranscripts: (questionIndex) => {
+    const state = get()
+    const updated = [...state.answers]
+    if (updated[questionIndex]) {
+      updated[questionIndex] = { ...updated[questionIndex], transcripts: [] }
+    }
+    set({ answers: updated, currentTranscript: '' })
   },
 
   addNonVerbalEvent: (event) => {
