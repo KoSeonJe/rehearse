@@ -31,6 +31,7 @@ export const InterviewPage = () => {
     currentTranscript,
     followUpQuestions,
     isFollowUpLoading,
+    greetingCompleted,
     autoTransitionMessage,
   } = useInterviewStore()
 
@@ -44,7 +45,6 @@ export const InterviewPage = () => {
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
-    isVadActive,
     isTtsSpeaking,
   } = useInterviewSession({
     interviewId,
@@ -64,7 +64,7 @@ export const InterviewPage = () => {
     [currentAnswer],
   )
 
-  const isGreeting = phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0 && !currentQuestion)
+  const isGreeting = !greetingCompleted && (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
 
   if (!interview || (!currentQuestion && !isGreeting)) {
     return (
@@ -88,10 +88,10 @@ export const InterviewPage = () => {
             <Logo size={24} />
           </div>
           <div>
-            <h1 className="text-sm font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
+            <h1 className="text-base font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-[10px] font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
+              <span className="text-xs font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
             </div>
           </div>
         </div>
@@ -194,9 +194,6 @@ export const InterviewPage = () => {
       <div className="p-6">
         <InterviewControls
           phase={phase}
-          currentIndex={currentQuestionIndex}
-          totalQuestions={questions.length}
-          isVadActive={isVadActive}
           isTtsSpeaking={isTtsSpeaking}
           onStartAnswer={handleStartAnswer}
           onStopAnswer={handleStopAnswer}
