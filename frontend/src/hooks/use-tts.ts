@@ -23,6 +23,7 @@ export const useTts = ({
   const onEndRef = useRef(onEnd)
   const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pendingVoicesListenerRef = useRef<(() => void) | null>(null)
+  const utteranceIdRef = useRef(0)
 
   useEffect(() => {
     onStartRef.current = onStart
@@ -57,7 +58,9 @@ export const useTts = ({
     (text: string) => {
       if (!isAvailableRef.current || !voiceRef.current) return
 
+      const id = ++utteranceIdRef.current
       window.speechSynthesis.cancel()
+      setIsSpeaking(true)
 
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.voice = voiceRef.current
@@ -72,7 +75,6 @@ export const useTts = ({
       }
 
       utterance.onstart = () => {
-        setIsSpeaking(true)
         onStartRef.current?.()
 
         // Chrome 15초 자동 중단 버그 워크어라운드
@@ -91,12 +93,14 @@ export const useTts = ({
       }
 
       utterance.onend = () => {
+        if (utteranceIdRef.current !== id) return
         clearResumeInterval()
         setIsSpeaking(false)
         onEndRef.current?.()
       }
 
       utterance.onerror = () => {
+        if (utteranceIdRef.current !== id) return
         clearResumeInterval()
         setIsSpeaking(false)
         onEndRef.current?.()
@@ -108,6 +112,7 @@ export const useTts = ({
   )
 
   const stop = useCallback(() => {
+    ++utteranceIdRef.current
     if (resumeIntervalRef.current) {
       clearInterval(resumeIntervalRef.current)
       resumeIntervalRef.current = null

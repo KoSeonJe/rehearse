@@ -187,15 +187,20 @@ export const InterviewPage = () => {
         </div>
       </main>
 
-      {/* Floating Controls */}
-      <div className="p-6">
-        <InterviewControls
-          phase={phase}
-          isTtsSpeaking={isTtsSpeaking}
-          onStartAnswer={handleStartAnswer}
-          onStopAnswer={handleStopAnswer}
-          onFinishInterview={handleFinishInterview}
-        />
+      {/* Floating Controls — 좌측 패널 기준 가운데 정렬 */}
+      <div className="px-6 pb-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="flex-1">
+            <InterviewControls
+              phase={phase}
+              isTtsSpeaking={isTtsSpeaking}
+              onStartAnswer={handleStartAnswer}
+              onStopAnswer={handleStopAnswer}
+              onFinishInterview={handleFinishInterview}
+            />
+          </div>
+          <div className="hidden lg:block lg:w-[400px]" />
+        </div>
       </div>
     </div>
   )

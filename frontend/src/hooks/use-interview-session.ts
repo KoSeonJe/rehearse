@@ -341,9 +341,10 @@ export const useInterviewSession = ({
   }, [stopRecording, stt, recorder, processAnswer, recordEvent, currentQuestionIndex, tts, nextQuestion, completeInterview, clearTranscripts])
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
+  const isFinishingRef = useRef(false)
   const handleFinishInterview = useCallback(async () => {
-    const currentPhase = useInterviewStore.getState().phase
-    if (currentPhase === 'completed') return
+    if (isFinishingRef.current) return
+    isFinishingRef.current = true
     pendingTtsActionRef.current = null
     await handleFinishInterviewInternal()
   }, [handleFinishInterviewInternal])
