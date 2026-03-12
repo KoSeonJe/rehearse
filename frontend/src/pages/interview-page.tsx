@@ -29,8 +29,6 @@ export const InterviewPage = () => {
     startTime,
     answers,
     currentTranscript,
-    followUpQuestions,
-    isFollowUpLoading,
     greetingCompleted,
     autoTransitionMessage,
   } = useInterviewStore()
@@ -41,7 +39,6 @@ export const InterviewPage = () => {
   const audio = useAudioAnalyzer()
 
   const {
-    handlePrepare,
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { useInterviewStore } from '../../stores/interview-store'
 
 interface InterviewControlsProps {
   phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
@@ -17,18 +18,19 @@ export const InterviewControls = ({
 }: InterviewControlsProps) => {
   const isRecording = phase === 'recording'
 
-  // 스페이스바로 답변 완료
+  // 스페이스바로 답변 완료 (store에서 직접 읽어 stale closure 방지)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && isRecording && !e.repeat) {
-        e.preventDefault()
-        onStopAnswer()
-      }
+      if (e.code !== 'Space' || e.repeat) return
+      const currentPhase = useInterviewStore.getState().phase
+      if (currentPhase !== 'recording') return
+      e.preventDefault()
+      onStopAnswer()
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isRecording, onStopAnswer])
+  }, [onStopAnswer])
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-20 bg-white px-6 pb-10 pt-6 sm:relative sm:bg-transparent sm:px-0 sm:pb-0 sm:pt-0">
@@ -47,7 +49,8 @@ export const InterviewControls = ({
             </div>
           ) : isRecording ? (
             <button
-              className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+              className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              disabled={isTtsSpeaking}
               onClick={onStopAnswer}
             >
               답변 완료
@@ -61,7 +64,8 @@ export const InterviewControls = ({
             </button>
           ) : phase !== 'preparing' ? (
             <button
-              className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+              className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+              disabled={isTtsSpeaking}
               onClick={onStartAnswer}
             >
               답변 시작

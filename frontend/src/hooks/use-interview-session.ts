@@ -103,6 +103,11 @@ export const useInterviewSession = ({
     onEnd: () => {
       // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
       if (pendingTtsActionRef.current) {
+        const state = useInterviewStore.getState()
+        if (state.phase !== 'paused' && state.phase !== 'recording' && state.phase !== 'completed') {
+          pendingTtsActionRef.current = null
+          return
+        }
         const action = pendingTtsActionRef.current
         pendingTtsActionRef.current = null
         action()
@@ -150,6 +155,8 @@ export const useInterviewSession = ({
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
+    const currentPhase = useInterviewStore.getState().phase
+    if (currentPhase !== 'ready' && currentPhase !== 'paused' && currentPhase !== 'greeting') return
     if (!mediaStream.stream) return
     startRecording()
     if (!recorder.isRecording) {
@@ -295,14 +302,14 @@ export const useInterviewSession = ({
 
   // "답변 완료" 버튼 — 전환 로직 통합 (VAD 자동 전환 대체)
   const handleStopAnswer = useCallback(() => {
+    const state = useInterviewStore.getState()
+    if (state.phase !== 'recording' && state.phase !== 'greeting') return
     pendingTtsActionRef.current = null
     tts.stop()
     stopRecording()
     stt.stop()
     recorder.pause()
     recordEvent('manual_stop', currentQuestionIndex)
-
-    const state = useInterviewStore.getState()
 
     // greeting 중 자기소개 완료 → ready로 전환 + 자막 클리어 + 첫 질문 TTS
     if (greetingPhaseRef.current) {
@@ -335,6 +342,8 @@ export const useInterviewSession = ({
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
   const handleFinishInterview = useCallback(async () => {
+    const currentPhase = useInterviewStore.getState().phase
+    if (currentPhase === 'completed') return
     pendingTtsActionRef.current = null
     await handleFinishInterviewInternal()
   }, [handleFinishInterviewInternal])

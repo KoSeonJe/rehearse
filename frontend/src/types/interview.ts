@@ -171,6 +171,7 @@ export interface QuestionAnswer {
 export type InterviewEventType =
   | 'question_start'
   | 'question_read_tts'
+  | 'greeting_tts'
   | 'answer_start'
   | 'answer_end'
   | 'thinking_time_requested'
