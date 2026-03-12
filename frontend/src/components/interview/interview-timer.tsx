@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { memo, useEffect, useRef } from 'react'
 
 interface InterviewTimerProps {
   startTime: number | null
@@ -21,7 +21,7 @@ const formatTime = (ms: number): string => {
     : `${pad(minutes)}:${pad(seconds)}`
 }
 
-export const InterviewTimer = ({ startTime, durationMinutes, onTick, onTimeWarning, onTimeExpired }: InterviewTimerProps) => {
+export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTimeWarning, onTimeExpired }: InterviewTimerProps) => {
   const displayRef = useRef<HTMLSpanElement>(null)
   const onTickRef = useRef(onTick)
   const onTimeWarningRef = useRef(onTimeWarning)
@@ -90,4 +90,6 @@ export const InterviewTimer = ({ startTime, durationMinutes, onTick, onTimeWarni
       {durationMinutes ? formatTime(durationMinutes * 60 * 1000) : '00:00'}
     </span>
   )
-}
+})
+
+InterviewTimer.displayName = 'InterviewTimer'

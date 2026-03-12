@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 
 interface UseVadOptions {
   enabled: boolean
+  audioLevelRef: RefObject<number>
   speechThreshold?: number
   speechStartDelay?: number
   silenceEndDelay?: number
@@ -19,6 +20,7 @@ const MAX_THRESHOLD = 0.85
 
 export const useVad = ({
   enabled,
+  audioLevelRef,
   speechThreshold = 0.08,
   speechStartDelay = 500,
   silenceEndDelay = 3000,
@@ -28,7 +30,6 @@ export const useVad = ({
   const vadStateRef = useRef<VadState>('idle')
   const speechStartTimeRef = useRef<number | null>(null)
   const silenceStartTimeRef = useRef<number | null>(null)
-  const audioLevelRef = useRef(0)
   const onSpeechStartRef = useRef(onSpeechStart)
   const onSpeechEndRef = useRef(onSpeechEnd)
   const rafRef = useRef<number | null>(null)
@@ -146,11 +147,7 @@ export const useVad = ({
         rafRef.current = null
       }
     }
-  }, [enabled])
-
-  const updateAudioLevel = useCallback((level: number) => {
-    audioLevelRef.current = level
-  }, [])
+  }, [enabled, audioLevelRef])
 
   const reset = useCallback(() => {
     vadStateRef.current = enabled ? 'listening' : 'idle'
@@ -160,7 +157,6 @@ export const useVad = ({
 
   return {
     isActive: enabled,
-    updateAudioLevel,
     reset,
   }
 }

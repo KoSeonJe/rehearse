@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import type { VoiceEvent } from '../types/interview'
 
 interface UseAudioAnalyzerReturn {
-  audioLevel: number
   audioLevelRef: React.RefObject<number>
   start: (stream: MediaStream) => Promise<void>
   stop: () => void
@@ -12,9 +11,9 @@ interface UseAudioAnalyzerReturn {
 const SILENCE_THRESHOLD = -50
 const SILENCE_DURATION_MS = 3000
 const ANALYSIS_INTERVAL_MS = 100
+const FRAME_INTERVAL_MS = 33 // ~30fps
 
 export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
-  const [audioLevel, setAudioLevel] = useState(0)
   const audioLevelRef = useRef(0)
   const contextRef = useRef<AudioContext | null>(null)
   const analyzerRef = useRef<AnalyserNode | null>(null)
@@ -23,7 +22,7 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
   const callbackRef = useRef<((event: VoiceEvent) => void) | null>(null)
   const silenceStartRef = useRef<number | null>(null)
   const lastAnalysisRef = useRef(0)
-  const frameCountRef = useRef(0)
+  const lastTickRef = useRef(0)
 
   const start = useCallback(async (stream: MediaStream) => {
     if (contextRef.current) return // 이미 시작됨 — 중복 초기화 방지
@@ -49,6 +48,14 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
     const tick = () => {
       if (!analyzerRef.current) return
 
+      // 30fps 스로틀
+      const now = performance.now()
+      if (now - lastTickRef.current < FRAME_INTERVAL_MS) {
+        rafRef.current = requestAnimationFrame(tick)
+        return
+      }
+      lastTickRef.current = now
+
       analyzerRef.current.getFloatTimeDomainData(dataArray)
 
       let sum = 0
@@ -59,32 +66,26 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
       const db = rms > 0 ? 20 * Math.log10(rms) : -100
       const normalized = Math.max(0, Math.min(1, (db + 60) / 60))
 
-      // ref는 매 프레임 업데이트 (VAD에서 지연 없이 접근)
+      // ref만 업데이트 (Zustand/setState 호출 없음 → 리렌더 0)
       audioLevelRef.current = normalized
 
-      // ~10fps로 UI state 업데이트 제한 (불필요한 리렌더 방지)
-      frameCountRef.current++
-      if (frameCountRef.current % 6 === 0) {
-        setAudioLevel(normalized)
-      }
-
-      const now = Date.now()
-      if (now - lastAnalysisRef.current >= ANALYSIS_INTERVAL_MS) {
-        lastAnalysisRef.current = now
+      const dateNow = Date.now()
+      if (dateNow - lastAnalysisRef.current >= ANALYSIS_INTERVAL_MS) {
+        lastAnalysisRef.current = dateNow
 
         if (db < SILENCE_THRESHOLD) {
           if (!silenceStartRef.current) {
-            silenceStartRef.current = now
-          } else if (now - silenceStartRef.current >= SILENCE_DURATION_MS) {
+            silenceStartRef.current = dateNow
+          } else if (dateNow - silenceStartRef.current >= SILENCE_DURATION_MS) {
             if (callbackRef.current) {
               callbackRef.current({
                 timestamp: silenceStartRef.current,
                 type: 'silence',
-                duration: (now - silenceStartRef.current) / 1000,
+                duration: (dateNow - silenceStartRef.current) / 1000,
                 value: db,
               })
             }
-            silenceStartRef.current = now
+            silenceStartRef.current = dateNow
           }
         } else {
           silenceStartRef.current = null
@@ -112,7 +113,6 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
     }
     analyzerRef.current = null
     audioLevelRef.current = 0
-    setAudioLevel(0)
   }, [])
 
   const onVoiceEvent = useCallback((callback: (event: VoiceEvent) => void) => {
@@ -127,6 +127,5 @@ export const useAudioAnalyzer = (): UseAudioAnalyzerReturn => {
     }
   }, [])
 
-  return { audioLevel, audioLevelRef, start, stop, onVoiceEvent }
+  return { audioLevelRef, start, stop, onVoiceEvent }
 }
-

@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { memo, useEffect } from 'react'
 
 interface InterviewControlsProps {
   phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
@@ -12,7 +12,7 @@ interface InterviewControlsProps {
   onFinishInterview: () => void
 }
 
-export const InterviewControls = ({
+export const InterviewControls = memo(({
   phase,
   currentIndex,
   totalQuestions,
@@ -144,4 +144,6 @@ export const InterviewControls = ({
       </div>
     </div>
   )
-}
+})
+
+InterviewControls.displayName = 'InterviewControls'

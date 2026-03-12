@@ -79,7 +79,7 @@ export const InterviewReviewPage = () => {
       <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:flex-row">
         {/* 좌측: 비디오 + 타임라인 */}
         <div className="w-full space-y-4 lg:w-3/5">
-          <VideoPlayer videoRef={videoRef} />
+          <VideoPlayer videoRef={videoRef} interviewId={id} />
           <FeedbackTimeline
             totalDuration={totalDuration}
             onSeekToFeedback={seekToFeedback}

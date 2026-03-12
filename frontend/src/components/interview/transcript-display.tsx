@@ -1,9 +1,15 @@
-interface TranscriptDisplayProps {
-  interimText: string
-  finalTexts: string[]
-}
+import { useMemo } from 'react'
+import { useInterviewStore } from '../../stores/interview-store'
 
-export const TranscriptDisplay = ({ interimText, finalTexts }: TranscriptDisplayProps) => {
+export const TranscriptDisplay = () => {
+  const interimText = useInterviewStore((s) => s.currentTranscript)
+  const currentAnswer = useInterviewStore((s) => s.answers[s.currentQuestionIndex])
+
+  const finalTexts = useMemo(
+    () => currentAnswer?.transcripts.filter((t) => t.isFinal).map((t) => t.text) ?? [],
+    [currentAnswer],
+  )
+
   const hasContent = finalTexts.length > 0 || interimText
 
   return (
@@ -27,4 +33,3 @@ export const TranscriptDisplay = ({ interimText, finalTexts }: TranscriptDisplay
     </div>
   )
 }
-

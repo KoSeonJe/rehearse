@@ -6,6 +6,7 @@ import { useVad } from './use-vad'
 import { useTts } from './use-tts'
 import { useThinkingTimeDetector } from './use-thinking-time-detector'
 import { useInterviewEventRecorder } from './use-interview-event-recorder'
+import { saveVideoBlob } from '../lib/video-storage'
 import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
 
 const DEFAULT_SILENCE_DELAY = 2000
@@ -49,7 +50,6 @@ interface UseInterviewSessionParams {
     onFinalResult: (callback: (segment: TranscriptSegment) => void) => void
   }
   audio: {
-    audioLevel: number
     audioLevelRef: React.RefObject<number>
     start: (stream: MediaStream) => Promise<void>
     stop: () => void
@@ -176,8 +176,9 @@ export const useInterviewSession = ({
   }, [mediaStream.stream, startRecording, recorder, stt, currentQuestionIndex, recordEvent, startEventRecording])
 
   // VAD: 음성 감지 시 자동 녹음 시작/일시정지
-  const { isActive: isVadActive, updateAudioLevel } = useVad({
+  const { isActive: isVadActive } = useVad({
     enabled: vadEnabled && !tts.isSpeaking,
+    audioLevelRef: audio.audioLevelRef,
     silenceEndDelay: currentSilenceDelay,
     onSpeechStart: () => {
       // TTS 종료 직후 잔향 무시 (에코 방지 — 300ms 이내 감지는 무시)
@@ -253,18 +254,6 @@ export const useInterviewSession = ({
       }, 3000)
     },
   })
-
-  // 오디오 레벨을 VAD에 전달 (ref 기반 — React 렌더 사이클 우회)
-  useEffect(() => {
-    let rafId: number
-    const syncLevel = () => {
-      updateAudioLevel(audio.audioLevelRef.current)
-      rafId = requestAnimationFrame(syncLevel)
-    }
-    rafId = requestAnimationFrame(syncLevel)
-    return () => cancelAnimationFrame(rafId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [updateAudioLevel])
 
   // greeting phase 진입 시 인사 TTS (mediaStream 준비 후 시작)
   useEffect(() => {
@@ -384,6 +373,7 @@ export const useInterviewSession = ({
 
     const blob = await recorder.stop()
     setVideoBlob(blob)
+    saveVideoBlob(interview.id, blob).catch(() => {})
     completeInterview()
 
     mediaStream.stop()
