@@ -210,7 +210,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
 
-        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any()))
+        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
                 .willReturn(followUp);
 
         FollowUpRequest request = new FollowUpRequest();
@@ -225,6 +225,45 @@ class InterviewServiceTest {
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
         assertThat(response.getType()).isEqualTo("DEEP_DIVE");
+    }
+
+    @Test
+    @DisplayName("대화 맥락 포함 후속 질문 생성 성공")
+    void generateFollowUp_withPreviousExchanges() {
+        // given
+        Interview interview = createMockInterview();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+
+        GeneratedFollowUp followUp = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(followUp, "question", "그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
+        ReflectionTestUtils.setField(followUp, "reason", "동시성 처리 이해도 확인");
+        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+
+        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
+                .willReturn(followUp);
+
+        List<FollowUpRequest.FollowUpExchange> exchanges = List.of(
+                new FollowUpRequest.FollowUpExchange("해시 충돌 해결 방법은?", "체이닝과 오픈 어드레싱이 있습니다.")
+        );
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
+        ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
+        ReflectionTestUtils.setField(request, "previousExchanges", exchanges);
+
+        // when
+        FollowUpResponse response = interviewService.generateFollowUp(1L, request);
+
+        // then
+        assertThat(response.getQuestion()).isEqualTo("그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
+        assertThat(response.getType()).isEqualTo("DEEP_DIVE");
+        then(aiClient).should().generateFollowUpQuestion(
+                eq("HashMap과 TreeMap의 차이점은?"),
+                eq("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다."),
+                any(),
+                eq(exchanges)
+        );
     }
 
     @Test

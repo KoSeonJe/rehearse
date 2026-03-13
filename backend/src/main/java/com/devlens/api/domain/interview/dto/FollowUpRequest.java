@@ -1,8 +1,11 @@
 package com.devlens.api.domain.interview.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Getter
 @NoArgsConstructor
@@ -15,4 +18,14 @@ public class FollowUpRequest {
     private String answerText;
 
     private String nonVerbalSummary;
+
+    private List<FollowUpExchange> previousExchanges;
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FollowUpExchange {
+        private String question;
+        private String answer;
+    }
 }

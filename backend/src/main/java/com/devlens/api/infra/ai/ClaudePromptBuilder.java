@@ -1,5 +1,6 @@
 package com.devlens.api.infra.ai;
 
+import com.devlens.api.domain.interview.dto.FollowUpRequest;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
@@ -172,6 +173,11 @@ public class ClaudePromptBuilder {
                 - CHALLENGE: 답변의 논리적 허점이나 대안을 탐색하는 질문
                 - APPLICATION: 답변 내용을 다른 상황에 적용해보는 질문
 
+                규칙:
+                - 반드시 하나의 후속 질문만 생성하세요. 복합 질문은 금지합니다.
+                - 이전 후속 대화가 제공된 경우, 이미 했던 질문과 중복되지 않는 새로운 관점의 질문을 생성하세요.
+                - 매 라운드마다 다른 후속 질문 유형을 사용하여 다양한 각도에서 평가하세요.
+
                 반드시 아래 JSON 형식으로만 응답하세요:
                 {
                   "question": "후속 질문 내용",
@@ -181,15 +187,31 @@ public class ClaudePromptBuilder {
                 """;
     }
 
-    public String buildFollowUpUserPrompt(String questionContent, String answerText, String nonVerbalSummary) {
-        return String.format("""
+    public String buildFollowUpUserPrompt(String questionContent, String answerText,
+                                           String nonVerbalSummary,
+                                           List<FollowUpRequest.FollowUpExchange> previousExchanges) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append(String.format("""
                 원래 질문: %s
                 면접자 답변: %s
                 비언어적 관찰: %s
-
-                위 답변에 대한 후속 질문을 생성해주세요.
                 """, questionContent, answerText,
-                nonVerbalSummary != null ? nonVerbalSummary : "관찰 데이터 없음");
+                nonVerbalSummary != null ? nonVerbalSummary : "관찰 데이터 없음"));
+
+        if (previousExchanges != null && !previousExchanges.isEmpty()) {
+            prompt.append("\n이전 후속 대화:\n");
+            for (int i = 0; i < previousExchanges.size(); i++) {
+                FollowUpRequest.FollowUpExchange exchange = previousExchanges.get(i);
+                prompt.append(String.format("[후속%d] Q: %s\n[후속%d] A: %s\n",
+                        i + 1, exchange.getQuestion(), i + 1, exchange.getAnswer()));
+            }
+            prompt.append("\n위 대화를 바탕으로 새로운 후속 질문을 생성해주세요.\n");
+            prompt.append("이전에 했던 질문과 중복되지 않는 새로운 관점의 질문이어야 합니다.\n");
+        } else {
+            prompt.append("\n위 답변에 대한 후속 질문을 생성해주세요.\n");
+        }
+
+        return prompt.toString();
     }
 
     public String buildReportSystemPrompt() {

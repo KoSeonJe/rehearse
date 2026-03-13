@@ -3,6 +3,7 @@ package com.devlens.api.infra.ai;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
+import com.devlens.api.domain.interview.dto.FollowUpRequest;
 import com.devlens.api.infra.ai.dto.GeneratedFeedback;
 import com.devlens.api.infra.ai.dto.GeneratedFollowUp;
 import com.devlens.api.infra.ai.dto.GeneratedQuestion;
@@ -17,7 +18,9 @@ public interface AiClient {
                                               List<String> csSubTopics, String resumeText,
                                               Integer durationMinutes);
 
-    GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText, String nonVerbalSummary);
+    GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
+                                                String nonVerbalSummary,
+                                                List<FollowUpRequest.FollowUpExchange> previousExchanges);
 
     GeneratedReport generateReport(String feedbackSummary);
 

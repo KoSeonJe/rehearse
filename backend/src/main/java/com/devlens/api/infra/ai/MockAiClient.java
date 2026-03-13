@@ -3,6 +3,7 @@ package com.devlens.api.infra.ai;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
+import com.devlens.api.domain.interview.dto.FollowUpRequest;
 import com.devlens.api.infra.ai.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -53,8 +54,10 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText, String nonVerbalSummary) {
-        log.info("[Mock] generateFollowUpQuestion 호출");
+    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
+                                                       String nonVerbalSummary,
+                                                       List<FollowUpRequest.FollowUpExchange> previousExchanges) {
+        log.info("[Mock] generateFollowUpQuestion 호출 - previousExchanges={}", previousExchanges != null ? previousExchanges.size() : 0);
 
         String json = """
                 {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE"}

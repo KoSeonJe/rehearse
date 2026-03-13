@@ -3,6 +3,7 @@ package com.devlens.api.infra.ai;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
+import com.devlens.api.domain.interview.dto.FollowUpRequest;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.dto.*;
 import com.devlens.api.infra.ai.exception.AiErrorCode;
@@ -78,9 +79,11 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
-    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText, String nonVerbalSummary) {
+    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
+                                                       String nonVerbalSummary,
+                                                       List<FollowUpRequest.FollowUpExchange> previousExchanges) {
         String systemPrompt = promptBuilder.buildFollowUpSystemPrompt();
-        String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary);
+        String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary, previousExchanges);
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
