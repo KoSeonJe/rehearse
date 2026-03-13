@@ -1,5 +1,5 @@
 import { useCallback, type MutableRefObject } from 'react'
-import { useInterviewStore } from '@/stores/interview-store'
+import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
 import { useFollowUpQuestion } from '@/hooks/use-interviews'
 import type { Question, InterviewEventType } from '@/types/interview'
 
@@ -55,50 +55,40 @@ export const useAnswerFlow = ({
 }: UseAnswerFlowParams) => {
   const followUpMutation = useFollowUpQuestion()
   const {
-    questions,
-    currentQuestionIndex,
     startRecording,
     stopRecording,
-    addFollowUpQuestion,
+    setCurrentFollowUp,
+    completeFollowUpRound,
+    resetFollowUpState,
     setFollowUpLoading,
     nextQuestion,
     completeInterview,
   } = useInterviewStore()
 
-  // 답변 처리 로직 (후속질문 요청)
-  const processAnswer = useCallback(() => {
-    const currentAnswer = useInterviewStore.getState().answers[currentQuestionIndex]
-    const answerText = currentAnswer?.transcripts
+  // 현재 답변 텍스트 수집
+  const getCurrentAnswerText = useCallback(() => {
+    const state = useInterviewStore.getState()
+    const currentAnswer = state.answers[state.currentQuestionIndex]
+    return currentAnswer?.transcripts
       .filter((t) => t.isFinal)
       .map((t) => t.text)
-      .join(' ')
+      .join(' ') ?? ''
+  }, [])
 
-    if (answerText && interview) {
-      setFollowUpLoading(true)
-      followUpMutation.mutate(
-        {
-          id: interview.id,
-          data: {
-            questionContent: questions[currentQuestionIndex].content,
-            answerText,
-          },
-        },
-        {
-          onSuccess: (res) => {
-            addFollowUpQuestion(currentQuestionIndex, res.data)
-            setFollowUpLoading(false)
-          },
-          onError: () => {
-            setFollowUpLoading(false)
-          },
-        },
-      )
+  // 다음 질문 또는 종료로 전환
+  const transitionToNext = useCallback((isLast: boolean) => {
+    if (isLast) {
+      pendingTtsActionRef.current = () => completeInterview()
+      tts.speak(pickRandom(CLOSING_PHRASES))
+    } else {
+      pendingTtsActionRef.current = () => nextQuestion()
+      tts.speak(pickRandom(TRANSITION_PHRASES))
     }
-  }, [currentQuestionIndex, interview, questions, followUpMutation, addFollowUpQuestion, setFollowUpLoading])
+  }, [pendingTtsActionRef, completeInterview, nextQuestion, tts])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
-    const currentPhase = useInterviewStore.getState().phase
+    const { phase: currentPhase, currentQuestionIndex } = useInterviewStore.getState()
     if (currentPhase !== 'ready' && currentPhase !== 'paused' && currentPhase !== 'greeting') return
     if (!mediaStream.stream) return
     startRecording()
@@ -110,10 +100,10 @@ export const useAnswerFlow = ({
     }
     stt.start(currentQuestionIndex)
     recordEvent('answer_start', currentQuestionIndex)
-  }, [mediaStream.stream, startRecording, recorder, stt, currentQuestionIndex, recordEvent, startEventRecording])
+  }, [mediaStream.stream, startRecording, recorder, stt, recordEvent, startEventRecording])
 
-  // "답변 완료" 버튼 — 전환 로직 통합
-  const handleStopAnswer = useCallback(() => {
+  // "답변 완료" 버튼 — 후속질문 멀티라운드 흐름
+  const handleStopAnswer = useCallback(async () => {
     const state = useInterviewStore.getState()
     if (state.phase !== 'recording' && state.phase !== 'greeting') return
     pendingTtsActionRef.current = null
@@ -121,7 +111,7 @@ export const useAnswerFlow = ({
     stopRecording()
     stt.stop()
     recorder.pause()
-    recordEvent('manual_stop', currentQuestionIndex)
+    recordEvent('manual_stop', state.currentQuestionIndex)
 
     // greeting 중 자기소개 완료 → ready로 전환 + 첫 질문 TTS
     if (greetingPhaseRef.current) {
@@ -129,21 +119,57 @@ export const useAnswerFlow = ({
       return
     }
 
-    // 일반 질문: 답변 처리 + 전환 TTS → 다음 질문/종료
-    processAnswer()
+    // 현재 답변 텍스트 수집
+    const answerText = getCurrentAnswerText()
 
+    // 후속질문에 대한 답변이었으면 히스토리에 저장
+    if (state.currentFollowUp) {
+      completeFollowUpRound(answerText)
+    }
+
+    // 후속질문 라운드 확인 (completeFollowUpRound 후 갱신된 상태)
+    const updatedState = useInterviewStore.getState()
+    const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
-    if (isLastQuestion) {
-      pendingTtsActionRef.current = () => {
-        completeInterview()
+    if (canDoMoreFollowUps && answerText.trim() && interview) {
+      // 후속질문 요청 → 응답 대기 → TTS로 읽기
+      setFollowUpLoading(true)
+      try {
+        const history = updatedState.followUpHistory.get(state.currentQuestionIndex) ?? []
+        const previousExchanges = history.map((e) => ({
+          question: e.question,
+          answer: e.answer,
+        }))
+
+        const res = await followUpMutation.mutateAsync({
+          id: interview.id,
+          data: {
+            questionContent: state.questions[state.currentQuestionIndex].content,
+            answerText,
+            previousExchanges,
+          },
+        })
+        setFollowUpLoading(false)
+        setCurrentFollowUp(res.data)
+        tts.speak(res.data.question)
+      } catch {
+        setFollowUpLoading(false)
+        resetFollowUpState()
+        transitionToNext(isLastQuestion)
       }
-      tts.speak(pickRandom(CLOSING_PHRASES))
     } else {
-      pendingTtsActionRef.current = () => nextQuestion()
-      tts.speak(pickRandom(TRANSITION_PHRASES))
+      // 후속질문 라운드 종료 → 다음 메인 질문 전환
+      resetFollowUpState()
+      transitionToNext(isLastQuestion)
     }
-  }, [stopRecording, stt, recorder, processAnswer, recordEvent, currentQuestionIndex, tts, nextQuestion, completeInterview, greetingPhaseRef, completeGreeting, pendingTtsActionRef])
+  }, [
+    stopRecording, stt, recorder, tts, recordEvent,
+    greetingPhaseRef, completeGreeting, pendingTtsActionRef,
+    getCurrentAnswerText, completeFollowUpRound,
+    setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
+    followUpMutation, interview, transitionToNext,
+  ])
 
   return {
     handleStartAnswer: doStartAnswer,

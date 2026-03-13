@@ -4,6 +4,7 @@ import { useInterviewStore } from '@/stores/interview-store'
 interface InterviewControlsProps {
   phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
   isTtsSpeaking?: boolean
+  isFollowUpLoading?: boolean
   onStartAnswer: () => void
   onStopAnswer: () => void
   onFinishInterview: () => void
@@ -12,6 +13,7 @@ interface InterviewControlsProps {
 export const InterviewControls = memo(({
   phase,
   isTtsSpeaking,
+  isFollowUpLoading,
   onStartAnswer,
   onStopAnswer,
   onFinishInterview,
@@ -65,10 +67,10 @@ export const InterviewControls = memo(({
           ) : phase !== 'preparing' ? (
             <button
               className="h-12 rounded-[16px] bg-text-primary px-8 text-sm font-extrabold text-white transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
-              disabled={isTtsSpeaking}
+              disabled={isTtsSpeaking || isFollowUpLoading}
               onClick={onStartAnswer}
             >
-              답변 시작
+              {isFollowUpLoading ? '후속 질문 생성 중...' : '답변 시작'}
             </button>
           ) : null}
         </div>

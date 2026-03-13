@@ -6,8 +6,11 @@ import type {
   VoiceEvent,
   QuestionAnswer,
   FollowUpResponse,
+  FollowUpExchange,
   InterviewEvent,
 } from '@/types/interview'
+
+export const MAX_FOLLOWUP_ROUNDS = 3
 
 export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
 
@@ -29,7 +32,9 @@ interface InterviewState {
   nonVerbalEvents: NonVerbalEvent[]
   voiceEvents: VoiceEvent[]
 
-  followUpQuestions: Map<number, FollowUpResponse>
+  followUpHistory: Map<number, FollowUpExchange[]>
+  currentFollowUp: FollowUpResponse | null
+  followUpRound: number
   isFollowUpLoading: boolean
 
   greetingCompleted: boolean
@@ -55,7 +60,9 @@ interface InterviewActions {
   setVideoBlob: (blob: Blob) => void
   setElapsedTime: (time: number) => void
   completeInterview: () => void
-  addFollowUpQuestion: (questionIndex: number, followUp: FollowUpResponse) => void
+  setCurrentFollowUp: (followUp: FollowUpResponse | null) => void
+  completeFollowUpRound: (answerText: string) => void
+  resetFollowUpState: () => void
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
   addInterviewEvent: (event: InterviewEvent) => void
@@ -89,7 +96,9 @@ const initialState: InterviewState = {
   nonVerbalEvents: [],
   voiceEvents: [],
 
-  followUpQuestions: new Map(),
+  followUpHistory: new Map(),
+  currentFollowUp: null,
+  followUpRound: 0,
   isFollowUpLoading: false,
 
   greetingCompleted: false,
@@ -215,12 +224,30 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   completeInterview: () => set({ phase: 'completed' }),
 
-  addFollowUpQuestion: (questionIndex, followUp) => {
-    const { followUpQuestions } = get()
-    const updated = new Map(followUpQuestions)
-    updated.set(questionIndex, followUp)
-    set({ followUpQuestions: updated })
+  setCurrentFollowUp: (followUp) => set({ currentFollowUp: followUp }),
+
+  completeFollowUpRound: (answerText) => {
+    const { currentQuestionIndex, currentFollowUp, followUpHistory, followUpRound } = get()
+    if (!currentFollowUp) return
+
+    const history = new Map(followUpHistory)
+    const existing = history.get(currentQuestionIndex) ?? []
+    history.set(currentQuestionIndex, [
+      ...existing,
+      {
+        question: currentFollowUp.question,
+        answer: answerText,
+        type: currentFollowUp.type,
+      },
+    ])
+    set({
+      followUpHistory: history,
+      followUpRound: followUpRound + 1,
+      currentFollowUp: null,
+    })
   },
+
+  resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0 }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 

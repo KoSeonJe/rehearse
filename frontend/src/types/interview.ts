@@ -114,10 +114,17 @@ export interface InterviewReport {
 
 export type FollowUpType = 'DEEP_DIVE' | 'CLARIFICATION' | 'CHALLENGE' | 'APPLICATION'
 
+export interface FollowUpExchange {
+  question: string
+  answer: string
+  type: FollowUpType
+}
+
 export interface FollowUpRequest {
   questionContent: string
   answerText: string
   nonVerbalSummary?: string
+  previousExchanges?: Array<{ question: string; answer: string }>
 }
 
 export interface FollowUpResponse {
