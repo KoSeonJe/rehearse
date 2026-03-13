@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from 'react'
-import { useInterviewStore } from '../../stores/interview-store'
-import { loadVideoBlob } from '../../lib/video-storage'
+import { useInterviewStore } from '@/stores/interview-store'
+import { loadVideoBlob } from '@/lib/video-storage'
 
 interface VideoPlayerProps {
   videoRef: RefObject<HTMLVideoElement | null>

@@ -7,7 +7,7 @@ import type {
   QuestionAnswer,
   FollowUpResponse,
   InterviewEvent,
-} from '../types/interview'
+} from '@/types/interview'
 
 export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
 

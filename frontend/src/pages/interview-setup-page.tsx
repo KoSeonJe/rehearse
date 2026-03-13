@@ -4,6 +4,7 @@ import { Logo } from '@/components/ui/logo'
 import { BackLink } from '@/components/ui/back-link'
 import { useCreateInterview } from '@/hooks/use-interviews'
 import { ApiError } from '@/lib/api-client'
+import { formatFileSize } from '@/lib/format-utils'
 import type {
   Position,
   Level,
@@ -63,11 +64,11 @@ export const InterviewSetupPage = () => {
     }
   }
 
-  const isSubmitStep = currentStep === 4
+  const isSubmitStep = currentStep === totalSteps
 
   const handleNext = () => {
     if (!canNext(currentStep)) return
-    if (currentStep < 4) {
+    if (currentStep < totalSteps) {
       setCurrentStep((currentStep + 1) as Step)
     }
   }
@@ -165,12 +166,6 @@ export const InterviewSetupPage = () => {
         },
       },
     )
-  }
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes}B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`
   }
 
   return (

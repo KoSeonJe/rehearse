@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useInterviewStore } from '../../stores/interview-store'
+import { useInterviewStore } from '@/stores/interview-store'
 
 export const TranscriptDisplay = () => {
   const interimText = useInterviewStore((s) => s.currentTranscript)

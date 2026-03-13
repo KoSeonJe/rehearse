@@ -178,13 +178,18 @@ com.devlens.api/
 
 ### DTO 패턴
 ```java
-// record 사용 (불변, 간결)
-public record CreateInterviewRequest(
-    @NotBlank @Size(max = 100) String position,
-    @NotNull InterviewLevel level,
-    @NotNull InterviewType interviewType
-) {}
+// Request: @Getter + @NoArgsConstructor + Jakarta Validation
+@Getter
+@NoArgsConstructor
+public class CreateInterviewRequest {
+    @NotNull(message = "직무를 선택해주세요.")
+    private Position position;
+    // ...
+}
+
+// Response: @Getter + @Builder + static from() 팩토리 메서드
 ```
+> 상세 패턴은 `docs/backend-coding-guide.md` 섹션 6 참조
 
 ### 에러 처리
 - `BusinessException` 상속하여 도메인별 예외 생성
@@ -193,13 +198,13 @@ public record CreateInterviewRequest(
 
 ### 응답 형식
 ```java
-// 성공: ApiResponse.success(data)
+// 성공: ApiResponse.ok(data)
 // 실패: ErrorResponse (GlobalExceptionHandler가 자동 생성)
 ```
 
 ### 테스트
 - 서비스 단위 테스트 필수 (핵심 비즈니스 로직)
-- `@MockBean`으로 외부 의존성 격리
+- `@MockitoBean`으로 외부 의존성 격리 (Spring Boot 3.4+, `@MockBean` deprecated)
 - 테스트 메서드명: `메서드명_조건_기대결과` (예: `createInterview_success`)
 
 ---

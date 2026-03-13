@@ -18,7 +18,7 @@ export const AudioLevelIndicator = memo(({ audioLevelRef }: AudioLevelIndicatorP
       const now = performance.now()
       if (now - lastUpdate >= UPDATE_INTERVAL_MS) {
         lastUpdate = now
-        const level = audioLevelRef.current
+        const level = audioLevelRef.current ?? 0
         const activeBars = Math.round(level * BARS)
 
         if (containerRef.current) {

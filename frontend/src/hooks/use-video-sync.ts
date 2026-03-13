@@ -1,5 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react'
-import { useReviewStore } from '../stores/review-store'
+import { useReviewStore } from '@/stores/review-store'
 
 export const useVideoSync = () => {
   const videoRef = useRef<HTMLVideoElement>(null)

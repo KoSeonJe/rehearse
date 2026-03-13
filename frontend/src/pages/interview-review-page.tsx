@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useReviewStore } from '../stores/review-store'
-import { useFeedbacks } from '../hooks/use-feedback'
-import { useVideoSync } from '../hooks/use-video-sync'
+import { useReviewStore } from '@/stores/review-store'
+import { useFeedbacks } from '@/hooks/use-feedback'
+import { useVideoSync } from '@/hooks/use-video-sync'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
-import { VideoPlayer } from '../components/review/video-player'
-import { FeedbackTimeline } from '../components/review/feedback-timeline'
-import { FeedbackPanel } from '../components/review/feedback-panel'
+import { VideoPlayer } from '@/components/review/video-player'
+import { FeedbackTimeline } from '@/components/review/feedback-timeline'
+import { FeedbackPanel } from '@/components/review/feedback-panel'
 
 export const InterviewReviewPage = () => {
   const { id } = useParams<{ id: string }>()

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { TimestampFeedback } from '../types/interview'
+import type { TimestampFeedback } from '@/types/interview'
 
 interface ReviewState {
   currentTime: number

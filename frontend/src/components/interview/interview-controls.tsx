@@ -1,5 +1,5 @@
 import { memo, useEffect } from 'react'
-import { useInterviewStore } from '../../stores/interview-store'
+import { useInterviewStore } from '@/stores/interview-store'
 
 interface InterviewControlsProps {
   phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
