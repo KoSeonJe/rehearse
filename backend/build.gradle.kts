@@ -44,6 +44,9 @@ dependencies {
     // PDF
     implementation("org.apache.pdfbox:pdfbox:3.0.4")
 
+    // .env 파일 로드
+    implementation("me.paulschwarz:spring-dotenv:4.0.0")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
