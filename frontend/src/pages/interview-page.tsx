@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useInterviewStore } from '@/stores/interview-store'
+import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
 import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
@@ -14,6 +14,13 @@ import { TranscriptDisplay } from '@/components/interview/transcript-display'
 import { InterviewControls } from '@/components/interview/interview-controls'
 import { AudioLevelIndicator } from '@/components/interview/audio-level-indicator'
 import { InterviewTimer } from '@/components/interview/interview-timer'
+
+const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
+  DEEP_DIVE: '심화',
+  CLARIFICATION: '명확화',
+  CHALLENGE: '반론',
+  APPLICATION: '적용',
+}
 
 export const InterviewPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -29,6 +36,9 @@ export const InterviewPage = () => {
   const startTime = useInterviewStore((s) => s.startTime)
   const greetingCompleted = useInterviewStore((s) => s.greetingCompleted)
   const autoTransitionMessage = useInterviewStore((s) => s.autoTransitionMessage)
+  const currentFollowUp = useInterviewStore((s) => s.currentFollowUp)
+  const isFollowUpLoading = useInterviewStore((s) => s.isFollowUpLoading)
+  const followUpRound = useInterviewStore((s) => s.followUpRound)
 
   const mediaStream = useMediaStream()
   const recorder = useMediaRecorder()
@@ -147,6 +157,33 @@ export const InterviewPage = () => {
                   {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
                 </p>
               </div>
+
+              {/* 후속질문 로딩 */}
+              {isFollowUpLoading && (
+                <div className="mt-4 rounded-[24px] bg-white/80 border border-accent/20 p-6 shadow-toss animate-fade-in">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                    <span className="text-sm font-bold text-accent">후속 질문을 생성하고 있습니다...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* 후속질문 카드 */}
+              {currentFollowUp && !isFollowUpLoading && (
+                <div className="mt-4 rounded-[24px] bg-white border border-accent/30 p-6 shadow-toss animate-fade-in">
+                  <div className="mb-3 flex items-center justify-center gap-2">
+                    <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-accent">
+                      후속 질문 {followUpRound}/{MAX_FOLLOWUP_ROUNDS}
+                    </span>
+                    <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-accent">
+                      {FOLLOW_UP_TYPE_LABELS[currentFollowUp.type] ?? currentFollowUp.type}
+                    </span>
+                  </div>
+                  <p className="text-lg md:text-xl font-extrabold leading-relaxed text-center tracking-tight text-text-primary">
+                    {currentFollowUp.question}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -186,6 +223,7 @@ export const InterviewPage = () => {
             <InterviewControls
               phase={phase}
               isTtsSpeaking={isTtsSpeaking}
+              isFollowUpLoading={isFollowUpLoading}
               onStartAnswer={handleStartAnswer}
               onStopAnswer={handleStopAnswer}
               onFinishInterview={handleFinishInterview}
