@@ -1,0 +1,49 @@
+import type { Step } from '@/hooks/use-interview-setup'
+
+interface SetupProgressBarProps {
+  currentStep: Step
+  totalSteps: number
+}
+
+export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarProps) => {
+  return (
+    <div className="mb-12">
+      <div className="flex items-center justify-between mb-2">
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+          <div key={step} className="flex items-center gap-1">
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all ${
+                step < currentStep
+                  ? 'bg-accent text-white'
+                  : step === currentStep
+                    ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                    : 'bg-surface text-text-tertiary'
+              }`}
+            >
+              {step < currentStep ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+                </svg>
+              ) : (
+                step
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex gap-1">
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
+          <div
+            key={step}
+            className={`h-1 flex-1 rounded-full transition-all ${
+              step <= currentStep ? 'bg-accent' : 'bg-surface'
+            }`}
+          />
+        ))}
+      </div>
+      <p className="mt-2 text-right text-[11px] font-bold text-text-tertiary">
+        {currentStep} / {totalSteps}
+      </p>
+    </div>
+  )
+}
