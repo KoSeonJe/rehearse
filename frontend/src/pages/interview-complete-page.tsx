@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useInterviewStore } from '../stores/interview-store'
-import { useGenerateFeedback } from '../hooks/use-feedback'
+import { useInterviewStore } from '@/stores/interview-store'
+import { useGenerateFeedback } from '@/hooks/use-feedback'
 import { Character } from '@/components/ui/character'
-import type { AnswerData } from '../types/interview'
+import type { AnswerData } from '@/types/interview'
 
 const ANALYSIS_STEPS = [
   '답변 내용 분석 중...',

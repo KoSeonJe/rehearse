@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { TranscriptSegment } from '../types/interview'
+import type { TranscriptSegment } from '@/types/interview'
 
 interface UseSpeechRecognitionReturn {
   isListening: boolean
@@ -36,6 +36,7 @@ declare global {
 
 const MAX_NETWORK_RETRIES = 3
 const SESSION_TIMEOUT_MS = 65000
+const BACKOFF_BASE_MS = 1000
 
 export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false)
@@ -95,7 +96,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
       if (event.error === 'network') {
         // 네트워크 에러: 지수 백오프 재시도 (최대 3회)
         if (networkRetryCountRef.current < MAX_NETWORK_RETRIES) {
-          const delay = Math.pow(2, networkRetryCountRef.current) * 1000
+          const delay = Math.pow(2, networkRetryCountRef.current) * BACKOFF_BASE_MS
           networkRetryCountRef.current++
           setTimeout(() => {
             if (shouldRestartRef.current && recognitionRef.current) {

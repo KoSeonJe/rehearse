@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useReport } from '../hooks/use-report'
+import { useReport } from '@/hooks/use-report'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 

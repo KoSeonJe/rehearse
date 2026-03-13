@@ -1,4 +1,4 @@
-import type { Question, FollowUpResponse } from '../../types/interview'
+import type { Question, FollowUpResponse } from '@/types/interview'
 
 interface QuestionDisplayProps {
   question: Question

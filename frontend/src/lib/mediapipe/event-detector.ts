@@ -1,4 +1,4 @@
-import type { NonVerbalEvent, NonVerbalEventType, Severity } from '../../types/interview'
+import type { NonVerbalEvent, NonVerbalEventType, Severity } from '@/types/interview'
 
 interface DetectorState {
   gazeDeviationStart: number | null

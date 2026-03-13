@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
-import { analyzePosture } from '../lib/mediapipe/pose-analyzer'
-import type { NonVerbalEvent } from '../types/interview'
-import type { EventDetector } from '../lib/mediapipe/event-detector'
+import { analyzePosture } from '@/lib/mediapipe/pose-analyzer'
+import type { NonVerbalEvent } from '@/types/interview'
+import type { EventDetector } from '@/lib/mediapipe/event-detector'
 
 interface UsePoseDetectionReturn {
   isLoaded: boolean

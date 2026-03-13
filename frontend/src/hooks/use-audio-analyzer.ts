@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react'
-import type { VoiceEvent } from '../types/interview'
+import type { VoiceEvent } from '@/types/interview'
 
 interface UseAudioAnalyzerReturn {
   audioLevelRef: React.RefObject<number>

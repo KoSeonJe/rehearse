@@ -1,15 +1,10 @@
-import { useReviewStore } from '../../stores/review-store'
+import { useReviewStore } from '@/stores/review-store'
 import { TimelineMarker } from './timeline-marker'
+import { formatTimeMinSec } from '@/lib/format-utils'
 
 interface FeedbackTimelineProps {
   totalDuration: number
   onSeekToFeedback: (feedbackId: number) => void
-}
-
-const formatTime = (seconds: number): string => {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 export const FeedbackTimeline = ({ totalDuration, onSeekToFeedback }: FeedbackTimelineProps) => {
@@ -37,8 +32,8 @@ export const FeedbackTimeline = ({ totalDuration, onSeekToFeedback }: FeedbackTi
         ))}
       </div>
       <div className="flex justify-between text-xs text-text-tertiary">
-        <span>{formatTime(currentTime)}</span>
-        <span>{formatTime(totalDuration)}</span>
+        <span>{formatTimeMinSec(currentTime)}</span>
+        <span>{formatTimeMinSec(totalDuration)}</span>
       </div>
       {/* 범례 */}
       <div className="flex gap-4 text-xs text-text-secondary">

@@ -1,5 +1,8 @@
 import type { DeviceTestState, DeviceTestStatus } from '@/types/device'
 
+const MIC_LEVEL_SCALE_FACTOR = 0.4
+const MIC_LEVEL_MIN_HEIGHT = 8
+
 interface DeviceTestSectionProps {
   state: DeviceTestState
   micLevel: number
@@ -119,7 +122,7 @@ export const DeviceTestSection = ({
                   key={i}
                   className="w-1.5 rounded-full bg-accent transition-all duration-75"
                   style={{
-                    height: `${Math.max(8, Math.min(micLevel * (i <= 4 ? i * 0.4 : (8 - i) * 0.4), 100))}%`,
+                    height: `${Math.max(MIC_LEVEL_MIN_HEIGHT, Math.min(micLevel * (i <= 4 ? i * MIC_LEVEL_SCALE_FACTOR : (8 - i) * MIC_LEVEL_SCALE_FACTOR), 100))}%`,
                   }}
                 />
               ))}

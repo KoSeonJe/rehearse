@@ -4,6 +4,10 @@ interface AudioWaveformProps {
 }
 
 const BAR_COUNT = 5
+const HEIGHT_SCALE_STEP = 0.15
+const ANIMATION_DELAY_STEP = 0.12
+const ANIMATION_BASE_DURATION = 0.8
+const ANIMATION_DURATION_INCREMENT = 0.1
 
 export const AudioWaveform = ({ isSpeaking, size = 240 }: AudioWaveformProps) => {
   const barWidth = size * 0.06
@@ -31,14 +35,14 @@ export const AudioWaveform = ({ isSpeaking, size = 240 }: AudioWaveformProps) =>
         {Array.from({ length: BAR_COUNT }).map((_, i) => {
           const centerIndex = Math.floor(BAR_COUNT / 2)
           const distFromCenter = Math.abs(i - centerIndex)
-          const heightScale = 1 - distFromCenter * 0.15
+          const heightScale = 1 - distFromCenter * HEIGHT_SCALE_STEP
 
           const x = (viewBoxWidth - totalWidth) / 2 + i * (barWidth + gap)
           const barHeight = isSpeaking
             ? maxBarHeight * heightScale
             : minBarHeight
 
-          const animationDelay = i * 0.12
+          const animationDelay = i * ANIMATION_DELAY_STEP
 
           return (
             <rect
@@ -52,7 +56,7 @@ export const AudioWaveform = ({ isSpeaking, size = 240 }: AudioWaveformProps) =>
               style={
                 isSpeaking
                   ? {
-                      animation: `waveform-bar ${0.8 + i * 0.1}s ease-in-out ${animationDelay}s infinite alternate`,
+                      animation: `waveform-bar ${ANIMATION_BASE_DURATION + i * ANIMATION_DURATION_INCREMENT}s ease-in-out ${animationDelay}s infinite alternate`,
                       transformOrigin: `${x + barWidth / 2}px ${viewBoxHeight / 2}px`,
                     }
                   : {

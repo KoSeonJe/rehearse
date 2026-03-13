@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { InterviewEvent, InterviewEventType } from '../types/interview'
+import type { InterviewEvent, InterviewEventType } from '@/types/interview'
 
 export const useInterviewEventRecorder = () => {
   const eventsRef = useRef<InterviewEvent[]>([])

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useInterviewStore } from '../stores/interview-store'
-import { useUpdateInterviewStatus, useFollowUpQuestion } from '../hooks/use-interviews'
+import { useInterviewStore } from '@/stores/interview-store'
+import { useUpdateInterviewStatus, useFollowUpQuestion } from '@/hooks/use-interviews'
 import { useTts } from './use-tts'
 import { useThinkingTimeDetector } from './use-thinking-time-detector'
 import { useInterviewEventRecorder } from './use-interview-event-recorder'
-import { saveVideoBlob } from '../lib/video-storage'
-import type { Question, TranscriptSegment, VoiceEvent } from '../types/interview'
+import { saveVideoBlob } from '@/lib/video-storage'
+import type { Question, TranscriptSegment, VoiceEvent } from '@/types/interview'
 
 const TRANSITION_PHRASES = [
   '네, 다음 질문 드리겠습니다.',

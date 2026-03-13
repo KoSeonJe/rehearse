@@ -1,4 +1,5 @@
 import { memo, useEffect, useRef } from 'react'
+import { formatTimeFull } from '@/lib/format-utils'
 
 interface InterviewTimerProps {
   startTime: number | null
@@ -8,18 +9,7 @@ interface InterviewTimerProps {
   onTimeExpired?: () => void
 }
 
-const formatTime = (ms: number): string => {
-  const totalSeconds = Math.floor(ms / 1000)
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-
-  const pad = (n: number) => n.toString().padStart(2, '0')
-
-  return hours > 0
-    ? `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`
-    : `${pad(minutes)}:${pad(seconds)}`
-}
+const TIME_WARNING_THRESHOLD_MS = 120_000
 
 export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTimeWarning, onTimeExpired }: InterviewTimerProps) => {
   const displayRef = useRef<HTMLSpanElement>(null)
@@ -48,9 +38,9 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
       if (totalMs) {
         const remaining = totalMs - elapsed
         if (displayRef.current) {
-          displayRef.current.textContent = formatTime(Math.max(0, remaining))
+          displayRef.current.textContent = formatTimeFull(Math.max(0, remaining))
           // 2분 이하 경고 스타일
-          if (remaining <= 120_000 && remaining > 0) {
+          if (remaining <= TIME_WARNING_THRESHOLD_MS && remaining > 0) {
             displayRef.current.classList.add('text-warning')
             displayRef.current.classList.remove('text-text-secondary')
           } else if (remaining <= 0) {
@@ -58,7 +48,7 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
             displayRef.current.classList.remove('text-text-secondary', 'text-warning')
           }
         }
-        if (remaining <= 120_000 && !warningFiredRef.current) {
+        if (remaining <= TIME_WARNING_THRESHOLD_MS && !warningFiredRef.current) {
           warningFiredRef.current = true
           onTimeWarningRef.current?.()
         }
@@ -68,7 +58,7 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
         }
       } else {
         if (displayRef.current) {
-          displayRef.current.textContent = formatTime(elapsed)
+          displayRef.current.textContent = formatTimeFull(elapsed)
         }
       }
 
@@ -87,7 +77,7 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
       aria-label={durationMinutes ? '남은 면접 시간' : '면접 경과 시간'}
       className="font-mono text-base tabular-nums text-text-secondary transition-colors duration-700"
     >
-      {durationMinutes ? formatTime(durationMinutes * 60 * 1000) : '00:00'}
+      {durationMinutes ? formatTimeFull(durationMinutes * 60 * 1000) : '00:00'}
     </span>
   )
 })

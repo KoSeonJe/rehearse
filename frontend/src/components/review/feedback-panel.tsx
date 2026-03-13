@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useReviewStore } from '../../stores/review-store'
-import type { TimestampFeedback } from '../../types/interview'
+import { useReviewStore } from '@/stores/review-store'
+import type { TimestampFeedback } from '@/types/interview'
+import { formatTimeMinSec } from '@/lib/format-utils'
 
 interface FeedbackPanelProps {
   onSeekToFeedback: (feedbackId: number) => void
@@ -16,12 +17,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   VERBAL: '언어적',
   NON_VERBAL: '비언어적',
   CONTENT: '내용',
-}
-
-const formatTime = (seconds: number): string => {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 const FeedbackCard = ({
@@ -57,7 +52,7 @@ const FeedbackCard = ({
     >
       <div className="mb-2 flex items-center gap-2">
         <span className="text-xs font-medium text-text-secondary">
-          {formatTime(feedback.timestampSeconds)}
+          {formatTimeMinSec(feedback.timestampSeconds)}
         </span>
         <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${severity.text} ${severity.bg}`}>
           {severity.label}

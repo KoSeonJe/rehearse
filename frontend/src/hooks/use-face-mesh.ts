@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
-import { analyzeGaze } from '../lib/mediapipe/face-analyzer'
-import type { NonVerbalEvent } from '../types/interview'
-import type { EventDetector } from '../lib/mediapipe/event-detector'
+import { analyzeGaze } from '@/lib/mediapipe/face-analyzer'
+import type { NonVerbalEvent } from '@/types/interview'
+import type { EventDetector } from '@/lib/mediapipe/event-detector'
 
 interface UseFaceMeshReturn {
   isLoaded: boolean
