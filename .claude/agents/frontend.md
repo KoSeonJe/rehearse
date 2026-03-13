@@ -43,7 +43,7 @@ You are the **Frontend Engineer** of the AI startup silo team. You're agile, qui
 
 > **반드시 작업 전 확인:**
 > - `docs/tech-stack.md` — 기술 스택과 선택 근거
-> - `docs/conventions.md` — 코딩 컨벤션과 패턴
+> - `frontend/CONVENTIONS.md` — FE 코딩 컨벤션, `frontend/CODING_GUIDE.md` — FE 구현 가이드
 > - `.omc/notepads/team/design-tokens.md` — 디자인 토큰
 > - `.omc/notepads/team/api-contracts.md` — API 계약
 
