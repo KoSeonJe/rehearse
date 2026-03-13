@@ -24,8 +24,8 @@ public class ReportResponse {
                 .interviewId(report.getInterview().getId())
                 .overallScore(report.getOverallScore())
                 .summary(report.getSummary())
-                .strengths(List.of(report.getStrengths().split("\\|")))
-                .improvements(List.of(report.getImprovements().split("\\|")))
+                .strengths(report.getStrengths())
+                .improvements(report.getImprovements())
                 .feedbackCount(report.getFeedbackCount())
                 .build();
     }
