@@ -9,6 +9,8 @@
 - Tech stack details: `docs/tech-stack.md`
 - Team workflow: `docs/team-workflow.md`
 - Claude Code 효율 가이드: `docs/claude-code-efficiency-guide.md`
+- Frontend conventions & guide: `frontend/CONVENTIONS.md`, `frontend/CODING_GUIDE.md`
+- Backend conventions & guide: `backend/CONVENTIONS.md`, `backend/CODING_GUIDE.md`
 
 ---
 
