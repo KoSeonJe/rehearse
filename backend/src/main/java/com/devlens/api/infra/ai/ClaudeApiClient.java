@@ -140,6 +140,13 @@ public class ClaudeApiClient implements AiClient {
                 throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_003", "AI 응답이 비어있습니다.");
             }
 
+            if (response.getUsage() != null) {
+                log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, total: {}",
+                        response.getUsage().getInputTokens(),
+                        response.getUsage().getOutputTokens(),
+                        response.getUsage().getInputTokens() + response.getUsage().getOutputTokens());
+            }
+
             return response.getContent().get(0).getText();
 
         } catch (RestClientException e) {
