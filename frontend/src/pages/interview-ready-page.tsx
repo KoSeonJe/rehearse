@@ -9,7 +9,7 @@ import {
   LEVEL_LABELS,
   INTERVIEW_TYPE_LABELS,
   CS_SUB_TOPIC_LABELS,
-} from '@/types/interview'
+} from '@/constants/interview-labels'
 import type { CsSubTopic } from '@/types/interview'
 
 export const InterviewReadyPage = () => {

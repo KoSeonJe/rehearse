@@ -1,10 +1,10 @@
 import type { RefObject } from 'react'
-import { CS_SUB_TOPICS } from '@/hooks/use-interview-setup'
+import { CS_SUB_TOPICS } from '@/constants/setup'
 import {
   INTERVIEW_TYPE_LABELS,
   CS_SUB_TOPIC_LABELS,
   POSITION_INTERVIEW_TYPES,
-} from '@/types/interview'
+} from '@/constants/interview-labels'
 import type { Position, InterviewType, CsSubTopic } from '@/types/interview'
 import { ResumeUpload } from '@/components/setup/resume-upload'
 

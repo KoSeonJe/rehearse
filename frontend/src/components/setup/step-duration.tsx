@@ -1,4 +1,4 @@
-import { DURATION_PRESETS } from '@/hooks/use-interview-setup'
+import { DURATION_PRESETS } from '@/constants/setup'
 
 interface StepDurationProps {
   durationMinutes: number

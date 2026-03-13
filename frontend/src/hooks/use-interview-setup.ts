@@ -2,29 +2,20 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateInterview } from '@/hooks/use-interviews'
 import { ApiError } from '@/lib/api-client'
+import { POSITION_INTERVIEW_TYPES } from '@/constants/interview-labels'
+import { TOTAL_STEPS, MAX_FILE_SIZE } from '@/constants/setup'
+import type { Step } from '@/constants/setup'
 import type {
   Position,
   Level,
   InterviewType,
   CsSubTopic,
 } from '@/types/interview'
-import { POSITION_INTERVIEW_TYPES } from '@/types/interview'
 
-export const POSITIONS: Position[] = ['BACKEND', 'FRONTEND', 'DEVOPS', 'DATA_ENGINEER', 'FULLSTACK']
-export const LEVELS: Level[] = ['JUNIOR', 'MID', 'SENIOR']
-export const CS_SUB_TOPICS: CsSubTopic[] = ['DATA_STRUCTURE', 'OS', 'NETWORK', 'DATABASE']
-export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-
-export const DURATION_PRESETS = [
-  { minutes: 15, label: '15분', description: '빠른 연습' },
-  { minutes: 30, label: '30분', description: '기본 면접' },
-  { minutes: 45, label: '45분', description: '심화 면접' },
-  { minutes: 60, label: '60분', description: '풀 면접' },
-] as const
-
-export type Step = 1 | 2 | 3 | 4
-
-const TOTAL_STEPS = 4
+const toStep = (n: number): Step | null => {
+  if (n >= 1 && n <= TOTAL_STEPS) return n as Step
+  return null
+}
 
 export const useInterviewSetup = () => {
   const navigate = useNavigate()
@@ -44,7 +35,7 @@ export const useInterviewSetup = () => {
   const isLoading = createInterview.isPending
   const totalSteps = TOTAL_STEPS
 
-  const canNext = (step: Step): boolean => {
+  const canNext = useCallback((step: Step): boolean => {
     switch (step) {
       case 1:
         return position !== null
@@ -55,32 +46,38 @@ export const useInterviewSetup = () => {
       case 4:
         return interviewTypes.length > 0
     }
-  }
+  }, [position, level, durationMinutes, interviewTypes.length])
 
   const isSubmitStep = currentStep === totalSteps
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (!canNext(currentStep)) return
-    if (currentStep < totalSteps) {
-      setCurrentStep((currentStep + 1) as Step)
-    }
-  }
+    const next = toStep(currentStep + 1)
+    if (next) setCurrentStep(next)
+  }, [canNext, currentStep])
 
-  const handlePrev = () => {
-    if (currentStep > 1) {
-      setCurrentStep((currentStep - 1) as Step)
-    }
-  }
+  const handlePrev = useCallback(() => {
+    const prev = toStep(currentStep - 1)
+    if (prev) setCurrentStep(prev)
+  }, [currentStep])
 
-  const handlePositionSelect = (p: Position) => {
+  const handlePositionSelect = useCallback((p: Position) => {
     if (position !== p) {
       setPosition(p)
       const availableTypes = POSITION_INTERVIEW_TYPES[p]
       setInterviewTypes((prev) => prev.filter((t) => availableTypes.includes(t)))
     }
-  }
+  }, [position])
 
-  const handleTypeToggle = (type: InterviewType) => {
+  const handleLevelSelect = useCallback((l: Level) => {
+    setLevel(l)
+  }, [])
+
+  const handleDurationSelect = useCallback((minutes: number) => {
+    setDurationMinutes(minutes)
+  }, [])
+
+  const handleTypeToggle = useCallback((type: InterviewType) => {
     setInterviewTypes((prev) => {
       if (prev.includes(type)) {
         const next = prev.filter((t) => t !== type)
@@ -93,13 +90,13 @@ export const useInterviewSetup = () => {
       }
       return [...prev, type]
     })
-  }
+  }, [])
 
-  const handleCsSubTopicToggle = (topic: CsSubTopic) => {
+  const handleCsSubTopicToggle = useCallback((topic: CsSubTopic) => {
     setCsSubTopics((prev) =>
       prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic],
     )
-  }
+  }, [])
 
   const handleFileSelect = useCallback((file: File) => {
     if (file.type !== 'application/pdf') {
@@ -114,10 +111,10 @@ export const useInterviewSetup = () => {
     setResumeFile(file)
   }, [])
 
-  const handleFileRemove = () => {
+  const handleFileRemove = useCallback(() => {
     setResumeFile(null)
     if (fileInputRef.current) fileInputRef.current.value = ''
-  }
+  }, [])
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -129,7 +126,15 @@ export const useInterviewSetup = () => {
     [handleFileSelect],
   )
 
-  const handleSubmit = () => {
+  const handleDragOver = useCallback(() => {
+    setDragOver(true)
+  }, [])
+
+  const handleDragLeave = useCallback(() => {
+    setDragOver(false)
+  }, [])
+
+  const handleSubmit = useCallback(() => {
     if (!position || !level || interviewTypes.length === 0 || isLoading) return
     setServerError(null)
 
@@ -159,7 +164,7 @@ export const useInterviewSetup = () => {
         },
       },
     )
-  }
+  }, [position, level, interviewTypes, durationMinutes, csSubTopics, resumeFile, isLoading, createInterview, navigate])
 
   return {
     currentStep,
@@ -178,15 +183,16 @@ export const useInterviewSetup = () => {
     handleNext,
     handlePrev,
     handlePositionSelect,
+    handleLevelSelect,
+    handleDurationSelect,
     handleTypeToggle,
     handleCsSubTopicToggle,
     handleFileSelect,
     handleFileRemove,
     handleDrop,
+    handleDragOver,
+    handleDragLeave,
     handleSubmit,
-    setLevel,
-    setDurationMinutes,
-    setDragOver,
     fileInputRef,
   }
 }

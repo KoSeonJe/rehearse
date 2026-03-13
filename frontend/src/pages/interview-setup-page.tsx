@@ -39,7 +39,7 @@ export const InterviewSetupPage = () => {
           <StepLevel
             level={setup.level}
             isLoading={setup.isLoading}
-            onSelect={setup.setLevel}
+            onSelect={setup.handleLevelSelect}
           />
         )}
 
@@ -47,7 +47,7 @@ export const InterviewSetupPage = () => {
           <StepDuration
             durationMinutes={setup.durationMinutes}
             isLoading={setup.isLoading}
-            onSelect={setup.setDurationMinutes}
+            onSelect={setup.handleDurationSelect}
           />
         )}
 
@@ -65,8 +65,8 @@ export const InterviewSetupPage = () => {
             onFileSelect={setup.handleFileSelect}
             onFileRemove={setup.handleFileRemove}
             onDrop={setup.handleDrop}
-            onDragOver={() => setup.setDragOver(true)}
-            onDragLeave={() => setup.setDragOver(false)}
+            onDragOver={setup.handleDragOver}
+            onDragLeave={setup.handleDragLeave}
           />
         )}
 

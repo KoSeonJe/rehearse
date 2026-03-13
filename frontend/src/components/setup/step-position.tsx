@@ -1,5 +1,5 @@
-import { POSITIONS } from '@/hooks/use-interview-setup'
-import { POSITION_LABELS } from '@/types/interview'
+import { POSITIONS } from '@/constants/setup'
+import { POSITION_LABELS } from '@/constants/interview-labels'
 import type { Position } from '@/types/interview'
 
 interface StepPositionProps {

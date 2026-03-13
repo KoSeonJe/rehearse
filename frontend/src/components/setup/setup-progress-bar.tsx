@@ -1,4 +1,4 @@
-import type { Step } from '@/hooks/use-interview-setup'
+import type { Step } from '@/constants/setup'
 
 interface SetupProgressBarProps {
   currentStep: Step

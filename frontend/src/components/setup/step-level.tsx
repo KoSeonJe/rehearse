@@ -1,5 +1,5 @@
-import { LEVELS } from '@/hooks/use-interview-setup'
-import { LEVEL_LABELS } from '@/types/interview'
+import { LEVELS } from '@/constants/setup'
+import { LEVEL_LABELS } from '@/constants/interview-labels'
 import type { Level } from '@/types/interview'
 
 interface StepLevelProps {

@@ -103,6 +103,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
               try {
                 recognitionRef.current.start()
               } catch {
+                // 재시도 중 start() 실패 시 음성 인식 중단
                 setIsListening(false)
               }
             }
@@ -136,6 +137,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
             }
           }, SESSION_TIMEOUT_MS)
         } catch {
+          // onend에서 재시작 실패 시 음성 인식 중단
           setIsListening(false)
         }
       } else {
@@ -187,6 +189,7 @@ export const useSpeechRecognition = (): UseSpeechRecognitionReturn => {
           }
         }, SESSION_TIMEOUT_MS)
       } catch {
+        // 최초 start() 실패 시 음성 인식 중단
         setIsListening(false)
       }
     },
