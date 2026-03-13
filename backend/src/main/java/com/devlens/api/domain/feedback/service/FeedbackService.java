@@ -40,36 +40,8 @@ public class FeedbackService {
             throw new BusinessException(FeedbackErrorCode.INTERVIEW_NOT_COMPLETED);
         }
 
-        // 답변 저장
-        for (AnswerData answerData : request.getAnswers()) {
-            InterviewAnswer answer = InterviewAnswer.builder()
-                    .interview(interview)
-                    .questionIndex(answerData.getQuestionIndex())
-                    .questionContent(answerData.getQuestionContent())
-                    .answerText(answerData.getAnswerText())
-                    .nonVerbalSummary(answerData.getNonVerbalSummary())
-                    .voiceSummary(answerData.getVoiceSummary())
-                    .build();
-            interviewAnswerRepository.save(answer);
-        }
-
-        // Claude API로 피드백 생성
-        String answersJson = serializeAnswers(request.getAnswers());
-        List<GeneratedFeedback> generatedFeedbacks = aiClient.generateFeedback(answersJson);
-
-        // 피드백 저장
-        List<Feedback> feedbacks = generatedFeedbacks.stream()
-                .map(gf -> Feedback.builder()
-                        .interview(interview)
-                        .timestampSeconds(gf.getTimestampSeconds())
-                        .category(FeedbackCategory.valueOf(gf.getCategory()))
-                        .severity(FeedbackSeverity.valueOf(gf.getSeverity()))
-                        .content(gf.getContent())
-                        .suggestion(gf.getSuggestion())
-                        .build())
-                .toList();
-
-        feedbackRepository.saveAll(feedbacks);
+        saveAnswers(interview, request.getAnswers());
+        List<Feedback> feedbacks = generateAndSaveFeedbacks(interview, request.getAnswers());
 
         log.info("피드백 생성 완료: interviewId={}, feedbackCount={}", interviewId, feedbacks.size());
 
@@ -97,6 +69,39 @@ public class FeedbackService {
                 .feedbacks(responses)
                 .totalCount(responses.size())
                 .build();
+    }
+
+    private void saveAnswers(Interview interview, List<AnswerData> answers) {
+        for (AnswerData answerData : answers) {
+            InterviewAnswer answer = InterviewAnswer.builder()
+                    .interview(interview)
+                    .questionIndex(answerData.getQuestionIndex())
+                    .questionContent(answerData.getQuestionContent())
+                    .answerText(answerData.getAnswerText())
+                    .nonVerbalSummary(answerData.getNonVerbalSummary())
+                    .voiceSummary(answerData.getVoiceSummary())
+                    .build();
+            interviewAnswerRepository.save(answer);
+        }
+    }
+
+    private List<Feedback> generateAndSaveFeedbacks(Interview interview, List<AnswerData> answers) {
+        String answersJson = serializeAnswers(answers);
+        List<GeneratedFeedback> generatedFeedbacks = aiClient.generateFeedback(answersJson);
+
+        List<Feedback> feedbacks = generatedFeedbacks.stream()
+                .map(gf -> Feedback.builder()
+                        .interview(interview)
+                        .timestampSeconds(gf.getTimestampSeconds())
+                        .category(FeedbackCategory.valueOf(gf.getCategory()))
+                        .severity(FeedbackSeverity.valueOf(gf.getSeverity()))
+                        .content(gf.getContent())
+                        .suggestion(gf.getSuggestion())
+                        .build())
+                .toList();
+
+        feedbackRepository.saveAll(feedbacks);
+        return feedbacks;
     }
 
     private String serializeAnswers(List<AnswerData> answers) {
