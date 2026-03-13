@@ -210,7 +210,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
 
-        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any()))
+        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
                 .willReturn(followUp);
 
         FollowUpRequest request = new FollowUpRequest();

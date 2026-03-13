@@ -1,5 +1,6 @@
 package com.devlens.api.infra.ai;
 
+import com.devlens.api.domain.interview.dto.FollowUpRequest;
 import com.devlens.api.domain.interview.entity.InterviewLevel;
 import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
@@ -181,15 +182,31 @@ public class ClaudePromptBuilder {
                 """;
     }
 
-    public String buildFollowUpUserPrompt(String questionContent, String answerText, String nonVerbalSummary) {
-        return String.format("""
+    public String buildFollowUpUserPrompt(String questionContent, String answerText,
+                                           String nonVerbalSummary,
+                                           List<FollowUpRequest.FollowUpExchange> previousExchanges) {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append(String.format("""
                 원래 질문: %s
                 면접자 답변: %s
                 비언어적 관찰: %s
-
-                위 답변에 대한 후속 질문을 생성해주세요.
                 """, questionContent, answerText,
-                nonVerbalSummary != null ? nonVerbalSummary : "관찰 데이터 없음");
+                nonVerbalSummary != null ? nonVerbalSummary : "관찰 데이터 없음"));
+
+        if (previousExchanges != null && !previousExchanges.isEmpty()) {
+            prompt.append("\n이전 후속 대화:\n");
+            for (int i = 0; i < previousExchanges.size(); i++) {
+                FollowUpRequest.FollowUpExchange exchange = previousExchanges.get(i);
+                prompt.append(String.format("[후속%d] Q: %s\n[후속%d] A: %s\n",
+                        i + 1, exchange.getQuestion(), i + 1, exchange.getAnswer()));
+            }
+            prompt.append("\n위 대화를 바탕으로 새로운 후속 질문을 생성해주세요.\n");
+            prompt.append("이전에 했던 질문과 중복되지 않는 새로운 관점의 질문이어야 합니다.\n");
+        } else {
+            prompt.append("\n위 답변에 대한 후속 질문을 생성해주세요.\n");
+        }
+
+        return prompt.toString();
     }
 
     public String buildReportSystemPrompt() {

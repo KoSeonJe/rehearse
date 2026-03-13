@@ -109,7 +109,8 @@ public class InterviewService {
         GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(
                 request.getQuestionContent(),
                 request.getAnswerText(),
-                request.getNonVerbalSummary()
+                request.getNonVerbalSummary(),
+                request.getPreviousExchanges()
         );
 
         log.info("후속 질문 생성 완료: interviewId={}, type={}", id, followUp.getType());
