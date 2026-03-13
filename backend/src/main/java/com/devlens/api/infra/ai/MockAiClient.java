@@ -7,20 +7,24 @@ import com.devlens.api.infra.ai.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 
 @Slf4j
 @Component
 @ConditionalOnMissingBean(ClaudeApiClient.class)
+@RequiredArgsConstructor
 public class MockAiClient implements AiClient {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
-    public MockAiClient() {
+    @PostConstruct
+    void init() {
         log.warn("=== MockAiClient 활성화: API 키 없이 Mock 데이터로 동작합니다 ===");
     }
 
@@ -32,13 +36,7 @@ public class MockAiClient implements AiClient {
         log.info("[Mock] generateQuestions 호출 - position={}, level={}, types={}, resume={}, duration={}",
                 position, level, interviewTypes, resumeText != null ? "있음" : "없음", durationMinutes);
 
-        int questionCount;
-        if (durationMinutes != null) {
-            questionCount = (int) Math.round((double) durationMinutes / 5);
-            questionCount = Math.max(2, Math.min(questionCount, 5));
-        } else {
-            questionCount = interviewTypes.size() == 1 ? 5 : interviewTypes.size() == 2 ? 6 : 8;
-        }
+        int questionCount = ClaudePromptBuilder.calculateQuestionCount(durationMinutes, interviewTypes.size());
 
         String json = """
                 [

@@ -11,6 +11,25 @@ import java.util.stream.Collectors;
 @Component
 public class ClaudePromptBuilder {
 
+    private static final int MINUTES_PER_QUESTION = 5;
+    private static final int MIN_QUESTION_COUNT = 2;
+    private static final int MAX_QUESTION_COUNT = 24;
+    private static final int SINGLE_TYPE_QUESTION_COUNT = 5;
+    private static final int DOUBLE_TYPE_QUESTION_COUNT = 6;
+    private static final int MULTI_TYPE_QUESTION_COUNT = 8;
+
+    public static int calculateQuestionCount(Integer durationMinutes, int typeCount) {
+        if (durationMinutes != null) {
+            int count = (int) Math.round((double) durationMinutes / MINUTES_PER_QUESTION);
+            return Math.max(MIN_QUESTION_COUNT, Math.min(count, MAX_QUESTION_COUNT));
+        }
+        return switch (typeCount) {
+            case 1 -> SINGLE_TYPE_QUESTION_COUNT;
+            case 2 -> DOUBLE_TYPE_QUESTION_COUNT;
+            default -> MULTI_TYPE_QUESTION_COUNT;
+        };
+    }
+
     public String buildQuestionSystemPrompt() {
         return """
                 당신은 한국 IT 기업의 시니어 개발자 면접관입니다.
@@ -83,13 +102,7 @@ public class ClaudePromptBuilder {
                 .map(this::interviewTypeToKorean)
                 .collect(Collectors.joining(", "));
 
-        int questionCount;
-        if (durationMinutes != null) {
-            questionCount = (int) Math.round((double) durationMinutes / 5);
-            questionCount = Math.max(2, Math.min(questionCount, 24));
-        } else {
-            questionCount = interviewTypes.size() == 1 ? 5 : interviewTypes.size() == 2 ? 6 : 8;
-        }
+        int questionCount = calculateQuestionCount(durationMinutes, interviewTypes.size());
 
         StringBuilder prompt = new StringBuilder();
         prompt.append(String.format("""

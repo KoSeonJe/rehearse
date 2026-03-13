@@ -5,11 +5,11 @@ import com.devlens.api.domain.interview.entity.InterviewType;
 import com.devlens.api.domain.interview.entity.Position;
 import com.devlens.api.global.exception.BusinessException;
 import com.devlens.api.infra.ai.dto.*;
+import com.devlens.api.infra.ai.exception.AiErrorCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
 import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -27,6 +27,11 @@ public class ClaudeApiClient implements AiClient {
 
     private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
+
+    private static final int MAX_TOKENS_QUESTION = 4096;
+    private static final int MAX_TOKENS_FOLLOW_UP = 1024;
+    private static final int MAX_TOKENS_REPORT = 2048;
+    private static final int MAX_TOKENS_FEEDBACK = 4096;
 
     private final RestClient restClient;
     private final ClaudePromptBuilder promptBuilder;
@@ -62,11 +67,11 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildQuestionSystemPrompt();
         String userPrompt = promptBuilder.buildQuestionUserPrompt(position, positionDetail, level, interviewTypes, csSubTopics, resumeText, durationMinutes);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, 4096);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_QUESTION);
         GeneratedQuestionsWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedQuestionsWrapper.class);
 
         if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
-            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI가 생성한 질문을 파싱할 수 없습니다.");
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
         }
 
         return wrapper.getQuestions();
@@ -77,7 +82,7 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildFollowUpSystemPrompt();
         String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, 1024);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
@@ -86,7 +91,7 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildReportSystemPrompt();
         String userPrompt = promptBuilder.buildReportUserPrompt(feedbackSummary);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, 2048);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_REPORT);
         return responseParser.parseJsonResponse(text, GeneratedReport.class);
     }
 
@@ -95,11 +100,11 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildFeedbackSystemPrompt();
         String userPrompt = promptBuilder.buildFeedbackUserPrompt(answersJson);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, 4096);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FEEDBACK);
         GeneratedFeedbackWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedFeedbackWrapper.class);
 
         if (wrapper.getFeedbacks() == null || wrapper.getFeedbacks().isEmpty()) {
-            throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_006", "AI 피드백을 생성할 수 없습니다.");
+            throw new BusinessException(AiErrorCode.FEEDBACK_PARSE_FAILED);
         }
 
         return wrapper.getFeedbacks();
@@ -128,16 +133,16 @@ public class ClaudeApiClient implements AiClient {
                     .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
                         String body = new String(res.getBody().readAllBytes());
                         log.error("Claude API 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
-                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "AI 요청에 실패했습니다: " + body);
+                        throw new BusinessException(AiErrorCode.CLIENT_ERROR);
                     })
                     .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
                         log.error("Claude API 서버 에러: status={}", res.getStatusCode());
-                        throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_002", "AI 서비스가 일시적으로 불안정합니다.");
+                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
                     })
                     .body(ClaudeResponse.class);
 
             if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
-                throw new BusinessException(HttpStatus.BAD_GATEWAY, "AI_003", "AI 응답이 비어있습니다.");
+                throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
             }
 
             if (response.getUsage() != null) {
@@ -151,7 +156,7 @@ public class ClaudeApiClient implements AiClient {
 
         } catch (RestClientException e) {
             log.error("Claude API 호출 실패", e);
-            throw new BusinessException(HttpStatus.GATEWAY_TIMEOUT, "AI_004", "AI 서비스 호출 시간이 초과되었습니다.");
+            throw new BusinessException(AiErrorCode.TIMEOUT);
         }
     }
 }
