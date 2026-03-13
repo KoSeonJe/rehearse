@@ -212,6 +212,38 @@ class InterviewControllerTest {
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
 
+    @Test
+    @DisplayName("POST /api/v1/interviews/{id}/follow-up - questionContent 누락 시 400")
+    void generateFollowUp_missingQuestionContent() throws Exception {
+        String requestBody = """
+                {
+                    "answerText": "답변입니다."
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/interviews/1/follow-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/interviews/{id}/follow-up - answerText 누락 시 400")
+    void generateFollowUp_missingAnswerText() throws Exception {
+        String requestBody = """
+                {
+                    "questionContent": "질문입니다."
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/interviews/1/follow-up")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
     private InterviewResponse createMockInterviewResponse() {
         QuestionResponse q1 = QuestionResponse.builder()
                 .id(1L).content("HashMap과 TreeMap의 차이점은?").category("자료구조").order(1).build();
