@@ -11,9 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "interview")
@@ -37,11 +35,16 @@ public class Interview {
     @Column(nullable = false, length = 20)
     private InterviewLevel level;
 
-    @Column(name = "interview_types", nullable = false, length = 200)
-    private String interviewTypes;
+    @ElementCollection(targetClass = InterviewType.class)
+    @CollectionTable(name = "interview_interview_types", joinColumns = @JoinColumn(name = "interview_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interview_type", nullable = false, length = 30)
+    private List<InterviewType> interviewTypes = new ArrayList<>();
 
-    @Column(length = 200)
-    private String csSubTopics;
+    @ElementCollection
+    @CollectionTable(name = "interview_cs_sub_topics", joinColumns = @JoinColumn(name = "interview_id"))
+    @Column(name = "cs_sub_topic", length = 50)
+    private List<String> csSubTopics = new ArrayList<>();
 
     @Column(nullable = false)
     private Integer durationMinutes;
@@ -67,28 +70,10 @@ public class Interview {
         this.position = position;
         this.positionDetail = positionDetail;
         this.level = level;
-        this.interviewTypes = interviewTypes.stream()
-                .map(Enum::name)
-                .collect(Collectors.joining(","));
-        this.csSubTopics = csSubTopics != null ? String.join(",", csSubTopics) : null;
+        this.interviewTypes = interviewTypes != null ? new ArrayList<>(interviewTypes) : new ArrayList<>();
+        this.csSubTopics = csSubTopics != null ? new ArrayList<>(csSubTopics) : new ArrayList<>();
         this.durationMinutes = durationMinutes;
         this.status = InterviewStatus.READY;
-    }
-
-    public List<InterviewType> getInterviewTypeList() {
-        if (interviewTypes == null || interviewTypes.isBlank()) {
-            return List.of();
-        }
-        return Arrays.stream(interviewTypes.split(","))
-                .map(InterviewType::valueOf)
-                .toList();
-    }
-
-    public List<String> getCsSubTopicList() {
-        if (csSubTopics == null || csSubTopics.isBlank()) {
-            return List.of();
-        }
-        return Arrays.asList(csSubTopics.split(","));
     }
 
     public void addQuestion(InterviewQuestion question) {

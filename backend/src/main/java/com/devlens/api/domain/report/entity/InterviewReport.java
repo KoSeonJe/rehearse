@@ -10,6 +10,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "interview_report")
@@ -32,11 +34,15 @@ public class InterviewReport {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String summary;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String strengths;
+    @ElementCollection
+    @CollectionTable(name = "report_strengths", joinColumns = @JoinColumn(name = "report_id"))
+    @Column(name = "strength", nullable = false, columnDefinition = "TEXT")
+    private List<String> strengths = new ArrayList<>();
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String improvements;
+    @ElementCollection
+    @CollectionTable(name = "report_improvements", joinColumns = @JoinColumn(name = "report_id"))
+    @Column(name = "improvement", nullable = false, columnDefinition = "TEXT")
+    private List<String> improvements = new ArrayList<>();
 
     @Column(nullable = false)
     private int feedbackCount;
@@ -47,12 +53,12 @@ public class InterviewReport {
 
     @Builder
     public InterviewReport(Interview interview, int overallScore, String summary,
-                           String strengths, String improvements, int feedbackCount) {
+                           List<String> strengths, List<String> improvements, int feedbackCount) {
         this.interview = interview;
         this.overallScore = overallScore;
         this.summary = summary;
-        this.strengths = strengths;
-        this.improvements = improvements;
+        this.strengths = strengths != null ? new ArrayList<>(strengths) : new ArrayList<>();
+        this.improvements = improvements != null ? new ArrayList<>(improvements) : new ArrayList<>();
         this.feedbackCount = feedbackCount;
     }
 }

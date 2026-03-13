@@ -56,8 +56,8 @@ class ReportServiceTest {
                 .interview(interview)
                 .overallScore(85)
                 .summary("전반적으로 우수한 면접")
-                .strengths("논리적 사고|기술적 깊이")
-                .improvements("구체적 예시 부족|시간 관리")
+                .strengths(List.of("논리적 사고", "기술적 깊이"))
+                .improvements(List.of("구체적 예시 부족", "시간 관리"))
                 .feedbackCount(5)
                 .build();
         ReflectionTestUtils.setField(existingReport, "id", 1L);

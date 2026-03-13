@@ -99,6 +99,36 @@ class FeedbackControllerTest {
                 .andExpect(jsonPath("$.code").value("INTERVIEW_001"));
     }
 
+    @Test
+    @DisplayName("POST /api/v1/interviews/{id}/feedbacks - answers 빈 배열 시 400")
+    void generateFeedback_emptyAnswers() throws Exception {
+        String requestBody = """
+                {
+                    "answers": []
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/interviews/1/feedbacks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/interviews/{id}/feedbacks - answers 누락 시 400")
+    void generateFeedback_missingAnswers() throws Exception {
+        String requestBody = "{}";
+
+        mockMvc.perform(post("/api/v1/interviews/1/feedbacks")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false))
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
     private FeedbackListResponse createMockFeedbackListResponse() {
         FeedbackResponse feedbackResponse = FeedbackResponse.builder()
                 .id(1L)

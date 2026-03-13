@@ -58,8 +58,8 @@ public class ReportService {
                 .interview(interview)
                 .overallScore(generated.getOverallScore())
                 .summary(generated.getSummary())
-                .strengths(String.join("|", generated.getStrengths()))
-                .improvements(String.join("|", generated.getImprovements()))
+                .strengths(generated.getStrengths())
+                .improvements(generated.getImprovements())
                 .feedbackCount(feedbacks.size())
                 .build();
 
