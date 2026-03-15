@@ -33,6 +33,10 @@ Thumbs.db
 
 # === Claude Code (로컬 전용) ===
 .claude/skills/
+.claude/agents/
+.claude/worktrees/
+.claude/settings.local.json
+.claude/docs/
 
 # === 민감 정보 ===
 *.key
