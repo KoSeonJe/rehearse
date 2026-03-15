@@ -85,9 +85,13 @@ npx tsc --noEmit       # 타입 체크만
 
 | Method | URL | 설명 |
 |--------|-----|------|
-| POST | `/api/v1/interviews` | 면접 세션 생성 |
-| GET | `/api/v1/interviews/{id}` | 면접 세션 조회 |
+| POST | `/api/v1/interviews` | 면접 생성 (multipart/form-data) |
+| GET | `/api/v1/interviews/{id}` | 면접 조회 |
 | PATCH | `/api/v1/interviews/{id}/status` | 면접 상태 변경 |
+| POST | `/api/v1/interviews/{id}/follow-up` | 후속질문 생성 |
+| POST | `/api/v1/interviews/{id}/feedbacks` | 피드백 생성 |
+| GET | `/api/v1/interviews/{id}/feedbacks` | 피드백 조회 |
+| GET | `/api/v1/interviews/{id}/report` | 종합 리포트 조회 |
 
 ---
 

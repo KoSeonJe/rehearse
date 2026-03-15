@@ -10,12 +10,12 @@
 
 | 영역 | 기술 | 버전 |
 |------|------|------|
-| Framework | React + TypeScript | React 18, TS 5+ |
-| Styling | Tailwind CSS | 3.x |
-| Build | Vite | 5.x |
-| State (Client) | Zustand | 4.x |
-| State (Server) | TanStack Query | 5.x |
-| Testing | Vitest + Playwright | - |
+| Framework | React + TypeScript | React 18.3, TS 5.9 |
+| Styling | Tailwind CSS | 3.4 |
+| Build | Vite | 7.3 |
+| State (Client) | Zustand | 4.5 |
+| State (Server) | TanStack Query | 5.90 |
+| Testing | Vitest | 4.0 |
 
 ### 선택 근거
 
@@ -39,7 +39,7 @@
 | 영역 | 기술 | 버전 |
 |------|------|------|
 | Language | Java | 21 (LTS) |
-| Framework | Spring Boot | 3.x |
+| Framework | Spring Boot | 3.4 |
 | Build | Gradle (Kotlin DSL) | 8.x |
 | Database | MySQL | 8.0 |
 | ORM | Spring Data JPA + Hibernate | - |
@@ -93,6 +93,4 @@
 |------|------|------|
 | Backend Build | Gradle (Kotlin DSL) | Maven보다 유연, 빌드 스크립트 가독성 |
 | Frontend Build | Vite | 빠른 HMR, 간단한 설정, ESM 네이티브 |
-| Linter (Java) | Checkstyle / SpotBugs | 코드 품질 자동 검증 |
 | Linter (JS/TS) | ESLint + Prettier | 코드 스타일 자동 포맷 |
-| Git Hooks | Husky + lint-staged | 커밋 전 자동 검증 |
