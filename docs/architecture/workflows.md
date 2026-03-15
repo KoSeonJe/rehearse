@@ -96,7 +96,7 @@
 
 ```
   Planner (기술 요구사항 정리)
-     ↓                              📄 docs/tech-stack.md
+     ↓                              📄 docs/architecture/tech-stack.md
   DevOps (프로젝트 스캐폴딩, 빌드 설정)
      ↓
   Backend (백엔드 기본 구조)
