@@ -12,8 +12,33 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      infra: ${{ steps.filter.outputs.infra }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+            infra:
+              - 'docker-compose.yml'
+              - '.github/workflows/**'
+              - '.env*'
+
   backend-test:
     name: Backend Test
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,6 +66,8 @@ jobs:
 
   frontend-build:
     name: Frontend Build
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -75,17 +102,11 @@ jobs:
 
   deploy:
     name: Deploy
-    needs: [backend-test, frontend-build]
+    needs: [changes, backend-test, frontend-build]
+    if: always() && !failure() && !cancelled()
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      # --- Frontend: S3 + CloudFront ---
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: frontend/dist
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -94,10 +115,20 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # --- Frontend: S3 + CloudFront ---
+      - name: Download frontend artifact
+        if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.infra == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
       - name: Deploy frontend to S3
+        if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.infra == 'true'
         run: aws s3 sync frontend/dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
       - name: Invalidate CloudFront cache
+        if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.infra == 'true'
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
@@ -105,15 +136,18 @@ jobs:
 
       # --- Backend: ECR + EC2 ---
       - name: Login to ECR
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build and push backend image
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         working-directory: backend
         run: |
           docker build -t ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest .
           docker push ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest
 
       - name: Deploy backend to EC2
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
