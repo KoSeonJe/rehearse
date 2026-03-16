@@ -27,16 +27,24 @@ application-local.yml
 Thumbs.db
 
 # === OMC (세션/상태는 로컬 전용) ===
-.omc/sessions/
-.omc/state/
-.omc/project-memory.json
+**/.omc/sessions/
+**/.omc/state/
+**/.omc/project-memory.json
 
 # === Claude Code (로컬 전용) ===
-.claude/skills/
-.claude/agents/
-.claude/worktrees/
-.claude/settings.local.json
-.claude/docs/
+**/.claude/skills/
+**/.claude/agents/
+**/.claude/worktrees/
+**/.claude/settings.local.json
+**/.claude/docs/
+**/.claude/.claude/
+
+# === 개인 문서 ===
+docs/resume/
+
+# === Docker ===
+.env.dev-server
+mysql_data/
 
 # === 민감 정보 ===
 *.key
