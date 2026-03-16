@@ -11,7 +11,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "interview")
@@ -39,12 +41,12 @@ public class Interview {
     @CollectionTable(name = "interview_interview_types", joinColumns = @JoinColumn(name = "interview_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "interview_type", nullable = false, length = 30)
-    private List<InterviewType> interviewTypes = new ArrayList<>();
+    private Set<InterviewType> interviewTypes = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "interview_cs_sub_topics", joinColumns = @JoinColumn(name = "interview_id"))
     @Column(name = "cs_sub_topic", length = 50)
-    private List<String> csSubTopics = new ArrayList<>();
+    private Set<String> csSubTopics = new HashSet<>();
 
     @Column(nullable = false)
     private Integer durationMinutes;
@@ -70,8 +72,8 @@ public class Interview {
         this.position = position;
         this.positionDetail = positionDetail;
         this.level = level;
-        this.interviewTypes = interviewTypes != null ? new ArrayList<>(interviewTypes) : new ArrayList<>();
-        this.csSubTopics = csSubTopics != null ? new ArrayList<>(csSubTopics) : new ArrayList<>();
+        this.interviewTypes = interviewTypes != null ? new HashSet<>(interviewTypes) : new HashSet<>();
+        this.csSubTopics = csSubTopics != null ? new HashSet<>(csSubTopics) : new HashSet<>();
         this.durationMinutes = durationMinutes;
         this.status = InterviewStatus.READY;
     }

@@ -19,7 +19,12 @@ public class InterviewFinder {
     }
 
     public Interview findByIdWithQuestions(Long id) {
-        return interviewRepository.findByIdWithQuestions(id)
+        Interview interview = interviewRepository.findByIdWithQuestions(id)
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
+
+        // ElementCollection은 별도 쿼리로 초기화 (MultipleBagFetchException 방지)
+        interviewRepository.findByIdWithElementCollections(id);
+
+        return interview;
     }
 }
