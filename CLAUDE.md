@@ -6,6 +6,7 @@
 - Target: developers preparing for jobs/transitions, bootcamp graduates
 - Plan: `docs/product/PLAN.md` (all features within MVP DO scope)
 - Workflows: `docs/architecture/workflows.md`
+- ERD: `docs/architecture/erd.md`
 - Tech stack details: `docs/architecture/tech-stack.md`
 - Team workflow: `docs/guides/team-workflow.md`
 - Claude Code 효율 가이드: `docs/guides/claude-code-efficiency-guide.md`
