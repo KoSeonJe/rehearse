@@ -270,13 +270,37 @@ export const InterviewAnalysisPage = () => {
                     />
                   </div>
 
-                  <p className={`text-xs font-medium ${
-                    isCompleted ? 'text-success' : isFailed ? 'text-error' : 'text-text-secondary'
-                  }`}>
-                    {label}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-xs font-medium ${
+                      isCompleted ? 'text-success' : isFailed ? 'text-error' : 'text-text-secondary'
+                    }`}>
+                      {label}
+                    </p>
 
-                  {/* 실패 시 재시도 (내부 API이므로 현재 비활성 — Lambda가 트리거) */}
+                    {/* COMPLETED: 미리보기 링크 */}
+                    {isCompleted && (
+                      <button
+                        onClick={() => navigate(`/interview/${interviewId}/report`)}
+                        className="text-xs font-bold text-accent hover:underline"
+                      >
+                        결과 미리보기 →
+                      </button>
+                    )}
+
+                    {/* FAILED: 재시도 버튼 (BE 클라이언트 retry API 추가 시 연동) */}
+                    {isFailed && (
+                      <button
+                        onClick={() => {
+                          // TODO: BE에 클라이언트용 retry API 추가 후 연동
+                          window.location.reload()
+                        }}
+                        className="text-xs font-bold text-error hover:underline"
+                      >
+                        재시도
+                      </button>
+                    )}
+                  </div>
+
                   {isFailed && status?.failureReason && (
                     <p className="mt-2 text-xs text-error/70">{status.failureReason}</p>
                   )}
