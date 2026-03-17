@@ -6,6 +6,8 @@ import com.rehearse.api.domain.interview.entity.InterviewQuestion;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -26,6 +29,7 @@ import java.util.List;
 public class InterviewService {
 
     private final InterviewRepository interviewRepository;
+    private final QuestionSetRepository questionSetRepository;
     private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
     private final PdfTextExtractor pdfTextExtractor;
@@ -59,7 +63,7 @@ public class InterviewService {
                 request.getDurationMinutes()
         );
 
-        // 4. 질문 엔티티 변환 및 연결
+        // 4. 질문 엔티티 변환 및 연결 (레거시 InterviewQuestion 유지 + 새 QuestionSet 생성)
         for (GeneratedQuestion gq : generatedQuestions) {
             InterviewQuestion question = InterviewQuestion.builder()
                     .questionOrder(gq.getOrder())
@@ -73,15 +77,19 @@ public class InterviewService {
         // 5. 저장
         Interview saved = interviewRepository.save(interview);
 
-        log.info("면접 세션 생성 완료: id={}, position={}, level={}, types={}",
-                saved.getId(), saved.getPosition(), saved.getLevel(), saved.getInterviewTypes());
+        // 6. QuestionSet + Question 생성 (질문세트 단위 녹화-분석용)
+        List<QuestionSet> questionSets = createQuestionSets(saved, generatedQuestions);
 
-        return InterviewResponse.from(saved);
+        log.info("면접 세션 생성 완료: id={}, position={}, level={}, types={}, questionSets={}",
+                saved.getId(), saved.getPosition(), saved.getLevel(), saved.getInterviewTypes(), questionSets.size());
+
+        return InterviewResponse.from(saved, questionSets);
     }
 
     public InterviewResponse getInterview(Long id) {
         Interview interview = interviewFinder.findByIdWithQuestions(id);
-        return InterviewResponse.from(interview);
+        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(id);
+        return InterviewResponse.from(interview, questionSets);
     }
 
     @Transactional
@@ -97,6 +105,56 @@ public class InterviewService {
         log.info("면접 세션 상태 변경: id={}, newStatus={}", id, request.getStatus());
 
         return UpdateStatusResponse.from(interview);
+    }
+
+    private List<QuestionSet> createQuestionSets(Interview interview, List<GeneratedQuestion> generatedQuestions) {
+        List<QuestionSet> questionSets = new ArrayList<>();
+
+        for (int i = 0; i < generatedQuestions.size(); i++) {
+            GeneratedQuestion gq = generatedQuestions.get(i);
+
+            QuestionCategory category = parseQuestionCategory(gq.getQuestionCategory());
+            ReferenceType refType = parseReferenceType(gq.getReferenceType());
+
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(category)
+                    .orderIndex(i)
+                    .build();
+
+            Question question = Question.builder()
+                    .questionType(QuestionType.MAIN)
+                    .questionText(gq.getContent())
+                    .modelAnswer(gq.getModelAnswer())
+                    .referenceType(refType)
+                    .orderIndex(0)
+                    .build();
+
+            questionSet.addQuestion(question);
+            questionSets.add(questionSet);
+        }
+
+        return questionSetRepository.saveAll(questionSets);
+    }
+
+    private QuestionCategory parseQuestionCategory(String categoryStr) {
+        if (categoryStr != null) {
+            try {
+                return QuestionCategory.valueOf(categoryStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return QuestionCategory.CS;
+    }
+
+    private ReferenceType parseReferenceType(String refTypeStr) {
+        if (refTypeStr != null) {
+            try {
+                return ReferenceType.valueOf(refTypeStr.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        return ReferenceType.GUIDE;
     }
 
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request) {

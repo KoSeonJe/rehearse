@@ -1,11 +1,14 @@
 package com.rehearse.api.domain.interview.dto;
 
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.questionset.dto.QuestionSetResponse;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Getter
@@ -21,11 +24,20 @@ public class InterviewResponse {
     private final InterviewStatus status;
     private final Integer durationMinutes;
     private final List<QuestionResponse> questions;
+    private final List<QuestionSetResponse> questionSets;
     private final LocalDateTime createdAt;
 
     public static InterviewResponse from(Interview interview) {
+        return from(interview, Collections.emptyList());
+    }
+
+    public static InterviewResponse from(Interview interview, List<QuestionSet> questionSets) {
         List<QuestionResponse> questionResponses = interview.getQuestions().stream()
                 .map(QuestionResponse::from)
+                .toList();
+
+        List<QuestionSetResponse> questionSetResponses = questionSets.stream()
+                .map(QuestionSetResponse::from)
                 .toList();
 
         return InterviewResponse.builder()
@@ -38,6 +50,7 @@ public class InterviewResponse {
                 .status(interview.getStatus())
                 .durationMinutes(interview.getDurationMinutes())
                 .questions(questionResponses)
+                .questionSets(questionSetResponses)
                 .createdAt(interview.getCreatedAt())
                 .build();
     }
