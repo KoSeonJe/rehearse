@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type {
   ApiResponse,
@@ -6,6 +6,8 @@ import type {
   UploadUrlRequest,
   UploadUrlResponse,
   QuestionSetStatusResponse,
+  QuestionsWithAnswersResponse,
+  QuestionSetData,
 } from '@/types/interview'
 
 export const useSaveAnswers = (interviewId: number, questionSetId: number) => {
@@ -41,5 +43,41 @@ export const useQuestionSetStatus = (
       ),
     enabled,
     refetchInterval: enabled ? 3000 : false,
+  })
+}
+
+// 모든 질문세트의 상태를 병렬 폴링
+export const useAllQuestionSetStatuses = (
+  interviewId: number,
+  questionSets: QuestionSetData[],
+  enabled = false,
+) => {
+  return useQueries({
+    queries: questionSets.map((qs) => ({
+      queryKey: ['questionSetStatus', interviewId, qs.id],
+      queryFn: () =>
+        apiClient.get<ApiResponse<QuestionSetStatusResponse>>(
+          `/api/v1/interviews/${interviewId}/question-sets/${qs.id}/status`,
+        ),
+      enabled,
+      refetchInterval: enabled ? 5000 : false,
+    })),
+  })
+}
+
+// 질문세트별 모범답변 조회
+export const useQuestionsWithAnswers = (
+  interviewId: number,
+  questionSetId: number,
+  enabled = false,
+) => {
+  return useQuery({
+    queryKey: ['questionsWithAnswers', interviewId, questionSetId],
+    queryFn: () =>
+      apiClient.get<ApiResponse<QuestionsWithAnswersResponse>>(
+        `/api/v1/interviews/${interviewId}/question-sets/${questionSetId}/questions-with-answers`,
+      ),
+    enabled,
+    staleTime: Infinity,
   })
 }
