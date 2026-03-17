@@ -1,5 +1,6 @@
-import { useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInterview } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
@@ -8,19 +9,25 @@ import { TimelineBar } from '@/components/feedback/timeline-bar'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
+import type { AnalysisStatus } from '@/types/interview'
 
 interface QuestionSetSectionProps {
   interviewId: number
   questionSetId: number
   category: string
   index: number
+  analysisStatus: AnalysisStatus
+  failureReason?: string | null
 }
 
-const QuestionSetSection = ({ interviewId, questionSetId, category, index }: QuestionSetSectionProps) => {
+const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason }: QuestionSetSectionProps) => {
   const videoRef = useRef<VideoPlayerHandle>(null)
+  const queryClient = useQueryClient()
 
-  const { data: feedbackRes, isLoading: feedbackLoading } = useQuestionSetFeedback(interviewId, questionSetId)
-  const { data: questionsRes } = useQuestionsWithAnswers(interviewId, questionSetId, true)
+  const { data: feedbackRes, isLoading: feedbackLoading } = useQuestionSetFeedback(
+    interviewId, questionSetId, analysisStatus === 'COMPLETED',
+  )
+  const { data: questionsRes } = useQuestionsWithAnswers(interviewId, questionSetId, analysisStatus === 'COMPLETED')
 
   const feedback = feedbackRes?.data
   const feedbacks = feedback?.timestampFeedbacks ?? []
@@ -28,10 +35,59 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index }: Que
 
   const { activeFeedbackId, currentTimeMs, seekTo } = useFeedbackSync(videoRef, feedbacks)
 
+  const handleUrlExpired = useCallback(() => {
+    void queryClient.invalidateQueries({
+      queryKey: ['questionSetFeedback', interviewId, questionSetId],
+    })
+  }, [queryClient, interviewId, questionSetId])
+
   // Estimate total duration from last feedback endMs
   const durationMs = feedbacks.length > 0
     ? Math.max(...feedbacks.map((f) => f.endMs))
     : 0
+
+  // FAILED 상태 UI
+  if (analysisStatus === 'FAILED') {
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-error/10 text-xs font-black text-error">
+            {index + 1}
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold tracking-tight text-text-primary">{category}</h2>
+            <p className="text-xs text-error font-bold">분석 실패</p>
+          </div>
+        </div>
+        <div className="rounded-2xl border border-error/20 bg-error/5 p-6 text-center">
+          <p className="text-sm font-bold text-error mb-2">이 질문세트의 분석에 실패했습니다</p>
+          {failureReason && (
+            <p className="text-xs text-text-tertiary">{failureReason}</p>
+          )}
+        </div>
+      </section>
+    )
+  }
+
+  // 분석 미완료 상태
+  if (analysisStatus !== 'COMPLETED') {
+    return (
+      <section className="space-y-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border text-xs font-black text-text-tertiary">
+            {index + 1}
+          </div>
+          <div>
+            <h2 className="text-lg font-extrabold tracking-tight text-text-primary">{category}</h2>
+            <p className="text-xs text-text-tertiary font-bold">분석 대기 중</p>
+          </div>
+        </div>
+        <div className="rounded-2xl bg-surface p-8 text-center animate-pulse">
+          <p className="text-sm font-bold text-text-tertiary">분석이 아직 완료되지 않았습니다</p>
+        </div>
+      </section>
+    )
+  }
 
   if (feedbackLoading) {
     return (
@@ -84,6 +140,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index }: Que
             ref={videoRef}
             streamingUrl={feedback.streamingUrl}
             fallbackUrl={feedback.fallbackUrl}
+            onUrlExpired={handleUrlExpired}
           />
           <TimelineBar
             feedbacks={feedbacks}
@@ -195,6 +252,8 @@ export const InterviewFeedbackPage = () => {
               questionSetId={qs.id}
               category={qs.category}
               index={idx}
+              analysisStatus={qs.analysisStatus}
+              failureReason={null}
             />
           ))}
         </div>

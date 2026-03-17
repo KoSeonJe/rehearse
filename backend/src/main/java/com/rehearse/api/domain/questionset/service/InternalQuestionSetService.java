@@ -27,12 +27,22 @@ public class InternalQuestionSetService {
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
 
+        if (request.getProgress() == AnalysisProgress.FAILED) {
+            questionSet.markFailed(request.getFailureReason(), request.getFailureDetail());
+            log.warn("분석 실패: questionSetId={}, reason={}", questionSetId, request.getFailureReason());
+            return;
+        }
+
         if (questionSet.getAnalysisStatus() != AnalysisStatus.ANALYZING) {
             questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
         }
         questionSet.updateAnalysisProgress(request.getProgress());
 
         log.info("분석 진행 상태 업데이트: questionSetId={}, progress={}", questionSetId, request.getProgress());
+    }
+
+    public QuestionSet getQuestionSet(Long questionSetId) {
+        return findQuestionSet(questionSetId);
     }
 
     public List<QuestionSetAnswer> getAnswers(Long questionSetId) {

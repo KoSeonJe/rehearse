@@ -11,4 +11,7 @@ public class UpdateProgressRequest {
 
     @NotNull(message = "분석 진행 상태는 필수입니다.")
     private AnalysisProgress progress;
+
+    private String failureReason;
+    private String failureDetail;
 }

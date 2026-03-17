@@ -1,6 +1,9 @@
 package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.questionset.entity.QuestionCategory;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
@@ -77,16 +80,21 @@ class InternalQuestionSetControllerTest {
     // ----------------------------------------------------------------
 
     @Test
-    @DisplayName("GET /answers - 답변 목록 조회 성공 시 200과 답변 리스트를 반환한다")
+    @DisplayName("GET /answers - 답변 목록 조회 성공 시 200과 analysisStatus + 답변 리스트를 반환한다")
     void getAnswers_success() throws Exception {
-        // InternalQuestionSetService.getAnswers()는 List<QuestionSetAnswer>를 반환하고
-        // 컨트롤러에서 AnswerResponse::from 으로 매핑하므로, 여기서는 빈 목록을 반환하게 stub한다.
+        QuestionSet questionSet = QuestionSet.builder()
+                .interview(Interview.builder().build())
+                .category(QuestionCategory.RESUME)
+                .orderIndex(0)
+                .build();
+        given(internalQuestionSetService.getQuestionSet(1L)).willReturn(questionSet);
         given(internalQuestionSetService.getAnswers(1L)).willReturn(List.of());
 
         mockMvc.perform(get(BASE_URL + "/answers", 5L, 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").isArray());
+                .andExpect(jsonPath("$.data.analysisStatus").value("PENDING"))
+                .andExpect(jsonPath("$.data.answers").isArray());
     }
 
     // ----------------------------------------------------------------
