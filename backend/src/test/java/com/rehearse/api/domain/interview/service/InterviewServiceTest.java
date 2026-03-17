@@ -3,6 +3,8 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
@@ -31,6 +33,9 @@ class InterviewServiceTest {
 
     @Mock
     private InterviewRepository interviewRepository;
+
+    @Mock
+    private QuestionSetRepository questionSetRepository;
 
     @Mock
     private InterviewFinder interviewFinder;
@@ -67,6 +72,9 @@ class InterviewServiceTest {
                     }
                     return interview;
                 });
+
+        given(questionSetRepository.saveAll(anyList()))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         InterviewResponse response = interviewService.createInterview(request, null);
@@ -107,6 +115,7 @@ class InterviewServiceTest {
         Interview interview = createMockInterview();
 
         given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
         // when
         InterviewResponse response = interviewService.getInterview(1L);

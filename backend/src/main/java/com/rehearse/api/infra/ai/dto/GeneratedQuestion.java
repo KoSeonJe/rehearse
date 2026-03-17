@@ -13,4 +13,7 @@ public class GeneratedQuestion {
     private String category;
     private int order;
     private String evaluationCriteria;
+    private String questionCategory;
+    private String modelAnswer;
+    private String referenceType;
 }
