@@ -8,7 +8,7 @@ import { useInterviewEventRecorder } from '@/hooks/use-interview-event-recorder'
 import { useInterviewGreeting } from '@/hooks/use-interview-greeting'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { saveVideoBlob } from '@/lib/video-storage'
-import type { Question, TranscriptSegment, VoiceEvent } from '@/types/interview'
+import type { Question, TranscriptSegment } from '@/types/interview'
 
 interface UseInterviewSessionParams {
   interviewId: string
@@ -33,12 +33,6 @@ interface UseInterviewSessionParams {
     stop: () => void
     onFinalResult: (callback: (segment: TranscriptSegment) => void) => void
   }
-  audio: {
-    audioLevelRef: React.RefObject<number>
-    start: (stream: MediaStream) => Promise<void>
-    stop: () => void
-    onVoiceEvent: (callback: (event: VoiceEvent) => void) => void
-  }
 }
 
 export const useInterviewSession = ({
@@ -47,7 +41,6 @@ export const useInterviewSession = ({
   mediaStream,
   recorder,
   stt,
-  audio,
 }: UseInterviewSessionParams) => {
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
@@ -60,7 +53,6 @@ export const useInterviewSession = ({
     setInterview,
     setCurrentTranscript,
     addTranscript,
-    addVoiceEvent,
     setVideoBlob,
     completeInterview,
     setAutoTransitionMessage,
@@ -139,16 +131,6 @@ export const useInterviewSession = ({
     },
   })
 
-  // phase가 greeting/ready가 되면 오디오 분석기 미리 시작 (음성 분석용)
-  useEffect(() => {
-    if ((phase === 'greeting' || phase === 'ready' || phase === 'paused') && mediaStream.stream) {
-      audio.start(mediaStream.stream)
-    }
-    // audio.start는 useCallback([])으로 안정적 — audio 객체 전체를 deps에 넣으면
-    // audioLevel 변경마다 재실행되어 AudioContext가 무한 생성됨
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, mediaStream.stream, audio.start])
-
   // 면접 데이터 로드
   useEffect(() => {
     if (interview && phase === 'preparing') {
@@ -178,14 +160,6 @@ export const useInterviewSession = ({
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stt.onFinalResult, addTranscript])
-
-  // 음성 이벤트 콜백 등록
-  useEffect(() => {
-    audio.onVoiceEvent((event: VoiceEvent) => {
-      addVoiceEvent(event)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [audio.onVoiceEvent, addVoiceEvent])
 
   // interim text 동기화
   useEffect(() => {
@@ -217,7 +191,6 @@ export const useInterviewSession = ({
 
     tts.stop()
     stt.stop()
-    audio.stop()
     recordEvent('interview_finish', currentQuestionIndex)
 
     // 이벤트를 스토어에 저장
@@ -243,7 +216,7 @@ export const useInterviewSession = ({
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stt, audio, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
+  }, [stt, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
   const isFinishingRef = useRef(false)
@@ -260,7 +233,6 @@ export const useInterviewSession = ({
       pendingTtsActionRef.current = null
       tts.stop()
       mediaStream.stop()
-      audio.stop()
       stt.stop()
       reset()
     }
