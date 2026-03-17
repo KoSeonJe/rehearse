@@ -27,6 +27,63 @@ export interface Question {
   order: number
 }
 
+// 질문세트 관련 타입 (Sprint 0 파이프라인)
+
+export type QuestionType = 'ORIGINAL' | 'FOLLOW_UP'
+
+export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
+
+export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'ANALYZING' | 'COMPLETED' | 'FAILED'
+
+export type FileStatus = 'PENDING' | 'UPLOADED' | 'CONVERTING' | 'CONVERTED' | 'FAILED'
+
+export interface QuestionDetail {
+  id: number
+  questionType: QuestionType
+  questionText: string
+  modelAnswer: string | null
+  referenceType: ReferenceType
+  orderIndex: number
+}
+
+export interface QuestionSetData {
+  id: number
+  category: string
+  orderIndex: number
+  analysisStatus: AnalysisStatus
+  questions: QuestionDetail[]
+}
+
+export interface AnswerTimestamp {
+  questionId: number
+  startMs: number
+  endMs: number
+}
+
+export interface UploadUrlRequest {
+  contentType: string
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string
+  s3Key: string
+  fileMetadataId: number
+}
+
+export interface SaveAnswersRequest {
+  answers: AnswerTimestamp[]
+}
+
+export interface QuestionSetStatusResponse {
+  id: number
+  analysisStatus: AnalysisStatus
+  analysisProgress: string | null
+  fileStatus: FileStatus | null
+  failureReason: string | null
+}
+
+export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
+
 export interface InterviewSession {
   id: number
   position: Position
@@ -37,6 +94,7 @@ export interface InterviewSession {
   durationMinutes: number
   status: InterviewStatus
   questions: Question[]
+  questionSets: QuestionSetData[]
   createdAt: string
 }
 

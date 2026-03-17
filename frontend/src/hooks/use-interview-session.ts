@@ -8,11 +8,11 @@ import { useInterviewEventRecorder } from '@/hooks/use-interview-event-recorder'
 import { useInterviewGreeting } from '@/hooks/use-interview-greeting'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { saveVideoBlob } from '@/lib/video-storage'
-import type { Question, TranscriptSegment } from '@/types/interview'
+import type { Question, TranscriptSegment, QuestionSetData } from '@/types/interview'
 
 interface UseInterviewSessionParams {
   interviewId: string
-  interview: { id: number; status: string; questions: Question[] } | undefined
+  interview: { id: number; status: string; questions: Question[]; questionSets?: QuestionSetData[] } | undefined
   mediaStream: {
     stream: MediaStream | null
     isActive: boolean
@@ -25,6 +25,7 @@ interface UseInterviewSessionParams {
     stop: () => Promise<Blob>
     pause: () => void
     resume: () => void
+    restart: (stream: MediaStream) => Promise<Blob>
   }
   stt: {
     interimText: string
@@ -50,7 +51,10 @@ export const useInterviewSession = ({
     questions,
     currentQuestionIndex,
     phase,
+    questionSets,
+    currentQuestionSetIndex,
     setInterview,
+    setQuestionSets,
     setCurrentTranscript,
     addTranscript,
     setVideoBlob,
@@ -104,7 +108,7 @@ export const useInterviewSession = ({
   })
 
   // 답변 시작/완료 + 전환 로직
-  const { handleStartAnswer, handleStopAnswer } = useAnswerFlow({
+  const { handleStartAnswer, handleStopAnswer, s3Upload } = useAnswerFlow({
     interview,
     mediaStream,
     recorder,
@@ -131,12 +135,15 @@ export const useInterviewSession = ({
     },
   })
 
-  // 면접 데이터 로드
+  // 면접 데이터 로드 + 질문세트 설정
   useEffect(() => {
     if (interview && phase === 'preparing') {
       setInterview(interview.id, interview.questions)
+      if (interview.questionSets?.length) {
+        setQuestionSets(interview.questionSets)
+      }
     }
-  }, [interview, phase, setInterview])
+  }, [interview, phase, setInterview, setQuestionSets])
 
   // 질문 변경 시 TTS로 읽기 (첫 질문은 greeting에서 처리하므로 제외)
   useEffect(() => {
@@ -199,6 +206,9 @@ export const useInterviewSession = ({
 
     const blob = await recorder.stop()
     setVideoBlob(blob)
+
+    // 질문세트가 있으면 마지막 세트 업로드는 answer-flow에서 처리
+    // 폴백: IndexedDB에 전체 blob 저장
     saveVideoBlob(interview.id, blob).catch(() => {})
     completeInterview()
 
@@ -245,5 +255,8 @@ export const useInterviewSession = ({
     handleStopAnswer,
     handleFinishInterview,
     isTtsSpeaking: tts.isSpeaking,
+    s3Upload,
+    questionSets,
+    currentQuestionSetIndex,
   }
 }

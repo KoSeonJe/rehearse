@@ -1,13 +1,28 @@
 import { useCallback, type MutableRefObject } from 'react'
 import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
 import { useFollowUpQuestion } from '@/hooks/use-interviews'
-import type { Question, InterviewEventType } from '@/types/interview'
+import { useS3Upload } from '@/hooks/use-s3-upload'
+import { apiClient } from '@/lib/api-client'
+import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
+import type {
+  Question,
+  InterviewEventType,
+  ApiResponse,
+  UploadUrlResponse,
+  QuestionSetData,
+} from '@/types/interview'
 
 const TRANSITION_PHRASES = [
   '네, 다음 질문 드리겠습니다.',
   '네, 알겠습니다. 다음 질문입니다.',
   '잘 들었습니다. 다음 질문 드릴게요.',
   '네, 감사합니다. 다음 질문입니다.',
+]
+
+const SET_TRANSITION_PHRASES = [
+  '네, 다음 주제로 넘어가겠습니다.',
+  '좋습니다. 다음 질문 세트를 시작하겠습니다.',
+  '잘 답변해주셨습니다. 다른 주제로 넘어가 보죠.',
 ]
 
 const CLOSING_PHRASES = [
@@ -18,13 +33,15 @@ const CLOSING_PHRASES = [
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
 interface UseAnswerFlowParams {
-  interview: { id: number; status: string; questions: Question[] } | undefined
+  interview: { id: number; status: string; questions: Question[]; questionSets?: QuestionSetData[] } | undefined
   mediaStream: { stream: MediaStream | null }
   recorder: {
     isRecording: boolean
     start: (stream: MediaStream) => void
+    stop: () => Promise<Blob>
     pause: () => void
     resume: () => void
+    restart: (stream: MediaStream) => Promise<Blob>
   }
   stt: {
     start: (questionIndex: number) => void
@@ -54,6 +71,8 @@ export const useAnswerFlow = ({
   pendingTtsActionRef,
 }: UseAnswerFlowParams) => {
   const followUpMutation = useFollowUpQuestion()
+  const s3Upload = useS3Upload()
+
   const {
     startRecording,
     stopRecording,
@@ -62,8 +81,13 @@ export const useAnswerFlow = ({
     resetFollowUpState,
     setFollowUpLoading,
     nextQuestion,
+    nextQuestionSet,
+    addAnswerTimestamp,
+    setUploadStatus,
     completeInterview,
   } = useInterviewStore()
+
+  const hasQuestionSets = !!interview?.questionSets?.length
 
   // 현재 답변 텍스트 수집
   const getCurrentAnswerText = useCallback(() => {
@@ -75,16 +99,102 @@ export const useAnswerFlow = ({
       .join(' ') ?? ''
   }, [])
 
-  // 다음 질문 또는 종료로 전환
-  const transitionToNext = useCallback((isLast: boolean) => {
-    if (isLast) {
-      pendingTtsActionRef.current = () => completeInterview()
-      tts.speak(pickRandom(CLOSING_PHRASES))
+  // 질문세트 완료 시 업로드 파이프라인 (백그라운드)
+  const handleQuestionSetComplete = useCallback(async (questionSetId: number) => {
+    if (!interview || !mediaStream.stream) return
+
+    const state = useInterviewStore.getState()
+    const isLastSet = state.currentQuestionSetIndex >= state.questionSets.length - 1
+
+    // 1. recorder stop → blob
+    let blob: Blob
+    if (isLastSet) {
+      blob = await recorder.stop()
     } else {
+      blob = await recorder.restart(mediaStream.stream)
+    }
+
+    // 2. IndexedDB 폴백 저장
+    await saveVideoBlob(interview.id, blob, questionSetId).catch(() => {})
+
+    // 3. 답변 타임스탬프 저장
+    const answers = state.questionSetAnswers.get(questionSetId) ?? []
+    if (answers.length > 0) {
+      try {
+        await apiClient.post(
+          `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/answers`,
+          { answers },
+        )
+      } catch {
+        // 답변 저장 실패 시에도 업로드는 시도
+      }
+    }
+
+    // 4. Presigned URL 발급 + S3 업로드
+    setUploadStatus(questionSetId, 'uploading')
+    try {
+      const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+        `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/upload-url`,
+        { contentType: blob.type || 'video/webm' },
+      )
+      await s3Upload.upload(blob, urlRes.data.uploadUrl)
+      setUploadStatus(questionSetId, 'completed')
+      // 업로드 성공 시 IndexedDB 임시 데이터 정리
+      deleteVideoBlob(interview.id, questionSetId).catch(() => {})
+    } catch {
+      setUploadStatus(questionSetId, 'failed')
+    }
+  }, [interview, mediaStream.stream, recorder, s3Upload, setUploadStatus])
+
+  // 질문세트 내 마지막 질문인지 확인
+  const isLastQuestionInSet = useCallback(() => {
+    if (!hasQuestionSets) return false
+    const state = useInterviewStore.getState()
+    const currentSet = state.questionSets[state.currentQuestionSetIndex]
+    if (!currentSet) return false
+
+    // 현재 질문이 현재 세트의 마지막인지 계산
+    // questions는 모든 세트의 질문이 flat하게 들어있으므로,
+    // 현재 세트까지의 질문 수 합산으로 경계를 판단
+    let questionsBeforeCurrentSet = 0
+    for (let i = 0; i < state.currentQuestionSetIndex; i++) {
+      questionsBeforeCurrentSet += state.questionSets[i].questions.length
+    }
+    const lastIndexInSet = questionsBeforeCurrentSet + currentSet.questions.length - 1
+    return state.currentQuestionIndex >= lastIndexInSet
+  }, [hasQuestionSets])
+
+  // 다음 질문 또는 다음 세트 또는 종료로 전환
+  const transitionToNext = useCallback((isLast: boolean) => {
+    const state = useInterviewStore.getState()
+    const isSetEnd = hasQuestionSets && isLastQuestionInSet()
+    const isLastSet = state.currentQuestionSetIndex >= state.questionSets.length - 1
+
+    if (isLast || (isSetEnd && isLastSet)) {
+      // 면접 종료
+      pendingTtsActionRef.current = () => {
+        if (hasQuestionSets) {
+          const currentSet = state.questionSets[state.currentQuestionSetIndex]
+          handleQuestionSetComplete(currentSet.id).catch(() => {})
+        }
+        completeInterview()
+      }
+      tts.speak(pickRandom(CLOSING_PHRASES))
+    } else if (isSetEnd && !isLastSet) {
+      // 질문세트 전환
+      const currentSet = state.questionSets[state.currentQuestionSetIndex]
+      pendingTtsActionRef.current = () => {
+        handleQuestionSetComplete(currentSet.id).catch(() => {})
+        nextQuestionSet()
+        nextQuestion()
+      }
+      tts.speak(pickRandom(SET_TRANSITION_PHRASES))
+    } else {
+      // 같은 세트 내 다음 질문
       pendingTtsActionRef.current = () => nextQuestion()
       tts.speak(pickRandom(TRANSITION_PHRASES))
     }
-  }, [pendingTtsActionRef, completeInterview, nextQuestion, tts])
+  }, [pendingTtsActionRef, completeInterview, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
@@ -121,6 +231,28 @@ export const useAnswerFlow = ({
 
     // 현재 답변 텍스트 수집
     const answerText = getCurrentAnswerText()
+
+    // 질문세트가 있으면 답변 타임스탬프 기록
+    if (hasQuestionSets) {
+      const currentSet = state.questionSets[state.currentQuestionSetIndex]
+      if (currentSet) {
+        // 현재 질문의 세트 내 인덱스 계산
+        let questionsBeforeSet = 0
+        for (let i = 0; i < state.currentQuestionSetIndex; i++) {
+          questionsBeforeSet += state.questionSets[i].questions.length
+        }
+        const questionInSetIndex = state.currentQuestionIndex - questionsBeforeSet
+        const questionDetail = currentSet.questions[questionInSetIndex]
+        if (questionDetail) {
+          const currentAnswer = state.answers[state.currentQuestionIndex]
+          addAnswerTimestamp(currentSet.id, {
+            questionId: questionDetail.id,
+            startMs: currentAnswer?.startTime ?? 0,
+            endMs: currentAnswer?.endTime ?? Date.now(),
+          })
+        }
+      }
+    }
 
     // 후속질문에 대한 답변이었으면 히스토리에 저장
     if (state.currentFollowUp) {
@@ -166,13 +298,14 @@ export const useAnswerFlow = ({
   }, [
     stopRecording, stt, recorder, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
-    getCurrentAnswerText, completeFollowUpRound,
+    getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
-    followUpMutation, interview, transitionToNext,
+    followUpMutation, interview, transitionToNext, hasQuestionSets,
   ])
 
   return {
     handleStartAnswer: doStartAnswer,
     handleStopAnswer,
+    s3Upload,
   }
 }
