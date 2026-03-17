@@ -127,7 +127,7 @@ export const InterviewReportPage = () => {
               나의 시선과 표정을 다시 체크해보세요.
             </p>
             <button
-              onClick={() => navigate(`/interview/${id}/review`)}
+              onClick={() => navigate(`/interview/${id}/feedback`)}
               className="h-16 w-full rounded-[24px] bg-white text-slate-950 font-black text-lg active:scale-95 transition-all"
             >
               타임스탬프 리뷰 보기

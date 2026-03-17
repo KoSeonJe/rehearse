@@ -5,6 +5,8 @@ import { InterviewReadyPage } from '@/pages/interview-ready-page'
 import { InterviewPage } from '@/pages/interview-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewReportPage } from '@/pages/interview-report-page'
+import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
+
 export const App = () => {
   return (
     <Routes>
@@ -14,6 +16,8 @@ export const App = () => {
       <Route path="/interview/:id/conduct" element={<InterviewPage />} />
       <Route path="/interview/:id/complete" element={<InterviewAnalysisPage />} />
       <Route path="/interview/:id/report" element={<InterviewReportPage />} />
+      <Route path="/interview/:id/feedback" element={<InterviewFeedbackPage />} />
+      <Route path="/interview/:id/review" element={<InterviewFeedbackPage />} />
     </Routes>
   )
 }
