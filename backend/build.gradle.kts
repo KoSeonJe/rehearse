@@ -45,6 +45,10 @@ dependencies {
     // JSON
     implementation("com.fasterxml.jackson.core:jackson-databind")
 
+    // AWS S3
+    implementation(platform("software.amazon.awssdk:bom:2.29.51"))
+    implementation("software.amazon.awssdk:s3")
+
     // PDF
     implementation("org.apache.pdfbox:pdfbox:3.0.4")
 

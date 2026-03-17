@@ -17,5 +17,8 @@ claude:
   api-key: test-key
   model: claude-sonnet-4-20250514
 
+aws:
+  enabled: false
+
 cors:
   allowed-origins: http://localhost:5173
