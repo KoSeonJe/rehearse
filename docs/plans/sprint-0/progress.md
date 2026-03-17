@@ -6,7 +6,7 @@
 |-------|------|------|
 | Phase A | Legacy 제거 + DB 스키마 | Completed |
 | Phase B | BE 서비스 레이어 | Completed |
-| Phase C~F | Infra + Lambda + FE | Not Started |
+| Phase C~F | Infra + Lambda + FE | In Progress |
 
 ## Task 진행 상태
 
@@ -15,7 +15,7 @@
 | Task 0 FE | Legacy 클라이언트 분석 코드 제거 | Completed | #89 | #77 |
 | Task 0 BE | feedback 도메인 제거 | Completed | #90 | #77 |
 | Task 1 | Flyway V4 + 6엔티티 + 7Enum + 6Repo | Completed | #91 | #78 |
-| Task 2-1 | AWS 인프라 (S3, EventBridge, Lambda) | Not Started | — | #79 |
+| Task 2-1 | AWS 인프라 (S3, EventBridge, Lambda) | Completed | — | #79 |
 | Task 2-2 | AWS S3 SDK + Presigned URL + 조건부 빈 | Completed | #92 → #97 | #79 (부분) |
 | Task 3-1 | 면접생성 리팩토링 + QuestionSet + 모범답변 | Completed | #93 → #98 | #80 |
 | Task 3-2 | 클라이언트 API 5개 + S3Service 인터페이스 | Completed | #94 → #99 | #81 |
