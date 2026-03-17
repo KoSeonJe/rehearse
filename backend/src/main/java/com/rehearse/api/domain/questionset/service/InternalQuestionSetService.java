@@ -1,0 +1,93 @@
+package com.rehearse.api.domain.questionset.service;
+
+import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
+import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.questionset.repository.*;
+import com.rehearse.api.global.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+public class InternalQuestionSetService {
+
+    private final QuestionSetRepository questionSetRepository;
+    private final QuestionSetAnswerRepository answerRepository;
+    private final QuestionSetFeedbackRepository feedbackRepository;
+
+    @Transactional
+    public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
+        QuestionSet questionSet = findQuestionSet(questionSetId);
+
+        if (questionSet.getAnalysisStatus() != AnalysisStatus.ANALYZING) {
+            questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
+        }
+        questionSet.updateAnalysisProgress(request.getProgress());
+
+        log.info("분석 진행 상태 업데이트: questionSetId={}, progress={}", questionSetId, request.getProgress());
+    }
+
+    public List<QuestionSetAnswer> getAnswers(Long questionSetId) {
+        return answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
+    }
+
+    @Transactional
+    public void saveFeedback(Long questionSetId, SaveFeedbackRequest request) {
+        QuestionSet questionSet = findQuestionSet(questionSetId);
+
+        QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                .questionSet(questionSet)
+                .questionSetScore(request.getQuestionSetScore())
+                .questionSetComment(request.getQuestionSetComment())
+                .build();
+
+        if (request.getTimestampFeedbacks() != null) {
+            for (SaveFeedbackRequest.TimestampFeedbackItem item : request.getTimestampFeedbacks()) {
+                TimestampFeedback tf = TimestampFeedback.builder()
+                        .answerType(QuestionType.valueOf(item.getAnswerType()))
+                        .startMs(item.getStartMs())
+                        .endMs(item.getEndMs())
+                        .transcript(item.getTranscript())
+                        .verbalScore(item.getVerbalScore())
+                        .verbalComment(item.getVerbalComment())
+                        .fillerWordCount(item.getFillerWordCount())
+                        .eyeContactScore(item.getEyeContactScore())
+                        .postureScore(item.getPostureScore())
+                        .expressionLabel(item.getExpressionLabel())
+                        .nonverbalComment(item.getNonverbalComment())
+                        .overallComment(item.getOverallComment())
+                        .isAnalyzed(true)
+                        .build();
+                feedback.addTimestampFeedback(tf);
+            }
+        }
+
+        feedbackRepository.save(feedback);
+        questionSet.updateAnalysisStatus(AnalysisStatus.COMPLETED);
+        questionSet.updateAnalysisProgress(AnalysisProgress.FINALIZING);
+
+        log.info("분석 결과 저장 완료: questionSetId={}, score={}", questionSetId, request.getQuestionSetScore());
+    }
+
+    @Transactional
+    public void retryAnalysis(Long questionSetId) {
+        QuestionSet questionSet = findQuestionSet(questionSetId);
+        questionSet.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
+        questionSet.updateAnalysisProgress(null);
+
+        log.info("분석 재시도 트리거: questionSetId={}", questionSetId);
+    }
+
+    private QuestionSet findQuestionSet(Long questionSetId) {
+        return questionSetRepository.findById(questionSetId)
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+    }
+}
