@@ -31,9 +31,9 @@ jobs:
             frontend:
               - 'frontend/**'
             infra:
-              - 'docker-compose.yml'
+              - 'backend/docker-compose.yml'
               - '.github/workflows/**'
-              - '.env*'
+              - 'backend/.env*'
 
   backend-test:
     name: Backend Test
@@ -63,6 +63,8 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: test
 
   frontend-build:
     name: Frontend Build
@@ -146,6 +148,17 @@ jobs:
           docker build -t ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest .
           docker push ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest
 
+      - name: Copy docker-compose.yml to EC2
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "backend/docker-compose.yml"
+          target: "~/rehearse"
+          overwrite: true
+
       - name: Deploy backend to EC2
         if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         uses: appleboy/ssh-action@v1
@@ -154,10 +167,9 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/devlens
-            git pull origin develop
+            cd ~/rehearse/backend
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-            docker compose --env-file .env.dev-server pull backend
-            docker compose --env-file .env.dev-server up -d
+            docker compose --env-file .env pull backend
+            docker compose --env-file .env up -d
             sleep 10
             curl -f http://localhost/actuator/health || echo "Health check failed"

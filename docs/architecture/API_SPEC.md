@@ -1,4 +1,4 @@
-# DevLens (Rehearse) Backend API 명세서
+# Rehearse Backend API 명세서
 
 > 최종 업데이트: 2026-03-16
 

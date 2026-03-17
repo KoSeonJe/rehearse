@@ -41,10 +41,10 @@
 
 ## 환경변수
 
-### Backend (.env.dev-server)
+### Backend (backend/.env)
 - `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `DB_ROOT_PASSWORD`
 - `CLAUDE_API_KEY`, `CORS_ALLOWED_ORIGINS`
-- `SPRING_PROFILES_ACTIVE=dev-server`
+- `SPRING_PROFILES_ACTIVE=dev`
 - `ECR_REGISTRY`
 
 ### Frontend (빌드 시)

@@ -36,7 +36,7 @@
   - `frontend/src/components/interview/question-card.tsx` — 번호 뱃지 + 카테고리 태그 + 질문 텍스트
   - `frontend/src/components/interview/question-card-skeleton.tsx` — 질문 카드 스켈레톤
   - `frontend/src/hooks/use-interviews.ts` — useCreateInterview, useInterview, useUpdateInterviewStatus (TanStack Query)
-  - `frontend/src/pages/home-page.tsx` — 리디자인 (DevLens 제목 + 설명 + CTA)
+  - `frontend/src/pages/home-page.tsx` — 리디자인 (Rehearse 제목 + 설명 + CTA)
   - `frontend/src/pages/interview-setup-page.tsx` — 직무 입력 + 레벨/유형 선택 + 질문 생성
   - `frontend/src/pages/interview-ready-page.tsx` — 질문 5개 표시 + 면접 시작 + 질문 재생성
   - `frontend/src/app.tsx` — /interview/setup, /interview/:id/ready 라우트 추가
@@ -85,7 +85,7 @@ Mobile (< 640px)                    Desktop (> 1024px)
 │                     │             │                                  │
 │                     │             │                                  │
 │                     │             │                                  │
-│      DevLens        │             │           DevLens                │
+│      Rehearse        │             │           Rehearse                │
 │                     │             │                                  │
 │  AI 기반 개발자      │             │    AI 기반 개발자 모의면접 플랫폼  │
 │  모의면접 플랫폼     │             │                                  │
@@ -107,7 +107,7 @@ Mobile (< 640px)                    Desktop (> 1024px)
 ```
 HomePage
 ├── <main> (전체 화면 중앙 정렬)
-│   ├── <h1> "DevLens"                    -- text-4xl font-bold text-gray-900
+│   ├── <h1> "Rehearse"                    -- text-4xl font-bold text-gray-900
 │   ├── <p> 서비스 한 줄 소개              -- text-lg text-gray-600 mt-3
 │   ├── <p> 상세 설명 (1-2줄)             -- text-base text-gray-500 mt-2
 │   └── <Link to="/interview/setup">      -- CTA 버튼, mt-8
