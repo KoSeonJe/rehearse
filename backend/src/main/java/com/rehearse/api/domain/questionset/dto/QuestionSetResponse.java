@@ -16,6 +16,7 @@ public class QuestionSetResponse {
     private final QuestionCategory category;
     private final int orderIndex;
     private final AnalysisStatus analysisStatus;
+    private final String failureReason;
     private final List<QuestionDetailResponse> questions;
 
     public static QuestionSetResponse from(QuestionSet questionSet) {
@@ -28,6 +29,7 @@ public class QuestionSetResponse {
                 .category(questionSet.getCategory())
                 .orderIndex(questionSet.getOrderIndex())
                 .analysisStatus(questionSet.getAnalysisStatus())
+                .failureReason(questionSet.getFailureReason())
                 .questions(questionDetails)
                 .build();
     }

@@ -7,6 +7,8 @@ import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -30,6 +32,7 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
+    private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
     private final AiClient aiClient;
     private final PdfTextExtractor pdfTextExtractor;
@@ -157,6 +160,7 @@ public class InterviewService {
         return ReferenceType.GUIDE;
     }
 
+    @Transactional
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request) {
         Interview interview = interviewFinder.findByIdWithQuestions(id);
 
@@ -171,12 +175,42 @@ public class InterviewService {
                 request.getPreviousExchanges()
         );
 
-        log.info("후속 질문 생성 완료: interviewId={}, type={}", id, followUp.getType());
+        // 후속질문을 Question 엔티티로 저장
+        QuestionSet questionSet = questionSetRepository.findById(request.getQuestionSetId())
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+
+        QuestionType followUpType = determineFollowUpType(questionSet);
+        int nextOrderIndex = questionSet.getQuestions().size();
+
+        Question followUpQuestion = Question.builder()
+                .questionType(followUpType)
+                .questionText(followUp.getQuestion())
+                .orderIndex(nextOrderIndex)
+                .build();
+
+        questionSet.addQuestion(followUpQuestion);
+        questionRepository.save(followUpQuestion);
+
+        log.info("후속 질문 생성 및 저장 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
+                id, request.getQuestionSetId(), followUpQuestion.getId(), followUp.getType());
 
         return FollowUpResponse.builder()
+                .questionId(followUpQuestion.getId())
                 .question(followUp.getQuestion())
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .build();
+    }
+
+    private QuestionType determineFollowUpType(QuestionSet questionSet) {
+        long followUpCount = questionSet.getQuestions().stream()
+                .filter(q -> q.getQuestionType() != QuestionType.MAIN)
+                .count();
+
+        return switch ((int) followUpCount) {
+            case 0 -> QuestionType.FOLLOWUP_1;
+            case 1 -> QuestionType.FOLLOWUP_2;
+            default -> QuestionType.FOLLOWUP_3;
+        };
     }
 }

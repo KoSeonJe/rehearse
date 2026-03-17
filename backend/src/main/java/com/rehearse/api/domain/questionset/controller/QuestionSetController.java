@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.questionset.controller;
 
 import com.rehearse.api.domain.questionset.dto.*;
+import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 public class QuestionSetController {
 
     private final QuestionSetService questionSetService;
+    private final InternalQuestionSetService internalQuestionSetService;
 
     @PostMapping("/answers")
     public ResponseEntity<ApiResponse<Void>> saveAnswers(
@@ -61,5 +63,14 @@ public class QuestionSetController {
 
         QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/retry-analysis")
+    public ResponseEntity<ApiResponse<Void>> retryAnalysis(
+            @PathVariable Long interviewId,
+            @PathVariable Long questionSetId) {
+
+        internalQuestionSetService.retryAnalysis(questionSetId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }
