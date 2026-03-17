@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react'
+import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from 'react'
 
 export interface VideoPlayerHandle {
   seekTo: (ms: number) => void
@@ -20,10 +20,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [duration, setDuration] = useState(0)
     const [usedFallback, setUsedFallback] = useState(false)
 
-    useEffect(() => {
+    const [prevUrls, setPrevUrls] = useState({ streamingUrl, fallbackUrl })
+    if (streamingUrl !== prevUrls.streamingUrl || fallbackUrl !== prevUrls.fallbackUrl) {
+      setPrevUrls({ streamingUrl, fallbackUrl })
       setCurrentSrc(streamingUrl ?? fallbackUrl)
       setUsedFallback(false)
-    }, [streamingUrl, fallbackUrl])
+    }
 
     useImperativeHandle(ref, () => ({
       seekTo: (ms: number) => {
