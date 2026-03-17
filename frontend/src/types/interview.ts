@@ -104,6 +104,34 @@ export interface QuestionsWithAnswersResponse {
   questions: QuestionWithAnswer[]
 }
 
+// 피드백 뷰어 타입 (Sprint 0 Task 10)
+
+export interface TimestampFeedback {
+  id: number
+  answerType: string
+  startMs: number
+  endMs: number
+  transcript: string | null
+  verbalScore: number | null
+  verbalComment: string | null
+  fillerWordCount: number | null
+  eyeContactScore: number | null
+  postureScore: number | null
+  expressionLabel: string | null
+  nonverbalComment: string | null
+  overallComment: string | null
+  isAnalyzed: boolean
+}
+
+export interface QuestionSetFeedbackResponse {
+  id: number
+  questionSetScore: number
+  questionSetComment: string
+  streamingUrl: string | null
+  fallbackUrl: string | null
+  timestampFeedbacks: TimestampFeedback[]
+}
+
 export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
 
 export interface InterviewSession {

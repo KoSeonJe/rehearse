@@ -280,7 +280,7 @@ export const InterviewAnalysisPage = () => {
                     {/* COMPLETED: 미리보기 링크 */}
                     {isCompleted && (
                       <button
-                        onClick={() => navigate(`/interview/${interviewId}/report`)}
+                        onClick={() => navigate(`/interview/${interviewId}/feedback`)}
                         className="text-xs font-bold text-accent hover:underline"
                       >
                         결과 미리보기 →

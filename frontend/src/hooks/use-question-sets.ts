@@ -8,6 +8,7 @@ import type {
   QuestionSetStatusResponse,
   QuestionsWithAnswersResponse,
   QuestionSetData,
+  QuestionSetFeedbackResponse,
 } from '@/types/interview'
 
 export const useSaveAnswers = (interviewId: number, questionSetId: number) => {
@@ -62,6 +63,23 @@ export const useAllQuestionSetStatuses = (
       enabled,
       refetchInterval: enabled ? 5000 : false,
     })),
+  })
+}
+
+// 질문세트별 피드백 조회
+export const useQuestionSetFeedback = (
+  interviewId: number,
+  questionSetId: number,
+  enabled = true,
+) => {
+  return useQuery({
+    queryKey: ['questionSetFeedback', interviewId, questionSetId],
+    queryFn: () =>
+      apiClient.get<ApiResponse<QuestionSetFeedbackResponse>>(
+        `/api/v1/interviews/${interviewId}/question-sets/${questionSetId}/feedback`,
+      ),
+    enabled,
+    staleTime: Infinity,
   })
 }
 
