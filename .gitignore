@@ -43,7 +43,7 @@ Thumbs.db
 docs/resume/
 
 # === Docker ===
-.env.dev-server
+backend/.env.dev-server
 mysql_data/
 
 # === 민감 정보 ===

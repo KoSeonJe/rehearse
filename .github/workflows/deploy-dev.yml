@@ -31,9 +31,9 @@ jobs:
             frontend:
               - 'frontend/**'
             infra:
-              - 'docker-compose.yml'
+              - 'backend/docker-compose.yml'
               - '.github/workflows/**'
-              - '.env*'
+              - 'backend/.env*'
 
   backend-test:
     name: Backend Test
@@ -154,7 +154,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd ~/devlens
+            cd ~/devlens/backend
             git pull origin develop
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
             docker compose --env-file .env.dev-server pull backend

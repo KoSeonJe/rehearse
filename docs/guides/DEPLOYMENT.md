@@ -84,7 +84,7 @@ aws configure  # Access Key, Secret Key, Region(ap-northeast-2) 입력
 
 # 프로젝트 클론
 git clone https://github.com/KoSeonJe/devlens.git ~/devlens
-cd ~/devlens
+cd ~/devlens/backend
 
 # 환경변수 파일 생성
 cp .env.dev-server.example .env.dev-server
