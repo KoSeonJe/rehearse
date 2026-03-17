@@ -59,6 +59,11 @@ public class Interview {
     @OrderBy("questionOrder ASC")
     private List<InterviewQuestion> questions = new ArrayList<>();
 
+    private Integer overallScore;
+
+    @Column(columnDefinition = "TEXT")
+    private String overallComment;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -89,5 +94,10 @@ public class Interview {
                     String.format("상태를 %s에서 %s로 변경할 수 없습니다.", this.status, newStatus));
         }
         this.status = newStatus;
+    }
+
+    public void updateOverallResult(Integer overallScore, String overallComment) {
+        this.overallScore = overallScore;
+        this.overallComment = overallComment;
     }
 }
