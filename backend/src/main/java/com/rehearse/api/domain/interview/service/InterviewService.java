@@ -185,6 +185,7 @@ public class InterviewService {
         Question followUpQuestion = Question.builder()
                 .questionType(followUpType)
                 .questionText(followUp.getQuestion())
+                .modelAnswer(followUp.getModelAnswer())
                 .orderIndex(nextOrderIndex)
                 .build();
 
@@ -210,7 +211,8 @@ public class InterviewService {
         return switch ((int) followUpCount) {
             case 0 -> QuestionType.FOLLOWUP_1;
             case 1 -> QuestionType.FOLLOWUP_2;
-            default -> QuestionType.FOLLOWUP_3;
+            case 2 -> QuestionType.FOLLOWUP_3;
+            default -> throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
         };
     }
 }
