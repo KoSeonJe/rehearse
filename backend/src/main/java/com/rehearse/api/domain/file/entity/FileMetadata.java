@@ -30,10 +30,10 @@ public class FileMetadata {
     @Column(nullable = false, length = 20)
     private FileStatus status;
 
-    @Column(nullable = false, length = 500)
+    @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
-    @Column(length = 500)
+    @Column(name = "streaming_s3_key", length = 500)
     private String streamingS3Key;
 
     @Column(length = 100)

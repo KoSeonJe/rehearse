@@ -46,6 +46,7 @@ def create_mediaconvert_job(input_s3_key: str, output_s3_key: str) -> str:
                                 "Codec": "H_264",
                                 "H264Settings": {
                                     "RateControlMode": "QVBR",
+                                    "MaxBitrate": 5000000,
                                     "QvbrSettings": {"QvbrQualityLevel": 7},
                                     "CodecProfile": "HIGH",
                                     "CodecLevel": "AUTO",
