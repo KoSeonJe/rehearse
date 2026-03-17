@@ -253,7 +253,7 @@ export const InterviewFeedbackPage = () => {
               category={qs.category}
               index={idx}
               analysisStatus={qs.analysisStatus}
-              failureReason={null}
+              failureReason={qs.failureReason}
             />
           ))}
         </div>

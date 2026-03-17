@@ -29,7 +29,7 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'ORIGINAL' | 'FOLLOW_UP'
+export type QuestionType = 'MAIN' | 'FOLLOWUP_1' | 'FOLLOWUP_2' | 'FOLLOWUP_3'
 
 export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
 
@@ -51,6 +51,7 @@ export interface QuestionSetData {
   category: string
   orderIndex: number
   analysisStatus: AnalysisStatus
+  failureReason: string | null
   questions: QuestionDetail[]
 }
 
@@ -202,12 +203,14 @@ export interface FollowUpExchange {
 }
 
 export interface FollowUpRequest {
+  questionSetId: number
   questionContent: string
   answerText: string
   previousExchanges?: Array<{ question: string; answer: string }>
 }
 
 export interface FollowUpResponse {
+  questionId: number
   question: string
   reason: string
   type: FollowUpType

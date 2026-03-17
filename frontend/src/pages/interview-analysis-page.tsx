@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInterview } from '@/hooks/use-interviews'
-import { useAllQuestionSetStatuses, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
+import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import type { AnalysisProgress, AnalysisStatus } from '@/types/interview'
@@ -96,6 +96,8 @@ export const InterviewAnalysisPage = () => {
     statusQueries.map((q) => q.data?.data ?? null),
     [statusQueries],
   )
+
+  const retryMutation = useRetryAnalysis()
 
   const allCompleted = hasQuestionSets && statuses.every((s) => s?.analysisStatus === 'COMPLETED')
   const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
@@ -287,16 +289,19 @@ export const InterviewAnalysisPage = () => {
                       </button>
                     )}
 
-                    {/* FAILED: 재시도 버튼 (BE 클라이언트 retry API 추가 시 연동) */}
-                    {isFailed && (
+                    {/* FAILED: 재시도 버튼 */}
+                    {isFailed && interview && (
                       <button
                         onClick={() => {
-                          // TODO: BE에 클라이언트용 retry API 추가 후 연동
-                          window.location.reload()
+                          retryMutation.mutate(
+                            { interviewId: interview.id, questionSetId: qs.id },
+                            { onSettled: () => statusQueries[idx].refetch() },
+                          )
                         }}
-                        className="text-xs font-bold text-error hover:underline"
+                        disabled={retryMutation.isPending}
+                        className="text-xs font-bold text-error hover:underline disabled:opacity-50"
                       >
-                        재시도
+                        {retryMutation.isPending ? '재시도 중...' : '재시도'}
                       </button>
                     )}
                   </div>
