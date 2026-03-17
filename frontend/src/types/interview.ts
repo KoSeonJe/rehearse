@@ -73,33 +73,6 @@ export interface ApiErrorResponse {
   timestamp: string
 }
 
-export interface TimestampFeedback {
-  id: number
-  timestampSeconds: number
-  category: 'VERBAL' | 'NON_VERBAL' | 'CONTENT'
-  severity: 'INFO' | 'WARNING' | 'SUGGESTION'
-  content: string
-  suggestion: string | null
-}
-
-export interface FeedbackListResponse {
-  interviewId: number
-  feedbacks: TimestampFeedback[]
-  totalCount: number
-}
-
-export interface AnswerData {
-  questionIndex: number
-  questionContent: string
-  answerText: string
-  nonVerbalSummary?: string
-  voiceSummary?: string
-}
-
-export interface GenerateFeedbackRequest {
-  answers: AnswerData[]
-}
-
 export interface InterviewReport {
   id: number
   interviewId: number
@@ -123,7 +96,6 @@ export interface FollowUpExchange {
 export interface FollowUpRequest {
   questionContent: string
   answerText: string
-  nonVerbalSummary?: string
   previousExchanges?: Array<{ question: string; answer: string }>
 }
 
@@ -135,20 +107,6 @@ export interface FollowUpResponse {
 
 // 면접 진행 관련 타입
 
-export type NonVerbalEventType = 'gaze' | 'expression' | 'posture' | 'voice'
-export type Severity = 'high' | 'medium' | 'low'
-
-export interface NonVerbalEvent {
-  timestamp: number
-  type: NonVerbalEventType
-  severity: Severity
-  data: {
-    description: string
-    value?: number
-    duration?: number
-  }
-}
-
 export interface TranscriptSegment {
   questionIndex: number
   text: string
@@ -157,20 +115,11 @@ export interface TranscriptSegment {
   isFinal: boolean
 }
 
-export interface VoiceEvent {
-  timestamp: number
-  type: 'silence' | 'fast_speech' | 'low_volume' | 'high_volume'
-  duration: number
-  value?: number
-}
-
 export interface QuestionAnswer {
   questionIndex: number
   startTime: number
   endTime: number
   transcripts: TranscriptSegment[]
-  nonVerbalEvents: NonVerbalEvent[]
-  voiceEvents: VoiceEvent[]
 }
 
 // 면접 이벤트 타입 (타임스탬프 기록용)
@@ -193,4 +142,3 @@ export interface InterviewEvent {
   questionIndex: number
   metadata?: Record<string, unknown>
 }
-

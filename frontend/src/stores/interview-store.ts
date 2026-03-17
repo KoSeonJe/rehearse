@@ -2,8 +2,6 @@ import { create } from 'zustand'
 import type {
   Question,
   TranscriptSegment,
-  NonVerbalEvent,
-  VoiceEvent,
   QuestionAnswer,
   FollowUpResponse,
   FollowUpExchange,
@@ -29,9 +27,6 @@ interface InterviewState {
   currentTranscript: string
   answers: QuestionAnswer[]
 
-  nonVerbalEvents: NonVerbalEvent[]
-  voiceEvents: VoiceEvent[]
-
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
   followUpRound: number
@@ -54,8 +49,6 @@ interface InterviewActions {
   setCurrentTranscript: (text: string) => void
   addTranscript: (segment: TranscriptSegment) => void
   clearTranscripts: (questionIndex: number) => void
-  addNonVerbalEvent: (event: NonVerbalEvent) => void
-  addVoiceEvent: (event: VoiceEvent) => void
 
   setVideoBlob: (blob: Blob) => void
   setElapsedTime: (time: number) => void
@@ -93,9 +86,6 @@ const initialState: InterviewState = {
   currentTranscript: '',
   answers: [],
 
-  nonVerbalEvents: [],
-  voiceEvents: [],
-
   followUpHistory: new Map(),
   currentFollowUp: null,
   followUpRound: 0,
@@ -115,8 +105,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       startTime: 0,
       endTime: 0,
       transcripts: [],
-      nonVerbalEvents: [],
-      voiceEvents: [],
     }))
 
     set({
@@ -190,28 +178,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       updated[questionIndex] = { ...updated[questionIndex], transcripts: [] }
     }
     set({ answers: updated, currentTranscript: '' })
-  },
-
-  addNonVerbalEvent: (event) => {
-    const state = get()
-    set({
-      nonVerbalEvents: [...state.nonVerbalEvents, event],
-      answers: updateCurrentAnswer(state, (a) => ({
-        ...a,
-        nonVerbalEvents: [...a.nonVerbalEvents, event],
-      })),
-    })
-  },
-
-  addVoiceEvent: (event) => {
-    const state = get()
-    set({
-      voiceEvents: [...state.voiceEvents, event],
-      answers: updateCurrentAnswer(state, (a) => ({
-        ...a,
-        voiceEvents: [...a.voiceEvents, event],
-      })),
-    })
   },
 
   setVideoBlob: (blob) => {

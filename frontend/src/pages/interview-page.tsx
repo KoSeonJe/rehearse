@@ -5,14 +5,12 @@ import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition'
-import { useAudioAnalyzer } from '@/hooks/use-audio-analyzer'
 import { useInterviewSession } from '@/hooks/use-interview-session'
 import { Logo } from '@/components/ui/logo'
 import { AudioWaveform } from '@/components/interview/audio-waveform'
 import { VideoPreview } from '@/components/interview/video-preview'
 import { TranscriptDisplay } from '@/components/interview/transcript-display'
 import { InterviewControls } from '@/components/interview/interview-controls'
-import { AudioLevelIndicator } from '@/components/interview/audio-level-indicator'
 import { InterviewTimer } from '@/components/interview/interview-timer'
 
 const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
@@ -43,7 +41,6 @@ export const InterviewPage = () => {
   const mediaStream = useMediaStream()
   const recorder = useMediaRecorder()
   const stt = useSpeechRecognition()
-  const audio = useAudioAnalyzer()
 
   const {
     handleStartAnswer,
@@ -56,7 +53,6 @@ export const InterviewPage = () => {
     mediaStream,
     recorder,
     stt,
-    audio,
   })
 
   const [timeWarning, setTimeWarning] = useState(false)
@@ -101,8 +97,6 @@ export const InterviewPage = () => {
             onTimeWarning={() => setTimeWarning(true)}
             onTimeExpired={() => handleFinishInterview()}
           />
-          <div className="h-8 w-[1px] bg-border" />
-          <AudioLevelIndicator audioLevelRef={audio.audioLevelRef} />
         </div>
       </header>
 
