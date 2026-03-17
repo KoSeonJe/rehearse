@@ -158,25 +158,28 @@ export const InterviewPage = () => {
                   </div>
                 </div>
               )}
-              <div className="rounded-[24px] bg-white border border-border p-8 shadow-toss">
-                <p className="text-xl md:text-2xl font-extrabold leading-relaxed text-center tracking-tight text-text-primary">
-                  {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
-                </p>
-              </div>
+              {/* 메인질문 — 후속질문 로딩 중이거나 후속질문이 있으면 숨김 */}
+              {!currentFollowUp && !isFollowUpLoading && (
+                <div className="rounded-[24px] bg-white border border-border p-8 shadow-toss">
+                  <p className="text-xl md:text-2xl font-extrabold leading-relaxed text-center tracking-tight text-text-primary">
+                    {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
+                  </p>
+                </div>
+              )}
 
               {/* 후속질문 로딩 */}
               {isFollowUpLoading && (
-                <div className="mt-4 rounded-[24px] bg-white/80 border border-accent/20 p-6 shadow-toss animate-fade-in">
+                <div className="rounded-[24px] bg-white/80 border border-accent/20 p-6 shadow-toss animate-fade-in">
                   <div className="flex items-center justify-center gap-3">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                    <span className="text-sm font-bold text-accent">후속 질문을 생성하고 있습니다...</span>
+                    <span className="text-sm font-bold text-accent">질문을 생각하고 있습니다...</span>
                   </div>
                 </div>
               )}
 
               {/* 후속질문 카드 */}
               {currentFollowUp && !isFollowUpLoading && (
-                <div className="mt-4 rounded-[24px] bg-white border border-accent/30 p-6 shadow-toss animate-fade-in">
+                <div className="rounded-[24px] bg-white border border-accent/30 p-6 shadow-toss animate-fade-in">
                   <div className="mb-3 flex items-center justify-center gap-2">
                     <span className="rounded-full bg-accent/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-accent">
                       후속 질문 {followUpRound}/{MAX_FOLLOWUP_ROUNDS}

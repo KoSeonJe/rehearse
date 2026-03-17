@@ -85,16 +85,19 @@ export const useAnswerFlow = ({
     addAnswerTimestamp,
     setUploadStatus,
     completeInterview,
+    setQuestionSetRecordingStartTime,
   } = useInterviewStore()
 
   const hasQuestionSets = !!interview?.questionSets?.length
 
-  // 현재 답변 텍스트 수집
+  // 현재 답변 텍스트 수집 — 후속질문 중엔 offset 이후 transcript만 반환
   const getCurrentAnswerText = useCallback(() => {
     const state = useInterviewStore.getState()
     const currentAnswer = state.answers[state.currentQuestionIndex]
+    const offset = state.currentFollowUp !== null ? state.followUpTranscriptOffset : 0
     return currentAnswer?.transcripts
       .filter((t) => t.isFinal)
+      .slice(offset)
       .map((t) => t.text)
       .join(' ') ?? ''
   }, [])
@@ -198,9 +201,13 @@ export const useAnswerFlow = ({
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
-    const { phase: currentPhase, currentQuestionIndex } = useInterviewStore.getState()
+    const { phase: currentPhase, currentQuestionIndex, questionSetRecordingStartTime } = useInterviewStore.getState()
     if (currentPhase !== 'ready' && currentPhase !== 'paused' && currentPhase !== 'greeting') return
     if (!mediaStream.stream) return
+    // 질문세트 녹화 시작 시간 기록 (최초 1회만)
+    if (hasQuestionSets && questionSetRecordingStartTime === null) {
+      setQuestionSetRecordingStartTime(Date.now())
+    }
     startRecording()
     if (!recorder.isRecording) {
       recorder.start(mediaStream.stream)
@@ -210,7 +217,7 @@ export const useAnswerFlow = ({
     }
     stt.start(currentQuestionIndex)
     recordEvent('answer_start', currentQuestionIndex)
-  }, [mediaStream.stream, startRecording, recorder, stt, recordEvent, startEventRecording])
+  }, [mediaStream.stream, startRecording, recorder, stt, recordEvent, startEventRecording, hasQuestionSets, setQuestionSetRecordingStartTime])
 
   // "답변 완료" 버튼 — 후속질문 멀티라운드 흐름
   const handleStopAnswer = useCallback(async () => {
@@ -253,10 +260,11 @@ export const useAnswerFlow = ({
         }
 
         if (targetQuestionId) {
+          const recordingStart = state.questionSetRecordingStartTime ?? 0
           addAnswerTimestamp(currentSetForTs.id, {
             questionId: targetQuestionId,
-            startMs: currentAnswer?.startTime ?? 0,
-            endMs: currentAnswer?.endTime ?? Date.now(),
+            startMs: Math.max(0, (currentAnswer?.startTime ?? 0) - recordingStart),
+            endMs: Math.max(0, (currentAnswer?.endTime ?? Date.now()) - recordingStart),
           })
         }
       }
@@ -272,9 +280,9 @@ export const useAnswerFlow = ({
     const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
-    // 현재 질문세트 ID 가져오기
+    // 현재 질문세트 ID 가져오기 — updatedState 사용으로 클로저 캡처 문제 방지
     const currentSet = hasQuestionSets
-      ? state.questionSets[state.currentQuestionSetIndex]
+      ? updatedState.questionSets[updatedState.currentQuestionSetIndex]
       : undefined
 
     if (canDoMoreFollowUps && answerText.trim() && interview) {
@@ -330,6 +338,7 @@ export const useAnswerFlow = ({
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
+    setQuestionSetRecordingStartTime,
   ])
 
   return {

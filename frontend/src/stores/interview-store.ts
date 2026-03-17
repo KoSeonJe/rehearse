@@ -39,7 +39,10 @@ interface InterviewState {
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
   followUpRound: number
+  followUpTranscriptOffset: number
   isFollowUpLoading: boolean
+
+  questionSetRecordingStartTime: number | null
 
   greetingCompleted: boolean
   autoTransitionMessage: string | null
@@ -60,6 +63,7 @@ interface InterviewActions {
   nextQuestionSet: () => void
   addAnswerTimestamp: (questionSetId: number, answer: AnswerTimestamp) => void
   setUploadStatus: (questionSetId: number, status: UploadState) => void
+  setQuestionSetRecordingStartTime: (time: number) => void
 
   setCurrentTranscript: (text: string) => void
   addTranscript: (segment: TranscriptSegment) => void
@@ -109,7 +113,10 @@ const initialState: InterviewState = {
   followUpHistory: new Map(),
   currentFollowUp: null,
   followUpRound: 0,
+  followUpTranscriptOffset: 0,
   isFollowUpLoading: false,
+
+  questionSetRecordingStartTime: null,
 
   greetingCompleted: false,
   autoTransitionMessage: null,
@@ -210,7 +217,16 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   completeInterview: () => set({ phase: 'completed' }),
 
-  setCurrentFollowUp: (followUp) => set({ currentFollowUp: followUp }),
+  setCurrentFollowUp: (followUp) => {
+    if (followUp !== null) {
+      const state = get()
+      const currentAnswer = state.answers[state.currentQuestionIndex]
+      const offset = currentAnswer?.transcripts.filter((t) => t.isFinal).length ?? 0
+      set({ currentFollowUp: followUp, followUpTranscriptOffset: offset })
+    } else {
+      set({ currentFollowUp: followUp })
+    }
+  },
 
   completeFollowUpRound: (answerText) => {
     const { currentQuestionIndex, currentFollowUp, followUpHistory, followUpRound } = get()
@@ -233,7 +249,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     })
   },
 
-  resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0 }),
+  resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0, followUpTranscriptOffset: 0 }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
@@ -247,9 +263,13 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         followUpHistory: new Map(),
         currentFollowUp: null,
         followUpRound: 0,
+        followUpTranscriptOffset: 0,
+        questionSetRecordingStartTime: Date.now(),
       })
     }
   },
+
+  setQuestionSetRecordingStartTime: (time) => set({ questionSetRecordingStartTime: time }),
 
   addAnswerTimestamp: (questionSetId, answer) => {
     const answers = new Map(get().questionSetAnswers)
