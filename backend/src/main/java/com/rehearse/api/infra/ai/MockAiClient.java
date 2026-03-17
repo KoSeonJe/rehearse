@@ -82,24 +82,6 @@ public class MockAiClient implements AiClient {
         return parseJson(json, new TypeReference<>() {});
     }
 
-    @Override
-    public List<GeneratedFeedback> generateFeedback(String answersJson) {
-        log.info("[Mock] generateFeedback 호출");
-
-        String json = """
-                [
-                  {"timestampSeconds": 5.0, "category": "CONTENT", "severity": "INFO", "content": "[Mock] 질문 의도를 정확히 파악하고 답변을 시작했습니다.", "suggestion": null},
-                  {"timestampSeconds": 15.0, "category": "VERBAL", "severity": "SUGGESTION", "content": "[Mock] 답변 초반에 결론을 먼저 말하면 더 효과적입니다.", "suggestion": "PREP 기법(Point-Reason-Example-Point)을 활용해보세요."},
-                  {"timestampSeconds": 30.0, "category": "NON_VERBAL", "severity": "WARNING", "content": "[Mock] 시선이 자주 아래로 향하는 경향이 있습니다.", "suggestion": "카메라를 바라보며 답변하는 연습을 해보세요."},
-                  {"timestampSeconds": 45.0, "category": "CONTENT", "severity": "INFO", "content": "[Mock] 구체적인 사례를 들어 설명한 점이 좋습니다.", "suggestion": null},
-                  {"timestampSeconds": 60.0, "category": "VERBAL", "severity": "SUGGESTION", "content": "[Mock] '음...', '그...' 같은 간투사 사용이 잦습니다.", "suggestion": "짧은 침묵으로 대체하면 더 자신감 있게 들립니다."},
-                  {"timestampSeconds": 80.0, "category": "NON_VERBAL", "severity": "INFO", "content": "[Mock] 자세가 안정적이고 자연스러운 제스처를 사용했습니다.", "suggestion": null}
-                ]
-                """;
-
-        return parseJson(json, new TypeReference<>() {});
-    }
-
     private <T> T parseJson(String json, TypeReference<T> typeRef) {
         try {
             return objectMapper.readValue(json, typeRef);
