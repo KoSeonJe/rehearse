@@ -67,6 +67,12 @@ public class ClaudePromptBuilder {
                 - MID: 실무 적용 능력, 문제 해결 경험, 기술적 깊이
                 - SENIOR: 아키텍처 판단력, 리더십, 기술 의사결정 능력
 
+                모범답변 생성 규칙:
+                - 각 질문에 대한 모범답변(modelAnswer)을 반드시 포함하세요.
+                - RESUME 카테고리(이력서 기반) 질문: referenceType을 "MODEL_ANSWER"로, 이력서 내용 기반 구체적 답변 예시
+                - CS 카테고리(기술/CS) 질문: referenceType을 "GUIDE"로, 핵심 개념과 답변 가이드 제공
+                - questionCategory는 이력서/경험 기반이면 "RESUME", 기술/CS이면 "CS"로 지정
+
                 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
                 {
                   "questions": [
@@ -74,7 +80,10 @@ public class ClaudePromptBuilder {
                       "content": "질문 내용",
                       "category": "세부 카테고리명",
                       "order": 1,
-                      "evaluationCriteria": "이 질문에서 평가할 핵심 포인트"
+                      "evaluationCriteria": "이 질문에서 평가할 핵심 포인트",
+                      "questionCategory": "RESUME 또는 CS",
+                      "modelAnswer": "모범답변 또는 답변 가이드",
+                      "referenceType": "MODEL_ANSWER 또는 GUIDE"
                     }
                   ]
                 }
