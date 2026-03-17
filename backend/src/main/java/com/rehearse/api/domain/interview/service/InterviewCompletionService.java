@@ -54,17 +54,20 @@ public class InterviewCompletionService {
 
     private int calculateOverallScore(Long interviewId) {
         var questionSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
-        int totalScore = 0;
-        int count = 0;
+        List<Long> questionSetIds = questionSets.stream()
+                .map(qs -> qs.getId())
+                .toList();
 
-        for (var qs : questionSets) {
-            var feedback = feedbackRepository.findByQuestionSetId(qs.getId());
-            if (feedback.isPresent()) {
-                totalScore += feedback.get().getQuestionSetScore();
-                count++;
-            }
+        var feedbacks = feedbackRepository.findByQuestionSetIdIn(questionSetIds);
+
+        if (feedbacks.isEmpty()) {
+            return 0;
         }
 
-        return count > 0 ? totalScore / count : 0;
+        int totalScore = feedbacks.stream()
+                .mapToInt(f -> f.getQuestionSetScore())
+                .sum();
+
+        return totalScore / feedbacks.size();
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface QuestionSetFeedbackRepository extends JpaRepository<QuestionSetFeedback, Long> {
@@ -13,4 +14,7 @@ public interface QuestionSetFeedbackRepository extends JpaRepository<QuestionSet
 
     @Query("SELECT f FROM QuestionSetFeedback f JOIN FETCH f.timestampFeedbacks WHERE f.questionSet.id = :questionSetId")
     Optional<QuestionSetFeedback> findByQuestionSetIdWithTimestampFeedbacks(@Param("questionSetId") Long questionSetId);
+
+    @Query("SELECT f FROM QuestionSetFeedback f WHERE f.questionSet.id IN :questionSetIds")
+    List<QuestionSetFeedback> findByQuestionSetIdIn(@Param("questionSetIds") List<Long> questionSetIds);
 }
