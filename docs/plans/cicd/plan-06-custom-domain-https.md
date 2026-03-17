@@ -1,6 +1,6 @@
 # Plan 06: 커스텀 도메인 + HTTPS 설정
 
-> 상태: TODO
+> 상태: In Progress (EC2 Nginx/HTTPS 코드 완료, EC2 수동 작업 필요)
 > 작성일: 2026-03-17
 
 ## Why

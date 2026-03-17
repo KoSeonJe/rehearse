@@ -32,6 +32,7 @@ jobs:
               - 'frontend/**'
             infra:
               - 'backend/docker-compose.yml'
+              - 'backend/nginx/**'
               - '.github/workflows/**'
               - 'backend/.env*'
 
@@ -93,7 +94,7 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_API_URL: http://${{ secrets.EC2_HOST }}
+          VITE_API_URL: https://api-dev.rehearse.co.kr
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -148,14 +149,14 @@ jobs:
           docker build -t ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest .
           docker push ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest
 
-      - name: Copy docker-compose.yml to EC2
+      - name: Copy docker-compose.yml and nginx config to EC2
         if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "backend/docker-compose.yml"
+          source: "backend/docker-compose.yml,backend/nginx/nginx.conf"
           target: "~/rehearse"
           overwrite: true
 
@@ -172,4 +173,4 @@ jobs:
             docker compose --env-file .env pull backend
             docker compose --env-file .env up -d
             sleep 10
-            curl -f http://localhost/actuator/health || echo "Health check failed"
+            curl -f http://localhost:8080/actuator/health || echo "Health check failed"
