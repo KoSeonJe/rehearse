@@ -83,6 +83,16 @@ export const useQuestionSetFeedback = (
   })
 }
 
+// 분석 재시도
+export const useRetryAnalysis = () => {
+  return useMutation({
+    mutationFn: ({ interviewId, questionSetId }: { interviewId: number; questionSetId: number }) =>
+      apiClient.post<ApiResponse<void>>(
+        `/api/v1/interviews/${interviewId}/question-sets/${questionSetId}/retry-analysis`,
+      ),
+  })
+}
+
 // 질문세트별 모범답변 조회
 export const useQuestionsWithAnswers = (
   interviewId: number,

@@ -234,19 +234,27 @@ export const useAnswerFlow = ({
 
     // 질문세트가 있으면 답변 타임스탬프 기록
     if (hasQuestionSets) {
-      const currentSet = state.questionSets[state.currentQuestionSetIndex]
-      if (currentSet) {
-        // 현재 질문의 세트 내 인덱스 계산
-        let questionsBeforeSet = 0
-        for (let i = 0; i < state.currentQuestionSetIndex; i++) {
-          questionsBeforeSet += state.questionSets[i].questions.length
+      const currentSetForTs = state.questionSets[state.currentQuestionSetIndex]
+      if (currentSetForTs) {
+        const currentAnswer = state.answers[state.currentQuestionIndex]
+
+        // 후속질문 답변이면 후속질문의 questionId 사용, 아니면 MAIN 질문 ID
+        let targetQuestionId: number | undefined
+        if (state.currentFollowUp?.questionId) {
+          targetQuestionId = state.currentFollowUp.questionId
+        } else {
+          let questionsBeforeSet = 0
+          for (let i = 0; i < state.currentQuestionSetIndex; i++) {
+            questionsBeforeSet += state.questionSets[i].questions.length
+          }
+          const questionInSetIndex = state.currentQuestionIndex - questionsBeforeSet
+          const questionDetail = currentSetForTs.questions[questionInSetIndex]
+          targetQuestionId = questionDetail?.id
         }
-        const questionInSetIndex = state.currentQuestionIndex - questionsBeforeSet
-        const questionDetail = currentSet.questions[questionInSetIndex]
-        if (questionDetail) {
-          const currentAnswer = state.answers[state.currentQuestionIndex]
-          addAnswerTimestamp(currentSet.id, {
-            questionId: questionDetail.id,
+
+        if (targetQuestionId) {
+          addAnswerTimestamp(currentSetForTs.id, {
+            questionId: targetQuestionId,
             startMs: currentAnswer?.startTime ?? 0,
             endMs: currentAnswer?.endTime ?? Date.now(),
           })
@@ -264,6 +272,11 @@ export const useAnswerFlow = ({
     const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
+    // 현재 질문세트 ID 가져오기
+    const currentSet = hasQuestionSets
+      ? state.questionSets[state.currentQuestionSetIndex]
+      : undefined
+
     if (canDoMoreFollowUps && answerText.trim() && interview) {
       // 후속질문 요청 → 응답 대기 → TTS로 읽기
       setFollowUpLoading(true)
@@ -277,6 +290,7 @@ export const useAnswerFlow = ({
         const res = await followUpMutation.mutateAsync({
           id: interview.id,
           data: {
+            questionSetId: currentSet?.id ?? 0,
             questionContent: state.questions[state.currentQuestionIndex].content,
             answerText,
             previousExchanges,
@@ -284,6 +298,21 @@ export const useAnswerFlow = ({
         })
         setFollowUpLoading(false)
         setCurrentFollowUp(res.data)
+
+        // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
+        if (currentSet && res.data.questionId) {
+          const followUpRound = useInterviewStore.getState().followUpRound
+          const followUpTypeMap = { 1: 'FOLLOWUP_1', 2: 'FOLLOWUP_2', 3: 'FOLLOWUP_3' } as const
+          currentSet.questions.push({
+            id: res.data.questionId,
+            questionType: followUpTypeMap[followUpRound as 1 | 2 | 3] ?? 'FOLLOWUP_1',
+            questionText: res.data.question,
+            modelAnswer: null,
+            referenceType: 'CS',
+            orderIndex: currentSet.questions.length,
+          })
+        }
+
         tts.speak(res.data.question)
       } catch {
         setFollowUpLoading(false)
