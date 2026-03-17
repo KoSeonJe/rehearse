@@ -187,14 +187,15 @@ export const FeedbackPanel = ({
   )
   const [activeTab, setActiveTab] = useState(availableTypes[0] ?? 'MAIN')
 
-  // 활성 피드백의 answerType에 따라 탭 자동 전환
-  useEffect(() => {
-    if (activeFeedbackId === null) return
+  // 활성 피드백의 answerType에 따라 탭 자동 전환 (렌더 중 조건부 setState)
+  const [prevActiveFeedbackId, setPrevActiveFeedbackId] = useState(activeFeedbackId)
+  if (activeFeedbackId !== prevActiveFeedbackId) {
+    setPrevActiveFeedbackId(activeFeedbackId)
     const activeFeedback = feedbacks.find((f) => f.id === activeFeedbackId)
-    if (activeFeedback && activeFeedback.answerType !== activeTab) {
+    if (activeFeedback) {
       setActiveTab(activeFeedback.answerType)
     }
-  }, [activeFeedbackId, feedbacks])
+  }
 
   const filtered = feedbacks.filter((f) => f.answerType === activeTab)
 
