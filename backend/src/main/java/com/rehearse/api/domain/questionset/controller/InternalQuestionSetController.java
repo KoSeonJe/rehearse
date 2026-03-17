@@ -1,8 +1,10 @@
 package com.rehearse.api.domain.questionset.controller;
 
 import com.rehearse.api.domain.questionset.dto.AnswerResponse;
+import com.rehearse.api.domain.questionset.dto.AnswersResponse;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -30,13 +32,19 @@ public class InternalQuestionSetController {
     }
 
     @GetMapping("/answers")
-    public ResponseEntity<ApiResponse<List<AnswerResponse>>> getAnswers(
+    public ResponseEntity<ApiResponse<AnswersResponse>> getAnswers(
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
-        List<AnswerResponse> response = internalQuestionSetService.getAnswers(questionSetId).stream()
+        QuestionSet questionSet = internalQuestionSetService.getQuestionSet(questionSetId);
+        List<AnswerResponse> answers = internalQuestionSetService.getAnswers(questionSetId).stream()
                 .map(AnswerResponse::from)
                 .toList();
+
+        AnswersResponse response = AnswersResponse.builder()
+                .analysisStatus(questionSet.getAnalysisStatus().name())
+                .answers(answers)
+                .build();
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

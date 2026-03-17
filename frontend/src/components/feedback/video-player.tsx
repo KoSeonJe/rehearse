@@ -8,10 +8,11 @@ export interface VideoPlayerHandle {
 interface VideoPlayerProps {
   streamingUrl: string | null
   fallbackUrl: string | null
+  onUrlExpired?: () => void
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
-  ({ streamingUrl, fallbackUrl }, ref) => {
+  ({ streamingUrl, fallbackUrl, onUrlExpired }, ref) => {
     const videoRef = useRef<HTMLVideoElement>(null)
     const [currentSrc, setCurrentSrc] = useState<string | null>(streamingUrl ?? fallbackUrl)
     const [isPlaying, setIsPlaying] = useState(false)
@@ -34,11 +35,19 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }))
 
     const handleError = useCallback(() => {
+      // Presigned URL 만료 (403) 감지 시 재발급 요청
+      if (videoRef.current) {
+        const mediaError = videoRef.current.error
+        if (mediaError && onUrlExpired) {
+          onUrlExpired()
+          return
+        }
+      }
       if (!usedFallback && fallbackUrl && currentSrc !== fallbackUrl) {
         setCurrentSrc(fallbackUrl)
         setUsedFallback(true)
       }
-    }, [usedFallback, fallbackUrl, currentSrc])
+    }, [usedFallback, fallbackUrl, currentSrc, onUrlExpired])
 
     const togglePlay = useCallback(() => {
       if (!videoRef.current) return
