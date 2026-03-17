@@ -30,7 +30,7 @@
 - **심각도**: High
 - **설명**: RestClient 생성 시 connect/read 타임아웃이 미설정. 스펙에서 30초 타임아웃을 요구하나 현재 타임아웃 없음. Claude API 무응답 시 스레드 무한 대기 가능.
 - **재현 방법**: Claude API가 응답을 지연시키는 상황에서 POST /api/v1/interviews 호출 시 스레드 무한 대기
-- **위치**: `backend/src/main/java/com/devlens/api/infra/ai/ClaudeApiClient.java:37-39`
+- **위치**: `backend/src/main/java/com/rehearse/api/infra/ai/ClaudeApiClient.java:37-39`
 - **담당**: Backend
 - **해결**: connect timeout 5초, read timeout 30초 설정 (ClientHttpRequestFactorySettings)
 
@@ -69,7 +69,7 @@
 - **심각도**: Medium
 - **설명**: Interview.questions가 LAZY 로딩이고 fetch join 쿼리가 없어 조회 시 Interview SELECT + Questions SELECT 2회 쿼리 발생. 향후 목록 조회 추가 시 N+1 문제로 확대 가능.
 - **재현 방법**: GET /api/v1/interviews/{id} 호출 후 SQL 로그 확인
-- **위치**: `backend/src/main/java/com/devlens/api/domain/interview/repository/InterviewRepository.java`
+- **위치**: `backend/src/main/java/com/rehearse/api/domain/interview/repository/InterviewRepository.java`
 - **담당**: Backend
 - **해결**: findByIdWithQuestions JOIN FETCH 쿼리 추가, Service에서 사용하도록 변경
 
@@ -82,6 +82,6 @@
 - **심각도**: Medium
 - **설명**: createInterview Claude API 실패 케이스, updateStatus 404 케이스 미테스트. InterviewController 통합 테스트(MockMvc) 전무하여 @Valid 검증, HTTP 상태코드 반환 등 미검증.
 - **재현 방법**: 해당 없음 (테스트 누락)
-- **위치**: `backend/src/test/java/com/devlens/api/domain/interview/service/InterviewServiceTest.java`
+- **위치**: `backend/src/test/java/com/rehearse/api/domain/interview/service/InterviewServiceTest.java`
 - **담당**: Backend
 - **해결**: Service 테스트에 Claude API 실패/updateStatus 404 케이스 추가, InterviewController MockMvc 통합 테스트 10건 작성

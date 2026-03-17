@@ -1,5 +1,5 @@
 -- V1__init_schema.sql
--- DevLens (Rehearse) 초기 스키마 - ERD 기반 9개 테이블
+-- Rehearse 초기 스키마 - ERD 기반 9개 테이블
 
 -- 1. interview (면접 세션)
 CREATE TABLE interview (

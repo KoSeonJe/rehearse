@@ -1,1 +1,1 @@
-rootProject.name = "devlens-api"
+rootProject.name = "rehearse-api"

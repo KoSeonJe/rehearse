@@ -33,7 +33,7 @@
 
 | 기준 | 판단 |
 |------|------|
-| **Impact** | Critical - DevLens의 핵심 가치인 "타임스탬프 피드백" 제공 |
+| **Impact** | Critical - Rehearse의 핵심 가치인 "타임스탬프 피드백" 제공 |
 | **Effort** | Medium - Claude API 호출 + 다수 DTO 매핑 |
 | **결론** | **P0** - Critical Impact. 즉시 개발 |
 

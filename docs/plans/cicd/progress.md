@@ -5,7 +5,7 @@
 | # | 태스크 | 상태 | 비고 |
 |---|--------|------|------|
 | 0 | 문서 구조 생성 | Completed | |
-| 1 | Flyway + 마이그레이션 + dev-server 프로필 | Completed | |
+| 1 | Flyway + 마이그레이션 + dev 프로필 | Completed | |
 | 2 | Backend Dockerfile | Completed | |
 | 3 | Docker Compose | Completed | |
 | 4 | .gitignore 업데이트 | Completed | |
@@ -16,5 +16,5 @@
 
 ### 2026-03-16
 - Task 0~6 전체 구현 완료
-- 생성 파일: V1__init_schema.sql, application-dev-server.yml, Dockerfile, .dockerignore, docker-compose.yml, deploy-dev.yml, .env.dev-server.example, DEPLOYMENT.md
+- 생성 파일: V1__init_schema.sql, application-dev.yml, Dockerfile, .dockerignore, backend/docker-compose.yml, deploy-dev.yml, backend/.env.example, DEPLOYMENT.md
 - 수정 파일: build.gradle.kts (Flyway 의존성), .gitignore (Docker 패턴)

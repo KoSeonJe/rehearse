@@ -1,4 +1,4 @@
-# DevLens — AI Mock Interview Platform for Developers
+# Rehearse — AI Mock Interview Platform for Developers
 
 ## Overview
 

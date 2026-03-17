@@ -5,7 +5,7 @@
 > **상태**: Completed
 > **우선순위**: P2 (Polish)
 >
-> DevLens → Rehearse 리브랜딩 + 토스 디자인 철학 기반 전면 리디자인
+> Rehearse → Rehearse 리브랜딩 + 토스 디자인 철학 기반 전면 리디자인
 
 ---
 
@@ -194,7 +194,7 @@ Info:           #3182F6  / Light: #EBF4FF
 
 ### Phase 1: 기반 (브랜딩 + 디자인 시스템)
 
-- 1-1. 서비스명 변경 (DevLens → Rehearse)
+- 1-1. 서비스명 변경 (Rehearse → Rehearse)
 - 1-2. 캐릭터 로고 SVG + 파비콘
 - 1-3. Tailwind 설정 업데이트
 - 1-4. 공통 UI 컴포넌트 리디자인

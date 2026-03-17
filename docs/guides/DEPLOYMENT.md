@@ -1,4 +1,4 @@
-# DevLens (Rehearse) — 배포 운영 가이드
+# Rehearse — 배포 운영 가이드
 
 > 최종 업데이트: 2026-03-16
 
@@ -83,17 +83,17 @@ sudo apt install -y awscli
 aws configure  # Access Key, Secret Key, Region(ap-northeast-2) 입력
 
 # 프로젝트 클론
-git clone https://github.com/KoSeonJe/devlens.git ~/devlens
-cd ~/devlens
+git clone https://github.com/KoSeonJe/rehearse.git ~/rehearse
+cd ~/rehearse/backend
 
 # 환경변수 파일 생성
-cp .env.dev-server.example .env.dev-server
-nano .env.dev-server  # 값 입력
+cp .env.example .env
+nano .env  # 값 입력
 
 # ECR 로그인 + 최초 실행
 aws ecr get-login-password --region ap-northeast-2 | \
   docker login --username AWS --password-stdin {ECR_REGISTRY}
-docker compose --env-file .env.dev-server up -d
+docker compose --env-file .env up -d
 ```
 
 ---
@@ -132,26 +132,26 @@ GitHub repo > Settings > Secrets and variables > Actions
 
 ### EC2에서 로그 확인
 ```bash
-docker compose --env-file .env.dev-server logs -f backend
-docker compose --env-file .env.dev-server logs -f db
+docker compose --env-file .env logs -f backend
+docker compose --env-file .env logs -f db
 ```
 
 ### 수동 재시작
 ```bash
-docker compose --env-file .env.dev-server restart backend
+docker compose --env-file .env restart backend
 ```
 
 ### 수동 배포 (ECR에서 최신 이미지)
 ```bash
 aws ecr get-login-password --region ap-northeast-2 | \
   docker login --username AWS --password-stdin {ECR_REGISTRY}
-docker compose --env-file .env.dev-server pull backend
-docker compose --env-file .env.dev-server up -d
+docker compose --env-file .env pull backend
+docker compose --env-file .env up -d
 ```
 
 ### DB 접속
 ```bash
-docker compose --env-file .env.dev-server exec db mysql -u devlens -p devlens
+docker compose --env-file .env exec db mysql -u rehearse -p rehearse
 ```
 
 ---
@@ -172,11 +172,11 @@ docker compose --env-file .env.dev-server exec db mysql -u devlens -p devlens
 
 ### Backend 시작 실패
 ```bash
-docker compose --env-file .env.dev-server logs backend | tail -50
+docker compose --env-file .env logs backend | tail -50
 ```
 
 ### MySQL 연결 실패
-- `docker compose --env-file .env.dev-server ps` 로 db 상태 확인
+- `docker compose --env-file .env ps` 로 db 상태 확인
 - 헬스체크 통과 전 backend가 시작되면 자동 재시작됨
 
 ### Flyway 마이그레이션 실패
@@ -184,5 +184,5 @@ docker compose --env-file .env.dev-server logs backend | tail -50
 - `flyway_schema_history` 테이블 확인 후 수동 조치
 
 ### CORS 에러
-- `.env.dev-server`의 `CORS_ALLOWED_ORIGINS`가 CloudFront 도메인과 일치하는지 확인
+- `.env`의 `CORS_ALLOWED_ORIGINS`가 CloudFront 도메인과 일치하는지 확인
 - `https://` 프로토콜 포함 필수
