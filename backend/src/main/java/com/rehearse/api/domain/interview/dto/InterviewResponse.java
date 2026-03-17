@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -32,8 +33,8 @@ public class InterviewResponse {
                 .position(interview.getPosition())
                 .positionDetail(interview.getPositionDetail())
                 .level(interview.getLevel())
-                .interviewTypes(interview.getInterviewTypes())
-                .csSubTopics(interview.getCsSubTopics())
+                .interviewTypes(new ArrayList<>(interview.getInterviewTypes()))
+                .csSubTopics(new ArrayList<>(interview.getCsSubTopics()))
                 .status(interview.getStatus())
                 .durationMinutes(interview.getDurationMinutes())
                 .questions(questionResponses)
