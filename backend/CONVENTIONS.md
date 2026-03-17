@@ -9,7 +9,7 @@
 ## 패키지 구조 (도메인 기반)
 
 ```
-com.devlens.api/
+com.rehearse.api/
 ├── domain/{feature}/       # 도메인별 분리
 │   ├── controller/         # @RestController (HTTP 요청/응답)
 │   ├── service/            # 비즈니스 로직, @Transactional
@@ -34,7 +34,7 @@ com.devlens.api/
 | 상수 | UPPER_SNAKE_CASE | `MAX_QUESTIONS` |
 | DB 테이블 | snake_case, 단수형 | `interview`, `interview_question` |
 | DB 컬럼 | snake_case | `interview_type`, `created_at` |
-| 패키지 | 소문자 | `com.devlens.api.domain.interview` |
+| 패키지 | 소문자 | `com.rehearse.api.domain.interview` |
 
 ## 계층 규칙
 

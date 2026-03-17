@@ -1,4 +1,4 @@
-# DevLens (Rehearse) ERD — Entity Relationship Diagram
+# Rehearse ERD — Entity Relationship Diagram
 
 > 최종 업데이트: 2026-03-16
 
@@ -106,7 +106,7 @@ erDiagram
 | `updated_at` | `DATETIME` | NOT NULL | 수정 시각 (JPA Auditing) |
 
 - JPA: `@Entity`, `@EntityListeners(AuditingEntityListener.class)`
-- 소스: `com.devlens.api.domain.interview.entity.Interview`
+- 소스: `com.rehearse.api.domain.interview.entity.Interview`
 
 ### 2. `interview_question` — 면접 질문
 
@@ -122,7 +122,7 @@ erDiagram
 
 - 관계: `interview` → `interview_question` (1:N, `CASCADE ALL`, `orphanRemoval`)
 - 정렬: `@OrderBy("questionOrder ASC")`
-- 소스: `com.devlens.api.domain.interview.entity.InterviewQuestion`
+- 소스: `com.rehearse.api.domain.interview.entity.InterviewQuestion`
 
 ### 3. `interview_interview_types` — 면접 유형 (ElementCollection)
 
@@ -158,7 +158,7 @@ erDiagram
 | `created_at` | `DATETIME` | NOT NULL | 생성 시각 |
 
 - 관계: `interview` → `feedback` (1:N)
-- 소스: `com.devlens.api.domain.feedback.entity.Feedback`
+- 소스: `com.rehearse.api.domain.feedback.entity.Feedback`
 
 ### 6. `interview_answer` — 면접 답변
 
@@ -174,7 +174,7 @@ erDiagram
 | `created_at` | `DATETIME` | NOT NULL | 생성 시각 |
 
 - 관계: `interview` → `interview_answer` (1:N)
-- 소스: `com.devlens.api.domain.feedback.entity.InterviewAnswer`
+- 소스: `com.rehearse.api.domain.feedback.entity.InterviewAnswer`
 
 ### 7. `interview_report` — 종합 리포트
 
@@ -188,7 +188,7 @@ erDiagram
 | `created_at` | `DATETIME` | NOT NULL | 생성 시각 |
 
 - 관계: `interview` → `interview_report` (1:1, `@OneToOne`)
-- 소스: `com.devlens.api.domain.report.entity.InterviewReport`
+- 소스: `com.rehearse.api.domain.report.entity.InterviewReport`
 
 ### 8. `report_strengths` — 리포트 강점 (ElementCollection)
 

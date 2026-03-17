@@ -19,4 +19,4 @@ cors:
 
 logging:
   level:
-    com.devlens.api: INFO
+    com.rehearse.api: INFO
