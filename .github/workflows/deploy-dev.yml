@@ -63,6 +63,8 @@ jobs:
 
       - name: Run tests
         run: ./gradlew test --no-daemon
+        env:
+          SPRING_PROFILES_ACTIVE: local
 
   frontend-build:
     name: Frontend Build
