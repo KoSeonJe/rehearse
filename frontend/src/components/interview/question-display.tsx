@@ -39,7 +39,7 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
         <div className="rounded-card border border-info/30 bg-info-light p-4">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-info border-t-transparent" />
-            <span className="text-sm text-info">후속 질문을 생성하고 있습니다...</span>
+            <span className="text-sm text-info">질문을 생각하고 있습니다...</span>
           </div>
         </div>
       )}
