@@ -6,6 +6,9 @@ import type {
   FollowUpResponse,
   FollowUpExchange,
   InterviewEvent,
+  QuestionSetData,
+  AnswerTimestamp,
+  UploadState,
 } from '@/types/interview'
 
 export const MAX_FOLLOWUP_ROUNDS = 3
@@ -17,6 +20,12 @@ interface InterviewState {
   questions: Question[]
   currentQuestionIndex: number
   phase: InterviewPhase
+
+  // 질문세트 상태
+  questionSets: QuestionSetData[]
+  currentQuestionSetIndex: number
+  questionSetAnswers: Map<number, AnswerTimestamp[]>
+  uploadStatus: Map<number, UploadState>
 
   startTime: number | null
   elapsedTime: number
@@ -45,6 +54,12 @@ interface InterviewActions {
   nextQuestion: () => void
   prevQuestion: () => void
   goToQuestion: (index: number) => void
+
+  // 질문세트 액션
+  setQuestionSets: (sets: QuestionSetData[]) => void
+  nextQuestionSet: () => void
+  addAnswerTimestamp: (questionSetId: number, answer: AnswerTimestamp) => void
+  setUploadStatus: (questionSetId: number, status: UploadState) => void
 
   setCurrentTranscript: (text: string) => void
   addTranscript: (segment: TranscriptSegment) => void
@@ -76,6 +91,11 @@ const initialState: InterviewState = {
   questions: [],
   currentQuestionIndex: 0,
   phase: 'preparing',
+
+  questionSets: [],
+  currentQuestionSetIndex: 0,
+  questionSetAnswers: new Map(),
+  uploadStatus: new Map(),
 
   startTime: null,
   elapsedTime: 0,
@@ -216,6 +236,33 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0 }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
+
+  setQuestionSets: (sets) => set({ questionSets: sets, currentQuestionSetIndex: 0 }),
+
+  nextQuestionSet: () => {
+    const { currentQuestionSetIndex, questionSets } = get()
+    if (currentQuestionSetIndex < questionSets.length - 1) {
+      set({
+        currentQuestionSetIndex: currentQuestionSetIndex + 1,
+        followUpHistory: new Map(),
+        currentFollowUp: null,
+        followUpRound: 0,
+      })
+    }
+  },
+
+  addAnswerTimestamp: (questionSetId, answer) => {
+    const answers = new Map(get().questionSetAnswers)
+    const existing = answers.get(questionSetId) ?? []
+    answers.set(questionSetId, [...existing, answer])
+    set({ questionSetAnswers: answers })
+  },
+
+  setUploadStatus: (questionSetId, status) => {
+    const statuses = new Map(get().uploadStatus)
+    statuses.set(questionSetId, status)
+    set({ uploadStatus: statuses })
+  },
 
   setAutoTransitionMessage: (msg) => set({ autoTransitionMessage: msg }),
 

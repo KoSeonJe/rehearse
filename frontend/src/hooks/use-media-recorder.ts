@@ -6,6 +6,7 @@ interface UseMediaRecorderReturn {
   stop: () => Promise<Blob>
   pause: () => void
   resume: () => void
+  restart: (stream: MediaStream) => Promise<Blob>
 }
 
 export const useMediaRecorder = (): UseMediaRecorderReturn => {
@@ -64,6 +65,12 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
     }
   }, [])
 
-  return { isRecording, start, stop, pause, resume }
-}
+  // 질문세트 전환: 현재 녹화 stop → blob 반환 → 새 녹화 start
+  const restart = useCallback(async (stream: MediaStream): Promise<Blob> => {
+    const blob = await stop()
+    start(stream)
+    return blob
+  }, [stop, start])
 
+  return { isRecording, start, stop, pause, resume, restart }
+}
