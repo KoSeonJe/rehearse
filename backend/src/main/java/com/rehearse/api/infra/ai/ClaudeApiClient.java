@@ -32,7 +32,6 @@ public class ClaudeApiClient implements AiClient {
     private static final int MAX_TOKENS_QUESTION = 4096;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
     private static final int MAX_TOKENS_REPORT = 2048;
-    private static final int MAX_TOKENS_FEEDBACK = 4096;
 
     private final RestClient restClient;
     private final ClaudePromptBuilder promptBuilder;
@@ -96,21 +95,6 @@ public class ClaudeApiClient implements AiClient {
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_REPORT);
         return responseParser.parseJsonResponse(text, GeneratedReport.class);
-    }
-
-    @Override
-    public List<GeneratedFeedback> generateFeedback(String answersJson) {
-        String systemPrompt = promptBuilder.buildFeedbackSystemPrompt();
-        String userPrompt = promptBuilder.buildFeedbackUserPrompt(answersJson);
-
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FEEDBACK);
-        GeneratedFeedbackWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedFeedbackWrapper.class);
-
-        if (wrapper.getFeedbacks() == null || wrapper.getFeedbacks().isEmpty()) {
-            throw new BusinessException(AiErrorCode.FEEDBACK_PARSE_FAILED);
-        }
-
-        return wrapper.getFeedbacks();
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {

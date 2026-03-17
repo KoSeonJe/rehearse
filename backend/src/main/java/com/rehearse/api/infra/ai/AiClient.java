@@ -4,7 +4,6 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
-import com.rehearse.api.infra.ai.dto.GeneratedFeedback;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.GeneratedReport;
@@ -23,6 +22,4 @@ public interface AiClient {
                                                 List<FollowUpRequest.FollowUpExchange> previousExchanges);
 
     GeneratedReport generateReport(String feedbackSummary);
-
-    List<GeneratedFeedback> generateFeedback(String answersJson);
 }

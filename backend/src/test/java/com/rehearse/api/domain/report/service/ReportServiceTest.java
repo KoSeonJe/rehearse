@@ -1,17 +1,10 @@
 package com.rehearse.api.domain.report.service;
 
-import com.rehearse.api.domain.feedback.entity.Feedback;
-import com.rehearse.api.domain.feedback.entity.FeedbackCategory;
-import com.rehearse.api.domain.feedback.entity.FeedbackSeverity;
-import com.rehearse.api.domain.feedback.repository.FeedbackRepository;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.report.dto.ReportResponse;
 import com.rehearse.api.domain.report.entity.InterviewReport;
 import com.rehearse.api.domain.report.repository.ReportRepository;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.dto.GeneratedReport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,12 +14,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,15 +28,6 @@ class ReportServiceTest {
 
     @Mock
     private ReportRepository reportRepository;
-
-    @Mock
-    private FeedbackRepository feedbackRepository;
-
-    @Mock
-    private InterviewFinder interviewFinder;
-
-    @Mock
-    private AiClient aiClient;
 
     @Test
     @DisplayName("이미 리포트가 존재하면 캐시된 리포트를 반환한다")
@@ -73,95 +55,21 @@ class ReportServiceTest {
         assertThat(response.getSummary()).isEqualTo("전반적으로 우수한 면접");
         assertThat(response.getStrengths()).containsExactly("논리적 사고", "기술적 깊이");
         assertThat(response.getImprovements()).containsExactly("구체적 예시 부족", "시간 관리");
-
-        then(interviewFinder).shouldHaveNoInteractions();
-        then(aiClient).shouldHaveNoInteractions();
     }
 
     @Test
-    @DisplayName("리포트가 없으면 AI로 생성하여 저장 후 반환한다")
-    void getReport_generateNew() {
+    @DisplayName("리포트가 없으면 REPORT_NOT_FOUND 예외가 발생한다")
+    void getReport_notFound() {
         // given
-        Interview interview = createCompletedInterview();
-
         given(reportRepository.findByInterviewId(1L)).willReturn(Optional.empty());
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
-        Feedback feedback = Feedback.builder()
-                .interview(interview)
-                .timestampSeconds(10.0)
-                .category(FeedbackCategory.CONTENT)
-                .severity(FeedbackSeverity.SUGGESTION)
-                .content("답변이 다소 추상적입니다.")
-                .build();
-        ReflectionTestUtils.setField(feedback, "id", 1L);
-
-        given(feedbackRepository.findByInterviewIdOrderByTimestampSeconds(1L))
-                .willReturn(List.of(feedback));
-
-        GeneratedReport generated = new GeneratedReport();
-        ReflectionTestUtils.setField(generated, "overallScore", 75);
-        ReflectionTestUtils.setField(generated, "summary", "개선이 필요한 면접");
-        ReflectionTestUtils.setField(generated, "strengths", List.of("기본 개념 이해", "성실한 태도"));
-        ReflectionTestUtils.setField(generated, "improvements", List.of("구체적 예시 부족", "답변 구조화"));
-
-        given(aiClient.generateReport(anyString())).willReturn(generated);
-        given(reportRepository.save(any(InterviewReport.class))).willAnswer(invocation -> {
-            InterviewReport report = invocation.getArgument(0);
-            ReflectionTestUtils.setField(report, "id", 1L);
-            return report;
-        });
-
-        // when
-        ReportResponse response = reportService.getReport(1L);
-
-        // then
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getOverallScore()).isEqualTo(75);
-        assertThat(response.getSummary()).isEqualTo("개선이 필요한 면접");
-        assertThat(response.getStrengths()).containsExactly("기본 개념 이해", "성실한 태도");
-        assertThat(response.getImprovements()).containsExactly("구체적 예시 부족", "답변 구조화");
-
-        then(reportRepository).should().save(any(InterviewReport.class));
-        then(aiClient).should().generateReport(anyString());
-    }
-
-    @Test
-    @DisplayName("피드백이 없으면 BusinessException이 발생한다")
-    void generateAndSaveReport_noFeedback() {
-        // given
-        Interview interview = createCompletedInterview();
-
-        given(reportRepository.findByInterviewId(1L)).willReturn(Optional.empty());
-        given(interviewFinder.findById(1L)).willReturn(interview);
-        given(feedbackRepository.findByInterviewIdOrderByTimestampSeconds(1L))
-                .willReturn(Collections.emptyList());
 
         // when & then
         assertThatThrownBy(() -> reportService.getReport(1L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-                    assertThat(be.getCode()).isEqualTo("REPORT_001");
-                });
-    }
-
-    @Test
-    @DisplayName("면접 세션을 찾을 수 없으면 예외가 전파된다")
-    void generateAndSaveReport_interviewNotFound() {
-        // given
-        given(reportRepository.findByInterviewId(999L)).willReturn(Optional.empty());
-        given(interviewFinder.findById(999L))
-                .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
-
-        // when & then
-        assertThatThrownBy(() -> reportService.getReport(999L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
                     assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
+                    assertThat(be.getCode()).isEqualTo("REPORT_002");
                 });
     }
 
@@ -169,7 +77,7 @@ class ReportServiceTest {
         Interview interview = Interview.builder()
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
-                .interviewTypes(java.util.List.of(InterviewType.CS_FUNDAMENTAL))
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
         interview.updateStatus(InterviewStatus.IN_PROGRESS);
