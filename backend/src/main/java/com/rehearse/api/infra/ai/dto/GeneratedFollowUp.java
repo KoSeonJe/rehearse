@@ -12,4 +12,5 @@ public class GeneratedFollowUp {
     private String question;
     private String reason;
     private String type;
+    private String modelAnswer;
 }

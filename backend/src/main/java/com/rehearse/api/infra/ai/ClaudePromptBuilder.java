@@ -187,11 +187,16 @@ public class ClaudePromptBuilder {
                 - 이전 후속 대화가 제공된 경우, 이미 했던 질문과 중복되지 않는 새로운 관점의 질문을 생성하세요.
                 - 매 라운드마다 다른 후속 질문 유형을 사용하여 다양한 각도에서 평가하세요.
 
+                모범답변 생성 규칙:
+                - 각 후속 질문에 대한 모범답변(modelAnswer)을 반드시 포함하세요.
+                - 핵심 개념과 실무 적용 관점에서 2-4문장의 구체적인 답변 가이드를 제공하세요.
+
                 반드시 아래 JSON 형식으로만 응답하세요:
                 {
                   "question": "후속 질문 내용",
                   "reason": "이 질문을 하는 이유",
-                  "type": "DEEP_DIVE|CLARIFICATION|CHALLENGE|APPLICATION"
+                  "type": "DEEP_DIVE|CLARIFICATION|CHALLENGE|APPLICATION",
+                  "modelAnswer": "모범답변 또는 답변 가이드"
                 }
                 """;
     }
