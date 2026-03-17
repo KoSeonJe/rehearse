@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.file.controller;
 
+import com.rehearse.api.domain.file.dto.FileMetadataResponse;
 import com.rehearse.api.domain.file.dto.UpdateFileStatusRequest;
-import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.service.InternalFileService;
 import com.rehearse.api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -29,13 +29,7 @@ public class InternalFileController {
     public ResponseEntity<ApiResponse<FileMetadataResponse>> findByS3Key(
             @RequestParam String key) {
 
-        FileMetadata file = internalFileService.findByS3Key(key);
-        FileMetadataResponse response = new FileMetadataResponse(
-                file.getId(), file.getFileType().name(), file.getStatus().name(),
-                file.getS3Key(), file.getStreamingS3Key(), file.getBucket());
+        FileMetadataResponse response = FileMetadataResponse.from(internalFileService.findByS3Key(key));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
-
-    public record FileMetadataResponse(Long id, String fileType, String status,
-                                        String s3Key, String streamingS3Key, String bucket) {}
 }
