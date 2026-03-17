@@ -24,7 +24,7 @@
 | Task 6 | 분석 Lambda (Python, FFmpeg+Whisper+Vision+LLM) | Not Started | — | — |
 | Task 7 | 변환 Lambda (WebM→MP4, MediaConvert) | Not Started | — | — |
 | Task 8 | [FE] 질문세트 단위 녹화 + S3 업로드 | Completed | — | — |
-| Task 9 | [FE] 분석 대기 UI + 상태 폴링 | Not Started | — | — |
+| Task 9 | [FE] 분석 대기 UI + 상태 폴링 | Completed | — | — |
 | Task 10 | [FE] 피드백 뷰어 (영상+타임라인+피드백 동기화) | Not Started | — | — |
 
 ## 이슈 상태

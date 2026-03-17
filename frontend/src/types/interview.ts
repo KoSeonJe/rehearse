@@ -82,6 +82,28 @@ export interface QuestionSetStatusResponse {
   failureReason: string | null
 }
 
+export type AnalysisProgress =
+  | 'STARTED'
+  | 'EXTRACTING'
+  | 'STT_PROCESSING'
+  | 'VERBAL_ANALYZING'
+  | 'NONVERBAL_ANALYZING'
+  | 'FINALIZING'
+  | 'FAILED'
+
+export interface QuestionWithAnswer {
+  questionId: number
+  questionType: string
+  questionText: string
+  modelAnswer: string | null
+  startMs: number | null
+  endMs: number | null
+}
+
+export interface QuestionsWithAnswersResponse {
+  questions: QuestionWithAnswer[]
+}
+
 export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
 
 export interface InterviewSession {
