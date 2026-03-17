@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.questionset.dto.*;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
 import com.rehearse.api.global.exception.BusinessException;
@@ -39,6 +40,9 @@ class QuestionSetControllerTest {
 
     @MockitoBean
     private QuestionSetService questionSetService;
+
+    @MockitoBean
+    private InternalQuestionSetService internalQuestionSetService;
 
     // ----------------------------------------------------------------
     // POST /answers

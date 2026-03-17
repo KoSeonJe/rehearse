@@ -3,7 +3,11 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.Question;
+import com.rehearse.api.domain.questionset.entity.QuestionType;
+import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -36,6 +40,9 @@ class InterviewServiceTest {
 
     @Mock
     private QuestionSetRepository questionSetRepository;
+
+    @Mock
+    private QuestionRepository questionRepository;
 
     @Mock
     private InterviewFinder interviewFinder;
@@ -214,6 +221,9 @@ class InterviewServiceTest {
         interview.updateStatus(InterviewStatus.IN_PROGRESS);
         given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
+        QuestionSet questionSet = createMockQuestionSet(interview);
+        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
+
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
@@ -222,7 +232,15 @@ class InterviewServiceTest {
         given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
                 .willReturn(followUp);
 
+        given(questionRepository.save(any(Question.class)))
+                .willAnswer(invocation -> {
+                    Question q = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(q, "id", 100L);
+                    return q;
+                });
+
         FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
         ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
         ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
@@ -231,6 +249,7 @@ class InterviewServiceTest {
         FollowUpResponse response = interviewService.generateFollowUp(1L, request);
 
         // then
+        assertThat(response.getQuestionId()).isEqualTo(100L);
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
         assertThat(response.getType()).isEqualTo("DEEP_DIVE");
@@ -244,6 +263,9 @@ class InterviewServiceTest {
         interview.updateStatus(InterviewStatus.IN_PROGRESS);
         given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
 
+        QuestionSet questionSet = createMockQuestionSet(interview);
+        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
+
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
         ReflectionTestUtils.setField(followUp, "reason", "동시성 처리 이해도 확인");
@@ -252,11 +274,19 @@ class InterviewServiceTest {
         given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
                 .willReturn(followUp);
 
+        given(questionRepository.save(any(Question.class)))
+                .willAnswer(invocation -> {
+                    Question q = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(q, "id", 101L);
+                    return q;
+                });
+
         List<FollowUpRequest.FollowUpExchange> exchanges = List.of(
                 new FollowUpRequest.FollowUpExchange("해시 충돌 해결 방법은?", "체이닝과 오픈 어드레싱이 있습니다.")
         );
 
         FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
         ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
         ReflectionTestUtils.setField(request, "previousExchanges", exchanges);
@@ -265,6 +295,7 @@ class InterviewServiceTest {
         FollowUpResponse response = interviewService.generateFollowUp(1L, request);
 
         // then
+        assertThat(response.getQuestionId()).isEqualTo(101L);
         assertThat(response.getQuestion()).isEqualTo("그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
         assertThat(response.getType()).isEqualTo("DEEP_DIVE");
         then(aiClient).should().generateFollowUpQuestion(
@@ -305,6 +336,23 @@ class InterviewServiceTest {
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
         return interview;
+    }
+
+    private QuestionSet createMockQuestionSet(Interview interview) {
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview)
+                .category(QuestionCategory.CS)
+                .orderIndex(0)
+                .build();
+        ReflectionTestUtils.setField(qs, "id", 10L);
+
+        Question mainQuestion = Question.builder()
+                .questionType(QuestionType.MAIN)
+                .questionText("HashMap과 TreeMap의 차이점은?")
+                .orderIndex(0)
+                .build();
+        qs.addQuestion(mainQuestion);
+        return qs;
     }
 
     private List<GeneratedQuestion> createMockGeneratedQuestions() {
