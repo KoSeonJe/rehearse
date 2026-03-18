@@ -10,7 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,9 +54,12 @@ public class Interview {
     @Column(nullable = false, length = 20)
     private InterviewStatus status;
 
-    @OneToMany(mappedBy = "interview", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("questionOrder ASC")
-    private List<InterviewQuestion> questions = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private QuestionGenerationStatus questionGenerationStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String failureReason;
 
     private Integer overallScore;
 
@@ -81,11 +83,26 @@ public class Interview {
         this.csSubTopics = csSubTopics != null ? new HashSet<>(csSubTopics) : new HashSet<>();
         this.durationMinutes = durationMinutes;
         this.status = InterviewStatus.READY;
+        this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
     }
 
-    public void addQuestion(InterviewQuestion question) {
-        this.questions.add(question);
-        question.assignInterview(this);
+    public void startQuestionGeneration() {
+        this.questionGenerationStatus = QuestionGenerationStatus.GENERATING;
+        this.failureReason = null;
+    }
+
+    public void completeQuestionGeneration() {
+        this.questionGenerationStatus = QuestionGenerationStatus.COMPLETED;
+    }
+
+    public void failQuestionGeneration(String reason) {
+        this.questionGenerationStatus = QuestionGenerationStatus.FAILED;
+        this.failureReason = reason;
+    }
+
+    public void resetForRetry() {
+        this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
+        this.failureReason = null;
     }
 
     public void updateStatus(InterviewStatus newStatus) {

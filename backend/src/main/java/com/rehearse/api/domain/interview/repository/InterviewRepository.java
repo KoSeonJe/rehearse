@@ -12,9 +12,6 @@ import java.util.Optional;
 
 public interface InterviewRepository extends JpaRepository<Interview, Long> {
 
-    @Query("SELECT i FROM Interview i JOIN FETCH i.questions WHERE i.id = :id")
-    Optional<Interview> findByIdWithQuestions(@Param("id") Long id);
-
     @EntityGraph(attributePaths = {"interviewTypes", "csSubTopics"})
     @Query("SELECT i FROM Interview i WHERE i.id = :id")
     Optional<Interview> findByIdWithElementCollections(@Param("id") Long id);

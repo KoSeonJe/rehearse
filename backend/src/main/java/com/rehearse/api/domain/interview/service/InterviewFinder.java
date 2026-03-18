@@ -14,17 +14,7 @@ public class InterviewFinder {
     private final InterviewRepository interviewRepository;
 
     public Interview findById(Long id) {
-        return interviewRepository.findById(id)
+        return interviewRepository.findByIdWithElementCollections(id)
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
-    }
-
-    public Interview findByIdWithQuestions(Long id) {
-        Interview interview = interviewRepository.findByIdWithQuestions(id)
-                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
-
-        // ElementCollection은 별도 쿼리로 초기화 (MultipleBagFetchException 방지)
-        interviewRepository.findByIdWithElementCollections(id);
-
-        return interview;
     }
 }

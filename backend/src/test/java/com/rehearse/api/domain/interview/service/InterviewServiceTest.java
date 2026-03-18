@@ -10,19 +10,21 @@ import com.rehearse.api.domain.questionset.entity.QuestionType;
 import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -53,8 +55,14 @@ class InterviewServiceTest {
     @Mock
     private PdfTextExtractor pdfTextExtractor;
 
+    @Mock
+    private com.rehearse.api.infra.ai.WhisperService whisperService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     @Test
-    @DisplayName("면접 세션 생성 시 Claude API로 질문을 생성하고 저장한다")
+    @DisplayName("면접 세션 생성 시 비동기 질문 생성을 트리거하고 즉시 응답한다")
     void createInterview_success() {
         // given
         CreateInterviewRequest request = new CreateInterviewRequest();
@@ -63,25 +71,12 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
         ReflectionTestUtils.setField(request, "durationMinutes", 30);
 
-        List<GeneratedQuestion> generatedQuestions = createMockGeneratedQuestions();
-
-        given(aiClient.generateQuestions(
-                eq(Position.BACKEND), isNull(), eq(InterviewLevel.JUNIOR),
-                eq(List.of(InterviewType.CS_FUNDAMENTAL)), isNull(), isNull(), eq(30)))
-                .willReturn(generatedQuestions);
-
         given(interviewRepository.save(any(Interview.class)))
                 .willAnswer(invocation -> {
                     Interview interview = invocation.getArgument(0);
                     ReflectionTestUtils.setField(interview, "id", 1L);
-                    for (int i = 0; i < interview.getQuestions().size(); i++) {
-                        ReflectionTestUtils.setField(interview.getQuestions().get(i), "id", (long) (i + 1));
-                    }
                     return interview;
                 });
-
-        given(questionSetRepository.saveAll(anyList()))
-                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         InterviewResponse response = interviewService.createInterview(request, null);
@@ -90,22 +85,20 @@ class InterviewServiceTest {
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
         assertThat(response.getLevel()).isEqualTo(InterviewLevel.JUNIOR);
-        assertThat(response.getInterviewTypes()).containsExactly(InterviewType.CS_FUNDAMENTAL);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
-        assertThat(response.getQuestions()).hasSize(2);
-        assertThat(response.getQuestions().get(0).getContent()).isEqualTo("HashMap과 TreeMap의 차이점은?");
+        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
+        assertThat(response.getQuestionSets()).isEmpty();
 
+        then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
         then(interviewRepository).should().save(any(Interview.class));
     }
 
     @Test
     @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
     void getInterview_notFound() {
-        // given
-        given(interviewFinder.findByIdWithQuestions(999L))
+        given(interviewFinder.findById(999L))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
-        // when & then
         assertThatThrownBy(() -> interviewService.getInterview(999L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
@@ -118,72 +111,60 @@ class InterviewServiceTest {
     @Test
     @DisplayName("면접 세션 조회 성공")
     void getInterview_success() {
-        // given
         Interview interview = createMockInterview();
-
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        given(interviewFinder.findById(1L)).willReturn(interview);
         given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
-        // when
         InterviewResponse response = interviewService.getInterview(1L);
 
-        // then
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
+        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
     }
 
     @Test
-    @DisplayName("READY -> IN_PROGRESS 상태 전이 성공")
+    @DisplayName("READY -> IN_PROGRESS 상태 전이 성공 (질문 생성 완료 시)")
     void updateStatus_readyToInProgress() {
-        // given
         Interview interview = createMockInterview();
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        interview.completeQuestionGeneration();
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        // when
         UpdateStatusResponse response = interviewService.updateStatus(1L, request);
 
-        // then
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
     }
 
     @Test
-    @DisplayName("Claude API 호출 실패 시 예외가 전파된다")
-    void createInterview_claudeApiFail() {
-        // given
-        CreateInterviewRequest request = new CreateInterviewRequest();
-        ReflectionTestUtils.setField(request, "position", Position.BACKEND);
-        ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
-        ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
+    @DisplayName("질문 생성 미완료 시 IN_PROGRESS 전환 실패")
+    void updateStatus_questionGenerationNotCompleted() {
+        Interview interview = createMockInterview(); // PENDING 상태
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
-        given(aiClient.generateQuestions(any(), any(), any(), anyList(), any(), any(), any()))
-                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_001", "Claude API 호출 실패"));
+        UpdateStatusRequest request = new UpdateStatusRequest();
+        ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        // when & then
-        assertThatThrownBy(() -> interviewService.createInterview(request, null))
+        assertThatThrownBy(() -> interviewService.updateStatus(1L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_GATEWAY);
-                    assertThat(be.getCode()).isEqualTo("AI_001");
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_004");
                 });
     }
 
     @Test
     @DisplayName("존재하지 않는 면접 세션 상태 변경 시 BusinessException이 발생한다")
     void updateStatus_notFound() {
-        // given
-        given(interviewFinder.findByIdWithQuestions(999L))
+        given(interviewFinder.findById(999L))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        // when & then
         assertThatThrownBy(() -> interviewService.updateStatus(999L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
@@ -196,14 +177,13 @@ class InterviewServiceTest {
     @Test
     @DisplayName("READY -> COMPLETED 잘못된 상태 전이 시 BusinessException이 발생한다")
     void updateStatus_invalidTransition() {
-        // given
         Interview interview = createMockInterview();
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        interview.completeQuestionGeneration();
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.COMPLETED);
 
-        // when & then
         assertThatThrownBy(() -> interviewService.updateStatus(1L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
@@ -214,12 +194,41 @@ class InterviewServiceTest {
     }
 
     @Test
+    @DisplayName("FAILED 상태에서 질문 생성 재시도 성공")
+    void retryQuestionGeneration_success() {
+        Interview interview = createMockInterview();
+        interview.failQuestionGeneration("Claude API timeout");
+        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
+
+        InterviewResponse response = interviewService.retryQuestionGeneration(1L);
+
+        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
+        assertThat(response.getFailureReason()).isNull();
+        then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
+    }
+
+    @Test
+    @DisplayName("FAILED가 아닌 상태에서 재시도 시 예외 발생")
+    void retryQuestionGeneration_notFailed() {
+        Interview interview = createMockInterview(); // PENDING
+        given(interviewFinder.findById(1L)).willReturn(interview);
+
+        assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_005");
+                });
+    }
+
+    @Test
     @DisplayName("후속 질문 생성 성공")
     void generateFollowUp_success() {
-        // given
         Interview interview = createMockInterview();
+        interview.completeQuestionGeneration();
         interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         QuestionSet questionSet = createMockQuestionSet(interview);
         given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
@@ -245,10 +254,8 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
         ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
 
-        // when
-        FollowUpResponse response = interviewService.generateFollowUp(1L, request);
+        FollowUpResponse response = interviewService.generateFollowUp(1L, request, null);
 
-        // then
         assertThat(response.getQuestionId()).isEqualTo(100L);
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
@@ -256,69 +263,16 @@ class InterviewServiceTest {
     }
 
     @Test
-    @DisplayName("대화 맥락 포함 후속 질문 생성 성공")
-    void generateFollowUp_withPreviousExchanges() {
-        // given
-        Interview interview = createMockInterview();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
-
-        QuestionSet questionSet = createMockQuestionSet(interview);
-        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
-
-        GeneratedFollowUp followUp = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(followUp, "question", "그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
-        ReflectionTestUtils.setField(followUp, "reason", "동시성 처리 이해도 확인");
-        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
-
-        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
-                .willReturn(followUp);
-
-        given(questionRepository.save(any(Question.class)))
-                .willAnswer(invocation -> {
-                    Question q = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(q, "id", 101L);
-                    return q;
-                });
-
-        List<FollowUpRequest.FollowUpExchange> exchanges = List.of(
-                new FollowUpRequest.FollowUpExchange("해시 충돌 해결 방법은?", "체이닝과 오픈 어드레싱이 있습니다.")
-        );
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
-        ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
-        ReflectionTestUtils.setField(request, "previousExchanges", exchanges);
-
-        // when
-        FollowUpResponse response = interviewService.generateFollowUp(1L, request);
-
-        // then
-        assertThat(response.getQuestionId()).isEqualTo(101L);
-        assertThat(response.getQuestion()).isEqualTo("그렇다면 ConcurrentHashMap은 어떻게 동시성을 보장하나요?");
-        assertThat(response.getType()).isEqualTo("DEEP_DIVE");
-        then(aiClient).should().generateFollowUpQuestion(
-                eq("HashMap과 TreeMap의 차이점은?"),
-                eq("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다."),
-                any(),
-                eq(exchanges)
-        );
-    }
-
-    @Test
     @DisplayName("진행 중이 아닌 면접에서 후속질문 생성 시 예외 발생")
     void generateFollowUp_notInProgress() {
-        // given
         Interview interview = createMockInterview(); // status = READY
-        given(interviewFinder.findByIdWithQuestions(1L)).willReturn(interview);
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionContent", "질문");
         ReflectionTestUtils.setField(request, "answerText", "답변");
 
-        // when & then
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request))
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -353,21 +307,5 @@ class InterviewServiceTest {
                 .build();
         qs.addQuestion(mainQuestion);
         return qs;
-    }
-
-    private List<GeneratedQuestion> createMockGeneratedQuestions() {
-        GeneratedQuestion q1 = new GeneratedQuestion();
-        ReflectionTestUtils.setField(q1, "content", "HashMap과 TreeMap의 차이점은?");
-        ReflectionTestUtils.setField(q1, "category", "자료구조");
-        ReflectionTestUtils.setField(q1, "order", 1);
-        ReflectionTestUtils.setField(q1, "evaluationCriteria", "시간 복잡도 이해");
-
-        GeneratedQuestion q2 = new GeneratedQuestion();
-        ReflectionTestUtils.setField(q2, "content", "프로세스와 스레드의 차이점은?");
-        ReflectionTestUtils.setField(q2, "category", "운영체제");
-        ReflectionTestUtils.setField(q2, "order", 2);
-        ReflectionTestUtils.setField(q2, "evaluationCriteria", "멀티스레딩 이해");
-
-        return List.of(q1, q2);
     }
 }

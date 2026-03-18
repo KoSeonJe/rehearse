@@ -22,8 +22,9 @@ public class InterviewResponse {
     private final List<InterviewType> interviewTypes;
     private final List<String> csSubTopics;
     private final InterviewStatus status;
+    private final QuestionGenerationStatus questionGenerationStatus;
+    private final String failureReason;
     private final Integer durationMinutes;
-    private final List<QuestionResponse> questions;
     private final List<QuestionSetResponse> questionSets;
     private final LocalDateTime createdAt;
 
@@ -32,10 +33,6 @@ public class InterviewResponse {
     }
 
     public static InterviewResponse from(Interview interview, List<QuestionSet> questionSets) {
-        List<QuestionResponse> questionResponses = interview.getQuestions().stream()
-                .map(QuestionResponse::from)
-                .toList();
-
         List<QuestionSetResponse> questionSetResponses = questionSets.stream()
                 .map(QuestionSetResponse::from)
                 .toList();
@@ -48,8 +45,9 @@ public class InterviewResponse {
                 .interviewTypes(new ArrayList<>(interview.getInterviewTypes()))
                 .csSubTopics(new ArrayList<>(interview.getCsSubTopics()))
                 .status(interview.getStatus())
+                .questionGenerationStatus(interview.getQuestionGenerationStatus())
+                .failureReason(interview.getFailureReason())
                 .durationMinutes(interview.getDurationMinutes())
-                .questions(questionResponses)
                 .questionSets(questionSetResponses)
                 .createdAt(interview.getCreatedAt())
                 .build();

@@ -43,12 +43,21 @@ public class InterviewController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
-    @PostMapping("/{id}/follow-up")
+    @PostMapping(value = "/{id}/follow-up", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<FollowUpResponse>> generateFollowUp(
             @PathVariable Long id,
-            @Valid @RequestBody FollowUpRequest request) {
+            @Valid @RequestPart("request") FollowUpRequest request,
+            @RequestPart(value = "audio", required = false) MultipartFile audioFile) {
 
-        FollowUpResponse response = interviewService.generateFollowUp(id, request);
+        FollowUpResponse response = interviewService.generateFollowUp(id, request, audioFile);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/{id}/retry-questions")
+    public ResponseEntity<ApiResponse<InterviewResponse>> retryQuestionGeneration(
+            @PathVariable Long id) {
+
+        InterviewResponse response = interviewService.retryQuestionGeneration(id);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

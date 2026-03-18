@@ -50,7 +50,7 @@ public class ReportService {
     }
 
     private ReportResponse createReport(Long interviewId) {
-        Interview interview = interviewFinder.findByIdWithQuestions(interviewId);
+        Interview interview = interviewFinder.findById(interviewId);
         List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(interviewId);
 
         // 모든 질문세트가 COMPLETED인지 확인
