@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
+import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,10 +26,11 @@ public class TimestampFeedbackResponse {
     private final boolean isAnalyzed;
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
+        Question question = feedback.getQuestion();
         return TimestampFeedbackResponse.builder()
                 .id(feedback.getId())
-                .questionId(feedback.getQuestion() != null ? feedback.getQuestion().getId() : null)
-                .questionType(feedback.getQuestion() != null ? feedback.getQuestion().getQuestionType().name() : null)
+                .questionId(question != null ? question.getId() : null)
+                .questionType(question != null ? question.getQuestionType().name() : null)
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())

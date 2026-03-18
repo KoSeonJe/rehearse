@@ -67,7 +67,7 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildQuestionSystemPrompt();
         String userPrompt = promptBuilder.buildQuestionUserPrompt(position, positionDetail, level, interviewTypes, csSubTopics, resumeText, durationMinutes);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_QUESTION);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_QUESTION, 0.9);
         GeneratedQuestionsWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedQuestionsWrapper.class);
 
         if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
@@ -98,6 +98,10 @@ public class ClaudeApiClient implements AiClient {
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
+        return callClaudeApi(systemPrompt, userPrompt, maxTokens, null);
+    }
+
+    private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
         ClaudeRequest request = ClaudeRequest.builder()
                 .model(model)
                 .maxTokens(maxTokens)
@@ -108,6 +112,7 @@ public class ClaudeApiClient implements AiClient {
                                 .content(userPrompt)
                                 .build()
                 ))
+                .temperature(temperature)
                 .build();
 
         try {

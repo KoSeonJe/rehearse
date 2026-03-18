@@ -19,8 +19,7 @@ public class ClaudeRequest {
 
     private final List<Message> messages;
 
-    @Builder.Default
-    private final double temperature = 0.9;
+    private final Double temperature;
 
     @Getter
     @Builder

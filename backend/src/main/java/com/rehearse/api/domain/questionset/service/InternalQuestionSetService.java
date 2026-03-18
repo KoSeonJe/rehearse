@@ -64,7 +64,11 @@ public class InternalQuestionSetService {
             for (SaveFeedbackRequest.TimestampFeedbackItem item : request.getTimestampFeedbacks()) {
                 Question question = null;
                 if (item.getQuestionId() != null) {
-                    question = questionRepository.findById(item.getQuestionId()).orElse(null);
+                    question = questionRepository.findById(item.getQuestionId())
+                            .orElseGet(() -> {
+                                log.warn("피드백 저장 시 존재하지 않는 questionId={}", item.getQuestionId());
+                                return null;
+                            });
                 }
 
                 TimestampFeedback tf = TimestampFeedback.builder()
