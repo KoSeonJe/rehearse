@@ -309,11 +309,9 @@ export const useAnswerFlow = ({
 
         // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
         if (currentSet && res.data.questionId) {
-          const followUpRound = useInterviewStore.getState().followUpRound
-          const followUpTypeMap = { 1: 'FOLLOWUP_1', 2: 'FOLLOWUP_2', 3: 'FOLLOWUP_3' } as const
           currentSet.questions.push({
             id: res.data.questionId,
-            questionType: followUpTypeMap[followUpRound as 1 | 2 | 3] ?? 'FOLLOWUP_1',
+            questionType: 'FOLLOWUP',
             questionText: res.data.question,
             modelAnswer: null,
             referenceType: 'CS',

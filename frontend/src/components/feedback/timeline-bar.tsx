@@ -2,16 +2,12 @@ import type { TimestampFeedback } from '@/types/interview'
 
 const ANSWER_TYPE_COLORS: Record<string, string> = {
   MAIN: 'bg-accent',
-  FOLLOWUP_1: 'bg-blue-400',
-  FOLLOWUP_2: 'bg-violet-400',
-  FOLLOWUP_3: 'bg-teal-400',
+  FOLLOWUP: 'bg-blue-400',
 }
 
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   MAIN: '원본',
-  FOLLOWUP_1: '후속 1',
-  FOLLOWUP_2: '후속 2',
-  FOLLOWUP_3: '후속 3',
+  FOLLOWUP: '후속',
 }
 
 const getScoreColor = (feedback: TimestampFeedback): string => {
@@ -58,7 +54,7 @@ export const TimelineBar = ({
               } ${getScoreColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
-              title={`${ANSWER_TYPE_LABELS[fb.answerType] ?? fb.answerType} (${Math.round(fb.startMs / 1000)}s)`}
+              title={`${ANSWER_TYPE_LABELS[fb.questionType] ?? fb.questionType} (${Math.round(fb.startMs / 1000)}s)`}
             />
           )
         })}
@@ -73,7 +69,7 @@ export const TimelineBar = ({
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
         {Object.entries(ANSWER_TYPE_COLORS).map(([type, color]) => {
-          const hasFeedback = feedbacks.some((f) => f.answerType === type)
+          const hasFeedback = feedbacks.some((f) => f.questionType === type)
           if (!hasFeedback) return null
           return (
             <div key={type} className="flex items-center gap-1.5">
