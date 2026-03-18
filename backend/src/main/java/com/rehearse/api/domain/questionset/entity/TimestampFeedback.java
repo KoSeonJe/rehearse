@@ -20,9 +20,9 @@ public class TimestampFeedback {
     @JoinColumn(name = "question_set_feedback_id", nullable = false)
     private QuestionSetFeedback questionSetFeedback;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private QuestionType answerType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_id")
+    private Question question;
 
     @Column(nullable = false)
     private long startMs;
@@ -57,12 +57,12 @@ public class TimestampFeedback {
     private boolean isAnalyzed;
 
     @Builder
-    public TimestampFeedback(QuestionType answerType, long startMs, long endMs,
+    public TimestampFeedback(Question question, long startMs, long endMs,
                              String transcript, Integer verbalScore, String verbalComment,
                              Integer fillerWordCount, Integer eyeContactScore, Integer postureScore,
                              String expressionLabel, String nonverbalComment, String overallComment,
                              boolean isAnalyzed) {
-        this.answerType = answerType;
+        this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
         this.transcript = transcript;

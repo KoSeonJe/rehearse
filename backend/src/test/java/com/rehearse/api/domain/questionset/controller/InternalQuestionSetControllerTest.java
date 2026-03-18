@@ -112,7 +112,7 @@ class InternalQuestionSetControllerTest {
                     "questionSetComment": "전반적으로 좋은 답변입니다.",
                     "timestampFeedbacks": [
                         {
-                            "answerType": "MAIN",
+                            "questionId": 10,
                             "startMs": 0,
                             "endMs": 5000,
                             "verbalScore": 80,

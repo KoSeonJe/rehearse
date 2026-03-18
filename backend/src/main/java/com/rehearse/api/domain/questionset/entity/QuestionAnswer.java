@@ -7,10 +7,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "question_set_answer")
+@Table(name = "question_answer")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class QuestionSetAnswer {
+public class QuestionAnswer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,7 +27,7 @@ public class QuestionSetAnswer {
     private long endMs;
 
     @Builder
-    public QuestionSetAnswer(Question question, long startMs, long endMs) {
+    public QuestionAnswer(Question question, long startMs, long endMs) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;

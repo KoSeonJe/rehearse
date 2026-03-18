@@ -20,8 +20,9 @@ import java.util.List;
 public class InternalQuestionSetService {
 
     private final QuestionSetRepository questionSetRepository;
-    private final QuestionSetAnswerRepository answerRepository;
+    private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
+    private final QuestionRepository questionRepository;
 
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
@@ -45,7 +46,7 @@ public class InternalQuestionSetService {
         return findQuestionSet(questionSetId);
     }
 
-    public List<QuestionSetAnswer> getAnswers(Long questionSetId) {
+    public List<QuestionAnswer> getAnswers(Long questionSetId) {
         return answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
     }
 
@@ -61,8 +62,13 @@ public class InternalQuestionSetService {
 
         if (request.getTimestampFeedbacks() != null) {
             for (SaveFeedbackRequest.TimestampFeedbackItem item : request.getTimestampFeedbacks()) {
+                Question question = null;
+                if (item.getQuestionId() != null) {
+                    question = questionRepository.findById(item.getQuestionId()).orElse(null);
+                }
+
                 TimestampFeedback tf = TimestampFeedback.builder()
-                        .answerType(QuestionType.valueOf(item.getAnswerType()))
+                        .question(question)
                         .startMs(item.getStartMs())
                         .endMs(item.getEndMs())
                         .transcript(item.getTranscript())

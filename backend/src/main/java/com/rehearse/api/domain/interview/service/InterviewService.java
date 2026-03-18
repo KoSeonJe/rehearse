@@ -203,16 +203,16 @@ public class InterviewService {
                 .build();
     }
 
+    private static final int MAX_FOLLOWUP_ROUNDS = 3;
+
     private QuestionType determineFollowUpType(QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() != QuestionType.MAIN)
+                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
                 .count();
 
-        return switch ((int) followUpCount) {
-            case 0 -> QuestionType.FOLLOWUP_1;
-            case 1 -> QuestionType.FOLLOWUP_2;
-            case 2 -> QuestionType.FOLLOWUP_3;
-            default -> throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
-        };
+        if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
+            throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
+        }
+        return QuestionType.FOLLOWUP;
     }
 }

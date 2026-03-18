@@ -7,12 +7,13 @@ import com.rehearse.api.domain.interview.entity.Position;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
 public class ClaudePromptBuilder {
 
-    private static final int MINUTES_PER_QUESTION = 5;
+    private static final int MINUTES_PER_QUESTION = 3;
     private static final int MIN_QUESTION_COUNT = 2;
     private static final int MAX_QUESTION_COUNT = 24;
     private static final int SINGLE_TYPE_QUESTION_COUNT = 5;
@@ -57,7 +58,7 @@ public class ClaudePromptBuilder {
                 - DATABASE: 데이터베이스 (인덱스, 트랜잭션, 정규화, 쿼리 최적화)
 
                 질문 수 규칙:
-                - 면접 시간이 설정된 경우: (면접 시간(분) / 5) 반올림 (최소 2개, 최대 24개)
+                - 면접 시간이 설정된 경우: (면접 시간(분) / 3) 반올림 (최소 2개, 최대 24개)
                 - 유형별로 균등 배분
 
                 이력서가 제공된 경우 RESUME_BASED 유형의 질문은 이력서 내용을 기반으로 맞춤 생성하세요.
@@ -69,8 +70,8 @@ public class ClaudePromptBuilder {
 
                 모범답변 생성 규칙:
                 - 각 질문에 대한 모범답변(modelAnswer)을 반드시 포함하세요.
-                - RESUME 카테고리(이력서 기반) 질문: referenceType을 "MODEL_ANSWER"로, 이력서 내용 기반 구체적 답변 예시
-                - CS 카테고리(기술/CS) 질문: referenceType을 "GUIDE"로, 핵심 개념과 답변 가이드 제공
+                - CS 카테고리(기술/CS) 질문: referenceType을 "MODEL_ANSWER"로, 정답이 있으므로 구체적 모범답변 제공
+                - RESUME 카테고리(이력서 기반) 질문: referenceType을 "GUIDE"로, 정답이 없으므로 답변 방향 가이드 제공
                 - questionCategory는 이력서/경험 기반이면 "RESUME", 기술/CS이면 "CS"로 지정
 
                 반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
@@ -138,6 +139,8 @@ public class ClaudePromptBuilder {
                     """, resumeText));
         }
 
+        prompt.append(String.format("세션 ID: %s\n", UUID.randomUUID()));
+        prompt.append("이전 면접과 중복되지 않는 새로운 관점의 질문을 생성해주세요.\n");
         prompt.append("위 조건에 맞는 면접 질문과 각 질문별 평가 기준을 생성해주세요.\n");
         prompt.append("각 질문의 카테고리는 면접 유형의 세부 분야로 지정해주세요.\n");
 

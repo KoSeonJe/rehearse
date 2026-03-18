@@ -24,7 +24,7 @@ public class SaveFeedbackRequest {
     @Getter
     @NoArgsConstructor
     public static class TimestampFeedbackItem {
-        @NotNull private String answerType;
+        private Long questionId;
         @NotNull private Long startMs;
         @NotNull private Long endMs;
         private String transcript;
