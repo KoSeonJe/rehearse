@@ -3,7 +3,7 @@ import { BackLink } from '@/components/ui/back-link'
 import { Logo } from '@/components/ui/logo'
 import { DeviceTestSection } from '@/components/interview/device-test-section'
 import { Character } from '@/components/ui/character'
-import { useInterview, useUpdateInterviewStatus } from '@/hooks/use-interviews'
+import { useInterview, useUpdateInterviewStatus, useRetryQuestions } from '@/hooks/use-interviews'
 import { useDeviceTest } from '@/hooks/use-device-test'
 import {
   LEVEL_LABELS,
@@ -18,6 +18,7 @@ export const InterviewReadyPage = () => {
 
   const { data: response, isLoading, isError, error } = useInterview(id ?? '')
   const updateStatus = useUpdateInterviewStatus()
+  const retryQuestions = useRetryQuestions()
   const {
     state,
     micLevel,
@@ -31,12 +32,23 @@ export const InterviewReadyPage = () => {
 
   const interview = response?.data
 
+  const questionGenStatus = interview?.questionGenerationStatus
+  const isQuestionReady = questionGenStatus === 'COMPLETED'
+  const isQuestionFailed = questionGenStatus === 'FAILED'
+  const isQuestionGenerating = questionGenStatus === 'PENDING' || questionGenStatus === 'GENERATING'
+  const canStart = allPassed && isQuestionReady
+
   const handleStartInterview = () => {
     if (!interview) return
     updateStatus.mutate(
       { id: interview.id, data: { status: 'IN_PROGRESS' } },
       { onSuccess: () => navigate(`/interview/${interview.id}/conduct`) },
     )
+  }
+
+  const handleRetryQuestions = () => {
+    if (!interview) return
+    retryQuestions.mutate(interview.id)
   }
 
   if (isError) {
@@ -116,6 +128,59 @@ export const InterviewReadyPage = () => {
           )}
         </section>
 
+        {/* Question Generation Status */}
+        {!isLoading && interview && (
+          <section className="mb-8">
+            <div className="mb-4 flex items-center gap-2 px-1">
+              <h2 className="text-xs font-black uppercase tracking-widest text-text-tertiary">
+                질문 준비
+              </h2>
+            </div>
+            <div className="rounded-2xl border border-border bg-surface/50 p-5">
+              {isQuestionGenerating && (
+                <div className="flex items-center gap-3">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+                  <span className="text-sm font-bold text-text-secondary">
+                    AI가 면접 질문을 생성하고 있어요...
+                  </span>
+                </div>
+              )}
+              {isQuestionReady && (
+                <div className="flex items-center gap-3">
+                  <svg className="h-5 w-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-sm font-bold text-text-primary">
+                    질문 준비 완료 ({interview.questionSets.length}개 질문세트)
+                  </span>
+                </div>
+              )}
+              {isQuestionFailed && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-3">
+                    <svg className="h-5 w-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    <span className="text-sm font-bold text-red-600">
+                      질문 생성에 실패했어요
+                    </span>
+                  </div>
+                  {interview.failureReason && (
+                    <p className="ml-8 text-xs text-text-tertiary">{interview.failureReason}</p>
+                  )}
+                  <button
+                    onClick={handleRetryQuestions}
+                    disabled={retryQuestions.isPending}
+                    className="ml-8 w-fit rounded-xl bg-accent/10 px-4 py-2 text-xs font-bold text-accent transition-all hover:bg-accent/20 active:scale-95 disabled:opacity-50"
+                  >
+                    {retryQuestions.isPending ? '재시도 중...' : '다시 시도하기'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Device Test — Main Content */}
         {!isLoading && (
           <section>
@@ -145,14 +210,18 @@ export const InterviewReadyPage = () => {
           <div className="mt-16">
             <button
               onClick={handleStartInterview}
-              disabled={!allPassed || updateStatus.isPending}
+              disabled={!canStart || updateStatus.isPending}
               className="h-18 w-full rounded-[24px] bg-accent py-5 text-xl font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {updateStatus.isPending ? '시작하는 중...' : '면접 시작하기'}
             </button>
-            {!allPassed && (
+            {!canStart && (
               <p className="mt-3 text-center text-xs font-bold text-text-tertiary">
-                카메라, 마이크, 스피커 테스트를 모두 완료해주세요
+                {!isQuestionReady && !isQuestionFailed
+                  ? '질문이 생성되는 동안 장치 테스트를 진행해주세요'
+                  : !allPassed
+                    ? '카메라, 마이크, 스피커 테스트를 모두 완료해주세요'
+                    : '질문 생성이 완료되어야 시작할 수 있어요'}
               </p>
             )}
           </div>

@@ -3,16 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '@/stores/interview-store'
 import { useUpdateInterviewStatus } from '@/hooks/use-interviews'
 import { useTts } from '@/hooks/use-tts'
-import { useThinkingTimeDetector } from '@/hooks/use-thinking-time-detector'
 import { useInterviewEventRecorder } from '@/hooks/use-interview-event-recorder'
 import { useInterviewGreeting } from '@/hooks/use-interview-greeting'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
+import { useAudioCapture } from '@/hooks/use-audio-capture'
 import { saveVideoBlob } from '@/lib/video-storage'
-import type { Question, TranscriptSegment, QuestionSetData } from '@/types/interview'
+import type { QuestionSetData } from '@/types/interview'
 
 interface UseInterviewSessionParams {
   interviewId: string
-  interview: { id: number; status: string; questions: Question[]; questionSets?: QuestionSetData[] } | undefined
+  interview: { id: number; status: string; questionSets?: QuestionSetData[] } | undefined
   mediaStream: {
     stream: MediaStream | null
     isActive: boolean
@@ -27,13 +27,6 @@ interface UseInterviewSessionParams {
     resume: () => void
     restart: (stream: MediaStream) => Promise<Blob>
   }
-  stt: {
-    interimText: string
-    isSupported: boolean
-    start: (questionIndex: number) => void
-    stop: () => void
-    onFinalResult: (callback: (segment: TranscriptSegment) => void) => void
-  }
 }
 
 export const useInterviewSession = ({
@@ -41,12 +34,12 @@ export const useInterviewSession = ({
   interview,
   mediaStream,
   recorder,
-  stt,
 }: UseInterviewSessionParams) => {
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
   const pendingTtsActionRef = useRef<(() => void) | null>(null)
   const greetingPhaseRef = useRef(false)
+  const audioCapture = useAudioCapture()
   const {
     questions,
     currentQuestionIndex,
@@ -55,8 +48,6 @@ export const useInterviewSession = ({
     currentQuestionSetIndex,
     setInterview,
     setQuestionSets,
-    setCurrentTranscript,
-    addTranscript,
     setVideoBlob,
     completeInterview,
     setAutoTransitionMessage,
@@ -75,7 +66,7 @@ export const useInterviewSession = ({
   // TTS 훅
   const tts = useTts({
     onStart: () => {
-      stt.stop()
+      // TTS 재생 중에는 별도 처리 불필요 (STT 제거됨)
     },
     onEnd: () => {
       // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
@@ -89,12 +80,6 @@ export const useInterviewSession = ({
         pendingTtsActionRef.current = null
         action()
         return
-      }
-
-      // 일반 TTS(질문 읽기) 끝나면 STT 재시작
-      const state = useInterviewStore.getState()
-      if (state.phase === 'recording') {
-        stt.start(state.currentQuestionIndex)
       }
     },
   })
@@ -112,7 +97,7 @@ export const useInterviewSession = ({
     interview,
     mediaStream,
     recorder,
-    stt,
+    audioCapture,
     tts,
     recordEvent,
     startEventRecording,
@@ -121,26 +106,22 @@ export const useInterviewSession = ({
     pendingTtsActionRef,
   })
 
-  // 생각 시간 감지
-  useThinkingTimeDetector({
-    interimText: stt.interimText,
-    enabled: phase === 'recording',
-    onThinkingTimeRequested: () => {
-      recordEvent('thinking_time_requested', currentQuestionIndex)
-      tts.speak('네, 천천히 생각하세요. 준비되면 말씀해 주세요.')
-      setAutoTransitionMessage('생각 시간 모드 — 충분히 생각하세요')
-      setTimeout(() => {
-        setAutoTransitionMessage(null)
-      }, 3000)
-    },
-  })
-
-  // 면접 데이터 로드 + 질문세트 설정
+  // 면접 데이터 로드 + 질문세트 설정 (questionSets에서 Question[] 도출)
   useEffect(() => {
     if (interview && phase === 'preparing') {
-      setInterview(interview.id, interview.questions)
-      if (interview.questionSets?.length) {
-        setQuestionSets(interview.questionSets)
+      const qs = interview.questionSets ?? []
+      const derivedQuestions = qs.map((qSet, idx) => {
+        const mainQ = qSet.questions.find((q) => q.questionType === 'MAIN')
+        return {
+          id: mainQ?.id ?? qSet.id,
+          content: mainQ?.questionText ?? '',
+          category: qSet.category,
+          order: idx,
+        }
+      })
+      setInterview(interview.id, derivedQuestions)
+      if (qs.length) {
+        setQuestionSets(qs)
       }
     }
   }, [interview, phase, setInterview, setQuestionSets])
@@ -159,19 +140,6 @@ export const useInterviewSession = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentQuestionIndex, questions])
-
-  // STT 콜백 등록
-  useEffect(() => {
-    stt.onFinalResult((segment: TranscriptSegment) => {
-      addTranscript(segment)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stt.onFinalResult, addTranscript])
-
-  // interim text 동기화
-  useEffect(() => {
-    setCurrentTranscript(stt.interimText)
-  }, [stt.interimText, setCurrentTranscript])
 
   // 카메라 시작
   const handlePrepare = useCallback(async () => {
@@ -197,7 +165,6 @@ export const useInterviewSession = ({
     if (!interview) return
 
     tts.stop()
-    stt.stop()
     recordEvent('interview_finish', currentQuestionIndex)
 
     // 이벤트를 스토어에 저장
@@ -226,7 +193,7 @@ export const useInterviewSession = ({
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stt, recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
+  }, [recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
   const isFinishingRef = useRef(false)
@@ -243,7 +210,6 @@ export const useInterviewSession = ({
       pendingTtsActionRef.current = null
       tts.stop()
       mediaStream.stop()
-      stt.stop()
       reset()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

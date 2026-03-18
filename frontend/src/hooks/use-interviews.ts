@@ -8,6 +8,7 @@ import type {
   UpdateInterviewStatusResponse,
   FollowUpRequest,
   FollowUpResponse,
+  QuestionGenerationStatus,
 } from '@/types/interview'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || ''
@@ -59,6 +60,8 @@ export const useCreateInterview = () => {
   })
 }
 
+const POLL_STATUSES: QuestionGenerationStatus[] = ['PENDING', 'GENERATING']
+
 export const useInterview = (id: string) => {
   return useQuery({
     queryKey: ['interviews', id],
@@ -68,6 +71,13 @@ export const useInterview = (id: string) => {
       ),
     staleTime: Infinity,
     enabled: !!id,
+    refetchInterval: (query) => {
+      const status = query.state.data?.data?.questionGenerationStatus
+      if (status && POLL_STATUSES.includes(status)) {
+        return 2000
+      }
+      return false
+    },
   })
 }
 
@@ -94,18 +104,66 @@ export const useUpdateInterviewStatus = () => {
   })
 }
 
+export const useRetryQuestions = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.post<ApiResponse<InterviewSession>>(
+        `/api/v1/interviews/${id}/retry-questions`,
+      ),
+    onSuccess: (_result, id) => {
+      void queryClient.invalidateQueries({
+        queryKey: ['interviews', String(id)],
+      })
+    },
+  })
+}
+
 export const useFollowUpQuestion = () => {
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       data,
+      audioBlob,
     }: {
       id: number
       data: FollowUpRequest
-    }) =>
-      apiClient.post<ApiResponse<FollowUpResponse>>(
-        `/api/v1/interviews/${id}/follow-up`,
-        data,
-      ),
+      audioBlob?: Blob
+    }) => {
+      const formData = new FormData()
+      const requestBlob = new Blob([JSON.stringify(data)], {
+        type: 'application/json',
+      })
+      formData.append('request', requestBlob)
+
+      if (audioBlob && audioBlob.size > 0) {
+        formData.append('audio', audioBlob, 'answer.webm')
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/v1/interviews/${id}/follow-up`, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        let errorBody
+        try {
+          errorBody = await response.json()
+        } catch {
+          throw new ApiError(response.status, {
+            success: false,
+            status: response.status,
+            code: 'UNKNOWN_ERROR',
+            message: response.statusText || '알 수 없는 오류가 발생했습니다.',
+            errors: [],
+            timestamp: new Date().toISOString(),
+          })
+        }
+        throw new ApiError(response.status, errorBody)
+      }
+
+      return response.json() as Promise<ApiResponse<FollowUpResponse>>
+    },
   })
 }

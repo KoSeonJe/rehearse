@@ -20,6 +20,8 @@ export type CsSubTopic = 'DATA_STRUCTURE' | 'OS' | 'NETWORK' | 'DATABASE'
 
 export type InterviewStatus = 'READY' | 'IN_PROGRESS' | 'COMPLETED'
 
+export type QuestionGenerationStatus = 'PENDING' | 'GENERATING' | 'COMPLETED' | 'FAILED'
+
 export interface Question {
   id: number
   content: string
@@ -145,7 +147,8 @@ export interface InterviewSession {
   csSubTopics?: CsSubTopic[]
   durationMinutes: number
   status: InterviewStatus
-  questions: Question[]
+  questionGenerationStatus: QuestionGenerationStatus
+  failureReason?: string | null
   questionSets: QuestionSetData[]
   createdAt: string
 }
@@ -206,7 +209,7 @@ export interface FollowUpExchange {
 export interface FollowUpRequest {
   questionSetId: number
   questionContent: string
-  answerText: string
+  answerText?: string
   previousExchanges?: Array<{ question: string; answer: string }>
 }
 
