@@ -53,3 +53,7 @@ mysql_data/
 *.bak
 credentials.*
 secrets.*
+
+# === Lambda 빌드 아티팩트 ===
+lambda/**/package/
+lambda/**/*.zip

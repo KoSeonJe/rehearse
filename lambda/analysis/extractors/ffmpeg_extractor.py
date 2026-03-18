@@ -8,7 +8,7 @@ from config import Config
 def extract_audio(video_path: str, output_dir: str) -> str:
     audio_path = os.path.join(output_dir, "audio.wav")
     cmd = [
-        "ffmpeg", "-i", video_path,
+        Config.FFMPEG_PATH, "-i", video_path,
         "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
         "-y", audio_path,
     ]
@@ -25,7 +25,7 @@ def extract_frames(video_path: str, output_dir: str) -> list[str]:
 
     interval = Config.FRAME_INTERVAL_SEC
     cmd = [
-        "ffmpeg", "-i", video_path,
+        Config.FFMPEG_PATH, "-i", video_path,
         "-vf", f"fps=1/{interval}",
         "-q:v", "2",
         "-y", os.path.join(frames_dir, "frame_%04d.jpg"),
@@ -41,7 +41,7 @@ def extract_frames(video_path: str, output_dir: str) -> list[str]:
 
 def get_video_duration_ms(video_path: str) -> int:
     cmd = [
-        "ffprobe", "-v", "quiet",
+        Config.FFPROBE_PATH, "-v", "quiet",
         "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1",
         video_path,
@@ -49,4 +49,20 @@ def get_video_duration_ms(video_path: str) -> int:
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
         raise RuntimeError(f"FFprobe 실패: {result.stderr[:500]}")
-    return int(float(result.stdout.strip()) * 1000)
+
+    raw = result.stdout.strip()
+    if not raw or raw == "N/A":
+        # WebM 컨테이너에 duration 메타데이터 없는 경우 — 스트림 레벨에서 재시도
+        cmd_stream = [
+            Config.FFPROBE_PATH, "-v", "quiet",
+            "-show_entries", "stream=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            video_path,
+        ]
+        result2 = subprocess.run(cmd_stream, capture_output=True, text=True, timeout=30)
+        raw = result2.stdout.strip().split("\n")[0]
+
+    if not raw or raw == "N/A":
+        raise RuntimeError(f"FFprobe: 영상 duration을 확인할 수 없습니다 (output: {result.stdout.strip()!r})")
+
+    return int(float(raw) * 1000)

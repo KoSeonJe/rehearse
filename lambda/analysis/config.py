@@ -6,6 +6,8 @@ class Config:
     API_SERVER_URL = os.environ.get("API_SERVER_URL", "").rstrip("/")
     OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
     S3_BUCKET = os.environ.get("S3_BUCKET", "rehearse-videos-dev")
+    FFMPEG_PATH = os.environ.get("FFMPEG_PATH", "ffmpeg")
+    FFPROBE_PATH = os.environ.get("FFPROBE_PATH", "ffprobe")
 
     FRAME_INTERVAL_SEC = 3
     MAX_VISION_FRAMES = 10
