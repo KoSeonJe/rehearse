@@ -1,12 +1,10 @@
 import { useRef, useEffect, useState } from 'react'
 import type { TimestampFeedback, QuestionWithAnswer } from '@/types/interview'
 
-const ANSWER_TYPE_ORDER = ['MAIN', 'FOLLOWUP_1', 'FOLLOWUP_2', 'FOLLOWUP_3']
+const ANSWER_TYPE_ORDER = ['MAIN', 'FOLLOWUP']
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   MAIN: '원본 답변',
-  FOLLOWUP_1: '후속 질문 1',
-  FOLLOWUP_2: '후속 질문 2',
-  FOLLOWUP_3: '후속 질문 3',
+  FOLLOWUP: '후속 질문',
 }
 
 const FILLER_WORDS = ['음', '어', '그', '아', '에', '그러니까', '뭐', '이제', '저기']
@@ -183,21 +181,21 @@ export const FeedbackPanel = ({
   onSeek,
 }: FeedbackPanelProps) => {
   const availableTypes = ANSWER_TYPE_ORDER.filter((type) =>
-    feedbacks.some((f) => f.answerType === type),
+    feedbacks.some((f) => f.questionType === type),
   )
   const [activeTab, setActiveTab] = useState(availableTypes[0] ?? 'MAIN')
 
-  // 활성 피드백의 answerType에 따라 탭 자동 전환 (렌더 중 조건부 setState)
+  // 활성 피드백의 questionType에 따라 탭 자동 전환 (렌더 중 조건부 setState)
   const [prevActiveFeedbackId, setPrevActiveFeedbackId] = useState(activeFeedbackId)
   if (activeFeedbackId !== prevActiveFeedbackId) {
     setPrevActiveFeedbackId(activeFeedbackId)
     const activeFeedback = feedbacks.find((f) => f.id === activeFeedbackId)
     if (activeFeedback) {
-      setActiveTab(activeFeedback.answerType)
+      setActiveTab(activeFeedback.questionType ?? 'MAIN')
     }
   }
 
-  const filtered = feedbacks.filter((f) => f.answerType === activeTab)
+  const filtered = feedbacks.filter((f) => f.questionType === activeTab)
 
   const findQuestion = (fb: TimestampFeedback): QuestionWithAnswer | undefined => {
     return questions.find(

@@ -29,7 +29,7 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'MAIN' | 'FOLLOWUP_1' | 'FOLLOWUP_2' | 'FOLLOWUP_3'
+export type QuestionType = 'MAIN' | 'FOLLOWUP'
 
 export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
 
@@ -109,7 +109,8 @@ export interface QuestionsWithAnswersResponse {
 
 export interface TimestampFeedback {
   id: number
-  answerType: string
+  questionId: number | null
+  questionType: string | null
   startMs: number
   endMs: number
   transcript: string | null
