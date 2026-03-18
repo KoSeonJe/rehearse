@@ -4,12 +4,10 @@ import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store
 import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
-import { useSpeechRecognition } from '@/hooks/use-speech-recognition'
 import { useInterviewSession } from '@/hooks/use-interview-session'
 import { Logo } from '@/components/ui/logo'
 import { AudioWaveform } from '@/components/interview/audio-waveform'
 import { VideoPreview } from '@/components/interview/video-preview'
-import { TranscriptDisplay } from '@/components/interview/transcript-display'
 import { InterviewControls } from '@/components/interview/interview-controls'
 import { InterviewTimer } from '@/components/interview/interview-timer'
 
@@ -27,7 +25,7 @@ export const InterviewPage = () => {
   const { data: response } = useInterview(interviewId)
   const interview = response?.data
 
-  // 개별 selector로 구독 — currentTranscript/answers 등 빈번한 변경에 의한 리렌더 차단
+  // 개별 selector로 구독 — 빈번한 변경에 의한 리렌더 차단
   const questions = useInterviewStore((s) => s.questions)
   const currentQuestionIndex = useInterviewStore((s) => s.currentQuestionIndex)
   const phase = useInterviewStore((s) => s.phase)
@@ -40,7 +38,6 @@ export const InterviewPage = () => {
 
   const mediaStream = useMediaStream()
   const recorder = useMediaRecorder()
-  const stt = useSpeechRecognition()
 
   const {
     handleStartAnswer,
@@ -55,7 +52,6 @@ export const InterviewPage = () => {
     interview,
     mediaStream,
     recorder,
-    stt,
   })
 
   const uploadStatus = useInterviewStore((s) => s.uploadStatus)
@@ -167,12 +163,12 @@ export const InterviewPage = () => {
                 </div>
               )}
 
-              {/* 후속질문 로딩 */}
+              {/* 후속질문 로딩 — 답변 분석 중 */}
               {isFollowUpLoading && (
                 <div className="rounded-[24px] bg-white/80 border border-accent/20 p-6 shadow-toss animate-fade-in">
                   <div className="flex items-center justify-center gap-3">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                    <span className="text-sm font-bold text-accent">질문을 생각하고 있습니다...</span>
+                    <span className="text-sm font-bold text-accent">답변을 분석하고 있습니다...</span>
                   </div>
                 </div>
               )}
@@ -239,7 +235,7 @@ export const InterviewPage = () => {
           </div>
         </div>
 
-        {/* Right: User Preview & Transcript */}
+        {/* Right: User Preview & Volume */}
         <div className="w-full lg:w-[400px] flex flex-col gap-6">
           {/* User Video */}
           <div className="relative aspect-video rounded-[32px] overflow-hidden bg-surface border border-border shadow-toss">
@@ -252,16 +248,43 @@ export const InterviewPage = () => {
             </div>
           </div>
 
-          {/* Transcript Area */}
+          {/* Volume Indicator Area (replaced transcript) */}
           <div className="flex-1 rounded-[32px] bg-surface border border-border p-6 flex flex-col gap-4 overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">실시간 음성 인식</span>
+              <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">음성 감지</span>
               <div className="flex gap-1">
                 {[1, 2, 3].map(i => <div key={i} className="h-1 w-1 rounded-full bg-text-tertiary/30" />)}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-              <TranscriptDisplay />
+            <div className="flex-1 flex items-center justify-center">
+              {phase === 'recording' ? (
+                <div className="text-center space-y-4">
+                  <div className="flex items-end justify-center gap-1 h-16">
+                    {[35, 65, 50, 80, 45, 70, 40].map((h, i) => (
+                      <div
+                        key={i}
+                        className="w-2 rounded-full bg-accent animate-pulse"
+                        style={{
+                          height: `${h}%`,
+                          animationDelay: `${i * 0.1}s`,
+                          animationDuration: `${0.4 + i * 0.07}s`,
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs font-bold text-text-secondary">음성을 녹음하고 있어요</p>
+                  <p className="text-[10px] text-text-tertiary">답변 완료 후 AI가 분석합니다</p>
+                </div>
+              ) : (
+                <div className="text-center space-y-2">
+                  <div className="flex items-end justify-center gap-1 h-16">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div key={i} className="w-2 h-1 rounded-full bg-border" />
+                    ))}
+                  </div>
+                  <p className="text-xs font-bold text-text-tertiary">답변을 시작하면 녹음이 시작됩니다</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
