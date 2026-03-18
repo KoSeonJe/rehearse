@@ -86,6 +86,7 @@ export const useAnswerFlow = ({
     setUploadStatus,
     completeInterview,
     setQuestionSetRecordingStartTime,
+    addQuestionToSet,
   } = useInterviewStore()
 
   const hasQuestionSets = !!interview?.questionSets?.length
@@ -204,11 +205,12 @@ export const useAnswerFlow = ({
     const { phase: currentPhase, currentQuestionIndex, questionSetRecordingStartTime } = useInterviewStore.getState()
     if (currentPhase !== 'ready' && currentPhase !== 'paused' && currentPhase !== 'greeting') return
     if (!mediaStream.stream) return
-    // 질문세트 녹화 시작 시간 기록 (최초 1회만)
+    // 단일 timestamp로 녹화 시작 시간과 답변 시작 시간 통일
+    const now = Date.now()
     if (hasQuestionSets && questionSetRecordingStartTime === null) {
-      setQuestionSetRecordingStartTime(Date.now())
+      setQuestionSetRecordingStartTime(now)
     }
-    startRecording()
+    startRecording(now)
     if (!recorder.isRecording) {
       recorder.start(mediaStream.stream)
       startEventRecording()
@@ -225,6 +227,7 @@ export const useAnswerFlow = ({
     if (state.phase !== 'recording' && state.phase !== 'greeting') return
     pendingTtsActionRef.current = null
     tts.stop()
+    const stopTime = Date.now()
     stopRecording()
     stt.stop()
     recorder.pause()
@@ -259,12 +262,12 @@ export const useAnswerFlow = ({
           targetQuestionId = questionDetail?.id
         }
 
-        if (targetQuestionId) {
-          const recordingStart = state.questionSetRecordingStartTime ?? 0
+        if (targetQuestionId && state.questionSetRecordingStartTime !== null) {
+          const recordingStart = state.questionSetRecordingStartTime
           addAnswerTimestamp(currentSetForTs.id, {
             questionId: targetQuestionId,
             startMs: Math.max(0, (currentAnswer?.startTime ?? 0) - recordingStart),
-            endMs: Math.max(0, (currentAnswer?.endTime ?? Date.now()) - recordingStart),
+            endMs: Math.max(0, stopTime - recordingStart),
           })
         }
       }
@@ -309,7 +312,7 @@ export const useAnswerFlow = ({
 
         // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
         if (currentSet && res.data.questionId) {
-          currentSet.questions.push({
+          addQuestionToSet(updatedState.currentQuestionSetIndex, {
             id: res.data.questionId,
             questionType: 'FOLLOWUP',
             questionText: res.data.question,
@@ -336,7 +339,7 @@ export const useAnswerFlow = ({
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
-    setQuestionSetRecordingStartTime,
+    addQuestionToSet,
   ])
 
   return {
