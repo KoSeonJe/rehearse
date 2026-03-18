@@ -38,7 +38,7 @@ class QuestionSetServiceTest {
     private QuestionRepository questionRepository;
 
     @Mock
-    private QuestionSetAnswerRepository answerRepository;
+    private QuestionAnswerRepository answerRepository;
 
     @Mock
     private QuestionSetFeedbackRepository feedbackRepository;
@@ -239,7 +239,7 @@ class QuestionSetServiceTest {
     void getQuestionsWithAnswers_success() {
         // given
         Question question = createQuestion(10L);
-        QuestionSetAnswer answer = QuestionSetAnswer.builder()
+        QuestionAnswer answer = QuestionAnswer.builder()
                 .question(question)
                 .startMs(0L)
                 .endMs(5000L)

@@ -19,6 +19,8 @@ public class ClaudeRequest {
 
     private final List<Message> messages;
 
+    private final Double temperature;
+
     @Getter
     @Builder
     public static class Message {

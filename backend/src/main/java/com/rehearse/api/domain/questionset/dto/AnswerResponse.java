@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
-import com.rehearse.api.domain.questionset.entity.QuestionSetAnswer;
+import com.rehearse.api.domain.questionset.entity.QuestionAnswer;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,7 +15,7 @@ public class AnswerResponse {
     private final long startMs;
     private final long endMs;
 
-    public static AnswerResponse from(QuestionSetAnswer answer) {
+    public static AnswerResponse from(QuestionAnswer answer) {
         return AnswerResponse.builder()
                 .id(answer.getId())
                 .questionId(answer.getQuestion().getId())

@@ -24,7 +24,7 @@ public class QuestionSetService {
 
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
-    private final QuestionSetAnswerRepository answerRepository;
+    private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
@@ -33,11 +33,11 @@ public class QuestionSetService {
     public void saveAnswers(Long questionSetId, SaveAnswersRequest request) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
 
-        List<QuestionSetAnswer> answers = request.getAnswers().stream()
+        List<QuestionAnswer> answers = request.getAnswers().stream()
                 .map(a -> {
                     Question question = questionRepository.findById(a.getQuestionId())
                             .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-                    return QuestionSetAnswer.builder()
+                    return QuestionAnswer.builder()
                             .question(question)
                             .startMs(a.getStartMs())
                             .endMs(a.getEndMs())
@@ -106,7 +106,7 @@ public class QuestionSetService {
 
     public QuestionsWithAnswersResponse getQuestionsWithAnswers(Long questionSetId) {
         List<Question> questions = questionRepository.findByQuestionSetIdOrderByOrderIndex(questionSetId);
-        List<QuestionSetAnswer> answers = answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
+        List<QuestionAnswer> answers = answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
 
         return QuestionsWithAnswersResponse.from(questions, answers);
     }

@@ -32,10 +32,13 @@ class InternalQuestionSetServiceTest {
     private QuestionSetRepository questionSetRepository;
 
     @Mock
-    private QuestionSetAnswerRepository answerRepository;
+    private QuestionAnswerRepository answerRepository;
 
     @Mock
     private QuestionSetFeedbackRepository feedbackRepository;
+
+    @Mock
+    private QuestionRepository questionRepository;
 
     // ----------------------------------------------------------------
     // updateProgress
@@ -105,7 +108,7 @@ class InternalQuestionSetServiceTest {
     void getAnswers_success() {
         // given
         Question question = createQuestion(10L);
-        QuestionSetAnswer answer = QuestionSetAnswer.builder()
+        QuestionAnswer answer = QuestionAnswer.builder()
                 .question(question)
                 .startMs(0L)
                 .endMs(5000L)
@@ -115,7 +118,7 @@ class InternalQuestionSetServiceTest {
         given(answerRepository.findByQuestionSetIdWithQuestion(1L)).willReturn(List.of(answer));
 
         // when
-        List<QuestionSetAnswer> answers = internalQuestionSetService.getAnswers(1L);
+        List<QuestionAnswer> answers = internalQuestionSetService.getAnswers(1L);
 
         // then
         assertThat(answers).hasSize(1);
@@ -133,12 +136,14 @@ class InternalQuestionSetServiceTest {
     void saveFeedback_withTimestampFeedbacks_success() {
         // given
         QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+        Question question = createQuestion(10L);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(questionRepository.findById(10L)).willReturn(Optional.of(question));
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
-        ReflectionTestUtils.setField(item, "answerType", "MAIN");
+        ReflectionTestUtils.setField(item, "questionId", 10L);
         ReflectionTestUtils.setField(item, "startMs", 0L);
         ReflectionTestUtils.setField(item, "endMs", 5000L);
         ReflectionTestUtils.setField(item, "verbalScore", 80);

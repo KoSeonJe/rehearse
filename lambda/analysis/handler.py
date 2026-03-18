@@ -130,7 +130,7 @@ def _build_timestamp_feedbacks(
         start_ms = answer["startMs"]
         end_ms = answer["endMs"]
         question_text = answer.get("questionText", "")
-        answer_type = answer.get("questionType", "MAIN")
+        question_id = answer.get("questionId")
 
         # 해당 답변 구간의 STT 텍스트 추출
         transcript = _extract_transcript_for_range(stt_segments, start_ms, end_ms)
@@ -141,7 +141,7 @@ def _build_timestamp_feedbacks(
         verbal = _safe_verbal(question_text, transcript)
 
         fb = {
-            "answerType": answer_type,
+            "questionId": question_id,
             "startMs": start_ms,
             "endMs": end_ms,
             "transcript": transcript or "",

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.questionset.dto;
 
 import com.rehearse.api.domain.questionset.entity.Question;
-import com.rehearse.api.domain.questionset.entity.QuestionSetAnswer;
+import com.rehearse.api.domain.questionset.entity.QuestionAnswer;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -27,13 +27,13 @@ public class QuestionsWithAnswersResponse {
     }
 
     public static QuestionsWithAnswersResponse from(List<Question> questions,
-                                                      List<QuestionSetAnswer> answers) {
-        Map<Long, QuestionSetAnswer> answerByQuestionId = answers.stream()
+                                                      List<QuestionAnswer> answers) {
+        Map<Long, QuestionAnswer> answerByQuestionId = answers.stream()
                 .collect(Collectors.toMap(a -> a.getQuestion().getId(), a -> a, (a, b) -> a));
 
         List<QuestionWithAnswer> items = questions.stream()
                 .map(q -> {
-                    QuestionSetAnswer answer = answerByQuestionId.get(q.getId());
+                    QuestionAnswer answer = answerByQuestionId.get(q.getId());
                     return QuestionWithAnswer.builder()
                             .questionId(q.getId())
                             .questionType(q.getQuestionType().name())
