@@ -52,7 +52,7 @@ interface InterviewState {
 interface InterviewActions {
   setInterview: (id: number, questions: Question[]) => void
   setPhase: (phase: InterviewPhase) => void
-  startRecording: () => void
+  startRecording: (timestamp?: number) => void
   stopRecording: () => void
   nextQuestion: () => void
   prevQuestion: () => void
@@ -64,6 +64,7 @@ interface InterviewActions {
   addAnswerTimestamp: (questionSetId: number, answer: AnswerTimestamp) => void
   setUploadStatus: (questionSetId: number, status: UploadState) => void
   setQuestionSetRecordingStartTime: (time: number) => void
+  addQuestionToSet: (setIndex: number, question: QuestionSetData['questions'][number]) => void
 
   setCurrentTranscript: (text: string) => void
   addTranscript: (segment: TranscriptSegment) => void
@@ -145,8 +146,8 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   setPhase: (phase) => set({ phase }),
 
-  startRecording: () => {
-    const now = Date.now()
+  startRecording: (timestamp?: number) => {
+    const now = timestamp ?? Date.now()
     const state = get()
     set({
       phase: 'recording',
@@ -264,12 +265,18 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         currentFollowUp: null,
         followUpRound: 0,
         followUpTranscriptOffset: 0,
-        questionSetRecordingStartTime: Date.now(),
+        questionSetRecordingStartTime: null,
       })
     }
   },
 
   setQuestionSetRecordingStartTime: (time) => set({ questionSetRecordingStartTime: time }),
+
+  addQuestionToSet: (setIndex, question) => {
+    const sets = [...get().questionSets]
+    sets[setIndex] = { ...sets[setIndex], questions: [...sets[setIndex].questions, question] }
+    set({ questionSets: sets })
+  },
 
   addAnswerTimestamp: (questionSetId, answer) => {
     const answers = new Map(get().questionSetAnswers)
