@@ -28,6 +28,8 @@ def lambda_handler(event, context):
             print(f"[Convert] 멱등성 스킵: file={file_id}, status={status}")
             return {"statusCode": 200, "body": "Already processed"}
 
+        if status == "PENDING":
+            update_file_status(file_id, "UPLOADED")
         update_file_status(file_id, "CONVERTING")
 
         output_key = key.rsplit(".", 1)[0] + ".mp4"
