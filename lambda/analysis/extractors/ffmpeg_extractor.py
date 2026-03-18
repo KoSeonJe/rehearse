@@ -63,6 +63,22 @@ def get_video_duration_ms(video_path: str) -> int:
         raw = result2.stdout.strip().split("\n")[0]
 
     if not raw or raw == "N/A":
+        # WebM (MediaRecorder)은 duration 메타데이터가 없는 경우가 많음
+        # ffmpeg null decode 후 마지막 time= 값으로 duration 추정
+        import re
+        cmd_decode = [
+            Config.FFMPEG_PATH, "-i", video_path,
+            "-f", "null", "-",
+        ]
+        result3 = subprocess.run(cmd_decode, capture_output=True, text=True, timeout=300)
+        # ffmpeg stderr 끝부분에 "time=00:01:23.45" 형식으로 최종 시간 출력
+        time_matches = re.findall(r"time=(\d{2}):(\d{2}):(\d{2}\.\d+)", result3.stderr)
+        if time_matches:
+            last = time_matches[-1]
+            hours, minutes, seconds = int(last[0]), int(last[1]), float(last[2])
+            raw = str(hours * 3600 + minutes * 60 + seconds)
+
+    if not raw or raw == "N/A":
         raise RuntimeError(f"FFprobe: 영상 duration을 확인할 수 없습니다 (output: {result.stdout.strip()!r})")
 
     return int(float(raw) * 1000)

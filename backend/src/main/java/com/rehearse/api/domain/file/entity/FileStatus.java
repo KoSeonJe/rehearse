@@ -13,7 +13,7 @@ public enum FileStatus {
             case UPLOADED -> target == CONVERTING || target == FAILED;
             case CONVERTING -> target == CONVERTED || target == FAILED;
             case CONVERTED -> target == FAILED;
-            case FAILED -> false;
+            case FAILED -> target == UPLOADED;
         };
     }
 }
