@@ -11,4 +11,5 @@ public class FollowUpResponse {
     private final String question;
     private final String reason;
     private final String type;
+    private final String answerText;
 }
