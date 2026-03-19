@@ -175,7 +175,12 @@ export const useInterviewSession = ({
     const events = getEvents()
     events.forEach((e) => addInterviewEvent(e))
 
-    const blob = await recorder.stop()
+    let blob: Blob
+    try {
+      blob = await recorder.stop()
+    } catch {
+      blob = new Blob([], { type: 'video/webm' })
+    }
     setVideoBlob(blob)
 
     // 현재 질문세트 업로드 (중도 종료 시 현재 녹화분 S3 업로드)

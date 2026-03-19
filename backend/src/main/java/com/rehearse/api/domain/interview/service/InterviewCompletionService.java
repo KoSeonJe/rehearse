@@ -42,8 +42,9 @@ public class InterviewCompletionService {
                     interviewId, AnalysisStatus.SKIPPED);
 
             if (completedCount + skippedCount == totalCount && completedCount > 0) {
-                // FE에서 이미 COMPLETED로 전이했을 수 있음 (중도 종료 시)
-                if (interview.getStatus() == InterviewStatus.COMPLETED) {
+                // FE에서 이미 COMPLETED로 전이했을 수 있음 (중도 종료 시) — DB 재조회로 최신 상태 확인
+                Interview freshInterview = interviewRepository.findById(interviewId).orElse(null);
+                if (freshInterview == null || freshInterview.getStatus() == InterviewStatus.COMPLETED) {
                     continue;
                 }
 
@@ -51,8 +52,8 @@ public class InterviewCompletionService {
                 String overallComment = String.format("전체 %d개 질문세트 중 %d개 분석 완료, %d개 건너뜀",
                         totalCount, completedCount, skippedCount);
 
-                interview.updateOverallResult(overallScore, overallComment);
-                interview.updateStatus(InterviewStatus.COMPLETED);
+                freshInterview.updateOverallResult(overallScore, overallComment);
+                freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
                 log.info("면접 완료 처리: interviewId={}, overallScore={}, completed={}, skipped={}",
                         interviewId, overallScore, completedCount, skippedCount);

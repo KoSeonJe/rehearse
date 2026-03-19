@@ -60,6 +60,8 @@ class InterviewCompletionServiceTest {
                 .willReturn(2L);
         given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.SKIPPED))
                 .willReturn(0L);
+        given(interviewRepository.findById(1L))
+                .willReturn(java.util.Optional.of(interview));
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                 .willReturn(List.of(qs1, qs2));
 
@@ -152,6 +154,8 @@ class InterviewCompletionServiceTest {
                 .willReturn(3L);
         given(questionSetRepository.countByInterviewIdAndAnalysisStatus(2L, AnalysisStatus.SKIPPED))
                 .willReturn(0L);
+        given(interviewRepository.findById(2L))
+                .willReturn(java.util.Optional.of(interview));
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(2L))
                 .willReturn(List.of(qs1, qs2, qs3));
 
