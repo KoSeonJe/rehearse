@@ -228,15 +228,18 @@ export const useAnswerFlow = ({
     tts.stop()
     const stopTime = Date.now()
     stopRecording()
-    audioCapture.stop()
     recorder.pause()
     recordEvent('manual_stop', state.currentQuestionIndex)
 
     // greeting 중 자기소개 완료 → ready로 전환 + 첫 질문 TTS
     if (greetingPhaseRef.current) {
+      audioCapture.stop()
       completeGreeting()
       return
     }
+
+    // 후속질문용 오디오 캡처 (await)
+    const audioBlob = await audioCapture.stop()
 
     // 현재 답변 텍스트 수집
     const answerText = getCurrentAnswerText()
@@ -272,12 +275,10 @@ export const useAnswerFlow = ({
       }
     }
 
-    // 후속질문에 대한 답변이었으면 히스토리에 저장
-    if (state.currentFollowUp) {
-      completeFollowUpRound(answerText)
-    }
+    // 후속질문에 대한 답변이었는지 기록 (히스토리 저장은 API 응답 후)
+    const wasFollowUp = !!state.currentFollowUp
 
-    // 후속질문 라운드 확인 (completeFollowUpRound 후 갱신된 상태)
+    // 후속질문 라운드 확인
     const updatedState = useInterviewStore.getState()
     const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
@@ -287,7 +288,9 @@ export const useAnswerFlow = ({
       ? updatedState.questionSets[updatedState.currentQuestionSetIndex]
       : undefined
 
-    if (canDoMoreFollowUps && answerText.trim() && interview) {
+    const hasAnswer = answerText.trim() || (audioBlob && audioBlob.size > 0)
+
+    if (canDoMoreFollowUps && hasAnswer && interview) {
       // 후속질문 요청 → 응답 대기 → TTS로 읽기
       setFollowUpLoading(true)
       try {
@@ -305,8 +308,15 @@ export const useAnswerFlow = ({
             answerText,
             previousExchanges,
           },
+          audioBlob: audioBlob && audioBlob.size > 0 ? audioBlob : undefined,
         })
         setFollowUpLoading(false)
+
+        // API 응답에서 Whisper STT 결과를 받아 히스토리에 저장
+        if (wasFollowUp) {
+          completeFollowUpRound(res.data.answerText || answerText)
+        }
+
         setCurrentFollowUp(res.data)
 
         // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
@@ -323,12 +333,19 @@ export const useAnswerFlow = ({
 
         tts.speak(res.data.question)
       } catch {
+        // 실패 시에도 히스토리 기록 (빈 텍스트라도)
+        if (wasFollowUp) {
+          completeFollowUpRound(answerText)
+        }
         setFollowUpLoading(false)
         resetFollowUpState()
         transitionToNext(isLastQuestion)
       }
     } else {
-      // 후속질문 라운드 종료 → 다음 메인 질문 전환
+      // 후속질문 라운드 종료 → 마지막 라운드 히스토리 저장
+      if (wasFollowUp) {
+        completeFollowUpRound(answerText)
+      }
       resetFollowUpState()
       transitionToNext(isLastQuestion)
     }
