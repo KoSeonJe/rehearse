@@ -44,17 +44,12 @@ export const InterviewPage = () => {
     handleStopAnswer,
     handleFinishInterview,
     isTtsSpeaking,
-    s3Upload,
-    questionSets,
-    currentQuestionSetIndex,
   } = useInterviewSession({
     interviewId,
     interview,
     mediaStream,
     recorder,
   })
-
-  const uploadStatus = useInterviewStore((s) => s.uploadStatus)
   const [timeWarning, setTimeWarning] = useState(false)
   const [showFinishDialog, setShowFinishDialog] = useState(false)
 
@@ -73,7 +68,6 @@ export const InterviewPage = () => {
   }, [showFinishDialog, handleEscKey])
 
   const currentQuestion = questions[currentQuestionIndex]
-  const hasQuestionSets = questionSets.length > 0
 
   const isGreeting = !greetingCompleted && (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
 
@@ -98,13 +92,7 @@ export const InterviewPage = () => {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-lg shadow-accent/20">
             <Logo size={24} />
           </div>
-          <div>
-            <h1 className="text-base font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
-              <span className="text-xs font-bold text-success uppercase tracking-tighter">실시간 연결됨</span>
-            </div>
-          </div>
+          <h1 className="text-base font-black uppercase tracking-widest text-text-primary">AI 모의 면접</h1>
         </div>
         <div className="flex items-center gap-6">
           {(phase === 'ready' || phase === 'recording' || phase === 'paused') && (
@@ -146,13 +134,6 @@ export const InterviewPage = () => {
           {/* HUD Overlay Elements */}
           <div className="absolute inset-0 z-20 pointer-events-none p-8 flex flex-col justify-between">
             <div className="flex justify-end items-start gap-2">
-              {hasQuestionSets && !isGreeting && (
-                <div className="rounded-full bg-white/80 backdrop-blur-md border border-border px-4 py-1.5 shadow-toss">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">
-                    세트 {currentQuestionSetIndex + 1}/{questionSets.length}
-                  </span>
-                </div>
-              )}
               <div className="rounded-full bg-accent px-4 py-1.5 shadow-lg shadow-accent/20">
                 <span className="text-[10px] font-black uppercase tracking-widest text-white">
                   {isGreeting ? '자기소개' : `질문 ${currentQuestionIndex + 1}`}
@@ -213,47 +194,6 @@ export const InterviewPage = () => {
                 </div>
               )}
 
-              {/* S3 업로드 진행 상태 */}
-              {s3Upload.isUploading && (
-                <div className="mt-4 rounded-[24px] bg-white/80 border border-border p-4 shadow-toss animate-fade-in">
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">영상 업로드 중</span>
-                        <span className="text-[10px] font-bold text-accent">{s3Upload.progress}%</span>
-                      </div>
-                      <div className="h-1 w-full bg-border rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-accent rounded-full transition-all duration-300"
-                          style={{ width: `${s3Upload.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 업로드 완료/실패 뱃지 표시 */}
-              {hasQuestionSets && uploadStatus.size > 0 && !s3Upload.isUploading && (
-                <div className="mt-3 flex justify-center gap-1.5">
-                  {questionSets.map((qs, idx) => {
-                    const status = uploadStatus.get(qs.id)
-                    if (!status || status === 'pending') return null
-                    return (
-                      <div
-                        key={qs.id}
-                        className={`h-1.5 w-6 rounded-full transition-colors ${
-                          status === 'completed' ? 'bg-success' :
-                          status === 'failed' ? 'bg-error' :
-                          status === 'uploading' ? 'bg-accent animate-pulse' :
-                          'bg-border'
-                        }`}
-                        title={`세트 ${idx + 1}: ${status}`}
-                      />
-                    )
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </div>
