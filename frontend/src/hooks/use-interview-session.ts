@@ -10,11 +10,11 @@ import { useAudioCapture } from '@/hooks/use-audio-capture'
 import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
 import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
-import type { Question, QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/interview'
+import type { QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/interview'
 
 interface UseInterviewSessionParams {
   interviewId: string
-  interview: { id: number; status: string; questions: Question[]; questionSets?: QuestionSetData[] } | undefined
+  interview: { id: number; status: string; questionSets?: QuestionSetData[] } | undefined
   mediaStream: {
     stream: MediaStream | null
     isActive: boolean

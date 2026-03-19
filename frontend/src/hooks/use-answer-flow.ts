@@ -5,7 +5,6 @@ import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
 import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
 import type {
-  Question,
   InterviewEventType,
   ApiResponse,
   UploadUrlResponse,
@@ -33,7 +32,7 @@ const CLOSING_PHRASES = [
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
 interface UseAnswerFlowParams {
-  interview: { id: number; status: string; questions: Question[]; questionSets?: QuestionSetData[] } | undefined
+  interview: { id: number; status: string; questionSets?: QuestionSetData[] } | undefined
   mediaStream: { stream: MediaStream | null }
   recorder: {
     isRecording: boolean
@@ -43,9 +42,9 @@ interface UseAnswerFlowParams {
     resume: () => void
     restart: (stream: MediaStream) => Promise<Blob>
   }
-  stt: {
-    start: (questionIndex: number) => void
-    stop: () => void
+  audioCapture: {
+    start: (stream: MediaStream) => void
+    stop: () => Promise<Blob>
   }
   tts: {
     speak: (text: string) => void
@@ -62,7 +61,7 @@ export const useAnswerFlow = ({
   interview,
   mediaStream,
   recorder,
-  stt,
+  audioCapture,
   tts,
   recordEvent,
   startEventRecording,
@@ -217,9 +216,9 @@ export const useAnswerFlow = ({
     } else {
       recorder.resume()
     }
-    stt.start(currentQuestionIndex)
+    if (mediaStream.stream) audioCapture.start(mediaStream.stream)
     recordEvent('answer_start', currentQuestionIndex)
-  }, [mediaStream.stream, startRecording, recorder, stt, recordEvent, startEventRecording, hasQuestionSets, setQuestionSetRecordingStartTime])
+  }, [mediaStream.stream, startRecording, recorder, audioCapture, recordEvent, startEventRecording, hasQuestionSets, setQuestionSetRecordingStartTime])
 
   // "답변 완료" 버튼 — 후속질문 멀티라운드 흐름
   const handleStopAnswer = useCallback(async () => {
@@ -229,7 +228,7 @@ export const useAnswerFlow = ({
     tts.stop()
     const stopTime = Date.now()
     stopRecording()
-    stt.stop()
+    audioCapture.stop()
     recorder.pause()
     recordEvent('manual_stop', state.currentQuestionIndex)
 
@@ -334,7 +333,7 @@ export const useAnswerFlow = ({
       transitionToNext(isLastQuestion)
     }
   }, [
-    stopRecording, stt, recorder, tts, recordEvent,
+    stopRecording, audioCapture, recorder, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
