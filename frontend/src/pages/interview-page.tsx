@@ -43,6 +43,7 @@ export const InterviewPage = () => {
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
+    handleTimeExpired,
     isTtsSpeaking,
   } = useInterviewSession({
     interviewId,
@@ -107,7 +108,7 @@ export const InterviewPage = () => {
             startTime={startTime}
             durationMinutes={interview.durationMinutes}
             onTimeWarning={() => setTimeWarning(true)}
-            onTimeExpired={() => handleFinishInterview()}
+            onTimeExpired={handleTimeExpired}
           />
         </div>
       </header>

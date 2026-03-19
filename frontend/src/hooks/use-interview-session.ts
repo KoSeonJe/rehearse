@@ -72,10 +72,11 @@ export const useInterviewSession = ({
       // TTS 재생 중에는 별도 처리 불필요 (STT 제거됨)
     },
     onEnd: () => {
-      // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
+      // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finishing)
       if (pendingTtsActionRef.current) {
         const state = useInterviewStore.getState()
-        if (state.phase !== 'paused' && state.phase !== 'recording' && state.phase !== 'completed') {
+        const actionablePhases = new Set(['paused', 'recording', 'finishing'])
+        if (!actionablePhases.has(state.phase)) {
           pendingTtsActionRef.current = null
           return
         }
@@ -169,63 +170,68 @@ export const useInterviewSession = ({
 
     tts.stop()
     const state = useInterviewStore.getState()
+    const isFromFinishing = state.phase === 'finishing'
     recordEvent('interview_finish', state.currentQuestionIndex)
 
     // 이벤트를 스토어에 저장
     const events = getEvents()
     events.forEach((e) => addInterviewEvent(e))
 
-    let blob: Blob
-    try {
-      blob = await recorder.stop()
-    } catch {
-      blob = new Blob([], { type: 'video/webm' })
-    }
-    setVideoBlob(blob)
+    // finishing phase: 정상 종료 경로 — recorder는 이미 stop되고 S3 업로드도 완료/진행 중
+    // 그 외 (중도 포기): recorder stop + S3 업로드 필요
+    if (!isFromFinishing) {
+      let blob: Blob
+      try {
+        blob = await recorder.stop()
+      } catch {
+        blob = new Blob([], { type: 'video/webm' })
+      }
+      setVideoBlob(blob)
 
-    // 현재 질문세트 업로드 (중도 종료 시 현재 녹화분 S3 업로드)
+      const hasQs = state.questionSets.length > 0
+      if (hasQs) {
+        const currentSet = state.questionSets[state.currentQuestionSetIndex]
+        if (currentSet) {
+          const answers = state.questionSetAnswers.get(currentSet.id) ?? []
+          const hasAnswers = answers.length > 0
+
+          if (hasAnswers) {
+            await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
+
+            try {
+              await apiClient.post(
+                `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/answers`,
+                { answers },
+              )
+            } catch (err) {
+              console.error('[면접종료] 답변 타임스탬프 저장 실패:', err)
+            }
+
+            try {
+              const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+                `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/upload-url`,
+                { contentType: blob.type || 'video/webm' },
+              )
+              await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
+              deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
+            } catch (err) {
+              console.error('[면접종료] S3 업로드 실패:', err)
+            }
+          }
+        }
+      } else {
+        saveVideoBlob(interview.id, blob).catch(() => {})
+      }
+    }
+
+    // 미응답 세트 SKIPPED 처리 (finishing/중도 포기 공통)
     const hasQs = state.questionSets.length > 0
     if (hasQs) {
-      const currentSet = state.questionSets[state.currentQuestionSetIndex]
-      if (currentSet) {
-        const answers = state.questionSetAnswers.get(currentSet.id) ?? []
-        const hasAnswers = answers.length > 0
-
-        if (hasAnswers) {
-          // 답변이 있는 세트: 정상 파이프라인 (업로드 → Lambda 분석)
-          await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
-
-          try {
-            await apiClient.post(
-              `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/answers`,
-              { answers },
-            )
-          } catch (err) {
-            console.error('[면접종료] 답변 타임스탬프 저장 실패:', err)
-          }
-
-          try {
-            const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
-              `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/upload-url`,
-              { contentType: blob.type || 'video/webm' },
-            )
-            await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
-            deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
-          } catch (err) {
-            console.error('[면접종료] S3 업로드 실패:', err)
-          }
-        }
-        // 답변 없는 현재 세트 + 나머지 PENDING 세트는 skipRemaining에서 일괄 SKIPPED 처리
-
-        try {
-          await skipRemaining.mutateAsync(interview.id)
-        } catch (err) {
-          console.error('[면접종료] 미응답 세트 스킵 실패:', err)
-        }
+      try {
+        await skipRemaining.mutateAsync(interview.id)
+      } catch (err) {
+        console.error('[면접종료] 미응답 세트 스킵 실패:', err)
       }
-    } else {
-      // 질문세트 없는 레거시: IndexedDB에 전체 blob 저장
-      saveVideoBlob(interview.id, blob).catch(() => {})
     }
 
     completeInterview()
@@ -245,7 +251,18 @@ export const useInterviewSession = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
 
-  // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
+  // 시간 만료 → recorder/audioCapture 정지 + finishing phase 전환
+  const handleTimeExpired = useCallback(() => {
+    const state = useInterviewStore.getState()
+    if (state.phase === 'finishing' || state.phase === 'completed') return
+    tts.stop()
+    pendingTtsActionRef.current = null
+    recorder.pause()
+    audioCapture.stop()
+    useInterviewStore.getState().setPhase('finishing')
+  }, [tts, recorder, audioCapture])
+
+  // 폴백: "면접 종료" 버튼 (중도 포기 또는 finishing phase에서 클릭)
   const isFinishingRef = useRef(false)
   const handleFinishInterview = useCallback(async () => {
     if (isFinishingRef.current) return
@@ -270,6 +287,7 @@ export const useInterviewSession = ({
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
+    handleTimeExpired,
     isTtsSpeaking: tts.isSpeaking,
     s3Upload,
     questionSets,

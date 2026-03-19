@@ -13,7 +13,7 @@ import type {
 
 export const MAX_FOLLOWUP_ROUNDS = 3
 
-export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
+export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
 
 interface InterviewState {
   interviewId: number | null
