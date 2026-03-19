@@ -19,14 +19,6 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
   const [isRecording, setIsRecording] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
-  const dataIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const clearDataInterval = useCallback(() => {
-    if (dataIntervalRef.current) {
-      clearInterval(dataIntervalRef.current)
-      dataIntervalRef.current = null
-    }
-  }, [])
 
   const start = useCallback((stream: MediaStream) => {
     chunksRef.current = []
@@ -48,14 +40,9 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
     recorderRef.current = recorder
     recorder.start()
     setIsRecording(true)
-
-    dataIntervalRef.current = setInterval(() => {
-      if (recorder.state === 'recording') recorder.requestData()
-    }, 5000)
   }, [])
 
   const stop = useCallback((): Promise<Blob> => {
-    clearDataInterval()
     return new Promise((resolve) => {
       const recorder = recorderRef.current
       if (!recorder || recorder.state === 'inactive') {
@@ -72,19 +59,11 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
 
       recorder.stop()
     })
-  }, [clearDataInterval])
-
-  const pause = useCallback(() => {
-    if (recorderRef.current?.state === 'recording') {
-      recorderRef.current.pause()
-    }
   }, [])
 
-  const resume = useCallback(() => {
-    if (recorderRef.current?.state === 'paused') {
-      recorderRef.current.resume()
-    }
-  }, [])
+  // Always Recording 패턴: pause/resume는 no-op (타임스탬프로 답변 구간 식별)
+  const pause = useCallback(() => {}, [])
+  const resume = useCallback(() => {}, [])
 
   // 질문세트 전환: 현재 녹화 stop → blob 반환 → 새 녹화 start
   const restart = useCallback(async (stream: MediaStream): Promise<Blob> => {

@@ -257,10 +257,10 @@ export const useInterviewSession = ({
     if (state.phase === 'finishing' || state.phase === 'completed') return
     tts.stop()
     pendingTtsActionRef.current = null
-    recorder.pause()
+    // Always Recording: recorder는 finishing → stop()에서 정리됨
     audioCapture.stop()
     useInterviewStore.getState().setPhase('finishing')
-  }, [tts, recorder, audioCapture])
+  }, [tts, audioCapture])
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 finishing phase에서 클릭)
   const isFinishingRef = useRef(false)
