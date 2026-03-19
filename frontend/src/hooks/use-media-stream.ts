@@ -22,6 +22,9 @@ const DEFAULT_VIDEO_CONSTRAINTS: MediaTrackConstraints = {
 const DEFAULT_AUDIO_CONSTRAINTS: MediaTrackConstraints = {
   echoCancellation: true,
   noiseSuppression: true,
+  autoGainControl: true,
+  channelCount: { ideal: 1 },
+  sampleRate: { ideal: 48000 },
 }
 
 export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamReturn => {
@@ -76,4 +79,3 @@ export const useMediaStream = (options?: UseMediaStreamOptions): UseMediaStreamR
 
   return { stream, isActive, error, start, stop }
 }
-

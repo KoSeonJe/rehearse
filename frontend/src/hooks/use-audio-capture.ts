@@ -13,12 +13,15 @@ export const useAudioCapture = () => {
       ? 'audio/webm;codecs=opus'
       : 'audio/webm'
 
-    const recorder = new MediaRecorder(audioStream, { mimeType })
+    const recorder = new MediaRecorder(audioStream, {
+      mimeType,
+      audioBitsPerSecond: 128_000,
+    })
     chunksRef.current = []
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data)
     }
-    recorder.start(1000)
+    recorder.start()
     recorderRef.current = recorder
   }, [])
 
