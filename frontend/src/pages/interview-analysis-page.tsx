@@ -34,6 +34,98 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
   )
 }
 
+interface AnalysisStatusFloatProps {
+  hasQuestionSets: boolean
+  isAnalyzing: boolean
+  allCompleted: boolean
+  hasFailed: boolean
+  completedCount: number
+  skippedCount: number
+  totalCount: number
+  isRetrying: boolean
+  onRetry: () => void
+  onNavigateFeedback: () => void
+}
+
+const AnalysisStatusFloat = ({
+  hasQuestionSets,
+  isAnalyzing,
+  allCompleted,
+  hasFailed,
+  completedCount,
+  skippedCount,
+  totalCount,
+  isRetrying,
+  onRetry,
+  onNavigateFeedback,
+}: AnalysisStatusFloatProps) => {
+  if (!hasQuestionSets) return null
+  if (!isAnalyzing && !allCompleted && !hasFailed) return null
+
+  return (
+    <div className="fixed bottom-4 right-4 z-40 w-72 animate-fade-in" role="status" aria-live="polite">
+      <div className="rounded-2xl bg-white border border-border shadow-xl p-5">
+        {isAnalyzing && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
+              <p className="text-sm font-bold text-text-primary">AI가 영상을 분석 중...</p>
+            </div>
+            <p className="text-xs text-text-secondary">
+              {completedCount + skippedCount} / {totalCount} 완료
+            </p>
+          </div>
+        )}
+
+        {allCompleted && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white flex-shrink-0">
+                ✓
+              </div>
+              <p className="text-sm font-bold text-text-primary">분석 완료!</p>
+            </div>
+            <button
+              onClick={onNavigateFeedback}
+              className="w-full h-10 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+            >
+              피드백 보러가기
+            </button>
+          </div>
+        )}
+
+        {hasFailed && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
+                !
+              </div>
+              <p className="text-sm font-bold text-text-primary">일부 분석 실패</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onRetry}
+                disabled={isRetrying}
+                className="flex-1 h-10 rounded-xl border border-border text-sm font-bold text-text-primary transition-all active:scale-95 disabled:opacity-50"
+              >
+                {isRetrying ? '재시도 중...' : '재시도'}
+              </button>
+              {completedCount > 0 && (
+                <button
+                  onClick={onNavigateFeedback}
+                  className="flex-1 h-10 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+                >
+                  완료된 결과 보기
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export const InterviewAnalysisPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -141,6 +233,8 @@ export const InterviewAnalysisPage = () => {
     )
   }
 
+  const skippedCount = statuses.filter((s) => s?.analysisStatus === 'SKIPPED').length
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -156,68 +250,6 @@ export const InterviewAnalysisPage = () => {
       </header>
 
       <main className="mx-auto max-w-3xl px-5 pt-8 pb-32">
-        {/* 분석 상태 배너 */}
-        {isAnalyzing && (
-          <div className="mb-8 rounded-[24px] bg-accent/5 border border-accent/20 p-5 animate-fade-in">
-            <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-text-primary">AI가 면접 영상을 분석하고 있습니다</p>
-                <p className="text-xs text-text-secondary mt-0.5">모범답변을 확인하며 기다려보세요</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {allCompleted && (
-          <div className="mb-8 rounded-[24px] bg-success/5 border border-success/20 p-5 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-black text-white flex-shrink-0">
-                  ✓
-                </div>
-                <p className="text-sm font-bold text-text-primary">분석이 완료되었습니다!</p>
-              </div>
-              <button
-                onClick={() => navigate(`/interview/${interviewId}/feedback`)}
-                className="h-10 px-5 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
-              >
-                피드백 보러가기
-              </button>
-            </div>
-          </div>
-        )}
-
-        {hasFailed && (
-          <div className="mb-8 rounded-[24px] bg-error/5 border border-error/20 p-5 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
-                  !
-                </div>
-                <p className="text-sm font-bold text-text-primary">일부 분석이 실패했습니다</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleRetryAll}
-                  disabled={isRetrying}
-                  className="h-10 px-5 rounded-xl border border-error/30 text-sm font-bold text-error transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {isRetrying ? '재시도 중...' : '재시도'}
-                </button>
-                {completedCount > 0 && (
-                  <button
-                    onClick={() => navigate(`/interview/${interviewId}/feedback`)}
-                    className="h-10 px-5 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
-                  >
-                    완료된 결과 보기
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* 모범답변 — 항상 표시 */}
         <section>
           <h2 className="text-lg font-extrabold tracking-tight text-text-primary mb-6">모범답변</h2>
@@ -233,6 +265,19 @@ export const InterviewAnalysisPage = () => {
           </div>
         </section>
       </main>
+
+      <AnalysisStatusFloat
+        hasQuestionSets={hasQuestionSets}
+        isAnalyzing={isAnalyzing}
+        allCompleted={allCompleted}
+        hasFailed={hasFailed}
+        completedCount={completedCount}
+        skippedCount={skippedCount}
+        totalCount={statuses.length}
+        isRetrying={isRetrying}
+        onRetry={handleRetryAll}
+        onNavigateFeedback={() => navigate(`/interview/${interviewId}/feedback`)}
+      />
     </div>
   )
 }

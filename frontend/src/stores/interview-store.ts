@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import type {
   Question,
-  TranscriptSegment,
   QuestionAnswer,
   FollowUpResponse,
   FollowUpExchange,
@@ -33,7 +32,6 @@ interface InterviewState {
   videoBlob: Blob | null
   videoBlobUrl: string | null
 
-  currentTranscript: string
   answers: QuestionAnswer[]
 
   followUpHistory: Map<number, FollowUpExchange[]>
@@ -65,10 +63,6 @@ interface InterviewActions {
   setUploadStatus: (questionSetId: number, status: UploadState) => void
   setQuestionSetRecordingStartTime: (time: number) => void
   addQuestionToSet: (setIndex: number, question: QuestionSetData['questions'][number]) => void
-
-  setCurrentTranscript: (text: string) => void
-  addTranscript: (segment: TranscriptSegment) => void
-  clearTranscripts: (questionIndex: number) => void
 
   setVideoBlob: (blob: Blob) => void
   setElapsedTime: (time: number) => void
@@ -108,7 +102,6 @@ const initialState: InterviewState = {
   videoBlob: null,
   videoBlobUrl: null,
 
-  currentTranscript: '',
   answers: [],
 
   followUpHistory: new Map(),
@@ -184,28 +177,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     if (index >= 0 && index < questions.length) {
       set({ currentQuestionIndex: index })
     }
-  },
-
-  setCurrentTranscript: (text) => set({ currentTranscript: text }),
-
-  addTranscript: (segment) => {
-    const state = get()
-    set({
-      answers: updateCurrentAnswer(state, (a) => ({
-        ...a,
-        transcripts: [...a.transcripts, segment],
-      })),
-      currentTranscript: '',
-    })
-  },
-
-  clearTranscripts: (questionIndex) => {
-    const state = get()
-    const updated = [...state.answers]
-    if (updated[questionIndex]) {
-      updated[questionIndex] = { ...updated[questionIndex], transcripts: [] }
-    }
-    set({ answers: updated, currentTranscript: '' })
   },
 
   setVideoBlob: (blob) => {
