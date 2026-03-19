@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
@@ -15,7 +16,7 @@ public class AllAnalysisCompletedEventListener {
     private final ReportService reportService;
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleAllAnalysisCompleted(AllAnalysisCompletedEvent event) {
         try {
             log.info("AllAnalysisCompletedEvent 수신 → 리포트 자동 생성: interviewId={}", event.getInterviewId());
