@@ -213,8 +213,6 @@ export const useAnswerFlow = ({
     if (!recorder.isRecording) {
       recorder.start(mediaStream.stream)
       startEventRecording()
-    } else {
-      recorder.resume()
     }
     if (mediaStream.stream) audioCapture.start(mediaStream.stream)
     recordEvent('answer_start', currentQuestionIndex)
@@ -228,7 +226,6 @@ export const useAnswerFlow = ({
     tts.stop()
     const stopTime = Date.now()
     stopRecording()
-    recorder.pause()
     recordEvent('manual_stop', state.currentQuestionIndex)
 
     // greeting 중 자기소개 완료 → ready로 전환 + 첫 질문 TTS
@@ -350,7 +347,7 @@ export const useAnswerFlow = ({
       transitionToNext(isLastQuestion)
     }
   }, [
-    stopRecording, audioCapture, recorder, tts, recordEvent,
+    stopRecording, audioCapture, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
