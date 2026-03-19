@@ -66,6 +66,7 @@ public class QuestionGenerationService {
         questionSetRepository.saveAll(questionSets);
 
         interview.completeQuestionGeneration();
+        interviewRepository.save(interview);
 
         log.info("질문 생성 완료: interviewId={}, questionSets={}", interviewId, questionSets.size());
     }
