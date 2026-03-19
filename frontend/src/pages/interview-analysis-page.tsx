@@ -1,58 +1,17 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInterview } from '@/hooks/use-interviews'
 import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
-import type { AnalysisProgress, AnalysisStatus } from '@/types/interview'
 
-const PROGRESS_LABELS: Record<string, string> = {
-  STARTED: '분석 준비 중...',
-  EXTRACTING: '음성/영상 추출 중...',
-  STT_PROCESSING: '음성을 텍스트로 변환 중...',
-  VERBAL_ANALYZING: '답변 내용을 분석 중...',
-  NONVERBAL_ANALYZING: '표정과 자세를 분석 중...',
-  FINALIZING: '종합 평가를 생성 중...',
-  FAILED: '분석 실패',
-}
-
-const PROGRESS_ORDER: AnalysisProgress[] = [
-  'STARTED',
-  'EXTRACTING',
-  'STT_PROCESSING',
-  'VERBAL_ANALYZING',
-  'NONVERBAL_ANALYZING',
-  'FINALIZING',
-]
-
-const getProgressPercent = (status: AnalysisStatus, progress: AnalysisProgress | null): number => {
-  if (status === 'COMPLETED') return 100
-  if (status === 'SKIPPED') return 100
-  if (status === 'FAILED') return 0
-  if (status === 'PENDING' || status === 'PENDING_UPLOAD') return 0
-  if (!progress) return 5
-  const idx = PROGRESS_ORDER.indexOf(progress)
-  if (idx === -1) return 5
-  return Math.round(((idx + 1) / PROGRESS_ORDER.length) * 90) + 5
-}
-
-const getStatusLabel = (status: AnalysisStatus, progress: AnalysisProgress | null): string => {
-  if (status === 'COMPLETED') return '분석 완료'
-  if (status === 'SKIPPED') return '건너뜀'
-  if (status === 'FAILED') return '분석 실패'
-  if (status === 'PENDING') return '업로드 대기 중...'
-  if (status === 'PENDING_UPLOAD') return '업로드 중...'
-  if (status === 'ANALYZING' && progress) return PROGRESS_LABELS[progress] ?? '분석 중...'
-  return '분석 중...'
-}
-
-interface ModelAnswerTabProps {
+interface ModelAnswerSectionProps {
   interviewId: number
   questionSetId: number
   category: string
 }
 
-const ModelAnswerTab = ({ interviewId, questionSetId, category }: ModelAnswerTabProps) => {
+const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswerSectionProps) => {
   const { data } = useQuestionsWithAnswers(interviewId, questionSetId, true)
   const questions = data?.data?.questions ?? []
 
@@ -84,8 +43,6 @@ export const InterviewAnalysisPage = () => {
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 
-  const [activeTab, setActiveTab] = useState<'status' | 'answers'>('status')
-
   // 모든 질문세트 상태 폴링 (5초 간격)
   const hasQuestionSets = questionSets.length > 0
   const statusQueries = useAllQuestionSetStatuses(
@@ -100,6 +57,24 @@ export const InterviewAnalysisPage = () => {
   )
 
   const retryMutation = useRetryAnalysis()
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  const handleRetryAll = useCallback(async () => {
+    if (!interview || isRetrying) return
+    setIsRetrying(true)
+    const failedSets = questionSets
+      .map((qs, idx) => ({ qs, idx }))
+      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED')
+
+    await Promise.allSettled(
+      failedSets.map(({ qs, idx }) =>
+        retryMutation.mutateAsync(
+          { interviewId: interview.id, questionSetId: qs.id },
+        ).then(() => statusQueries[idx].refetch()).catch(() => {}),
+      ),
+    )
+    setIsRetrying(false)
+  }, [interview, isRetrying, questionSets, statuses, retryMutation, statusQueries])
 
   const allTerminal = hasQuestionSets && statuses.every((s) =>
     s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'SKIPPED',
@@ -107,17 +82,9 @@ export const InterviewAnalysisPage = () => {
   const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
   const allCompleted = allTerminal && completedCount > 0
   const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
-  const skippedCount = statuses.filter((s) => s?.analysisStatus === 'SKIPPED').length
-
-  // 모든 완료 시 리포트 페이지로 자동 전환
-  useEffect(() => {
-    if (allCompleted) {
-      const timer = setTimeout(() => {
-        navigate(`/interview/${interviewId}/report`)
-      }, 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [allCompleted, navigate, interviewId])
+  const isAnalyzing = hasQuestionSets && statuses.some(
+    (s) => s?.analysisStatus === 'ANALYZING' || s?.analysisStatus === 'PENDING' || s?.analysisStatus === 'PENDING_UPLOAD',
+  )
 
   // 페이지 이탈 시 알림 권한 요청 + 완료 시 알림
   useEffect(() => {
@@ -183,152 +150,80 @@ export const InterviewAnalysisPage = () => {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-lg shadow-accent/20">
               <Logo size={24} />
             </div>
-            <span className="text-lg font-black tracking-tight text-text-primary">분석 중</span>
-          </div>
-          <div className="text-sm font-bold text-text-secondary">
-            {completedCount}/{questionSets.length} 완료
-            {skippedCount > 0 && <span className="text-text-tertiary"> · {skippedCount} 건너뜀</span>}
+            <span className="text-lg font-black tracking-tight text-text-primary">면접 완료</span>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-5 pt-10 pb-32">
-        {/* Hero */}
-        <section className="text-center mb-10">
-          <Character mood={allCompleted ? 'happy' : 'thinking'} size={140} className="mx-auto mb-6" />
-          {allCompleted ? (
-            <>
-              <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary">분석이 완료되었습니다!</h1>
-              <p className="mt-2 text-base font-medium text-text-secondary">리포트 페이지로 이동합니다...</p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary">AI가 면접 영상을 분석하고 있습니다</h1>
-              <p className="mt-2 text-base font-medium text-text-secondary">약 2~5분 정도 소요됩니다. 이 페이지를 닫아도 분석은 계속됩니다.</p>
-            </>
-          )}
-        </section>
-
-        {/* Tab */}
-        <div className="flex gap-1 bg-surface rounded-2xl p-1 mb-8">
-          <button
-            onClick={() => setActiveTab('status')}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'status' ? 'bg-white shadow-toss text-text-primary' : 'text-text-tertiary'
-            }`}
-          >
-            분석 현황
-          </button>
-          <button
-            onClick={() => setActiveTab('answers')}
-            className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${
-              activeTab === 'answers' ? 'bg-white shadow-toss text-text-primary' : 'text-text-tertiary'
-            }`}
-          >
-            모범답변
-          </button>
-        </div>
-
-        {/* Status Tab */}
-        {activeTab === 'status' && (
-          <div className="space-y-4">
-            {questionSets.map((qs, idx) => {
-              const status = statuses[idx]
-              const analysisStatus = status?.analysisStatus ?? qs.analysisStatus
-              const progress = status?.analysisProgress as AnalysisProgress | null ?? null
-              const percent = getProgressPercent(analysisStatus, progress)
-              const label = getStatusLabel(analysisStatus, progress)
-              const isCompleted = analysisStatus === 'COMPLETED'
-              const isFailed = analysisStatus === 'FAILED'
-              const isSkipped = analysisStatus === 'SKIPPED'
-
-              return (
-                <div
-                  key={qs.id}
-                  className={`rounded-[24px] border p-6 transition-all ${
-                    isCompleted ? 'bg-success/5 border-success/20' :
-                    isSkipped ? 'bg-surface border-border opacity-60' :
-                    isFailed ? 'bg-error/5 border-error/20' :
-                    'bg-surface border-border'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black text-white ${
-                        isCompleted ? 'bg-success' : isSkipped ? 'bg-text-tertiary' : isFailed ? 'bg-error' : 'bg-accent'
-                      }`}>
-                        {isCompleted ? '✓' : isSkipped ? '—' : isFailed ? '!' : idx + 1}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold text-text-primary">질문세트 {idx + 1}</p>
-                        <p className="text-xs text-text-tertiary">{qs.category} · {qs.questions.length}문항</p>
-                      </div>
-                    </div>
-                    <span className={`text-xs font-bold ${
-                      isCompleted ? 'text-success' : isSkipped ? 'text-text-tertiary' : isFailed ? 'text-error' : 'text-accent'
-                    }`}>
-                      {isCompleted ? '완료' : isSkipped ? '건너뜀' : isFailed ? '실패' : `${percent}%`}
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="h-1.5 w-full bg-border/50 rounded-full overflow-hidden mb-2">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isCompleted ? 'bg-success' : isSkipped ? 'bg-text-tertiary' : isFailed ? 'bg-error' : 'bg-accent'
-                      }`}
-                      style={{ width: `${percent}%` }}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <p className={`text-xs font-medium ${
-                      isCompleted ? 'text-success' : isSkipped ? 'text-text-tertiary' : isFailed ? 'text-error' : 'text-text-secondary'
-                    }`}>
-                      {label}
-                    </p>
-
-                    {/* COMPLETED: 미리보기 링크 */}
-                    {isCompleted && (
-                      <button
-                        onClick={() => navigate(`/interview/${interviewId}/feedback`)}
-                        className="text-xs font-bold text-accent hover:underline"
-                      >
-                        결과 미리보기 →
-                      </button>
-                    )}
-
-                    {/* FAILED: 재시도 버튼 */}
-                    {isFailed && interview && (
-                      <button
-                        onClick={() => {
-                          retryMutation.mutate(
-                            { interviewId: interview.id, questionSetId: qs.id },
-                            { onSettled: () => statusQueries[idx].refetch() },
-                          )
-                        }}
-                        disabled={retryMutation.isPending}
-                        className="text-xs font-bold text-error hover:underline disabled:opacity-50"
-                      >
-                        {retryMutation.isPending ? '재시도 중...' : '재시도'}
-                      </button>
-                    )}
-                  </div>
-
-                  {isFailed && status?.failureReason && (
-                    <p className="mt-2 text-xs text-error/70">{status.failureReason}</p>
-                  )}
-                </div>
-              )
-            })}
+      <main className="mx-auto max-w-3xl px-5 pt-8 pb-32">
+        {/* 분석 상태 배너 */}
+        {isAnalyzing && (
+          <div className="mb-8 rounded-[24px] bg-accent/5 border border-accent/20 p-5 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-text-primary">AI가 면접 영상을 분석하고 있습니다</p>
+                <p className="text-xs text-text-secondary mt-0.5">모범답변을 확인하며 기다려보세요</p>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Model Answers Tab */}
-        {activeTab === 'answers' && (
+        {allCompleted && (
+          <div className="mb-8 rounded-[24px] bg-success/5 border border-success/20 p-5 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-black text-white flex-shrink-0">
+                  ✓
+                </div>
+                <p className="text-sm font-bold text-text-primary">분석이 완료되었습니다!</p>
+              </div>
+              <button
+                onClick={() => navigate(`/interview/${interviewId}/feedback`)}
+                className="h-10 px-5 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+              >
+                피드백 보러가기
+              </button>
+            </div>
+          </div>
+        )}
+
+        {hasFailed && (
+          <div className="mb-8 rounded-[24px] bg-error/5 border border-error/20 p-5 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
+                  !
+                </div>
+                <p className="text-sm font-bold text-text-primary">일부 분석이 실패했습니다</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleRetryAll}
+                  disabled={isRetrying}
+                  className="h-10 px-5 rounded-xl border border-error/30 text-sm font-bold text-error transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {isRetrying ? '재시도 중...' : '재시도'}
+                </button>
+                {completedCount > 0 && (
+                  <button
+                    onClick={() => navigate(`/interview/${interviewId}/feedback`)}
+                    className="h-10 px-5 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+                  >
+                    완료된 결과 보기
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 모범답변 — 항상 표시 */}
+        <section>
+          <h2 className="text-lg font-extrabold tracking-tight text-text-primary mb-6">모범답변</h2>
           <div className="space-y-6">
             {questionSets.map((qs) => (
-              <ModelAnswerTab
+              <ModelAnswerSection
                 key={qs.id}
                 interviewId={interview.id}
                 questionSetId={qs.id}
@@ -336,22 +231,7 @@ export const InterviewAnalysisPage = () => {
               />
             ))}
           </div>
-        )}
-
-        {/* 부분 실패 시 CTA */}
-        {hasFailed && completedCount > 0 && (
-          <div className="mt-8 rounded-[24px] bg-surface border border-border p-6 text-center">
-            <p className="text-sm font-bold text-text-primary mb-4">
-              일부 질문세트 분석이 실패했습니다. 완료된 결과를 먼저 확인하시겠습니까?
-            </p>
-            <button
-              onClick={() => navigate(`/interview/${interviewId}/report`)}
-              className="h-12 px-8 rounded-2xl bg-accent font-bold text-white text-sm transition-all active:scale-95"
-            >
-              완료된 결과 보기
-            </button>
-          </div>
-        )}
+        </section>
       </main>
     </div>
   )
