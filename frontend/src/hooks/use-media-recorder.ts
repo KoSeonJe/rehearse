@@ -9,19 +9,35 @@ interface UseMediaRecorderReturn {
   restart: (stream: MediaStream) => Promise<Blob>
 }
 
+const SUPPORTED_CODECS = [
+  'video/webm;codecs=vp9,opus',
+  'video/webm;codecs=vp8,opus',
+  'video/webm',
+]
+
 export const useMediaRecorder = (): UseMediaRecorderReturn => {
   const [isRecording, setIsRecording] = useState(false)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const chunksRef = useRef<Blob[]>([])
+  const dataIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const clearDataInterval = useCallback(() => {
+    if (dataIntervalRef.current) {
+      clearInterval(dataIntervalRef.current)
+      dataIntervalRef.current = null
+    }
+  }, [])
 
   const start = useCallback((stream: MediaStream) => {
     chunksRef.current = []
 
-    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-      ? 'video/webm;codecs=vp9'
-      : 'video/webm'
+    const mimeType = SUPPORTED_CODECS.find((c) => MediaRecorder.isTypeSupported(c)) ?? 'video/webm'
 
-    const recorder = new MediaRecorder(stream, { mimeType })
+    const recorder = new MediaRecorder(stream, {
+      mimeType,
+      audioBitsPerSecond: 128_000,
+      videoBitsPerSecond: 2_500_000,
+    })
 
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) {
@@ -30,11 +46,16 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
     }
 
     recorderRef.current = recorder
-    recorder.start(1000)
+    recorder.start()
     setIsRecording(true)
+
+    dataIntervalRef.current = setInterval(() => {
+      if (recorder.state === 'recording') recorder.requestData()
+    }, 5000)
   }, [])
 
   const stop = useCallback((): Promise<Blob> => {
+    clearDataInterval()
     return new Promise((resolve) => {
       const recorder = recorderRef.current
       if (!recorder || recorder.state === 'inactive') {
@@ -51,7 +72,7 @@ export const useMediaRecorder = (): UseMediaRecorderReturn => {
 
       recorder.stop()
     })
-  }, [])
+  }, [clearDataInterval])
 
   const pause = useCallback(() => {
     if (recorderRef.current?.state === 'recording') {

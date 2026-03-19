@@ -87,6 +87,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           <video
             ref={videoRef}
             src={currentSrc}
+            preload="auto"
             className="h-full w-full object-contain"
             onError={handleError}
             onPlay={() => setIsPlaying(true)}
@@ -95,7 +96,25 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               if (videoRef.current) setCurrentTime(videoRef.current.currentTime)
             }}
             onLoadedMetadata={() => {
-              if (videoRef.current) setDuration(videoRef.current.duration)
+              if (videoRef.current) {
+                const d = videoRef.current.duration
+                if (d && isFinite(d)) {
+                  setDuration(d)
+                } else {
+                  videoRef.current.currentTime = Number.MAX_SAFE_INTEGER
+                }
+              }
+            }}
+            onDurationChange={() => {
+              if (videoRef.current) {
+                const d = videoRef.current.duration
+                if (isFinite(d)) {
+                  setDuration(d)
+                  if (videoRef.current.currentTime > d) {
+                    videoRef.current.currentTime = 0
+                  }
+                }
+              }
             }}
             playsInline
           />
