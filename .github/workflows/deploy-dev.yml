@@ -20,6 +20,7 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
       infra: ${{ steps.filter.outputs.infra }}
+      nginx: ${{ steps.filter.outputs.nginx }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,6 +32,8 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+            nginx:
+              - 'backend/nginx/**'
             infra:
               - 'backend/docker-compose.yml'
               - 'backend/nginx/**'
@@ -175,3 +178,14 @@ jobs:
             docker compose --env-file .env up -d
             sleep 10
             curl -f http://localhost:8080/actuator/health || echo "Health check failed"
+
+      - name: Restart Nginx on config change
+        if: needs.changes.outputs.nginx == 'true'
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/rehearse/backend
+            docker compose restart nginx
