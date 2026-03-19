@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInterview } from '@/hooks/use-interviews'
 import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
@@ -57,6 +57,24 @@ export const InterviewAnalysisPage = () => {
   )
 
   const retryMutation = useRetryAnalysis()
+  const [isRetrying, setIsRetrying] = useState(false)
+
+  const handleRetryAll = useCallback(async () => {
+    if (!interview || isRetrying) return
+    setIsRetrying(true)
+    const failedSets = questionSets
+      .map((qs, idx) => ({ qs, idx }))
+      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED')
+
+    await Promise.allSettled(
+      failedSets.map(({ qs, idx }) =>
+        retryMutation.mutateAsync(
+          { interviewId: interview.id, questionSetId: qs.id },
+        ).then(() => statusQueries[idx].refetch()).catch(() => {}),
+      ),
+    )
+    setIsRetrying(false)
+  }, [interview, isRetrying, questionSets, statuses, retryMutation, statusQueries])
 
   const allTerminal = hasQuestionSets && statuses.every((s) =>
     s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'SKIPPED',
@@ -64,7 +82,9 @@ export const InterviewAnalysisPage = () => {
   const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
   const allCompleted = allTerminal && completedCount > 0
   const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
-  const isAnalyzing = hasQuestionSets && !allTerminal && !hasFailed
+  const isAnalyzing = hasQuestionSets && statuses.some(
+    (s) => s?.analysisStatus === 'ANALYZING' || s?.analysisStatus === 'PENDING' || s?.analysisStatus === 'PENDING_UPLOAD',
+  )
 
   // 페이지 이탈 시 알림 권한 요청 + 완료 시 알림
   useEffect(() => {
@@ -138,7 +158,7 @@ export const InterviewAnalysisPage = () => {
       <main className="mx-auto max-w-3xl px-5 pt-8 pb-32">
         {/* 분석 상태 배너 */}
         {isAnalyzing && (
-          <div className="mb-8 rounded-[20px] bg-accent/5 border border-accent/20 p-5 animate-fade-in">
+          <div className="mb-8 rounded-[24px] bg-accent/5 border border-accent/20 p-5 animate-fade-in">
             <div className="flex items-center gap-3">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
               <div>
@@ -150,7 +170,7 @@ export const InterviewAnalysisPage = () => {
         )}
 
         {allCompleted && (
-          <div className="mb-8 rounded-[20px] bg-success/5 border border-success/20 p-5 animate-fade-in">
+          <div className="mb-8 rounded-[24px] bg-success/5 border border-success/20 p-5 animate-fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-success text-[10px] font-black text-white flex-shrink-0">
@@ -169,7 +189,7 @@ export const InterviewAnalysisPage = () => {
         )}
 
         {hasFailed && (
-          <div className="mb-8 rounded-[20px] bg-error/5 border border-error/20 p-5 animate-fade-in">
+          <div className="mb-8 rounded-[24px] bg-error/5 border border-error/20 p-5 animate-fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
@@ -179,21 +199,11 @@ export const InterviewAnalysisPage = () => {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    questionSets.forEach((qs, idx) => {
-                      const s = statuses[idx]
-                      if (s?.analysisStatus === 'FAILED') {
-                        retryMutation.mutate(
-                          { interviewId: interview.id, questionSetId: qs.id },
-                          { onSettled: () => statusQueries[idx].refetch() },
-                        )
-                      }
-                    })
-                  }}
-                  disabled={retryMutation.isPending}
+                  onClick={handleRetryAll}
+                  disabled={isRetrying}
                   className="h-10 px-5 rounded-xl border border-error/30 text-sm font-bold text-error transition-all active:scale-95 disabled:opacity-50"
                 >
-                  {retryMutation.isPending ? '재시도 중...' : '재시도'}
+                  {isRetrying ? '재시도 중...' : '재시도'}
                 </button>
                 {completedCount > 0 && (
                   <button
