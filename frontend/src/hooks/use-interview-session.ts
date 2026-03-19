@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useInterviewStore } from '@/stores/interview-store'
-import { useUpdateInterviewStatus } from '@/hooks/use-interviews'
+import { useUpdateInterviewStatus, useSkipRemainingQuestionSets } from '@/hooks/use-interviews'
 import { useTts } from '@/hooks/use-tts'
 import { useInterviewEventRecorder } from '@/hooks/use-interview-event-recorder'
 import { useInterviewGreeting } from '@/hooks/use-interview-greeting'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { useAudioCapture } from '@/hooks/use-audio-capture'
-import { saveVideoBlob } from '@/lib/video-storage'
-import type { QuestionSetData } from '@/types/interview'
+import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
+import { useS3Upload } from '@/hooks/use-s3-upload'
+import { apiClient } from '@/lib/api-client'
+import type { QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/interview'
 
 interface UseInterviewSessionParams {
   interviewId: string
@@ -37,6 +39,8 @@ export const useInterviewSession = ({
 }: UseInterviewSessionParams) => {
   const navigate = useNavigate()
   const updateStatus = useUpdateInterviewStatus()
+  const skipRemaining = useSkipRemainingQuestionSets()
+  const s3UploadForFinish = useS3Upload()
   const pendingTtsActionRef = useRef<(() => void) | null>(null)
   const greetingPhaseRef = useRef(false)
   const audioCapture = useAudioCapture()
@@ -50,7 +54,6 @@ export const useInterviewSession = ({
     setQuestionSets,
     setVideoBlob,
     completeInterview,
-    setAutoTransitionMessage,
     addInterviewEvent,
     reset,
   } = useInterviewStore()
@@ -165,7 +168,8 @@ export const useInterviewSession = ({
     if (!interview) return
 
     tts.stop()
-    recordEvent('interview_finish', currentQuestionIndex)
+    const state = useInterviewStore.getState()
+    recordEvent('interview_finish', state.currentQuestionIndex)
 
     // 이벤트를 스토어에 저장
     const events = getEvents()
@@ -174,11 +178,52 @@ export const useInterviewSession = ({
     const blob = await recorder.stop()
     setVideoBlob(blob)
 
-    // 질문세트가 있으면 마지막 세트 업로드는 answer-flow에서 처리
-    // 폴백: IndexedDB에 전체 blob 저장
-    saveVideoBlob(interview.id, blob).catch(() => {})
-    completeInterview()
+    // 현재 질문세트 업로드 (중도 종료 시 현재 녹화분 S3 업로드)
+    const hasQs = state.questionSets.length > 0
+    if (hasQs) {
+      const currentSet = state.questionSets[state.currentQuestionSetIndex]
+      if (currentSet) {
+        // IndexedDB 폴백 저장
+        await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
 
+        // 답변 타임스탬프 저장
+        const answers = state.questionSetAnswers.get(currentSet.id) ?? []
+        if (answers.length > 0) {
+          try {
+            await apiClient.post(
+              `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/answers`,
+              { answers },
+            )
+          } catch {
+            // 답변 저장 실패 시에도 업로드는 시도
+          }
+        }
+
+        // Presigned URL 발급 + S3 업로드
+        try {
+          const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+            `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/upload-url`,
+            { contentType: blob.type || 'video/webm' },
+          )
+          await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
+          deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
+        } catch {
+          // 업로드 실패 시에도 종료 진행
+        }
+
+        // 미응답 질문세트 SKIPPED 처리
+        try {
+          await skipRemaining.mutateAsync(interview.id)
+        } catch {
+          // SKIP 실패 시에도 종료 진행
+        }
+      }
+    } else {
+      // 질문세트 없는 레거시: IndexedDB에 전체 blob 저장
+      saveVideoBlob(interview.id, blob).catch(() => {})
+    }
+
+    completeInterview()
     mediaStream.stop()
 
     updateStatus.mutate(
@@ -193,7 +238,7 @@ export const useInterviewSession = ({
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, currentQuestionIndex, getEvents, addInterviewEvent])
+  }, [recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
 
   // 폴백: "면접 종료" 버튼 (중도 포기 또는 시간 초과)
   const isFinishingRef = useRef(false)
