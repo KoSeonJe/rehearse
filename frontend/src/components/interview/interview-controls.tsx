@@ -2,7 +2,7 @@ import { memo, useEffect } from 'react'
 import { useInterviewStore } from '@/stores/interview-store'
 
 interface InterviewControlsProps {
-  phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'completed'
+  phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
   isTtsSpeaking?: boolean
   isFollowUpLoading?: boolean
   onStartAnswer: () => void
@@ -44,7 +44,17 @@ export const InterviewControls = memo(({
           )}
 
           {/* 단일 버튼 영역 — 항상 같은 위치 */}
-          {isTtsSpeaking ? (
+          {phase === 'finishing' ? (
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-sm font-bold text-text-secondary">수고하셨습니다! 면접이 끝났습니다.</p>
+              <button
+                className="h-12 rounded-[16px] bg-accent px-8 text-sm font-extrabold text-white transition-all active:scale-95"
+                onClick={onFinishInterview}
+              >
+                면접 종료하기
+              </button>
+            </div>
+          ) : isTtsSpeaking ? (
             <div className="flex items-center gap-2 rounded-full bg-surface px-5 py-2.5">
               <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
               <span className="text-sm font-bold text-text-secondary">AI 면접관이 말하고 있어요</span>

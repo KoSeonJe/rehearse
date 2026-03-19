@@ -72,10 +72,10 @@ export const useInterviewSession = ({
       // TTS 재생 중에는 별도 처리 불필요 (STT 제거됨)
     },
     onEnd: () => {
-      // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finish)
+      // 전환 TTS 완료 후 예약된 액션 실행 (nextQuestion / finishing)
       if (pendingTtsActionRef.current) {
         const state = useInterviewStore.getState()
-        if (state.phase !== 'paused' && state.phase !== 'recording' && state.phase !== 'completed') {
+        if (state.phase !== 'paused' && state.phase !== 'recording' && state.phase !== 'completed' && state.phase !== 'finishing') {
           pendingTtsActionRef.current = null
           return
         }

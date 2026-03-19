@@ -83,7 +83,7 @@ export const useAnswerFlow = ({
     nextQuestionSet,
     addAnswerTimestamp,
     setUploadStatus,
-    completeInterview,
+    setPhase,
     setQuestionSetRecordingStartTime,
     addQuestionToSet,
   } = useInterviewStore()
@@ -174,13 +174,13 @@ export const useAnswerFlow = ({
     const isLastSet = state.currentQuestionSetIndex >= state.questionSets.length - 1
 
     if (isLast || (isSetEnd && isLastSet)) {
-      // 면접 종료
+      // 면접 종료 → finishing phase로 전환 (사용자가 [면접 종료하기] 클릭 대기)
       pendingTtsActionRef.current = () => {
         if (hasQuestionSets) {
           const currentSet = state.questionSets[state.currentQuestionSetIndex]
           handleQuestionSetComplete(currentSet.id).catch(() => {})
         }
-        completeInterview()
+        setPhase('finishing')
       }
       tts.speak(pickRandom(CLOSING_PHRASES))
     } else if (isSetEnd && !isLastSet) {
@@ -197,7 +197,7 @@ export const useAnswerFlow = ({
       pendingTtsActionRef.current = () => nextQuestion()
       tts.speak(pickRandom(TRANSITION_PHRASES))
     }
-  }, [pendingTtsActionRef, completeInterview, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete])
+  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {

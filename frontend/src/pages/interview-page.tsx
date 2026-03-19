@@ -54,7 +54,7 @@ export const InterviewPage = () => {
     recorder,
   })
 
-  const uploadStatus = useInterviewStore((s) => s.uploadStatus)
+  const setPhase = useInterviewStore((s) => s.setPhase)
   const [timeWarning, setTimeWarning] = useState(false)
   const [showFinishDialog, setShowFinishDialog] = useState(false)
 
@@ -119,7 +119,7 @@ export const InterviewPage = () => {
             startTime={startTime}
             durationMinutes={interview.durationMinutes}
             onTimeWarning={() => setTimeWarning(true)}
-            onTimeExpired={() => handleFinishInterview()}
+            onTimeExpired={() => setPhase('finishing')}
           />
         </div>
       </header>
