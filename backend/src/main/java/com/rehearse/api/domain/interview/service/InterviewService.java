@@ -11,6 +11,7 @@ import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
@@ -37,6 +38,7 @@ public class InterviewService {
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
+    private final QuestionSetService questionSetService;
     private final AiClient aiClient;
     private final PdfTextExtractor pdfTextExtractor;
     private final WhisperService whisperService;
@@ -180,6 +182,19 @@ public class InterviewService {
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .build();
+    }
+
+    @Transactional
+    public void skipRemainingQuestionSets(Long id) {
+        Interview interview = interviewFinder.findById(id);
+
+        if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
+            throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
+        }
+
+        questionSetService.skipRemaining(id);
+
+        log.info("미응답 질문세트 스킵 처리: interviewId={}", id);
     }
 
     private static final int MAX_FOLLOWUP_ROUNDS = 3;

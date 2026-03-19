@@ -53,16 +53,19 @@ public class ReportService {
         Interview interview = interviewFinder.findById(interviewId);
         List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(interviewId);
 
-        // 모든 질문세트가 COMPLETED인지 확인
-        boolean allCompleted = !questionSets.isEmpty() && questionSets.stream()
-                .allMatch(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED);
+        // 모든 질문세트가 COMPLETED 또는 SKIPPED인지 확인 (최소 1개 COMPLETED 필요)
+        boolean allResolved = !questionSets.isEmpty() && questionSets.stream()
+                .allMatch(qs -> qs.getAnalysisStatus().isResolved());
+        boolean hasCompleted = questionSets.stream()
+                .anyMatch(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED);
 
-        if (!allCompleted) {
+        if (!allResolved || !hasCompleted) {
             throw new BusinessException(ReportErrorCode.ANALYSIS_NOT_COMPLETED);
         }
 
-        // 피드백 수집
+        // 피드백 수집 (COMPLETED 세트만)
         List<Long> questionSetIds = questionSets.stream()
+                .filter(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED)
                 .map(QuestionSet::getId)
                 .toList();
         List<QuestionSetFeedback> feedbacks = feedbackRepository.findByQuestionSetIdIn(questionSetIds);
@@ -91,7 +94,14 @@ public class ReportService {
 
     private String buildFeedbackSummary(List<QuestionSet> questionSets, List<QuestionSetFeedback> feedbacks) {
         StringBuilder sb = new StringBuilder();
-        sb.append(String.format("면접 질문세트 수: %d개\n\n", questionSets.size()));
+        long completedCount = questionSets.stream()
+                .filter(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED)
+                .count();
+        long skippedCount = questionSets.stream()
+                .filter(qs -> qs.getAnalysisStatus() == AnalysisStatus.SKIPPED)
+                .count();
+        sb.append(String.format("면접 질문세트 수: %d개 (분석 완료: %d개, 건너뜀: %d개)\n\n",
+                questionSets.size(), completedCount, skippedCount));
 
         for (QuestionSetFeedback feedback : feedbacks) {
             QuestionSet qs = feedback.getQuestionSet();
