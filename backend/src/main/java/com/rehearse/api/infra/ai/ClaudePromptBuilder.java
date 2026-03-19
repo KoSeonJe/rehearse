@@ -7,6 +7,7 @@ import com.rehearse.api.domain.interview.entity.Position;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -138,6 +139,7 @@ public class ClaudePromptBuilder {
                     """, resumeText));
         }
 
+        prompt.append(String.format("세션 ID: %s\n", UUID.randomUUID()));
         prompt.append("이전 면접과 중복되지 않는 새로운 관점의 질문을 생성해주세요.\n");
         prompt.append("위 조건에 맞는 면접 질문과 각 질문별 평가 기준을 생성해주세요.\n");
         prompt.append("각 질문의 카테고리는 면접 유형의 세부 분야로 지정해주세요.\n");

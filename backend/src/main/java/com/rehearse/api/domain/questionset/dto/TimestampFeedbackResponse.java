@@ -12,6 +12,8 @@ public class TimestampFeedbackResponse {
     private final Long id;
     private final Long questionId;
     private final String questionType;
+    private final String questionText;
+    private final String modelAnswer;
     private final long startMs;
     private final long endMs;
     private final String transcript;
@@ -31,6 +33,8 @@ public class TimestampFeedbackResponse {
                 .id(feedback.getId())
                 .questionId(question != null ? question.getId() : null)
                 .questionType(question != null ? question.getQuestionType().name() : null)
+                .questionText(question != null ? question.getQuestionText() : null)
+                .modelAnswer(question != null ? question.getModelAnswer() : null)
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
