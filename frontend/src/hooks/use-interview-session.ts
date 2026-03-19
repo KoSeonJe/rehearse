@@ -241,10 +241,10 @@ export const useInterviewSession = ({
       { id: interview.id, data: { status: 'COMPLETED' } },
       {
         onSuccess: () => {
-          navigate(`/interview/${interview.id}/complete`)
+          navigate(`/interview/${interview.id}/analysis`)
         },
         onError: () => {
-          navigate(`/interview/${interview.id}/complete`)
+          navigate(`/interview/${interview.id}/analysis`)
         },
       },
     )

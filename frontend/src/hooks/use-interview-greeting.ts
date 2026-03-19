@@ -19,7 +19,6 @@ export const useInterviewGreeting = ({
   greetingPhaseRef,
 }: UseInterviewGreetingParams) => {
   const phase = useInterviewStore((s) => s.phase)
-  const clearTranscripts = useInterviewStore((s) => s.clearTranscripts)
 
   // greeting phase 진입 시 인사 TTS (mediaStream 준비 후 시작)
   useEffect(() => {
@@ -36,7 +35,6 @@ export const useInterviewGreeting = ({
   // 자기소개 완료 → ready 전환 + 첫 질문 TTS
   const completeGreeting = useCallback(() => {
     greetingPhaseRef.current = false
-    clearTranscripts(0)
     useInterviewStore.setState({ phase: 'ready', greetingCompleted: true })
     const state = useInterviewStore.getState()
     const firstQuestion = state.questions[0]
@@ -47,7 +45,7 @@ export const useInterviewGreeting = ({
       recordEvent('question_read_tts', 0)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clearTranscripts, tts.speak, recordEvent])
+  }, [tts.speak, recordEvent])
 
   return { completeGreeting }
 }
