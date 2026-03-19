@@ -54,7 +54,7 @@ export const TimelineBar = ({
               } ${getScoreColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
-              title={`${ANSWER_TYPE_LABELS[fb.questionType] ?? fb.questionType} (${Math.round(fb.startMs / 1000)}s)`}
+              title={`${(fb.questionType ? ANSWER_TYPE_LABELS[fb.questionType] : null) ?? fb.questionType ?? '질문'} (${Math.round(fb.startMs / 1000)}s)`}
             />
           )
         })}
