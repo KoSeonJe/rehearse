@@ -181,6 +181,7 @@ public class InterviewService {
                 .question(followUp.getQuestion())
                 .reason(followUp.getReason())
                 .type(followUp.getType())
+                .answerText(answerText)
                 .build();
     }
 
