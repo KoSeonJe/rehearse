@@ -35,10 +35,24 @@ public class ReportService {
     private final AiClient aiClient;
 
     public ReportResponse getReport(Long interviewId) {
-        InterviewReport report = reportRepository.findByInterviewId(interviewId)
-                .orElseThrow(() -> new BusinessException(ReportErrorCode.REPORT_NOT_FOUND));
+        // 리포트가 이미 존재하면 바로 반환
+        return reportRepository.findByInterviewId(interviewId)
+                .map(ReportResponse::from)
+                .orElseThrow(() -> {
+                    // 리포트 없음 → 분석 상태에 따라 에러 구분
+                    List<QuestionSet> allSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+                    boolean allResolved = !allSets.isEmpty() && allSets.stream()
+                            .allMatch(qs -> qs.getAnalysisStatus().isResolved());
+                    boolean hasCompleted = allSets.stream()
+                            .anyMatch(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED);
 
-        return ReportResponse.from(report);
+                    if (allResolved && hasCompleted) {
+                        // 분석 완료 but 리포트 미생성 → 생성 중 (202)
+                        return new BusinessException(ReportErrorCode.REPORT_GENERATING);
+                    }
+                    // 분석 미완료 → 400
+                    return new BusinessException(ReportErrorCode.ANALYSIS_NOT_COMPLETED);
+                });
     }
 
     @Transactional
