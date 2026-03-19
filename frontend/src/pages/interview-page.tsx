@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
 import { useInterview } from '@/hooks/use-interviews'
@@ -56,6 +56,21 @@ export const InterviewPage = () => {
 
   const uploadStatus = useInterviewStore((s) => s.uploadStatus)
   const [timeWarning, setTimeWarning] = useState(false)
+  const [showFinishDialog, setShowFinishDialog] = useState(false)
+
+  // ESC 키로 다이얼로그 닫기
+  const handleEscKey = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && showFinishDialog) {
+      setShowFinishDialog(false)
+    }
+  }, [showFinishDialog])
+
+  useEffect(() => {
+    if (showFinishDialog) {
+      document.addEventListener('keydown', handleEscKey)
+      return () => document.removeEventListener('keydown', handleEscKey)
+    }
+  }, [showFinishDialog, handleEscKey])
 
   const currentQuestion = questions[currentQuestionIndex]
   const hasQuestionSets = questionSets.length > 0
@@ -92,6 +107,14 @@ export const InterviewPage = () => {
           </div>
         </div>
         <div className="flex items-center gap-6">
+          {(phase === 'ready' || phase === 'recording' || phase === 'paused') && (
+            <button
+              onClick={() => setShowFinishDialog(true)}
+              className="px-4 py-2 text-xs font-bold text-text-secondary hover:text-error border border-border hover:border-error/30 rounded-full transition-all"
+            >
+              면접 종료
+            </button>
+          )}
           <InterviewTimer
             startTime={startTime}
             durationMinutes={interview.durationMinutes}
@@ -306,6 +329,44 @@ export const InterviewPage = () => {
           <div className="hidden lg:block lg:w-[400px]" />
         </div>
       </div>
+
+      {/* 면접 종료 확인 다이얼로그 */}
+      {showFinishDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onClick={() => setShowFinishDialog(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="finish-dialog-title"
+        >
+          <div
+            className="w-full max-w-sm mx-4 rounded-[24px] bg-white p-8 shadow-toss-lg animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="finish-dialog-title" className="text-lg font-extrabold text-text-primary tracking-tight mb-2">면접을 종료하시겠습니까?</h2>
+            <p className="text-sm text-text-secondary leading-relaxed mb-6">
+              답변하지 않은 질문은 분석되지 않습니다.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowFinishDialog(false)}
+                className="flex-1 h-12 rounded-2xl border border-border text-sm font-bold text-text-secondary transition-all active:scale-95"
+              >
+                계속하기
+              </button>
+              <button
+                onClick={() => {
+                  setShowFinishDialog(false)
+                  handleFinishInterview()
+                }}
+                className="flex-1 h-12 rounded-2xl bg-error text-sm font-bold text-white transition-all active:scale-95"
+              >
+                종료하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

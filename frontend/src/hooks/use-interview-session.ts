@@ -175,7 +175,12 @@ export const useInterviewSession = ({
     const events = getEvents()
     events.forEach((e) => addInterviewEvent(e))
 
-    const blob = await recorder.stop()
+    let blob: Blob
+    try {
+      blob = await recorder.stop()
+    } catch {
+      blob = new Blob([], { type: 'video/webm' })
+    }
     setVideoBlob(blob)
 
     // 현재 질문세트 업로드 (중도 종료 시 현재 녹화분 S3 업로드)
@@ -183,39 +188,39 @@ export const useInterviewSession = ({
     if (hasQs) {
       const currentSet = state.questionSets[state.currentQuestionSetIndex]
       if (currentSet) {
-        // IndexedDB 폴백 저장
-        await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
-
-        // 답변 타임스탬프 저장
         const answers = state.questionSetAnswers.get(currentSet.id) ?? []
-        if (answers.length > 0) {
+        const hasAnswers = answers.length > 0
+
+        if (hasAnswers) {
+          // 답변이 있는 세트: 정상 파이프라인 (업로드 → Lambda 분석)
+          await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
+
           try {
             await apiClient.post(
               `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/answers`,
               { answers },
             )
-          } catch {
-            // 답변 저장 실패 시에도 업로드는 시도
+          } catch (err) {
+            console.error('[면접종료] 답변 타임스탬프 저장 실패:', err)
+          }
+
+          try {
+            const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+              `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/upload-url`,
+              { contentType: blob.type || 'video/webm' },
+            )
+            await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
+            deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
+          } catch (err) {
+            console.error('[면접종료] S3 업로드 실패:', err)
           }
         }
+        // 답변 없는 현재 세트 + 나머지 PENDING 세트는 skipRemaining에서 일괄 SKIPPED 처리
 
-        // Presigned URL 발급 + S3 업로드
-        try {
-          const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
-            `/api/v1/interviews/${interview.id}/question-sets/${currentSet.id}/upload-url`,
-            { contentType: blob.type || 'video/webm' },
-          )
-          await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
-          deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
-        } catch {
-          // 업로드 실패 시에도 종료 진행
-        }
-
-        // 미응답 질문세트 SKIPPED 처리
         try {
           await skipRemaining.mutateAsync(interview.id)
-        } catch {
-          // SKIP 실패 시에도 종료 진행
+        } catch (err) {
+          console.error('[면접종료] 미응답 세트 스킵 실패:', err)
         }
       }
     } else {

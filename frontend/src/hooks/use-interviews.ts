@@ -120,6 +120,15 @@ export const useRetryQuestions = () => {
   })
 }
 
+export const useSkipRemainingQuestionSets = () => {
+  return useMutation({
+    mutationFn: (interviewId: number) =>
+      apiClient.post<ApiResponse<void>>(
+        `/api/v1/interviews/${interviewId}/skip-remaining`,
+      ),
+  })
+}
+
 export const useFollowUpQuestion = () => {
   return useMutation({
     mutationFn: async ({
