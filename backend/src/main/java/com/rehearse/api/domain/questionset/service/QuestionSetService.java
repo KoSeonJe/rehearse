@@ -111,6 +111,18 @@ public class QuestionSetService {
         return QuestionsWithAnswersResponse.from(questions, answers);
     }
 
+    @Transactional
+    public void skipRemaining(Long interviewId) {
+        List<QuestionSet> pendingSets = questionSetRepository.findByInterviewIdAndAnalysisStatus(
+                interviewId, AnalysisStatus.PENDING);
+
+        for (QuestionSet qs : pendingSets) {
+            qs.updateAnalysisStatus(AnalysisStatus.SKIPPED);
+        }
+
+        log.info("미응답 질문세트 SKIPPED 처리: interviewId={}, count={}", interviewId, pendingSets.size());
+    }
+
     private QuestionSet findQuestionSet(Long questionSetId) {
         return questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));

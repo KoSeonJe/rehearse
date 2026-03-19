@@ -21,4 +21,6 @@ public interface QuestionSetRepository extends JpaRepository<QuestionSet, Long> 
     long countByInterviewIdAndAnalysisStatus(Long interviewId, AnalysisStatus status);
 
     long countByInterviewId(Long interviewId);
+
+    List<QuestionSet> findByInterviewIdAndAnalysisStatus(Long interviewId, AnalysisStatus status);
 }
