@@ -43,7 +43,6 @@ interface AnalysisStatusFloatProps {
   skippedCount: number
   totalCount: number
   isRetrying: boolean
-  interviewId: string
   onRetry: () => void
   onNavigateFeedback: () => void
 }
@@ -64,7 +63,7 @@ const AnalysisStatusFloat = ({
   if (!isAnalyzing && !allCompleted && !hasFailed) return null
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 w-72 animate-fade-in">
+    <div className="fixed bottom-4 right-4 z-40 w-72 animate-fade-in" role="status" aria-live="polite">
       <div className="rounded-2xl bg-white border border-border shadow-xl p-5">
         {isAnalyzing && (
           <div className="space-y-3">
@@ -276,7 +275,6 @@ export const InterviewAnalysisPage = () => {
         skippedCount={skippedCount}
         totalCount={statuses.length}
         isRetrying={isRetrying}
-        interviewId={interviewId}
         onRetry={handleRetryAll}
         onNavigateFeedback={() => navigate(`/interview/${interviewId}/feedback`)}
       />
