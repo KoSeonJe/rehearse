@@ -43,6 +43,7 @@ export const InterviewPage = () => {
     handleStartAnswer,
     handleStopAnswer,
     handleFinishInterview,
+    handleTimeExpired,
     isTtsSpeaking,
     s3Upload,
     questionSets,
@@ -53,8 +54,6 @@ export const InterviewPage = () => {
     mediaStream,
     recorder,
   })
-
-  const setPhase = useInterviewStore((s) => s.setPhase)
   const [timeWarning, setTimeWarning] = useState(false)
   const [showFinishDialog, setShowFinishDialog] = useState(false)
 
@@ -119,7 +118,7 @@ export const InterviewPage = () => {
             startTime={startTime}
             durationMinutes={interview.durationMinutes}
             onTimeWarning={() => setTimeWarning(true)}
-            onTimeExpired={() => setPhase('finishing')}
+            onTimeExpired={handleTimeExpired}
           />
         </div>
       </header>

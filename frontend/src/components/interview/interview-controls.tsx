@@ -1,8 +1,9 @@
 import { memo, useEffect } from 'react'
 import { useInterviewStore } from '@/stores/interview-store'
+import type { InterviewPhase } from '@/stores/interview-store'
 
 interface InterviewControlsProps {
-  phase: 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
+  phase: InterviewPhase
   isTtsSpeaking?: boolean
   isFollowUpLoading?: boolean
   onStartAnswer: () => void
