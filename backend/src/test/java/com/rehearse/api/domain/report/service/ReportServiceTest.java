@@ -1,10 +1,14 @@
 package com.rehearse.api.domain.report.service;
 
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.report.dto.ReportResponse;
 import com.rehearse.api.domain.report.entity.InterviewReport;
 import com.rehearse.api.domain.report.repository.ReportRepository;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.AiClient;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +33,18 @@ class ReportServiceTest {
 
     @Mock
     private ReportRepository reportRepository;
+
+    @Mock
+    private QuestionSetRepository questionSetRepository;
+
+    @Mock
+    private QuestionSetFeedbackRepository feedbackRepository;
+
+    @Mock
+    private InterviewFinder interviewFinder;
+
+    @Mock
+    private AiClient aiClient;
 
     @Test
     @DisplayName("이미 리포트가 존재하면 캐시된 리포트를 반환한다")
@@ -58,18 +75,44 @@ class ReportServiceTest {
     }
 
     @Test
-    @DisplayName("리포트가 없으면 REPORT_NOT_FOUND 예외가 발생한다")
-    void getReport_notFound() {
+    @DisplayName("리포트가 없고 분석 미완료이면 ANALYSIS_NOT_COMPLETED 예외가 발생한다")
+    void getReport_analysisNotCompleted() {
         // given
         given(reportRepository.findByInterviewId(1L)).willReturn(Optional.empty());
+        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                .willReturn(Collections.emptyList());
 
         // when & then
         assertThatThrownBy(() -> reportService.getReport(1L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-                    assertThat(be.getCode()).isEqualTo("REPORT_002");
+                    assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                    assertThat(be.getCode()).isEqualTo("REPORT_003");
+                });
+    }
+
+    @Test
+    @DisplayName("리포트가 없고 분석 완료이면 REPORT_GENERATING 예외가 발생한다 (202)")
+    void getReport_reportGenerating() {
+        // given
+        given(reportRepository.findByInterviewId(1L)).willReturn(Optional.empty());
+
+        com.rehearse.api.domain.questionset.entity.QuestionSet completedSet =
+                mock(com.rehearse.api.domain.questionset.entity.QuestionSet.class);
+        given(completedSet.getAnalysisStatus())
+                .willReturn(com.rehearse.api.domain.questionset.entity.AnalysisStatus.COMPLETED);
+
+        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                .willReturn(List.of(completedSet));
+
+        // when & then
+        assertThatThrownBy(() -> reportService.getReport(1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getStatus()).isEqualTo(HttpStatus.ACCEPTED);
+                    assertThat(be.getCode()).isEqualTo("REPORT_004");
                 });
     }
 
