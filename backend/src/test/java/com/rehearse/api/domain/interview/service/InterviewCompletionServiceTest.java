@@ -50,14 +50,16 @@ class InterviewCompletionServiceTest {
     void checkAndCompleteInterviews_모든질문세트완료시_면접COMPLETED() {
         // given
         Interview interview = createInProgressInterview(1L);
-        QuestionSet qs1 = createQuestionSet(10L, interview);
-        QuestionSet qs2 = createQuestionSet(11L, interview);
+        QuestionSet qs1 = createQuestionSet(10L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs2 = createQuestionSet(11L, interview, AnalysisStatus.COMPLETED);
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
         given(questionSetRepository.countByInterviewId(1L)).willReturn(2L);
         given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.COMPLETED))
                 .willReturn(2L);
+        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.SKIPPED))
+                .willReturn(0L);
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                 .willReturn(List.of(qs1, qs2));
 
@@ -72,7 +74,7 @@ class InterviewCompletionServiceTest {
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
         assertThat(interview.getOverallScore()).isEqualTo(70); // (80+60)/2
-        assertThat(interview.getOverallComment()).contains("2개 질문세트 분석 완료");
+        assertThat(interview.getOverallComment()).contains("분석 완료");
     }
 
     @Test
@@ -86,6 +88,8 @@ class InterviewCompletionServiceTest {
         given(questionSetRepository.countByInterviewId(1L)).willReturn(2L);
         given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.COMPLETED))
                 .willReturn(1L);
+        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.SKIPPED))
+                .willReturn(0L);
 
         // when
         interviewCompletionService.checkAndCompleteInterviews();
@@ -137,15 +141,17 @@ class InterviewCompletionServiceTest {
     void calculateOverallScore_배치쿼리로평균점수계산() {
         // given
         Interview interview = createInProgressInterview(2L);
-        QuestionSet qs1 = createQuestionSet(20L, interview);
-        QuestionSet qs2 = createQuestionSet(21L, interview);
-        QuestionSet qs3 = createQuestionSet(22L, interview);
+        QuestionSet qs1 = createQuestionSet(20L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs2 = createQuestionSet(21L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs3 = createQuestionSet(22L, interview, AnalysisStatus.COMPLETED);
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
         given(questionSetRepository.countByInterviewId(2L)).willReturn(3L);
         given(questionSetRepository.countByInterviewIdAndAnalysisStatus(2L, AnalysisStatus.COMPLETED))
                 .willReturn(3L);
+        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(2L, AnalysisStatus.SKIPPED))
+                .willReturn(0L);
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(2L))
                 .willReturn(List.of(qs1, qs2, qs3));
 
@@ -179,12 +185,17 @@ class InterviewCompletionServiceTest {
     }
 
     private QuestionSet createQuestionSet(Long id, Interview interview) {
+        return createQuestionSet(id, interview, AnalysisStatus.PENDING);
+    }
+
+    private QuestionSet createQuestionSet(Long id, Interview interview, AnalysisStatus status) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
                 .category(QuestionCategory.CS)
                 .orderIndex(id.intValue())
                 .build();
         ReflectionTestUtils.setField(qs, "id", id);
+        ReflectionTestUtils.setField(qs, "analysisStatus", status);
         return qs;
     }
 

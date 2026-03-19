@@ -27,6 +27,7 @@ const PROGRESS_ORDER: AnalysisProgress[] = [
 
 const getProgressPercent = (status: AnalysisStatus, progress: AnalysisProgress | null): number => {
   if (status === 'COMPLETED') return 100
+  if (status === 'SKIPPED') return 100
   if (status === 'FAILED') return 0
   if (status === 'PENDING' || status === 'PENDING_UPLOAD') return 0
   if (!progress) return 5
@@ -37,6 +38,7 @@ const getProgressPercent = (status: AnalysisStatus, progress: AnalysisProgress |
 
 const getStatusLabel = (status: AnalysisStatus, progress: AnalysisProgress | null): string => {
   if (status === 'COMPLETED') return '분석 완료'
+  if (status === 'SKIPPED') return '건너뜀'
   if (status === 'FAILED') return '분석 실패'
   if (status === 'PENDING') return '업로드 대기 중...'
   if (status === 'PENDING_UPLOAD') return '업로드 중...'
@@ -99,9 +101,13 @@ export const InterviewAnalysisPage = () => {
 
   const retryMutation = useRetryAnalysis()
 
-  const allCompleted = hasQuestionSets && statuses.every((s) => s?.analysisStatus === 'COMPLETED')
-  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
+  const allTerminal = hasQuestionSets && statuses.every((s) =>
+    s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'SKIPPED',
+  )
   const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
+  const allCompleted = allTerminal && completedCount > 0
+  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
+  const skippedCount = statuses.filter((s) => s?.analysisStatus === 'SKIPPED').length
 
   // 모든 완료 시 리포트 페이지로 자동 전환
   useEffect(() => {
@@ -181,6 +187,7 @@ export const InterviewAnalysisPage = () => {
           </div>
           <div className="text-sm font-bold text-text-secondary">
             {completedCount}/{questionSets.length} 완료
+            {skippedCount > 0 && <span className="text-text-tertiary"> · {skippedCount} 건너뜀</span>}
           </div>
         </div>
       </header>
@@ -233,12 +240,14 @@ export const InterviewAnalysisPage = () => {
               const label = getStatusLabel(analysisStatus, progress)
               const isCompleted = analysisStatus === 'COMPLETED'
               const isFailed = analysisStatus === 'FAILED'
+              const isSkipped = analysisStatus === 'SKIPPED'
 
               return (
                 <div
                   key={qs.id}
                   className={`rounded-[24px] border p-6 transition-all ${
                     isCompleted ? 'bg-success/5 border-success/20' :
+                    isSkipped ? 'bg-surface border-border opacity-60' :
                     isFailed ? 'bg-error/5 border-error/20' :
                     'bg-surface border-border'
                   }`}
@@ -246,9 +255,9 @@ export const InterviewAnalysisPage = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black text-white ${
-                        isCompleted ? 'bg-success' : isFailed ? 'bg-error' : 'bg-accent'
+                        isCompleted ? 'bg-success' : isSkipped ? 'bg-text-tertiary' : isFailed ? 'bg-error' : 'bg-accent'
                       }`}>
-                        {isCompleted ? '✓' : isFailed ? '!' : idx + 1}
+                        {isCompleted ? '✓' : isSkipped ? '—' : isFailed ? '!' : idx + 1}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-text-primary">질문세트 {idx + 1}</p>
@@ -256,9 +265,9 @@ export const InterviewAnalysisPage = () => {
                       </div>
                     </div>
                     <span className={`text-xs font-bold ${
-                      isCompleted ? 'text-success' : isFailed ? 'text-error' : 'text-accent'
+                      isCompleted ? 'text-success' : isSkipped ? 'text-text-tertiary' : isFailed ? 'text-error' : 'text-accent'
                     }`}>
-                      {isCompleted ? '완료' : isFailed ? '실패' : `${percent}%`}
+                      {isCompleted ? '완료' : isSkipped ? '건너뜀' : isFailed ? '실패' : `${percent}%`}
                     </span>
                   </div>
 
@@ -266,7 +275,7 @@ export const InterviewAnalysisPage = () => {
                   <div className="h-1.5 w-full bg-border/50 rounded-full overflow-hidden mb-2">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        isCompleted ? 'bg-success' : isFailed ? 'bg-error' : 'bg-accent'
+                        isCompleted ? 'bg-success' : isSkipped ? 'bg-text-tertiary' : isFailed ? 'bg-error' : 'bg-accent'
                       }`}
                       style={{ width: `${percent}%` }}
                     />
@@ -274,7 +283,7 @@ export const InterviewAnalysisPage = () => {
 
                   <div className="flex items-center justify-between">
                     <p className={`text-xs font-medium ${
-                      isCompleted ? 'text-success' : isFailed ? 'text-error' : 'text-text-secondary'
+                      isCompleted ? 'text-success' : isSkipped ? 'text-text-tertiary' : isFailed ? 'text-error' : 'text-text-secondary'
                     }`}>
                       {label}
                     </p>

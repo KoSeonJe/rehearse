@@ -35,7 +35,7 @@ export type QuestionType = 'MAIN' | 'FOLLOWUP'
 
 export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
 
-export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'ANALYZING' | 'COMPLETED' | 'FAILED'
+export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'ANALYZING' | 'COMPLETED' | 'FAILED' | 'SKIPPED'
 
 export type FileStatus = 'PENDING' | 'UPLOADED' | 'CONVERTING' | 'CONVERTED' | 'FAILED'
 

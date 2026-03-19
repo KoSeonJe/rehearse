@@ -60,4 +60,12 @@ public class InterviewController {
         InterviewResponse response = interviewService.retryQuestionGeneration(id);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
+
+    @PostMapping("/{id}/skip-remaining")
+    public ResponseEntity<ApiResponse<Void>> skipRemainingQuestionSets(
+            @PathVariable Long id) {
+
+        interviewService.skipRemainingQuestionSets(id);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
 }

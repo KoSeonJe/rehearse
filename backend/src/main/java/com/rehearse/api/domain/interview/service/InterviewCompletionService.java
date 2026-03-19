@@ -38,16 +38,24 @@ public class InterviewCompletionService {
 
             long completedCount = questionSetRepository.countByInterviewIdAndAnalysisStatus(
                     interviewId, AnalysisStatus.COMPLETED);
+            long skippedCount = questionSetRepository.countByInterviewIdAndAnalysisStatus(
+                    interviewId, AnalysisStatus.SKIPPED);
 
-            if (completedCount == totalCount) {
+            if (completedCount + skippedCount == totalCount && completedCount > 0) {
+                // FE에서 이미 COMPLETED로 전이했을 수 있음 (중도 종료 시)
+                if (interview.getStatus() == InterviewStatus.COMPLETED) {
+                    continue;
+                }
+
                 int overallScore = calculateOverallScore(interviewId);
-                String overallComment = "전체 " + totalCount + "개 질문세트 분석 완료";
+                String overallComment = String.format("전체 %d개 질문세트 중 %d개 분석 완료, %d개 건너뜀",
+                        totalCount, completedCount, skippedCount);
 
                 interview.updateOverallResult(overallScore, overallComment);
                 interview.updateStatus(InterviewStatus.COMPLETED);
 
-                log.info("면접 완료 처리: interviewId={}, overallScore={}, questionSets={}",
-                        interviewId, overallScore, totalCount);
+                log.info("면접 완료 처리: interviewId={}, overallScore={}, completed={}, skipped={}",
+                        interviewId, overallScore, completedCount, skippedCount);
             }
         }
     }
@@ -55,6 +63,7 @@ public class InterviewCompletionService {
     private int calculateOverallScore(Long interviewId) {
         var questionSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
         List<Long> questionSetIds = questionSets.stream()
+                .filter(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED)
                 .map(qs -> qs.getId())
                 .toList();
 

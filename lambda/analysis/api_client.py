@@ -48,6 +48,8 @@ def save_feedback(
 ) -> None:
     url = f"{_base_url(interview_id, question_set_id)}/feedback"
     resp = httpx.post(url, json=feedback, headers=HEADERS, timeout=TIMEOUT)
+    if resp.status_code >= 400:
+        print(f"[Analysis] 피드백 저장 실패: status={resp.status_code}, body={resp.text}")
     resp.raise_for_status()
 
 
