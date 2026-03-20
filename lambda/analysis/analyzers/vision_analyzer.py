@@ -3,7 +3,7 @@ import json
 import re
 import time
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIError, AuthenticationError
 
 from config import Config
 
@@ -78,6 +78,19 @@ def analyze_frames(frame_paths: list[str]) -> dict:
             result = _validate_result(result)
             print(f"[Vision] 분석 완료: eye={result.get('eye_contact_score')}, posture={result.get('posture_score')}")
             return result
+
+        except AuthenticationError:
+            raise
+
+        except RateLimitError as e:
+            retry_after = getattr(getattr(e, "response", None), "headers", {}).get("retry-after")
+            wait = float(retry_after) if retry_after else 60.0
+            print(f"[Vision] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait:.0f}초 후 재시도")
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(wait)
+            else:
+                print("[Vision] 모든 재시도 실패 — 폴백 사용")
+                return dict(_FALLBACK)
 
         except Exception as e:
             print(f"[Vision] 시도 {attempt + 1}/{MAX_RETRIES} 실패: {e}")

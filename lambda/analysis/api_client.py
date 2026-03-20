@@ -1,15 +1,34 @@
 import json
+import os
+import sys
 
 import boto3
 import httpx
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'common'))
+
 from config import Config
+from retry import retry_on_transient
 
 TIMEOUT = 30.0
 HEADERS = {
     "Content-Type": "application/json",
     "X-Internal-Api-Key": Config.INTERNAL_API_KEY,
 }
+
+_correlation_id: str | None = None
+
+
+def set_correlation_id(cid: str) -> None:
+    global _correlation_id
+    _correlation_id = cid
+
+
+def _get_headers() -> dict:
+    headers = dict(HEADERS)
+    if _correlation_id:
+        headers["X-Correlation-Id"] = _correlation_id
+    return headers
 
 
 def _base_url(interview_id: int, question_set_id: int) -> str:
@@ -19,13 +38,15 @@ def _base_url(interview_id: int, question_set_id: int) -> str:
     )
 
 
+@retry_on_transient()
 def get_answers(interview_id: int, question_set_id: int) -> dict:
     url = f"{_base_url(interview_id, question_set_id)}/answers"
-    resp = httpx.get(url, headers=HEADERS, timeout=TIMEOUT)
+    resp = httpx.get(url, headers=_get_headers(), timeout=TIMEOUT)
     resp.raise_for_status()
     return resp.json()["data"]
 
 
+@retry_on_transient()
 def update_progress(
     interview_id: int,
     question_set_id: int,
@@ -39,24 +60,26 @@ def update_progress(
         body["failureReason"] = failure_reason
     if failure_detail:
         body["failureDetail"] = failure_detail
-    resp = httpx.put(url, json=body, headers=HEADERS, timeout=TIMEOUT)
+    resp = httpx.put(url, json=body, headers=_get_headers(), timeout=TIMEOUT)
     resp.raise_for_status()
 
 
+@retry_on_transient()
 def save_feedback(
     interview_id: int, question_set_id: int, feedback: dict
 ) -> None:
     url = f"{_base_url(interview_id, question_set_id)}/feedback"
-    resp = httpx.post(url, json=feedback, headers=HEADERS, timeout=TIMEOUT)
+    resp = httpx.post(url, json=feedback, headers=_get_headers(), timeout=TIMEOUT)
     if resp.status_code >= 400:
         print(f"[Analysis] 피드백 저장 실패: status={resp.status_code}, body={resp.text}")
     resp.raise_for_status()
 
 
+@retry_on_transient()
 def check_all_completed(interview_id: int) -> bool:
     """면접의 모든 질문세트가 COMPLETED인지 확인"""
     url = f"{Config.API_SERVER_URL}/api/v1/interviews/{interview_id}"
-    resp = httpx.get(url, headers=HEADERS, timeout=TIMEOUT)
+    resp = httpx.get(url, headers=_get_headers(), timeout=TIMEOUT)
     resp.raise_for_status()
     interview_data = resp.json()["data"]
     question_sets = interview_data.get("questionSets", [])
@@ -65,12 +88,13 @@ def check_all_completed(interview_id: int) -> bool:
     return all(qs.get("analysisStatus") == "COMPLETED" for qs in question_sets)
 
 
+@retry_on_transient()
 def trigger_report(interview_id: int) -> None:
     """종합 리포트 생성 트리거"""
     url = (
         f"{Config.API_SERVER_URL}/api/internal/interviews/{interview_id}/report"
     )
-    resp = httpx.post(url, headers=HEADERS, timeout=60.0)
+    resp = httpx.post(url, headers=_get_headers(), timeout=60.0)
     resp.raise_for_status()
     print(f"[Analysis] 종합 리포트 생성 트리거 완료: interviewId={interview_id}")
 
