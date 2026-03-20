@@ -358,7 +358,7 @@ export const useAnswerFlow = ({
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
-    addQuestionToSet, recorder, setQuestionSetRecordingStartTime,
+    addQuestionToSet,
   ])
 
   return {
