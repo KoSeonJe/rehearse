@@ -43,8 +43,8 @@ def lambda_handler(event, context):
         print(f"[Analysis] 파이프라인 실패: {error_msg}\n{error_detail}")
         _safe_update_progress(
             interview_id, question_set_id, "FAILED",
-            failure_reason=error_msg[:500],
-            failure_detail=error_detail[:2000],
+            failure_reason=_classify_error(e),
+            failure_detail=f"{error_msg}\n\n{error_detail[:1800]}",
         )
         return {"statusCode": 500, "body": json.dumps({"error": error_msg})}
     finally:
@@ -276,3 +276,17 @@ def _parse_ids_from_key(key: str) -> tuple[int | None, int | None]:
 def _cleanup():
     if os.path.exists(WORK_DIR):
         shutil.rmtree(WORK_DIR, ignore_errors=True)
+
+
+def _classify_error(e: Exception) -> str:
+    """에러를 표준 분류 코드로 변환"""
+    error_str = str(e).lower()
+    if isinstance(e, TimeoutError) or 'timeout' in error_str:
+        return "TIMEOUT"
+    if 'openai' in error_str or '429' in error_str or '503' in error_str:
+        return "API_ERROR"
+    if 'ffmpeg' in error_str or 'whisper' in error_str:
+        return "TRANSCRIPTION_ERROR"
+    if 'vision' in error_str or 'frame' in error_str:
+        return "VISION_ERROR"
+    return "INTERNAL_ERROR"
