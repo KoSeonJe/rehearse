@@ -154,19 +154,8 @@ const NONVERBAL_FEEDBACKS: NonverbalFeedback[] = [
 
 const NonverbalMockup = () => (
   <div className="space-y-3">
-    {/* 면접자 사진 + 헤더 */}
-    <div className="rounded-2xl bg-surface border border-border overflow-hidden">
-      <div className="relative h-28">
-        <img
-          src={INTERVIEW_IMG}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover object-top"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-        <div className="absolute bottom-3 left-3">
-          <span className="text-xs font-bold text-white drop-shadow-md">비언어 분석 결과</span>
-        </div>
-      </div>
+    <div className="rounded-2xl bg-surface border border-border p-4">
+      <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
     </div>
     <div className="space-y-2">
       {NONVERBAL_FEEDBACKS.map((fb) => (
