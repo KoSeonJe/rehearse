@@ -76,9 +76,8 @@ def analyze_verbal(question_text: str, transcript: str) -> dict:
             raise
 
         except RateLimitError as e:
-            retry_after = getattr(getattr(e, "response", None), "headers", {}).get("retry-after")
-            wait = float(retry_after) if retry_after else 60.0
-            print(f"[Verbal] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait:.0f}초 후 재시도")
+            wait = RETRY_DELAY * (2 ** attempt)
+            print(f"[Verbal] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait}초 후 재시도")
             if attempt < MAX_RETRIES - 1:
                 time.sleep(wait)
             else:

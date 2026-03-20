@@ -44,10 +44,9 @@ def transcribe(audio_path: str) -> dict:
 
         except RateLimitError as e:
             last_exception = e
-            retry_after = getattr(getattr(e, "response", None), "headers", {}).get("retry-after")
-            wait = float(retry_after) if retry_after else 60.0
+            wait = RETRY_DELAY * (2 ** attempt)
             if attempt < MAX_RETRIES - 1:
-                print(f"[STT] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait:.0f}초 후 재시도")
+                print(f"[STT] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait}초 후 재시도")
                 time.sleep(wait)
             else:
                 print(f"[STT] 모든 재시도 실패 (RateLimitError)")
