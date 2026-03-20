@@ -87,4 +87,25 @@ class ReportControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("REPORT_001"));
     }
+
+    @Test
+    @DisplayName("POST /api/v1/interviews/{id}/report - 리포트 생성 성공 (200)")
+    void generateReport_success() throws Exception {
+        ReportResponse response = ReportResponse.builder()
+                .id(1L)
+                .interviewId(1L)
+                .overallScore(85)
+                .summary("전반적으로 우수한 면접")
+                .strengths(List.of("논리적 사고", "기술적 깊이"))
+                .improvements(List.of("구체적 예시 부족", "시간 관리"))
+                .feedbackCount(5)
+                .build();
+
+        given(reportService.generateReport(1L)).willReturn(response);
+
+        mockMvc.perform(post("/api/v1/interviews/1/report"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.overallScore").value(85));
+    }
 }

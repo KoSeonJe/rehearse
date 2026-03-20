@@ -11,7 +11,8 @@ public enum ReportErrorCode implements ErrorCode {
     NO_FEEDBACK(HttpStatus.CONFLICT, "REPORT_001", "피드백이 없어 리포트를 생성할 수 없습니다."),
     REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "REPORT_002", "아직 분석이 완료되지 않았습니다."),
     ANALYSIS_NOT_COMPLETED(HttpStatus.CONFLICT, "REPORT_003", "모든 질문세트 분석이 완료되지 않아 리포트를 생성할 수 없습니다."),
-    REPORT_GENERATING(HttpStatus.ACCEPTED, "REPORT_004", "리포트를 생성 중입니다. 잠시 후 다시 조회해주세요.");
+    REPORT_GENERATING(HttpStatus.ACCEPTED, "REPORT_004", "리포트를 생성 중입니다. 잠시 후 다시 조회해주세요."),
+    REPORT_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "REPORT_005", "리포트 생성에 실패했습니다.");
 
     private final HttpStatus status;
     private final String code;
