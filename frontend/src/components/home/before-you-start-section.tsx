@@ -30,10 +30,6 @@ const CHECK_ITEMS: CheckItem[] = [
     title: '불필요한 탭·알림 끄기',
     description: '다른 탭과 알림을 닫으면 녹화 품질이 올라가고 집중도도 높아집니다',
   },
-  {
-    title: 'STAR 기법 숙지',
-    description: '상황-과제-행동-결과 구조로 답변하면 면접관에게 잘 전달됩니다',
-  },
 ]
 
 const CheckIcon = () => (

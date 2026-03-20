@@ -127,7 +127,7 @@ export const KeyFeaturesSection = () => {
       aria-labelledby="key-features-heading"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
-        <div className="text-center mb-24">
+        <div className="text-center mb-16">
           <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
             KEY FEATURES
           </p>
@@ -139,7 +139,7 @@ export const KeyFeaturesSection = () => {
           </h2>
         </div>
 
-        <div className="space-y-32">
+        <div className="space-y-20">
           {features.map((feature, index) => {
             const MockupComponent = mockupComponents[feature.mockup]
             const isReversed = index % 2 !== 0

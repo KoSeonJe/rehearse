@@ -14,7 +14,7 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-5xl items-center px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />

@@ -110,7 +110,7 @@ export const FaqSection = () => {
                   id={`faq-answer-${i}`}
                   role="region"
                   aria-hidden={!isOpen}
-                  className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-40 pb-6' : 'max-h-0'}`}
+                  className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-60 pb-6' : 'max-h-0'}`}
                 >
                   <p className="text-base text-text-secondary leading-relaxed">
                     {item.answer}

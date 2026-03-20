@@ -14,7 +14,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
       style={style}
       className="bg-gradient-to-b from-accent/5 to-white py-32"
     >
-      <div className="mx-auto max-w-4xl px-5 text-center">
+      <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
         <div className="mb-8">
           <Character mood="happy" size={80} />
         </div>

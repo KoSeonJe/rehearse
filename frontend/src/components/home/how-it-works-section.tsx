@@ -32,7 +32,7 @@ export const HowItWorksSection = () => {
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
-        <div className="mb-6">
+        <div className="mb-0">
           <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
             HOW IT WORKS
           </p>
@@ -44,7 +44,7 @@ export const HowItWorksSection = () => {
           </h2>
         </div>
 
-        <div className="relative mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div className="relative mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Desktop connector arrows */}
           <div
             className="absolute inset-0 hidden items-center justify-between md:flex"
