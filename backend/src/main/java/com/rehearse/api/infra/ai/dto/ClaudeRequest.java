@@ -1,5 +1,6 @@
 package com.rehearse.api.infra.ai.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,6 +20,7 @@ public class ClaudeRequest {
 
     private final List<Message> messages;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Double temperature;
 
     @Getter
