@@ -335,7 +335,8 @@ export const useAnswerFlow = ({
         }
 
         tts.speak(res.data.question)
-      } catch {
+      } catch (err) {
+        console.error('[후속질문] 생성 실패:', err)
         // 실패 시에도 히스토리 기록 (빈 텍스트라도)
         if (wasFollowUp) {
           completeFollowUpRound(answerText)
