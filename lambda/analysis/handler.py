@@ -44,7 +44,7 @@ def lambda_handler(event, context):
         _safe_update_progress(
             interview_id, question_set_id, "FAILED",
             failure_reason=_classify_error(e),
-            failure_detail=error_detail[:2000],
+            failure_detail=f"{error_msg}\n\n{error_detail[:1800]}",
         )
         return {"statusCode": 500, "body": json.dumps({"error": error_msg})}
     finally:
