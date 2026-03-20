@@ -28,7 +28,7 @@ export const HowItWorksSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-white py-32"
+      className="bg-white py-24"
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">

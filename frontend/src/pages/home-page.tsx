@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
-import { SocialProofSection } from '@/components/home/social-proof-section'
 import { HowItWorksSection } from '@/components/home/how-it-works-section'
+import { KeyFeaturesSection } from '@/components/home/key-features-section'
 import { BeforeYouStartSection } from '@/components/home/before-you-start-section'
 import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
@@ -26,8 +26,8 @@ export const HomePage = () => {
 
       <main>
         <HeroSection onNavigate={handleNavigateSetup} />
-        <SocialProofSection />
         <HowItWorksSection />
+        <KeyFeaturesSection />
         <BeforeYouStartSection />
         <FaqSection />
         <CtaSection onNavigate={handleNavigateSetup} />
