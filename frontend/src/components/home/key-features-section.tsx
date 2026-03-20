@@ -28,7 +28,7 @@ const TimestampMockup = () => (
   <div className="space-y-3">
     <div className="rounded-2xl bg-surface border border-border p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-black text-accent-teal-dark">
+        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
           0:42
         </span>
         <span className="text-[10px] font-bold text-text-tertiary">답변 분석</span>
@@ -39,10 +39,10 @@ const TimestampMockup = () => (
     </div>
     <div className="rounded-2xl bg-surface border border-border p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-black text-accent-teal-dark">
+        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
           1:15
         </span>
-        <span className="inline-flex items-center rounded-md bg-[#FFF0EB] px-1.5 py-0.5 text-[9px] font-bold text-accent-coral">
+        <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">
           개선 포인트
         </span>
       </div>
@@ -61,9 +61,9 @@ const NonverbalMockup = () => (
       </div>
       <div className="space-y-3">
         {[
-          { label: '시선 처리', score: 78, color: 'bg-accent-teal' },
-          { label: '표정 자연스러움', score: 85, color: 'bg-accent-teal' },
-          { label: '자세 안정성', score: 62, color: 'bg-accent-coral' },
+          { label: '시선 처리', score: 78, color: 'bg-accent' },
+          { label: '표정 자연스러움', score: 85, color: 'bg-emerald-500' },
+          { label: '자세 안정성', score: 62, color: 'bg-amber-500' },
         ].map((item) => (
           <div key={item.label}>
             <div className="flex items-center justify-between mb-1">
@@ -101,7 +101,7 @@ const QuestionsMockup = () => (
       { q: '팀에서 코드 리뷰 프로세스를 개선한 경험이 있다면 말씀해주세요.', type: '이력서 기반' },
     ].map((item) => (
       <div key={item.q} className="rounded-2xl bg-surface border border-border p-4">
-        <span className="inline-flex items-center rounded-md bg-accent-teal-light px-1.5 py-0.5 text-[9px] font-black text-accent-teal-dark mb-2">
+        <span className="inline-flex items-center rounded-md bg-accent/10 px-1.5 py-0.5 text-[9px] font-black text-accent mb-2">
           {item.type}
         </span>
         <p className="text-xs font-bold text-text-primary leading-relaxed">{item.q}</p>
@@ -123,17 +123,17 @@ export const KeyFeaturesSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-surface-warm py-32"
+      className="bg-surface py-32"
       aria-labelledby="key-features-heading"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="label-wide text-accent-teal-dark mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
             KEY FEATURES
           </p>
           <h2
             id="key-features-heading"
-            className="heading-section text-text-primary"
+            className="text-3xl font-extrabold tracking-tighter text-text-primary md:text-4xl"
           >
             리허설만의 차별화된 기능
           </h2>
@@ -150,18 +150,18 @@ export const KeyFeaturesSection = () => {
                 className={`flex flex-col items-center gap-16 ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'}`}
               >
                 <div className={`flex-1 space-y-4 ${isReversed ? 'md:text-right' : ''}`}>
-                  <p className="label-wide text-accent-teal-dark">
+                  <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent">
                     {feature.label}
                   </p>
-                  <h3 className="text-2xl font-bold text-text-primary md:text-3xl">
+                  <h3 className="text-2xl font-extrabold tracking-tight text-text-primary md:text-3xl">
                     {feature.title}
                   </h3>
-                  <p className="text-lg font-normal text-text-secondary leading-relaxed">
+                  <p className="text-lg font-medium text-text-secondary leading-relaxed">
                     {feature.description}
                   </p>
                 </div>
                 <div
-                  className={`flex-1 w-full max-w-[440px] rounded-[32px] bg-white border border-border p-8 shadow-medium transition-all duration-300 hover:shadow-strong hover:-translate-y-1 ${isReversed ? '-rotate-1' : 'rotate-1'}`}
+                  className={`flex-1 w-full max-w-[440px] rounded-[32px] bg-white border border-border p-8 shadow-toss ${isReversed ? '-rotate-1' : 'rotate-1'}`}
                   aria-hidden="true"
                 >
                   <MockupComponent />

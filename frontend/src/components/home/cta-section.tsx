@@ -12,24 +12,22 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="relative bg-accent py-32"
+      className="bg-gradient-to-b from-accent/5 to-white py-32"
     >
-      <div className="bg-grid-light absolute inset-0 opacity-20" aria-hidden="true" />
-      <div className="relative mx-auto max-w-4xl px-5 md:px-8 text-center">
+      <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
         <div className="mb-8">
           <Character mood="happy" size={80} />
         </div>
-        <h2 className="heading-section text-3xl leading-snug text-white md:text-4xl">
+        <h2 className="text-3xl font-extrabold leading-snug text-text-primary md:text-4xl">
           준비된 만큼 보여줄 수 있습니다
         </h2>
-        <p className="mt-4 text-lg text-white/70">
+        <p className="mt-4 text-lg text-text-secondary">
           지금 바로 리허설을 시작하세요.
         </p>
         <div className="mt-10">
           <button
-            className="rounded-full bg-accent-teal px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-teal/90 active:scale-95 shadow-glow-teal"
+            className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20"
             onClick={onNavigate}
-            aria-label="무료로 시작하기"
           >
             무료로 시작하기
           </button>

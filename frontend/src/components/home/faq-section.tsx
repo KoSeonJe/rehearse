@@ -63,14 +63,14 @@ export const FaqSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-surface-warm py-32"
+      className="bg-surface py-32"
     >
       <div className="max-w-3xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="label-wide text-accent-teal-dark mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
             FAQ
           </p>
-          <h2 className="text-3xl md:text-4xl heading-section text-text-primary">
+          <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-text-primary">
             자주 묻는 질문
           </h2>
         </div>
@@ -82,12 +82,19 @@ export const FaqSection = () => {
             return (
               <div key={item.question} className="border-b border-border">
                 <dt>
-                  <button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     aria-expanded={isOpen}
                     aria-controls={`faq-answer-${i}`}
-                    className="w-full py-6 cursor-pointer flex items-center justify-between gap-4 select-none text-left"
+                    className="py-6 cursor-pointer flex items-center justify-between gap-4 select-none"
                     onClick={() => toggle(i)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        toggle(i)
+                      }
+                    }}
                   >
                     <span className="text-lg font-bold text-text-primary">
                       {item.question}
@@ -97,7 +104,7 @@ export const FaqSection = () => {
                     >
                       <ChevronDownIcon />
                     </span>
-                  </button>
+                  </div>
                 </dt>
                 <dd
                   id={`faq-answer-${i}`}
@@ -105,7 +112,7 @@ export const FaqSection = () => {
                   aria-hidden={!isOpen}
                   className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-60 pb-6' : 'max-h-0'}`}
                 >
-                  <p className={`text-base text-text-secondary leading-relaxed ${isOpen ? 'bg-accent-teal/5 rounded-lg px-4 py-3' : ''}`}>
+                  <p className="text-base text-text-secondary leading-relaxed">
                     {item.answer}
                   </p>
                 </dd>

@@ -4,50 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Typography utilities */
-@layer utilities {
-  .heading-hero {
-    letter-spacing: -0.04em;
-    font-weight: 800;
-    line-height: 1.05;
-  }
-
-  .heading-section {
-    letter-spacing: -0.025em;
-    font-weight: 700;
-    line-height: 1.15;
-  }
-
-  .label-wide {
-    letter-spacing: 0.15em;
-    font-weight: 700;
-    text-transform: uppercase;
-    font-size: 11px;
-  }
-}
-
-/* Background textures */
-@layer utilities {
-  .bg-grid {
-    background-image: radial-gradient(
-      circle,
-      rgba(26, 26, 46, 0.07) 1px,
-      transparent 1px
-    );
-    background-size: 24px 24px;
-  }
-
-  .bg-grid-light {
-    background-image: radial-gradient(
-      circle,
-      rgba(255, 255, 255, 0.05) 1px,
-      transparent 1px
-    );
-    background-size: 24px 24px;
-  }
-}
-
-/* Accessibility — reduced motion (WCAG 2.1 AA) */
+/* U3: 접근성 — 모션 감소 선호 지원 (WCAG 2.1 AA) */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

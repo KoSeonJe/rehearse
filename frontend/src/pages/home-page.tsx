@@ -13,21 +13,15 @@ export const HomePage = () => {
   const handleNavigateSetup = () => navigate('/interview/setup')
 
   return (
-    <div className="min-h-screen bg-background text-text-primary selection:bg-accent/10">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
+    <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+        <div className="mx-auto flex h-16 max-w-5xl items-center px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />
-            <span className="text-xl font-bold tracking-tight text-text-primary">
+            <span className="text-xl font-extrabold tracking-tight text-text-primary">
               리허설
             </span>
           </div>
-          <button
-            className="rounded-full bg-accent px-6 py-2 text-sm font-semibold text-white transition-all hover:bg-accent-hover hover:shadow-glow-navy"
-            onClick={handleNavigateSetup}
-          >
-            시작하기
-          </button>
         </div>
       </header>
 

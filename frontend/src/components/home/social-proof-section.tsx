@@ -22,7 +22,7 @@ export const SocialProofSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-surface-warm py-12"
+      className="border-y border-border bg-surface py-12"
       aria-label="주요 기능 요약"
     >
       <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-5 md:grid-cols-3 md:px-8">
@@ -31,12 +31,12 @@ export const SocialProofSection = () => {
             key={feature.keyword}
             className="relative flex flex-col items-center text-center md:items-start md:text-left"
           >
-            <p className="text-2xl font-bold text-accent-teal-dark">{feature.keyword}</p>
+            <p className="text-2xl font-extrabold text-accent">{feature.keyword}</p>
             <p className="mt-1 text-sm text-text-secondary">{feature.description}</p>
 
             {index < FEATURES.length - 1 && (
               <div
-                className="absolute -right-4 top-1/2 hidden h-8 w-px -translate-y-1/2 bg-border-subtle md:block"
+                className="absolute -right-4 top-1/2 hidden h-8 w-px -translate-y-1/2 bg-border md:block"
                 aria-hidden="true"
               />
             )}
