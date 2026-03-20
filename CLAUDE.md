@@ -21,7 +21,9 @@
 - **Backend**: Java 21 + Spring Boot 3.x / Gradle (Kotlin DSL) / Spring Data JPA
 - **Database**: MySQL 8.0 (prod) / H2 (dev)
 - **AI**: Claude API (`claude-sonnet-4-20250514`) — backend only
-- **Browser**: MediaPipe (face/pose), Web Audio API, MediaRecorder (WebM), Web Speech API
+- **Analysis**: OpenAI API (Whisper STT, GPT-4o Vision/LLM) — Lambda only
+- **Browser**: MediaRecorder (WebM), Web Speech API
+- **Infra**: S3, EventBridge, Lambda (Python 3.12), MediaConvert
 
 ---
 
@@ -32,7 +34,7 @@
 - Functional components + arrow functions
 - File names: kebab-case (`interview-player.tsx`)
 - Component names: PascalCase (`InterviewPlayer`)
-- Hooks: `use` prefix (`useMediaPipe`)
+- Hooks: `use` prefix (`useRecording`)
 - Props interface defined inside component file
 - No barrel exports (`index.ts`) — use direct imports
 - Server state: TanStack Query / Client state: Zustand / Local state: `useState`/`useReducer`
@@ -62,7 +64,7 @@
 
 ## MVP Scope
 
-**DO**: AI interviewer (resume-based Q&A + follow-ups), video recording, nonverbal analysis (MediaPipe), voice analysis (Web Audio), timestamp feedback UI, STT, AI feedback (Claude), summary report
+**DO**: AI interviewer (resume-based Q&A + follow-ups), video recording + S3 upload, nonverbal analysis (GPT-4o Vision via Lambda), STT (OpenAI Whisper via Lambda), timestamp feedback UI, AI feedback (Claude), summary report
 
 **DON'T**: company-specific Q&A DB, interview history dashboard, peer review, mobile app, payments, coding test IDE
 
