@@ -1,7 +1,7 @@
 import json
 import time
 
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIError, AuthenticationError
 
 from config import Config
 
@@ -71,6 +71,17 @@ def analyze_verbal(question_text: str, transcript: str) -> dict:
             result = _parse_json(raw)
             print(f"[Verbal] 분석 완료: score={result.get('verbal_score')}, fillers={result.get('filler_word_count')}")
             return result
+
+        except AuthenticationError:
+            raise
+
+        except RateLimitError as e:
+            wait = RETRY_DELAY * (2 ** attempt)
+            print(f"[Verbal] 시도 {attempt + 1}/{MAX_RETRIES} RateLimitError — {wait}초 후 재시도")
+            if attempt < MAX_RETRIES - 1:
+                time.sleep(wait)
+            else:
+                raise
 
         except Exception as e:
             print(f"[Verbal] 시도 {attempt + 1}/{MAX_RETRIES} 실패: {e}")

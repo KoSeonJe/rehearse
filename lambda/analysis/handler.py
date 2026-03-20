@@ -3,9 +3,11 @@ import os
 import shutil
 import traceback
 import urllib.parse
+from uuid import uuid4
 
 import boto3
 
+import api_client
 from api_client import get_answers, update_progress, save_feedback, backup_to_s3, check_all_completed, trigger_report
 from config import Config
 from extractors.ffmpeg_extractor import extract_audio, extract_frames, get_video_duration_ms
@@ -46,10 +48,15 @@ def lambda_handler(event, context):
         )
         return {"statusCode": 500, "body": json.dumps({"error": error_msg})}
     finally:
+        api_client.set_correlation_id(None)
         _cleanup()
 
 
 def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str) -> dict:
+    correlation_id = f"{interview_id}-{question_set_id}-{uuid4().hex[:8]}"
+    api_client.set_correlation_id(correlation_id)
+    print(f"[Analysis] 파이프라인 시작: interview={interview_id}, qs={question_set_id}, correlation_id={correlation_id}")
+
     # 1. 멱등성 체크
     answers_data = get_answers(interview_id, question_set_id)
     analysis_status = answers_data.get("analysisStatus", "")

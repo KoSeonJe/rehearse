@@ -1,7 +1,9 @@
 import json
 import traceback
 import urllib.parse
+from uuid import uuid4
 
+import api_client
 from api_client import get_file_metadata_by_s3_key, update_file_status
 from converter import create_mediaconvert_job, wait_for_job
 
@@ -17,6 +19,10 @@ def lambda_handler(event, context):
     if not key.startswith("videos/") or not key.endswith(".webm"):
         print(f"[Convert] Skipping non-video key: {key}")
         return {"statusCode": 200, "body": "Skipped"}
+
+    correlation_id = f"convert-{key.replace('/', '-')}-{uuid4().hex[:8]}"
+    api_client.set_correlation_id(correlation_id)
+    print(f"[Convert] correlation_id={correlation_id}")
 
     file_meta = None
     try:
@@ -68,3 +74,5 @@ def lambda_handler(event, context):
             "statusCode": 500,
             "body": json.dumps({"error": error_msg}),
         }
+    finally:
+        api_client.set_correlation_id(None)
