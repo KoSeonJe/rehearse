@@ -11,6 +11,15 @@ import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import type { AnalysisStatus } from '@/types/interview'
 
+const failureMessages: Record<string, string> = {
+  TIMEOUT: '분석 시간이 초과되었습니다. 다시 시도해주세요.',
+  API_ERROR: '외부 서비스 연결에 실패했습니다.',
+  TRANSCRIPTION_ERROR: '음성 인식 처리 중 오류가 발생했습니다.',
+  VISION_ERROR: '영상 분석 중 오류가 발생했습니다.',
+  ZOMBIE_TIMEOUT: '분석이 시간 내 완료되지 않았습니다.',
+  INTERNAL_ERROR: '분석 중 오류가 발생했습니다.',
+}
+
 interface QuestionSetSectionProps {
   interviewId: number
   questionSetId: number
@@ -64,9 +73,9 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
         </div>
         <div className="rounded-2xl border border-error/20 bg-error/5 p-6 text-center">
           <p className="text-sm font-bold text-error mb-2">이 질문세트의 분석에 실패했습니다</p>
-          {failureReason && (
-            <p className="text-xs text-text-tertiary">{failureReason}</p>
-          )}
+          <p className="text-xs text-text-tertiary">
+            {failureReason ? (failureMessages[failureReason] ?? failureReason) : '알 수 없는 오류가 발생했습니다.'}
+          </p>
         </div>
       </section>
     )
