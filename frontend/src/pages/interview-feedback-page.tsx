@@ -299,7 +299,7 @@ export const InterviewFeedbackPage = () => {
 
         {/* Question Set Sections */}
         <div className="space-y-16">
-          {questionSets.map((qs, idx) => (
+          {questionSets.filter(qs => qs.analysisStatus !== 'SKIPPED').map((qs, idx) => (
             <QuestionSetSection
               key={qs.id}
               interviewId={interview.id}
