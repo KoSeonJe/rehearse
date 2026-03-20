@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInterview } from '@/hooks/use-interviews'
@@ -51,12 +51,12 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
     return (
       <section className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-error/10 text-xs font-black text-error">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-error/10 text-xs font-bold text-error">
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight text-text-primary">{category}</h2>
-            <p className="text-xs text-error font-bold">분석 실패</p>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+            <p className="text-xs text-error font-semibold">분석 실패</p>
           </div>
         </div>
         <div className="rounded-2xl border border-error/20 bg-error/5 p-6 text-center">
@@ -71,20 +71,71 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 
   // 분석 미완료 상태
   if (analysisStatus !== 'COMPLETED') {
+    const statusConfig: Record<string, { subtitle: string; body: ReactNode }> = {
+      PENDING: {
+        subtitle: '업로드 대기 중',
+        body: (
+          <div className="rounded-2xl bg-surface p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-text-secondary">영상 업로드를 기다리고 있어요</p>
+            <p className="text-xs text-text-tertiary">면접 영상이 업로드되면 자동으로 분석이 시작됩니다</p>
+          </div>
+        ),
+      },
+      PENDING_UPLOAD: {
+        subtitle: '업로드 대기 중',
+        body: (
+          <div className="rounded-2xl bg-surface p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-text-secondary">영상 업로드를 기다리고 있어요</p>
+            <p className="text-xs text-text-tertiary">면접 영상이 업로드되면 자동으로 분석이 시작됩니다</p>
+          </div>
+        ),
+      },
+      ANALYZING: {
+        subtitle: '분석 진행 중',
+        body: (
+          <div className="rounded-2xl bg-surface p-8 text-center space-y-4">
+            <Character mood="thinking" size={80} className="mx-auto" />
+            <div>
+              <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
+              <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
+            </div>
+            <div className="h-1 w-32 bg-accent/20 rounded-full mx-auto overflow-hidden">
+              <div className="h-full bg-accent animate-progress-loading" />
+            </div>
+          </div>
+        ),
+      },
+      SKIPPED: {
+        subtitle: '건너뜀',
+        body: (
+          <div className="rounded-2xl bg-surface p-8 text-center">
+            <p className="text-sm font-semibold text-text-tertiary">이 질문세트는 건너뛰었습니다</p>
+          </div>
+        ),
+      },
+    }
+
+    const config = statusConfig[analysisStatus] ?? {
+      subtitle: '대기 중',
+      body: (
+        <div className="rounded-2xl bg-surface p-8 text-center animate-pulse">
+          <p className="text-sm font-semibold text-text-tertiary">분석이 아직 완료되지 않았습니다</p>
+        </div>
+      ),
+    }
+
     return (
       <section className="space-y-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border text-xs font-black text-text-tertiary">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border text-xs font-bold text-text-tertiary">
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight text-text-primary">{category}</h2>
-            <p className="text-xs text-text-tertiary font-bold">분석 대기 중</p>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+            <p className="text-xs text-text-tertiary font-medium">{config.subtitle}</p>
           </div>
         </div>
-        <div className="rounded-2xl bg-surface p-8 text-center animate-pulse">
-          <p className="text-sm font-bold text-text-tertiary">분석이 아직 완료되지 않았습니다</p>
-        </div>
+        {config.body}
       </section>
     )
   }
@@ -111,17 +162,17 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-black text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-extrabold tracking-tight text-text-primary">{category}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
             <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
           </div>
         </div>
         <div className="text-right">
           <p className="text-3xl font-black tracking-tighter text-text-primary">{feedback.questionSetScore}</p>
-          <p className="text-[10px] font-bold text-text-tertiary">/ 100</p>
+          <p className="text-[10px] font-medium text-text-tertiary">/ 100</p>
         </div>
       </div>
 
@@ -133,8 +184,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       )}
 
       {/* Content: Video + Feedback */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left: Video + Timeline */}
+      <div className="space-y-6">
+        {/* Video + Timeline: full width */}
         <div className="space-y-4">
           <VideoPlayer
             ref={videoRef}
@@ -151,8 +202,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           />
         </div>
 
-        {/* Right: Feedback Panel */}
-        <div className="lg:max-h-[500px] lg:overflow-y-auto">
+        {/* Feedback Panel: full width, scrollable */}
+        <div className="max-h-[500px] overflow-y-auto">
           <FeedbackPanel
             feedbacks={feedbacks}
             questions={questions}
@@ -194,7 +245,7 @@ export const InterviewFeedbackPage = () => {
           피드백을 불러올 수 없습니다
         </h1>
         <button
-          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-accent font-black text-white active:scale-95"
+          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-accent font-semibold text-white active:scale-95"
           onClick={() => navigate('/')}
         >
           홈으로 돌아가기
@@ -206,22 +257,22 @@ export const InterviewFeedbackPage = () => {
   return (
     <div className="min-h-screen bg-white pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-center gap-2" onClick={() => navigate('/')} role="button">
+          <button className="flex items-center gap-2" onClick={() => navigate('/')}>
             <Logo size={60} />
-            <span className="text-lg font-black tracking-tight text-text-primary">타임스탬프 리뷰</span>
-          </div>
+            <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
+          </button>
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(`/interview/${id}/report`)}
-              className="text-sm font-bold text-text-secondary hover:text-text-primary"
+              className="text-sm font-semibold text-text-secondary hover:text-text-primary"
             >
               리포트
             </button>
             <button
               onClick={() => navigate('/')}
-              className="text-sm font-bold text-text-secondary hover:text-text-primary"
+              className="text-sm font-semibold text-text-secondary hover:text-text-primary"
             >
               닫기
             </button>

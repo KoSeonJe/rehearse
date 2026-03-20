@@ -1,10 +1,5 @@
 import type { TimestampFeedback } from '@/types/interview'
 
-const ANSWER_TYPE_COLORS: Record<string, string> = {
-  MAIN: 'bg-accent',
-  FOLLOWUP: 'bg-blue-400',
-}
-
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   MAIN: '원본',
   FOLLOWUP: '후속',
@@ -51,7 +46,9 @@ export const TimelineBar = ({
               key={fb.id}
               className={`absolute top-1 bottom-1 rounded-md transition-all cursor-pointer ${
                 isActive ? 'ring-2 ring-accent ring-offset-1 z-10' : 'hover:brightness-110'
-              } ${getScoreColor(fb)}`}
+              } ${getScoreColor(fb)} ${
+                fb.questionType === 'FOLLOWUP' ? 'border-2 border-dashed border-blue-400' : ''
+              }`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
               title={`${(fb.questionType ? ANSWER_TYPE_LABELS[fb.questionType] : null) ?? fb.questionType ?? '질문'} (${Math.round(fb.startMs / 1000)}s)`}
@@ -68,30 +65,24 @@ export const TimelineBar = ({
 
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
-        {Object.entries(ANSWER_TYPE_COLORS).map(([type, color]) => {
-          const hasFeedback = feedbacks.some((f) => f.questionType === type)
-          if (!hasFeedback) return null
-          return (
-            <div key={type} className="flex items-center gap-1.5">
-              <div className={`h-2.5 w-2.5 rounded-sm ${color}`} />
-              <span className="text-[10px] font-bold text-text-tertiary">
-                {ANSWER_TYPE_LABELS[type] ?? type}
-              </span>
-            </div>
-          )
-        })}
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-sm bg-success" />
-          <span className="text-[10px] font-bold text-text-tertiary">80+</span>
+          <span className="text-[10px] font-medium text-text-tertiary">80+</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-sm bg-yellow-400" />
-          <span className="text-[10px] font-bold text-text-tertiary">50~79</span>
+          <span className="text-[10px] font-medium text-text-tertiary">50~79</span>
         </div>
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-sm bg-error" />
-          <span className="text-[10px] font-bold text-text-tertiary">~49</span>
+          <span className="text-[10px] font-medium text-text-tertiary">~49</span>
         </div>
+        {feedbacks.some((f) => f.questionType === 'FOLLOWUP') && (
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-sm border-2 border-dashed border-blue-400" />
+            <span className="text-[10px] font-medium text-text-tertiary">후속질문</span>
+          </div>
+        )}
       </div>
     </div>
   )
