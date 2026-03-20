@@ -318,7 +318,28 @@ export const InterviewReportPage = () => {
     )
   }
 
-  // 에러 상태
+  // 리포트 생성 실패 (500 에러)
+  if (reportStatus === 'failed') {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
+        <Character mood="confused" size={140} className="mb-8" />
+        <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary text-center">
+          리포트 생성에 실패했습니다
+        </h1>
+        <p className="mt-3 text-base font-medium text-text-secondary text-center">
+          AI 리포트 생성 중 오류가 발생했어요
+        </p>
+        <button
+          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-accent font-black text-white active:scale-95"
+          onClick={() => window.location.reload()}
+        >
+          다시 시도하기
+        </button>
+      </div>
+    )
+  }
+
+  // 에러 상태 (네트워크 등 일반 에러)
   if (reportStatus === 'error' || !report) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5">

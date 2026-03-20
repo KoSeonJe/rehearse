@@ -3,7 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query'
 import { apiClient, ApiError } from '@/lib/api-client'
 import type { ApiResponse, InterviewReport } from '@/types/interview'
 
-type ReportStatus = 'loading' | 'analyzing' | 'generating' | 'ready' | 'error'
+type ReportStatus = 'loading' | 'analyzing' | 'generating' | 'failed' | 'ready' | 'error'
 
 export const useReport = (interviewId: string) => {
   const hasTriggeredPost = useRef(false)
@@ -25,6 +25,8 @@ export const useReport = (interviewId: string) => {
       ),
     enabled: !!interviewId,
     retry: (failureCount, error) => {
+      // 500 에러 → 즉시 폴링 중단 (리포트 생성 실패)
+      if (error instanceof ApiError && error.status >= 500) return false
       // 202 (REPORT_GENERATING) → 폴링으로 재시도, 최대 24회 (2분)
       if (error instanceof ApiError && error.status === 202) return failureCount < 24
       // 409 (ANALYSIS_NOT_COMPLETED) → 폴링으로 재시도, 최대 60회 (5분)
@@ -58,6 +60,7 @@ export const useReport = (interviewId: string) => {
     if (query.data?.data) return 'ready'
     if (query.isLoading) return 'loading'
     if (query.isError && query.error instanceof ApiError) {
+      if (query.error.status >= 500) return 'failed'
       if (query.error.status === 409) return 'analyzing'
       if (query.error.status === 202) return 'generating'
     }
