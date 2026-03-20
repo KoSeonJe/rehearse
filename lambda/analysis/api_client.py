@@ -75,30 +75,6 @@ def save_feedback(
     resp.raise_for_status()
 
 
-@retry_on_transient()
-def check_all_completed(interview_id: int) -> bool:
-    """면접의 모든 질문세트가 COMPLETED인지 확인"""
-    url = f"{Config.API_SERVER_URL}/api/v1/interviews/{interview_id}"
-    resp = httpx.get(url, headers=_get_headers(), timeout=TIMEOUT)
-    resp.raise_for_status()
-    interview_data = resp.json()["data"]
-    question_sets = interview_data.get("questionSets", [])
-    if not question_sets:
-        return False
-    return all(qs.get("analysisStatus") == "COMPLETED" for qs in question_sets)
-
-
-@retry_on_transient()
-def trigger_report(interview_id: int) -> None:
-    """종합 리포트 생성 트리거"""
-    url = (
-        f"{Config.API_SERVER_URL}/api/internal/interviews/{interview_id}/report"
-    )
-    resp = httpx.post(url, headers=_get_headers(), timeout=60.0)
-    resp.raise_for_status()
-    print(f"[Analysis] 종합 리포트 생성 트리거 완료: interviewId={interview_id}")
-
-
 def backup_to_s3(interview_id: int, question_set_id: int, data: dict) -> None:
     s3 = boto3.client("s3")
     key = f"analysis-backup/{interview_id}/qs_{question_set_id}.json"
