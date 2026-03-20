@@ -35,9 +35,6 @@ export const HowItWorksSection = () => {
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="mb-0">
-          <p className="label-wide text-accent-teal-dark mb-4">
-            HOW IT WORKS
-          </p>
           <h2
             id="how-it-works-heading"
             className="text-3xl heading-section text-text-primary md:text-4xl"
@@ -66,10 +63,10 @@ export const HowItWorksSection = () => {
             <article
               key={step.number}
               style={getItemStyle(index)}
-              className="relative rounded-card border border-border bg-surface p-8 shadow-soft transition-all duration-300 hover:shadow-medium hover:-translate-y-1"
+              className="relative rounded-2xl border border-border bg-surface p-8 shadow-soft transition-all duration-300 hover:shadow-medium hover:-translate-y-1"
             >
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent font-black text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent font-bold text-white"
                 aria-label={`${step.number}단계`}
               >
                 {step.number}

@@ -1,5 +1,4 @@
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
-import { useStaggerOnScroll } from '@/hooks/use-stagger-on-scroll'
 
 interface CheckItem {
   title: string
@@ -53,7 +52,6 @@ const CheckIcon = () => (
 
 export const BeforeYouStartSection = () => {
   const { ref, style } = useFadeInOnScroll<HTMLElement>()
-  const { ref: staggerRef, getItemStyle } = useStaggerOnScroll<HTMLUListElement>()
 
   return (
     <section
@@ -63,9 +61,6 @@ export const BeforeYouStartSection = () => {
     >
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="label-wide text-accent-teal-dark mb-4">
-            PREPARATION
-          </p>
           <h2 className="text-3xl md:text-4xl heading-section text-text-primary">
             시작 전, 이것만 준비하세요
           </h2>
@@ -75,15 +70,13 @@ export const BeforeYouStartSection = () => {
         </div>
 
         <ul
-          ref={staggerRef}
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
           aria-label="면접 준비 체크리스트"
         >
-          {CHECK_ITEMS.map((item, index) => (
+          {CHECK_ITEMS.map((item) => (
             <li
               key={item.title}
-              style={getItemStyle(index)}
-              className="bg-surface rounded-card border border-border p-6 transition-all duration-300 hover:shadow-medium hover:-translate-y-1"
+              className="bg-surface rounded-xl border border-border p-6"
             >
               <div className="flex items-start gap-4">
                 <div
@@ -93,7 +86,7 @@ export const BeforeYouStartSection = () => {
                   <CheckIcon />
                 </div>
                 <div>
-                  <p className="text-base font-bold text-text-primary">{item.title}</p>
+                  <p className="text-base font-semibold text-text-primary">{item.title}</p>
                   <p className="text-sm text-text-secondary mt-1">{item.description}</p>
                 </div>
               </div>

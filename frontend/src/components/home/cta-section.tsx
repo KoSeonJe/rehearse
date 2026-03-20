@@ -29,9 +29,9 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
           <button
             className="rounded-full bg-accent-teal px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-teal/90 active:scale-95 shadow-glow-teal"
             onClick={onNavigate}
-            aria-label="무료로 시작하기"
+            aria-label="지금 바로 연습 시작"
           >
-            무료로 시작하기
+            지금 바로 연습 시작
           </button>
         </div>
       </div>

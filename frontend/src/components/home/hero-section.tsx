@@ -32,9 +32,9 @@ export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
               <button
                 className="rounded-full bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-glow-navy"
                 onClick={onNavigate}
-                aria-label="무료로 시작하기"
+                aria-label="첫 면접 연습해보기"
               >
-                무료로 시작하기
+                첫 면접 연습해보기
               </button>
               <p className="mt-4 text-sm text-text-tertiary">
                 회원가입 없이 바로 체험 · 이력서 업로드만 하면 끝
@@ -63,7 +63,7 @@ export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
                       />
                     ))}
                   </div>
-                  <span className="text-[8px] font-black text-text-primary uppercase tracking-wider">
+                  <span className="text-[8px] font-bold text-text-primary uppercase tracking-wider">
                     Recording
                   </span>
                 </div>

@@ -28,7 +28,7 @@ const TimestampMockup = () => (
   <div className="space-y-3">
     <div className="rounded-2xl bg-surface border border-border p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-black text-accent-teal-dark">
+        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-semibold text-accent-teal-dark">
           0:42
         </span>
         <span className="text-[10px] font-bold text-text-tertiary">답변 분석</span>
@@ -39,7 +39,7 @@ const TimestampMockup = () => (
     </div>
     <div className="rounded-2xl bg-surface border border-border p-4">
       <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-black text-accent-teal-dark">
+        <span className="inline-flex items-center rounded-lg bg-accent-teal-light px-2 py-0.5 text-[10px] font-semibold text-accent-teal-dark">
           1:15
         </span>
         <span className="inline-flex items-center rounded-md bg-[#FFF0EB] px-1.5 py-0.5 text-[9px] font-bold text-accent-coral">
@@ -68,7 +68,7 @@ const NonverbalMockup = () => (
           <div key={item.label}>
             <div className="flex items-center justify-between mb-1">
               <span className="text-[10px] font-bold text-text-secondary">{item.label}</span>
-              <span className="text-[10px] font-black text-text-primary">{item.score}점</span>
+              <span className="text-[10px] font-semibold text-text-primary">{item.score}점</span>
             </div>
             <div className="h-1.5 rounded-full bg-border">
               <div
@@ -101,7 +101,7 @@ const QuestionsMockup = () => (
       { q: '팀에서 코드 리뷰 프로세스를 개선한 경험이 있다면 말씀해주세요.', type: '이력서 기반' },
     ].map((item) => (
       <div key={item.q} className="rounded-2xl bg-surface border border-border p-4">
-        <span className="inline-flex items-center rounded-md bg-accent-teal-light px-1.5 py-0.5 text-[9px] font-black text-accent-teal-dark mb-2">
+        <span className="inline-flex items-center rounded-md bg-accent-teal-light px-1.5 py-0.5 text-[9px] font-semibold text-accent-teal-dark mb-2">
           {item.type}
         </span>
         <p className="text-xs font-bold text-text-primary leading-relaxed">{item.q}</p>
@@ -128,7 +128,7 @@ export const KeyFeaturesSection = () => {
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="label-wide text-accent-teal-dark mb-4">
+          <p className="label-wide text-text-tertiary mb-4">
             KEY FEATURES
           </p>
           <h2
@@ -150,7 +150,7 @@ export const KeyFeaturesSection = () => {
                 className={`flex flex-col items-center gap-16 ${isReversed ? 'md:flex-row-reverse' : 'md:flex-row'}`}
               >
                 <div className={`flex-1 space-y-4 ${isReversed ? 'md:text-right' : ''}`}>
-                  <p className="label-wide text-accent-teal-dark">
+                  <p className="label-wide text-text-tertiary">
                     {feature.label}
                   </p>
                   <h3 className="text-2xl font-bold text-text-primary md:text-3xl">

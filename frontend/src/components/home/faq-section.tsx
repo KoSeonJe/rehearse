@@ -67,9 +67,6 @@ export const FaqSection = () => {
     >
       <div className="max-w-3xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="label-wide text-accent-teal-dark mb-4">
-            FAQ
-          </p>
           <h2 className="text-3xl md:text-4xl heading-section text-text-primary">
             자주 묻는 질문
           </h2>
