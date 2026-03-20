@@ -24,148 +24,8 @@ const features = [
   },
 ] as const
 
-// 면접자 상반신 실루엣 — 웹캠 앞에 앉아 살짝 미소짓는 모습
-const PersonSilhouette = () => (
-  <svg
-    viewBox="0 0 120 144"
-    fill="none"
-    aria-hidden="true"
-    className="w-20 h-24"
-  >
-    {/* 목 */}
-    <path
-      d="M54 58 C54 62 52 66 52 70 L68 70 C68 66 66 62 66 58 Z"
-      fill="white"
-      opacity="0.55"
-    />
-
-    {/* 얼굴 형태 — 약간 갸름한 타원 */}
-    <ellipse cx="60" cy="38" rx="18" ry="22" fill="white" opacity="0.75" />
-
-    {/* 머리카락 — 자연스러운 윗부분 */}
-    <path
-      d="M42 34 C42 20 45 14 60 13 C75 14 78 20 78 34 C76 28 72 24 60 24 C48 24 44 28 42 34 Z"
-      fill="white"
-      opacity="0.45"
-    />
-
-    {/* 귀 — 좌 */}
-    <ellipse cx="42" cy="38" rx="3.5" ry="5" fill="white" opacity="0.55" />
-    {/* 귀 — 우 */}
-    <ellipse cx="78" cy="38" rx="3.5" ry="5" fill="white" opacity="0.55" />
-
-    {/* 눈썹 — 좌 */}
-    <path
-      d="M50 28 C52 26.5 56 26 58 26.5"
-      stroke="white"
-      strokeOpacity="0.5"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    {/* 눈썹 — 우 */}
-    <path
-      d="M62 26.5 C64 26 68 26.5 70 28"
-      stroke="white"
-      strokeOpacity="0.5"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-
-    {/* 눈 — 좌 (아몬드형) */}
-    <path
-      d="M50 33 C52 31 56 31 58 33 C56 35.5 52 35.5 50 33 Z"
-      fill="white"
-      opacity="0.35"
-    />
-    <ellipse cx="54" cy="33" rx="2.2" ry="2.5" fill="white" opacity="0.6" />
-
-    {/* 눈 — 우 (아몬드형) */}
-    <path
-      d="M62 33 C64 31 68 31 70 33 C68 35.5 64 35.5 62 33 Z"
-      fill="white"
-      opacity="0.35"
-    />
-    <ellipse cx="66" cy="33" rx="2.2" ry="2.5" fill="white" opacity="0.6" />
-
-    {/* 코 — 섬세한 콧날 */}
-    <path
-      d="M58 36 C58 41 56 43.5 56 44.5 C57.5 45.5 62.5 45.5 64 44.5 C64 43.5 62 41 62 36"
-      stroke="white"
-      strokeOpacity="0.3"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      fill="none"
-    />
-
-    {/* 입 — 살짝 미소 (양끝이 올라간 곡선) */}
-    <path
-      d="M53 50 C55.5 52.5 60 53 64.5 52 C66.5 51.5 67.5 50.5 67 50"
-      stroke="white"
-      strokeOpacity="0.55"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      fill="none"
-    />
-    {/* 윗입술 중앙 (큐피드 활) */}
-    <path
-      d="M55 49.5 C57 48.5 60 48 63 49 C65 49.5 67 50 67 50"
-      stroke="white"
-      strokeOpacity="0.3"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      fill="none"
-    />
-
-    {/* 어깨 + 상체 — 자연스러운 드롭 숄더 */}
-    <path
-      d="M52 70 C46 71 36 74 24 82 C18 86 16 92 16 100 L104 100 C104 92 102 86 96 82 C84 74 74 71 68 70 Z"
-      fill="white"
-      opacity="0.55"
-    />
-
-    {/* 셔츠 칼라 — V넥 오른쪽 */}
-    <path
-      d="M60 72 L68 70 C70 72 72 76 70 80 Z"
-      fill="white"
-      opacity="0.7"
-    />
-    {/* 셔츠 칼라 — V넥 왼쪽 */}
-    <path
-      d="M60 72 L52 70 C50 72 48 76 50 80 Z"
-      fill="white"
-      opacity="0.7"
-    />
-    {/* 칼라 중앙 V 라인 */}
-    <path
-      d="M52 70 C55 74 58 78 60 82 C62 78 65 74 68 70"
-      stroke="white"
-      strokeOpacity="0.4"
-      strokeWidth="1.2"
-      strokeLinecap="round"
-      fill="none"
-    />
-
-    {/* 어깨 윤곽 강조 — 좌 */}
-    <path
-      d="M52 70 C44 72 32 77 24 82"
-      stroke="white"
-      strokeOpacity="0.3"
-      strokeWidth="1"
-      strokeLinecap="round"
-      fill="none"
-    />
-    {/* 어깨 윤곽 강조 — 우 */}
-    <path
-      d="M68 70 C76 72 88 77 96 82"
-      stroke="white"
-      strokeOpacity="0.3"
-      strokeWidth="1"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
-)
+// 면접자/면접관 사진 경로
+const INTERVIEW_IMG = '/images/img.png'
 
 interface FeedbackItem {
   time: string
@@ -220,8 +80,12 @@ const TimestampMockup = () => (
         <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-white/15 rounded-tr" />
         <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-white/15 rounded-bl" />
 
-        {/* 사람 실루엣 */}
-        <PersonSilhouette />
+        {/* 면접자 사진 (왼쪽 인물 크롭) */}
+        <img
+          src={INTERVIEW_IMG}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-[25%_20%]"
+        />
       </div>
 
       {/* 타임라인 바 */}
@@ -317,8 +181,19 @@ const NONVERBAL_FEEDBACKS: NonverbalFeedback[] = [
 
 const NonverbalMockup = () => (
   <div className="space-y-3">
-    <div className="rounded-2xl bg-surface border border-border p-4">
-      <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
+    {/* 면접관 사진 + 헤더 */}
+    <div className="rounded-2xl bg-surface border border-border overflow-hidden">
+      <div className="relative h-28">
+        <img
+          src={INTERVIEW_IMG}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-[75%_20%]"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+        <div className="absolute bottom-3 left-3">
+          <span className="text-xs font-bold text-white drop-shadow-md">비언어 분석 결과</span>
+        </div>
+      </div>
     </div>
     <div className="space-y-2">
       {NONVERBAL_FEEDBACKS.map((fb) => (
