@@ -12,4 +12,5 @@ public class FollowUpResponse {
     private final String reason;
     private final String type;
     private final String answerText;
+    private final String modelAnswer;
 }

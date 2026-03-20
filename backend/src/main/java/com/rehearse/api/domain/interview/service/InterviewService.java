@@ -182,6 +182,7 @@ public class InterviewService {
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .answerText(answerText)
+                .modelAnswer(followUpQuestion.getModelAnswer())
                 .build();
     }
 
