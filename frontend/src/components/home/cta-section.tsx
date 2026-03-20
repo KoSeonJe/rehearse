@@ -1,3 +1,4 @@
+import { Character } from '@/components/ui/character'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface CtaSectionProps {
@@ -11,19 +12,26 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="mx-auto max-w-4xl px-5 py-32 text-center"
+      className="bg-gradient-to-b from-accent/5 to-white py-32"
     >
-      <h2 className="text-3xl font-extrabold leading-snug text-text-primary md:text-4xl">
-        당신의 면접, 이제 혼자 고민하지 마세요.<br />
-        리허설이 함께합니다.
-      </h2>
-      <div className="mt-12">
-        <button
-          className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95"
-          onClick={onNavigate}
-        >
-          무료로 체험하기
-        </button>
+      <div className="mx-auto max-w-4xl px-5 text-center">
+        <div className="mb-8">
+          <Character mood="happy" size={80} />
+        </div>
+        <h2 className="text-3xl font-extrabold leading-snug text-text-primary md:text-4xl">
+          준비된 만큼 보여줄 수 있습니다
+        </h2>
+        <p className="mt-4 text-lg text-text-secondary">
+          지금 바로 리허설을 시작하세요.
+        </p>
+        <div className="mt-10">
+          <button
+            className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20"
+            onClick={onNavigate}
+          >
+            무료로 시작하기
+          </button>
+        </div>
       </div>
     </section>
   )
