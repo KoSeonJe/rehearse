@@ -8,7 +8,7 @@ from uuid import uuid4
 import boto3
 
 import api_client
-from api_client import get_answers, update_progress, save_feedback, backup_to_s3, check_all_completed, trigger_report
+from api_client import get_answers, update_progress, save_feedback, backup_to_s3
 from config import Config
 from extractors.ffmpeg_extractor import extract_audio, extract_frames, get_video_duration_ms
 from analyzers.stt_analyzer import transcribe
@@ -111,13 +111,6 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         print(f"[Analysis] 피드백 저장 API 실패, S3 백업 시도: {e}")
         backup_to_s3(interview_id, question_set_id, feedback_payload)
         raise
-
-    # 모든 질문세트 완료 시 종합 리포트 생성 트리거
-    try:
-        if check_all_completed(interview_id):
-            trigger_report(interview_id)
-    except Exception as e:
-        print(f"[Analysis] 리포트 트리거 실패 (피드백은 저장됨): {e}")
 
     print(f"[Analysis] 파이프라인 완료: interview={interview_id}, qs={question_set_id}")
     return {"statusCode": 200, "body": json.dumps({"message": "Analysis complete"})}
