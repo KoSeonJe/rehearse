@@ -56,7 +56,7 @@ class InterviewServiceTest {
     private PdfTextExtractor pdfTextExtractor;
 
     @Mock
-    private com.rehearse.api.infra.ai.WhisperService whisperService;
+    private com.rehearse.api.infra.ai.SttService sttService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -260,6 +260,132 @@ class InterviewServiceTest {
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
         assertThat(response.getType()).isEqualTo("DEEP_DIVE");
+    }
+
+    @Test
+    @DisplayName("오디오 파일이 있으면 STT로 텍스트를 추출하여 후속질문 생성")
+    void generateFollowUp_withAudioFile() {
+        // given
+        Interview interview = createMockInterview();
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewFinder.findById(1L)).willReturn(interview);
+
+        QuestionSet questionSet = createMockQuestionSet(interview);
+        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
+
+        org.springframework.mock.web.MockMultipartFile audioFile =
+                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        given(sttService.transcribe(audioFile)).willReturn("STT로 추출된 답변 텍스트입니다.");
+
+        GeneratedFollowUp followUp = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(followUp, "question", "구체적으로 어떤 최적화를 하셨나요?");
+        ReflectionTestUtils.setField(followUp, "reason", "깊이 확인");
+        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+
+        given(aiClient.generateFollowUpQuestion(anyString(), eq("STT로 추출된 답변 텍스트입니다."), any(), any()))
+                .willReturn(followUp);
+
+        given(questionRepository.save(any(Question.class)))
+                .willAnswer(invocation -> {
+                    Question q = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(q, "id", 101L);
+                    return q;
+                });
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "성능 최적화 경험을 말씀해주세요.");
+        ReflectionTestUtils.setField(request, "answerText", "");
+
+        // when
+        FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
+
+        // then
+        assertThat(response.getQuestionId()).isEqualTo(101L);
+        assertThat(response.getAnswerText()).isEqualTo("STT로 추출된 답변 텍스트입니다.");
+        then(sttService).should().transcribe(audioFile);
+    }
+
+    @Test
+    @DisplayName("오디오 파일과 answerText 모두 비어있으면 예외 발생")
+    void generateFollowUp_noAnswerText_noAudio() {
+        // given
+        Interview interview = createMockInterview();
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewFinder.findById(1L)).willReturn(interview);
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "질문");
+        ReflectionTestUtils.setField(request, "answerText", "");
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_006");
+                });
+    }
+
+    @Test
+    @DisplayName("오디오 파일이 있지만 STT 결과가 빈 문자열이면 예외 발생")
+    void generateFollowUp_sttReturnsEmpty_throwsException() {
+        // given
+        Interview interview = createMockInterview();
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewFinder.findById(1L)).willReturn(interview);
+
+        org.springframework.mock.web.MockMultipartFile audioFile =
+                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        given(sttService.transcribe(audioFile)).willReturn("");
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "질문");
+        ReflectionTestUtils.setField(request, "answerText", "");
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo("INTERVIEW_006");
+                });
+    }
+
+    @Test
+    @DisplayName("STT 호출 중 예외 발생 시 그대로 전파된다")
+    void generateFollowUp_sttThrowsException_propagates() {
+        // given
+        Interview interview = createMockInterview();
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        given(interviewFinder.findById(1L)).willReturn(interview);
+
+        org.springframework.mock.web.MockMultipartFile audioFile =
+                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        given(sttService.transcribe(audioFile))
+                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "WHISPER_003", "음성 인식 API 호출에 실패했습니다."));
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "질문");
+        ReflectionTestUtils.setField(request, "answerText", "");
+
+        // when & then
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo("WHISPER_003");
+                });
     }
 
     @Test

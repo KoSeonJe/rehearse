@@ -19,6 +19,9 @@ claude:
   api-key: ${CLAUDE_API_KEY}
   model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
 
+openai:
+  api-key: ${OPENAI_API_KEY:}
+
 aws:
   enabled: true
   region: ${AWS_REGION:ap-northeast-2}

@@ -15,7 +15,7 @@ import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
-import com.rehearse.api.infra.ai.WhisperService;
+import com.rehearse.api.infra.ai.SttService;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class InterviewService {
     private final QuestionSetService questionSetService;
     private final AiClient aiClient;
     private final PdfTextExtractor pdfTextExtractor;
-    private final WhisperService whisperService;
+    private final SttService sttService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -143,7 +143,7 @@ public class InterviewService {
         // 오디오 파일이 있으면 Whisper STT로 텍스트 추출
         String answerText = request.getAnswerText();
         if (audioFile != null && !audioFile.isEmpty()) {
-            answerText = whisperService.transcribe(audioFile);
+            answerText = sttService.transcribe(audioFile);
         }
 
         if (answerText == null || answerText.isBlank()) {
