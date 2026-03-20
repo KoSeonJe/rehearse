@@ -53,7 +53,7 @@ const CheckIcon = () => (
 
 export const BeforeYouStartSection = () => {
   const { ref, style } = useFadeInOnScroll<HTMLElement>()
-  const { ref: staggerRef, getItemStyle } = useStaggerOnScroll()
+  const { ref: staggerRef, getItemStyle } = useStaggerOnScroll<HTMLUListElement>()
 
   return (
     <section
