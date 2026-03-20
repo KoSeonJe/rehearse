@@ -25,7 +25,7 @@ const features = [
 ] as const
 
 // 면접자/면접관 사진 경로
-const INTERVIEW_IMG = '/images/img.png'
+const INTERVIEW_IMG = '/images/면접자.png'
 
 interface FeedbackItem {
   time: string
@@ -65,7 +65,7 @@ const TimestampMockup = () => (
           <img
             src={INTERVIEW_IMG}
             alt=""
-            className="absolute inset-0 w-[200%] h-full object-cover object-[15%_15%]"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
           {/* REC 배지 */}
           <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
@@ -160,7 +160,7 @@ const NonverbalMockup = () => (
         <img
           src={INTERVIEW_IMG}
           alt=""
-          className="absolute inset-0 w-[200%] h-full object-cover object-[15%_15%]"
+          className="absolute inset-0 w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-3 left-3">
