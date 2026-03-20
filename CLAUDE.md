@@ -59,6 +59,9 @@
   - e.g. `[BE] feat: 면접 생성 API` → `[FE] feat: 면접 Setup 위저드 UI`
   - Merge BE PR first, then create FE PR
 - Branches: `feat/{name}`, `fix/{name}`
+- **CI 통과 필수**: 모든 CI 워크플로우(Frontend CI, Backend CI)가 통과해야 머지 가능
+  - FE 변경: `Frontend CI` (lint + build) 통과 필수
+  - BE 변경: `Backend CI` (test) 통과 필수
 
 ---
 
