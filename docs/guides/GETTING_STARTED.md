@@ -89,8 +89,12 @@ npx tsc --noEmit       # 타입 체크만
 | GET | `/api/v1/interviews/{id}` | 면접 조회 |
 | PATCH | `/api/v1/interviews/{id}/status` | 면접 상태 변경 |
 | POST | `/api/v1/interviews/{id}/follow-up` | 후속질문 생성 |
-| POST | `/api/v1/interviews/{id}/feedbacks` | 피드백 생성 |
-| GET | `/api/v1/interviews/{id}/feedbacks` | 피드백 조회 |
+| POST | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/answers` | 답변 타임스탬프 저장 |
+| POST | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/upload-url` | S3 업로드 URL 발급 |
+| GET | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/status` | 분석 상태 조회 |
+| GET | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/feedback` | 질문세트 피드백 조회 |
+| GET | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/questions-with-answers` | 질문+답변 조회 |
+| POST | `/api/v1/interviews/{interviewId}/question-sets/{qsId}/retry-analysis` | 분석 재시도 |
 | GET | `/api/v1/interviews/{id}/report` | 종합 리포트 조회 |
 
 ---
@@ -98,7 +102,7 @@ npx tsc --noEmit       # 타입 체크만
 ## 트러블슈팅
 
 ### 카메라/마이크 접근 실패
-- Chrome 브라우저 권장 (Web Speech API, MediaPipe 호환)
+- Chrome 브라우저 권장 (Web Speech API, MediaRecorder 호환)
 - `chrome://settings/content/camera`에서 권한 확인
 - HTTPS 또는 localhost에서만 미디어 접근 가능
 

@@ -94,3 +94,52 @@
 | Backend Build | Gradle (Kotlin DSL) | Maven보다 유연, 빌드 스크립트 가독성 |
 | Frontend Build | Vite | 빠른 HMR, 간단한 설정, ESM 네이티브 |
 | Linter (JS/TS) | ESLint + Prettier | 코드 스타일 자동 포맷 |
+
+---
+
+## Analysis (Lambda)
+
+| 영역 | 기술 | 버전/사양 |
+|------|------|-----------|
+| Runtime | Python | 3.12 |
+| STT | OpenAI Whisper API | whisper-1 |
+| Vision/LLM | OpenAI GPT-4o | Vision + LLM |
+| 미디어 처리 | FFmpeg (static) | 7.x |
+
+### 선택 근거
+
+> **문제**: 면접 녹화 영상에서 STT, 비언어 분석, 언어 분석을 서버사이드로 처리해야 한다.
+>
+> **상황**: 기존 클라이언트 분석(MediaPipe/Web Audio)에서 서버사이드 분석으로 전환. 정확도와 일관성이 핵심.
+>
+> **선택지**:
+> | 옵션 | 장점 | 단점 |
+> |------|------|------|
+> | OpenAI Whisper + GPT-4o | 높은 한국어 STT 정확도, Vision으로 비언어 분석 통합 | API 비용 발생 |
+> | 클라이언트 분석 (MediaPipe) | 서버 비용 $0 | 디바이스 의존, 분석 정확도/일관성 낮음 |
+> | AWS Transcribe + Rekognition | AWS 네이티브 통합 | 한국어 지원 제한, 비언어 분석 커스텀 어려움 |
+>
+> **결정**: OpenAI Whisper + GPT-4o. 한국어 STT 정확도가 가장 높고, Vision API로 프레임 기반 비언어 분석을 단일 벤더에서 처리 가능.
+
+---
+
+## Infrastructure
+
+| 영역 | 기술 | 사양 |
+|------|------|------|
+| Compute | EC2 | t3.small (2 vCPU, 2GB) |
+| Container | Docker Compose | Backend + MySQL |
+| Object Storage | S3 | rehearse-videos-dev |
+| Event | EventBridge | S3 PutObject → Lambda 트리거 |
+| Serverless | Lambda | Convert (256MB/5min) + Analysis (2048MB/15min) |
+| Video Convert | MediaConvert | WebM→MP4 (H.264+AAC) |
+| CDN | CloudFront | Frontend SPA 배포 |
+| Registry | ECR | Backend Docker 이미지 |
+
+### 선택 근거
+
+> **문제**: 영상 업로드 후 분석/변환을 비동기로 처리하는 파이프라인이 필요하다.
+>
+> **상황**: 분석은 15분까지 소요될 수 있으며, EC2 부하를 분리해야 한다.
+>
+> **결정**: S3 → EventBridge → Lambda 이벤트 드리븐 아키텍처. 영상 업로드 시 자동으로 분석+변환 Lambda가 병렬 트리거되어 서버 부하 없이 처리.
