@@ -72,7 +72,7 @@ const AnalysisStatusFloat = ({
               <p className="text-sm font-bold text-text-primary">AI가 영상을 분석 중...</p>
             </div>
             <p className="text-xs text-text-secondary">
-              {completedCount + skippedCount} / {totalCount} 완료
+              {completedCount} / {totalCount - skippedCount} 완료
             </p>
           </div>
         )}
