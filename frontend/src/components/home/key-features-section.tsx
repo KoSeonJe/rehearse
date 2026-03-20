@@ -24,35 +24,146 @@ const features = [
   },
 ] as const
 
-// 사람 실루엣 — 단순 도형 조합 (외부 라이브러리 없음)
+// 면접자 상반신 실루엣 — 웹캠 앞에 앉아 살짝 미소짓는 모습
 const PersonSilhouette = () => (
   <svg
-    viewBox="0 0 64 96"
+    viewBox="0 0 120 144"
     fill="none"
     aria-hidden="true"
-    className="w-12 h-20 text-white/20"
+    className="w-20 h-24"
   >
-    {/* 머리 */}
-    <circle cx="32" cy="18" r="11" fill="currentColor" />
-    {/* 몸통 */}
+    {/* 목 */}
     <path
-      d="M14 48 C14 37 50 37 50 48 L50 70 C50 73 47 75 44 75 L20 75 C17 75 14 73 14 70 Z"
-      fill="currentColor"
+      d="M54 58 C54 62 52 66 52 70 L68 70 C68 66 66 62 66 58 Z"
+      fill="white"
+      opacity="0.55"
     />
-    {/* 왼팔 */}
+
+    {/* 얼굴 형태 — 약간 갸름한 타원 */}
+    <ellipse cx="60" cy="38" rx="18" ry="22" fill="white" opacity="0.75" />
+
+    {/* 머리카락 — 자연스러운 윗부분 */}
     <path
-      d="M14 50 C10 55 8 62 10 68 C11 71 15 70 16 67 C17 62 18 57 20 54"
-      fill="currentColor"
+      d="M42 34 C42 20 45 14 60 13 C75 14 78 20 78 34 C76 28 72 24 60 24 C48 24 44 28 42 34 Z"
+      fill="white"
+      opacity="0.45"
     />
-    {/* 오른팔 */}
+
+    {/* 귀 — 좌 */}
+    <ellipse cx="42" cy="38" rx="3.5" ry="5" fill="white" opacity="0.55" />
+    {/* 귀 — 우 */}
+    <ellipse cx="78" cy="38" rx="3.5" ry="5" fill="white" opacity="0.55" />
+
+    {/* 눈썹 — 좌 */}
     <path
-      d="M50 50 C54 55 56 62 54 68 C53 71 49 70 48 67 C47 62 46 57 44 54"
-      fill="currentColor"
+      d="M50 28 C52 26.5 56 26 58 26.5"
+      stroke="white"
+      strokeOpacity="0.5"
+      strokeWidth="1.8"
+      strokeLinecap="round"
     />
-    {/* 왼 다리 */}
-    <path d="M20 74 L17 92 C16 95 21 96 22 93 L26 77" fill="currentColor" />
-    {/* 오른 다리 */}
-    <path d="M44 74 L47 92 C48 95 43 96 42 93 L38 77" fill="currentColor" />
+    {/* 눈썹 — 우 */}
+    <path
+      d="M62 26.5 C64 26 68 26.5 70 28"
+      stroke="white"
+      strokeOpacity="0.5"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+
+    {/* 눈 — 좌 (아몬드형) */}
+    <path
+      d="M50 33 C52 31 56 31 58 33 C56 35.5 52 35.5 50 33 Z"
+      fill="white"
+      opacity="0.35"
+    />
+    <ellipse cx="54" cy="33" rx="2.2" ry="2.5" fill="white" opacity="0.6" />
+
+    {/* 눈 — 우 (아몬드형) */}
+    <path
+      d="M62 33 C64 31 68 31 70 33 C68 35.5 64 35.5 62 33 Z"
+      fill="white"
+      opacity="0.35"
+    />
+    <ellipse cx="66" cy="33" rx="2.2" ry="2.5" fill="white" opacity="0.6" />
+
+    {/* 코 — 섬세한 콧날 */}
+    <path
+      d="M58 36 C58 41 56 43.5 56 44.5 C57.5 45.5 62.5 45.5 64 44.5 C64 43.5 62 41 62 36"
+      stroke="white"
+      strokeOpacity="0.3"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      fill="none"
+    />
+
+    {/* 입 — 살짝 미소 (양끝이 올라간 곡선) */}
+    <path
+      d="M53 50 C55.5 52.5 60 53 64.5 52 C66.5 51.5 67.5 50.5 67 50"
+      stroke="white"
+      strokeOpacity="0.55"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      fill="none"
+    />
+    {/* 윗입술 중앙 (큐피드 활) */}
+    <path
+      d="M55 49.5 C57 48.5 60 48 63 49 C65 49.5 67 50 67 50"
+      stroke="white"
+      strokeOpacity="0.3"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+
+    {/* 어깨 + 상체 — 자연스러운 드롭 숄더 */}
+    <path
+      d="M52 70 C46 71 36 74 24 82 C18 86 16 92 16 100 L104 100 C104 92 102 86 96 82 C84 74 74 71 68 70 Z"
+      fill="white"
+      opacity="0.55"
+    />
+
+    {/* 셔츠 칼라 — V넥 오른쪽 */}
+    <path
+      d="M60 72 L68 70 C70 72 72 76 70 80 Z"
+      fill="white"
+      opacity="0.7"
+    />
+    {/* 셔츠 칼라 — V넥 왼쪽 */}
+    <path
+      d="M60 72 L52 70 C50 72 48 76 50 80 Z"
+      fill="white"
+      opacity="0.7"
+    />
+    {/* 칼라 중앙 V 라인 */}
+    <path
+      d="M52 70 C55 74 58 78 60 82 C62 78 65 74 68 70"
+      stroke="white"
+      strokeOpacity="0.4"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      fill="none"
+    />
+
+    {/* 어깨 윤곽 강조 — 좌 */}
+    <path
+      d="M52 70 C44 72 32 77 24 82"
+      stroke="white"
+      strokeOpacity="0.3"
+      strokeWidth="1"
+      strokeLinecap="round"
+      fill="none"
+    />
+    {/* 어깨 윤곽 강조 — 우 */}
+    <path
+      d="M68 70 C76 72 88 77 96 82"
+      stroke="white"
+      strokeOpacity="0.3"
+      strokeWidth="1"
+      strokeLinecap="round"
+      fill="none"
+    />
   </svg>
 )
 
@@ -180,41 +291,48 @@ const TimestampMockup = () => (
   </div>
 )
 
+interface NonverbalFeedback {
+  category: string
+  categoryClass: string
+  text: string
+}
+
+const NONVERBAL_FEEDBACKS: NonverbalFeedback[] = [
+  {
+    category: '시선',
+    categoryClass: 'bg-accent/10 text-accent',
+    text: '0:42~1:15 구간에서 시선이 화면 아래로 자주 향했습니다. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.',
+  },
+  {
+    category: '자세',
+    categoryClass: 'bg-amber-50 text-amber-600',
+    text: '전반적으로 안정적인 자세를 유지했으나, 2:30 이후 어깨가 점차 앞으로 기울어졌습니다.',
+  },
+  {
+    category: '표정',
+    categoryClass: 'bg-emerald-50 text-emerald-600',
+    text: '답변 시작 시 자연스러운 미소가 좋은 인상을 줍니다.',
+  },
+]
+
 const NonverbalMockup = () => (
   <div className="space-y-3">
     <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
-      </div>
-      <div className="space-y-3">
-        {[
-          { label: '시선 처리', score: 78, color: 'bg-accent' },
-          { label: '표정 자연스러움', score: 85, color: 'bg-emerald-500' },
-          { label: '자세 안정성', score: 62, color: 'bg-amber-500' },
-        ].map((item) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold text-text-secondary">{item.label}</span>
-              <span className="text-[10px] font-black text-text-primary">{item.score}점</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-border">
-              <div
-                className={`h-full rounded-full ${item.color}`}
-                style={{ width: `${item.score}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
     </div>
-    <div className="flex gap-2">
-      {['자신감 있는 표정', '안정적 자세', '시선 분산 주의'].map((tag) => (
-        <span
-          key={tag}
-          className="rounded-lg bg-surface border border-border px-2 py-1 text-[9px] font-bold text-text-secondary"
+    <div className="space-y-2">
+      {NONVERBAL_FEEDBACKS.map((fb) => (
+        <div
+          key={fb.category}
+          className="rounded-2xl bg-surface border border-border p-3.5"
         >
-          {tag}
-        </span>
+          <span
+            className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold mb-2 ${fb.categoryClass}`}
+          >
+            {fb.category}
+          </span>
+          <p className="text-xs font-medium text-text-primary leading-relaxed">{fb.text}</p>
+        </div>
       ))}
     </div>
   </div>
