@@ -2,6 +2,7 @@ package com.rehearse.api.domain.file.service;
 
 import com.rehearse.api.domain.file.dto.UpdateFileStatusRequest;
 import com.rehearse.api.domain.file.entity.FileMetadata;
+import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.file.exception.FileErrorCode;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
 import com.rehearse.api.global.exception.BusinessException;
@@ -37,6 +38,19 @@ public class InternalFileService {
         }
 
         log.info("파일 상태 업데이트: fileMetadataId={}, status={}", fileMetadataId, request.getStatus());
+    }
+
+    @Transactional
+    public void retryConvert(Long fileMetadataId) {
+        FileMetadata file = fileMetadataRepository.findById(fileMetadataId)
+                .orElseThrow(() -> new BusinessException(FileErrorCode.NOT_FOUND));
+
+        if (file.getStatus() != FileStatus.FAILED) {
+            throw new BusinessException(FileErrorCode.INVALID_STATUS_FOR_RETRY);
+        }
+
+        file.updateStatus(FileStatus.UPLOADED);
+        log.info("파일 변환 재시도: fileMetadataId={}", fileMetadataId);
     }
 
     public FileMetadata findByS3Key(String s3Key) {

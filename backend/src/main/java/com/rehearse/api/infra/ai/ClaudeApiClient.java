@@ -7,6 +7,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
@@ -115,40 +116,64 @@ public class ClaudeApiClient implements AiClient {
                 .temperature(temperature)
                 .build();
 
-        try {
-            ClaudeResponse response = restClient.post()
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("x-api-key", apiKey)
-                    .header("anthropic-version", ANTHROPIC_VERSION)
-                    .body(request)
-                    .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError, (req, res) -> {
-                        String body = new String(res.getBody().readAllBytes());
-                        log.error("Claude API 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
-                        throw new BusinessException(AiErrorCode.CLIENT_ERROR);
-                    })
-                    .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                        log.error("Claude API 서버 에러: status={}", res.getStatusCode());
-                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
-                    })
-                    .body(ClaudeResponse.class);
+        int maxAttempts = 3;
+        long delayMs = 1000;
 
-            if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
-                throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                ClaudeResponse response = restClient.post()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("x-api-key", apiKey)
+                        .header("anthropic-version", ANTHROPIC_VERSION)
+                        .body(request)
+                        .retrieve()
+                        .onStatus(status -> status.value() == 429, (req, res) -> {
+                            log.warn("[Claude API] Rate Limited (429)");
+                            throw new RetryableApiException("Claude API rate limited (429)");
+                        })
+                        .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
+                            String body = new String(res.getBody().readAllBytes());
+                            log.error("Claude API 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
+                            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+                        })
+                        .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                            log.warn("[Claude API] 서버 에러: status={}", res.getStatusCode());
+                            throw new RetryableApiException("Claude API 서버 에러: " + res.getStatusCode());
+                        })
+                        .body(ClaudeResponse.class);
+
+                if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
+                    throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
+                }
+
+                if (response.getUsage() != null) {
+                    log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, total: {}",
+                            response.getUsage().getInputTokens(),
+                            response.getUsage().getOutputTokens(),
+                            response.getUsage().getInputTokens() + response.getUsage().getOutputTokens());
+                }
+
+                return response.getContent().get(0).getText();
+
+            } catch (BusinessException e) {
+                throw e;
+            } catch (RetryableApiException | RestClientException e) {
+                if (attempt < maxAttempts) {
+                    log.info("[Claude API] 재시도 {}/{}: {}", attempt, maxAttempts, e.getMessage());
+                    try {
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new BusinessException(AiErrorCode.TIMEOUT);
+                    }
+                    delayMs *= 2;
+                } else {
+                    log.error("[Claude API] 모든 재시도 실패", e);
+                    throw new BusinessException(AiErrorCode.TIMEOUT);
+                }
             }
-
-            if (response.getUsage() != null) {
-                log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, total: {}",
-                        response.getUsage().getInputTokens(),
-                        response.getUsage().getOutputTokens(),
-                        response.getUsage().getInputTokens() + response.getUsage().getOutputTokens());
-            }
-
-            return response.getContent().get(0).getText();
-
-        } catch (RestClientException e) {
-            log.error("Claude API 호출 실패", e);
-            throw new BusinessException(AiErrorCode.TIMEOUT);
         }
+        // 컴파일러 요구사항 — 실제로 도달하지 않음
+        throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 }

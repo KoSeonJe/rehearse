@@ -58,6 +58,9 @@ public class FileMetadata {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Version
+    private Long version;
+
     @Builder
     public FileMetadata(FileType fileType, String s3Key, String bucket, String contentType) {
         this.fileType = fileType;

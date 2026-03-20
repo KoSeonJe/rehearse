@@ -63,6 +63,9 @@ public class QuestionSet {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Version
+    private Long version;
+
     @OneToMany(mappedBy = "questionSet", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     private List<Question> questions = new ArrayList<>();
