@@ -16,6 +16,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedReport;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -105,7 +106,14 @@ public class ReportService {
                 .feedbackCount(feedbacks.size())
                 .build();
 
-        reportRepository.save(report);
+        try {
+            reportRepository.save(report);
+        } catch (DataIntegrityViolationException e) {
+            log.info("리포트 동시 생성 감지, 기존 리포트 반환: interviewId={}", interviewId);
+            return reportRepository.findByInterviewId(interviewId)
+                    .map(ReportResponse::from)
+                    .orElseThrow(() -> new BusinessException(ReportErrorCode.REPORT_GENERATION_FAILED));
+        }
 
         log.info("종합 리포트 생성 완료: interviewId={}, score={}", interviewId, generated.getOverallScore());
 
