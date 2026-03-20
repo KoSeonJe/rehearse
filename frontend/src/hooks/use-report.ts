@@ -14,6 +14,8 @@ export const useReport = (interviewId: string) => {
         `/api/v1/interviews/${interviewId}/report`,
       ),
   })
+  const mutateRef = useRef(postMutation.mutate)
+  mutateRef.current = postMutation.mutate
 
   const query = useQuery({
     queryKey: ['report', interviewId],
@@ -48,9 +50,9 @@ export const useReport = (interviewId: string) => {
       query.error.status === 202
     ) {
       hasTriggeredPost.current = true
-      postMutation.mutate()
+      mutateRef.current()
     }
-  }, [query.isError, query.error, postMutation])
+  }, [query.isError, query.error])
 
   const reportStatus: ReportStatus = (() => {
     if (query.data?.data) return 'ready'
