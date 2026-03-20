@@ -18,7 +18,7 @@ export const Logo = ({ size = 40, className = '' }: LogoProps) => {
       aria-label="리허설 로고"
     >
       <g
-        stroke="#1e293b"
+        stroke="#1A1A2E"
         strokeWidth={2 / scale > 3 ? 3 : 2}
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -34,8 +34,8 @@ export const Logo = ({ size = 40, className = '' }: LogoProps) => {
         {/* 거울 속 캐릭터 (자신감 있는 미소) */}
         <circle cx="85" cy="38" r="14" />
         {/* 거울 속 — 눈 (활기찬) */}
-        <circle cx="80" cy="35" r="1.5" fill="#1e293b" stroke="none" />
-        <circle cx="90" cy="35" r="1.5" fill="#1e293b" stroke="none" />
+        <circle cx="80" cy="35" r="1.5" fill="#1A1A2E" stroke="none" />
+        <circle cx="90" cy="35" r="1.5" fill="#1A1A2E" stroke="none" />
         {/* 거울 속 — 자신감 있는 미소 */}
         <path d="M79 42 Q85 48 91 42" />
         {/* 거울 속 — 몸통 */}
@@ -48,7 +48,7 @@ export const Logo = ({ size = 40, className = '' }: LogoProps) => {
         <path d="M24 30 Q20 24 26 26" />
         <path d="M22 36 Q17 33 21 30" />
         {/* 옆얼굴 — 눈 (긴장) */}
-        <circle cx="44" cy="37" r="1.5" fill="#1e293b" stroke="none" />
+        <circle cx="44" cy="37" r="1.5" fill="#1A1A2E" stroke="none" />
         {/* 옆얼굴 — 긴장된 입 (물결) */}
         <path d="M43 44 Q45 43 47 44 Q49 45 51 44" />
         {/* 옆얼굴 — 땀방울 */}

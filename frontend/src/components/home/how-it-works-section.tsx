@@ -1,4 +1,5 @@
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
+import { useStaggerOnScroll } from '@/hooks/use-stagger-on-scroll'
 
 const STEPS = [
   {
@@ -23,28 +24,29 @@ const STEPS = [
 
 export const HowItWorksSection = () => {
   const { ref, style } = useFadeInOnScroll<HTMLElement>()
+  const { ref: staggerRef, getItemStyle } = useStaggerOnScroll()
 
   return (
     <section
       ref={ref}
       style={style}
-      className="bg-white py-32"
+      className="bg-background py-32"
       aria-labelledby="how-it-works-heading"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="mb-0">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="label-wide text-accent-teal-dark mb-4">
             HOW IT WORKS
           </p>
           <h2
             id="how-it-works-heading"
-            className="text-3xl font-extrabold tracking-tighter text-text-primary md:text-4xl"
+            className="text-3xl heading-section text-text-primary md:text-4xl"
           >
             3단계로 완성하는 면접 연습
           </h2>
         </div>
 
-        <div className="relative mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
+        <div ref={staggerRef} className="relative mt-16 grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Desktop connector arrows */}
           <div
             className="absolute inset-0 hidden items-center justify-between md:flex"
@@ -60,10 +62,11 @@ export const HowItWorksSection = () => {
             </div>
           </div>
 
-          {STEPS.map((step) => (
+          {STEPS.map((step, index) => (
             <article
               key={step.number}
-              className="relative rounded-card border border-border bg-surface p-8 shadow-toss"
+              style={getItemStyle(index)}
+              className="relative rounded-card border border-border bg-surface p-8 shadow-soft transition-all duration-300 hover:shadow-medium hover:-translate-y-1"
             >
               <div
                 className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent font-black text-white"
@@ -71,7 +74,7 @@ export const HowItWorksSection = () => {
               >
                 {step.number}
               </div>
-              <h3 className="mt-4 text-xl font-extrabold text-text-primary">{step.title}</h3>
+              <h3 className="mt-4 text-xl font-bold text-text-primary">{step.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-text-secondary">{step.description}</p>
             </article>
           ))}
@@ -96,14 +99,14 @@ const ConnectorArrow = () => (
       y1="8"
       x2="18"
       y2="8"
-      stroke="#C7D2FE"
+      stroke="#2DD4A8"
       strokeWidth="1.5"
       strokeDasharray="3 3"
     />
     {/* Arrowhead */}
     <path
       d="M16 4L22 8L16 12"
-      stroke="#C7D2FE"
+      stroke="#2DD4A8"
       strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
