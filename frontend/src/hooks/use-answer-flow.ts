@@ -328,7 +328,7 @@ export const useAnswerFlow = ({
             id: res.data.questionId,
             questionType: 'FOLLOWUP',
             questionText: res.data.question,
-            modelAnswer: null,
+            modelAnswer: res.data.modelAnswer ?? null,
             referenceType: 'CS',
             orderIndex: currentSet.questions.length,
           })

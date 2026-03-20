@@ -219,6 +219,7 @@ export interface FollowUpResponse {
   reason: string
   type: FollowUpType
   answerText?: string
+  modelAnswer?: string | null
 }
 
 // 면접 진행 관련 타입
