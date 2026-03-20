@@ -24,70 +24,152 @@ const features = [
   },
 ] as const
 
+// 면접자/면접관 사진 경로
+const INTERVIEW_IMG = '/images/면접자.png'
+
+interface FeedbackItem {
+  time: string
+  label: string
+  labelClass: string
+  markerClass: string
+  timelinePos: string
+  text: string
+}
+
+const TIMESTAMP_FEEDBACKS: FeedbackItem[] = [
+  {
+    time: '0:42',
+    label: '잘한 점',
+    labelClass: 'bg-accent/10 text-accent',
+    markerClass: 'bg-accent',
+    timelinePos: '28%',
+    text: '기술적 부채 해결 경험을 구체적으로 잘 설명하셨어요. STAR 기법이 자연스럽게 녹아있습니다.',
+  },
+  {
+    time: '1:15',
+    label: '개선 포인트',
+    labelClass: 'bg-amber-50 text-amber-600',
+    markerClass: 'bg-amber-400',
+    timelinePos: '55%',
+    text: '이 구간에서 시선이 아래로 향했어요. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.',
+  },
+]
+
 const TimestampMockup = () => (
-  <div className="space-y-3">
-    <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
-          0:42
-        </span>
-        <span className="text-[10px] font-bold text-text-tertiary">답변 분석</span>
+  <div className="flex gap-3">
+    {/* 왼쪽: 영상 + 타임라인 */}
+    <div className="w-[45%] shrink-0 space-y-2">
+      <div className="rounded-2xl overflow-hidden border border-border">
+        {/* 카메라 뷰 — 왼쪽 인물만 크롭 */}
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img
+            src={INTERVIEW_IMG}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover object-top"
+          />
+          {/* REC 배지 */}
+          <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white/70">
+              REC
+            </span>
+          </div>
+          {/* 시간 */}
+          <div className="absolute bottom-2 right-2 z-10">
+            <span className="font-mono text-[9px] font-bold text-white/60 bg-black/30 px-1.5 py-0.5 rounded">
+              00:42
+            </span>
+          </div>
+        </div>
+
+        {/* 타임라인 바 */}
+        <div className="bg-white px-2.5 pt-2 pb-1.5">
+          <div className="relative h-1 rounded-full bg-border">
+            <div className="absolute left-0 top-0 h-full w-[28%] rounded-full bg-accent/30" />
+            {TIMESTAMP_FEEDBACKS.map((fb) => (
+              <div
+                key={fb.time}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                style={{ left: fb.timelinePos }}
+              >
+                <span className={`block w-2 h-2 rounded-full border-2 border-white shadow-sm ${fb.markerClass}`} />
+              </div>
+            ))}
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style={{ left: '28%' }}>
+              <span className="block w-2.5 h-2.5 rounded-full bg-accent border-2 border-white shadow" />
+            </div>
+          </div>
+        </div>
       </div>
-      <p className="text-xs font-bold text-text-primary leading-relaxed">
-        기술적 부채 해결 경험을 구체적으로 잘 설명하셨어요. STAR 기법이 자연스럽게 녹아있습니다.
-      </p>
     </div>
-    <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
-          1:15
-        </span>
-        <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">
-          개선 포인트
-        </span>
-      </div>
-      <p className="text-xs font-bold text-text-primary leading-relaxed">
-        이 구간에서 시선이 아래로 향했어요. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.
-      </p>
+
+    {/* 오른쪽: 피드백 카드 */}
+    <div className="flex-1 space-y-2">
+      {TIMESTAMP_FEEDBACKS.map((fb) => (
+        <div
+          key={fb.time}
+          className="rounded-2xl bg-surface border border-border p-3"
+        >
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${fb.markerClass}`} />
+            <span className="font-mono text-[10px] font-black text-text-secondary">
+              {fb.time}
+            </span>
+            <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold ${fb.labelClass}`}>
+              {fb.label}
+            </span>
+          </div>
+          <p className="text-[11px] font-medium text-text-primary leading-relaxed">
+            {fb.text}
+          </p>
+        </div>
+      ))}
     </div>
   </div>
 )
 
+interface NonverbalFeedback {
+  category: string
+  categoryClass: string
+  text: string
+}
+
+const NONVERBAL_FEEDBACKS: NonverbalFeedback[] = [
+  {
+    category: '시선',
+    categoryClass: 'bg-accent/10 text-accent',
+    text: '0:42~1:15 구간에서 시선이 화면 아래로 자주 향했습니다. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.',
+  },
+  {
+    category: '자세',
+    categoryClass: 'bg-amber-50 text-amber-600',
+    text: '전반적으로 안정적인 자세를 유지했으나, 2:30 이후 어깨가 점차 앞으로 기울어졌습니다.',
+  },
+  {
+    category: '표정',
+    categoryClass: 'bg-emerald-50 text-emerald-600',
+    text: '답변 시작 시 자연스러운 미소가 좋은 인상을 줍니다.',
+  },
+]
+
 const NonverbalMockup = () => (
   <div className="space-y-3">
     <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
-      </div>
-      <div className="space-y-3">
-        {[
-          { label: '시선 처리', score: 78, color: 'bg-accent' },
-          { label: '표정 자연스러움', score: 85, color: 'bg-emerald-500' },
-          { label: '자세 안정성', score: 62, color: 'bg-amber-500' },
-        ].map((item) => (
-          <div key={item.label}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-bold text-text-secondary">{item.label}</span>
-              <span className="text-[10px] font-black text-text-primary">{item.score}점</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-border">
-              <div
-                className={`h-full rounded-full ${item.color}`}
-                style={{ width: `${item.score}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
+      <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
     </div>
-    <div className="flex gap-2">
-      {['자신감 있는 표정', '안정적 자세', '시선 분산 주의'].map((tag) => (
-        <span
-          key={tag}
-          className="rounded-lg bg-surface border border-border px-2 py-1 text-[9px] font-bold text-text-secondary"
+    <div className="space-y-2">
+      {NONVERBAL_FEEDBACKS.map((fb) => (
+        <div
+          key={fb.category}
+          className="rounded-2xl bg-surface border border-border p-3.5"
         >
-          {tag}
-        </span>
+          <span
+            className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold mb-2 ${fb.categoryClass}`}
+          >
+            {fb.category}
+          </span>
+          <p className="text-xs font-medium text-text-primary leading-relaxed">{fb.text}</p>
+        </div>
       ))}
     </div>
   </div>

@@ -12,7 +12,7 @@ export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="py-24 md:py-32"
+      className="py-20 md:py-28"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="flex flex-col items-center gap-12 md:flex-row md:items-center md:gap-16">
