@@ -21,4 +21,11 @@ public class ReportController {
         ReportResponse response = reportService.getReport(interviewId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<ReportResponse>> generateReport(
+            @PathVariable Long interviewId) {
+        ReportResponse response = reportService.generateReport(interviewId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
 }

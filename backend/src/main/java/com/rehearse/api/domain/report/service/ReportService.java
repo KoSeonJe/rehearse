@@ -88,7 +88,13 @@ public class ReportService {
         String feedbackSummary = buildFeedbackSummary(questionSets, feedbacks);
 
         // Claude API로 종합 리포트 생성
-        GeneratedReport generated = aiClient.generateReport(feedbackSummary);
+        GeneratedReport generated;
+        try {
+            generated = aiClient.generateReport(feedbackSummary);
+        } catch (Exception e) {
+            log.error("리포트 생성 실패: interviewId={}", interviewId, e);
+            throw new BusinessException(ReportErrorCode.REPORT_GENERATION_FAILED);
+        }
 
         InterviewReport report = InterviewReport.builder()
                 .interview(interview)
