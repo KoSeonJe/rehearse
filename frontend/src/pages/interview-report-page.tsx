@@ -292,9 +292,14 @@ export const InterviewReportPage = () => {
   const { id } = useParams<{ id: string }>()
   const { report, reportStatus } = useReport(id ?? '')
 
-  // 로딩 / 생성 중 상태
-  if (reportStatus === 'loading' || reportStatus === 'generating') {
-    const isGenerating = reportStatus === 'generating'
+  // 로딩 / 분석 중 / 생성 중 상태
+  if (reportStatus === 'loading' || reportStatus === 'analyzing' || reportStatus === 'generating') {
+    const statusMessages = {
+      loading: { title: 'AI가 리포트를 준비하고 있어요', subtitle: '잠시만 기다려주세요' },
+      analyzing: { title: '분석이 아직 진행 중이에요', subtitle: '영상 분석이 완료되면 리포트가 생성됩니다' },
+      generating: { title: 'AI가 리포트를 생성하고 있어요', subtitle: '곧 완성됩니다, 잠시만 기다려주세요' },
+    }
+    const { title, subtitle } = statusMessages[reportStatus]
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
         <div className="relative mb-10">
@@ -304,10 +309,10 @@ export const InterviewReportPage = () => {
           </div>
         </div>
         <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary">
-          {isGenerating ? 'AI가 리포트를 생성하고 있어요' : 'AI가 리포트를 분석하고 있어요'}
+          {title}
         </h1>
         <p className="mt-3 text-base font-medium text-text-secondary">
-          {isGenerating ? '곧 완성됩니다, 잠시만 기다려주세요' : '잠시만 기다려주세요'}
+          {subtitle}
         </p>
       </div>
     )
