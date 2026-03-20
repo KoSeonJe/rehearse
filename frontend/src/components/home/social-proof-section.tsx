@@ -3,7 +3,7 @@ import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 const FEATURES = [
   {
     keyword: 'AI 맞춤 질문',
-    description: '이력서 기반 1:1 질문 생성',
+    description: '이력서 · CS · 직무 지식 기반',
   },
   {
     keyword: '영상 타임스탬프 피드백',

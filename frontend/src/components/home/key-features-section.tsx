@@ -17,9 +17,9 @@ const features = [
   },
   {
     label: 'AI QUESTIONS',
-    title: '이력서 기반 1:1 맞춤 질문',
+    title: 'CS · 직무 지식 · 이력서 맞춤 질문',
     description:
-      '이력서를 업로드하면 AI가 내용을 분석해 실제 면접에서 나올 법한 질문을 생성합니다. 후속 질문까지 자연스럽게 이어집니다.',
+      '이력서 분석은 물론, 컴퓨터 CS 기초(자료구조, 네트워크 등)와 직무별 기술 지식(Java/Spring, 컴포넌트 설계 등)까지 실전 면접에서 나올 법한 질문을 생성합니다.',
     mockup: 'questions',
   },
 ] as const
@@ -96,9 +96,9 @@ const NonverbalMockup = () => (
 const QuestionsMockup = () => (
   <div className="space-y-3">
     {[
-      { q: 'Spring Boot에서 트랜잭션 전파 전략을 어떻게 설계하셨나요?', type: 'CS 질문' },
-      { q: '팀에서 코드 리뷰 프로세스를 개선한 경험이 있다면 말씀해주세요.', type: '경험 질문' },
-      { q: '그 과정에서 팀원들의 반대 의견은 어떻게 처리하셨나요?', type: '후속 질문' },
+      { q: 'HashMap과 ConcurrentHashMap의 차이를 설명하고, 각각 언제 사용하는지 말씀해주세요.', type: 'CS 기초' },
+      { q: 'Spring Boot에서 트랜잭션 전파 전략을 어떻게 설계하셨나요?', type: '직무 지식' },
+      { q: '팀에서 코드 리뷰 프로세스를 개선한 경험이 있다면 말씀해주세요.', type: '이력서 기반' },
     ].map((item) => (
       <div key={item.q} className="rounded-2xl bg-surface border border-border p-4">
         <span className="inline-flex items-center rounded-md bg-accent/10 px-1.5 py-0.5 text-[9px] font-black text-accent mb-2">

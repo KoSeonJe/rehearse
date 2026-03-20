@@ -24,8 +24,8 @@ export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
               <span className="text-accent">달라집니다.</span>
             </h1>
             <p className="mt-6 text-lg font-medium leading-relaxed text-text-secondary md:text-xl">
-              AI가 이력서를 분석해 맞춤 질문을 만들고,<br className="hidden md:block" />
-              답변의 매 순간을 영상과 함께 피드백합니다.
+              이력서 분석은 물론, CS 기초와 직무 지식까지<br className="hidden md:block" />
+              AI가 맞춤 질문을 만들고 영상과 함께 피드백합니다.
             </p>
             <div className="mt-10">
               <button
