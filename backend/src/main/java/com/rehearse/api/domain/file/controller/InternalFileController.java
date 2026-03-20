@@ -25,6 +25,13 @@ public class InternalFileController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @PostMapping("/{fileMetadataId}/retry-convert")
+    public ResponseEntity<ApiResponse<Void>> retryConvert(
+            @PathVariable Long fileMetadataId) {
+        internalFileService.retryConvert(fileMetadataId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     @GetMapping("/by-s3-key")
     public ResponseEntity<ApiResponse<FileMetadataResponse>> findByS3Key(
             @RequestParam String key) {
