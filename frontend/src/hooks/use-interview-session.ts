@@ -156,14 +156,6 @@ export const useInterviewSession = ({
     }
   }, [phase, mediaStream.isActive, handlePrepare])
 
-  // 상태를 IN_PROGRESS로 변경
-  useEffect(() => {
-    if ((phase === 'greeting' || phase === 'ready') && interview?.status === 'READY') {
-      updateStatus.mutate({ id: interview.id, data: { status: 'IN_PROGRESS' } })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, interview?.status, interviewId, updateStatus])
-
   // 면접 종료 (내부용)
   const handleFinishInterviewInternal = useCallback(async () => {
     if (!interview) return

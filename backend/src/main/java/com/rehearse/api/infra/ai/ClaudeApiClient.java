@@ -85,7 +85,7 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildFollowUpSystemPrompt();
         String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary, previousExchanges);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
@@ -94,7 +94,7 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = promptBuilder.buildReportSystemPrompt();
         String userPrompt = promptBuilder.buildReportUserPrompt(feedbackSummary);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_REPORT);
+        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_REPORT, 0.3);
         return responseParser.parseJsonResponse(text, GeneratedReport.class);
     }
 
