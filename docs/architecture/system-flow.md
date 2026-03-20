@@ -1,401 +1,647 @@
 # 리허설(Rehearse) — 시스템 상호작용 흐름도
 
-> 면접 Setup부터 피드백 추출까지, 사용자·클라이언트·서버 간 전체 흐름
+> 홈페이지부터 종합 리포트까지, 클라이언트·서버·인프라 간 전체 상호작용 문서
+>
+> 최종 업데이트: 2026-03-20
 
 ---
 
-## 전체 흐름 요약
+## 전체 아키텍처 개요
 
 ```
-┌─────────┐     ┌─────────────┐     ┌──────────────┐     ┌───────────┐
-│  사용자  │ ──→ │  프론트엔드  │ ──→ │   백엔드 API  │ ──→ │ Claude AI │
-│ (브라우저)│ ←── │  (React)    │ ←── │ (Spring Boot)│ ←── │ (Sonnet)  │
-└─────────┘     └─────────────┘     └──────────────┘     └───────────┘
-                                           │
-                                    ┌──────┴──────┐
-                                    │  MySQL / H2  │
-                                    └─────────────┘
+┌──────────────────┐          ┌──────────────────┐
+│ 클라이언트 (Vercel) │          │ AI 서비스          │
+│ React 18 + TS     │          │ Claude API        │
+│ Zustand           │          │ (질문·후속질문·리포트) │
+│ TanStack Query    │          │ OpenAI API        │
+└────────┬─────────┘          │ (Whisper·Vision·LLM)│
+         │ REST API            └────────┬─────────┘
+         ▼                              │
+┌──────────────────┐                    │
+│ API 서버 (EC2)    │◄──────────────────┘
+│ Spring Boot 3.4   │
+│ Java 21           │
+└──┬──────┬────────┘
+   │ JPA  │ Internal API
+   ▼      ▼
+┌──────┐ ┌────────────────────────────────────────┐
+│ RDS  │ │ AWS 인프라                               │
+│MySQL │ │ S3 → EventBridge →┬→ Analysis Lambda    │
+└──────┘ │    (WebM/MP4)     │   → OpenAI API      │
+         │       ▲           └→ Convert Lambda     │
+         │  Presigned PUT       → MediaConvert → S3│
+         └────────────────────────────────────────┘
 ```
+
+**주요 기술 스택**: React 18 + Vite + Tailwind | Spring Boot 3.4 + JPA | Claude API (질문·후속질문·리포트) | OpenAI API (STT·Vision·LLM 분석) | S3 + EventBridge + Lambda + MediaConvert | MySQL 8.0
+
+**핵심 설계 원칙**:
+- DB 접근은 API 서버만 수행 (Lambda는 Internal API 호출)
+- S3 이벤트 기반 자동 트리거 (API 서버가 Lambda를 직접 호출하지 않음)
+- 질문 세트 단위 녹화 + 즉시 업로드로 분석 지연 최소화
 
 ---
 
-## Phase 1: 면접 Setup (질문 생성)
+## Phase 1: 홈 + 온보딩 (`/`)
+
+정적 페이지. API 호출 없음.
+
+- 서비스 소개, CTA 버튼 → `/interview/setup`으로 네비게이션
+
+---
+
+## Phase 2: 면접 Setup (`/interview/setup`)
+
+4단계 위저드를 통해 면접 설정 후 세션을 생성한다.
 
 ```
-사용자                     프론트엔드                        백엔드                         Claude AI
-  │                          │                               │                               │
-  │  직무/레벨/유형/시간 선택  │                               │                               │
-  │  이력서 PDF 첨부 (선택)   │                               │                               │
-  │ ─────────────────────→   │                               │                               │
-  │                          │                               │                               │
-  │                          │  POST /api/v1/interviews      │                               │
-  │                          │  (multipart: request + PDF)   │                               │
-  │                          │ ─────────────────────────────→│                               │
-  │                          │                               │                               │
-  │                          │                               │  ① PDF → 텍스트 추출          │
-  │                          │                               │  ② Interview 엔티티 생성       │
-  │                          │                               │     status = READY             │
-  │                          │                               │  ③ DB 저장 (Interview)         │
-  │                          │                               │                               │
-  │                          │                               │  ④ 🤖 Claude API 호출 #1      │
-  │                          │                               │  "면접 질문 생성해줘"           │
-  │                          │                               │  (직무+레벨+유형+이력서)        │
-  │                          │                               │ ─────────────────────────────→│
-  │                          │                               │                               │
-  │                          │                               │  ⑤ 질문 목록 응답              │
-  │                          │                               │←─────────────────────────────│
-  │                          │                               │                               │
-  │                          │                               │  ⑥ InterviewQuestion 엔티티    │
-  │                          │                               │     DB 저장 (N개 질문)         │
-  │                          │                               │                               │
-  │                          │  InterviewSession 응답         │                               │
-  │                          │  (id, questions[], status)    │                               │
-  │                          │←─────────────────────────────│                               │
-  │                          │                               │                               │
-  │  /interview/{id}/ready   │                               │                               │
-  │  페이지로 이동            │                               │                               │
-  │←─────────────────────   │                               │                               │
+사용자 → FE: 4단계 위저드 입력
+  Step 1: 포지션 (BACKEND/FRONTEND/DEVOPS/DATA_ENGINEER/FULLSTACK)
+  Step 2: 레벨 (JUNIOR/MID/SENIOR)
+  Step 3: 면접 시간 (15/30/45/60분 프리셋, 5~120분 범위)
+  Step 4: 면접 유형 선택 + 이력서 업로드 (RESUME_BASED 시)
+
+FE → BE: POST /api/v1/interviews (multipart: request JSON + resumeFile PDF)
+  BE: ① PDF 텍스트 추출 (Apache PDFBox)
+  BE → DB: ② Interview 엔티티 저장 (status=READY, questionGenerationStatus=PENDING)
+  BE → FE: 201 Created (interviewId)
+  BE: ③ QuestionGenerationRequestedEvent 발행 (트랜잭션 커밋 후)
+FE: /interview/{id}/ready로 이동
+
+--- 비동기 처리 (@Async("questionGenerationExecutor") + @TransactionalEventListener(AFTER_COMMIT)) ---
+  BE: questionGenerationStatus = GENERATING
+  BE → Claude API: 질문 생성 호출 (포지션+레벨+유형+이력서 텍스트)
+  Claude → BE: 질문 세트 목록 (각 질문세트: 원본질문 1 + 후속질문 3 + 모범답변)
+  BE → DB: QuestionSet + Question 엔티티 저장
+  BE: questionGenerationStatus = COMPLETED
 ```
 
 **API 상세**:
-- **URL**: `POST /api/v1/interviews`
-- **요청**: multipart/form-data (`request` JSON part + `resumeFile` PDF part)
-- **DB 저장**: Interview + InterviewQuestion (cascade)
-- **Claude 호출**: 질문 생성 (max_tokens: 4096)
-- **질문 수 계산**: `round(durationMinutes / 5)` (최소 2, 최대 24)
+- `POST /api/v1/interviews` (multipart/form-data)
+  - `request` 파트: `{ position, level, interviewTypes[], durationMinutes, csSubTopics?[] }`
+  - `resumeFile` 파트: PDF (optional, max 10MB)
+- 질문 수 계산: `round(durationMinutes / 5)` (최소 2, 최대 24)
+- 질문 생성은 비동기: `@Async("questionGenerationExecutor")` + `@TransactionalEventListener(AFTER_COMMIT)`
+- Claude 모델: `claude-sonnet-4-20250514`, maxTokens=4096, temperature=0.9
 
 ---
 
-## Phase 2: 면접 준비 (기기 테스트)
+## Phase 3: 면접 준비 (`/interview/:id/ready`)
+
+질문 생성 완료를 대기하고, 장치 테스트 후 면접을 시작한다.
 
 ```
-사용자                     프론트엔드                        백엔드
-  │                          │                               │
-  │  준비 페이지 진입          │                               │
-  │ ─────────────────────→   │                               │
-  │                          │  GET /api/v1/interviews/{id}  │
-  │                          │ ─────────────────────────────→│
-  │                          │  InterviewSession 응답         │
-  │                          │←─────────────────────────────│
-  │                          │                               │
-  │  카메라 테스트 ✅          │  (브라우저 로컬)              │
-  │  마이크 테스트 ✅          │  getUserMedia()              │
-  │  스피커 테스트 ✅          │  AudioContext                │
-  │                          │                               │
-  │  "면접 시작" 버튼 클릭     │                               │
-  │ ─────────────────────→   │                               │
-  │                          │  PATCH /interviews/{id}/status │
-  │                          │  { status: "IN_PROGRESS" }    │
-  │                          │ ─────────────────────────────→│
-  │                          │                               │  상태 전이: READY → IN_PROGRESS
-  │                          │←─────────────────────────────│
-  │                          │                               │
-  │  /interview/{id}/conduct │                               │
-  │  면접 진행 페이지로 이동   │                               │
-  │←─────────────────────   │                               │
+[폴링: 2초 간격, PENDING/GENERATING일 때]
+FE → BE: GET /api/v1/interviews/{id}
+BE → FE: InterviewResponse (questionGenerationStatus, questionSets[])
+→ COMPLETED 시 폴링 중단, 질문 표시
+
+사용자: 카메라/마이크/스피커 테스트 (getUserMedia + AudioContext, 브라우저 로컬)
+
+사용자: "면접 시작" 클릭
+FE → BE: PATCH /api/v1/interviews/{id}/status { status: "IN_PROGRESS" }
+  BE → DB: status: READY → IN_PROGRESS
+FE: /interview/{id}/conduct로 이동
 ```
 
-**API 상세**:
-- **조회**: `GET /api/v1/interviews/{id}` (questions 포함)
-- **상태 변경**: `PATCH /api/v1/interviews/{id}/status` → READY → IN_PROGRESS
+**실패 처리**:
+- 질문 생성 실패(FAILED) → `POST /api/v1/interviews/{id}/retry-questions` → 재생성
 
 ---
 
-## Phase 3: 면접 진행 (음성 대화 루프)
+## Phase 4: 면접 진행 (`/interview/:id/conduct`)
+
+질문세트 단위로 녹화·답변 제출·S3 업로드를 반복한다.
+
+### 4-1. 전체 면접 진행 시퀀스
 
 ```
-사용자                     프론트엔드 (브라우저 API)                        백엔드          Claude AI
-  │                          │                                              │               │
-  │                          │  ┌─────────────────────────────────┐        │               │
-  │                          │  │ 동시 활성화:                     │        │               │
-  │                          │  │ • MediaRecorder (영상 녹화)      │        │               │
-  │                          │  │ • Web Speech API (STT)          │        │               │
-  │                          │  │ • Web Audio API (음성 분석)      │        │               │
-  │                          │  │ • MediaPipe (비언어 분석)        │        │               │
-  │                          │  │ • VAD (음성 감지)                │        │               │
-  │                          │  │ • TTS (질문 읽기)                │        │               │
-  │                          │  └─────────────────────────────────┘        │               │
-  │                          │                                              │               │
-  │                          │  🔊 TTS: "안녕하세요, 면접을 시작하겠습니다"  │               │
-  │←── 인사 음성 ───────────│                                              │               │
-  │                          │                                              │               │
-  │                          │  🔊 TTS: "첫 번째 질문입니다. ..."           │               │
-  │←── 질문 음성 ───────────│                                              │               │
-  │                          │                                              │               │
-  │                          │                                              │               │
-  │  ┌──── 답변 루프 (질문당 반복) ─────────────────────────────────────────┐               │
-  │  │                                                                      │               │
-  │  │  "답변을 말합니다..."   │                                              │               │
-  │  │ ─────────────────────→│                                              │               │
-  │  │                        │                                              │               │
-  │  │                        │  🎤 VAD: 음성 감지 → 녹음 시작              │               │
-  │  │                        │  🎤 STT: 실시간 텍스트 변환                  │               │
-  │  │                        │  📹 MediaRecorder: 영상 녹화 중             │               │
-  │  │                        │  👁️ MediaPipe: 표정/자세 분석 중            │               │
-  │  │                        │  📊 AudioAnalyzer: 음성 톤 분석 중          │               │
-  │  │                        │                                              │               │
-  │  │  (침묵 3초 감지)        │                                              │               │
-  │  │                        │  🔇 VAD: 침묵 감지 → 답변 종료              │               │
-  │  │                        │                                              │               │
-  │  │                        │  POST /interviews/{id}/follow-up             │               │
-  │  │                        │  { questionContent, answerText }             │               │
-  │  │                        │ ─────────────────────────────────────────→  │               │
-  │  │                        │                                              │               │
-  │  │                        │                                              │  🤖 Claude API│
-  │  │                        │                                              │  호출 #2     │
-  │  │                        │                                              │  "후속질문"   │
-  │  │                        │                                              │ ────────────→│
-  │  │                        │                                              │←────────────│
-  │  │                        │                                              │               │
-  │  │                        │  FollowUpResponse (question, reason, type)   │               │
-  │  │                        │←─────────────────────────────────────────  │               │
-  │  │                        │                                              │               │
-  │  │                        │  "2.5초 후 다음 질문으로 넘어갑니다..."       │               │
-  │  │                        │  🔊 TTS: 다음 질문 읽기                      │               │
-  │  │                        │                                              │               │
-  │  └──── 답변 루프 끝 ───────────────────────────────────────────────────┘               │
-  │                          │                                              │               │
-  │                          │  (마지막 질문 답변 완료)                      │               │
-  │                          │                                              │               │
-  │                          │  PATCH /interviews/{id}/status               │               │
-  │                          │  { status: "COMPLETED" }                     │               │
-  │                          │ ─────────────────────────────────────────→  │               │
-  │                          │                                              │  상태 전이:    │
-  │                          │←─────────────────────────────────────────  │  IN_PROGRESS   │
-  │                          │                                              │  → COMPLETED   │
-  │                          │                                              │               │
-  │  /interview/{id}/complete│                                              │               │
-  │←─────────────────────   │                                              │               │
+[동시 활성화: MediaRecorder(WebM/VP9 2.5Mbps), Web Speech API(ko-KR), AudioCapture(opus 128kbps), TTS]
+
+FE → 사용자: TTS "안녕하세요, 면접을 시작하겠습니다"
+
+┌── 각 질문세트 (N개) 반복 ──────────────────────────────────────┐
+│ FE → 사용자: TTS 원본 질문 읽기                                 │
+│ [MediaRecorder 녹화 시작 — 질문세트 단위, 중간 일시정지 없음]     │
+│                                                                │
+│ ┌── 답변 루프 (원본 1 + 후속 3 = 4라운드) ──────────────────┐   │
+│ │ 사용자 → FE: 답변 (음성)                                  │   │
+│ │ FE: VAD 침묵 감지 → 답변 종료, STT 텍스트 + 타임스탬프 기록│   │
+│ │                                                           │   │
+│ │ [후속질문 라운드 - 최대 3회]                                │   │
+│ │ FE → BE: POST /interviews/{id}/follow-up (multipart)      │   │
+│ │   request 파트: { questionSetId, questionContent,          │   │
+│ │                   answerText, nonVerbalSummary,            │   │
+│ │                   previousExchanges[] }                    │   │
+│ │   audio 파트: WebM 오디오 (optional)                       │   │
+│ │ BE: (audio 있으면) OpenAI Whisper STT → answerText 보강    │   │
+│ │ BE → Claude: 후속질문 생성 (maxTokens=1024)                │   │
+│ │ BE → FE: FollowUpResponse (question, reason, type)        │   │
+│ │ FE → 사용자: TTS 후속질문 읽기                             │   │
+│ │ 사용자 → FE: 답변 (음성)                                  │   │
+│ └───────────────────────────────────────────────────────────┘   │
+│                                                                │
+│ [MediaRecorder 녹화 종료]                                      │
+│                                                                │
+│ [병렬 처리]                                                    │
+│ ├─ FE → BE: POST .../question-sets/{qsId}/answers             │
+│ │   (타임스탬프 4개: MAIN + FOLLOWUP 1~3)                      │
+│ │   BE: QuestionAnswer(questionId, startMs, endMs) 저장        │
+│ │   BE: analysisStatus = PENDING_UPLOAD                        │
+│ └─ FE → BE: POST .../question-sets/{qsId}/upload-url          │
+│    BE → FE: { uploadUrl, s3Key, fileMetadataId }               │
+│    FE → S3: PUT (WebM 영상 직접 업로드, 3회 재시도)             │
+│    FE: IndexedDB에 Blob 백업 → 업로드 성공 시 삭제              │
+│                                                                │
+│ [다음 질문세트로 이동, 업로드·분석은 백그라운드]                 │
+└────────────────────────────────────────────────────────────────┘
+
+FE → BE: POST /interviews/{id}/skip-remaining (미응답 질문세트 SKIPPED)
+FE → BE: PATCH /interviews/{id}/status { status: "COMPLETED" }
+FE: /interview/{id}/analysis로 이동
 ```
 
-**브라우저 API 활용 상세**:
+### 4-2. Zustand 상태 머신 (InterviewPhase)
+
+```
+[*] → preparing → greeting → ready → recording → paused → finishing → completed → [*]
+                                  ↑               │
+                                  └───────────────┘
+                                  (다음 질문 답변 시작)
+```
+
+| 전이 | 트리거 |
+|------|--------|
+| preparing → greeting | 면접 초기화 완료 |
+| greeting → ready | 인사 TTS 완료 |
+| ready → recording | 답변 시작 (VAD/수동) |
+| recording → paused | 답변 종료 (VAD/수동) |
+| paused → recording | 다음 질문 답변 시작 |
+| paused → finishing | 마지막 답변 완료 또는 시간 만료 |
+| finishing → completed | 업로드 완료, 상태 업데이트 |
+
+### 4-3. 브라우저 API 활용
 
 | 기술 | 역할 | 데이터 |
 |------|------|--------|
-| MediaRecorder | 영상 녹화 | WebM/VP9 Blob |
-| Web Speech API | 음성→텍스트 | TranscriptSegment[] |
-| Web Audio API | 음성 레벨/톤 분석 | VoiceEvent[] |
-| MediaPipe | 표정/자세 분석 | NonVerbalEvent[] |
-| VAD (커스텀) | 발화/침묵 감지 | 녹음 시작/종료 트리거 |
-| TTS | 질문 음성 출력 | SpeechSynthesis |
-
-**후속질문 API**:
-- **URL**: `POST /api/v1/interviews/{id}/follow-up`
-- **Claude 호출**: 후속질문 생성 (max_tokens: 1024)
-- **유형**: DEEP_DIVE / CLARIFICATION / CHALLENGE / APPLICATION
+| MediaRecorder | 질문세트 단위 영상 녹화 | WebM/VP9 2.5Mbps Blob |
+| AudioCapture | 병렬 오디오 전용 녹음 | opus 128kbps |
+| Web Speech API | 실시간 음성→텍스트 (ko-KR) | 답변 텍스트 + 타임스탬프 |
+| VAD (커스텀) | 발화/침묵 감지 | 답변 시작/종료 트리거 |
+| TTS (SpeechSynthesis) | 질문 음성 출력 | — |
 
 ---
 
-## Phase 4: 피드백 생성 (면접 완료 직후)
+## Phase 5: 비동기 분석 파이프라인 (서버사이드)
+
+S3에 영상이 업로드되면 EventBridge를 통해 2개 Lambda가 동시 트리거된다.
+
+### 인증 & 추적
+
+Lambda → API 서버 호출 시 `X-Internal-Api-Key` 헤더 필수.
+- 헤더명: `X-Internal-Api-Key`
+- 값: 환경변수 `INTERNAL_API_KEY` (config: `internal.api-key`)
+- 인증 실패 시: 401 `{ success: false, code: "AUTH_001", message: "유효하지 않은 내부 API 키입니다." }`
+
+**Correlation ID**: Lambda handler 진입 시 고유 ID 생성 → 모든 Internal API 호출에 `X-Correlation-Id` 헤더 전파.
+- Analysis: `{interviewId}-{questionSetId}-{uuid8자리}` (예: `42-7-a1b2c3d4`)
+- Convert: `convert-{s3key}-{uuid8자리}`
+- API 서버: `InternalApiKeyFilter`에서 헤더 추출 → SLF4J MDC 설정 → logback 로그에 `[correlationId]` 자동 포함
+- 장애 추적: CloudWatch에서 correlation_id 확인 → API 서버 로그에서 같은 ID 검색
+
+### 파이프라인 흐름
 
 ```
-사용자                     프론트엔드                        백엔드                         Claude AI
-  │                          │                               │                               │
-  │  완료 페이지 진입          │                               │                               │
-  │ ─────────────────────→   │                               │                               │
-  │                          │                               │                               │
-  │                          │  ┌─────────────────────────┐  │                               │
-  │                          │  │ 데이터 수집 (Zustand):   │  │                               │
-  │                          │  │ • STT 텍스트 (답변)      │  │                               │
-  │                          │  │ • 비언어 분석 요약       │  │                               │
-  │                          │  │ • 음성 분석 요약         │  │                               │
-  │                          │  └─────────────────────────┘  │                               │
-  │                          │                               │                               │
-  │                          │  POST /interviews/{id}/feedbacks                              │
-  │                          │  {                            │                               │
-  │                          │    answers: [                 │                               │
-  │                          │      {                        │                               │
-  │                          │        questionIndex: 0,      │                               │
-  │                          │        questionContent: "...",│                               │
-  │                          │        answerText: "...",     │                               │
-  │                          │        nonVerbalSummary: ".",│                               │
-  │                          │        voiceSummary: "..."    │                               │
-  │                          │      }, ...                   │                               │
-  │                          │    ]                          │                               │
-  │                          │  }                            │                               │
-  │                          │ ─────────────────────────────→│                               │
-  │                          │                               │                               │
-  │                          │                               │  ① InterviewAnswer 엔티티     │
-  │                          │                               │     DB 저장 (질문별 답변)      │
-  │                          │                               │                               │
-  │                          │                               │  ② 🤖 Claude API 호출 #3     │
-  │                          │                               │  "타임스탬프별 피드백 생성"     │
-  │                          │                               │ ─────────────────────────────→│
-  │                          │                               │                               │
-  │                          │                               │  ③ 피드백 목록 응답            │
-  │                          │                               │←─────────────────────────────│
-  │                          │                               │                               │
-  │                          │                               │  ④ Feedback 엔티티            │
-  │                          │                               │     DB 저장 (10~20개)         │
-  │                          │                               │                               │
-  │                          │  FeedbackListResponse          │                               │
-  │                          │  [{timestampSeconds, category, │                               │
-  │                          │    severity, content, ...}]   │                               │
-  │                          │←─────────────────────────────│                               │
-  │                          │                               │                               │
-  │  "분석 완료!" 버튼 표시    │                               │                               │
-  │←─────────────────────   │                               │                               │
+S3 PutObject (videos/{interviewId}/qs_{qsId}.webm)
+  → EventBridge (rehearse-video-uploaded-dev)
+    ├── Analysis Lambda (동시 트리거)
+    └── Convert Lambda (동시 트리거)
+
+=== Analysis Lambda (질문세트 1개당 약 2~5분) ===
+
+1. S3 키에서 interviewId, questionSetId 파싱
+   LA → BE: GET .../answers (멱등성 체크: analysisStatus == COMPLETED면 즉시 종료)
+
+2. LA → BE: PUT .../progress { "STARTED" }
+   BE: analysisStatus PENDING_UPLOAD → ANALYZING
+
+3. LA → S3: 영상 다운로드
+   LA: FFmpeg 추출
+     - 오디오: PCM 16-bit, 16kHz, mono (Whisper 요구사항)
+     - 프레임: 3초 간격, 최대 10장 (quality level 2)
+
+4. [언어 + 비언어 분석 병렬 실행 (asyncio.gather)]
+   ├── 언어 분석 파이프라인:
+   │   LA → OpenAI: Whisper STT (whisper-1, language="ko", verbose_json)
+   │   → 세그먼트별 start_ms, end_ms, text
+   │   LA → OpenAI: GPT-4o LLM (답변별 언어 분석)
+   │   → verbal_score(0~100), filler_word_count, tone_label, comment
+   └── 비언어 분석 파이프라인:
+       LA → OpenAI: GPT-4o Vision (프레임 base64, detail="low")
+       → eye_contact_score(0~100), posture_score(0~100),
+         expression_label(CONFIDENT|NERVOUS|NEUTRAL|ENGAGED|UNCERTAIN)
+
+5. LA: 종합 점수 계산
+   overall = verbal_score × 0.6 + nonverbal_score × 0.4
+   (nonverbal = (eye_contact + posture) / 2)
+
+6. LA → BE: POST .../feedback (분석 결과 저장)
+   BE → DB: QuestionSetFeedback + TimestampFeedback 저장
+   BE: analysisStatus = COMPLETED
+
+7. LA → BE: GET .../check-all-completed
+   [모든 질문세트 분석 완료 시]
+   LA → BE: POST /api/internal/interviews/{iId}/report (리포트 생성 트리거, timeout 60초)
+
+=== Convert Lambda (질문세트 1개당 약 30초~1분) ===
+
+1. S3 키에서 interviewId, questionSetId 파싱
+2. LC → BE: GET /api/internal/files/by-s3-key (멱등성 체크)
+3. LC → BE: PUT /api/internal/files/{id}/status { UPLOADED } (PENDING→UPLOADED)
+4. LC → BE: PUT /api/internal/files/{id}/status { CONVERTING }
+5. LC → MediaConvert: WebM → MP4 변환 Job 생성
+   - H.264 HIGH, QVBR Level 7, Max 5Mbps
+   - AAC 128kbps, 48kHz, stereo
+   - MOOV: PROGRESSIVE_DOWNLOAD (faststart)
+6. LC: Job 상태 폴링 (10초 간격, 최대 600초)
+   - COMPLETE → 성공
+   - ERROR/CANCELED → 예외
+   - 600초 초과 → TimeoutError
+7. LC → BE: PUT /api/internal/files/{id}/status { CONVERTED }
+   + streamingS3Key 업데이트 (videos/{id}/qs_{id}.mp4)
 ```
 
-**API 상세**:
-- **URL**: `POST /api/v1/interviews/{id}/feedbacks`
-- **DB 저장**: InterviewAnswer (답변) + Feedback (피드백)
-- **Claude 호출**: 피드백 생성 (max_tokens: 4096)
-- **피드백 카테고리**: VERBAL / NON_VERBAL / CONTENT
-- **피드백 심각도**: INFO (긍정) / WARNING (주의) / SUGGESTION (제안)
+### Analysis Lambda 진행 단계 (AnalysisProgress)
+
+| 단계 | 설명 | Internal API |
+|------|------|-------------|
+| `STARTED` | 분석 시작, 멱등성 체크 | `PUT .../progress` |
+| `EXTRACTING` | FFmpeg 오디오/프레임 추출 | `PUT .../progress` |
+| `STT_PROCESSING` | Whisper 음성→텍스트 변환 | `PUT .../progress` |
+| `VERBAL_ANALYZING` | GPT-4o LLM 언어 분석 | `PUT .../progress` |
+| `NONVERBAL_ANALYZING` | GPT-4o Vision 비언어 분석 | `PUT .../progress` |
+| `FINALIZING` | 종합 평가 생성 | `PUT .../progress` |
+| `FAILED` | 분석 실패 (터미널 상태) | `PUT .../progress` |
+
+### 장애 격리 & 실패 처리
+
+**Lambda 내부 HTTP 재시도** (`lambda/common/retry.py`):
+- `@retry_on_transient()` 데코레이터: 3회, 지수 백오프 + 지터 (1s→2s→4s)
+- 재시도 대상: `httpx.TimeoutException`, `httpx.ConnectError`, 5xx 응답
+- 즉시 실패: 4xx (클라이언트 에러)
+- API 서버 순간 장애 시 Lambda 전체 재실행 없이 내부 복구
+
+**OpenAI API 재시도** (STT/Vision/Verbal 전 analyzer):
+- 3회 재시도, 지수 백오프 (2s→4s→8s)
+- `RateLimitError`: 지수 백오프 대기 후 재시도
+- `AuthenticationError`: 즉시 실패 (재시도 낭비 방지)
+- Vision 실패 시 50점 + NEUTRAL 폴백, STT 실패 시 비언어만 분석
+
+**낙관적 잠금** (`@Version`):
+- `QuestionSet`, `FileMetadata` 엔티티에 version 필드
+- 좀비 스케줄러와 Lambda 동시 업데이트 시 `OptimisticLockException` → 데이터 정합성 보장
+- 스케줄러에서 version 충돌 시 해당 엔티티 스킵 (Lambda가 이미 처리한 것)
+
+**복구 경로**:
+- Lambda 크래시 → 좀비 스케줄러 (60초 간격) 감지: 10분 이상 ANALYZING → FAILED
+- 분석 실패 → `POST /api/internal/.../retry-analysis` (FAILED → PENDING_UPLOAD)
+- 변환 실패 → `POST /api/internal/files/{id}/retry-convert` (FAILED → UPLOADED)
+- 변환 미실패 → 원본 WebM으로 재생 폴백
+- API 서버 호출 실패 → 3회 내부 재시도 후에도 실패 시 S3 JSON 백업 (`analysis-backup/{id}/qs_{id}.json`)
 
 ---
 
-## Phase 5A: 타임스탬프 피드백 리뷰
+## Phase 6: 분석 대기 (`/interview/:id/analysis`)
+
+모든 질문세트의 분석 완료를 대기한다.
 
 ```
-사용자                     프론트엔드                        백엔드
-  │                          │                               │
-  │  리뷰 페이지 진입          │                               │
-  │ ─────────────────────→   │                               │
-  │                          │  GET /interviews/{id}/feedbacks│
-  │                          │ ─────────────────────────────→│
-  │                          │  피드백 목록 (timestamp 순서)   │
-  │                          │←─────────────────────────────│
-  │                          │                               │
-  │  ┌─────────────────────────────────────────────────┐    │
-  │  │              리뷰 화면 레이아웃                    │    │
-  │  │                                                   │    │
-  │  │  ┌──────────────────┐  ┌──────────────────┐      │    │
-  │  │  │   영상 플레이어   │  │   피드백 패널     │      │    │
-  │  │  │   (60%)          │  │   (40%)          │      │    │
-  │  │  │                  │  │                  │      │    │
-  │  │  │  ▶ 녹화 영상     │  │  📝 피드백 #1    │      │    │
-  │  │  │                  │  │  📝 피드백 #2    │      │    │
-  │  │  │                  │  │  📝 피드백 #3    │      │    │
-  │  │  └──────────────────┘  │  ...             │      │    │
-  │  │  ┌──────────────────┐  └──────────────────┘      │    │
-  │  │  │ 타임라인 (피드백) │                            │    │
-  │  │  │ ●──●────●──●──── │  ← 클릭 시 영상 seek      │    │
-  │  │  └──────────────────┘                            │    │
-  │  └─────────────────────────────────────────────────┘    │
-  │                          │                               │
-  │  피드백 클릭 →            │  영상 seek (timestampSeconds)  │
-  │  영상 해당 시점으로 이동   │                               │
-```
+[폴링: 5초 간격, 질문세트별 병렬 (useAllQuestionSetStatuses)]
+FE → BE: GET .../question-sets/{qsId}/status (각 질문세트 병렬 요청)
+BE → FE: { analysisStatus, analysisProgress, fileStatus }
 
-**API 상세**:
-- **URL**: `GET /api/v1/interviews/{id}/feedbacks`
-- **서버 처리**: DB 조회만 (Claude 호출 없음)
-- **동기화**: 피드백의 `timestampSeconds` ↔ 영상 재생 위치
+질문세트별 분석 상태 표시:
+  EXTRACTING        → "음성/영상 추출 중..."
+  STT_PROCESSING    → "음성을 텍스트로 변환 중..."
+  VERBAL_ANALYZING  → "답변 내용을 분석 중..."
+  NONVERBAL_ANALYZING → "표정과 자세를 분석 중..."
+  FINALIZING        → "종합 평가를 생성 중..."
 
----
+[완료된 질문세트 모범답변 미리보기]
+FE → BE: GET .../question-sets/{qsId}/questions-with-answers
 
-## Phase 5B: 종합 리포트
+[분석 실패 시]
+사용자: "재시도" 클릭
+FE → BE: POST .../question-sets/{qsId}/retry-analysis
 
-```
-사용자                     프론트엔드                        백엔드                         Claude AI
-  │                          │                               │                               │
-  │  리포트 페이지 진입        │                               │                               │
-  │ ─────────────────────→   │                               │                               │
-  │                          │  GET /interviews/{id}/report  │                               │
-  │                          │ ─────────────────────────────→│                               │
-  │                          │                               │                               │
-  │                          │                               │  리포트 존재? ─── Yes → 반환   │
-  │                          │                               │       │                       │
-  │                          │                               │      No (최초 조회)            │
-  │                          │                               │       │                       │
-  │                          │                               │  ① 피드백 DB 조회              │
-  │                          │                               │  ② 피드백 텍스트 요약 생성      │
-  │                          │                               │                               │
-  │                          │                               │  ③ 🤖 Claude API 호출 #4     │
-  │                          │                               │  "종합 리포트 생성"             │
-  │                          │                               │ ─────────────────────────────→│
-  │                          │                               │                               │
-  │                          │                               │  ④ 리포트 응답                 │
-  │                          │                               │←─────────────────────────────│
-  │                          │                               │                               │
-  │                          │                               │  ⑤ InterviewReport 엔티티     │
-  │                          │                               │     DB 저장 (1회만 생성)       │
-  │                          │                               │                               │
-  │                          │  InterviewReport               │                               │
-  │                          │  { overallScore, summary,     │                               │
-  │                          │    strengths[], improvements[]}│                               │
-  │                          │←─────────────────────────────│                               │
-  │                          │                               │                               │
-  │  ┌─────────────────────────────────┐                    │                               │
-  │  │  종합 점수: 78 / 100            │                    │                               │
-  │  │  ──────────────────────         │                    │                               │
-  │  │  종합 평가:                      │                    │                               │
-  │  │  "전반적으로 기술 이해도가..."    │                    │                               │
-  │  │  ──────────────────────         │                    │                               │
-  │  │  ✅ 강점        ⚠️ 보완점       │                    │                               │
-  │  │  • 논리적 설명   • 구체적 사례   │                    │                               │
-  │  │  • 기술 이해도   • 비언어 표현   │                    │                               │
-  │  └─────────────────────────────────┘                    │                               │
-```
-
-**API 상세**:
-- **URL**: `GET /api/v1/interviews/{id}/report`
-- **Lazy Generation**: 첫 조회 시 생성, 이후 캐싱
-- **Claude 호출**: 리포트 생성 (max_tokens: 2048)
-
----
-
-## Claude AI 호출 시점 총정리
-
-| # | 시점 | API 엔드포인트 | 서비스 메서드 | 입력 | 출력 | max_tokens |
-|---|------|---------------|-------------|------|------|-----------|
-| 1 | 면접 생성 | `POST /interviews` | `InterviewService.createInterview()` | 직무+레벨+유형+이력서 | 질문 목록 (N개) | 4096 |
-| 2 | 답변 후 | `POST /interviews/{id}/follow-up` | `InterviewService.generateFollowUp()` | 원 질문+답변+비언어 | 후속질문 1개 | 1024 |
-| 3 | 면접 완료 | `POST /interviews/{id}/feedbacks` | `FeedbackService.generateFeedback()` | 전체 답변 데이터 | 피드백 10~20개 | 4096 |
-| 4 | 리포트 조회 | `GET /interviews/{id}/report` | `ReportService.getReport()` | 피드백 요약 | 점수+강점+보완점 | 2048 |
-
----
-
-## DB 저장 시점 총정리
-
-| 시점 | 저장 엔티티 | 트리거 |
-|------|-----------|--------|
-| 면접 생성 | `Interview` + `InterviewQuestion[]` | Setup 완료 버튼 |
-| 면접 시작 | `Interview.status = IN_PROGRESS` | 준비 페이지 시작 버튼 |
-| 면접 완료 | `Interview.status = COMPLETED` | 마지막 질문 답변 후 자동 |
-| 피드백 생성 | `InterviewAnswer[]` + `Feedback[]` | 완료 페이지 자동 호출 |
-| 리포트 생성 | `InterviewReport` | 리포트 페이지 첫 조회 |
-
----
-
-## 데이터 모델 관계도
-
-```
-Interview (1)
-├── status: READY → IN_PROGRESS → COMPLETED
-│
-├──→ InterviewQuestion (N)     [면접 생성 시 저장]
-│    ├── content: "질문 내용"
-│    ├── category: "CS/행동/기술"
-│    └── evaluationCriteria: "평가 기준"
-│
-├──→ InterviewAnswer (N)       [피드백 생성 시 저장]
-│    ├── answerText: "STT 변환 텍스트"
-│    ├── nonVerbalSummary: "비언어 분석"
-│    └── voiceSummary: "음성 분석"
-│
-├──→ Feedback (N)              [피드백 생성 시 저장]
-│    ├── timestampSeconds: 32.5
-│    ├── category: VERBAL | NON_VERBAL | CONTENT
-│    ├── severity: INFO | WARNING | SUGGESTION
-│    └── content + suggestion
-│
-└──→ InterviewReport (1)       [리포트 첫 조회 시 저장]
-     ├── overallScore: 0~100
-     ├── summary: "종합 평가"
-     ├── strengths: ["강점1", "강점2"]
-     └── improvements: ["보완점1", "보완점2"]
+[모든 질문세트 COMPLETED/SKIPPED → /interview/{id}/feedback으로 이동]
 ```
 
 ---
 
-## 프론트엔드 상태 관리
+## Phase 7: 타임스탬프 피드백 (`/interview/:id/feedback`)
+
+질문세트별 영상과 타임스탬프 피드백을 3way 동기화하여 표시한다.
+
+```
+FE → BE: GET .../question-sets/{qsId}/feedback
+BE → FE: QuestionSetFeedbackResponse (점수, 코멘트, 타임스탬프 피드백[], streamingUrl, fallbackUrl)
+FE → S3: MP4 스트리밍 재생 (streamingUrl) 또는 WebM 폴백 (fallbackUrl)
+
+3way 동기화 (useFeedbackSync, 200ms 폴링):
+  ① 영상 플레이어 ↔ ② 타임라인 마커 ↔ ③ 피드백 패널
+
+사용자: 피드백 카드 클릭 → 영상 seek (해당 타임스탬프로 이동)
+사용자: 영상 재생 → 타임스탬프 통과 시 해당 피드백 카드 하이라이트 + 스크롤
+사용자: 질문세트 탭 전환 → 다른 질문세트 피드백 로드
+```
+
+**피드백 카드 데이터 (TimestampFeedback)**:
+- `startMs`, `endMs`: 구간 타임스탬프
+- `transcript`: STT 텍스트
+- `verbalScore` (0~100), `fillerWordCount`: 언어 분석
+- `eyeContactScore`, `postureScore` (0~100): 비언어 분석
+- `expressionLabel`: CONFIDENT/NERVOUS/NEUTRAL/ENGAGED/UNCERTAIN
+- `nonverbalComment`, `overallComment`: AI 코멘트
+
+**UI 레이아웃**:
+- 좌측 (60%): 영상 플레이어 + 타임라인 (피드백 마커, 점수별 색상)
+- 우측 (40%): 피드백 카드 패널 (MAIN/FOLLOWUP 그룹, 필러워드 하이라이트)
+- 상단: 질문세트 탭 전환
+
+**Presigned URL 만료 처리**:
+- 영상 로드 실패 시 `onUrlExpired()` → 쿼리 무효화 → 새 URL 자동 발급
+
+---
+
+## Phase 8: 종합 리포트 (`/interview/:id/report`)
+
+모든 분석 완료 시 자동 생성된 리포트를 표시한다.
+
+```
+--- 리포트 자동 생성 흐름 (Analysis Lambda가 트리거, 비동기) ---
+BE → DB: 모든 QuestionSetFeedback 조회
+BE → Claude API: 종합 리포트 생성 (maxTokens=2048)
+Claude → BE: 점수 + 요약 + 강점 + 개선점
+BE → DB: InterviewReport 저장
+
+--- InterviewCompletionService (30초 스케줄러) ---
+BE: IN_PROGRESS 면접 중 모든 질문세트가 resolved(COMPLETED/SKIPPED) → COMPLETED 자동 전환
+BE: overallScore = QuestionSetFeedback.questionSetScore 평균
+
+--- 클라이언트 조회 ---
+FE → BE: GET /api/v1/interviews/{interviewId}/report
+
+[리포트 존재] → 200 OK: { id, interviewId, overallScore, summary, strengths[], improvements[], feedbackCount }
+[리포트 생성 중] → 202 Accepted (REPORT_GENERATING) → 5초 폴링, 최대 24회 (2분)
+[분석 미완료] → 409 Conflict (ANALYSIS_NOT_COMPLETED) → 5초 폴링, 최대 60회 (5분)
+```
+
+**리포트 생성 트리거**:
+- Analysis Lambda에서 모든 질문세트 완료 확인 시 `POST /api/internal/interviews/{iId}/report` 호출
+- 또는 `InternalQuestionSetService.saveFeedback()`에서 `AllAnalysisCompletedEvent` 발행
+- `AllAnalysisCompletedEventListener`가 `@Async` + `@TransactionalEventListener(AFTER_COMMIT)`으로 수신 → `ReportService.generateReport()` 호출
+
+---
+
+## 부록
+
+### A. 상태 전이 다이어그램
+
+#### Interview 상태 (InterviewStatus)
+
+```
+[*] → READY → IN_PROGRESS → COMPLETED → [*]
+      (생성)   (PATCH /status) (PATCH /status 또는 30초 스케줄러)
+```
+
+#### 질문 생성 상태 (QuestionGenerationStatus)
+
+```
+[*] → PENDING → GENERATING → COMPLETED
+      (생성)    (비동기 시작)  (질문 저장 완료)
+                    │
+                    ▼
+                  FAILED ──(retry-questions)──→ PENDING
+```
+
+#### 질문세트 분석 상태 (AnalysisStatus)
+
+```
+[*] → PENDING → PENDING_UPLOAD → ANALYZING → COMPLETED
+      (생성)    (답변 제출)       (Lambda 시작) (피드백 저장)
+         │            │              │              │
+         ├→ SKIPPED   ├→ FAILED      ├→ FAILED      ├→ FAILED
+         │  (skip)    │              │  (좀비 감지)   │  (후처리)
+         ├→ FAILED    │              │              │
+         │  (타임아웃) │              │              │
+         │            │              │              │
+         │      FAILED ←─────────────┘              │
+         │        │                                  │
+         │        ├→ PENDING_UPLOAD (retry-analysis) │
+         │        ├→ ANALYZING (retry-analysis)      │
+         │        └→ COMPLETED (수동 복구)            │
+```
+
+#### 파일 상태 (FileStatus)
+
+```
+[*] → PENDING → UPLOADED → CONVERTING → CONVERTED
+      (생성)    (Lambda)   (MediaConvert) (완료)
+         │         │           │
+         ├→ FAILED ├→ FAILED   ├→ FAILED
+         │         │           │  (타임아웃)
+         │         │           │
+         │   FAILED → UPLOADED (재시도)
+```
+
+### B. 이벤트 목록
+
+| 이벤트 | 발행 시점 | 리스너 | 처리 |
+|--------|----------|--------|------|
+| `QuestionGenerationRequestedEvent` | `InterviewService.createInterview()` 트랜잭션 커밋 후 | `QuestionGenerationService` | `@Async("questionGenerationExecutor")` Claude API 호출 → QuestionSet 저장 |
+| `AllAnalysisCompletedEvent` | `InternalQuestionSetService.saveFeedback()` 에서 모든 질문세트 완료 확인 시 | `AllAnalysisCompletedEventListener` | `@Async` Claude API 호출 → InterviewReport 저장 |
+| S3 PutObject → EventBridge | 클라이언트 S3 업로드 완료 시 (`videos/*.webm` 패턴) | Analysis Lambda + Convert Lambda | 동시 트리거 |
+
+### C. API 엔드포인트 전체 목록
+
+#### 클라이언트 API (`/api/v1`)
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| `POST` | `/api/v1/interviews` | 면접 세션 생성 (multipart: request + resumeFile) |
+| `GET` | `/api/v1/interviews/{id}` | 면접 상세 조회 |
+| `PATCH` | `/api/v1/interviews/{id}/status` | 면접 상태 변경 |
+| `POST` | `/api/v1/interviews/{id}/follow-up` | 후속질문 생성 (multipart: request + audio) |
+| `POST` | `/api/v1/interviews/{id}/retry-questions` | 질문 재생성 |
+| `POST` | `/api/v1/interviews/{id}/skip-remaining` | 미응답 질문세트 스킵 |
+| `POST` | `/api/v1/interviews/{iId}/question-sets/{qsId}/answers` | 답변 타임스탬프 저장 |
+| `POST` | `/api/v1/interviews/{iId}/question-sets/{qsId}/upload-url` | Presigned URL 발급 |
+| `GET` | `/api/v1/interviews/{iId}/question-sets/{qsId}/status` | 분석 상태 조회 |
+| `GET` | `/api/v1/interviews/{iId}/question-sets/{qsId}/feedback` | 질문세트 피드백 조회 |
+| `GET` | `/api/v1/interviews/{iId}/question-sets/{qsId}/questions-with-answers` | 모범답변 조회 |
+| `POST` | `/api/v1/interviews/{iId}/question-sets/{qsId}/retry-analysis` | 분석 재시도 |
+| `GET` | `/api/v1/interviews/{iId}/report` | 종합 리포트 조회 |
+
+#### 내부 API (`/api/internal`) — Lambda → API 서버
+
+인증: `X-Internal-Api-Key` 헤더 필수
+
+| 메서드 | 엔드포인트 | 설명 |
+|--------|-----------|------|
+| `PUT` | `/api/internal/interviews/{iId}/question-sets/{qsId}/progress` | 분석 진행 상태 업데이트 |
+| `GET` | `/api/internal/interviews/{iId}/question-sets/{qsId}/answers` | 답변 구간 타임스탬프 조회 |
+| `POST` | `/api/internal/interviews/{iId}/question-sets/{qsId}/feedback` | 분석 결과(피드백) 저장 |
+| `POST` | `/api/internal/interviews/{iId}/question-sets/{qsId}/retry-analysis` | Lambda 수동 invoke |
+| `PUT` | `/api/internal/files/{fileMetadataId}/status` | 파일 변환 상태 업데이트 |
+| `GET` | `/api/internal/files/by-s3-key` | S3 키로 파일 메타 조회 |
+| `POST` | `/api/internal/interviews/{iId}/report` | 리포트 생성 트리거 |
+
+### D. 폴링 전략
+
+| 대상 | 훅 | 간격 | 조건 | 중단 |
+|------|-----|------|------|------|
+| 질문 생성 | `useInterview` | 2초 | `questionGenerationStatus ∈ {PENDING, GENERATING}` | COMPLETED 또는 FAILED |
+| 분석 상태 (개별) | `useQuestionSetStatus` | 3초 | caller가 `enabled=true` 전달 시 | COMPLETED/SKIPPED/FAILED |
+| 분석 상태 (전체) | `useAllQuestionSetStatuses` | 5초 | ANALYZING인 질문세트 존재 시 | 모든 질문세트 COMPLETED/SKIPPED/FAILED |
+| 리포트 (생성 중) | `useReport` | 5초 | 202 응답 (REPORT_GENERATING) | 200 응답 (리포트 반환), 최대 24회 (2분) |
+| 리포트 (분석 중) | `useReport` | 5초 | 409 응답 (ANALYSIS_NOT_COMPLETED) | 200 응답, 최대 60회 (5분) |
+| 피드백 동기화 | `useFeedbackSync` | 200ms | 영상 재생 중 | 영상 일시정지 |
+
+### E. 에러 처리 & 재시도
+
+| 실패 유형 | 감지 방법 | 복구 방법 |
+|----------|----------|----------|
+| 질문 생성 실패 | `questionGenerationStatus = FAILED` | `POST .../retry-questions` |
+| Claude API 장애 | 3회 지수 백오프 재시도 (1s→2s→4s), 429/5xx 재시도 | 최종 실패 시 BusinessException |
+| 분석 Lambda 크래시 | 좀비 스케줄러 (10분 ANALYZING → FAILED) | `POST .../retry-analysis` |
+| 변환 Lambda 크래시 | 좀비 스케줄러 (10분 CONVERTING → FAILED) | `POST .../retry-convert` 또는 원본 WebM 폴백 |
+| 업로드 타임아웃 | 좀비 스케줄러 (30분 PENDING → FAILED) | FE 재업로드 |
+| S3 업로드 실패 | FE 3회 재시도 (1s, 2s, 4s 지수 백오프) | IndexedDB Blob 보관 → 재업로드 |
+| OpenAI API 실패 | Lambda 내부 3회 재시도 (2s→4s→8s 지수 백오프) | 부분 실패 허용 (Vision 실패 시 50점 폴백) |
+| OpenAI Rate Limit | RateLimitError 분리 감지, 지수 백오프 대기 | AuthenticationError는 즉시 실패 |
+| API 서버 호출 실패 | `@retry_on_transient` 3회 재시도 (1s→2s→4s + jitter) | 최종 실패 시 S3 JSON 백업 |
+| 동시 상태 업데이트 | `@Version` 낙관적 잠금 → OptimisticLockException | 스케줄러: 스킵, Lambda: 5xx 수신 후 재시도 |
+
+### F. 프론트엔드 상태 관리
 
 | 저장소 | 역할 | 데이터 |
 |--------|------|--------|
-| **TanStack Query** | 서버 데이터 캐싱 | Interview, Feedbacks, Report |
-| **Zustand (interview-store)** | 면접 진행 상태 | phase, questions, answers, transcripts, events |
-| **Zustand (review-store)** | 리뷰 페이지 상태 | feedbacks, currentTimestamp |
-| **React State** | 로컬 UI 상태 | Setup 위저드 step, 기기 테스트 상태 |
+| **TanStack Query** | 서버 데이터 캐싱 + 폴링 | Interview, QuestionSetStatus, Feedback, Report |
+| **Zustand (useInterviewStore)** | 면접 진행 상태 머신 | phase, questionSets, questionSetAnswers, uploadStatus, followUpHistory, currentFollowUp, followUpRound, videoBlob |
+| **React State** | 로컬 UI 상태 | Setup 위저드 step, 기기 테스트 상태, 피드백 탭 선택 |
+
+### G. 스케줄러 목록
+
+| 스케줄러 | 클래스 | 간격 | 로직 |
+|---------|--------|------|------|
+| 면접 자동 완료 | `InterviewCompletionService` | 30초 (`fixedDelay=30_000`) | IN_PROGRESS 면접 중 모든 질문세트 resolved(COMPLETED+SKIPPED) && completedCount > 0 → COMPLETED 전환 + overallScore 계산 |
+| 분석 좀비 감지 | `AnalysisScheduler.detectAnalysisZombies` | 60초 (`fixedDelay=60_000`) | ANALYZING 상태 10분 이상 → FAILED (reason: ZOMBIE_TIMEOUT). `@Version` 충돌 시 스킵 |
+| 변환 좀비 감지 | `AnalysisScheduler.detectFileConvertingZombies` | 60초 (`fixedDelay=60_000`) | CONVERTING 상태 10분 이상 → FAILED (reason: CONVERTING_TIMEOUT). `@Version` 충돌 시 스킵 |
+| 업로드 좀비 감지 | `AnalysisScheduler.detectUploadZombies` | 300초 (`fixedDelay=300_000`) | PENDING 상태 30분 이상 → FAILED (reason: UPLOAD_TIMEOUT). `@Version` 충돌 시 스킵 |
+
+### H. AWS 인프라 상세
+
+#### 서버 구성
+
+| 컴포넌트 | 스펙 | 비고 |
+|---------|------|------|
+| EC2 | t3.small (2 vCPU, 2GB RAM) | 리전: ap-northeast-2 |
+| Docker Compose | MySQL 8.0 + Spring Boot + Nginx + Certbot | 4개 서비스 |
+| Nginx | TLS 1.2/1.3, client_max_body_size 10MB | `api-dev.rehearse.co.kr` |
+| JVM | `-Xms512m -Xmx512m`, eclipse-temurin:21-jre | 멀티스테이지 Docker 빌드 |
+
+#### S3 (rehearse-videos-dev)
+
+| 경로 패턴 | 설명 |
+|----------|------|
+| `videos/{interviewId}/qs_{questionSetId}.webm` | 원본 녹화 영상 |
+| `videos/{interviewId}/qs_{questionSetId}.mp4` | MP4 변환 영상 |
+| `analysis-backup/{id}/qs_{id}.json` | 분석 실패 시 JSON 백업 |
+
+Presigned URL 유효기간: PUT 30분, GET 2시간
+
+S3 수명주기: 30일 → Intelligent-Tiering, 90일 → WebM 삭제, 180일 → 전체 삭제
+
+#### EventBridge
+
+- 규칙: `rehearse-video-uploaded-dev`
+- 패턴: S3 PutObject → `videos/*.webm`
+- 타겟: `rehearse-analysis-dev` + `rehearse-convert-dev` (동시)
+
+#### Lambda 설정
+
+| Lambda | 메모리 | 타임아웃 | 런타임 | Layer |
+|--------|--------|---------|--------|-------|
+| `rehearse-analysis-dev` | 2048 MB | 900초 (15분) | Python 3.12 | ffmpeg-static:1 (56MB) |
+| `rehearse-convert-dev` | 256 MB | 300초 (5분) | Python 3.12 | — |
+
+ffmpeg-static Layer: `/opt/bin/ffmpeg`, `/opt/bin/ffprobe` (FFmpeg 7.x)
+
+#### MediaConvert
+
+| 설정 | 값 |
+|------|-----|
+| 입력 | WebM (VP9 + Opus/Vorbis) |
+| 비디오 코덱 | H.264 HIGH |
+| 비트레이트 | QVBR Level 7, Max 5Mbps |
+| MOOV | PROGRESSIVE_DOWNLOAD (faststart) |
+| 오디오 | AAC 128kbps, 48kHz, stereo |
+
+#### CI/CD (deploy-dev.yml)
+
+- 트리거: `develop` 브랜치 push
+- 변경 감지: `dorny/paths-filter` (backend, frontend, nginx, infra)
+- BE 테스트: JDK 21, Gradle, H2 in-memory
+- FE 빌드: Node 20, `VITE_API_URL=https://api-dev.rehearse.co.kr`
+- FE 배포: S3 sync + CloudFront 캐시 무효화
+- BE 배포: ECR push → EC2 SSH docker compose up → health check (`/actuator/health`)
+- Nginx: 설정 변경 시 조건부 재시작
+
+### I. AI 클라이언트 구조
+
+#### AiClient 인터페이스 (BE)
+
+```
+interface AiClient {
+  generateQuestions(position, positionDetail, level, interviewTypes, csSubTopics, resumeText, durationMinutes) → List<GeneratedQuestion>
+  generateFollowUpQuestion(questionContent, answerText, nonVerbalSummary, previousExchanges) → GeneratedFollowUp
+  generateReport(feedbackSummary) → GeneratedReport
+}
+```
+
+| 구현체 | 조건 | 용도 |
+|--------|------|------|
+| `ClaudeApiClient` | `claude.api-key` 설정 시 | 프로덕션 |
+| `MockAiClient` | API 키 미설정 시 | 로컬 개발/테스트 |
+
+#### Claude API 설정
+
+| 항목 | 값 |
+|------|-----|
+| 모델 | `claude-sonnet-4-20250514` |
+| API 버전 | `2023-06-01` |
+| 질문 생성 | maxTokens=4096, temperature=0.9 |
+| 후속질문 | maxTokens=1024 |
+| 리포트 | maxTokens=2048 |
+| 타임아웃 | connect=5초, read=60초 |
+
+#### OpenAI API (Lambda)
+
+| 용도 | 모델 | 설정 |
+|------|------|------|
+| STT | whisper-1 | language="ko", response_format="verbose_json" |
+| 비언어 분석 | gpt-4o | Vision, 최대 10 프레임, detail="low" |
+| 언어 분석 | gpt-4o | 답변별 분석, JSON 응답 |
+
+재시도: 3회, 2초 지수 백오프. Vision 실패 시 50점 + NEUTRAL 폴백.
+
+#### 비동기 설정
+
+```
+questionGenerationExecutor:
+  corePoolSize: 2
+  maxPoolSize: 5
+  queueCapacity: 10
+  threadNamePrefix: "question-gen-"
+```
