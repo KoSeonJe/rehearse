@@ -23,13 +23,37 @@ const highlightFillers = (text: string): React.ReactNode[] => {
   )
 }
 
-const ScoreBadge = ({ label, score }: { label: string; score: number | null }) => {
+const getScoreLabel = (score: number): string => {
+  if (score >= 80) return '우수'
+  if (score >= 50) return '보통'
+  return '미흡'
+}
+
+const getScoreBarColor = (score: number): string => {
+  if (score >= 80) return 'bg-success'
+  if (score >= 50) return 'bg-yellow-400'
+  return 'bg-error'
+}
+
+const ScoreBar = ({ label, score }: { label: string; score: number | null }) => {
   if (score === null) return null
-  const color = score >= 80 ? 'text-success' : score >= 50 ? 'text-yellow-600' : 'text-error'
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-xs text-text-tertiary">{label}</span>
-      <span className={`text-xs font-black ${color}`}>{score}</span>
+    <div className="flex items-center gap-3">
+      <span className="text-xs font-medium text-text-tertiary w-8 shrink-0">{label}</span>
+      <div className="flex-1 h-2 bg-border/30 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${getScoreBarColor(score)}`}
+          style={{ width: `${score}%` }}
+        />
+      </div>
+      <span
+        className={`text-sm font-black tabular-nums w-8 text-right ${
+          score >= 80 ? 'text-success' : score >= 50 ? 'text-yellow-600' : 'text-error'
+        }`}
+      >
+        {score}
+      </span>
+      <span className="text-[10px] font-medium text-text-tertiary w-6">{getScoreLabel(score)}</span>
     </div>
   )
 }
@@ -44,6 +68,7 @@ interface FeedbackCardProps {
 const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null)
   const [showModelAnswer, setShowModelAnswer] = useState(false)
+  const [showTranscript, setShowTranscript] = useState(false)
 
   useEffect(() => {
     if (isActive && cardRef.current) {
@@ -57,6 +82,11 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
 
+  const hasNonverbal =
+    feedback.eyeContactScore !== null ||
+    feedback.postureScore !== null ||
+    feedback.expressionLabel !== null
+
   return (
     <div
       ref={cardRef}
@@ -68,83 +98,126 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
       }`}
       onClick={() => onSeek(feedback.startMs)}
     >
-      {/* Time badge */}
+      {/* 1. Time badge + type */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-black uppercase tracking-widest text-accent">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
           {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
         </span>
         {!feedback.isAnalyzed && (
-          <span className="text-[10px] font-bold text-text-tertiary">미분석</span>
+          <span className="text-[10px] font-medium text-text-tertiary">미분석</span>
         )}
       </div>
 
-      {/* Question text */}
+      {/* 2. Question text */}
       {question && (
-        <p className="text-xs font-bold text-text-secondary mb-2">Q. {question.questionText}</p>
+        <p className="text-sm font-semibold text-text-secondary mb-3">Q. {question.questionText}</p>
       )}
 
-      {/* Transcript */}
-      {feedback.transcript && (
-        <div className="mb-4 rounded-xl bg-surface p-4">
-          <p className="text-xs font-bold text-text-tertiary mb-1">답변 텍스트</p>
-          <p className="text-sm leading-relaxed text-text-primary">
-            {highlightFillers(feedback.transcript)}
+      {/* 3. Score summary block */}
+      <div className="space-y-2 mb-3">
+        {/* 언어 ScoreBar */}
+        {feedback.verbalScore !== null ? (
+          <ScoreBar label="언어" score={feedback.verbalScore} />
+        ) : (
+          <p className="text-xs text-text-tertiary">언어 분석 대기 중</p>
+        )}
+
+        {/* 언어 코멘트 */}
+        {feedback.verbalComment && (
+          <p className="text-xs text-text-secondary leading-relaxed">{feedback.verbalComment}</p>
+        )}
+
+        {/* 비언어 점수 인라인 */}
+        {hasNonverbal && (
+          <div className="flex flex-wrap gap-4 pt-1">
+            <span className="text-xs font-semibold text-text-primary">비언어</span>
+            {feedback.eyeContactScore !== null && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-text-tertiary">시선</span>
+                <span
+                  className={`text-xs font-black ${
+                    feedback.eyeContactScore >= 80
+                      ? 'text-success'
+                      : feedback.eyeContactScore >= 50
+                        ? 'text-yellow-600'
+                        : 'text-error'
+                  }`}
+                >
+                  {feedback.eyeContactScore}
+                </span>
+              </div>
+            )}
+            {feedback.postureScore !== null && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-text-tertiary">자세</span>
+                <span
+                  className={`text-xs font-black ${
+                    feedback.postureScore >= 80
+                      ? 'text-success'
+                      : feedback.postureScore >= 50
+                        ? 'text-yellow-600'
+                        : 'text-error'
+                  }`}
+                >
+                  {feedback.postureScore}
+                </span>
+              </div>
+            )}
+            {feedback.expressionLabel && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-medium text-text-tertiary">표정</span>
+                <span className="text-xs font-semibold text-text-primary">
+                  {feedback.expressionLabel}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 비언어 코멘트 */}
+        {feedback.nonverbalComment && (
+          <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbalComment}</p>
+        )}
+      </div>
+
+      {/* 4. Overall comment */}
+      {feedback.overallComment && (
+        <div className="border-t border-border/50 pt-3 mb-3">
+          <p className="text-xs font-semibold text-text-primary mb-1">종합 코멘트</p>
+          <p className="text-sm font-normal text-text-primary leading-relaxed">
+            {feedback.overallComment}
           </p>
-          {feedback.fillerWordCount !== null && feedback.fillerWordCount > 0 && (
-            <p className="mt-2 text-[10px] font-bold text-accent">
-              필러워드 {feedback.fillerWordCount}회 감지
-            </p>
-          )}
         </div>
       )}
 
-      {/* Scores */}
-      {feedback.isAnalyzed && (
-        <div className="space-y-3">
-          {/* Verbal */}
-          {feedback.verbalScore !== null && (
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-xs font-black text-text-primary">언어 분석</span>
-                <ScoreBadge label="" score={feedback.verbalScore} />
-              </div>
-              {feedback.verbalComment && (
-                <p className="text-xs text-text-secondary leading-relaxed">{feedback.verbalComment}</p>
+      {/* 5. Transcript (collapsed by default) */}
+      {feedback.transcript && (
+        <div className="border-t border-border/50 pt-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowTranscript(!showTranscript)
+            }}
+            className="text-xs font-semibold text-accent hover:underline"
+          >
+            {showTranscript ? '답변 텍스트 접기' : '답변 텍스트 보기'}
+          </button>
+          {showTranscript && (
+            <div className="mt-2 rounded-xl bg-surface p-4">
+              <p className="text-sm leading-relaxed text-text-primary">
+                {highlightFillers(feedback.transcript)}
+              </p>
+              {feedback.fillerWordCount !== null && feedback.fillerWordCount > 0 && (
+                <p className="mt-2 text-[10px] font-semibold text-accent">
+                  필러워드 {feedback.fillerWordCount}회 감지
+                </p>
               )}
-            </div>
-          )}
-
-          {/* Nonverbal */}
-          {(feedback.eyeContactScore !== null || feedback.postureScore !== null || feedback.expressionLabel !== null) && (
-            <div>
-              <p className="text-xs font-black text-text-primary mb-1">비언어 분석</p>
-              <div className="flex flex-wrap gap-3 mb-1">
-                <ScoreBadge label="시선" score={feedback.eyeContactScore} />
-                <ScoreBadge label="자세" score={feedback.postureScore} />
-                {feedback.expressionLabel && (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-text-tertiary">표정</span>
-                    <span className="text-xs font-bold text-text-primary">{feedback.expressionLabel}</span>
-                  </div>
-                )}
-              </div>
-              {feedback.nonverbalComment && (
-                <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbalComment}</p>
-              )}
-            </div>
-          )}
-
-          {/* Overall */}
-          {feedback.overallComment && (
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-xs font-black text-text-primary mb-1">종합 코멘트</p>
-              <p className="text-sm font-medium text-text-primary leading-relaxed">{feedback.overallComment}</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Model answer toggle */}
+      {/* 6. Model answer (collapsed by default) */}
       {question?.modelAnswer && (
         <div className="mt-3 border-t border-border/50 pt-3">
           <button
@@ -152,7 +225,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
               e.stopPropagation()
               setShowModelAnswer(!showModelAnswer)
             }}
-            className="text-xs font-bold text-accent hover:underline"
+            className="text-xs font-semibold text-accent hover:underline"
           >
             {showModelAnswer ? '모범답변 접기' : '모범답변 비교'}
           </button>
@@ -232,7 +305,7 @@ export const FeedbackPanel = ({
       <div className="space-y-3 overflow-y-auto flex-1">
         {filtered.length === 0 ? (
           <div className="rounded-2xl bg-surface p-8 text-center">
-            <p className="text-sm font-bold text-text-tertiary">피드백이 없습니다</p>
+            <p className="text-sm font-semibold text-text-tertiary">피드백이 없습니다</p>
           </div>
         ) : (
           filtered.map((fb) => (
