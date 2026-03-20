@@ -15,7 +15,9 @@ export const useReport = (interviewId: string) => {
       ),
   })
   const mutateRef = useRef(postMutation.mutate)
-  mutateRef.current = postMutation.mutate
+  useEffect(() => {
+    mutateRef.current = postMutation.mutate
+  }, [postMutation.mutate])
 
   const query = useQuery({
     queryKey: ['report', interviewId],

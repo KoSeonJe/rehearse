@@ -133,7 +133,7 @@ export const InterviewAnalysisPage = () => {
 
   const { data: response } = useInterview(interviewId)
   const interview = response?.data
-  const questionSets = interview?.questionSets ?? []
+  const questionSets = useMemo(() => interview?.questionSets ?? [], [interview?.questionSets])
 
   // 모든 질문세트 상태 폴링 (5초 간격)
   const hasQuestionSets = questionSets.length > 0

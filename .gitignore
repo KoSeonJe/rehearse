@@ -41,6 +41,7 @@ Thumbs.db
 
 # === 개인 문서 ===
 docs/resume/
+docs/local/
 
 # === Docker ===
 backend/.env
