@@ -56,99 +56,72 @@ const TIMESTAMP_FEEDBACKS: FeedbackItem[] = [
 ]
 
 const TimestampMockup = () => (
-  <div className="space-y-3">
-    {/* 웹캠 영역 */}
-    <div className="rounded-2xl overflow-hidden border border-border">
-      {/* 카메라 뷰 */}
-      <div className="relative bg-gradient-to-b from-[#16213e] to-[#0f3460] h-36 flex items-center justify-center overflow-hidden">
-        {/* REC 배지 */}
-        <div className="absolute top-2.5 left-3 flex items-center gap-1.5 z-10">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-[9px] font-black uppercase tracking-widest text-white/50">
-            REC
-          </span>
-        </div>
-
-        {/* 시간 표시 */}
-        <div className="absolute top-2.5 right-3 z-10">
-          <span className="font-mono text-[10px] font-bold text-white/50">
-            00:42 / 03:00
-          </span>
-        </div>
-
-        {/* 코너 브라켓 */}
-        <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-white/15 rounded-tr" />
-        <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-white/15 rounded-bl" />
-
-        {/* 면접자 사진 (왼쪽 인물 크롭) */}
-        <img
-          src={INTERVIEW_IMG}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover object-[25%_20%]"
-        />
-      </div>
-
-      {/* 타임라인 바 */}
-      <div className="bg-white px-3 pt-2.5 pb-2">
-        <div className="relative h-1 rounded-full bg-border">
-          {/* 진행 채움 */}
-          <div className="absolute left-0 top-0 h-full w-[28%] rounded-full bg-accent/30" />
-
-          {/* 피드백 마커 */}
-          {TIMESTAMP_FEEDBACKS.map((fb) => (
-            <div
-              key={fb.time}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-              style={{ left: fb.timelinePos }}
-            >
-              <span
-                className={`block w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm ${fb.markerClass}`}
-              />
-            </div>
-          ))}
-
-          {/* 재생 헤드 */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
-            style={{ left: '28%' }}
-          >
-            <span className="block w-3 h-3 rounded-full bg-accent border-2 border-white shadow" />
+  <div className="flex gap-3">
+    {/* 왼쪽: 영상 + 타임라인 */}
+    <div className="w-[45%] shrink-0 space-y-2">
+      <div className="rounded-2xl overflow-hidden border border-border">
+        {/* 카메라 뷰 — 왼쪽 인물만 크롭 */}
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img
+            src={INTERVIEW_IMG}
+            alt=""
+            className="absolute inset-0 w-[200%] h-full object-cover object-[15%_15%]"
+          />
+          {/* REC 배지 */}
+          <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-white/70">
+              REC
+            </span>
+          </div>
+          {/* 시간 */}
+          <div className="absolute bottom-2 right-2 z-10">
+            <span className="font-mono text-[9px] font-bold text-white/60 bg-black/30 px-1.5 py-0.5 rounded">
+              00:42
+            </span>
           </div>
         </div>
-        <div className="flex justify-between mt-1">
-          <span className="font-mono text-[9px] text-text-tertiary">0:00</span>
-          <span className="font-mono text-[9px] text-text-tertiary">3:00</span>
+
+        {/* 타임라인 바 */}
+        <div className="bg-white px-2.5 pt-2 pb-1.5">
+          <div className="relative h-1 rounded-full bg-border">
+            <div className="absolute left-0 top-0 h-full w-[28%] rounded-full bg-accent/30" />
+            {TIMESTAMP_FEEDBACKS.map((fb) => (
+              <div
+                key={fb.time}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+                style={{ left: fb.timelinePos }}
+              >
+                <span className={`block w-2 h-2 rounded-full border-2 border-white shadow-sm ${fb.markerClass}`} />
+              </div>
+            ))}
+            <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2" style={{ left: '28%' }}>
+              <span className="block w-2.5 h-2.5 rounded-full bg-accent border-2 border-white shadow" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    {/* 피드백 카드 목록 */}
-    <div className="space-y-2">
+    {/* 오른쪽: 피드백 카드 */}
+    <div className="flex-1 space-y-2">
       {TIMESTAMP_FEEDBACKS.map((fb) => (
         <div
           key={fb.time}
-          className="rounded-2xl bg-surface border border-border p-3.5 flex gap-3"
+          className="rounded-2xl bg-surface border border-border p-3"
         >
-          {/* 마커 도트 */}
-          <span
-            className={`inline-block w-2 h-2 rounded-full shrink-0 mt-0.5 ${fb.markerClass}`}
-            aria-hidden="true"
-          />
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className="font-mono text-[10px] font-black text-text-secondary">
-                {fb.time}
-              </span>
-              <span
-                className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold ${fb.labelClass}`}
-              >
-                {fb.label}
-              </span>
-            </div>
-            <p className="text-xs font-medium text-text-primary leading-relaxed">
-              {fb.text}
-            </p>
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${fb.markerClass}`} />
+            <span className="font-mono text-[10px] font-black text-text-secondary">
+              {fb.time}
+            </span>
+            <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold ${fb.labelClass}`}>
+              {fb.label}
+            </span>
           </div>
+          <p className="text-[11px] font-medium text-text-primary leading-relaxed">
+            {fb.text}
+          </p>
         </div>
       ))}
     </div>
@@ -181,19 +154,8 @@ const NONVERBAL_FEEDBACKS: NonverbalFeedback[] = [
 
 const NonverbalMockup = () => (
   <div className="space-y-3">
-    {/* 면접관 사진 + 헤더 */}
-    <div className="rounded-2xl bg-surface border border-border overflow-hidden">
-      <div className="relative h-28">
-        <img
-          src={INTERVIEW_IMG}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover object-[75%_20%]"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-        <div className="absolute bottom-3 left-3">
-          <span className="text-xs font-bold text-white drop-shadow-md">비언어 분석 결과</span>
-        </div>
-      </div>
+    <div className="rounded-2xl bg-surface border border-border p-4">
+      <span className="text-xs font-bold text-text-primary">비언어 분석 결과</span>
     </div>
     <div className="space-y-2">
       {NONVERBAL_FEEDBACKS.map((fb) => (
