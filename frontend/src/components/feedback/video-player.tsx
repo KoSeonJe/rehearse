@@ -3,6 +3,7 @@ import { forwardRef, useCallback, useImperativeHandle, useRef, useState } from '
 export interface VideoPlayerHandle {
   seekTo: (ms: number) => void
   getCurrentTimeMs: () => number
+  getDurationMs: () => number
 }
 
 interface VideoPlayerProps {
@@ -34,6 +35,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
       },
       getCurrentTimeMs: () => (videoRef.current ? videoRef.current.currentTime * 1000 : 0),
+      getDurationMs: () => (videoRef.current && isFinite(videoRef.current.duration) ? videoRef.current.duration * 1000 : 0),
     }))
 
     const handleError = useCallback(() => {
@@ -93,7 +95,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             onPlay={() => setIsPlaying(true)}
             onPause={() => setIsPlaying(false)}
             onTimeUpdate={() => {
-              if (videoRef.current) setCurrentTime(videoRef.current.currentTime)
+              if (videoRef.current) {
+                const ct = videoRef.current.currentTime
+                setCurrentTime(ct)
+                // WebM duration 부정확 시 보정
+                if (ct > duration && ct > 0) {
+                  setDuration(ct)
+                }
+              }
             }}
             onLoadedMetadata={() => {
               if (videoRef.current) {

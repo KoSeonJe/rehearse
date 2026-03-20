@@ -203,7 +203,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
             {showTranscript ? '답변 텍스트 접기' : '답변 텍스트 보기'}
           </button>
           {showTranscript && (
-            <div className="mt-2 rounded-xl bg-surface p-4">
+            <div className="mt-2 rounded-xl bg-surface p-4" onClick={(e) => e.stopPropagation()}>
               <p className="text-sm leading-relaxed text-text-primary">
                 {highlightFillers(feedback.transcript)}
               </p>
@@ -230,7 +230,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
             {showModelAnswer ? '모범답변 접기' : '모범답변 비교'}
           </button>
           {showModelAnswer && (
-            <div className="mt-2 rounded-xl bg-success/5 border border-success/10 p-4">
+            <div className="mt-2 rounded-xl bg-success/5 border border-success/10 p-4" onClick={(e) => e.stopPropagation()}>
               <p className="text-xs text-text-secondary leading-relaxed">{question.modelAnswer}</p>
             </div>
           )}

@@ -8,6 +8,7 @@ export const useFeedbackSync = (
 ) => {
   const [activeFeedbackId, setActiveFeedbackId] = useState<number | null>(null)
   const [currentTimeMs, setCurrentTimeMs] = useState(0)
+  const [videoDurationMs, setVideoDurationMs] = useState(0)
 
   // Poll video time and compute active feedback
   useEffect(() => {
@@ -15,6 +16,9 @@ export const useFeedbackSync = (
       if (!videoRef.current) return
       const ms = videoRef.current.getCurrentTimeMs()
       setCurrentTimeMs(ms)
+
+      const dMs = videoRef.current.getDurationMs()
+      if (dMs > 0) setVideoDurationMs(dMs)
 
       const active = feedbacks.find((fb) => ms >= fb.startMs && ms < fb.endMs)
       setActiveFeedbackId(active?.id ?? null)
@@ -32,5 +36,5 @@ export const useFeedbackSync = (
     [videoRef],
   )
 
-  return { activeFeedbackId, currentTimeMs, seekTo }
+  return { activeFeedbackId, currentTimeMs, videoDurationMs, seekTo }
 }

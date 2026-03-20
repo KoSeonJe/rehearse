@@ -231,6 +231,12 @@ export const useAnswerFlow = ({
     // greeting 중 자기소개 완료 → ready로 전환 + 첫 질문 TTS
     if (greetingPhaseRef.current) {
       audioCapture.stop()
+      // 자기소개 녹화 blob 폐기 — MediaRecorder 정지
+      if (recorder.isRecording) {
+        await recorder.stop()
+      }
+      // 다음 doStartAnswer() 호출 시 새로 설정되도록 리셋
+      setQuestionSetRecordingStartTime(null)
       completeGreeting()
       return
     }

@@ -33,7 +33,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
   const feedbacks = feedback?.timestampFeedbacks ?? []
   const questions = questionsRes?.data?.questions ?? []
 
-  const { activeFeedbackId, currentTimeMs, seekTo } = useFeedbackSync(videoRef, feedbacks)
+  const { activeFeedbackId, currentTimeMs, videoDurationMs, seekTo } = useFeedbackSync(videoRef, feedbacks)
 
   const handleUrlExpired = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -41,10 +41,13 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
     })
   }, [queryClient, interviewId, questionSetId])
 
-  // Estimate total duration from last feedback endMs
-  const durationMs = feedbacks.length > 0
+  // Use actual video duration as timeline base; fall back to feedback endMs
+  const feedbackMaxMs = feedbacks.length > 0
     ? Math.max(...feedbacks.map((f) => f.endMs))
     : 0
+  const durationMs = videoDurationMs > 0
+    ? Math.max(videoDurationMs, feedbackMaxMs)
+    : feedbackMaxMs
 
   // FAILED 상태 UI
   if (analysisStatus === 'FAILED') {
@@ -203,7 +206,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
         </div>
 
         {/* Feedback Panel: full width, scrollable */}
-        <div className="max-h-[500px] overflow-y-auto">
+        <div>
           <FeedbackPanel
             feedbacks={feedbacks}
             questions={questions}
