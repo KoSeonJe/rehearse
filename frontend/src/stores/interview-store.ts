@@ -61,7 +61,7 @@ interface InterviewActions {
   nextQuestionSet: () => void
   addAnswerTimestamp: (questionSetId: number, answer: AnswerTimestamp) => void
   setUploadStatus: (questionSetId: number, status: UploadState) => void
-  setQuestionSetRecordingStartTime: (time: number) => void
+  setQuestionSetRecordingStartTime: (time: number | null) => void
   addQuestionToSet: (setIndex: number, question: QuestionSetData['questions'][number]) => void
 
   setVideoBlob: (blob: Blob) => void
