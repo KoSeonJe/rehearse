@@ -14,10 +14,7 @@ export const useReport = (interviewId: string) => {
         `/api/v1/interviews/${interviewId}/report`,
       ),
   })
-  const mutateRef = useRef(postMutation.mutate)
-  useEffect(() => {
-    mutateRef.current = postMutation.mutate
-  }, [postMutation.mutate])
+
 
   const query = useQuery({
     queryKey: ['report', interviewId],
@@ -54,8 +51,9 @@ export const useReport = (interviewId: string) => {
       query.error.status === 202
     ) {
       hasTriggeredPost.current = true
-      mutateRef.current()
+      postMutation.mutate()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.isError, query.error])
 
   const reportStatus: ReportStatus = (() => {

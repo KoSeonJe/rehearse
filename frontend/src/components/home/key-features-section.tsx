@@ -24,31 +24,158 @@ const features = [
   },
 ] as const
 
+// 사람 실루엣 — 단순 도형 조합 (외부 라이브러리 없음)
+const PersonSilhouette = () => (
+  <svg
+    viewBox="0 0 64 96"
+    fill="none"
+    aria-hidden="true"
+    className="w-12 h-20 text-white/20"
+  >
+    {/* 머리 */}
+    <circle cx="32" cy="18" r="11" fill="currentColor" />
+    {/* 몸통 */}
+    <path
+      d="M14 48 C14 37 50 37 50 48 L50 70 C50 73 47 75 44 75 L20 75 C17 75 14 73 14 70 Z"
+      fill="currentColor"
+    />
+    {/* 왼팔 */}
+    <path
+      d="M14 50 C10 55 8 62 10 68 C11 71 15 70 16 67 C17 62 18 57 20 54"
+      fill="currentColor"
+    />
+    {/* 오른팔 */}
+    <path
+      d="M50 50 C54 55 56 62 54 68 C53 71 49 70 48 67 C47 62 46 57 44 54"
+      fill="currentColor"
+    />
+    {/* 왼 다리 */}
+    <path d="M20 74 L17 92 C16 95 21 96 22 93 L26 77" fill="currentColor" />
+    {/* 오른 다리 */}
+    <path d="M44 74 L47 92 C48 95 43 96 42 93 L38 77" fill="currentColor" />
+  </svg>
+)
+
+interface FeedbackItem {
+  time: string
+  label: string
+  labelClass: string
+  markerClass: string
+  timelinePos: string
+  text: string
+}
+
+const TIMESTAMP_FEEDBACKS: FeedbackItem[] = [
+  {
+    time: '0:42',
+    label: '잘한 점',
+    labelClass: 'bg-accent/10 text-accent',
+    markerClass: 'bg-accent',
+    timelinePos: '28%',
+    text: '기술적 부채 해결 경험을 구체적으로 잘 설명하셨어요. STAR 기법이 자연스럽게 녹아있습니다.',
+  },
+  {
+    time: '1:15',
+    label: '개선 포인트',
+    labelClass: 'bg-amber-50 text-amber-600',
+    markerClass: 'bg-amber-400',
+    timelinePos: '55%',
+    text: '이 구간에서 시선이 아래로 향했어요. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.',
+  },
+]
+
 const TimestampMockup = () => (
   <div className="space-y-3">
-    <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
-          0:42
-        </span>
-        <span className="text-[10px] font-bold text-text-tertiary">답변 분석</span>
+    {/* 웹캠 영역 */}
+    <div className="rounded-2xl overflow-hidden border border-border">
+      {/* 카메라 뷰 */}
+      <div className="relative bg-gradient-to-b from-[#16213e] to-[#0f3460] h-36 flex items-center justify-center overflow-hidden">
+        {/* REC 배지 */}
+        <div className="absolute top-2.5 left-3 flex items-center gap-1.5 z-10">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/50">
+            REC
+          </span>
+        </div>
+
+        {/* 시간 표시 */}
+        <div className="absolute top-2.5 right-3 z-10">
+          <span className="font-mono text-[10px] font-bold text-white/50">
+            00:42 / 03:00
+          </span>
+        </div>
+
+        {/* 코너 브라켓 */}
+        <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-white/15 rounded-tr" />
+        <div className="absolute bottom-2 left-2 w-4 h-4 border-b-2 border-l-2 border-white/15 rounded-bl" />
+
+        {/* 사람 실루엣 */}
+        <PersonSilhouette />
       </div>
-      <p className="text-xs font-bold text-text-primary leading-relaxed">
-        기술적 부채 해결 경험을 구체적으로 잘 설명하셨어요. STAR 기법이 자연스럽게 녹아있습니다.
-      </p>
+
+      {/* 타임라인 바 */}
+      <div className="bg-white px-3 pt-2.5 pb-2">
+        <div className="relative h-1 rounded-full bg-border">
+          {/* 진행 채움 */}
+          <div className="absolute left-0 top-0 h-full w-[28%] rounded-full bg-accent/30" />
+
+          {/* 피드백 마커 */}
+          {TIMESTAMP_FEEDBACKS.map((fb) => (
+            <div
+              key={fb.time}
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+              style={{ left: fb.timelinePos }}
+            >
+              <span
+                className={`block w-2.5 h-2.5 rounded-full border-2 border-white shadow-sm ${fb.markerClass}`}
+              />
+            </div>
+          ))}
+
+          {/* 재생 헤드 */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2"
+            style={{ left: '28%' }}
+          >
+            <span className="block w-3 h-3 rounded-full bg-accent border-2 border-white shadow" />
+          </div>
+        </div>
+        <div className="flex justify-between mt-1">
+          <span className="font-mono text-[9px] text-text-tertiary">0:00</span>
+          <span className="font-mono text-[9px] text-text-tertiary">3:00</span>
+        </div>
+      </div>
     </div>
-    <div className="rounded-2xl bg-surface border border-border p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="inline-flex items-center rounded-lg bg-accent/10 px-2 py-0.5 text-[10px] font-black text-accent">
-          1:15
-        </span>
-        <span className="inline-flex items-center rounded-md bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold text-amber-600">
-          개선 포인트
-        </span>
-      </div>
-      <p className="text-xs font-bold text-text-primary leading-relaxed">
-        이 구간에서 시선이 아래로 향했어요. 카메라를 바라보며 답변하면 자신감이 더 전달됩니다.
-      </p>
+
+    {/* 피드백 카드 목록 */}
+    <div className="space-y-2">
+      {TIMESTAMP_FEEDBACKS.map((fb) => (
+        <div
+          key={fb.time}
+          className="rounded-2xl bg-surface border border-border p-3.5 flex gap-3"
+        >
+          {/* 마커 도트 */}
+          <span
+            className={`inline-block w-2 h-2 rounded-full shrink-0 mt-0.5 ${fb.markerClass}`}
+            aria-hidden="true"
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className="font-mono text-[10px] font-black text-text-secondary">
+                {fb.time}
+              </span>
+              <span
+                className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold ${fb.labelClass}`}
+              >
+                {fb.label}
+              </span>
+            </div>
+            <p className="text-xs font-medium text-text-primary leading-relaxed">
+              {fb.text}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   </div>
 )

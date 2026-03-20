@@ -63,7 +63,7 @@ export const FaqSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-surface py-32"
+      className="bg-surface pt-20 pb-16"
     >
       <div className="max-w-3xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
