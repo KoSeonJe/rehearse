@@ -82,7 +82,7 @@ FE: /interview/{id}/ready로 이동
   - `resumeFile` 파트: PDF (optional, max 10MB)
 - 질문 수 계산: `round(durationMinutes / 5)` (최소 2, 최대 24)
 - 질문 생성은 비동기: `@Async("questionGenerationExecutor")` + `@TransactionalEventListener(AFTER_COMMIT)`
-- Claude 모델: `claude-sonnet-4-20250514`, maxTokens=4096, temperature=0.9
+- Claude 모델: `claude-sonnet-4-20250514`, maxTokens=4096, temperature=0.9 (다양하고 자연스러운 질문 생성을 위해 높은 temperature 사용)
 
 ---
 
@@ -116,7 +116,7 @@ FE: /interview/{id}/conduct로 이동
 ### 4-1. 전체 면접 진행 시퀀스
 
 ```
-[동시 활성화: MediaRecorder(WebM/VP9 2.5Mbps), Web Speech API(ko-KR), AudioCapture(opus 128kbps), TTS]
+[동시 활성화: MediaRecorder(WebM/VP9 2.5Mbps), AudioCapture(opus 128kbps), TTS]
 
 FE → 사용자: TTS "안녕하세요, 면접을 시작하겠습니다"
 
@@ -126,7 +126,7 @@ FE → 사용자: TTS "안녕하세요, 면접을 시작하겠습니다"
 │                                                                │
 │ ┌── 답변 루프 (원본 1 + 후속 3 = 4라운드) ──────────────────┐   │
 │ │ 사용자 → FE: 답변 (음성)                                  │   │
-│ │ FE: VAD 침묵 감지 → 답변 종료, STT 텍스트 + 타임스탬프 기록│   │
+│ │ FE: 사용자 수동 종료 → 답변 종료, 타임스탬프 기록            │   │
 │ │                                                           │   │
 │ │ [후속질문 라운드 - 최대 3회]                                │   │
 │ │ FE → BE: POST /interviews/{id}/follow-up (multipart)      │   │
@@ -174,8 +174,8 @@ FE: /interview/{id}/analysis로 이동
 |------|--------|
 | preparing → greeting | 면접 초기화 완료 |
 | greeting → ready | 인사 TTS 완료 |
-| ready → recording | 답변 시작 (VAD/수동) |
-| recording → paused | 답변 종료 (VAD/수동) |
+| ready → recording | 답변 시작 (수동) |
+| recording → paused | 답변 종료 (수동) |
 | paused → recording | 다음 질문 답변 시작 |
 | paused → finishing | 마지막 답변 완료 또는 시간 만료 |
 | finishing → completed | 업로드 완료, 상태 업데이트 |
@@ -186,8 +186,7 @@ FE: /interview/{id}/analysis로 이동
 |------|------|--------|
 | MediaRecorder | 질문세트 단위 영상 녹화 | WebM/VP9 2.5Mbps Blob |
 | AudioCapture | 병렬 오디오 전용 녹음 | opus 128kbps |
-| Web Speech API | 실시간 음성→텍스트 (ko-KR) | 답변 텍스트 + 타임스탬프 |
-| VAD (커스텀) | 발화/침묵 감지 | 답변 시작/종료 트리거 |
+| ~~Web Speech API~~ | ~~실시간 음성→텍스트~~ | 제거됨 — STT는 Lambda(OpenAI Whisper)에서 처리 |
 | TTS (SpeechSynthesis) | 질문 음성 출력 | — |
 
 ---
@@ -230,13 +229,13 @@ S3 PutObject (videos/{interviewId}/qs_{qsId}.webm)
      - 오디오: PCM 16-bit, 16kHz, mono (Whisper 요구사항)
      - 프레임: 3초 간격, 최대 10장 (quality level 2)
 
-4. [언어 + 비언어 분석 병렬 실행 (asyncio.gather)]
-   ├── 언어 분석 파이프라인:
+4. [언어 → 비언어 순차 실행]
+   ├── 언어 분석 파이프라인 (먼저 실행):
    │   LA → OpenAI: Whisper STT (whisper-1, language="ko", verbose_json)
    │   → 세그먼트별 start_ms, end_ms, text
    │   LA → OpenAI: GPT-4o LLM (답변별 언어 분석)
    │   → verbal_score(0~100), filler_word_count, tone_label, comment
-   └── 비언어 분석 파이프라인:
+   └── 비언어 분석 파이프라인 (이후 실행, 분석+변환 Lambda는 EventBridge 동시 트리거로 병렬):
        LA → OpenAI: GPT-4o Vision (프레임 base64, detail="low")
        → eye_contact_score(0~100), posture_score(0~100),
          expression_label(CONFIDENT|NERVOUS|NEUTRAL|ENGAGED|UNCERTAIN)
@@ -495,7 +494,7 @@ FE → BE: GET /api/v1/interviews/{interviewId}/report
 | `POST` | `/api/internal/interviews/{iId}/question-sets/{qsId}/retry-analysis` | Lambda 수동 invoke |
 | `PUT` | `/api/internal/files/{fileMetadataId}/status` | 파일 변환 상태 업데이트 |
 | `GET` | `/api/internal/files/by-s3-key` | S3 키로 파일 메타 조회 |
-| `POST` | `/api/internal/interviews/{iId}/report` | 리포트 생성 트리거 |
+| ~~`POST`~~ | ~~`/api/internal/interviews/{iId}/report`~~ | 제거됨 — 리포트 생성은 Spring Event(AllAnalysisCompletedEvent) 또는 FE POST `/api/v1/.../report`로 트리거 |
 
 ### D. 폴링 전략
 
@@ -536,7 +535,7 @@ FE → BE: GET /api/v1/interviews/{interviewId}/report
 | 스케줄러 | 클래스 | 간격 | 로직 |
 |---------|--------|------|------|
 | 면접 자동 완료 | `InterviewCompletionService` | 30초 (`fixedDelay=30_000`) | IN_PROGRESS 면접 중 모든 질문세트 resolved(COMPLETED+SKIPPED) && completedCount > 0 → COMPLETED 전환 + overallScore 계산 |
-| 분석 좀비 감지 | `AnalysisScheduler.detectAnalysisZombies` | 60초 (`fixedDelay=60_000`) | ANALYZING 상태 10분 이상 → FAILED (reason: ZOMBIE_TIMEOUT). `@Version` 충돌 시 스킵 |
+| 분석 좀비 감지 | `AnalysisScheduler.detectAnalysisZombies` | 60초 (`fixedDelay=60_000`) | ANALYZING 상태 10분 이상 → FAILED (reason: ZOMBIE_TIMEOUT). `@Version` 충돌 시 스킵. Lambda 실행 시간 제한(15분) + 네트워크 장애로 상태 업데이트 누락 가능하므로 필요 |
 | 변환 좀비 감지 | `AnalysisScheduler.detectFileConvertingZombies` | 60초 (`fixedDelay=60_000`) | CONVERTING 상태 10분 이상 → FAILED (reason: CONVERTING_TIMEOUT). `@Version` 충돌 시 스킵 |
 | 업로드 좀비 감지 | `AnalysisScheduler.detectUploadZombies` | 300초 (`fixedDelay=300_000`) | PENDING 상태 30분 이상 → FAILED (reason: UPLOAD_TIMEOUT). `@Version` 충돌 시 스킵 |
 
@@ -621,7 +620,7 @@ interface AiClient {
 |------|-----|
 | 모델 | `claude-sonnet-4-20250514` |
 | API 버전 | `2023-06-01` |
-| 질문 생성 | maxTokens=4096, temperature=0.9 |
+| 질문 생성 | maxTokens=4096, temperature=0.9 (다양성 확보) |
 | 후속질문 | maxTokens=1024 |
 | 리포트 | maxTokens=2048 |
 | 타임아웃 | connect=5초, read=60초 |
