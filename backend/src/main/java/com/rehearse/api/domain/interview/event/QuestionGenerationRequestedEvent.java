@@ -21,5 +21,5 @@ public class QuestionGenerationRequestedEvent {
     private final List<String> csSubTopics;
     private final String resumeText;
     private final Integer durationMinutes;
-    private final TechStack techStack;  // nullable
+    private final TechStack techStack;
 }

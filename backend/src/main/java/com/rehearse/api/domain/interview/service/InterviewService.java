@@ -148,7 +148,6 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
         }
 
-        // 오디오 파일이 있으면 Whisper STT로 텍스트 추출
         String answerText = request.getAnswerText();
         if (audioFile != null && !audioFile.isEmpty()) {
             answerText = sttService.transcribe(audioFile);

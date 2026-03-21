@@ -40,27 +40,22 @@ public class QuestionGenerationPromptBuilder {
     }
 
     public String buildSystemPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = req.techStack() != null
-            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
 
-        // v3 전략 4: 선택된 유형 가이드만 필터링
         String typeGuide = profile.interviewTypeGuideMap().entrySet().stream()
             .filter(e -> req.interviewTypes().stream().anyMatch(t -> t.name().equals(e.getKey())))
             .map(e -> "- " + e.getKey() + ": " + e.getValue())
             .collect(Collectors.joining("\n"));
 
-        // v3 전략 3: CS 블록 조건부
         String csBlock = "";
         if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)
                 && req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
             csBlock = "## CS 세부 주제\n" + String.join(", ", req.csSubTopics()) + "에서만 출제.";
         }
 
-        // v3 전략 2: 해당 레벨만
         String levelGuide = LevelGuideProvider.get(req.level());
 
-        // v3 전략 7: 이력서 블록 조건부
         String resumeBlock = (req.resumeText() != null && !req.resumeText().isBlank())
             ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성."
             : "";
@@ -75,8 +70,7 @@ public class QuestionGenerationPromptBuilder {
     }
 
     public String buildUserPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = req.techStack() != null
-            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         int questionCount = ClaudePromptBuilder.calculateQuestionCount(
             req.durationMinutes(), req.interviewTypes().size());
 
@@ -98,6 +92,10 @@ public class QuestionGenerationPromptBuilder {
         sb.append("세션: ").append(UUID.randomUUID()).append("\n");
         sb.append("중복 없는 새 관점의 질문을 생성하세요.");
         return sb.toString();
+    }
+
+    private static TechStack resolveEffectiveStack(Position position, TechStack techStack) {
+        return techStack != null ? techStack : TechStack.getDefaultForPosition(position);
     }
 
     private static String positionKorean(Position p) {

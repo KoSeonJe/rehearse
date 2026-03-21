@@ -15,5 +15,5 @@ public record QuestionGenerationRequest(
     Set<String> csSubTopics,
     String resumeText,
     Integer durationMinutes,
-    TechStack techStack  // nullable → PersonaResolver에서 기본 스택 적용
+    TechStack techStack
 ) {}

@@ -4,7 +4,10 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 
 import java.util.Map;
 
-public class LevelGuideProvider {
+public final class LevelGuideProvider {
+
+    private LevelGuideProvider() {
+    }
 
     private static final Map<InterviewLevel, String> GUIDES = Map.of(
         InterviewLevel.JUNIOR,

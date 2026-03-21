@@ -31,7 +31,6 @@ public class ClaudeApiClient implements AiClient {
     private static final int MAX_TOKENS_QUESTION = 4096;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
 
-
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
     private final FollowUpPromptBuilder followUpPromptBuilder;
@@ -83,10 +82,6 @@ public class ClaudeApiClient implements AiClient {
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
-    private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
-        return callClaudeApi(systemPrompt, userPrompt, maxTokens, null);
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
@@ -160,7 +155,6 @@ public class ClaudeApiClient implements AiClient {
                 }
             }
         }
-        // 컴파일러 요구사항 — 실제로 도달하지 않음
         throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 }

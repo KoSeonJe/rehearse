@@ -1,6 +1,5 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
@@ -13,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -37,19 +35,16 @@ public class FollowUpPromptBuilder {
     }
 
     public String buildSystemPrompt(FollowUpGenerationRequest req) {
-        TechStack effectiveStack = req.techStack() != null
-            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
 
-        // [M2] 단일 플레이스홀더: profile.followUpDepth()가 이미 base+overlay merge 결과
         return template
             .replace("{MEDIUM_PERSONA}", profile.mediumPersona())
             .replace("{FOLLOWUP_DEPTH}", profile.followUpDepth());
     }
 
     public String buildUserPrompt(FollowUpGenerationRequest req) {
-        TechStack effectiveStack = req.techStack() != null
-            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
 
         StringBuilder sb = new StringBuilder();
         sb.append("직무: ").append(positionKorean(req.position()))
@@ -72,6 +67,10 @@ public class FollowUpPromptBuilder {
 
         sb.append("\n새 후속 질문을 생성하세요.");
         return sb.toString();
+    }
+
+    private static TechStack resolveEffectiveStack(Position position, TechStack techStack) {
+        return techStack != null ? techStack : TechStack.getDefaultForPosition(position);
     }
 
     private static String positionKorean(Position p) {
