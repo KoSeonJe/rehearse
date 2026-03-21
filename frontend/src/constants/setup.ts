@@ -1,8 +1,8 @@
 import type { Position, Level, CsSubTopic } from '@/types/interview'
 
-export type Step = 1 | 2 | 3 | 4
+export type Step = 1 | 2 | 3 | 4 | 5
 
-export const TOTAL_STEPS = 4
+export const TOTAL_STEPS = 5
 
 export const POSITIONS: Position[] = ['BACKEND', 'FRONTEND', 'DEVOPS', 'DATA_ENGINEER', 'FULLSTACK']
 export const LEVELS: Level[] = ['JUNIOR', 'MID', 'SENIOR']

@@ -3,6 +3,7 @@ import { BackLink } from '@/components/ui/back-link'
 import { useInterviewSetup } from '@/hooks/use-interview-setup'
 import { SetupProgressBar } from '@/components/setup/setup-progress-bar'
 import { StepPosition } from '@/components/setup/step-position'
+import { StepTechStack } from '@/components/setup/step-tech-stack'
 import { StepLevel } from '@/components/setup/step-level'
 import { StepDuration } from '@/components/setup/step-duration'
 import { StepInterviewType } from '@/components/setup/step-interview-type'
@@ -13,7 +14,6 @@ export const InterviewSetupPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="flex items-center justify-between px-5 pt-8 md:px-8">
         <div className="flex items-center gap-2">
           <Logo size={80} />
@@ -35,7 +35,16 @@ export const InterviewSetupPage = () => {
           />
         )}
 
-        {setup.currentStep === 2 && (
+        {setup.currentStep === 2 && setup.position && (
+          <StepTechStack
+            position={setup.position}
+            techStack={setup.techStack}
+            isLoading={setup.isLoading}
+            onSelect={setup.handleTechStackSelect}
+          />
+        )}
+
+        {setup.currentStep === 3 && (
           <StepLevel
             level={setup.level}
             isLoading={setup.isLoading}
@@ -43,7 +52,7 @@ export const InterviewSetupPage = () => {
           />
         )}
 
-        {setup.currentStep === 3 && (
+        {setup.currentStep === 4 && (
           <StepDuration
             durationMinutes={setup.durationMinutes}
             isLoading={setup.isLoading}
@@ -51,7 +60,7 @@ export const InterviewSetupPage = () => {
           />
         )}
 
-        {setup.currentStep === 4 && setup.position && (
+        {setup.currentStep === 5 && setup.position && (
           <StepInterviewType
             position={setup.position}
             interviewTypes={setup.interviewTypes}

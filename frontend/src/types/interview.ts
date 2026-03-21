@@ -1,5 +1,25 @@
 export type Position = 'BACKEND' | 'FRONTEND' | 'DEVOPS' | 'DATA_ENGINEER' | 'FULLSTACK'
 
+export type TechStack =
+  | 'JAVA_SPRING'
+  | 'PYTHON_DJANGO'
+  | 'NODE_NESTJS'
+  | 'GO'
+  | 'KOTLIN_SPRING'
+  | 'REACT_TS'
+  | 'VUE_TS'
+  | 'SVELTE'
+  | 'ANGULAR'
+  | 'AWS_K8S'
+  | 'GCP'
+  | 'AZURE'
+  | 'SPARK_AIRFLOW'
+  | 'FLINK'
+  | 'DBT_SNOWFLAKE'
+  | 'REACT_SPRING'
+  | 'REACT_NODE'
+  | 'NEXTJS_FULLSTACK'
+
 export type Level = 'JUNIOR' | 'MID' | 'SENIOR'
 
 export type InterviewType =
@@ -145,6 +165,7 @@ export interface InterviewSession {
   level: Level
   interviewTypes: InterviewType[]
   csSubTopics?: CsSubTopic[]
+  techStack?: TechStack | null
   durationMinutes: number
   status: InterviewStatus
   questionGenerationStatus: QuestionGenerationStatus
@@ -160,6 +181,7 @@ export interface CreateInterviewRequest {
   interviewTypes: InterviewType[]
   durationMinutes: number
   csSubTopics?: CsSubTopic[]
+  techStack?: TechStack
 }
 
 export interface UpdateInterviewStatusRequest {
