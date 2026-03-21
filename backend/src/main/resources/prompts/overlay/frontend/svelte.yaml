@@ -11,7 +11,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, 네트워크, 브라우저 동작 원리. Svelte 관점에서 연결짓는 질문을 포함하세요. (예: \"AST 변환 기반 컴파일러가 Svelte의 반응성 구현에서 런타임 오버헤드를 어떻게 제거하나요?\")"
   BEHAVIORAL: "컴파일러 기반 프레임워크 도입 결정, 기존 팀의 학습 곡선 관리, 번들 사이즈 최적화 경험 등 Svelte 기반 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 Svelte/SvelteKit 프로젝트, React 대비 성능 개선, 번들 사이즈 절감 수치를 기반으로 질문"
-  REACT_COMPONENT: "Svelte 컴파일러 동작 원리 (AST → 명령형 DOM 조작 코드 생성), $: 반응성 선언과 의존성 추적, Svelte 스토어 (writable, readable, derived, get), SvelteKit 라우팅 (+page.svelte, +layout.svelte, +error.svelte), load 함수와 데이터 직렬화, form action과 점진적 개선, Svelte 5 Runes ($state, $derived, $effect, $props)"
+  UI_FRAMEWORK: "Svelte 컴파일러 동작 원리 (AST → 명령형 DOM 조작 코드 생성), $: 반응성 선언과 의존성 추적, Svelte 스토어 (writable, readable, derived, get), SvelteKit 라우팅 (+page.svelte, +layout.svelte, +error.svelte), load 함수와 데이터 직렬화, form action과 점진적 개선, Svelte 5 Runes ($state, $derived, $effect, $props)"
   BROWSER_PERFORMANCE: "Svelte vs 가상 DOM 프레임워크 성능 비교 (컴파일 타임 최적화, 런타임 없음), SvelteKit SSR/SSG/ISR, 코드 스플리팅 (동적 import, 라우트 기반 분할), Core Web Vitals 측정과 개선, Vite 기반 Svelte 빌드 최적화"
 
 follow_up_depth_append: |

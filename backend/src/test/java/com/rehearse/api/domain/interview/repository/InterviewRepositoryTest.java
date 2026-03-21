@@ -33,7 +33,7 @@ class InterviewRepositoryTest {
         Interview interview = Interview.builder()
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
-                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.JAVA_SPRING))
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.LANGUAGE_FRAMEWORK))
                 .csSubTopics(List.of("자료구조", "운영체제"))
                 .durationMinutes(30)
                 .build();
@@ -48,7 +48,7 @@ class InterviewRepositoryTest {
 
         // then
         assertThat(found.getInterviewTypes()).containsExactlyInAnyOrder(
-                InterviewType.CS_FUNDAMENTAL, InterviewType.JAVA_SPRING);
+                InterviewType.CS_FUNDAMENTAL, InterviewType.LANGUAGE_FRAMEWORK);
         assertThat(found.getCsSubTopics()).containsExactlyInAnyOrder("자료구조", "운영체제");
         assertThat(found.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
     }
@@ -60,7 +60,7 @@ class InterviewRepositoryTest {
         Interview interview = Interview.builder()
                 .position(Position.FRONTEND)
                 .level(InterviewLevel.MID)
-                .interviewTypes(List.of(InterviewType.REACT_COMPONENT))
+                .interviewTypes(List.of(InterviewType.UI_FRAMEWORK))
                 .csSubTopics(List.of())
                 .durationMinutes(20)
                 .build();
@@ -79,7 +79,7 @@ class InterviewRepositoryTest {
             ObjectMapper mapper = new ObjectMapper();
             mapper.findAndRegisterModules();
             String json = mapper.writeValueAsString(response);
-            assertThat(json).contains("REACT_COMPONENT");
+            assertThat(json).contains("UI_FRAMEWORK");
             assertThat(json).contains("PENDING");
         });
     }

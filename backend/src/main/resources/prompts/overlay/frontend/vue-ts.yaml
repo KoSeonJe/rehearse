@@ -11,7 +11,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, 네트워크, 브라우저 동작 원리. Vue 관점에서 연결짓는 질문을 포함하세요. (예: \"Proxy 객체의 동작 원리가 Vue 3의 반응성 시스템 구현에 어떻게 활용되나요?\")"
   BEHAVIORAL: "디자이너 협업, 컴포넌트 라이브러리 구축, 성능 개선 경험 등 Vue 기반 프론트엔드 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 Vue 프로젝트, 마이그레이션 경험(Options→Composition API), 성능 개선 수치를 기반으로 질문"
-  REACT_COMPONENT: "Vue 3 반응성 시스템 (Proxy 기반 reactive/ref, track/trigger, effect), Composition API vs Options API 트레이드오프, setup() 실행 시점과 라이프사이클 훅, Pinia 스토어 설계 (defineStore, storeToRefs, $patch), Vue Router 4 내비게이션 가드와 동적 라우팅, 컴포넌트 최적화 (v-memo, shallowRef, markRaw, defineAsyncComponent), Teleport·Suspense·Transition 활용 패턴"
+  UI_FRAMEWORK: "Vue 3 반응성 시스템 (Proxy 기반 reactive/ref, track/trigger, effect), Composition API vs Options API 트레이드오프, setup() 실행 시점과 라이프사이클 훅, Pinia 스토어 설계 (defineStore, storeToRefs, $patch), Vue Router 4 내비게이션 가드와 동적 라우팅, 컴포넌트 최적화 (v-memo, shallowRef, markRaw, defineAsyncComponent), Teleport·Suspense·Transition 활용 패턴"
   BROWSER_PERFORMANCE: "Vue 렌더러 내부 동작 (VNode, patch 알고리즘, key 휴리스틱), Nuxt 3 SSR/SSG/ISR, 코드 스플리팅 (defineAsyncComponent, 라우트 기반 분할), Core Web Vitals 측정과 개선, Vite 번들 최적화 (treeshaking, rollup 청크 전략)"
 
 follow_up_depth_append: |

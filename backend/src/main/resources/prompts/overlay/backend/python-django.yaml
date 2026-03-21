@@ -11,7 +11,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "OS, 네트워크, 자료구조 기초. Python 백엔드 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"GIL이 멀티코어 환경에서 Django 서버의 CPU-bound 작업에 어떤 영향을 주나요?\")"
   BEHAVIORAL: "장애 대응, 성능 병목 분석, Django 레거시 마이그레이션, 팀 내 코드 리뷰 갈등 등 Python 기반 백엔드 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 Django/FastAPI 프로젝트, ORM 활용, 성능 개선 수치, Celery 적용 사례를 기반으로 질문"
-  JAVA_SPRING: "CPython GIL 동작과 I/O-bound vs CPU-bound 처리 전략 (멀티스레딩 vs 멀티프로세싱 vs asyncio), WSGI(uWSGI/Gunicorn) vs ASGI(uvicorn/hypercorn) 선택 기준, Django ORM QuerySet 평가 시점과 select_related/prefetch_related 차이, Django 마이그레이션 전략 (스쿼시, 데이터 마이그레이션), Celery 태스크 설계 (재시도 전략, 결과 백엔드, Beat 스케줄러), FastAPI Dependency Injection 패턴과 Pydantic 검증, pytest 기반 테스트 전략 (factory_boy, pytest-django)"
+  LANGUAGE_FRAMEWORK: "CPython GIL 동작과 I/O-bound vs CPU-bound 처리 전략 (멀티스레딩 vs 멀티프로세싱 vs asyncio), WSGI(uWSGI/Gunicorn) vs ASGI(uvicorn/hypercorn) 선택 기준, Django ORM QuerySet 평가 시점과 select_related/prefetch_related 차이, Django 마이그레이션 전략 (스쿼시, 데이터 마이그레이션), Celery 태스크 설계 (재시도 전략, 결과 백엔드, Beat 스케줄러), FastAPI Dependency Injection 패턴과 Pydantic 검증, pytest 기반 테스트 전략 (factory_boy, pytest-django)"
   SYSTEM_DESIGN: "대규모 시스템 설계 시 Python 에코시스템 기반의 기술 선택. Django REST Framework vs FastAPI, Celery + Redis/RabbitMQ 비동기 파이프라인, Cache 계층(Django cache framework, Redis), 마이크로서비스 통신 (gRPC with grpcio, Kafka)"
 
 follow_up_depth_append: |

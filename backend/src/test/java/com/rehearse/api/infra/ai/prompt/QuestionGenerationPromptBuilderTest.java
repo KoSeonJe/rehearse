@@ -54,7 +54,7 @@ class QuestionGenerationPromptBuilderTest {
                 Position.BACKEND,
                 null,
                 InterviewLevel.JUNIOR,
-                Set.of(InterviewType.JAVA_SPRING),
+                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
                 Set.of("OS", "NETWORK"),
                 null,
                 30,
@@ -92,7 +92,7 @@ class QuestionGenerationPromptBuilderTest {
                 Position.BACKEND,
                 null,
                 InterviewLevel.JUNIOR,
-                Set.of(InterviewType.JAVA_SPRING),
+                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
                 null,
                 null,
                 30,
@@ -105,13 +105,13 @@ class QuestionGenerationPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("interviewTypes=[JAVA_SPRING, SYSTEM_DESIGN] 시 해당 2개 가이드만 포함된다")
+    @DisplayName("interviewTypes=[LANGUAGE_FRAMEWORK, SYSTEM_DESIGN] 시 해당 2개 가이드만 포함된다")
     void buildSystemPrompt_specificInterviewTypes_containsOnlyMatchingGuides() {
         QuestionGenerationRequest req = new QuestionGenerationRequest(
                 Position.BACKEND,
                 null,
                 InterviewLevel.MID,
-                Set.of(InterviewType.JAVA_SPRING, InterviewType.SYSTEM_DESIGN),
+                Set.of(InterviewType.LANGUAGE_FRAMEWORK, InterviewType.SYSTEM_DESIGN),
                 null,
                 null,
                 30,
@@ -120,7 +120,7 @@ class QuestionGenerationPromptBuilderTest {
 
         String prompt = builder.buildSystemPrompt(req);
 
-        assertThat(prompt).contains("JAVA_SPRING");
+        assertThat(prompt).contains("LANGUAGE_FRAMEWORK");
         assertThat(prompt).contains("SYSTEM_DESIGN");
         assertThat(prompt).doesNotContain("CS_FUNDAMENTAL:");
         assertThat(prompt).doesNotContain("BEHAVIORAL:");
@@ -133,7 +133,7 @@ class QuestionGenerationPromptBuilderTest {
                 Position.BACKEND,
                 null,
                 InterviewLevel.JUNIOR,
-                Set.of(InterviewType.JAVA_SPRING),
+                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
                 null,
                 null,
                 30,

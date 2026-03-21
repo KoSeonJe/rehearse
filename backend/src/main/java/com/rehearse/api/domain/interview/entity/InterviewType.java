@@ -6,15 +6,15 @@ public enum InterviewType {
     BEHAVIORAL,
     RESUME_BASED,
 
-    // 백엔드 특화
-    JAVA_SPRING,
+    // 언어/프레임워크 심화
+    LANGUAGE_FRAMEWORK,
     SYSTEM_DESIGN,
 
-    // 풀스택 특화
-    FULLSTACK_JS,
+    // 풀스택 기술 심화
+    FULLSTACK_STACK,
 
-    // 프론트엔드 특화
-    REACT_COMPONENT,
+    // UI 프레임워크 심화
+    UI_FRAMEWORK,
     BROWSER_PERFORMANCE,
 
     // 데브옵스 특화

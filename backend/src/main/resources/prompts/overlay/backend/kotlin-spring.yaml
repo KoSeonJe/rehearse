@@ -10,7 +10,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "OS, 네트워크, 자료구조 기초. Kotlin/Spring 백엔드 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"JVM 스레드 모델과 Kotlin 코루틴의 경량 스레드 추상화가 고부하 서버 설계에 어떤 차이를 만드나요?\")"
   BEHAVIORAL: "리액티브 전환 경험, 코루틴 도입, Java→Kotlin 마이그레이션, 팀 내 코드 리뷰 갈등 등 Kotlin/Spring 기반 백엔드 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 Kotlin Spring 프로젝트, 코루틴 활용, 성능 개선 수치, WebFlux 적용 사례를 기반으로 질문"
-  JAVA_SPRING: "Kotlin 코루틴 내부 동작 (CPS 변환, Continuation, CoroutineContext, Dispatcher), CoroutineScope 생명주기 관리와 structured concurrency, Flow vs Channel 선택 기준과 연산자 체인, Kotlin 널 안전성과 Java 상호운용 (@Nullable/@NonNull 처리), data class / sealed class / value class 실전 활용, Spring WebFlux Mono/Flux와 Kotlin suspend 함수 통합, R2DBC 트랜잭션 관리 (@Transactional with coroutine), Kotlin DSL 빌더 패턴 (Exposed, kotest, Spring Security DSL)"
+  LANGUAGE_FRAMEWORK: "Kotlin 코루틴 내부 동작 (CPS 변환, Continuation, CoroutineContext, Dispatcher), CoroutineScope 생명주기 관리와 structured concurrency, Flow vs Channel 선택 기준과 연산자 체인, Kotlin 널 안전성과 Java 상호운용 (@Nullable/@NonNull 처리), data class / sealed class / value class 실전 활용, Spring WebFlux Mono/Flux와 Kotlin suspend 함수 통합, R2DBC 트랜잭션 관리 (@Transactional with coroutine), Kotlin DSL 빌더 패턴 (Exposed, kotest, Spring Security DSL)"
   SYSTEM_DESIGN: "대규모 시스템 설계 시 Kotlin 에코시스템 기반의 기술 선택. Spring WebFlux + Kotlin Coroutines 리액티브 스택, Ktor 경량 서버 vs Spring Boot 선택, Kafka + Kotlin Coroutines 이벤트 스트리밍, Exposed ORM DSL 설계"
 
 follow_up_depth_append: |
