@@ -16,6 +16,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
 import com.rehearse.api.infra.ai.SttService;
+import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,6 +52,10 @@ public class InterviewService {
             resumeText = pdfTextExtractor.extract(resumeFile);
         }
 
+        if (request.getTechStack() != null && !request.getTechStack().isAllowedFor(request.getPosition())) {
+            throw new BusinessException(InterviewErrorCode.INVALID_TECH_STACK);
+        }
+
         Interview interview = Interview.builder()
                 .position(request.getPosition())
                 .positionDetail(request.getPositionDetail())
@@ -58,6 +63,7 @@ public class InterviewService {
                 .interviewTypes(request.getInterviewTypes())
                 .csSubTopics(request.getCsSubTopics())
                 .durationMinutes(request.getDurationMinutes())
+                .techStack(request.getTechStack())
                 .build();
 
         Interview saved = interviewRepository.save(interview);
@@ -70,7 +76,8 @@ public class InterviewService {
                 request.getInterviewTypes(),
                 request.getCsSubTopics(),
                 resumeText,
-                request.getDurationMinutes()
+                request.getDurationMinutes(),
+                request.getTechStack()
         ));
 
         log.info("면접 세션 생성 완료 (질문 생성 이벤트 발행): id={}, position={}, level={}, types={}",
@@ -123,7 +130,8 @@ public class InterviewService {
                 new ArrayList<>(interview.getInterviewTypes()),
                 new ArrayList<>(interview.getCsSubTopics()),
                 null,
-                interview.getDurationMinutes()
+                interview.getDurationMinutes(),
+                interview.getTechStack()
         ));
 
         log.info("질문 생성 재시도 이벤트 발행: id={}", id);
@@ -140,7 +148,6 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
         }
 
-        // 오디오 파일이 있으면 Whisper STT로 텍스트 추출
         String answerText = request.getAnswerText();
         if (audioFile != null && !audioFile.isEmpty()) {
             answerText = sttService.transcribe(audioFile);
@@ -150,12 +157,16 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
         }
 
-        GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(
+        FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
+                interview.getPosition(),
+                interview.getEffectiveTechStack(),
+                interview.getLevel(),
                 request.getQuestionContent(),
                 answerText,
                 request.getNonVerbalSummary(),
                 request.getPreviousExchanges()
         );
+        GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(followUpReq);
 
         QuestionSet questionSet = questionSetRepository.findById(request.getQuestionSetId())
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));

@@ -1,13 +1,11 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
+import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
+import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
@@ -33,16 +31,17 @@ public class ClaudeApiClient implements AiClient {
     private static final int MAX_TOKENS_QUESTION = 4096;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
 
-
     private final RestClient restClient;
-    private final ClaudePromptBuilder promptBuilder;
+    private final QuestionGenerationPromptBuilder questionPromptBuilder;
+    private final FollowUpPromptBuilder followUpPromptBuilder;
     private final ClaudeResponseParser responseParser;
     private final String apiKey;
     private final String model;
 
     public ClaudeApiClient(
             RestClient.Builder restClientBuilder,
-            ClaudePromptBuilder promptBuilder,
+            QuestionGenerationPromptBuilder questionPromptBuilder,
+            FollowUpPromptBuilder followUpPromptBuilder,
             ClaudeResponseParser responseParser,
             @Value("${claude.api-key}") String apiKey,
             @Value("${claude.model:claude-sonnet-4-20250514}") String model) {
@@ -54,19 +53,17 @@ public class ClaudeApiClient implements AiClient {
                 .baseUrl(ANTHROPIC_API_URL)
                 .requestFactory(ClientHttpRequestFactories.get(settings))
                 .build();
-        this.promptBuilder = promptBuilder;
+        this.questionPromptBuilder = questionPromptBuilder;
+        this.followUpPromptBuilder = followUpPromptBuilder;
         this.responseParser = responseParser;
         this.apiKey = apiKey;
         this.model = model;
     }
 
     @Override
-    public List<GeneratedQuestion> generateQuestions(Position position, String positionDetail,
-                                                      InterviewLevel level, List<InterviewType> interviewTypes,
-                                                      List<String> csSubTopics, String resumeText,
-                                                      Integer durationMinutes) {
-        String systemPrompt = promptBuilder.buildQuestionSystemPrompt();
-        String userPrompt = promptBuilder.buildQuestionUserPrompt(position, positionDetail, level, interviewTypes, csSubTopics, resumeText, durationMinutes);
+    public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
+        String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
+        String userPrompt = questionPromptBuilder.buildUserPrompt(request);
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_QUESTION, 0.9);
         GeneratedQuestionsWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedQuestionsWrapper.class);
@@ -79,18 +76,12 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
-    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
-                                                       String nonVerbalSummary,
-                                                       List<FollowUpRequest.FollowUpExchange> previousExchanges) {
-        String systemPrompt = promptBuilder.buildFollowUpSystemPrompt();
-        String userPrompt = promptBuilder.buildFollowUpUserPrompt(questionContent, answerText, nonVerbalSummary, previousExchanges);
+    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
+        String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
+        String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
-    private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
-        return callClaudeApi(systemPrompt, userPrompt, maxTokens, null);
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
@@ -164,7 +155,6 @@ public class ClaudeApiClient implements AiClient {
                 }
             }
         }
-        // 컴파일러 요구사항 — 실제로 도달하지 않음
         throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 }

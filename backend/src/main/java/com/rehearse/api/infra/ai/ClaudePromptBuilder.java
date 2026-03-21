@@ -4,13 +4,11 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-@Component
+@Deprecated
 public class ClaudePromptBuilder {
 
     private static final int MINUTES_PER_QUESTION = 3;

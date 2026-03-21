@@ -1,9 +1,5 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.infra.ai.dto.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -30,14 +26,12 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public List<GeneratedQuestion> generateQuestions(Position position, String positionDetail,
-                                                      InterviewLevel level, List<InterviewType> interviewTypes,
-                                                      List<String> csSubTopics, String resumeText,
-                                                      Integer durationMinutes) {
-        log.info("[Mock] generateQuestions 호출 - position={}, level={}, types={}, resume={}, duration={}",
-                position, level, interviewTypes, resumeText != null ? "있음" : "없음", durationMinutes);
+    public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
+        log.info("[Mock] generateQuestions 호출 - position={}, level={}, types={}, techStack={}, resume={}, duration={}",
+                request.position(), request.level(), request.interviewTypes(), request.techStack(),
+                request.resumeText() != null ? "있음" : "없음", request.durationMinutes());
 
-        int questionCount = ClaudePromptBuilder.calculateQuestionCount(durationMinutes, interviewTypes.size());
+        int questionCount = ClaudePromptBuilder.calculateQuestionCount(request.durationMinutes(), request.interviewTypes().size());
 
         String json = """
                 [
@@ -54,10 +48,9 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
-                                                       String nonVerbalSummary,
-                                                       List<FollowUpRequest.FollowUpExchange> previousExchanges) {
-        log.info("[Mock] generateFollowUpQuestion 호출 - previousExchanges={}", previousExchanges != null ? previousExchanges.size() : 0);
+    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
+        log.info("[Mock] generateFollowUpQuestion 호출 - previousExchanges={}",
+                request.previousExchanges() != null ? request.previousExchanges().size() : 0);
 
         String json = """
                 {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "modelAnswer": "[Mock] 성능 최적화를 위해 캐싱 전략, 쿼리 최적화, 비동기 처리 등의 접근 방식을 구체적으로 설명할 수 있어야 합니다."}

@@ -4,12 +4,14 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
+import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -19,7 +21,9 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -36,7 +40,7 @@ public class QuestionGenerationService {
         try {
             generateQuestions(event.getInterviewId(), event.getPosition(), event.getPositionDetail(),
                     event.getLevel(), event.getInterviewTypes(), event.getCsSubTopics(),
-                    event.getResumeText(), event.getDurationMinutes());
+                    event.getResumeText(), event.getDurationMinutes(), event.getTechStack());
         } catch (Exception e) {
             log.error("질문 생성 비동기 작업 실패: interviewId={}", event.getInterviewId(), e);
             // self-invocation 방지: 직접 Repository 사용
@@ -51,16 +55,21 @@ public class QuestionGenerationService {
     public void generateQuestions(Long interviewId, Position position, String positionDetail,
                                   InterviewLevel level, List<InterviewType> interviewTypes,
                                   List<String> csSubTopics, String resumeText,
-                                  Integer durationMinutes) {
+                                  Integer durationMinutes, TechStack techStack) {
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalStateException("Interview not found: " + interviewId));
 
         interview.startQuestionGeneration();
         interviewRepository.flush();
 
-        List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(
-                position, positionDetail, level, interviewTypes,
-                csSubTopics, resumeText, durationMinutes);
+        QuestionGenerationRequest request = new QuestionGenerationRequest(
+                position, positionDetail, level,
+                new HashSet<>(interviewTypes),
+                csSubTopics != null ? new HashSet<>(csSubTopics) : Set.of(),
+                resumeText, durationMinutes, techStack
+        );
+
+        List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(request);
 
         List<QuestionSet> questionSets = createQuestionSets(interview, generatedQuestions);
         questionSetRepository.saveAll(questionSets);
