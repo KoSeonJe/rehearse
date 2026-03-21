@@ -75,3 +75,44 @@ export const POSITION_TECH_STACKS: Record<Position, TechStack[]> = {
   DATA_ENGINEER: ['SPARK_AIRFLOW', 'FLINK', 'DBT_SNOWFLAKE'],
   FULLSTACK: ['REACT_SPRING', 'REACT_NODE', 'NEXTJS_FULLSTACK'],
 }
+
+export const POSITION_TECH_TYPE: Record<Position, InterviewType | null> = {
+  BACKEND: 'JAVA_SPRING',
+  FRONTEND: 'REACT_COMPONENT',
+  FULLSTACK: 'FULLSTACK_JS',
+  DEVOPS: null,
+  DATA_ENGINEER: null,
+}
+
+export const TECH_STACK_TYPE_LABELS: Record<TechStack, { label: string; description: string }> = {
+  JAVA_SPRING:      { label: 'Java/Spring', description: 'JVM, Spring IoC/AOP, JPA' },
+  PYTHON_DJANGO:    { label: 'Python/Django', description: 'Django, FastAPI, SQLAlchemy, Celery' },
+  NODE_NESTJS:      { label: 'Node.js/NestJS', description: '이벤트 루프, NestJS DI, Prisma, TypeORM' },
+  GO:               { label: 'Go', description: '고루틴, 채널, net/http, 동시성 패턴' },
+  KOTLIN_SPRING:    { label: 'Kotlin/Spring', description: '코루틴, Spring Boot, 널 안전성' },
+  REACT_TS:         { label: 'React/TypeScript', description: 'Hooks, 상태 관리, 렌더링 최적화' },
+  VUE_TS:           { label: 'Vue.js/TypeScript', description: 'Composition API, Pinia, 반응성' },
+  SVELTE:           { label: 'Svelte/SvelteKit', description: '반응성, 스토어, SSR' },
+  ANGULAR:          { label: 'Angular', description: 'RxJS, DI, NgModule, 변경 감지' },
+  AWS_K8S:          { label: 'AWS/Kubernetes', description: 'EKS, Terraform, 파이프라인' },
+  GCP:              { label: 'GCP', description: 'GKE, Cloud Run, Pub/Sub' },
+  AZURE:            { label: 'Azure', description: 'AKS, Functions, DevOps' },
+  SPARK_AIRFLOW:    { label: 'Spark/Airflow', description: 'PySpark, DAG, ETL' },
+  FLINK:            { label: 'Flink', description: '스트리밍, 윈도우, 상태 관리' },
+  DBT_SNOWFLAKE:    { label: 'dbt/Snowflake', description: 'dbt 모델링, Snowflake, 분석' },
+  REACT_SPRING:     { label: 'React + Spring', description: 'FE↔BE 통합, API 설계' },
+  REACT_NODE:       { label: 'React + Node.js', description: 'MERN, 풀스택 JS, API' },
+  NEXTJS_FULLSTACK: { label: 'Next.js Fullstack', description: 'App Router, RSC, 풀스택' },
+}
+
+export const getInterviewTypeLabel = (
+  type: InterviewType,
+  techStack: TechStack | null,
+  position: Position,
+): { label: string; description: string } => {
+  const techType = POSITION_TECH_TYPE[position]
+  if (techStack && techType && type === techType) {
+    return TECH_STACK_TYPE_LABELS[techStack]
+  }
+  return INTERVIEW_TYPE_LABELS[type]
+}
