@@ -1,4 +1,4 @@
-import type { Position, Level, InterviewType, CsSubTopic } from '@/types/interview'
+import type { Position, Level, InterviewType, CsSubTopic, TechStack } from '@/types/interview'
 
 export const POSITION_LABELS: Record<Position, { label: string; description: string }> = {
   BACKEND: { label: '백엔드', description: '서버, API, 데이터베이스' },
@@ -45,4 +45,33 @@ export const POSITION_INTERVIEW_TYPES: Record<Position, InterviewType[]> = {
   DEVOPS: ['CS_FUNDAMENTAL', 'INFRA_CICD', 'CLOUD', 'BEHAVIORAL', 'RESUME_BASED'],
   DATA_ENGINEER: ['CS_FUNDAMENTAL', 'DATA_PIPELINE', 'SQL_MODELING', 'BEHAVIORAL', 'RESUME_BASED'],
   FULLSTACK: ['CS_FUNDAMENTAL', 'FULLSTACK_JS', 'REACT_COMPONENT', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'RESUME_BASED'],
+}
+
+export const TECH_STACK_LABELS: Record<TechStack, { label: string; description: string }> = {
+  JAVA_SPRING: { label: 'Java/Spring', description: 'Spring Boot, JPA, JVM' },
+  PYTHON_DJANGO: { label: 'Python/Django', description: 'Django, FastAPI, Celery' },
+  NODE_NESTJS: { label: 'Node.js/NestJS', description: 'NestJS, Express, Prisma' },
+  GO: { label: 'Go', description: '고루틴, 채널, net/http' },
+  KOTLIN_SPRING: { label: 'Kotlin/Spring', description: 'Kotlin, Spring Boot, 코루틴' },
+  REACT_TS: { label: 'React/TypeScript', description: 'React 18+, Next.js, TanStack' },
+  VUE_TS: { label: 'Vue.js/TypeScript', description: 'Vue 3, Nuxt, Pinia' },
+  SVELTE: { label: 'Svelte/SvelteKit', description: 'Svelte, SvelteKit' },
+  ANGULAR: { label: 'Angular', description: 'Angular, RxJS, NgRx' },
+  AWS_K8S: { label: 'AWS/Kubernetes', description: 'AWS, EKS, Terraform' },
+  GCP: { label: 'GCP', description: 'GKE, Cloud Run, Pub/Sub' },
+  AZURE: { label: 'Azure', description: 'AKS, Azure Functions' },
+  SPARK_AIRFLOW: { label: 'Spark/Airflow', description: 'PySpark, Airflow DAG' },
+  FLINK: { label: 'Flink', description: 'Apache Flink, 스트리밍' },
+  DBT_SNOWFLAKE: { label: 'dbt/Snowflake', description: 'dbt, Snowflake, 모델링' },
+  REACT_SPRING: { label: 'React + Spring', description: 'React FE + Spring BE' },
+  REACT_NODE: { label: 'React + Node.js', description: 'React FE + Node BE' },
+  NEXTJS_FULLSTACK: { label: 'Next.js Fullstack', description: 'Next.js App Router 풀스택' },
+}
+
+export const POSITION_TECH_STACKS: Record<Position, TechStack[]> = {
+  BACKEND: ['JAVA_SPRING', 'PYTHON_DJANGO', 'NODE_NESTJS', 'GO', 'KOTLIN_SPRING'],
+  FRONTEND: ['REACT_TS', 'VUE_TS', 'SVELTE', 'ANGULAR'],
+  DEVOPS: ['AWS_K8S', 'GCP', 'AZURE'],
+  DATA_ENGINEER: ['SPARK_AIRFLOW', 'FLINK', 'DBT_SNOWFLAKE'],
+  FULLSTACK: ['REACT_SPRING', 'REACT_NODE', 'NEXTJS_FULLSTACK'],
 }

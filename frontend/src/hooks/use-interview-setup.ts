@@ -10,6 +10,7 @@ import type {
   Level,
   InterviewType,
   CsSubTopic,
+  TechStack,
 } from '@/types/interview'
 
 const toStep = (n: number): Step | null => {
@@ -24,6 +25,7 @@ export const useInterviewSetup = () => {
 
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [position, setPosition] = useState<Position | null>(null)
+  const [techStack, setTechStack] = useState<TechStack | null>(null)
   const [level, setLevel] = useState<Level | null>(null)
   const [durationMinutes, setDurationMinutes] = useState(30)
   const [interviewTypes, setInterviewTypes] = useState<InterviewType[]>([])
@@ -40,10 +42,12 @@ export const useInterviewSetup = () => {
       case 1:
         return position !== null
       case 2:
-        return level !== null
+        return true
       case 3:
-        return durationMinutes >= 5 && durationMinutes <= 120
+        return level !== null
       case 4:
+        return durationMinutes >= 5 && durationMinutes <= 120
+      case 5:
         return interviewTypes.length > 0
     }
   }, [position, level, durationMinutes, interviewTypes.length])
@@ -64,6 +68,7 @@ export const useInterviewSetup = () => {
   const handlePositionSelect = useCallback((p: Position) => {
     if (position !== p) {
       setPosition(p)
+      setTechStack(null)
       const availableTypes = POSITION_INTERVIEW_TYPES[p]
       setInterviewTypes((prev) => prev.filter((t) => availableTypes.includes(t)))
     }
@@ -134,6 +139,10 @@ export const useInterviewSetup = () => {
     setDragOver(false)
   }, [])
 
+  const handleTechStackSelect = useCallback((stack: TechStack | null) => {
+    setTechStack(stack)
+  }, [])
+
   const handleSubmit = useCallback(() => {
     if (!position || !level || interviewTypes.length === 0 || isLoading) return
     setServerError(null)
@@ -148,6 +157,7 @@ export const useInterviewSetup = () => {
           csSubTopics: interviewTypes.includes('CS_FUNDAMENTAL') && csSubTopics.length > 0
             ? csSubTopics
             : undefined,
+          ...(techStack ? { techStack } : {}),
         },
         resumeFile,
       },
@@ -164,11 +174,12 @@ export const useInterviewSetup = () => {
         },
       },
     )
-  }, [position, level, interviewTypes, durationMinutes, csSubTopics, resumeFile, isLoading, createInterview, navigate])
+  }, [position, level, interviewTypes, durationMinutes, csSubTopics, techStack, resumeFile, isLoading, createInterview, navigate])
 
   return {
     currentStep,
     position,
+    techStack,
     level,
     durationMinutes,
     interviewTypes,
@@ -183,6 +194,7 @@ export const useInterviewSetup = () => {
     handleNext,
     handlePrev,
     handlePositionSelect,
+    handleTechStackSelect,
     handleLevelSelect,
     handleDurationSelect,
     handleTypeToggle,
