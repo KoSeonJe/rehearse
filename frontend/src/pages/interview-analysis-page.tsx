@@ -34,6 +34,15 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
   )
 }
 
+const PROGRESS_LABELS: Record<string, string> = {
+  STARTED: '분석 준비 중',
+  EXTRACTING: '영상 처리 중',
+  STT_PROCESSING: '음성 인식 중',
+  VERBAL_ANALYZING: '언어 분석 중',
+  NONVERBAL_ANALYZING: '비언어 분석 중',
+  FINALIZING: '피드백 생성 중',
+}
+
 interface AnalysisStatusFloatProps {
   hasQuestionSets: boolean
   isAnalyzing: boolean
@@ -45,6 +54,8 @@ interface AnalysisStatusFloatProps {
   isRetrying: boolean
   onRetry: () => void
   onNavigateFeedback: () => void
+  statuses: Array<{ analysisProgress: string | null; analysisStatus: string } | null>
+  questionSets: Array<{ id: number; category: string }>
 }
 
 const AnalysisStatusFloat = ({
@@ -58,6 +69,8 @@ const AnalysisStatusFloat = ({
   isRetrying,
   onRetry,
   onNavigateFeedback,
+  statuses,
+  questionSets,
 }: AnalysisStatusFloatProps) => {
   if (!hasQuestionSets) return null
   if (!isAnalyzing && !allCompleted && !hasFailed) return null
@@ -74,6 +87,20 @@ const AnalysisStatusFloat = ({
             <p className="text-xs text-text-secondary">
               {completedCount} / {totalCount - skippedCount} 완료
             </p>
+            {/* 질문세트별 세부 상태 */}
+            <div className="mt-2 space-y-1.5">
+              {statuses.map((status, idx) => {
+                if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
+                const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
+                const progressLabel = status.analysisProgress ? PROGRESS_LABELS[status.analysisProgress] ?? status.analysisProgress : '대기 중'
+                return (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-text-secondary truncate mr-2">{label}</span>
+                    <span className="font-bold text-accent shrink-0">{progressLabel}</span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
         )}
 
@@ -254,14 +281,18 @@ export const InterviewAnalysisPage = () => {
         <section>
           <h2 className="text-lg font-extrabold tracking-tight text-text-primary mb-6">모범답변</h2>
           <div className="space-y-6">
-            {questionSets.map((qs) => (
-              <ModelAnswerSection
-                key={qs.id}
-                interviewId={interview.id}
-                questionSetId={qs.id}
-                category={qs.category}
-              />
-            ))}
+            {questionSets.map((qs, idx) => {
+              const status = statuses[idx]
+              if (status?.analysisStatus === 'SKIPPED') return null
+              return (
+                <ModelAnswerSection
+                  key={qs.id}
+                  interviewId={interview.id}
+                  questionSetId={qs.id}
+                  category={qs.category}
+                />
+              )
+            })}
           </div>
         </section>
       </main>
@@ -277,6 +308,8 @@ export const InterviewAnalysisPage = () => {
         isRetrying={isRetrying}
         onRetry={handleRetryAll}
         onNavigateFeedback={() => navigate(`/interview/${interviewId}/feedback`)}
+        statuses={statuses}
+        questionSets={questionSets}
       />
     </div>
   )
