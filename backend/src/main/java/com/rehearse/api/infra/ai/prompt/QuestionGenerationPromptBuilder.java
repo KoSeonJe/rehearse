@@ -1,0 +1,139 @@
+package com.rehearse.api.infra.ai.prompt;
+
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.infra.ai.ClaudePromptBuilder;
+import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
+import com.rehearse.api.infra.ai.persona.PersonaResolver;
+import com.rehearse.api.infra.ai.persona.ResolvedProfile;
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class QuestionGenerationPromptBuilder {
+
+    private final PersonaResolver personaResolver;
+    private String template;
+
+    @PostConstruct
+    void init() {
+        try (var stream = getClass().getResourceAsStream("/prompts/template/question-generation.txt")) {
+            if (stream == null) {
+                throw new IllegalStateException("question-generation.txt 템플릿 파일을 찾을 수 없습니다.");
+            }
+            template = new String(stream.readAllBytes());
+            log.info("질문 생성 프롬프트 템플릿 로드 완료");
+        } catch (IOException e) {
+            throw new IllegalStateException("question-generation.txt 템플릿 로드 실패", e);
+        }
+    }
+
+    public String buildSystemPrompt(QuestionGenerationRequest req) {
+        TechStack effectiveStack = req.techStack() != null
+            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
+
+        // v3 전략 4: 선택된 유형 가이드만 필터링
+        String typeGuide = profile.interviewTypeGuideMap().entrySet().stream()
+            .filter(e -> req.interviewTypes().stream().anyMatch(t -> t.name().equals(e.getKey())))
+            .map(e -> "- " + e.getKey() + ": " + e.getValue())
+            .collect(Collectors.joining("\n"));
+
+        // v3 전략 3: CS 블록 조건부
+        String csBlock = "";
+        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)
+                && req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
+            csBlock = "## CS 세부 주제\n" + String.join(", ", req.csSubTopics()) + "에서만 출제.";
+        }
+
+        // v3 전략 2: 해당 레벨만
+        String levelGuide = LevelGuideProvider.get(req.level());
+
+        // v3 전략 7: 이력서 블록 조건부
+        String resumeBlock = (req.resumeText() != null && !req.resumeText().isBlank())
+            ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성."
+            : "";
+
+        return template
+            .replace("{FULL_PERSONA}", profile.fullPersona())
+            .replace("{BASE_EVALUATION_PERSPECTIVE}", profile.evaluationPerspective())
+            .replace("{FILTERED_INTERVIEW_TYPE_GUIDE}", typeGuide)
+            .replace("{CONDITIONAL_CS_SUBTOPIC_BLOCK}", csBlock)
+            .replace("{SINGLE_LEVEL_GUIDE}", levelGuide)
+            .replace("{CONDITIONAL_RESUME_BLOCK}", resumeBlock);
+    }
+
+    public String buildUserPrompt(QuestionGenerationRequest req) {
+        TechStack effectiveStack = req.techStack() != null
+            ? req.techStack() : TechStack.getDefaultForPosition(req.position());
+        int questionCount = ClaudePromptBuilder.calculateQuestionCount(
+            req.durationMinutes(), req.interviewTypes().size());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("직무: ").append(positionKorean(req.position()))
+          .append(" (").append(effectiveStack.getDisplayName()).append(")\n");
+        sb.append("레벨: ").append(levelKorean(req.level())).append("\n");
+        sb.append("유형: ").append(typesKorean(req.interviewTypes())).append("\n");
+        sb.append("질문 수: ").append(questionCount).append("개\n");
+
+        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)
+                && req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
+            sb.append("CS 세부: ").append(String.join(", ", req.csSubTopics())).append("\n");
+        }
+        if (req.resumeText() != null && !req.resumeText().isBlank()) {
+            sb.append("이력서:\n").append(req.resumeText()).append("\n");
+        }
+
+        sb.append("세션: ").append(UUID.randomUUID()).append("\n");
+        sb.append("중복 없는 새 관점의 질문을 생성하세요.");
+        return sb.toString();
+    }
+
+    private static String positionKorean(Position p) {
+        return switch (p) {
+            case BACKEND -> "백엔드";
+            case FRONTEND -> "프론트엔드";
+            case DEVOPS -> "데브옵스";
+            case DATA_ENGINEER -> "데이터 엔지니어";
+            case FULLSTACK -> "풀스택";
+        };
+    }
+
+    private static String levelKorean(InterviewLevel l) {
+        return switch (l) {
+            case JUNIOR -> "주니어";
+            case MID -> "미드";
+            case SENIOR -> "시니어";
+        };
+    }
+
+    private static String typesKorean(Set<InterviewType> types) {
+        return types.stream()
+            .map(t -> switch (t) {
+                case CS_FUNDAMENTAL -> "CS 기초";
+                case BEHAVIORAL -> "Behavioral";
+                case RESUME_BASED -> "이력서 기반";
+                case JAVA_SPRING -> "Java/Spring";
+                case SYSTEM_DESIGN -> "시스템 설계";
+                case FULLSTACK_JS -> "풀스택 JS";
+                case REACT_COMPONENT -> "React 컴포넌트";
+                case BROWSER_PERFORMANCE -> "브라우저 성능";
+                case INFRA_CICD -> "인프라/CI-CD";
+                case CLOUD -> "클라우드";
+                case DATA_PIPELINE -> "데이터 파이프라인";
+                case SQL_MODELING -> "SQL/모델링";
+            })
+            .collect(Collectors.joining(", "));
+    }
+}

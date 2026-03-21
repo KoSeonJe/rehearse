@@ -13,6 +13,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
+import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -238,7 +239,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
 
-        given(aiClient.generateFollowUpQuestion(anyString(), anyString(), any(), any()))
+        given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
         given(questionRepository.save(any(Question.class)))
@@ -284,7 +285,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "reason", "깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
 
-        given(aiClient.generateFollowUpQuestion(anyString(), eq("STT로 추출된 답변 텍스트입니다."), any(), any()))
+        given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
         given(questionRepository.save(any(Question.class)))

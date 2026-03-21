@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.dto;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
@@ -35,4 +36,6 @@ public class CreateInterviewRequest {
     @Min(value = 5, message = "면접 시간은 최소 5분입니다.")
     @Max(value = 120, message = "면접 시간은 최대 120분입니다.")
     private Integer durationMinutes;
+
+    private TechStack techStack;
 }

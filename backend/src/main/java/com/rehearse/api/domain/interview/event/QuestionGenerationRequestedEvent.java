@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.event;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -20,4 +21,5 @@ public class QuestionGenerationRequestedEvent {
     private final List<String> csSubTopics;
     private final String resumeText;
     private final Integer durationMinutes;
+    private final TechStack techStack;  // nullable
 }

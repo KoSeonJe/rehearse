@@ -17,6 +17,7 @@ public class InterviewResponse {
 
     private final Long id;
     private final Position position;
+    private final TechStack techStack;
     private final String positionDetail;
     private final InterviewLevel level;
     private final List<InterviewType> interviewTypes;
@@ -40,6 +41,7 @@ public class InterviewResponse {
         return InterviewResponse.builder()
                 .id(interview.getId())
                 .position(interview.getPosition())
+                .techStack(interview.getTechStack())
                 .positionDetail(interview.getPositionDetail())
                 .level(interview.getLevel())
                 .interviewTypes(new ArrayList<>(interview.getInterviewTypes()))
