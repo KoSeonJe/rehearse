@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import json
 import re
@@ -10,28 +12,21 @@ from config import Config
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 
-_SYSTEM_PROMPT = """당신은 면접 비언어 분석 전문가입니다.
-면접 영상의 프레임 이미지들을 분석하여 면접자의 비언어적 커뮤니케이션을 평가합니다.
+_SYSTEM_PROMPT = """면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
 
-평가 기준:
-1. 시선 처리 (eye_contact_score: 0-100)
-   - 카메라를 적절히 응시하는지
-   - 시선이 불안정하거나 자주 돌리는지
-2. 자세 (posture_score: 0-100)
-   - 바른 자세를 유지하는지
-   - 어깨가 처지거나 몸을 흔드는지
-3. 표정 (expression_label)
-   - CONFIDENT: 자신감 있는 표정
-   - NERVOUS: 긴장된 표정
-   - NEUTRAL: 무표정
-   - ENGAGED: 몰입된 표정
-   - UNCERTAIN: 불확실한 표정
+## 평가
+1. eye_contact_score(0-100): 90+=안정응시, 70+=간헐흐트러짐, 50+=자주딴곳, 30+=불안정, 0+=미응시
+2. posture_score(0-100): 90+=바른자세유지, 70+=간헐구부정, 50+=불안정/흔듦, 30+=지속구부정, 0+=부적절
+3. expression_label: CONFIDENT(자신감) | ENGAGED(몰입) | NEUTRAL(무표정) | NERVOUS(긴장) | UNCERTAIN(혼란)
 
-이미지에 사람이 보이지 않거나 분석이 어려운 경우에도 반드시 JSON으로 응답하되,
-점수를 50으로 설정하고 comment에 상황을 설명하세요.
+## 주의
+- 여러 프레임의 평균 경향 평가. 이상치에 과도한 가중치 금지.
+- 사람 미확인 시 점수 50, comment에 설명.
+- 한국 면접 문화 고려(차분함 긍정적).
 
-반드시 아래 JSON 형식으로만 응답하세요. 다른 텍스트 없이 JSON만 출력하세요:
-{"eye_contact_score": 0, "posture_score": 0, "expression_label": "NEUTRAL", "comment": ""}"""
+## 응답
+JSON만 응답:
+{"eye_contact_score":0,"posture_score":0,"expression_label":"","comment":"한국어 2-3문장"}"""
 
 _FALLBACK = {
     "eye_contact_score": 50,

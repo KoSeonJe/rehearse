@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import shutil
@@ -66,6 +68,10 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         print(f"[Analysis] 이미 완료됨 — 스킵")
         return {"statusCode": 200, "body": "Already completed"}
 
+    position = answers_data.get("position")
+    tech_stack = answers_data.get("techStack")
+    level = answers_data.get("level")
+
     update_progress(interview_id, question_set_id, "STARTED")
 
     # 2. S3에서 영상 다운로드
@@ -92,7 +98,8 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     # 6. GPT-4o LLM 언어 분석 (답변별)
     update_progress(interview_id, question_set_id, "VERBAL_ANALYZING")
     timestamp_feedbacks = _build_timestamp_feedbacks(
-        answers, stt_result, vision_result, video_duration_ms
+        answers, stt_result, vision_result, video_duration_ms,
+        position=position, tech_stack=tech_stack, level=level,
     )
 
     # 7. 종합 점수 계산 + 피드백 저장
@@ -121,6 +128,9 @@ def _build_timestamp_feedbacks(
     stt_result: dict | None,
     vision_result: dict | None,
     video_duration_ms: int,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
 ) -> list[dict]:
     feedbacks = []
     stt_text = stt_result["full_text"] if stt_result else ""
@@ -138,7 +148,11 @@ def _build_timestamp_feedbacks(
             transcript = stt_text
 
         # 언어 분석
-        verbal = _safe_verbal(question_text, transcript)
+        verbal = _safe_verbal(
+            question_text, transcript,
+            position=position, tech_stack=tech_stack,
+            level=level, model_answer=answer.get("modelAnswer"),
+        )
 
         fb = {
             "questionId": question_id,
@@ -236,9 +250,20 @@ def _safe_vision(frame_paths: list[str]) -> dict | None:
         return None
 
 
-def _safe_verbal(question_text: str, transcript: str) -> dict | None:
+def _safe_verbal(
+    question_text: str,
+    transcript: str,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
+    model_answer: str | None = None,
+) -> dict | None:
     try:
-        return analyze_verbal(question_text, transcript)
+        return analyze_verbal(
+            question_text, transcript,
+            position=position, tech_stack=tech_stack,
+            level=level, model_answer=model_answer,
+        )
     except Exception as e:
         print(f"[Analysis] Verbal 분석 실패: {e}")
         return None

@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import json
 import time
 
 from openai import OpenAI, RateLimitError, APIError, AuthenticationError
 
 from config import Config
+from analyzers.verbal_prompt_factory import build_system_prompt, build_user_prompt
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -38,7 +41,14 @@ _SYSTEM_PROMPT = """당신은 면접 언어 분석 전문가입니다.
 }"""
 
 
-def analyze_verbal(question_text: str, transcript: str) -> dict:
+def analyze_verbal(
+    question_text: str,
+    transcript: str,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
+    model_answer: str | None = None,
+) -> dict:
     if not transcript or not transcript.strip():
         print("[Verbal] 전사 텍스트 없음 — 기본값 반환")
         return {
@@ -48,20 +58,23 @@ def analyze_verbal(question_text: str, transcript: str) -> dict:
         }
 
     client = OpenAI(api_key=Config.OPENAI_API_KEY)
-    user_prompt = f"""## 질문
-{question_text}
 
-## 면접자 답변 (STT 전사)
-{transcript}
-
-위 답변을 분석해주세요."""
+    if position:
+        system_prompt = build_system_prompt(position, tech_stack)
+        user_prompt = build_user_prompt(
+            position, tech_stack, level or "JUNIOR",
+            question_text, transcript, model_answer,
+        )
+    else:
+        system_prompt = _SYSTEM_PROMPT
+        user_prompt = f"질문: {question_text}\n답변(STT): {transcript}"
 
     for attempt in range(MAX_RETRIES):
         try:
             response = client.chat.completions.create(
                 model=Config.LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 max_tokens=500,
