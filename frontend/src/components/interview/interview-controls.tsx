@@ -20,6 +20,7 @@ export const InterviewControls = memo(({
   onFinishInterview,
 }: InterviewControlsProps) => {
   const isRecording = phase === 'recording'
+  const currentFollowUp = useInterviewStore((s) => s.currentFollowUp)
 
   // 스페이스바로 답변 완료 (store에서 직접 읽어 stale closure 방지)
   useEffect(() => {
@@ -73,7 +74,7 @@ export const InterviewControls = memo(({
               className="h-12 rounded-[16px] bg-accent px-8 text-sm font-extrabold text-white transition-all active:scale-95"
               onClick={onFinishInterview}
             >
-              리포트 보기
+              피드백 보기
             </button>
           ) : phase !== 'preparing' ? (
             <button
@@ -81,7 +82,7 @@ export const InterviewControls = memo(({
               disabled={isTtsSpeaking || isFollowUpLoading}
               onClick={onStartAnswer}
             >
-              {isFollowUpLoading ? '후속 질문 생성 중...' : '답변 시작'}
+              {isFollowUpLoading ? '후속 질문 생성 중...' : currentFollowUp ? '후속 질문에 답변하기' : '답변 시작'}
             </button>
           ) : null}
         </div>
