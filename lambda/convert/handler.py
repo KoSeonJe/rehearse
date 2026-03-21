@@ -70,9 +70,6 @@ def lambda_handler(event, context):
             except Exception as api_err:
                 print(f"[Convert] 실패 상태 업데이트 실패: {api_err}")
 
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": error_msg}),
-        }
+        raise
     finally:
         api_client.set_correlation_id(None)
