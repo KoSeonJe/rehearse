@@ -231,29 +231,4 @@ public class ClaudePromptBuilder {
         return prompt.toString();
     }
 
-    public String buildReportSystemPrompt() {
-        return """
-                당신은 면접 코치입니다. 면접 피드백을 종합 분석하여 리포트를 생성합니다.
-
-                반드시 아래 JSON 형식으로만 응답하세요:
-                {
-                  "overallScore": 75,
-                  "summary": "종합 평가 요약 (2-3문장)",
-                  "strengths": ["강점1", "강점2", "강점3"],
-                  "improvements": ["개선점1", "개선점2", "개선점3"]
-                }
-
-                overallScore는 0-100 사이의 정수입니다.
-                strengths와 improvements는 각각 최소 2개, 최대 5개 항목입니다.
-                """;
-    }
-
-    public String buildReportUserPrompt(String feedbackSummary) {
-        return String.format("""
-                아래는 면접 피드백 데이터입니다. 종합 리포트를 생성해주세요.
-
-                %s
-                """, feedbackSummary);
-    }
-
 }
