@@ -1,16 +1,8 @@
 import type { TimestampFeedback } from '@/types/interview'
 
-const ANSWER_TYPE_LABELS: Record<string, string> = {
-  MAIN: '원본',
-  FOLLOWUP: '후속',
-}
-
-const getScoreColor = (feedback: TimestampFeedback): string => {
-  const score = feedback.verbalScore
-  if (score === null) return 'bg-border'
-  if (score >= 80) return 'bg-success'
-  if (score >= 50) return 'bg-yellow-400'
-  return 'bg-error'
+const getTypeColor = (feedback: TimestampFeedback): string => {
+  if (feedback.questionType === 'FOLLOWUP') return 'bg-blue-400'
+  return 'bg-accent'
 }
 
 interface TimelineBarProps {
@@ -46,12 +38,10 @@ export const TimelineBar = ({
               key={fb.id}
               className={`absolute top-1 bottom-1 rounded-md transition-all cursor-pointer ${
                 isActive ? 'ring-2 ring-accent ring-offset-1 z-10' : 'hover:brightness-110'
-              } ${getScoreColor(fb)} ${
-                fb.questionType === 'FOLLOWUP' ? 'border-2 border-dashed border-blue-400' : ''
-              }`}
+              } ${getTypeColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
-              title={`${(fb.questionType ? ANSWER_TYPE_LABELS[fb.questionType] : null) ?? fb.questionType ?? '질문'} (${Math.round(fb.startMs / 1000)}s)`}
+              title={`${fb.questionType === 'FOLLOWUP' ? '후속질문' : '원본'} (${Math.round(fb.startMs / 1000)}s)`}
             />
           )
         })}
@@ -66,20 +56,12 @@ export const TimelineBar = ({
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-success" />
-          <span className="text-[10px] font-medium text-text-tertiary">80+</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-yellow-400" />
-          <span className="text-[10px] font-medium text-text-tertiary">50~79</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-error" />
-          <span className="text-[10px] font-medium text-text-tertiary">~49</span>
+          <div className="h-2.5 w-2.5 rounded-sm bg-accent" />
+          <span className="text-[10px] font-medium text-text-tertiary">원본</span>
         </div>
         {feedbacks.some((f) => f.questionType === 'FOLLOWUP') && (
           <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-sm border-2 border-dashed border-blue-400" />
+            <div className="h-2.5 w-2.5 rounded-sm bg-blue-400" />
             <span className="text-[10px] font-medium text-text-tertiary">후속질문</span>
           </div>
         )}

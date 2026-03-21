@@ -1,10 +1,14 @@
 import { useRef, useEffect, useState } from 'react'
 import type { TimestampFeedback, QuestionWithAnswer } from '@/types/interview'
 
-const ANSWER_TYPE_ORDER = ['MAIN', 'FOLLOWUP']
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   MAIN: '원본 답변',
   FOLLOWUP: '후속 질문',
+}
+
+const ANSWER_TYPE_BADGE_COLORS: Record<string, string> = {
+  MAIN: 'bg-accent/10 text-accent',
+  FOLLOWUP: 'bg-blue-50 text-blue-600',
 }
 
 const FILLER_WORDS = ['음', '어', '그', '아', '에', '그러니까', '뭐', '이제', '저기']
@@ -23,40 +27,6 @@ const highlightFillers = (text: string): React.ReactNode[] => {
   )
 }
 
-const getScoreLabel = (score: number): string => {
-  if (score >= 80) return '우수'
-  if (score >= 50) return '보통'
-  return '미흡'
-}
-
-const getScoreBarColor = (score: number): string => {
-  if (score >= 80) return 'bg-success'
-  if (score >= 50) return 'bg-yellow-400'
-  return 'bg-error'
-}
-
-const ScoreBar = ({ label, score }: { label: string; score: number | null }) => {
-  if (score === null) return null
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs font-medium text-text-tertiary w-8 shrink-0">{label}</span>
-      <div className="flex-1 h-2 bg-border/30 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${getScoreBarColor(score)}`}
-          style={{ width: `${score}%` }}
-        />
-      </div>
-      <span
-        className={`text-sm font-black tabular-nums w-8 text-right ${
-          score >= 80 ? 'text-success' : score >= 50 ? 'text-yellow-600' : 'text-error'
-        }`}
-      >
-        {score}
-      </span>
-      <span className="text-[10px] font-medium text-text-tertiary w-6">{getScoreLabel(score)}</span>
-    </div>
-  )
-}
 
 interface FeedbackCardProps {
   feedback: TimestampFeedback
@@ -82,10 +52,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
 
-  const hasNonverbal =
-    feedback.eyeContactScore !== null ||
-    feedback.postureScore !== null ||
-    feedback.expressionLabel !== null
+  const hasNonverbal = feedback.expressionLabel !== null
 
   return (
     <div
@@ -98,11 +65,18 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
       }`}
       onClick={() => onSeek(feedback.startMs)}
     >
-      {/* 1. Time badge + type */}
+      {/* 1. Time badge + type badge */}
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
-          {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+            {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
+          </span>
+          {feedback.questionType && (
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${ANSWER_TYPE_BADGE_COLORS[feedback.questionType] ?? 'bg-surface text-text-tertiary'}`}>
+              {ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType}
+            </span>
+          )}
+        </div>
         {!feedback.isAnalyzed && (
           <span className="text-[10px] font-medium text-text-tertiary">미분석</span>
         )}
@@ -113,56 +87,17 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         <p className="text-sm font-semibold text-text-secondary mb-3">Q. {question.questionText}</p>
       )}
 
-      {/* 3. Score summary block */}
+      {/* 3. Feedback comments */}
       <div className="space-y-2 mb-3">
-        {/* 언어 ScoreBar */}
-        {feedback.verbalScore !== null ? (
-          <ScoreBar label="언어" score={feedback.verbalScore} />
-        ) : (
-          <p className="text-xs text-text-tertiary">언어 분석 대기 중</p>
-        )}
-
         {/* 언어 코멘트 */}
         {feedback.verbalComment && (
           <p className="text-xs text-text-secondary leading-relaxed">{feedback.verbalComment}</p>
         )}
 
-        {/* 비언어 점수 인라인 */}
+        {/* 비언어 정보 (점수 없이 라벨/코멘트만) */}
         {hasNonverbal && (
           <div className="flex flex-wrap gap-4 pt-1">
             <span className="text-xs font-semibold text-text-primary">비언어</span>
-            {feedback.eyeContactScore !== null && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-text-tertiary">시선</span>
-                <span
-                  className={`text-xs font-black ${
-                    feedback.eyeContactScore >= 80
-                      ? 'text-success'
-                      : feedback.eyeContactScore >= 50
-                        ? 'text-yellow-600'
-                        : 'text-error'
-                  }`}
-                >
-                  {feedback.eyeContactScore}
-                </span>
-              </div>
-            )}
-            {feedback.postureScore !== null && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-text-tertiary">자세</span>
-                <span
-                  className={`text-xs font-black ${
-                    feedback.postureScore >= 80
-                      ? 'text-success'
-                      : feedback.postureScore >= 50
-                        ? 'text-yellow-600'
-                        : 'text-error'
-                  }`}
-                >
-                  {feedback.postureScore}
-                </span>
-              </div>
-            )}
             {feedback.expressionLabel && (
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-medium text-text-tertiary">표정</span>
@@ -253,23 +188,6 @@ export const FeedbackPanel = ({
   activeFeedbackId,
   onSeek,
 }: FeedbackPanelProps) => {
-  const availableTypes = ANSWER_TYPE_ORDER.filter((type) =>
-    feedbacks.some((f) => f.questionType === type),
-  )
-  const [activeTab, setActiveTab] = useState(availableTypes[0] ?? 'MAIN')
-
-  // 활성 피드백의 questionType에 따라 탭 자동 전환 (렌더 중 조건부 setState)
-  const [prevActiveFeedbackId, setPrevActiveFeedbackId] = useState(activeFeedbackId)
-  if (activeFeedbackId !== prevActiveFeedbackId) {
-    setPrevActiveFeedbackId(activeFeedbackId)
-    const activeFeedback = feedbacks.find((f) => f.id === activeFeedbackId)
-    if (activeFeedback) {
-      setActiveTab(activeFeedback.questionType ?? 'MAIN')
-    }
-  }
-
-  const filtered = feedbacks.filter((f) => f.questionType === activeTab)
-
   const findQuestion = (fb: TimestampFeedback): QuestionWithAnswer | undefined => {
     return questions.find(
       (q) =>
@@ -282,33 +200,14 @@ export const FeedbackPanel = ({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Tabs */}
-      {availableTypes.length > 1 && (
-        <div className="flex gap-1 bg-surface rounded-xl p-1 mb-4 shrink-0">
-          {availableTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveTab(type)}
-              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
-                activeTab === type
-                  ? 'bg-white shadow-toss text-text-primary'
-                  : 'text-text-tertiary'
-              }`}
-            >
-              {ANSWER_TYPE_LABELS[type] ?? type}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Cards */}
+      {/* Cards — 전체 피드백 시간순 표시 */}
       <div className="space-y-3 overflow-y-auto flex-1">
-        {filtered.length === 0 ? (
+        {feedbacks.length === 0 ? (
           <div className="rounded-2xl bg-surface p-8 text-center">
             <p className="text-sm font-semibold text-text-tertiary">피드백이 없습니다</p>
           </div>
         ) : (
-          filtered.map((fb) => (
+          feedbacks.map((fb) => (
             <FeedbackCard
               key={fb.id}
               feedback={fb}
