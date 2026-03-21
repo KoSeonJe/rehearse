@@ -2,10 +2,6 @@ package com.rehearse.api.domain.interview.entity;
 
 import java.util.Arrays;
 
-/**
- * 직군별 기술 스택 enum
- * 각 직군의 기본값(isDefault=true)은 포지션당 1개만 지정
- */
 public enum TechStack {
 
     // Backend
@@ -58,10 +54,6 @@ public enum TechStack {
         return isDefault;
     }
 
-    /**
-     * 주어진 포지션의 기본 기술 스택을 반환
-     * 기본값이 없는 포지션은 예외 발생
-     */
     public static TechStack getDefaultForPosition(Position position) {
         return Arrays.stream(values())
                 .filter(ts -> ts.allowedPosition == position && ts.isDefault)
@@ -69,9 +61,6 @@ public enum TechStack {
                 .orElseThrow(() -> new IllegalArgumentException("기본 TechStack 없음: " + position));
     }
 
-    /**
-     * 해당 포지션에서 사용 가능한 기술 스택인지 확인
-     */
     public boolean isAllowedFor(Position position) {
         return this.allowedPosition == position;
     }

@@ -12,18 +12,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
-/**
- * classpath의 prompts/base/*.yaml과 prompts/overlay/**&#47;*.yaml을 로드하여
- * Position→BaseProfile, TechStack→StackOverlay 맵을 반환한다.
- *
- * <p>애플리케이션 시작 시 1회만 호출되며, immutable Map으로 캐싱된다.
- */
 @Slf4j
 @Component
 public class ProfileYamlLoader {
 
-    /** 파일명(확장자 제외) → Position 매핑 */
     private static final Map<String, Position> BASE_FILE_MAP = Map.of(
             "backend",      Position.BACKEND,
             "frontend",     Position.FRONTEND,
@@ -32,7 +26,6 @@ public class ProfileYamlLoader {
             "fullstack",    Position.FULLSTACK
     );
 
-    /** 파일명(확장자 제외) → TechStack 매핑 */
     private static final Map<String, TechStack> OVERLAY_FILE_MAP = Map.of(
             "java-spring",    TechStack.JAVA_SPRING,
             "react-ts",       TechStack.REACT_TS,
@@ -41,9 +34,6 @@ public class ProfileYamlLoader {
             "react-spring",   TechStack.REACT_SPRING
     );
 
-    /**
-     * classpath:prompts/base/*.yaml 파일을 읽어 Position→BaseProfile 맵을 반환한다.
-     */
     public Map<Position, BaseProfile> loadBaseProfiles() {
         Map<Position, BaseProfile> result = new HashMap<>();
         Yaml yaml = new Yaml();
@@ -75,9 +65,6 @@ public class ProfileYamlLoader {
         return Map.copyOf(result);
     }
 
-    /**
-     * classpath:prompts/overlay/**&#47;*.yaml 파일을 읽어 TechStack→StackOverlay 맵을 반환한다.
-     */
     public Map<TechStack, StackOverlay> loadStackOverlays() {
         Map<TechStack, StackOverlay> result = new HashMap<>();
         Yaml yaml = new Yaml();
@@ -109,38 +96,40 @@ public class ProfileYamlLoader {
         return Map.copyOf(result);
     }
 
-    /**
-     * Base YAML Map을 BaseProfile 레코드로 변환한다.
-     */
     @SuppressWarnings("unchecked")
     private BaseProfile parseBaseProfile(Map<String, Object> data) {
+        if (data == null) {
+            throw new IllegalStateException("Base YAML 내용이 비어있습니다");
+        }
         return new BaseProfile(
-                (String) data.get("persona_block"),
-                (String) data.get("evaluation_perspective"),
-                (String) data.get("follow_up_depth")
+                Objects.requireNonNull((String) data.get("persona_block"), "persona_block 필수"),
+                Objects.requireNonNull((String) data.get("evaluation_perspective"), "evaluation_perspective 필수"),
+                Objects.requireNonNull((String) data.get("follow_up_depth"), "follow_up_depth 필수")
         );
     }
 
-    /**
-     * Overlay YAML Map을 StackOverlay 레코드로 변환한다.
-     */
     @SuppressWarnings("unchecked")
     private StackOverlay parseStackOverlay(Map<String, Object> data) {
+        if (data == null) {
+            throw new IllegalStateException("Overlay YAML 내용이 비어있습니다");
+        }
         Map<String, Object> persona = (Map<String, Object>) data.get("persona");
+        if (persona == null) {
+            throw new IllegalStateException("Overlay YAML에 persona 키가 없습니다");
+        }
         Map<String, String> interviewTypeGuideMap =
                 (Map<String, String>) data.getOrDefault("interview_type_guide", Map.of());
 
         return new StackOverlay(
-                (String) persona.get("full"),
-                (String) persona.get("medium"),
-                (String) persona.get("minimal"),
+                Objects.requireNonNull((String) persona.get("full"), "persona.full 필수"),
+                Objects.requireNonNull((String) persona.get("medium"), "persona.medium 필수"),
+                Objects.requireNonNull((String) persona.get("minimal"), "persona.minimal 필수"),
                 Map.copyOf(interviewTypeGuideMap),
                 (String) data.getOrDefault("follow_up_depth_append", ""),
                 (String) data.getOrDefault("verbal_expertise", "")
         );
     }
 
-    /** 파일명에서 확장자를 제거한다. */
     private String getFilenameWithoutExtension(String filename) {
         if (filename == null) return "";
         int dotIndex = filename.lastIndexOf('.');

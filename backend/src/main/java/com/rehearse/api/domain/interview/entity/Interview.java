@@ -50,7 +50,6 @@ public class Interview {
     @Column(nullable = false)
     private Integer durationMinutes;
 
-    // 기술 스택 (nullable: 미지정 시 포지션 기본값으로 폴백)
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private TechStack techStack;
@@ -94,10 +93,6 @@ public class Interview {
         this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
     }
 
-    /**
-     * 유효한 기술 스택 반환
-     * techStack이 null이면 포지션 기본값으로 폴백
-     */
     public TechStack getEffectiveTechStack() {
         return techStack != null ? techStack : TechStack.getDefaultForPosition(this.position);
     }
