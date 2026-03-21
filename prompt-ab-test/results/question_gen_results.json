@@ -1,0 +1,24 @@
+{
+  "test_id": "question_gen_001",
+  "timestamp": "2026-03-21T19:02:50.935445",
+  "conditions": {
+    "position": "BACKEND",
+    "tech_stack": "JAVA_SPRING",
+    "level": "JUNIOR",
+    "types": [
+      "JAVA_SPRING",
+      "CS_FUNDAMENTAL"
+    ],
+    "cs_sub_topics": [
+      "OS",
+      "NETWORK"
+    ],
+    "n_runs": 3,
+    "model": "claude-sonnet-4-20250514",
+    "temperature": 0.9
+  },
+  "results": {
+    "group_a": [],
+    "group_b": []
+  }
+}
