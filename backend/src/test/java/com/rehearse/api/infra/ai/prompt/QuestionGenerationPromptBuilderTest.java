@@ -25,7 +25,6 @@ class QuestionGenerationPromptBuilderTest {
         ProfileYamlLoader loader = new ProfileYamlLoader();
         PersonaResolver personaResolver = new PersonaResolver(loader);
         builder = new QuestionGenerationPromptBuilder(personaResolver);
-        // @PostConstruct 수동 호출
         ReflectionTestUtils.invokeMethod(builder, "init");
     }
 
