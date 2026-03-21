@@ -51,6 +51,10 @@ public class Interview {
     private Integer durationMinutes;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private TechStack techStack;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private InterviewStatus status;
 
@@ -75,15 +79,22 @@ public class Interview {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Interview(Position position, String positionDetail, InterviewLevel level, List<InterviewType> interviewTypes, List<String> csSubTopics, Integer durationMinutes) {
+    public Interview(Position position, String positionDetail, InterviewLevel level,
+                     List<InterviewType> interviewTypes, List<String> csSubTopics,
+                     Integer durationMinutes, TechStack techStack) {
         this.position = position;
         this.positionDetail = positionDetail;
         this.level = level;
         this.interviewTypes = interviewTypes != null ? new HashSet<>(interviewTypes) : new HashSet<>();
         this.csSubTopics = csSubTopics != null ? new HashSet<>(csSubTopics) : new HashSet<>();
         this.durationMinutes = durationMinutes;
+        this.techStack = techStack;
         this.status = InterviewStatus.READY;
         this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
+    }
+
+    public TechStack getEffectiveTechStack() {
+        return techStack != null ? techStack : TechStack.getDefaultForPosition(this.position);
     }
 
     public void startQuestionGeneration() {
