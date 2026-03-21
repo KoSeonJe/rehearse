@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -41,9 +40,6 @@ class InternalQuestionSetServiceTest {
 
     @Mock
     private QuestionRepository questionRepository;
-
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
 
     // ----------------------------------------------------------------
     // updateProgress
@@ -146,9 +142,6 @@ class InternalQuestionSetServiceTest {
         given(questionRepository.findById(10L)).willReturn(Optional.of(question));
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
-        // saveFeedback 후 이벤트 발행 여부 확인을 위한 mock (COMPLETED 1개 → 이벤트 발행)
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(100L))
-                .willReturn(List.of(questionSet));
 
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
         ReflectionTestUtils.setField(item, "questionId", 10L);
@@ -179,8 +172,6 @@ class InternalQuestionSetServiceTest {
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(100L))
-                .willReturn(List.of(questionSet));
 
         SaveFeedbackRequest request = new SaveFeedbackRequest();
         ReflectionTestUtils.setField(request, "questionSetScore", 70);

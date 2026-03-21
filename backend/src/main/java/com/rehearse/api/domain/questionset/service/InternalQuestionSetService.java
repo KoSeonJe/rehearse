@@ -5,11 +5,9 @@ import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
-import com.rehearse.api.domain.report.event.AllAnalysisCompletedEvent;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +23,6 @@ public class InternalQuestionSetService {
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
@@ -98,16 +95,6 @@ public class InternalQuestionSetService {
         questionSet.updateAnalysisProgress(AnalysisProgress.FINALIZING);
 
         log.info("분석 결과 저장 완료: questionSetId={}, score={}", questionSetId, request.getQuestionSetScore());
-
-        // 모든 QuestionSet이 resolved 상태인지 확인 → 리포트 자동 생성 이벤트 발행
-        Long interviewId = questionSet.getInterview().getId();
-        List<QuestionSet> allSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
-        boolean allResolved = allSets.stream().allMatch(qs -> qs.getAnalysisStatus().isResolved());
-        boolean hasCompleted = allSets.stream().anyMatch(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED);
-        if (allResolved && hasCompleted) {
-            log.info("모든 분석 완료 → 리포트 생성 이벤트 발행: interviewId={}", interviewId);
-            eventPublisher.publishEvent(new AllAnalysisCompletedEvent(interviewId));
-        }
     }
 
     @Transactional
