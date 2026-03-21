@@ -1,15 +1,16 @@
 import type { RefObject } from 'react'
 import { CS_SUB_TOPICS } from '@/constants/setup'
 import {
-  INTERVIEW_TYPE_LABELS,
   CS_SUB_TOPIC_LABELS,
   POSITION_INTERVIEW_TYPES,
+  getInterviewTypeLabel,
 } from '@/constants/interview-labels'
-import type { Position, InterviewType, CsSubTopic } from '@/types/interview'
+import type { Position, InterviewType, CsSubTopic, TechStack } from '@/types/interview'
 import { ResumeUpload } from '@/components/setup/resume-upload'
 
 interface StepInterviewTypeProps {
   position: Position
+  techStack: TechStack | null
   interviewTypes: InterviewType[]
   csSubTopics: CsSubTopic[]
   resumeFile: File | null
@@ -27,6 +28,7 @@ interface StepInterviewTypeProps {
 
 export const StepInterviewType = ({
   position,
+  techStack,
   interviewTypes,
   csSubTopics,
   resumeFile,
@@ -67,7 +69,7 @@ export const StepInterviewType = ({
             >
               <div className="flex flex-col gap-1">
                 <span className="text-base font-extrabold">
-                  {INTERVIEW_TYPE_LABELS[type].label}
+                  {getInterviewTypeLabel(type, techStack, position).label}
                 </span>
                 <span
                   className={`text-xs font-medium ${
@@ -76,7 +78,7 @@ export const StepInterviewType = ({
                       : 'text-text-secondary'
                   }`}
                 >
-                  {INTERVIEW_TYPE_LABELS[type].description}
+                  {getInterviewTypeLabel(type, techStack, position).description}
                 </span>
               </div>
               <div

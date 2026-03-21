@@ -121,10 +121,10 @@ public class QuestionGenerationPromptBuilder {
                 case CS_FUNDAMENTAL -> "CS 기초";
                 case BEHAVIORAL -> "Behavioral";
                 case RESUME_BASED -> "이력서 기반";
-                case JAVA_SPRING -> "Java/Spring";
+                case LANGUAGE_FRAMEWORK -> "언어/프레임워크";
                 case SYSTEM_DESIGN -> "시스템 설계";
-                case FULLSTACK_JS -> "풀스택 JS";
-                case REACT_COMPONENT -> "React 컴포넌트";
+                case FULLSTACK_STACK -> "풀스택 기술";
+                case UI_FRAMEWORK -> "UI 프레임워크";
                 case BROWSER_PERFORMANCE -> "브라우저 성능";
                 case INFRA_CICD -> "인프라/CI-CD";
                 case CLOUD -> "클라우드";

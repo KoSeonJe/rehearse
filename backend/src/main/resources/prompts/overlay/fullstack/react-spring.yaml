@@ -11,7 +11,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, 네트워크, 브라우저/서버 동작 원리. 풀스택 관점에서 연결짓는 질문을 포함하세요. (예: \"HTTP Keep-Alive가 React의 API 클라이언트 설계와 Spring의 커넥션 풀 관리에 어떤 영향을 미치나요?\")"
   BEHAVIORAL: "FE↔BE 인터페이스 협의 경험, 기술 선택 갈등 해결, 전체 스택 장애 대응 등 React/Spring 기반 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 React+Spring 프로젝트, API 설계, 성능 개선, 서비스 배포 경험을 기반으로 질문"
-  FULLSTACK_REACT_SPRING: "REST API 설계 원칙과 React에서의 소비 패턴 (TanStack Query, SWR), TypeScript 타입과 Spring DTO 동기화 전략, JWT/세션 인증 구현 (Spring Security + React 클라이언트), CORS 설정과 프록시 패턴, JPA 엔티티 설계와 React 상태 구조의 정합성, 트랜잭션 경계와 낙관적 업데이트 (React Query optimistic update)"
+  FULLSTACK_STACK: "REST API 설계 원칙과 React에서의 소비 패턴 (TanStack Query, SWR), TypeScript 타입과 Spring DTO 동기화 전략, JWT/세션 인증 구현 (Spring Security + React 클라이언트), CORS 설정과 프록시 패턴, JPA 엔티티 설계와 React 상태 구조의 정합성, 트랜잭션 경계와 낙관적 업데이트 (React Query optimistic update)"
   SYSTEM_DESIGN: "React SPA + Spring Boot API 기반 시스템 설계. CDN 정적 파일 배포, API Gateway, BFF (Backend for Frontend) 패턴, 마이크로프론트엔드 vs 모놀리식 FE, Spring Cloud 기반 MSA와 React 라우팅 통합"
 
 follow_up_depth_append: |

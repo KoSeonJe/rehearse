@@ -63,6 +63,7 @@ export const InterviewSetupPage = () => {
         {setup.currentStep === 5 && setup.position && (
           <StepInterviewType
             position={setup.position}
+            techStack={setup.techStack}
             interviewTypes={setup.interviewTypes}
             csSubTopics={setup.csSubTopics}
             resumeFile={setup.resumeFile}

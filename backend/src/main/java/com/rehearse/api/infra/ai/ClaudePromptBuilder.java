@@ -39,10 +39,10 @@ public class ClaudePromptBuilder {
                 - CS_FUNDAMENTAL: CS 기초 (자료구조, 알고리즘, 운영체제, 네트워크, 데이터베이스)
                 - BEHAVIORAL: STAR 기법 기반 경험 질문 (상황, 과제, 행동, 결과)
                 - RESUME_BASED: 이력서/포트폴리오 기반 맞춤 질문
-                - JAVA_SPRING: Java/Spring 프레임워크 심화 (JVM, Spring IoC/AOP, JPA, 트랜잭션)
+                - LANGUAGE_FRAMEWORK: 선택한 언어/프레임워크 심화
                 - SYSTEM_DESIGN: 시스템 아키텍처 설계, 스케일링, 트레이드오프 분석
-                - FULLSTACK_JS: Node.js + React 풀스택, API 설계, DB 연동, 배포
-                - REACT_COMPONENT: React 컴포넌트 설계, 상태 관리, 렌더링 최적화
+                - FULLSTACK_STACK: 선택한 풀스택 기술 심화
+                - UI_FRAMEWORK: 선택한 UI 프레임워크 심화
                 - BROWSER_PERFORMANCE: 브라우저 렌더링, 웹 성능 최적화, 번들 최적화
                 - INFRA_CICD: 인프라 구성, CI/CD 파이프라인, 컨테이너 오케스트레이션
                 - CLOUD: 클라우드 아키텍처 (AWS/GCP/Azure), 서버리스, IaC
@@ -150,10 +150,10 @@ public class ClaudePromptBuilder {
             case CS_FUNDAMENTAL -> "CS 기초";
             case BEHAVIORAL -> "Behavioral (인성/경험)";
             case RESUME_BASED -> "이력서/포트폴리오 기반";
-            case JAVA_SPRING -> "Java/Spring 심화";
+            case LANGUAGE_FRAMEWORK -> "언어/프레임워크 심화";
             case SYSTEM_DESIGN -> "시스템 설계";
-            case FULLSTACK_JS -> "Node.js + React 풀스택";
-            case REACT_COMPONENT -> "React/컴포넌트 설계";
+            case FULLSTACK_STACK -> "풀스택 기술 심화";
+            case UI_FRAMEWORK -> "UI 프레임워크 심화";
             case BROWSER_PERFORMANCE -> "브라우저/웹 성능";
             case INFRA_CICD -> "인프라/CI-CD";
             case CLOUD -> "클라우드 아키텍처";

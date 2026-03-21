@@ -21,10 +21,10 @@ export const INTERVIEW_TYPE_LABELS: Record<
   CS_FUNDAMENTAL: { label: 'CS 기초', description: '자료구조, 알고리즘, OS, 네트워크, DB' },
   BEHAVIORAL: { label: '경험/협업', description: '팀 협업, 갈등 해결, 프로젝트 경험' },
   RESUME_BASED: { label: '이력서 기반', description: '이력서/포트폴리오 맞춤 질문' },
-  JAVA_SPRING: { label: 'Java/Spring', description: 'JVM, Spring IoC/AOP, JPA' },
-  FULLSTACK_JS: { label: 'JS 풀스택', description: 'Node.js + React, API 설계, DB 연동, 배포' },
+  LANGUAGE_FRAMEWORK: { label: '언어/프레임워크', description: '선택한 기술스택의 언어 및 프레임워크 심화' },
+  FULLSTACK_STACK: { label: '풀스택 기술', description: '선택한 풀스택 기술 통합, API 설계, 배포' },
   SYSTEM_DESIGN: { label: '시스템 설계', description: '아키텍처, 스케일링, 트레이드오프' },
-  REACT_COMPONENT: { label: 'React/컴포넌트', description: '컴포넌트 설계, 상태 관리, 최적화' },
+  UI_FRAMEWORK: { label: 'UI 프레임워크', description: '선택한 UI 프레임워크 설계, 상태 관리, 최적화' },
   BROWSER_PERFORMANCE: { label: '브라우저/웹 성능', description: '렌더링, 번들 최적화, Core Web Vitals' },
   INFRA_CICD: { label: '인프라/CI-CD', description: 'Docker, K8s, 파이프라인' },
   CLOUD: { label: '클라우드', description: 'AWS/GCP/Azure, 서버리스, IaC' },
@@ -40,11 +40,11 @@ export const CS_SUB_TOPIC_LABELS: Record<CsSubTopic, string> = {
 }
 
 export const POSITION_INTERVIEW_TYPES: Record<Position, InterviewType[]> = {
-  BACKEND: ['CS_FUNDAMENTAL', 'JAVA_SPRING', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'RESUME_BASED'],
-  FRONTEND: ['CS_FUNDAMENTAL', 'REACT_COMPONENT', 'BROWSER_PERFORMANCE', 'BEHAVIORAL', 'RESUME_BASED'],
+  BACKEND: ['CS_FUNDAMENTAL', 'LANGUAGE_FRAMEWORK', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'RESUME_BASED'],
+  FRONTEND: ['CS_FUNDAMENTAL', 'UI_FRAMEWORK', 'BROWSER_PERFORMANCE', 'BEHAVIORAL', 'RESUME_BASED'],
   DEVOPS: ['CS_FUNDAMENTAL', 'INFRA_CICD', 'CLOUD', 'BEHAVIORAL', 'RESUME_BASED'],
   DATA_ENGINEER: ['CS_FUNDAMENTAL', 'DATA_PIPELINE', 'SQL_MODELING', 'BEHAVIORAL', 'RESUME_BASED'],
-  FULLSTACK: ['CS_FUNDAMENTAL', 'FULLSTACK_JS', 'REACT_COMPONENT', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'RESUME_BASED'],
+  FULLSTACK: ['CS_FUNDAMENTAL', 'FULLSTACK_STACK', 'UI_FRAMEWORK', 'SYSTEM_DESIGN', 'BEHAVIORAL', 'RESUME_BASED'],
 }
 
 export const TECH_STACK_LABELS: Record<TechStack, { label: string; description: string }> = {
@@ -74,4 +74,45 @@ export const POSITION_TECH_STACKS: Record<Position, TechStack[]> = {
   DEVOPS: ['AWS_K8S', 'GCP', 'AZURE'],
   DATA_ENGINEER: ['SPARK_AIRFLOW', 'FLINK', 'DBT_SNOWFLAKE'],
   FULLSTACK: ['REACT_SPRING', 'REACT_NODE', 'NEXTJS_FULLSTACK'],
+}
+
+export const POSITION_TECH_TYPE: Record<Position, InterviewType | null> = {
+  BACKEND: 'LANGUAGE_FRAMEWORK',
+  FRONTEND: 'UI_FRAMEWORK',
+  FULLSTACK: 'FULLSTACK_STACK',
+  DEVOPS: null,
+  DATA_ENGINEER: null,
+}
+
+export const TECH_STACK_TYPE_LABELS: Record<TechStack, { label: string; description: string }> = {
+  JAVA_SPRING:      { label: 'Java/Spring', description: 'JVM, Spring IoC/AOP, JPA' },
+  PYTHON_DJANGO:    { label: 'Python/Django', description: 'Django, FastAPI, SQLAlchemy, Celery' },
+  NODE_NESTJS:      { label: 'Node.js/NestJS', description: '이벤트 루프, NestJS DI, Prisma, TypeORM' },
+  GO:               { label: 'Go', description: '고루틴, 채널, net/http, 동시성 패턴' },
+  KOTLIN_SPRING:    { label: 'Kotlin/Spring', description: '코루틴, Spring Boot, 널 안전성' },
+  REACT_TS:         { label: 'React/TypeScript', description: 'Hooks, 상태 관리, 렌더링 최적화' },
+  VUE_TS:           { label: 'Vue.js/TypeScript', description: 'Composition API, Pinia, 반응성' },
+  SVELTE:           { label: 'Svelte/SvelteKit', description: '반응성, 스토어, SSR' },
+  ANGULAR:          { label: 'Angular', description: 'RxJS, DI, NgModule, 변경 감지' },
+  AWS_K8S:          { label: 'AWS/Kubernetes', description: 'EKS, Terraform, 파이프라인' },
+  GCP:              { label: 'GCP', description: 'GKE, Cloud Run, Pub/Sub' },
+  AZURE:            { label: 'Azure', description: 'AKS, Functions, DevOps' },
+  SPARK_AIRFLOW:    { label: 'Spark/Airflow', description: 'PySpark, DAG, ETL' },
+  FLINK:            { label: 'Flink', description: '스트리밍, 윈도우, 상태 관리' },
+  DBT_SNOWFLAKE:    { label: 'dbt/Snowflake', description: 'dbt 모델링, Snowflake, 분석' },
+  REACT_SPRING:     { label: 'React + Spring', description: 'FE↔BE 통합, API 설계' },
+  REACT_NODE:       { label: 'React + Node.js', description: 'MERN, 풀스택 JS, API' },
+  NEXTJS_FULLSTACK: { label: 'Next.js Fullstack', description: 'App Router, RSC, 풀스택' },
+}
+
+export const getInterviewTypeLabel = (
+  type: InterviewType,
+  techStack: TechStack | null,
+  position: Position,
+): { label: string; description: string } => {
+  const techType = POSITION_TECH_TYPE[position]
+  if (techStack && techType && type === techType) {
+    return TECH_STACK_TYPE_LABELS[techStack]
+  }
+  return INTERVIEW_TYPE_LABELS[type]
 }

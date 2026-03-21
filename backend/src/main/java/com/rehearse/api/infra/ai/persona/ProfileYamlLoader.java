@@ -26,12 +26,25 @@ public class ProfileYamlLoader {
             "fullstack",    Position.FULLSTACK
     );
 
-    private static final Map<String, TechStack> OVERLAY_FILE_MAP = Map.of(
-            "java-spring",    TechStack.JAVA_SPRING,
-            "react-ts",       TechStack.REACT_TS,
-            "aws-k8s",        TechStack.AWS_K8S,
-            "spark-airflow",  TechStack.SPARK_AIRFLOW,
-            "react-spring",   TechStack.REACT_SPRING
+    private static final Map<String, TechStack> OVERLAY_FILE_MAP = Map.ofEntries(
+            Map.entry("java-spring",       TechStack.JAVA_SPRING),
+            Map.entry("python-django",     TechStack.PYTHON_DJANGO),
+            Map.entry("node-nestjs",       TechStack.NODE_NESTJS),
+            Map.entry("go",                TechStack.GO),
+            Map.entry("kotlin-spring",     TechStack.KOTLIN_SPRING),
+            Map.entry("react-ts",          TechStack.REACT_TS),
+            Map.entry("vue-ts",            TechStack.VUE_TS),
+            Map.entry("svelte",            TechStack.SVELTE),
+            Map.entry("angular",           TechStack.ANGULAR),
+            Map.entry("aws-k8s",           TechStack.AWS_K8S),
+            Map.entry("gcp",               TechStack.GCP),
+            Map.entry("azure",             TechStack.AZURE),
+            Map.entry("spark-airflow",     TechStack.SPARK_AIRFLOW),
+            Map.entry("flink",             TechStack.FLINK),
+            Map.entry("dbt-snowflake",     TechStack.DBT_SNOWFLAKE),
+            Map.entry("react-spring",      TechStack.REACT_SPRING),
+            Map.entry("react-node",        TechStack.REACT_NODE),
+            Map.entry("nextjs-fullstack",  TechStack.NEXTJS_FULLSTACK)
     );
 
     public Map<Position, BaseProfile> loadBaseProfiles() {

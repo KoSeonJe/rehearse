@@ -11,7 +11,7 @@ interview_type_guide:
   CS_FUNDAMENTAL: "OS, 네트워크, 자료구조 기초. Java 백엔드 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"TCP 3-way handshake가 Spring의 HikariCP 커넥션 풀 설계에 어떤 영향을 줄까요?\")"
   BEHAVIORAL: "장애 대응, 코드 리뷰 갈등, 기술 부채 해결 등 Java/Spring 기반 백엔드 팀 맥락의 경험 질문"
   RESUME_BASED: "이력서의 Spring 프로젝트, JPA 활용, 성능 개선 수치를 기반으로 질문"
-  JAVA_SPRING: "JVM 메모리 구조 (힙/메타스페이스/스택), GC 알고리즘 (G1/ZGC/Shenandoah), Spring IoC 컨테이너 동작 원리, AOP 프록시 메커니즘, @Transactional 전파 속성, JPA 영속성 컨텍스트와 1차 캐시, N+1 문제 해결 (fetch join, EntityGraph, BatchSize), 동시성 제어 (synchronized, ReentrantLock, @Version)"
+  LANGUAGE_FRAMEWORK: "JVM 메모리 구조 (힙/메타스페이스/스택), GC 알고리즘 (G1/ZGC/Shenandoah), Spring IoC 컨테이너 동작 원리, AOP 프록시 메커니즘, @Transactional 전파 속성, JPA 영속성 컨텍스트와 1차 캐시, N+1 문제 해결 (fetch join, EntityGraph, BatchSize), 동시성 제어 (synchronized, ReentrantLock, @Version)"
   SYSTEM_DESIGN: "대규모 시스템 설계 시 Java/Spring 에코시스템 기반의 기술 선택. Spring Cloud Gateway, Resilience4j, Spring Kafka 등 구체적 기술 맥락을 포함"
 
 follow_up_depth_append: |
