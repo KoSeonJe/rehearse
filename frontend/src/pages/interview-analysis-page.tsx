@@ -219,14 +219,14 @@ export const InterviewAnalysisPage = () => {
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary">면접이 완료되었습니다</h1>
             <p className="text-base font-medium text-text-secondary">
-              수고하셨습니다! 종합 리포트에서 결과를 확인하세요.
+              수고하셨습니다!
             </p>
           </div>
           <button
-            onClick={() => navigate(`/interview/${interviewId}/report`)}
+            onClick={() => navigate('/')}
             className="h-16 w-full rounded-[24px] bg-accent font-black text-lg text-white transition-all active:scale-95"
           >
-            종합 리포트 보기
+            홈으로 돌아가기
           </button>
         </div>
       </div>

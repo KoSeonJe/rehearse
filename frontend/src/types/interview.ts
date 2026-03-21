@@ -186,16 +186,6 @@ export interface ApiErrorResponse {
   timestamp: string
 }
 
-export interface InterviewReport {
-  id: number
-  interviewId: number
-  overallScore: number
-  summary: string
-  strengths: string[]
-  improvements: string[]
-  feedbackCount: number
-}
-
 // 후속 질문 관련 타입
 
 export type FollowUpType = 'DEEP_DIVE' | 'CLARIFICATION' | 'CHALLENGE' | 'APPLICATION'

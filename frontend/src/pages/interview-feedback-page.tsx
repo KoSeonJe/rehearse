@@ -277,12 +277,6 @@ export const InterviewFeedbackPage = () => {
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(`/interview/${id}/report`)}
-              className="text-sm font-semibold text-text-secondary hover:text-text-primary"
-            >
-              리포트
-            </button>
-            <button
               onClick={() => navigate('/')}
               className="text-sm font-semibold text-text-secondary hover:text-text-primary"
             >
