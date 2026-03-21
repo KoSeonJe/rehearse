@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.infra.ai.dto.*;
+import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -31,7 +32,7 @@ public class MockAiClient implements AiClient {
                 request.position(), request.level(), request.interviewTypes(), request.techStack(),
                 request.resumeText() != null ? "있음" : "없음", request.durationMinutes());
 
-        int questionCount = ClaudePromptBuilder.calculateQuestionCount(request.durationMinutes(), request.interviewTypes().size());
+        int questionCount = QuestionCountCalculator.calculate(request.durationMinutes(), request.interviewTypes().size());
 
         String json = """
                 [

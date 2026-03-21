@@ -4,7 +4,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.infra.ai.ClaudePromptBuilder;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
 import com.rehearse.api.infra.ai.persona.PersonaResolver;
 import com.rehearse.api.infra.ai.persona.ResolvedProfile;
@@ -71,7 +70,7 @@ public class QuestionGenerationPromptBuilder {
 
     public String buildUserPrompt(QuestionGenerationRequest req) {
         TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
-        int questionCount = ClaudePromptBuilder.calculateQuestionCount(
+        int questionCount = QuestionCountCalculator.calculate(
             req.durationMinutes(), req.interviewTypes().size());
 
         StringBuilder sb = new StringBuilder();
