@@ -10,5 +10,8 @@ import java.util.List;
 public class AnswersResponse {
 
     private final String analysisStatus;
+    private final String position;
+    private final String techStack;
+    private final String level;
     private final List<AnswerResponse> answers;
 }

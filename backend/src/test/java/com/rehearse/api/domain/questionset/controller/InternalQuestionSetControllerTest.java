@@ -2,6 +2,9 @@ package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
@@ -40,6 +43,9 @@ class InternalQuestionSetControllerTest {
 
     @MockitoBean
     private InternalQuestionSetService internalQuestionSetService;
+
+    @MockitoBean
+    private InterviewFinder interviewFinder;
 
     // ----------------------------------------------------------------
     // PUT /progress
@@ -82,11 +88,17 @@ class InternalQuestionSetControllerTest {
     @Test
     @DisplayName("GET /answers - 답변 목록 조회 성공 시 200과 analysisStatus + 답변 리스트를 반환한다")
     void getAnswers_success() throws Exception {
+        Interview interview = Interview.builder()
+                .position(Position.BACKEND)
+                .level(InterviewLevel.JUNIOR)
+                .durationMinutes(30)
+                .build();
         QuestionSet questionSet = QuestionSet.builder()
-                .interview(Interview.builder().build())
+                .interview(interview)
                 .category(QuestionCategory.RESUME)
                 .orderIndex(0)
                 .build();
+        given(interviewFinder.findById(5L)).willReturn(interview);
         given(internalQuestionSetService.getQuestionSet(1L)).willReturn(questionSet);
         given(internalQuestionSetService.getAnswers(1L)).willReturn(List.of());
 
@@ -94,6 +106,8 @@ class InternalQuestionSetControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.analysisStatus").value("PENDING"))
+                .andExpect(jsonPath("$.data.position").value("BACKEND"))
+                .andExpect(jsonPath("$.data.level").value("JUNIOR"))
                 .andExpect(jsonPath("$.data.answers").isArray());
     }
 
