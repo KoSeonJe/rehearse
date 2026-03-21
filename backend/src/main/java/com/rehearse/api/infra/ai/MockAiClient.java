@@ -66,22 +66,6 @@ public class MockAiClient implements AiClient {
         return parseJson(json, new TypeReference<>() {});
     }
 
-    @Override
-    public GeneratedReport generateReport(String feedbackSummary) {
-        log.info("[Mock] generateReport 호출");
-
-        String json = """
-                {
-                  "overallScore": 72,
-                  "summary": "[Mock] 전반적으로 기술적 기초가 탄탄하며, 특히 자료구조와 알고리즘에 대한 이해도가 높습니다. 다만 시스템 설계 관련 답변에서 더 구체적인 사례를 들어 설명하면 좋겠습니다.",
-                  "strengths": ["CS 기초 지식이 탄탄함", "논리적이고 구조화된 답변 방식", "질문 의도를 정확히 파악함"],
-                  "improvements": ["시스템 설계 시 트레이드오프 분석 보완 필요", "비언어적 표현(시선, 자세) 안정감 개선", "답변 시 구체적인 수치나 사례 추가"]
-                }
-                """;
-
-        return parseJson(json, new TypeReference<>() {});
-    }
-
     private <T> T parseJson(String json, TypeReference<T> typeRef) {
         try {
             return objectMapper.readValue(json, typeRef);

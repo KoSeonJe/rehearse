@@ -6,7 +6,6 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
-import com.rehearse.api.infra.ai.dto.GeneratedReport;
 
 import java.util.List;
 
@@ -20,6 +19,4 @@ public interface AiClient {
     GeneratedFollowUp generateFollowUpQuestion(String questionContent, String answerText,
                                                 String nonVerbalSummary,
                                                 List<FollowUpRequest.FollowUpExchange> previousExchanges);
-
-    GeneratedReport generateReport(String feedbackSummary);
 }

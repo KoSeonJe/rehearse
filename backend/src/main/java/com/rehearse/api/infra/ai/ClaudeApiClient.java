@@ -32,7 +32,7 @@ public class ClaudeApiClient implements AiClient {
 
     private static final int MAX_TOKENS_QUESTION = 4096;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
-    private static final int MAX_TOKENS_REPORT = 2048;
+
 
     private final RestClient restClient;
     private final ClaudePromptBuilder promptBuilder;
@@ -87,15 +87,6 @@ public class ClaudeApiClient implements AiClient {
 
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
-    @Override
-    public GeneratedReport generateReport(String feedbackSummary) {
-        String systemPrompt = promptBuilder.buildReportSystemPrompt();
-        String userPrompt = promptBuilder.buildReportUserPrompt(feedbackSummary);
-
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_REPORT, 0.3);
-        return responseParser.parseJsonResponse(text, GeneratedReport.class);
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens) {
