@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import shutil
@@ -57,7 +59,6 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     api_client.set_correlation_id(correlation_id)
     print(f"[Analysis] 파이프라인 시작: interview={interview_id}, qs={question_set_id}, correlation_id={correlation_id}")
 
-    # 1. 멱등성 체크
     answers_data = get_answers(interview_id, question_set_id)
     analysis_status = answers_data.get("analysisStatus", "")
     answers = answers_data.get("answers", [])
@@ -66,36 +67,35 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         print(f"[Analysis] 이미 완료됨 — 스킵")
         return {"statusCode": 200, "body": "Already completed"}
 
+    position = answers_data.get("position")
+    tech_stack = answers_data.get("techStack")
+    level = answers_data.get("level")
+
     update_progress(interview_id, question_set_id, "STARTED")
 
-    # 2. S3에서 영상 다운로드
     os.makedirs(WORK_DIR, exist_ok=True)
     video_path = os.path.join(WORK_DIR, "video.webm")
     s3 = boto3.client("s3")
     s3.download_file(bucket, key, video_path)
     print(f"[Analysis] 영상 다운로드 완료: {key}")
 
-    # 3. FFmpeg: 오디오 + 프레임 추출
     update_progress(interview_id, question_set_id, "EXTRACTING")
     audio_path = extract_audio(video_path, WORK_DIR)
     frame_paths = extract_frames(video_path, WORK_DIR)
     video_duration_ms = get_video_duration_ms(video_path)
 
-    # 4. Whisper STT
     update_progress(interview_id, question_set_id, "STT_PROCESSING")
     stt_result = _safe_stt(audio_path)
 
-    # 5. GPT-4o Vision 비언어 분석
     update_progress(interview_id, question_set_id, "NONVERBAL_ANALYZING")
     vision_result = _safe_vision(frame_paths)
 
-    # 6. GPT-4o LLM 언어 분석 (답변별)
     update_progress(interview_id, question_set_id, "VERBAL_ANALYZING")
     timestamp_feedbacks = _build_timestamp_feedbacks(
-        answers, stt_result, vision_result, video_duration_ms
+        answers, stt_result, vision_result, video_duration_ms,
+        position=position, tech_stack=tech_stack, level=level,
     )
 
-    # 7. 종합 점수 계산 + 피드백 저장
     update_progress(interview_id, question_set_id, "FINALIZING")
     overall_score, overall_comment = _compute_overall(timestamp_feedbacks)
 
@@ -121,6 +121,9 @@ def _build_timestamp_feedbacks(
     stt_result: dict | None,
     vision_result: dict | None,
     video_duration_ms: int,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
 ) -> list[dict]:
     feedbacks = []
     stt_text = stt_result["full_text"] if stt_result else ""
@@ -132,13 +135,15 @@ def _build_timestamp_feedbacks(
         question_text = answer.get("questionText", "")
         question_id = answer.get("questionId")
 
-        # 해당 답변 구간의 STT 텍스트 추출
         transcript = _extract_transcript_for_range(stt_segments, start_ms, end_ms)
         if not transcript and stt_text and len(answers) == 1:
             transcript = stt_text
 
-        # 언어 분석
-        verbal = _safe_verbal(question_text, transcript)
+        verbal = _safe_verbal(
+            question_text, transcript,
+            position=position, tech_stack=tech_stack,
+            level=level, model_answer=answer.get("modelAnswer"),
+        )
 
         fb = {
             "questionId": question_id,
@@ -158,7 +163,6 @@ def _build_timestamp_feedbacks(
             fb["expressionLabel"] = vision_result.get("expression_label")
             fb["nonverbalComment"] = vision_result.get("comment")
 
-        # 종합 코멘트
         fb["overallComment"] = _build_overall_comment(verbal, vision_result)
 
         feedbacks.append(fb)
@@ -236,9 +240,20 @@ def _safe_vision(frame_paths: list[str]) -> dict | None:
         return None
 
 
-def _safe_verbal(question_text: str, transcript: str) -> dict | None:
+def _safe_verbal(
+    question_text: str,
+    transcript: str,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
+    model_answer: str | None = None,
+) -> dict | None:
     try:
-        return analyze_verbal(question_text, transcript)
+        return analyze_verbal(
+            question_text, transcript,
+            position=position, tech_stack=tech_stack,
+            level=level, model_answer=model_answer,
+        )
     except Exception as e:
         print(f"[Analysis] Verbal 분석 실패: {e}")
         return None
@@ -272,7 +287,6 @@ def _cleanup():
 
 
 def _classify_error(e: Exception) -> str:
-    """에러를 표준 분류 코드로 변환"""
     error_str = str(e).lower()
     if isinstance(e, TimeoutError) or 'timeout' in error_str:
         return "TIMEOUT"

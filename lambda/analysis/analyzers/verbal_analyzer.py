@@ -1,9 +1,12 @@
-import json
+from __future__ import annotations
+
 import time
 
-from openai import OpenAI, RateLimitError, APIError, AuthenticationError
+from openai import OpenAI, RateLimitError, AuthenticationError
 
 from config import Config
+from analyzers.json_utils import parse_llm_json
+from analyzers.verbal_prompt_factory import build_system_prompt, build_user_prompt
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -38,7 +41,14 @@ _SYSTEM_PROMPT = """당신은 면접 언어 분석 전문가입니다.
 }"""
 
 
-def analyze_verbal(question_text: str, transcript: str) -> dict:
+def analyze_verbal(
+    question_text: str,
+    transcript: str,
+    position: str | None = None,
+    tech_stack: str | None = None,
+    level: str | None = None,
+    model_answer: str | None = None,
+) -> dict:
     if not transcript or not transcript.strip():
         print("[Verbal] 전사 텍스트 없음 — 기본값 반환")
         return {
@@ -48,27 +58,30 @@ def analyze_verbal(question_text: str, transcript: str) -> dict:
         }
 
     client = OpenAI(api_key=Config.OPENAI_API_KEY)
-    user_prompt = f"""## 질문
-{question_text}
 
-## 면접자 답변 (STT 전사)
-{transcript}
-
-위 답변을 분석해주세요."""
+    if position:
+        system_prompt = build_system_prompt(position, tech_stack)
+        user_prompt = build_user_prompt(
+            position, tech_stack, level or "JUNIOR",
+            question_text, transcript, model_answer,
+        )
+    else:
+        system_prompt = _SYSTEM_PROMPT
+        user_prompt = f"질문: {question_text}\n답변(STT): {transcript}"
 
     for attempt in range(MAX_RETRIES):
         try:
             response = client.chat.completions.create(
                 model=Config.LLM_MODEL,
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
                 max_tokens=500,
                 temperature=0.3,
             )
             raw = response.choices[0].message.content.strip()
-            result = _parse_json(raw)
+            result = parse_llm_json(raw)
             print(f"[Verbal] 분석 완료: score={result.get('verbal_score')}, fillers={result.get('filler_word_count')}")
             return result
 
@@ -89,11 +102,3 @@ def analyze_verbal(question_text: str, transcript: str) -> dict:
                 time.sleep(RETRY_DELAY * (attempt + 1))
             else:
                 raise
-
-
-def _parse_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
-    return json.loads(text)

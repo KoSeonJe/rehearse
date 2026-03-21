@@ -1,6 +1,6 @@
 # Phase 4: [Lambda] 언어/비언어 프롬프트 최적화
 
-> **상태**: TODO
+> **상태**: Completed
 > **브랜치**: `feat/lambda-verbal-prompt`
 > **PR**: PR-4 → develop
 > **의존**: Phase 3 (PR-3 머지 후 — Internal API에서 position/techStack/level 제공)
