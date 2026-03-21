@@ -48,7 +48,7 @@ def lambda_handler(event, context):
             failure_reason=_classify_error(e),
             failure_detail=f"{error_msg}\n\n{error_detail[:1800]}",
         )
-        return {"statusCode": 500, "body": json.dumps({"error": error_msg})}
+        raise
     finally:
         api_client.set_correlation_id(None)
         _cleanup()

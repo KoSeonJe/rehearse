@@ -5,7 +5,7 @@ import boto3
 from config import Config
 
 POLL_INTERVAL = 10
-MAX_POLL_SECONDS = 600
+MAX_POLL_SECONDS = 250  # Lambda timeout(300s) - 안전 마진 50s
 
 
 def create_mediaconvert_job(input_s3_key: str, output_s3_key: str) -> str:
