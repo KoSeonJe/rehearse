@@ -96,7 +96,6 @@ public class ProfileYamlLoader {
         return Map.copyOf(result);
     }
 
-    @SuppressWarnings("unchecked")
     private BaseProfile parseBaseProfile(Map<String, Object> data) {
         if (data == null) {
             throw new IllegalStateException("Base YAML 내용이 비어있습니다");
