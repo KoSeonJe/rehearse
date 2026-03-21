@@ -53,19 +53,20 @@ class PersonaResolverTest {
     }
 
     @Test
-    @DisplayName("overlay가 없는 TechStack(PYTHON_DJANGO) resolve 시 fromBaseOnly 프로필을 반환한다")
-    void resolve_pythonDjango_noOverlay_returnsBaseOnlyProfile() {
+    @DisplayName("BACKEND + PYTHON_DJANGO resolve 시 fullPersona에 Python 키워드가 포함된다")
+    void resolve_pythonDjango_fullPersonaContainsPythonKeyword() {
         ResolvedProfile profile = personaResolver.resolve(Position.BACKEND, TechStack.PYTHON_DJANGO);
 
-        assertThat(profile.interviewTypeGuideMap()).isEmpty();
+        assertThat(profile.fullPersona()).contains("Python");
+        assertThat(profile.interviewTypeGuideMap()).isNotEmpty();
     }
 
     @Test
-    @DisplayName("overlay가 없는 TechStack resolve 시 verbalExpertise가 빈 문자열이다")
-    void resolve_noOverlay_verbalExpertiseIsEmpty() {
+    @DisplayName("BACKEND + PYTHON_DJANGO resolve 시 verbalExpertise가 존재한다")
+    void resolve_pythonDjango_verbalExpertiseIsNotEmpty() {
         ResolvedProfile profile = personaResolver.resolve(Position.BACKEND, TechStack.PYTHON_DJANGO);
 
-        assertThat(profile.verbalExpertise()).isEmpty();
+        assertThat(profile.verbalExpertise()).isNotBlank();
     }
 
     @Test
