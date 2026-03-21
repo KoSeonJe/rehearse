@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.questionset.controller;
 
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.dto.AnswerResponse;
 import com.rehearse.api.domain.questionset.dto.AnswersResponse;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
@@ -20,6 +22,7 @@ import java.util.List;
 public class InternalQuestionSetController {
 
     private final InternalQuestionSetService internalQuestionSetService;
+    private final InterviewFinder interviewFinder;
 
     @PutMapping("/progress")
     public ResponseEntity<ApiResponse<Void>> updateProgress(
@@ -37,12 +40,17 @@ public class InternalQuestionSetController {
             @PathVariable Long questionSetId) {
 
         QuestionSet questionSet = internalQuestionSetService.getQuestionSet(questionSetId);
+        Interview interview = interviewFinder.findById(interviewId);
+
         List<AnswerResponse> answers = internalQuestionSetService.getAnswers(questionSetId).stream()
                 .map(AnswerResponse::from)
                 .toList();
 
         AnswersResponse response = AnswersResponse.builder()
                 .analysisStatus(questionSet.getAnalysisStatus().name())
+                .position(interview.getPosition().name())
+                .techStack(interview.getTechStack() != null ? interview.getTechStack().name() : null)
+                .level(interview.getLevel().name())
                 .answers(answers)
                 .build();
         return ResponseEntity.ok(ApiResponse.ok(response));
