@@ -172,19 +172,13 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
   return (
     <section className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
-            {index + 1}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
-            <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
-          </div>
+      <div className="flex items-center gap-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+          {index + 1}
         </div>
-        <div className="text-right">
-          <p className="text-3xl font-black tracking-tighter text-text-primary">{feedback.questionSetScore}</p>
-          <p className="text-[10px] font-medium text-text-tertiary">/ 100</p>
+        <div>
+          <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+          <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
         </div>
       </div>
 
@@ -195,10 +189,10 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
         </div>
       )}
 
-      {/* Content: Video + Feedback */}
-      <div className="space-y-6">
-        {/* Video + Timeline: full width */}
-        <div className="space-y-4">
+      {/* Content: Video (left) + Feedback (right) */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* 좌측: Video + Timeline */}
+        <div className="lg:w-[60%] space-y-4 lg:sticky lg:top-20 lg:self-start">
           <VideoPlayer
             ref={videoRef}
             streamingUrl={feedback.streamingUrl}
@@ -214,8 +208,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           />
         </div>
 
-        {/* Feedback Panel: full width, scrollable */}
-        <div>
+        {/* 우측: Feedback Panel */}
+        <div className="lg:w-[40%]">
           <FeedbackPanel
             feedbacks={feedbacks}
             questions={questions}
