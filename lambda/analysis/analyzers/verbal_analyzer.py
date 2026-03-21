@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import json
 import time
 
-from openai import OpenAI, RateLimitError, APIError, AuthenticationError
+from openai import OpenAI, RateLimitError, AuthenticationError
 
 from config import Config
+from analyzers.json_utils import parse_llm_json
 from analyzers.verbal_prompt_factory import build_system_prompt, build_user_prompt
 
 MAX_RETRIES = 3
@@ -81,7 +81,7 @@ def analyze_verbal(
                 temperature=0.3,
             )
             raw = response.choices[0].message.content.strip()
-            result = _parse_json(raw)
+            result = parse_llm_json(raw)
             print(f"[Verbal] 분석 완료: score={result.get('verbal_score')}, fillers={result.get('filler_word_count')}")
             return result
 
@@ -102,11 +102,3 @@ def analyze_verbal(
                 time.sleep(RETRY_DELAY * (attempt + 1))
             else:
                 raise
-
-
-def _parse_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
-    return json.loads(text)

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import base64
-import json
-import re
 import time
 
-from openai import OpenAI, RateLimitError, APIError, AuthenticationError
+from openai import OpenAI, RateLimitError, AuthenticationError
 
 from config import Config
+from analyzers.json_utils import parse_llm_json
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -69,7 +68,7 @@ def analyze_frames(frame_paths: list[str]) -> dict:
                 print(f"[Vision] 빈 응답 — 폴백 사용")
                 return dict(_FALLBACK)
 
-            result = _parse_json(raw.strip())
+            result = parse_llm_json(raw.strip())
             result = _validate_result(result)
             print(f"[Vision] 분석 완료: eye={result.get('eye_contact_score')}, posture={result.get('posture_score')}")
             return result
@@ -107,23 +106,7 @@ def _encode_image(path: str) -> str:
         return base64.b64encode(f.read()).decode("utf-8")
 
 
-def _parse_json(text: str) -> dict:
-    text = text.strip()
-    if text.startswith("```"):
-        lines = text.split("\n")
-        text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
-        text = text.strip()
-
-    # JSON 블록 추출 시도
-    match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
-    if match:
-        return json.loads(match.group())
-
-    return json.loads(text)
-
-
 def _validate_result(result: dict) -> dict:
-    """필수 키 존재 + 타입 검증, 없으면 기본값으로 채움."""
     validated = {}
     validated["eye_contact_score"] = _clamp_int(result.get("eye_contact_score"), 0, 100, 50)
     validated["posture_score"] = _clamp_int(result.get("posture_score"), 0, 100, 50)
