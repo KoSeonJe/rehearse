@@ -35,7 +35,6 @@ export const useInterviewSetup = () => {
   const [dragOver, setDragOver] = useState(false)
 
   const isLoading = createInterview.isPending
-  const totalSteps = TOTAL_STEPS
 
   const canNext = useCallback((step: Step): boolean => {
     switch (step) {
@@ -52,7 +51,7 @@ export const useInterviewSetup = () => {
     }
   }, [position, level, durationMinutes, interviewTypes.length])
 
-  const isSubmitStep = currentStep === totalSteps
+  const isSubmitStep = currentStep === TOTAL_STEPS
 
   const handleNext = useCallback(() => {
     if (!canNext(currentStep)) return
@@ -157,7 +156,7 @@ export const useInterviewSetup = () => {
           csSubTopics: interviewTypes.includes('CS_FUNDAMENTAL') && csSubTopics.length > 0
             ? csSubTopics
             : undefined,
-          ...(techStack ? { techStack } : {}),
+          techStack: techStack ?? undefined,
         },
         resumeFile,
       },
@@ -189,7 +188,7 @@ export const useInterviewSetup = () => {
     dragOver,
     isLoading,
     isSubmitStep,
-    totalSteps,
+    totalSteps: TOTAL_STEPS,
     canNext,
     handleNext,
     handlePrev,

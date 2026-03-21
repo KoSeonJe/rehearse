@@ -14,7 +14,6 @@ export const InterviewSetupPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
       <header className="flex items-center justify-between px-5 pt-8 md:px-8">
         <div className="flex items-center gap-2">
           <Logo size={80} />
@@ -40,6 +39,7 @@ export const InterviewSetupPage = () => {
           <StepTechStack
             position={setup.position}
             techStack={setup.techStack}
+            isLoading={setup.isLoading}
             onSelect={setup.handleTechStackSelect}
           />
         )}

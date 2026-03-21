@@ -4,10 +4,11 @@ import type { Position, TechStack } from '@/types/interview'
 interface StepTechStackProps {
   position: Position
   techStack: TechStack | null
+  isLoading: boolean
   onSelect: (techStack: TechStack | null) => void
 }
 
-export const StepTechStack = ({ position, techStack, onSelect }: StepTechStackProps) => {
+export const StepTechStack = ({ position, techStack, isLoading, onSelect }: StepTechStackProps) => {
   const availableStacks = POSITION_TECH_STACKS[position]
   const defaultStack = availableStacks[0]
 
@@ -35,6 +36,8 @@ export const StepTechStack = ({ position, techStack, onSelect }: StepTechStackPr
             <button
               key={stack}
               onClick={() => onSelect(isSelected ? null : stack)}
+              disabled={isLoading}
+              aria-pressed={isSelected}
               className={`flex flex-col items-start gap-1.5 rounded-[20px] p-5 transition-all active:scale-95 ${
                 isSelected
                   ? 'bg-accent text-white shadow-lg shadow-accent/20'
