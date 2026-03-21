@@ -159,11 +159,9 @@ export const useAnswerFlow = ({
     // 현재 질문이 현재 세트의 마지막인지 계산
     // questions는 모든 세트의 질문이 flat하게 들어있으므로,
     // 현재 세트까지의 질문 수 합산으로 경계를 판단
-    let questionsBeforeCurrentSet = 0
-    for (let i = 0; i < state.currentQuestionSetIndex; i++) {
-      questionsBeforeCurrentSet += state.questionSets[i].questions.length
-    }
-    const lastIndexInSet = questionsBeforeCurrentSet + currentSet.questions.length - 1
+    const questionsBeforeCurrentSet = state.currentQuestionSetIndex
+    const mainQuestionCount = currentSet.questions.filter(q => q.questionType === 'MAIN').length
+    const lastIndexInSet = questionsBeforeCurrentSet + mainQuestionCount - 1
     return state.currentQuestionIndex >= lastIndexInSet
   }, [hasQuestionSets])
 
@@ -258,10 +256,7 @@ export const useAnswerFlow = ({
         if (state.currentFollowUp?.questionId) {
           targetQuestionId = state.currentFollowUp.questionId
         } else {
-          let questionsBeforeSet = 0
-          for (let i = 0; i < state.currentQuestionSetIndex; i++) {
-            questionsBeforeSet += state.questionSets[i].questions.length
-          }
+          const questionsBeforeSet = state.currentQuestionSetIndex
           const questionInSetIndex = state.currentQuestionIndex - questionsBeforeSet
           const questionDetail = currentSetForTs.questions[questionInSetIndex]
           targetQuestionId = questionDetail?.id

@@ -173,7 +173,7 @@ export const InterviewPage = () => {
                 <div className="rounded-[24px] bg-white/80 border border-accent/20 p-6 shadow-toss animate-fade-in">
                   <div className="flex items-center justify-center gap-3">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-                    <span className="text-sm font-bold text-accent">답변을 분석하고 있습니다...</span>
+                    <span className="text-sm font-bold text-accent">후속 질문 생성 중...</span>
                   </div>
                 </div>
               )}
