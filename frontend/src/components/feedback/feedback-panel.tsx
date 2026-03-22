@@ -90,11 +90,15 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         <div className="mb-3 rounded-xl bg-surface p-3 space-y-2">
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-bold uppercase tracking-widest text-accent">기술 분석</span>
-            <span className="text-[10px] font-semibold text-text-tertiary">
-              언어 점수 {feedback.technical.verbalScore}
-            </span>
+            {feedback.technical.verbalScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                언어 점수 {feedback.technical.verbalScore}
+              </span>
+            )}
           </div>
-          <p className="text-xs text-text-secondary leading-relaxed">{feedback.technical.verbalComment}</p>
+          {feedback.technical.verbalComment && (
+            <p className="text-xs text-text-secondary leading-relaxed">{feedback.technical.verbalComment}</p>
+          )}
         </div>
       )}
 
@@ -103,19 +107,25 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         <div className="mb-3 rounded-xl bg-surface p-3 space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500">비언어 분석</span>
-            <span className="text-[10px] font-semibold text-text-tertiary">
-              시선 {feedback.nonverbal.eyeContactScore}
-            </span>
-            <span className="text-[10px] font-semibold text-text-tertiary">
-              자세 {feedback.nonverbal.postureScore}
-            </span>
+            {feedback.nonverbal.eyeContactScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                시선 {feedback.nonverbal.eyeContactScore}
+              </span>
+            )}
+            {feedback.nonverbal.postureScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                자세 {feedback.nonverbal.postureScore}
+              </span>
+            )}
             {feedback.nonverbal.expressionLabel && (
               <span className="text-[10px] font-semibold text-text-tertiary">
                 표정 {feedback.nonverbal.expressionLabel}
               </span>
             )}
           </div>
-          <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbal.nonverbalComment}</p>
+          {feedback.nonverbal.nonverbalComment && (
+            <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbal.nonverbalComment}</p>
+          )}
         </div>
       )}
 
@@ -136,7 +146,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
               <p className="text-sm leading-relaxed text-text-primary">
                 {highlightFillers(feedback.transcript)}
               </p>
-              {feedback.technical && feedback.technical.fillerWordCount > 0 && (
+              {feedback.technical && feedback.technical.fillerWordCount !== null && feedback.technical.fillerWordCount > 0 && (
                 <p className="mt-2 text-[10px] font-semibold text-accent">
                   필러워드 {feedback.technical.fillerWordCount}회 감지
                 </p>

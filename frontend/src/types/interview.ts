@@ -130,22 +130,24 @@ export interface QuestionsWithAnswersResponse {
 // 피드백 뷰어 타입 (Sprint 0 Task 10)
 
 export interface TechnicalFeedback {
-  verbalScore: number
-  verbalComment: string
-  fillerWordCount: number
+  verbalScore: number | null
+  verbalComment: string | null
+  fillerWordCount: number | null
 }
 
 export interface NonverbalFeedback {
-  eyeContactScore: number
-  postureScore: number
-  expressionLabel: string
-  nonverbalComment: string
+  eyeContactScore: number | null
+  postureScore: number | null
+  expressionLabel: string | null
+  nonverbalComment: string | null
 }
 
 export interface TimestampFeedback {
   id: number
   questionId: number | null
   questionType: string | null
+  questionText: string | null
+  modelAnswer: string | null
   startMs: number
   endMs: number
   transcript: string | null
