@@ -31,6 +31,18 @@ export default {
         success: { DEFAULT: '#10B981', light: '#ECFDF5' },
         warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
         error: { DEFAULT: '#EF4444', light: '#FEF2F2' },
+        studio: {
+          bg: '#202124',
+          surface: '#2c2c2c',
+          'surface-elevated': '#3c4043',
+          border: '#3c4043',
+          text: '#e8eaed',
+          'text-secondary': '#9aa0a6',
+        },
+        meet: {
+          green: '#00AC47',
+          red: '#EA4335',
+        },
       },
       boxShadow: {
         'toss': '0 8px 16px 0 rgba(0, 0, 0, 0.04)',
@@ -50,10 +62,25 @@ export default {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(400%)' },
         },
+        'glow-pulse': {
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.8' },
+        },
+        'rec-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' },
+          '50%': { boxShadow: '0 0 20px 4px rgba(239, 68, 68, 0.3)' },
+        },
+        'ripple': {
+          '0%': { transform: 'scale(1)', opacity: '0.6' },
+          '100%': { transform: 'scale(1.8)', opacity: '0' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
         'progress-loading': 'progress-loading 1.5s ease-in-out infinite',
+        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
+        'rec-pulse': 'rec-pulse 2s ease-in-out infinite',
+        'ripple': 'ripple 2s ease-out infinite',
       },
     },
   },

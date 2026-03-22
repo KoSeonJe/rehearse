@@ -2,10 +2,9 @@ import { memo, useEffect, useRef } from 'react'
 
 interface VideoPreviewProps {
   stream: MediaStream | null
-  isRecording: boolean
 }
 
-export const VideoPreview = memo(({ stream, isRecording }: VideoPreviewProps) => {
+export const VideoPreview = memo(({ stream }: VideoPreviewProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
@@ -15,23 +14,17 @@ export const VideoPreview = memo(({ stream, isRecording }: VideoPreviewProps) =>
   }, [stream])
 
   return (
-    <div className="relative overflow-hidden rounded-card bg-text-primary">
+    <div className="relative h-full w-full overflow-hidden bg-studio-bg">
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
-        className="aspect-video w-full -scale-x-100 object-cover"
+        className="h-full w-full -scale-x-100 object-cover"
       />
-      {isRecording && (
-        <div className="absolute top-4 right-4 flex items-center gap-2 rounded-badge bg-error/90 px-3 py-1.5 text-xs font-medium text-white">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-white" />
-          REC
-        </div>
-      )}
       {!stream && (
-        <div className="absolute inset-0 flex items-center justify-center bg-text-primary/90">
-          <p className="text-sm text-text-tertiary">카메라를 준비하고 있습니다...</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-studio-bg/90">
+          <p className="text-xs text-studio-text-secondary">카메라 준비 중...</p>
         </div>
       )}
     </div>
