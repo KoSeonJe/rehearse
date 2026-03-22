@@ -92,7 +92,9 @@ API Gateway, BFF, MSA, 이벤트 드리븐, 메시지 큐,
 CI/CD, Docker, 무중단 배포, 블루-그린, 카나리""",
 }
 
-SYSTEM_TEMPLATE = """{minimal_persona}
+SYSTEM_TEMPLATE = """중요: 모든 응답은 반드시 한국어로만 작성하세요. 영어로 응답하지 마세요.
+
+{minimal_persona}
 
 ## 전문 분야
 {verbal_expertise}

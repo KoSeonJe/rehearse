@@ -11,7 +11,9 @@ from analyzers.json_utils import parse_llm_json
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 
-_SYSTEM_PROMPT = """면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
+_SYSTEM_PROMPT = """중요: 모든 응답은 반드시 한국어로만 작성하세요. 영어로 응답하지 마세요.
+
+면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
 
 ## 평가
 1. eye_contact_score(0-100): 90+=안정응시, 70+=간헐흐트러짐, 50+=자주딴곳, 30+=불안정, 0+=미응시
