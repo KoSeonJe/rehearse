@@ -92,6 +92,12 @@ public class InterviewService {
         return InterviewResponse.from(interview, questionSets);
     }
 
+    public InterviewResponse getInterviewByPublicId(String publicId) {
+        Interview interview = interviewFinder.findByPublicId(publicId);
+        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(interview.getId());
+        return InterviewResponse.from(interview, questionSets);
+    }
+
     @Transactional
     public UpdateStatusResponse updateStatus(Long id, UpdateStatusRequest request) {
         Interview interview = interviewFinder.findById(id);

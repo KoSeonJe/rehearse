@@ -16,6 +16,7 @@ import java.util.List;
 public class InterviewResponse {
 
     private final Long id;
+    private final String publicId;
     private final Position position;
     private final TechStack techStack;
     private final String positionDetail;
@@ -40,6 +41,7 @@ public class InterviewResponse {
 
         return InterviewResponse.builder()
                 .id(interview.getId())
+                .publicId(interview.getPublicId())
                 .position(interview.getPosition())
                 .techStack(interview.getTechStack())
                 .positionDetail(interview.getPositionDetail())

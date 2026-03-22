@@ -34,6 +34,13 @@ public class InterviewController {
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
+    @GetMapping("/by-public-id/{publicId}")
+    public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(@PathVariable String publicId) {
+
+        InterviewResponse response = interviewService.getInterviewByPublicId(publicId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<UpdateStatusResponse>> updateStatus(
             @PathVariable Long id,
