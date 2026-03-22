@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.questionset.service;
 
 import com.rehearse.api.domain.file.entity.FileMetadata;
+import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
@@ -224,10 +225,15 @@ class InternalQuestionSetServiceTest {
     }
 
     @Test
-    @DisplayName("retryAnalysis: FAILED가 아닌 상태에서 호출하면 BusinessException이 발생한다")
+    @DisplayName("retryAnalysis: 분석/파일 모두 실패가 아닌 상태에서 호출하면 BusinessException이 발생한다")
     void retryAnalysis_notFailedStatus() {
         // given
         QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+
+        FileMetadata fileMetadata = mock(FileMetadata.class);
+        given(fileMetadata.getStatus()).willReturn(FileStatus.UPLOADED);
+        ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
+
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
 
         // when & then

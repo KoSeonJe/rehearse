@@ -30,11 +30,11 @@ def lambda_handler(event, context):
         file_id = file_meta["id"]
         status = file_meta["status"]
 
-        if status not in ("PENDING", "UPLOADED"):
+        if status not in ("PENDING", "UPLOADED", "FAILED"):
             print(f"[Convert] 멱등성 스킵: file={file_id}, status={status}")
             return {"statusCode": 200, "body": "Already processed"}
 
-        if status == "PENDING":
+        if status in ("PENDING", "FAILED"):
             update_file_status(file_id, "UPLOADED")
         update_file_status(file_id, "CONVERTING")
 

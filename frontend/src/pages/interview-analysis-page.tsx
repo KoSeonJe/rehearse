@@ -64,7 +64,7 @@ interface AnalysisStatusFloatProps {
   isRetrying: boolean
   onRetry: () => void
   onNavigateFeedback: () => void
-  statuses: Array<{ analysisProgress: string | null; analysisStatus: string } | null>
+  statuses: Array<{ analysisProgress: string | null; analysisStatus: string; fileStatus: string | null } | null>
   questionSets: Array<{ id: number; category: string }>
 }
 
@@ -161,7 +161,7 @@ const AnalysisStatusFloat = ({
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
                 !
               </div>
-              <p className="text-sm font-bold text-text-primary">일부 분석 실패</p>
+              <p className="text-sm font-bold text-text-primary">일부 피드백 생성 실패</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -214,7 +214,7 @@ export const InterviewAnalysisPage = () => {
     setIsRetrying(true)
     const failedSets = questionSets
       .map((qs, idx) => ({ qs, idx }))
-      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED')
+      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED' || statuses[idx]?.fileStatus === 'FAILED')
 
     await Promise.allSettled(
       failedSets.map(({ qs, idx }) =>
@@ -231,7 +231,7 @@ export const InterviewAnalysisPage = () => {
   )
   const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
   const allCompleted = allTerminal && completedCount > 0
-  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
+  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED' || s?.fileStatus === 'FAILED')
   const isAnalyzing = hasQuestionSets && statuses.some(
     (s) => s?.analysisStatus === 'ANALYZING' || s?.analysisStatus === 'PENDING' || s?.analysisStatus === 'PENDING_UPLOAD',
   )

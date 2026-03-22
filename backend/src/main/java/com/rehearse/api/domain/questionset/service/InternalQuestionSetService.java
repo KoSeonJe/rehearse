@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.questionset.service;
 
 import com.rehearse.api.domain.file.entity.FileMetadata;
+import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
@@ -106,17 +107,22 @@ public class InternalQuestionSetService {
     public void retryAnalysis(Long questionSetId) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
 
-        if (questionSet.getAnalysisStatus() != AnalysisStatus.FAILED) {
-            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
-        }
-
         FileMetadata file = questionSet.getFileMetadata();
         if (file == null) {
             throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
         }
 
-        questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
-        questionSet.updateAnalysisProgress(AnalysisProgress.STARTED);
+        boolean analysisNeedsRetry = questionSet.getAnalysisStatus() == AnalysisStatus.FAILED;
+        boolean fileNeedsRetry = file.getStatus() == FileStatus.FAILED;
+
+        if (!analysisNeedsRetry && !fileNeedsRetry) {
+            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
+        }
+
+        if (analysisNeedsRetry) {
+            questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
+            questionSet.updateAnalysisProgress(AnalysisProgress.STARTED);
+        }
 
         String s3Key = file.getS3Key();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -131,7 +137,7 @@ public class InternalQuestionSetService {
             }
         });
 
-        log.info("분석 재시도 트리거: questionSetId={}, s3Key={}", questionSetId, s3Key);
+        log.info("피드백 생성 재시도 트리거: questionSetId={}, analysisRetry={}, fileRetry={}", questionSetId, analysisNeedsRetry, fileNeedsRetry);
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {
