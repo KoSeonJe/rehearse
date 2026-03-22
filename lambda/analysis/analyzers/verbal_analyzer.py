@@ -12,7 +12,7 @@ from analyzers.verbal_prompt_factory import build_system_prompt, build_user_prom
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 
-_SYSTEM_PROMPT = f"""{KOREAN_INSTRUCTION}당신은 면접 언어 분석 전문가입니다.
+_SYSTEM_PROMPT = KOREAN_INSTRUCTION + """당신은 면접 언어 분석 전문가입니다.
 면접자의 답변 텍스트를 분석하여 언어적 커뮤니케이션을 평가합니다.
 
 평가 기준:
