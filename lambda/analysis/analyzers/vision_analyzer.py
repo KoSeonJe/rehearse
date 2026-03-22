@@ -7,11 +7,12 @@ from openai import OpenAI, RateLimitError, AuthenticationError
 
 from config import Config
 from analyzers.json_utils import parse_llm_json
+from analyzers.prompts import KOREAN_INSTRUCTION
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 
-_SYSTEM_PROMPT = """면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
+_SYSTEM_PROMPT = f"""{KOREAN_INSTRUCTION}면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
 
 ## 평가
 1. eye_contact_score(0-100): 90+=안정응시, 70+=간헐흐트러짐, 50+=자주딴곳, 30+=불안정, 0+=미응시

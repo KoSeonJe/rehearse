@@ -1,6 +1,8 @@
 """Position × TechStack별 언어 분석 프롬프트 조립 (v3 최적화)"""
 from __future__ import annotations
 
+from analyzers.prompts import KOREAN_INSTRUCTION
+
 DEFAULT_TECH_STACKS: dict[str, str] = {
     "BACKEND": "JAVA_SPRING",
     "FRONTEND": "REACT_TS",
@@ -92,7 +94,7 @@ API Gateway, BFF, MSA, 이벤트 드리븐, 메시지 큐,
 CI/CD, Docker, 무중단 배포, 블루-그린, 카나리""",
 }
 
-SYSTEM_TEMPLATE = """{minimal_persona}
+SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """{minimal_persona}
 
 ## 전문 분야
 {verbal_expertise}
