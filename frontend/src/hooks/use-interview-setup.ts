@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateInterview } from '@/hooks/use-interviews'
 import { ApiError } from '@/lib/api-client'
-import { POSITION_INTERVIEW_TYPES } from '@/constants/interview-labels'
+import { POSITION_INTERVIEW_TYPES, POSITION_TECH_STACKS } from '@/constants/interview-labels'
 import { TOTAL_STEPS, MAX_FILE_SIZE } from '@/constants/setup'
 import type { Step } from '@/constants/setup'
 import type {
@@ -26,7 +26,7 @@ export const useInterviewSetup = () => {
   const [currentStep, setCurrentStep] = useState<Step>(1)
   const [position, setPosition] = useState<Position | null>(null)
   const [techStack, setTechStack] = useState<TechStack | null>(null)
-  const [level, setLevel] = useState<Level | null>(null)
+  const [level, setLevel] = useState<Level | null>('JUNIOR')
   const [durationMinutes, setDurationMinutes] = useState(30)
   const [interviewTypes, setInterviewTypes] = useState<InterviewType[]>([])
   const [csSubTopics, setCsSubTopics] = useState<CsSubTopic[]>([])
@@ -67,7 +67,8 @@ export const useInterviewSetup = () => {
   const handlePositionSelect = useCallback((p: Position) => {
     if (position !== p) {
       setPosition(p)
-      setTechStack(null)
+      const stacks = POSITION_TECH_STACKS[p]
+      setTechStack(stacks.length > 0 ? stacks[0] : null)
       const availableTypes = POSITION_INTERVIEW_TYPES[p]
       setInterviewTypes((prev) => prev.filter((t) => availableTypes.includes(t)))
     }
