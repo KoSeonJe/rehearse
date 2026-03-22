@@ -35,26 +35,22 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 }
 
 const PROGRESS_STEPS = [
-  { key: 'STARTED', label: '준비' },
-  { key: 'EXTRACTING', label: '영상' },
-  { key: 'STT_PROCESSING', label: '음성' },
-  { key: 'VERBAL_ANALYZING', label: '언어' },
-  { key: 'NONVERBAL_ANALYZING', label: '비언어' },
-  { key: 'FINALIZING', label: '생성' },
+  { key: 'STARTED', label: '준비', fullLabel: '분석 준비 중' },
+  { key: 'EXTRACTING', label: '영상', fullLabel: '영상 처리 중' },
+  { key: 'STT_PROCESSING', label: '음성', fullLabel: '음성 인식 중' },
+  { key: 'VERBAL_ANALYZING', label: '언어', fullLabel: '언어 분석 중' },
+  { key: 'NONVERBAL_ANALYZING', label: '비언어', fullLabel: '비언어 분석 중' },
+  { key: 'FINALIZING', label: '생성', fullLabel: '피드백 생성 중' },
 ] as const
-
-const PROGRESS_LABELS: Record<string, string> = {
-  STARTED: '분석 준비 중',
-  EXTRACTING: '영상 처리 중',
-  STT_PROCESSING: '음성 인식 중',
-  VERBAL_ANALYZING: '언어 분석 중',
-  NONVERBAL_ANALYZING: '비언어 분석 중',
-  FINALIZING: '피드백 생성 중',
-}
 
 const getProgressIndex = (progress: string | null): number => {
   if (!progress) return -1
   return PROGRESS_STEPS.findIndex((s) => s.key === progress)
+}
+
+const getProgressLabel = (progress: string | null): string => {
+  if (!progress) return '대기 중'
+  return PROGRESS_STEPS.find((s) => s.key === progress)?.fullLabel ?? progress
 }
 
 interface AnalysisStatusFloatProps {
@@ -107,18 +103,22 @@ const AnalysisStatusFloat = ({
                 if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
                 const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
                 const currentStep = getProgressIndex(status.analysisProgress)
-                const progressLabel = status.analysisProgress
-                  ? PROGRESS_LABELS[status.analysisProgress] ?? status.analysisProgress
-                  : '대기 중'
+                const progressLabel = getProgressLabel(status.analysisProgress)
 
                 return (
-                  <div key={idx} className="space-y-1.5">
+                  <div key={questionSets[idx]?.id ?? idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-text-primary">{label}</span>
                       <span className="font-bold text-accent">{progressLabel}</span>
                     </div>
-                    {/* 스텝 도트 */}
-                    <div className="flex items-center gap-1">
+                    <div
+                      className="flex items-center gap-1"
+                      role="progressbar"
+                      aria-valuenow={currentStep + 1}
+                      aria-valuemin={0}
+                      aria-valuemax={PROGRESS_STEPS.length}
+                      aria-label={`${label} ${progressLabel}`}
+                    >
                       {PROGRESS_STEPS.map((step, stepIdx) => (
                         <div key={step.key} className="flex items-center flex-1">
                           <div
@@ -204,10 +204,7 @@ export const InterviewAnalysisPage = () => {
     hasQuestionSets,
   )
 
-  const statuses = useMemo(() =>
-    statusQueries.map((q) => q.data?.data ?? null),
-    [statusQueries],
-  )
+  const statuses = statusQueries.map((q) => q.data?.data ?? null)
 
   const retryMutation = useRetryAnalysis()
   const [isRetrying, setIsRetrying] = useState(false)

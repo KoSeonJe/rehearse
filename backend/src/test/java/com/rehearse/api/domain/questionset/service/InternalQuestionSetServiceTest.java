@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 import java.util.Optional;
@@ -196,7 +197,7 @@ class InternalQuestionSetServiceTest {
     // ----------------------------------------------------------------
 
     @Test
-    @DisplayName("retryAnalysis: 상태가 ANALYZING으로 변경되고 S3 재트리거가 호출된다")
+    @DisplayName("retryAnalysis: FAILED 상태에서 ANALYZING으로 전이되고 progress가 STARTED로 설정된다")
     void retryAnalysis_success() {
         // given
         QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.FAILED);
@@ -208,13 +209,51 @@ class InternalQuestionSetServiceTest {
 
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
 
-        // when
-        internalQuestionSetService.retryAnalysis(1L);
+        // TransactionSynchronizationManager 활성화 (afterCommit 콜백 등록용)
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            // when
+            internalQuestionSetService.retryAnalysis(1L);
 
-        // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
-        assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.STARTED);
-        then(s3Service).should().retriggerUploadEvent("videos/100/qs_1.webm");
+            // then
+            assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
+            assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.STARTED);
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Test
+    @DisplayName("retryAnalysis: FAILED가 아닌 상태에서 호출하면 BusinessException이 발생한다")
+    void retryAnalysis_notFailedStatus() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+
+        // when & then
+        assertThatThrownBy(() -> internalQuestionSetService.retryAnalysis(1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION.getCode());
+                });
+    }
+
+    @Test
+    @DisplayName("retryAnalysis: fileMetadata가 없으면 BusinessException이 발생한다")
+    void retryAnalysis_fileNotFound() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.FAILED);
+        ReflectionTestUtils.setField(questionSet, "fileMetadata", null);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+
+        // when & then
+        assertThatThrownBy(() -> internalQuestionSetService.retryAnalysis(1L))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.FILE_NOT_FOUND.getCode());
+                });
     }
 
     @Test
