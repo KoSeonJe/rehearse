@@ -15,11 +15,17 @@ public class CorsConfig {
     @Value("${cors.allowed-origins}")
     private List<String> allowedOrigins;
 
+    @Value("${cors.allowed-origin-patterns:}")
+    private List<String> allowedOriginPatterns;
+
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.setAllowedOrigins(allowedOrigins);
+        if (allowedOriginPatterns != null && !allowedOriginPatterns.isEmpty()) {
+            config.setAllowedOriginPatterns(allowedOriginPatterns);
+        }
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setMaxAge(3600L);
