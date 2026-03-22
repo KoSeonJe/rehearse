@@ -5,9 +5,7 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 
-import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class CacheKeyGenerator {
 
@@ -25,24 +23,15 @@ public final class CacheKeyGenerator {
     }
 
     public static String generate(Position position, InterviewLevel level,
-                                  TechStack techStack, InterviewType type,
-                                  List<String> csSubTopics) {
+                                  TechStack techStack, InterviewType type) {
 
-        String base;
         if (POSITION_AGNOSTIC_TYPES.contains(type)) {
             // 공통 유형: 레벨 + 유형만으로 키 생성
-            base = level.name() + ":" + type.name();
-        } else {
-            // 포지션 특화 유형: 포지션 + 레벨 + 스택 + 유형
-            base = position.name() + ":" + level.name() + ":"
-                    + techStack.name() + ":" + type.name();
+            // CS 세부 주제는 캐시 키에 포함하지 않고, 조회 시 category 필터링으로 처리
+            return level.name() + ":" + type.name();
         }
-
-        if (type == InterviewType.CS_FUNDAMENTAL
-                && csSubTopics != null && !csSubTopics.isEmpty()) {
-            String sorted = csSubTopics.stream().sorted().collect(Collectors.joining(","));
-            return base + ":" + sorted;
-        }
-        return base;
+        // 포지션 특화 유형: 포지션 + 레벨 + 스택 + 유형
+        return position.name() + ":" + level.name() + ":"
+                + techStack.name() + ":" + type.name();
     }
 }

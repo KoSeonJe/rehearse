@@ -39,6 +39,15 @@ public class QuestionPoolService {
         return selectWithCategoryDistribution(candidates, requiredCount);
     }
 
+    public List<QuestionPool> selectFromPool(String cacheKey, int requiredCount, List<String> categoryFilter) {
+        if (categoryFilter == null || categoryFilter.isEmpty()) {
+            return selectFromPool(cacheKey, requiredCount);
+        }
+        List<QuestionPool> candidates = questionPoolRepository
+                .findByCacheKeyAndIsActiveTrueAndCategoryIn(cacheKey, categoryFilter);
+        return selectWithCategoryDistribution(candidates, requiredCount);
+    }
+
     public List<QuestionPool> selectWithCategoryDistribution(
             List<QuestionPool> candidates, int requiredCount) {
 

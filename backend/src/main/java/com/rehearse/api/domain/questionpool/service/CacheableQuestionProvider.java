@@ -22,6 +22,13 @@ import java.util.concurrent.locks.ReentrantLock;
 @RequiredArgsConstructor
 public class CacheableQuestionProvider {
 
+    private static final Map<String, String> CS_SUBTOPIC_TO_CATEGORY = Map.of(
+            "DATA_STRUCTURE", "자료구조",
+            "OS", "운영체제",
+            "NETWORK", "네트워크",
+            "DATABASE", "데이터베이스"
+    );
+
     private final QuestionPoolService questionPoolService;
     private final AiClient aiClient;
 
@@ -31,29 +38,30 @@ public class CacheableQuestionProvider {
                                       TechStack techStack, InterviewType type,
                                       int requiredCount, List<String> csSubTopics) {
 
-        String cacheKey = CacheKeyGenerator.generate(position, level, techStack, type, csSubTopics);
+        String cacheKey = CacheKeyGenerator.generate(position, level, techStack, type);
+        List<String> categoryFilter = toCategoryFilter(csSubTopics);
 
         if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
-            log.info("[CACHE] pool 히트: cacheKey={}, required={}", cacheKey, requiredCount);
-            return questionPoolService.selectFromPool(cacheKey, requiredCount);
+            log.info("[CACHE] pool 히트: cacheKey={}, required={}, categoryFilter={}", cacheKey, requiredCount, categoryFilter);
+            return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
         }
 
         log.info("[CACHE] pool 부족, Claude 호출: cacheKey={}", cacheKey);
         return generateWithStampedeProtection(cacheKey, position, level, techStack, type,
-                requiredCount, csSubTopics);
+                requiredCount, csSubTopics, categoryFilter);
     }
 
     private List<QuestionPool> generateWithStampedeProtection(
             String cacheKey, Position position, InterviewLevel level,
             TechStack techStack, InterviewType type,
-            int requiredCount, List<String> csSubTopics) {
+            int requiredCount, List<String> csSubTopics, List<String> categoryFilter) {
 
         ReentrantLock lock = keyLocks.computeIfAbsent(cacheKey, k -> new ReentrantLock());
         lock.lock();
         try {
             if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
                 log.info("[CACHE] lock 후 pool 히트: cacheKey={}", cacheKey);
-                return questionPoolService.selectFromPool(cacheKey, requiredCount);
+                return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
             }
 
             QuestionGenerationRequest request = new QuestionGenerationRequest(
@@ -70,6 +78,16 @@ public class CacheableQuestionProvider {
                 return allGenerated;
             }
 
+            // category 필터가 있으면 필터링 후 선택
+            if (categoryFilter != null && !categoryFilter.isEmpty()) {
+                List<QuestionPool> filtered = allGenerated.stream()
+                        .filter(qp -> qp.getCategory() != null && categoryFilter.contains(qp.getCategory()))
+                        .toList();
+                if (!filtered.isEmpty()) {
+                    return questionPoolService.selectWithCategoryDistribution(filtered, requiredCount);
+                }
+            }
+
             return questionPoolService.selectWithCategoryDistribution(allGenerated, requiredCount);
         } catch (Exception e) {
             log.error("[CACHE] Claude 호출 실패: cacheKey={}", cacheKey, e);
@@ -78,5 +96,15 @@ public class CacheableQuestionProvider {
             lock.unlock();
             keyLocks.remove(cacheKey, lock);
         }
+    }
+
+    private List<String> toCategoryFilter(List<String> csSubTopics) {
+        if (csSubTopics == null || csSubTopics.isEmpty()) {
+            return List.of();
+        }
+        return csSubTopics.stream()
+                .map(CS_SUBTOPIC_TO_CATEGORY::get)
+                .filter(Objects::nonNull)
+                .toList();
     }
 }
