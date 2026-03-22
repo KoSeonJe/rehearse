@@ -223,9 +223,9 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 }
 
 export const InterviewFeedbackPage = () => {
-  const { id } = useParams<{ id: string }>()
+  const { publicId } = useParams<{ publicId: string }>()
   const navigate = useNavigate()
-  const { data: response, isLoading } = useInterview(id ?? '')
+  const { data: response, isLoading } = useInterview(publicId ?? '')
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 

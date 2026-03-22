@@ -14,7 +14,7 @@ import type { QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/in
 
 interface UseInterviewSessionParams {
   interviewId: string
-  interview: { id: number; status: string; questionSets?: QuestionSetData[] } | undefined
+  interview: { id: number; publicId: string; status: string; questionSets?: QuestionSetData[] } | undefined
   mediaStream: {
     stream: MediaStream | null
     isActive: boolean
@@ -233,10 +233,10 @@ export const useInterviewSession = ({
       { id: interview.id, data: { status: 'COMPLETED' } },
       {
         onSuccess: () => {
-          navigate(`/interview/${interview.id}/analysis`)
+          navigate(`/interview/${interview.publicId}/analysis`)
         },
         onError: () => {
-          navigate(`/interview/${interview.id}/analysis`)
+          navigate(`/interview/${interview.publicId}/analysis`)
         },
       },
     )

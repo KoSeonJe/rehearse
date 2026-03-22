@@ -160,6 +160,7 @@ export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
 
 export interface InterviewSession {
   id: number
+  publicId: string
   position: Position
   positionDetail?: string | null
   level: Level
