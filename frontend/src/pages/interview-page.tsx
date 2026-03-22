@@ -159,7 +159,7 @@ export const InterviewPage = () => {
               <div className="rounded-lg bg-black/70 backdrop-blur-sm px-6 py-4 animate-fade-in">
                 <div className="mb-2 flex items-center justify-center gap-2">
                   <span className="rounded bg-blue-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                    후속 {followUpRound}/{MAX_FOLLOWUP_ROUNDS}
+                    후속 {followUpRound + 1}/{MAX_FOLLOWUP_ROUNDS}
                   </span>
                   <span className="rounded bg-blue-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
                     {FOLLOW_UP_TYPE_LABELS[currentFollowUp.type] ?? currentFollowUp.type}
