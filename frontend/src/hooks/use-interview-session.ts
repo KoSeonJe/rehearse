@@ -233,15 +233,17 @@ export const useInterviewSession = ({
       { id: interview.id, data: { status: 'COMPLETED' } },
       {
         onSuccess: () => {
-          navigate(`/interview/${interview.publicId}/analysis`)
+          const targetId = interview.publicId || interviewId
+          navigate(`/interview/${targetId}/analysis`)
         },
         onError: () => {
-          navigate(`/interview/${interview.publicId}/analysis`)
+          const targetId = interview.publicId || interviewId
+          navigate(`/interview/${targetId}/analysis`)
         },
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recorder, setVideoBlob, completeInterview, updateStatus, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
+  }, [recorder, setVideoBlob, completeInterview, updateStatus, interview, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
 
   // 시간 만료 → recorder/audioCapture 정지 + finishing phase 전환
   const handleTimeExpired = useCallback(() => {
