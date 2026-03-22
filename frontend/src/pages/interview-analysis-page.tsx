@@ -34,13 +34,23 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
   )
 }
 
-const PROGRESS_LABELS: Record<string, string> = {
-  STARTED: '분석 준비 중',
-  EXTRACTING: '영상 처리 중',
-  STT_PROCESSING: '음성 인식 중',
-  VERBAL_ANALYZING: '언어 분석 중',
-  NONVERBAL_ANALYZING: '비언어 분석 중',
-  FINALIZING: '피드백 생성 중',
+const PROGRESS_STEPS = [
+  { key: 'STARTED', label: '준비', fullLabel: '분석 준비 중' },
+  { key: 'EXTRACTING', label: '영상', fullLabel: '영상 처리 중' },
+  { key: 'STT_PROCESSING', label: '음성', fullLabel: '음성 인식 중' },
+  { key: 'VERBAL_ANALYZING', label: '언어', fullLabel: '언어 분석 중' },
+  { key: 'NONVERBAL_ANALYZING', label: '비언어', fullLabel: '비언어 분석 중' },
+  { key: 'FINALIZING', label: '생성', fullLabel: '피드백 생성 중' },
+] as const
+
+const getProgressIndex = (progress: string | null): number => {
+  if (!progress) return -1
+  return PROGRESS_STEPS.findIndex((s) => s.key === progress)
+}
+
+const getProgressLabel = (progress: string | null): string => {
+  if (!progress) return '대기 중'
+  return PROGRESS_STEPS.find((s) => s.key === progress)?.fullLabel ?? progress
 }
 
 interface AnalysisStatusFloatProps {
@@ -54,7 +64,7 @@ interface AnalysisStatusFloatProps {
   isRetrying: boolean
   onRetry: () => void
   onNavigateFeedback: () => void
-  statuses: Array<{ analysisProgress: string | null; analysisStatus: string } | null>
+  statuses: Array<{ analysisProgress: string | null; analysisStatus: string; fileStatus: string | null } | null>
   questionSets: Array<{ id: number; category: string }>
 }
 
@@ -87,16 +97,40 @@ const AnalysisStatusFloat = ({
             <p className="text-xs text-text-secondary">
               {completedCount} / {totalCount - skippedCount} 완료
             </p>
-            {/* 질문세트별 세부 상태 */}
-            <div className="mt-2 space-y-1.5">
+            {/* 질문세트별 스텝 프로그레스 */}
+            <div className="mt-2 space-y-3">
               {statuses.map((status, idx) => {
                 if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
                 const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
-                const progressLabel = status.analysisProgress ? PROGRESS_LABELS[status.analysisProgress] ?? status.analysisProgress : '대기 중'
+                const currentStep = getProgressIndex(status.analysisProgress)
+                const progressLabel = getProgressLabel(status.analysisProgress)
+
                 return (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-text-secondary truncate mr-2">{label}</span>
-                    <span className="font-bold text-accent shrink-0">{progressLabel}</span>
+                  <div key={questionSets[idx]?.id ?? idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-text-primary">{label}</span>
+                      <span className="font-bold text-accent">{progressLabel}</span>
+                    </div>
+                    <div
+                      className="flex items-center gap-1"
+                      role="progressbar"
+                      aria-valuenow={currentStep + 1}
+                      aria-valuemin={0}
+                      aria-valuemax={PROGRESS_STEPS.length}
+                      aria-label={`${label} ${progressLabel}`}
+                    >
+                      {PROGRESS_STEPS.map((step, stepIdx) => (
+                        <div key={step.key} className="flex items-center flex-1">
+                          <div
+                            className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                              stepIdx <= currentStep
+                                ? 'bg-accent'
+                                : 'bg-border'
+                            } ${stepIdx === currentStep ? 'animate-pulse' : ''}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
               })}
@@ -127,7 +161,7 @@ const AnalysisStatusFloat = ({
               <div className="flex h-5 w-5 items-center justify-center rounded-full bg-error text-[10px] font-black text-white flex-shrink-0">
                 !
               </div>
-              <p className="text-sm font-bold text-text-primary">일부 분석 실패</p>
+              <p className="text-sm font-bold text-text-primary">일부 피드백 생성 실패</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -170,10 +204,7 @@ export const InterviewAnalysisPage = () => {
     hasQuestionSets,
   )
 
-  const statuses = useMemo(() =>
-    statusQueries.map((q) => q.data?.data ?? null),
-    [statusQueries],
-  )
+  const statuses = statusQueries.map((q) => q.data?.data ?? null)
 
   const retryMutation = useRetryAnalysis()
   const [isRetrying, setIsRetrying] = useState(false)
@@ -183,7 +214,7 @@ export const InterviewAnalysisPage = () => {
     setIsRetrying(true)
     const failedSets = questionSets
       .map((qs, idx) => ({ qs, idx }))
-      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED')
+      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED' || statuses[idx]?.fileStatus === 'FAILED')
 
     await Promise.allSettled(
       failedSets.map(({ qs, idx }) =>
@@ -200,7 +231,7 @@ export const InterviewAnalysisPage = () => {
   )
   const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
   const allCompleted = allTerminal && completedCount > 0
-  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED')
+  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED' || s?.fileStatus === 'FAILED')
   const isAnalyzing = hasQuestionSets && statuses.some(
     (s) => s?.analysisStatus === 'ANALYZING' || s?.analysisStatus === 'PENDING' || s?.analysisStatus === 'PENDING_UPLOAD',
   )

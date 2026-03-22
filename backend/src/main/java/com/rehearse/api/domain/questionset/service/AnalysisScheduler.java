@@ -82,6 +82,33 @@ public class AnalysisScheduler {
 
     @Scheduled(fixedDelay = 300_000)
     @Transactional
+    public void detectPendingUploadZombies() {
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(UPLOAD_TIMEOUT_MINUTES);
+        List<QuestionSet> zombies = questionSetRepository
+                .findByAnalysisStatusAndUpdatedAtBefore(AnalysisStatus.PENDING_UPLOAD, threshold);
+
+        int processed = 0;
+        for (QuestionSet qs : zombies) {
+            try {
+                qs.markFailed("UPLOAD_PENDING_TIMEOUT",
+                        "업로드 대기가 " + UPLOAD_TIMEOUT_MINUTES + "분 내 완료되지 않음");
+                questionSetRepository.saveAndFlush(qs);
+                log.warn("업로드 대기 좀비 감지: questionSetId={}", qs.getId());
+                processed++;
+            } catch (ObjectOptimisticLockingFailureException e) {
+                log.info("업로드 대기 좀비 처리 스킵 (동시 업데이트): questionSetId={}", qs.getId());
+            } catch (Exception e) {
+                log.error("업로드 대기 좀비 처리 실패: questionSetId={}", qs.getId(), e);
+            }
+        }
+
+        if (processed > 0) {
+            log.info("업로드 대기 좀비 처리 완료: {}건", processed);
+        }
+    }
+
+    @Scheduled(fixedDelay = 300_000)
+    @Transactional
     public void detectUploadZombies() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(UPLOAD_TIMEOUT_MINUTES);
         List<FileMetadata> zombies = fileMetadataRepository

@@ -1,15 +1,20 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.rehearse.api.domain.file.entity.FileMetadata;
+import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -23,6 +28,7 @@ public class InternalQuestionSetService {
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
@@ -100,10 +106,38 @@ public class InternalQuestionSetService {
     @Transactional
     public void retryAnalysis(Long questionSetId) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
-        questionSet.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
-        questionSet.updateAnalysisProgress(null);
 
-        log.info("분석 재시도 트리거: questionSetId={}", questionSetId);
+        FileMetadata file = questionSet.getFileMetadata();
+        if (file == null) {
+            throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
+        }
+
+        boolean analysisNeedsRetry = questionSet.getAnalysisStatus() == AnalysisStatus.FAILED;
+        boolean fileNeedsRetry = file.getStatus() == FileStatus.FAILED;
+
+        if (!analysisNeedsRetry && !fileNeedsRetry) {
+            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
+        }
+
+        if (analysisNeedsRetry) {
+            questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
+            questionSet.updateAnalysisProgress(AnalysisProgress.STARTED);
+        }
+
+        String s3Key = file.getS3Key();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    s3Service.retriggerUploadEvent(s3Key);
+                    log.info("S3 재트리거 완료: questionSetId={}, s3Key={}", questionSetId, s3Key);
+                } catch (Exception e) {
+                    log.error("S3 재트리거 실패 (좀비 스케줄러가 감지 예정): questionSetId={}, s3Key={}", questionSetId, s3Key, e);
+                }
+            }
+        });
+
+        log.info("피드백 생성 재시도 트리거: questionSetId={}, analysisRetry={}, fileRetry={}", questionSetId, analysisNeedsRetry, fileNeedsRetry);
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {

@@ -7,4 +7,6 @@ public interface S3Service {
     String generateGetPresignedUrl(String s3Key);
 
     String getBucket();
+
+    void retriggerUploadEvent(String s3Key);
 }
