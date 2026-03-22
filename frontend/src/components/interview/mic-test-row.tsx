@@ -9,9 +9,10 @@ interface MicTestRowProps {
   status: DeviceTestStatus
   micLevel: number
   onMicTest: () => void
+  onReset?: () => void
 }
 
-export const MicTestRow = ({ status, micLevel, onMicTest }: MicTestRowProps) => {
+export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowProps) => {
   return (
     <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-all ${statusBorder(status)}`}>
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-surface">
@@ -60,6 +61,14 @@ export const MicTestRow = ({ status, micLevel, onMicTest }: MicTestRowProps) => 
             className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
           >
             테스트
+          </button>
+        )}
+        {status === 'passed' && onReset && (
+          <button
+            onClick={onReset}
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+          >
+            다시 테스트
           </button>
         )}
       </div>

@@ -11,6 +11,8 @@ interface DeviceTestSectionProps {
   onMicTest: () => void
   onSpeakerTest: () => void
   onConfirmSpeaker: () => void
+  onResetMic?: () => void
+  onResetSpeaker?: () => void
 }
 
 export const DeviceTestSection = ({
@@ -21,12 +23,14 @@ export const DeviceTestSection = ({
   onMicTest,
   onSpeakerTest,
   onConfirmSpeaker,
+  onResetMic,
+  onResetSpeaker,
 }: DeviceTestSectionProps) => {
   return (
     <div className="flex flex-col gap-4">
       <CameraTestRow status={state.camera} videoRef={videoRef} onCameraTest={onCameraTest} />
-      <MicTestRow status={state.microphone} micLevel={micLevel} onMicTest={onMicTest} />
-      <SpeakerTestRow status={state.speaker} onSpeakerTest={onSpeakerTest} onConfirmSpeaker={onConfirmSpeaker} />
+      <MicTestRow status={state.microphone} micLevel={micLevel} onMicTest={onMicTest} onReset={onResetMic} />
+      <SpeakerTestRow status={state.speaker} onSpeakerTest={onSpeakerTest} onConfirmSpeaker={onConfirmSpeaker} onReset={onResetSpeaker} />
     </div>
   )
 }
