@@ -6,14 +6,13 @@ from openai import OpenAI, RateLimitError, AuthenticationError
 
 from config import Config
 from analyzers.json_utils import parse_llm_json
+from analyzers.prompts import KOREAN_INSTRUCTION
 from analyzers.verbal_prompt_factory import build_system_prompt, build_user_prompt
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
 
-_SYSTEM_PROMPT = """중요: 모든 응답은 반드시 한국어로만 작성하세요. 영어로 응답하지 마세요.
-
-당신은 면접 언어 분석 전문가입니다.
+_SYSTEM_PROMPT = f"""{KOREAN_INSTRUCTION}당신은 면접 언어 분석 전문가입니다.
 면접자의 답변 텍스트를 분석하여 언어적 커뮤니케이션을 평가합니다.
 
 평가 기준:
