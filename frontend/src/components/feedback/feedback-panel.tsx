@@ -52,8 +52,6 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
 
-  const hasNonverbal = feedback.expressionLabel !== null
-
   return (
     <div
       ref={cardRef}
@@ -87,41 +85,47 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         <p className="text-sm font-semibold text-text-secondary mb-3">Q. {question.questionText}</p>
       )}
 
-      {/* 3. Feedback comments */}
-      <div className="space-y-2 mb-3">
-        {/* 언어 코멘트 */}
-        {feedback.verbalComment && (
-          <p className="text-xs text-text-secondary leading-relaxed">{feedback.verbalComment}</p>
-        )}
-
-        {/* 비언어 정보 (점수 없이 라벨/코멘트만) */}
-        {hasNonverbal && (
-          <div className="flex flex-wrap gap-4 pt-1">
-            <span className="text-xs font-semibold text-text-primary">비언어</span>
-            {feedback.expressionLabel && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-text-tertiary">표정</span>
-                <span className="text-xs font-semibold text-text-primary">
-                  {feedback.expressionLabel}
-                </span>
-              </div>
+      {/* 3. 기술 분석 섹션 */}
+      {feedback.technical && (
+        <div className="mb-3 rounded-xl bg-surface p-3 space-y-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-accent">기술 분석</span>
+            {feedback.technical.verbalScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                언어 점수 {feedback.technical.verbalScore}
+              </span>
             )}
           </div>
-        )}
+          {feedback.technical.verbalComment && (
+            <p className="text-xs text-text-secondary leading-relaxed">{feedback.technical.verbalComment}</p>
+          )}
+        </div>
+      )}
 
-        {/* 비언어 코멘트 */}
-        {feedback.nonverbalComment && (
-          <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbalComment}</p>
-        )}
-      </div>
-
-      {/* 4. Overall comment */}
-      {feedback.overallComment && (
-        <div className="border-t border-border/50 pt-3 mb-3">
-          <p className="text-xs font-semibold text-text-primary mb-1">종합 코멘트</p>
-          <p className="text-sm font-normal text-text-primary leading-relaxed">
-            {feedback.overallComment}
-          </p>
+      {/* 4. 비언어 분석 섹션 */}
+      {feedback.nonverbal && (
+        <div className="mb-3 rounded-xl bg-surface p-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500">비언어 분석</span>
+            {feedback.nonverbal.eyeContactScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                시선 {feedback.nonverbal.eyeContactScore}
+              </span>
+            )}
+            {feedback.nonverbal.postureScore !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                자세 {feedback.nonverbal.postureScore}
+              </span>
+            )}
+            {feedback.nonverbal.expressionLabel && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                표정 {feedback.nonverbal.expressionLabel}
+              </span>
+            )}
+          </div>
+          {feedback.nonverbal.nonverbalComment && (
+            <p className="text-xs text-text-secondary leading-relaxed">{feedback.nonverbal.nonverbalComment}</p>
+          )}
         </div>
       )}
 
@@ -142,9 +146,9 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
               <p className="text-sm leading-relaxed text-text-primary">
                 {highlightFillers(feedback.transcript)}
               </p>
-              {feedback.fillerWordCount !== null && feedback.fillerWordCount > 0 && (
+              {feedback.technical && feedback.technical.fillerWordCount !== null && feedback.technical.fillerWordCount > 0 && (
                 <p className="mt-2 text-[10px] font-semibold text-accent">
-                  필러워드 {feedback.fillerWordCount}회 감지
+                  필러워드 {feedback.technical.fillerWordCount}회 감지
                 </p>
               )}
             </div>
