@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useInterview } from '@/hooks/use-interviews'
 import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
 import { Logo } from '@/components/ui/logo'
@@ -190,6 +191,7 @@ const AnalysisStatusFloat = ({
 export const InterviewAnalysisPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const interviewId = id ?? ''
 
   const { data: response } = useInterview(interviewId)
@@ -338,7 +340,10 @@ export const InterviewAnalysisPage = () => {
         totalCount={statuses.length}
         isRetrying={isRetrying}
         onRetry={handleRetryAll}
-        onNavigateFeedback={() => navigate(`/interview/${interviewId}/feedback`)}
+        onNavigateFeedback={() => {
+          queryClient.invalidateQueries({ queryKey: ['interviews', interviewId] })
+          navigate(`/interview/${interviewId}/feedback`)
+        }}
         statuses={statuses}
         questionSets={questionSets}
       />
