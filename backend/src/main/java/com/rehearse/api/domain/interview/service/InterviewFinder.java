@@ -17,4 +17,9 @@ public class InterviewFinder {
         return interviewRepository.findByIdWithElementCollections(id)
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
     }
+
+    public Interview findByPublicId(String publicId) {
+        return interviewRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
+    }
 }

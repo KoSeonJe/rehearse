@@ -17,4 +17,6 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     Optional<Interview> findByIdWithElementCollections(@Param("id") Long id);
 
     List<Interview> findByStatus(InterviewStatus status);
+
+    Optional<Interview> findByPublicId(String publicId);
 }
