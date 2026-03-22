@@ -116,6 +116,15 @@ export const useDeviceTest = () => {
     updateStatus('speaker', 'passed')
   }, [updateStatus])
 
+  const resetMicTest = useCallback(() => {
+    stopMicStream()
+    updateStatus('microphone', 'idle')
+  }, [stopMicStream, updateStatus])
+
+  const resetSpeakerTest = useCallback(() => {
+    updateStatus('speaker', 'idle')
+  }, [updateStatus])
+
   const allPassed = state.camera === 'passed' && state.microphone === 'passed' && state.speaker === 'passed'
 
   useEffect(() => {
@@ -134,5 +143,7 @@ export const useDeviceTest = () => {
     startMicTest,
     startSpeakerTest,
     confirmSpeaker,
+    resetMicTest,
+    resetSpeakerTest,
   }
 }

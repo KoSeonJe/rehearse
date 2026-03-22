@@ -28,6 +28,8 @@ export const InterviewReadyPage = () => {
     startMicTest,
     startSpeakerTest,
     confirmSpeaker,
+    resetMicTest,
+    resetSpeakerTest,
   } = useDeviceTest()
 
   const interview = response?.data
@@ -201,6 +203,8 @@ export const InterviewReadyPage = () => {
               onMicTest={startMicTest}
               onSpeakerTest={startSpeakerTest}
               onConfirmSpeaker={confirmSpeaker}
+              onResetMic={resetMicTest}
+              onResetSpeaker={resetSpeakerTest}
             />
           </section>
         )}
