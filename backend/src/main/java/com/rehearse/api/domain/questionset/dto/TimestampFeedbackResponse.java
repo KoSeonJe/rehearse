@@ -17,18 +17,43 @@ public class TimestampFeedbackResponse {
     private final long startMs;
     private final long endMs;
     private final String transcript;
-    private final Integer verbalScore;
-    private final String verbalComment;
-    private final Integer fillerWordCount;
-    private final Integer eyeContactScore;
-    private final Integer postureScore;
-    private final String expressionLabel;
-    private final String nonverbalComment;
-    private final String overallComment;
+    private final TechnicalFeedback technical;
+    private final NonverbalFeedback nonverbal;
     private final boolean isAnalyzed;
+
+    @Getter
+    @Builder
+    public static class TechnicalFeedback {
+        private final Integer verbalScore;
+        private final String verbalComment;
+        private final Integer fillerWordCount;
+    }
+
+    @Getter
+    @Builder
+    public static class NonverbalFeedback {
+        private final Integer eyeContactScore;
+        private final Integer postureScore;
+        private final String expressionLabel;
+        private final String nonverbalComment;
+    }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
         Question question = feedback.getQuestion();
+
+        TechnicalFeedback technical = TechnicalFeedback.builder()
+                .verbalScore(feedback.getVerbalScore())
+                .verbalComment(feedback.getVerbalComment())
+                .fillerWordCount(feedback.getFillerWordCount())
+                .build();
+
+        NonverbalFeedback nonverbal = NonverbalFeedback.builder()
+                .eyeContactScore(feedback.getEyeContactScore())
+                .postureScore(feedback.getPostureScore())
+                .expressionLabel(feedback.getExpressionLabel())
+                .nonverbalComment(feedback.getNonverbalComment())
+                .build();
+
         return TimestampFeedbackResponse.builder()
                 .id(feedback.getId())
                 .questionId(question != null ? question.getId() : null)
@@ -38,14 +63,8 @@ public class TimestampFeedbackResponse {
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
-                .verbalScore(feedback.getVerbalScore())
-                .verbalComment(feedback.getVerbalComment())
-                .fillerWordCount(feedback.getFillerWordCount())
-                .eyeContactScore(feedback.getEyeContactScore())
-                .postureScore(feedback.getPostureScore())
-                .expressionLabel(feedback.getExpressionLabel())
-                .nonverbalComment(feedback.getNonverbalComment())
-                .overallComment(feedback.getOverallComment())
+                .technical(technical)
+                .nonverbal(nonverbal)
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
     }
