@@ -32,7 +32,7 @@ const CLOSING_PHRASES = [
 const pickRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)]
 
 interface UseAnswerFlowParams {
-  interview: { id: number; status: string; questionSets?: QuestionSetData[] } | undefined
+  interview: { id: number; publicId: string; status: string; questionSets?: QuestionSetData[] } | undefined
   mediaStream: { stream: MediaStream | null }
   recorder: {
     isRecording: boolean

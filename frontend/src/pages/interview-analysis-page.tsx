@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { useInterview } from '@/hooks/use-interviews'
+import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
@@ -189,12 +189,12 @@ const AnalysisStatusFloat = ({
 }
 
 export const InterviewAnalysisPage = () => {
-  const { id } = useParams<{ id: string }>()
+  const { publicId } = useParams<{ publicId: string }>()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const interviewId = id ?? ''
+  const interviewPublicId = publicId ?? ''
 
-  const { data: response } = useInterview(interviewId)
+  const { data: response } = useInterviewByPublicId(interviewPublicId)
   const interview = response?.data
   const questionSets = useMemo(() => interview?.questionSets ?? [], [interview?.questionSets])
 
@@ -203,7 +203,7 @@ export const InterviewAnalysisPage = () => {
   const statusQueries = useAllQuestionSetStatuses(
     interview?.id ?? 0,
     questionSets,
-    hasQuestionSets,
+    hasQuestionSets && !!interview,
   )
 
   const statuses = statusQueries.map((q) => q.data?.data ?? null)
@@ -342,7 +342,7 @@ export const InterviewAnalysisPage = () => {
         onRetry={handleRetryAll}
         onNavigateFeedback={async () => {
           await queryClient.invalidateQueries({ queryKey: ['interviews'] })
-          navigate(`/interview/${interviewId}/feedback`)
+          navigate(`/interview/${interviewPublicId}/feedback`)
         }}
         statuses={statuses}
         questionSets={questionSets}

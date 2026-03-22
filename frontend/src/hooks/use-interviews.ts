@@ -81,6 +81,22 @@ export const useInterview = (id: string) => {
   })
 }
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+// 분석/피드백 페이지 전용 — 질문 생성 완료 후 사용하므로 폴링 불필요
+export const useInterviewByPublicId = (publicId: string) => {
+  return useQuery({
+    queryKey: ['interviews', 'public', publicId],
+    queryFn: () =>
+      apiClient.get<ApiResponse<InterviewSession>>(
+        `/api/v1/interviews/by-public-id/${publicId}`,
+      ),
+    staleTime: Infinity,
+    enabled: !!publicId && UUID_REGEX.test(publicId),
+  })
+}
+
 export const useUpdateInterviewStatus = () => {
   const queryClient = useQueryClient()
 

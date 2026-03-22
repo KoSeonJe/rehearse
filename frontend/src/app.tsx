@@ -13,9 +13,9 @@ export const App = () => {
       <Route path="/interview/setup" element={<InterviewSetupPage />} />
       <Route path="/interview/:id/ready" element={<InterviewReadyPage />} />
       <Route path="/interview/:id/conduct" element={<InterviewPage />} />
-      <Route path="/interview/:id/analysis" element={<InterviewAnalysisPage />} />
-      <Route path="/interview/:id/feedback" element={<InterviewFeedbackPage />} />
-      <Route path="/interview/:id/review" element={<InterviewFeedbackPage />} />
+      <Route path="/interview/:publicId/analysis" element={<InterviewAnalysisPage />} />
+      <Route path="/interview/:publicId/feedback" element={<InterviewFeedbackPage />} />
+      <Route path="/interview/:publicId/review" element={<InterviewFeedbackPage />} />
     </Routes>
   )
 }
