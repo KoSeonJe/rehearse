@@ -1,7 +1,7 @@
 import { useCallback, useRef, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { useInterview } from '@/hooks/use-interviews'
+import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video-player'
@@ -225,7 +225,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 export const InterviewFeedbackPage = () => {
   const { publicId } = useParams<{ publicId: string }>()
   const navigate = useNavigate()
-  const { data: response, isLoading } = useInterview(publicId ?? '')
+  const { data: response, isLoading } = useInterviewByPublicId(publicId ?? '')
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 

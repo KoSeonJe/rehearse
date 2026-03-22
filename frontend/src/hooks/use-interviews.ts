@@ -62,6 +62,9 @@ export const useCreateInterview = () => {
 
 const POLL_STATUSES: QuestionGenerationStatus[] = ['PENDING', 'GENERATING']
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
 export const useInterview = (id: string) => {
   return useQuery({
     queryKey: ['interviews', id],
@@ -78,6 +81,18 @@ export const useInterview = (id: string) => {
       }
       return false
     },
+  })
+}
+
+export const useInterviewByPublicId = (publicId: string) => {
+  return useQuery({
+    queryKey: ['interviews', 'public', publicId],
+    queryFn: () =>
+      apiClient.get<ApiResponse<InterviewSession>>(
+        `/api/v1/interviews/by-public-id/${publicId}`,
+      ),
+    staleTime: Infinity,
+    enabled: !!publicId && UUID_REGEX.test(publicId),
   })
 }
 
