@@ -216,7 +216,7 @@ public class InterviewService {
         log.info("미응답 질문세트 스킵 처리: interviewId={}", id);
     }
 
-    private static final int MAX_FOLLOWUP_ROUNDS = 3;
+    private static final int MAX_FOLLOWUP_ROUNDS = 2;
 
     private QuestionType determineFollowUpType(QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
