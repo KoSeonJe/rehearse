@@ -129,6 +129,19 @@ export interface QuestionsWithAnswersResponse {
 
 // 피드백 뷰어 타입 (Sprint 0 Task 10)
 
+export interface TechnicalFeedback {
+  verbalScore: number
+  verbalComment: string
+  fillerWordCount: number
+}
+
+export interface NonverbalFeedback {
+  eyeContactScore: number
+  postureScore: number
+  expressionLabel: string
+  nonverbalComment: string
+}
+
 export interface TimestampFeedback {
   id: number
   questionId: number | null
@@ -136,14 +149,8 @@ export interface TimestampFeedback {
   startMs: number
   endMs: number
   transcript: string | null
-  verbalScore: number | null
-  verbalComment: string | null
-  fillerWordCount: number | null
-  eyeContactScore: number | null
-  postureScore: number | null
-  expressionLabel: string | null
-  nonverbalComment: string | null
-  overallComment: string | null
+  technical: TechnicalFeedback | null
+  nonverbal: NonverbalFeedback | null
   isAnalyzed: boolean
 }
 
