@@ -10,7 +10,7 @@ import type {
   UploadState,
 } from '@/types/interview'
 
-export const MAX_FOLLOWUP_ROUNDS = 3
+export const MAX_FOLLOWUP_ROUNDS = 2
 
 export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
 
