@@ -340,8 +340,8 @@ export const InterviewAnalysisPage = () => {
         totalCount={statuses.length}
         isRetrying={isRetrying}
         onRetry={handleRetryAll}
-        onNavigateFeedback={() => {
-          queryClient.invalidateQueries({ queryKey: ['interviews', interviewId] })
+        onNavigateFeedback={async () => {
+          await queryClient.invalidateQueries({ queryKey: ['interviews'] })
           navigate(`/interview/${interviewId}/feedback`)
         }}
         statuses={statuses}
