@@ -375,3 +375,199 @@ INSERT INTO question_pool (cache_key, content, category, question_order, evaluat
  'Master-Slave 구조, 읽기/쓰기 분리, 동기/비동기/반동기 비교',
  '레플리케이션은 DB를 복제하여 Master-Slave(Source-Replica) 구조를 만드는 것입니다. Master는 쓰기 처리, Slave는 읽기 처리를 분담하여 부하를 분산합니다. 동기식 레플리케이션은 데이터 일관성이 높지만 성능이 낮고, 비동기식은 빠르지만 지연(Replication Lag)이 발생할 수 있습니다. 반동기식(Semi-Sync)은 최소 하나의 Slave가 수신을 확인한 후 커밋하는 절충 방식입니다.',
  'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+-- ============================================================
+-- Vol.2 자료구조 (15문항 추가)
+-- ============================================================
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'HashSet의 내부 동작 원리를 설명해주세요.', '자료구조', 16, 'HashMap 기반 구현, hashCode/equals 오버라이드 필요성, 중복 제거 원리', 'HashSet은 내부적으로 HashMap을 사용하여 구현됩니다. 요소를 추가하면 해당 요소를 HashMap의 key로, 더미 객체(PRESENT)를 value로 저장합니다. 따라서 중복을 허용하지 않으며, 순서를 보장하지 않습니다. 요소의 동등성 판단은 hashCode()와 equals()로 이루어지므로, 커스텀 객체를 HashSet에 넣을 때는 두 메서드를 반드시 오버라이드해야 합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Comparable과 Comparator의 차이점은 무엇인가요?', '자료구조', 17, 'compareTo vs compare, 자연 정렬 vs 외부 정렬, 람다 활용', 'Comparable은 클래스 자체에 자연 정렬 기준을 정의하는 인터페이스로, compareTo() 메서드를 구현합니다. Comparator는 외부에서 별도의 정렬 기준을 정의하는 인터페이스로, compare() 메서드를 구현합니다. Comparable은 하나의 정렬 기준만 가능하지만, Comparator는 여러 정렬 기준을 유연하게 만들 수 있어 람다식과 함께 자주 사용됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Iterator와 for-each의 차이점은 무엇인가요?', '자료구조', 18, 'Syntactic Sugar 관계, ConcurrentModificationException, 순회 중 삭제', 'for-each는 내부적으로 Iterator를 사용하는 Syntactic Sugar입니다. Iterator는 hasNext(), next(), remove() 메서드를 제공하며, 순회 중 안전하게 요소를 제거할 수 있습니다. 반면 for-each 루프 내에서 컬렉션을 직접 수정하면 ConcurrentModificationException이 발생합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '이진 탐색(Binary Search)의 동작 원리와 전제 조건은?', '자료구조', 19, 'O(log n), 정렬 전제 조건, 랜덤 접근 필요, Java API', '이진 탐색은 정렬된 배열에서 중간값과 타겟을 비교하여 탐색 범위를 절반씩 줄이는 알고리즘입니다. 시간 복잡도는 O(log n)입니다. 전제 조건으로 데이터가 반드시 정렬되어 있어야 하며, 인덱스 기반 랜덤 접근이 가능해야 합니다. Java에서는 Arrays.binarySearch()와 Collections.binarySearch()로 제공됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'TreeMap과 HashMap의 차이점을 설명해주세요.', '자료구조', 20, 'Red-Black Tree vs 해시 테이블, 정렬 보장, NavigableMap, 범위 검색', 'HashMap은 해시 테이블 기반으로 삽입/조회가 평균 O(1)이지만 순서를 보장하지 않습니다. TreeMap은 Red-Black Tree 기반으로 key가 자동 정렬되며, 삽입/조회가 O(log n)입니다. TreeMap은 범위 검색(subMap, headMap, tailMap)이 가능합니다. 순서가 필요하면 TreeMap, 성능이 우선이면 HashMap을 사용합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'LinkedHashMap은 어떤 경우에 사용하나요?', '자료구조', 21, '삽입 순서/접근 순서 유지, LRU 캐시 구현, removeEldestEntry', 'LinkedHashMap은 HashMap에 이중 연결 리스트를 추가하여 삽입 순서(또는 접근 순서)를 유지하는 자료구조입니다. accessOrder 옵션을 true로 설정하면 LRU 캐시 구현에 활용할 수 있습니다. removeEldestEntry()를 오버라이드하면 최대 크기를 제한하는 간단한 캐시를 만들 수 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '그래프 탐색에서 BFS와 DFS의 차이점을 설명해주세요.', '자료구조', 22, 'Queue vs Stack/재귀, 최단 경로 vs 경로 존재, 공간 복잡도', 'BFS(너비 우선 탐색)는 Queue를 사용하여 시작 노드에서 가까운 노드부터 탐색하며, 최단 경로 탐색에 유리합니다. DFS(깊이 우선 탐색)는 Stack 또는 재귀를 사용하여 한 경로를 끝까지 탐색한 후 백트래킹합니다. 경로 존재 여부는 DFS, 최단 경로는 BFS가 적합합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '다익스트라(Dijkstra) 알고리즘의 원리와 한계를 설명해주세요.', '자료구조', 23, '그리디 + 우선순위 큐, 시간 복잡도, 음의 가중치 한계', '다익스트라는 시작 노드에서 모든 노드까지의 최단 경로를 구하는 그리디 알고리즘입니다. 우선순위 큐(Min Heap)를 사용하며 시간 복잡도는 O((V+E) log V)입니다. 음의 가중치 간선이 있으면 정상 동작하지 않으며, 이 경우 벨만-포드 알고리즘을 사용해야 합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Union-Find(Disjoint Set) 자료구조에 대해 설명해주세요.', '자료구조', 24, 'Find/Union 연산, 경로 압축, 랭크 기반 합치기, 크루스칼 활용', 'Union-Find는 서로소 집합을 관리하는 자료구조로, 경로 압축(Path Compression)과 랭크 기반 합치기(Union by Rank)를 적용하면 연산당 거의 O(1)에 가깝습니다. 크루스칼 알고리즘에서 사이클 검출, 네트워크 연결 여부 판단 등에 활용됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '동적 프로그래밍(DP)의 개념과 적용 조건을 설명해주세요.', '자료구조', 25, '메모이제이션, 최적 부분 구조, 중복 부분 문제, Top-Down vs Bottom-Up', '동적 프로그래밍은 큰 문제를 작은 하위 문제로 나누어 풀고, 그 결과를 저장(메모이제이션)하여 중복 계산을 방지하는 기법입니다. 적용 조건은 최적 부분 구조와 중복 부분 문제입니다. Top-Down(재귀+메모이제이션)과 Bottom-Up(반복문+테이블) 방식이 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Segment Tree란 무엇이며 언제 사용하나요?', '자료구조', 26, '구간 질의 O(log n), 업데이트+질의 동시 필요, Lazy Propagation', 'Segment Tree는 배열의 구간 합, 구간 최솟값/최댓값 등의 구간 질의를 O(log n)에 처리할 수 있는 트리 자료구조입니다. 배열의 값이 빈번하게 업데이트되면서 동시에 구간 질의가 필요한 경우에 적합합니다. Lazy Propagation을 적용하면 구간 업데이트도 O(log n)에 가능합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '해시 함수의 좋은 조건은 무엇인가요?', '자료구조', 27, '결정적, 균일 분포, 눈사태 효과, Java String hashCode 31 이유', '좋은 해시 함수는 결정적(Deterministic)이고, 균일 분포를 보이며, 계산이 빠르고, 눈사태 효과(Avalanche Effect)가 있어야 합니다. Java의 String hashCode()는 31을 승수로 사용하는데, 홀수 소수여서 비트 분포가 고르고 컴파일러가 시프트 연산으로 최적화할 수 있기 때문입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'ConcurrentHashMap의 동작 원리를 설명해주세요.', '자료구조', 28, 'Java 7 Segment Lock vs Java 8 CAS+synchronized, 읽기 무락', 'ConcurrentHashMap은 멀티스레드 환경에서 안전하게 사용할 수 있는 HashMap입니다. Java 8부터는 각 버킷의 첫 번째 노드에 대해 synchronized를 사용하고 CAS 연산을 활용하여 세밀한 락을 제공합니다. 읽기 연산은 락이 필요 없고, 쓰기 연산만 해당 버킷에 락을 걸어 높은 동시 처리 성능을 보장합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '그리디(Greedy) 알고리즘과 DP의 차이점은?', '자료구조', 29, '탐욕적 선택 속성, 최적해 보장 조건, 거스름돈 vs 배낭 문제 예시', '그리디는 매 순간 최적의 선택을 하여 전체 최적해를 구하는 방식입니다. DP는 모든 경우를 고려하여 최적해를 보장합니다. 그리디는 탐욕적 선택 속성이 성립할 때만 사용 가능합니다. 거스름돈 문제는 그리디로 풀 수 있지만, 배낭 문제는 DP가 필요합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Bloom Filter란 무엇인가요?', '자료구조', 30, '확률적 자료구조, False Positive, 공간 효율, Redis/크롤러 활용', 'Bloom Filter는 원소가 집합에 속하는지 확률적으로 판별하는 자료구조입니다. "없다"는 100% 정확하지만 "있다"는 거짓 양성(False Positive)이 발생할 수 있습니다. 공간 효율이 매우 좋아 Redis의 중복 체크, 웹 크롤러의 URL 중복 방문 방지 등에 활용됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+-- ============================================================
+-- Vol.2 운영체제 (15문항 추가)
+-- ============================================================
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'PCB(Process Control Block)란 무엇인가요?', '운영체제', 16, 'PCB 구성 요소, Context Switching과의 관계', 'PCB는 운영체제가 각 프로세스를 관리하기 위해 유지하는 자료구조입니다. PID, 프로세스 상태, PC, CPU 레지스터 값, 메모리 관리 정보, 스케줄링 정보 등을 포함합니다. Context Switching 시 현재 프로세스의 PCB를 저장하고 다음 프로세스의 PCB를 복원합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '프로세스의 생명주기(상태 변화)를 설명해주세요.', '운영체제', 17, 'New→Ready→Running→Waiting→Terminated 전이, Preemption', '프로세스는 New → Ready → Running → Waiting → Terminated 상태를 거칩니다. Running에서 Time Quantum 만료 시 Ready로 돌아가고(Preemption), I/O 요청 시 Waiting으로 전환됩니다. I/O 완료 시 Waiting에서 Ready로 이동합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '스핀락(Spinlock)이란 무엇이며 언제 사용하나요?', '운영체제', 18, 'Busy Waiting, 멀티코어 조건, 뮤텍스와 비교', '스핀락은 락을 획득할 때까지 반복적으로 확인(Busy Waiting)하는 동기화 기법입니다. Context Switching이 발생하지 않아 락 보유 시간이 매우 짧은 경우 오버헤드가 적습니다. 멀티코어 환경에서 효과적이며, 싱글코어에서는 CPU를 낭비하므로 부적합합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'fork()와 exec()의 차이점을 설명해주세요.', '운영체제', 19, '프로세스 복제 vs 프로그램 교체, Copy-on-Write, fork+exec 패턴', 'fork()는 현재 프로세스를 복제하여 자식 프로세스를 생성합니다. Copy-on-Write로 실제 쓰기가 발생할 때까지 메모리 페이지를 공유합니다. exec()은 현재 프로세스의 메모리 공간을 새로운 프로그램으로 교체합니다. 보통 fork()로 자식을 만든 뒤 exec()으로 다른 프로그램을 실행하는 패턴을 사용합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Copy-on-Write(COW)란 무엇인가요?', '운영체제', 20, 'fork 시 메모리 공유, 쓰기 시점 복사, exec 시 불필요한 복사 방지', 'Copy-on-Write는 fork() 시 부모와 자식 프로세스가 동일한 물리 메모리 페이지를 공유하다가, 어느 한쪽이 수정을 시도할 때 해당 페이지만 복사하는 기법입니다. fork() 후 바로 exec()을 호출하는 경우 불필요한 복사를 완전히 방지합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '인터럽트(Interrupt)의 종류와 처리 과정을 설명해주세요.', '운영체제', 21, '하드웨어/소프트웨어 인터럽트, ISR, IVT, 우선순위', '인터럽트는 하드웨어 인터럽트(타이머, I/O 장치)와 소프트웨어 인터럽트(시스템 콜, 예외)로 나뉩니다. 처리 과정: 인터럽트 발생 → 현재 상태 저장 → IVT에서 ISR 주소 확인 → ISR 실행 → 상태 복원. 인터럽트에는 우선순위가 있어 선점이 가능합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'TLB(Translation Lookaside Buffer)란 무엇인가요?', '운영체제', 22, '페이지 테이블 캐시, TLB Hit/Miss, Context Switching 시 Flush, ASID', 'TLB는 가상 주소에서 물리 주소로의 변환 결과를 캐싱하는 하드웨어 캐시입니다. TLB Hit 시 메모리 접근 없이 바로 물리 주소를 얻을 수 있어 성능이 크게 향상됩니다. Context Switching 시 TLB가 Flush되며, ASID를 사용하면 이를 완화할 수 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '메모리 단편화(Fragmentation)의 종류와 해결 방법은?', '운영체제', 23, '내부/외부 단편화 구분, 압축, 페이징, 버디 시스템', '내부 단편화는 할당된 블록 내부의 미사용 공간, 외부 단편화는 흩어진 공간으로 연속 할당 불가한 상태입니다. 해결 방법으로 압축(Compaction), 페이징(고정 크기 분할), 버디 시스템(Buddy System) 등이 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '파일 시스템의 inode란 무엇인가요?', '운영체제', 24, 'inode 메타데이터, 파일명은 디렉토리 엔트리, 하드링크 vs 심볼릭 링크', 'inode는 Unix/Linux 파일 시스템에서 파일의 메타데이터를 저장하는 자료구조입니다. 파일 이름은 포함하지 않으며 디렉토리 엔트리에서 매핑됩니다. 하드 링크는 같은 inode를 가리키고, 심볼릭 링크는 경로 문자열을 저장하는 별도의 inode입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '스와핑(Swapping)이란 무엇인가요?', '운영체제', 25, 'Swap Out/In, Demand Paging, swappiness, Thrashing 연관', '스와핑은 메모리가 부족할 때 프로세스를 디스크의 Swap 영역으로 내보내고 필요할 때 다시 불러오는 기법입니다. 빈번하면 Thrashing으로 이어집니다. 리눅스에서는 swappiness 파라미터로 스왑 빈도를 조절할 수 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '리눅스의 프로세스 vs 스레드 구현 방식을 설명해주세요.', '운영체제', 26, 'task_struct, clone() 플래그, LWP, 커널 스케줄링 동일', '리눅스에서는 프로세스와 스레드를 모두 task_struct로 관리합니다. clone() 시스템 콜의 플래그로 자원 공유 범위를 결정합니다. 스레드는 경량 프로세스(LWP)로 취급되며, 커널 스케줄러는 프로세스와 스레드를 동일하게 스케줄링합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '교착 상태 해결 전략 4가지를 설명해주세요.', '운영체제', 27, '예방/회피/탐지/무시, 은행원 알고리즘, Ostrich Algorithm', '예방: 발생 조건 하나를 원천 차단. 회피: 은행원 알고리즘으로 안전 상태 유지. 탐지: 자원 할당 그래프로 데드락 탐지 후 해결. 무시: 발생 확률이 낮으면 무시(Ostrich Algorithm). 대부분의 현대 OS가 무시 방식을 사용합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '실시간 운영체제(RTOS)란 무엇인가요?', '운영체제', 28, 'Hard/Soft Real-Time, 우선순위 역전, 결정적 스케줄링', 'RTOS는 정해진 시간 내에 작업을 완료하는 것을 보장하는 운영체제입니다. Hard Real-Time은 데드라인 초과가 시스템 실패이고, Soft Real-Time은 성능 저하로 이어집니다. 우선순위 역전 방지, 결정적 스케줄링, 낮은 인터럽트 지연시간이 핵심입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'DMA(Direct Memory Access)란 무엇인가요?', '운영체제', 29, 'CPU 개입 없는 데이터 전송, Programmed I/O 비교, 인터럽트 완료 알림', 'DMA는 CPU의 개입 없이 I/O 장치가 메인 메모리에 직접 데이터를 전송하는 기술입니다. 전송이 완료되면 DMA 컨트롤러가 인터럽트로 CPU에 알립니다. 디스크 I/O, 네트워크 통신 등에서 필수적입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '가상 메모리에서 Demand Paging이란 무엇인가요?', '운영체제', 30, '필요 시 적재, Page Fault 처리, 메모리 절약', 'Demand Paging은 프로세스 시작 시 모든 페이지를 적재하지 않고, 실제로 접근할 때 해당 페이지만 메모리에 로드하는 기법입니다. 메모리 사용량을 줄이고 프로세스 시작 시간을 단축합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+-- ============================================================
+-- Vol.2 네트워크 (15문항 추가)
+-- ============================================================
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'IP 주소와 서브넷 마스크의 역할을 설명해주세요.', '네트워크', 16, 'IPv4/IPv6, 네트워크/호스트 부분, 서브넷팅, CIDR 표기', 'IP 주소는 네트워크에서 장치를 식별하는 논리적 주소입니다. 서브넷 마스크는 IP 주소에서 네트워크 부분과 호스트 부분을 구분합니다. 서브넷팅을 통해 네트워크를 효율적으로 분할하고 브로드캐스트 도메인을 줄여 트래픽을 관리합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'ARP(Address Resolution Protocol)의 동작 과정을 설명해주세요.', '네트워크', 17, 'IP→MAC 변환, 브로드캐스트/유니캐스트, ARP 캐시, L2 범위', 'ARP는 IP 주소를 MAC 주소로 변환하는 프로토콜입니다. 브로드캐스트로 ARP Request를 전송하고 해당 호스트가 유니캐스트로 응답합니다. 결과는 ARP 캐시에 저장됩니다. 같은 네트워크(L2) 내에서만 동작합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'NAT(Network Address Translation)란 무엇인가요?', '네트워크', 18, '사설/공인 IP 변환, Static/Dynamic/PAT, NAT 트래버설 문제', 'NAT는 사설 IP를 공인 IP로 변환하는 기술입니다. PAT/NAPT가 가장 일반적이며, IPv4 주소 부족 문제를 완화합니다. P2P 통신이나 WebRTC에서 NAT 트래버설 문제가 발생합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'HTTP 메서드의 멱등성(Idempotency)이란 무엇인가요?', '네트워크', 19, 'GET/PUT/DELETE 멱등, POST 비멱등, 네트워크 재시도 안전성', '멱등성은 같은 요청을 여러 번 보내도 결과가 동일한 성질입니다. GET, PUT, DELETE는 멱등적이고, POST는 비멱등적입니다. 멱등성은 네트워크 장애 시 안전한 재시도를 가능하게 합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'HTTP 상태 코드의 주요 분류를 설명해주세요.', '네트워크', 20, '1xx~5xx 분류, 주요 코드', '1xx(정보), 2xx(성공: 200/201/204), 3xx(리다이렉션: 301/302/304), 4xx(클라이언트 오류: 400/401/403/404/429), 5xx(서버 오류: 500/502/503).', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '프록시 서버(Forward Proxy vs Reverse Proxy)의 차이점은?', '네트워크', 21, '위치, 역할, Nginx 활용', 'Forward Proxy는 클라이언트 앞에서 접근 제어/캐싱/익명성을 제공합니다. Reverse Proxy는 서버 앞에서 로드 밸런싱/SSL 종료/캐싱을 담당합니다. Nginx는 대표적인 Reverse Proxy입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'TCP Keep-Alive와 HTTP Keep-Alive의 차이점은?', '네트워크', 22, 'TCP 연결 유효성 확인 vs HTTP 연결 재사용', 'TCP Keep-Alive는 유휴 연결의 유효성을 확인하는 프로브 패킷입니다. HTTP Keep-Alive는 하나의 TCP 연결에서 여러 HTTP 요청/응답을 처리하는 기능입니다. HTTP/1.1에서 기본 활성화됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'gRPC와 REST의 차이점을 설명해주세요.', '네트워크', 23, 'Protocol Buffers vs JSON, HTTP/2 기반, 양방향 스트리밍', 'REST는 JSON 기반으로 가독성이 좋고 범용적입니다. gRPC는 Protocol Buffers와 HTTP/2 기반으로 빠르고 양방향 스트리밍을 지원합니다. 내부 통신에는 gRPC, 외부 API에는 REST가 주로 사용됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'SSL/TLS Handshake 과정을 설명해주세요.', '네트워크', 24, 'Client/Server Hello, 인증서 검증, 키 교환, 대칭키 생성', 'Client Hello → Server Hello(인증서 전송) → 인증서 CA 검증 → 키 교환(Pre-Master Secret 또는 ECDHE) → 대칭키 생성 → 이후 대칭키로 암호화 통신. 비대칭키는 키 교환에만 사용합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '소켓(Socket) 통신의 동작 과정을 설명해주세요.', '네트워크', 25, 'socket→bind→listen→accept/connect→read/write→close', '서버: socket() → bind() → listen() → accept(). 클라이언트: socket() → connect(). 연결 후 read()/write()로 통신하고 close()로 종료합니다. accept() 시 새로운 소켓을 생성하여 다중 클라이언트를 처리합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'HTTP 캐시의 동작 원리(ETag, Cache-Control)를 설명해주세요.', '네트워크', 26, 'Cache-Control 디렉티브, ETag/If-None-Match, 304 Not Modified', 'Cache-Control로 캐시 정책을 제어합니다(max-age, no-cache, no-store). ETag는 리소스 고유 식별자로, If-None-Match 헤더로 재검증하여 변경 없으면 304 Not Modified를 반환합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'SYN Flood 공격이란 무엇이며 어떻게 방어하나요?', '네트워크', 27, 'TCP Handshake 악용, Half-Open 자원 고갈, SYN Cookie', 'SYN Flood는 대량의 SYN 패킷으로 서버의 Half-Open 연결 자원을 고갈시키는 DDoS 공격입니다. SYN Cookie, Rate Limiting, 방화벽 필터링으로 방어합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'OAuth 2.0의 동작 흐름을 설명해주세요.', '네트워크', 28, 'Authorization Code Grant, Code→Token 교환', 'Authorization Code Grant: 사용자를 인가 서버로 리다이렉트 → 인증 후 Code 발급 → 서버 간 통신으로 Access Token 교환 → Token으로 리소스 서버 접근. Code를 중간에 두어 토큰이 브라우저에 노출되지 않습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '네트워크에서 TTL(Time To Live)이란 무엇인가요?', '네트워크', 29, 'IP 패킷 루프 방지, 라우터 통과 시 감소, traceroute', 'TTL은 패킷의 무한 순환을 방지합니다. 라우터 통과 시 1씩 감소하며 0이 되면 폐기됩니다. traceroute는 TTL을 점진적으로 증가시켜 경유 라우터를 파악합니다. DNS에서의 TTL은 캐시 유효 시간입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'HTTP/3와 QUIC 프로토콜에 대해 설명해주세요.', '네트워크', 30, 'UDP 기반, HOL Blocking 해결, TLS 1.3 내장, 0-RTT', 'HTTP/3는 UDP 기반의 QUIC 위에서 동작합니다. TCP의 HOL Blocking을 해결하고, TLS 1.3을 내장하여 0-RTT 재연결이 가능하며, 연결 마이그레이션으로 네트워크 변경 시에도 연결이 유지됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+-- ============================================================
+-- Vol.2 데이터베이스 (15문항 추가)
+-- ============================================================
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '클러스터드 인덱스와 논클러스터드 인덱스의 차이점은?', '데이터베이스', 16, '물리 정렬 여부, 테이블당 1개, PK=클러스터드(InnoDB)', '클러스터드 인덱스는 데이터가 인덱스 순서대로 물리적으로 정렬됩니다. 테이블당 하나만 가능하며 MySQL InnoDB에서는 PK가 클러스터드 인덱스입니다. 논클러스터드 인덱스는 여러 개 생성 가능하지만 추가 I/O가 발생합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '커버링 인덱스(Covering Index)란 무엇인가요?', '데이터베이스', 17, 'Using index, 테이블 접근 불필요, 디스크 I/O 감소', '커버링 인덱스는 쿼리에 필요한 모든 컬럼이 인덱스에 포함되어 테이블 접근 없이 인덱스만으로 처리하는 것입니다. EXPLAIN에서 Using index로 표시됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '복합 인덱스에서 컬럼 순서가 중요한 이유는?', '데이터베이스', 18, '최좌선 접두사 규칙, 카디널리티 고려, 범위 조건', '복합 인덱스(A, B, C)에서 A 단독, A+B, A+B+C 조건에는 인덱스가 사용되지만 B 단독이나 B+C에는 사용되지 않습니다(최좌선 접두사 규칙). 카디널리티가 높은 컬럼을 앞에 배치해야 합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '낙관적 락 vs 비관적 락의 차이점은?', '데이터베이스', 19, 'SELECT FOR UPDATE vs @Version, 충돌 빈도에 따른 선택', '비관적 락은 접근 시 즉시 락을 걸고(SELECT FOR UPDATE), 낙관적 락은 커밋 시 version으로 충돌을 감지합니다. 충돌이 빈번하면 비관적, 적으면 낙관적 락이 적합합니다. JPA에서는 @Version으로 구현합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'WAL(Write-Ahead Logging)이란 무엇인가요?', '데이터베이스', 20, '변경 전 로그 기록, Redo/Undo, 순차 쓰기 성능, Durability', 'WAL은 데이터 변경 전에 로그를 먼저 기록하여 장애 시 Redo/Undo로 복구하는 기법입니다. 순차 쓰기여서 빠르고 ACID Durability를 보장합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '데이터베이스의 뷰(View)란 무엇이며 왜 사용하나요?', '데이터베이스', 21, '가상 테이블, 쿼리 단순화, 보안, Materialized View', '뷰는 SELECT 결과를 테이블처럼 사용하는 가상 테이블입니다. 복잡한 쿼리를 단순화하고 보안을 강화합니다. Materialized View는 결과를 물리적으로 저장하여 읽기 성능을 향상시킵니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '데이터베이스에서 Deadlock이 발생하는 예시와 해결 방법은?', '데이터베이스', 22, '레코드 교차 락, InnoDB 자동 감지, 접근 순서 일관', '트랜잭션 A와 B가 서로의 레코드 락을 대기하면 데드락 발생. InnoDB는 자동 감지 후 비용이 적은 트랜잭션을 롤백합니다. 자원 접근 순서를 일관되게 유지하고 트랜잭션을 짧게 유지하여 예방합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'EXPLAIN 실행 계획의 주요 항목들을 설명해주세요.', '데이터베이스', 23, 'type(const~ALL), rows, key, Extra', 'type은 const > eq_ref > ref > range > index > ALL 순으로 성능이 좋습니다. key는 사용된 인덱스, Extra의 Using index는 커버링 인덱스, Using filesort는 추가 정렬을 의미합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Stored Procedure의 장단점을 설명해주세요.', '데이터베이스', 24, '네트워크 절감, 실행 계획 캐싱, DB 종속성, 디버깅 어려움', '장점: 네트워크 트래픽 감소, 실행 계획 캐싱, 보안. 단점: DB 종속, 유지보수 어려움, 디버깅 힘듦. 최근에는 애플리케이션 레벨에서 로직을 처리하는 추세입니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Soft Delete vs Hard Delete의 차이점과 고려사항은?', '데이터베이스', 25, 'is_deleted 플래그, 복구 가능, WHERE 조건 추가, JPA @SQLDelete', 'Hard Delete는 실제 삭제, Soft Delete는 is_deleted 플래그로 논리적 삭제입니다. Soft Delete는 복구 가능하지만 모든 쿼리에 조건 추가가 필요하고 테이블 크기가 증가합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '데이터베이스 정규화에서 발생할 수 있는 이상 3가지는?', '데이터베이스', 26, '삽입/갱신/삭제 이상, 구체적 예시', '삽입 이상: 불필요한 데이터를 함께 입력해야 삽입 가능. 갱신 이상: 중복 데이터 중 일부만 수정되어 불일치 발생. 삭제 이상: 의도치 않은 다른 정보까지 삭제됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '분산 트랜잭션과 2PC를 설명해주세요.', '데이터베이스', 27, 'Prepare/Commit Phase, 코디네이터 장애, Saga 패턴', '2PC: Prepare 단계에서 참여자에게 커밋 가능 여부를 질의하고, 모두 OK하면 Commit, 하나라도 실패하면 Abort합니다. 코디네이터 장애 시 블로킹 발생. Saga 패턴으로 보완합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'CAP 이론이란 무엇인가요?', '데이터베이스', 28, 'C/A/P 정의, CP vs AP 선택, 대표 DB', 'CAP 이론은 분산 시스템에서 Consistency, Availability, Partition Tolerance를 동시에 만족할 수 없다는 이론입니다. 실질적으로 CP(MongoDB)와 AP(Cassandra) 중 선택합니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '인덱스를 사용해도 성능이 안 나오는 경우는?', '데이터베이스', 29, '함수 적용, 묵시적 형변환, LIKE 와일드카드, 낮은 카디널리티', '인덱스 컬럼에 함수 적용, 묵시적 형변환, LIKE 앞 와일드카드, 낮은 카디널리티, 테이블 대부분 조회 시 인덱스가 무시될 수 있습니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
+
+INSERT INTO question_pool (cache_key, content, category, question_order, evaluation_criteria, model_answer, reference_type, follow_up_strategy, quality_score, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '페이지네이션에서 Offset vs Cursor 방식의 차이점은?', '데이터베이스', 30, 'Offset 성능 저하, Cursor 일정 성능, 대용량 권장', 'Offset 방식은 뒤로 갈수록 성능이 저하됩니다. Cursor 방식(WHERE id > last_id)은 어떤 페이지든 일정 성능을 보장하며 대용량 데이터에서 권장됩니다.', 'MODEL_ANSWER', 'PREPARED', 1.00, TRUE, NOW());
