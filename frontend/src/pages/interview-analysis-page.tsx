@@ -34,6 +34,15 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
   )
 }
 
+const PROGRESS_STEPS = [
+  { key: 'STARTED', label: '준비' },
+  { key: 'EXTRACTING', label: '영상' },
+  { key: 'STT_PROCESSING', label: '음성' },
+  { key: 'VERBAL_ANALYZING', label: '언어' },
+  { key: 'NONVERBAL_ANALYZING', label: '비언어' },
+  { key: 'FINALIZING', label: '생성' },
+] as const
+
 const PROGRESS_LABELS: Record<string, string> = {
   STARTED: '분석 준비 중',
   EXTRACTING: '영상 처리 중',
@@ -41,6 +50,11 @@ const PROGRESS_LABELS: Record<string, string> = {
   VERBAL_ANALYZING: '언어 분석 중',
   NONVERBAL_ANALYZING: '비언어 분석 중',
   FINALIZING: '피드백 생성 중',
+}
+
+const getProgressIndex = (progress: string | null): number => {
+  if (!progress) return -1
+  return PROGRESS_STEPS.findIndex((s) => s.key === progress)
 }
 
 interface AnalysisStatusFloatProps {
@@ -87,16 +101,36 @@ const AnalysisStatusFloat = ({
             <p className="text-xs text-text-secondary">
               {completedCount} / {totalCount - skippedCount} 완료
             </p>
-            {/* 질문세트별 세부 상태 */}
-            <div className="mt-2 space-y-1.5">
+            {/* 질문세트별 스텝 프로그레스 */}
+            <div className="mt-2 space-y-3">
               {statuses.map((status, idx) => {
                 if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
                 const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
-                const progressLabel = status.analysisProgress ? PROGRESS_LABELS[status.analysisProgress] ?? status.analysisProgress : '대기 중'
+                const currentStep = getProgressIndex(status.analysisProgress)
+                const progressLabel = status.analysisProgress
+                  ? PROGRESS_LABELS[status.analysisProgress] ?? status.analysisProgress
+                  : '대기 중'
+
                 return (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-text-secondary truncate mr-2">{label}</span>
-                    <span className="font-bold text-accent shrink-0">{progressLabel}</span>
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-text-primary">{label}</span>
+                      <span className="font-bold text-accent">{progressLabel}</span>
+                    </div>
+                    {/* 스텝 도트 */}
+                    <div className="flex items-center gap-1">
+                      {PROGRESS_STEPS.map((step, stepIdx) => (
+                        <div key={step.key} className="flex items-center flex-1">
+                          <div
+                            className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                              stepIdx <= currentStep
+                                ? 'bg-accent'
+                                : 'bg-border'
+                            } ${stepIdx === currentStep ? 'animate-pulse' : ''}`}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
               })}

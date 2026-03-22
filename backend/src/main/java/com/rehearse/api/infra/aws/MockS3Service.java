@@ -31,4 +31,9 @@ public class MockS3Service implements S3Service {
     public String getBucket() {
         return "mock-bucket";
     }
+
+    @Override
+    public void retriggerUploadEvent(String s3Key) {
+        log.info("[Mock S3] retriggerUploadEvent: s3Key={}", s3Key);
+    }
 }

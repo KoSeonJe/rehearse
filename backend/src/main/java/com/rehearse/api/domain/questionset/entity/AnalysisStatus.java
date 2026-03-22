@@ -14,7 +14,7 @@ public enum AnalysisStatus {
             case PENDING_UPLOAD -> target == ANALYZING || target == FAILED;
             case ANALYZING -> target == COMPLETED || target == FAILED;
             case COMPLETED -> target == FAILED;
-            case FAILED -> target == PENDING_UPLOAD || target == ANALYZING || target == COMPLETED;
+            case FAILED -> target == ANALYZING || target == COMPLETED;
             case SKIPPED -> false;
         };
     }

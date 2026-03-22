@@ -1,11 +1,13 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ public class InternalQuestionSetService {
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
+    private final S3Service s3Service;
 
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
@@ -100,10 +103,18 @@ public class InternalQuestionSetService {
     @Transactional
     public void retryAnalysis(Long questionSetId) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
-        questionSet.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
-        questionSet.updateAnalysisProgress(null);
 
-        log.info("분석 재시도 트리거: questionSetId={}", questionSetId);
+        FileMetadata file = questionSet.getFileMetadata();
+        if (file == null) {
+            throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
+        }
+
+        questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
+        questionSet.updateAnalysisProgress(AnalysisProgress.STARTED);
+
+        s3Service.retriggerUploadEvent(file.getS3Key());
+
+        log.info("분석 재시도 트리거: questionSetId={}, s3Key={}", questionSetId, file.getS3Key());
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -26,6 +27,9 @@ import static org.mockito.BDDMockito.then;
 class AwsS3ServiceTest {
 
     @Mock
+    private S3Client s3Client;
+
+    @Mock
     private S3Presigner s3Presigner;
 
     @Mock
@@ -38,7 +42,7 @@ class AwsS3ServiceTest {
 
     @BeforeEach
     void setUp() {
-        awsS3Service = new AwsS3Service(s3Presigner);
+        awsS3Service = new AwsS3Service(s3Client, s3Presigner);
         ReflectionTestUtils.setField(awsS3Service, "bucket", "test-bucket");
     }
 

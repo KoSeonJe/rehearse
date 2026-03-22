@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
@@ -7,6 +8,7 @@ import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3Service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +42,9 @@ class InternalQuestionSetServiceTest {
 
     @Mock
     private QuestionRepository questionRepository;
+
+    @Mock
+    private S3Service s3Service;
 
     // ----------------------------------------------------------------
     // updateProgress
@@ -191,19 +196,25 @@ class InternalQuestionSetServiceTest {
     // ----------------------------------------------------------------
 
     @Test
-    @DisplayName("retryAnalysis: 상태가 PENDING_UPLOAD로 변경되고 progress가 null로 초기화된다")
+    @DisplayName("retryAnalysis: 상태가 ANALYZING으로 변경되고 S3 재트리거가 호출된다")
     void retryAnalysis_success() {
         // given
         QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.FAILED);
         ReflectionTestUtils.setField(questionSet, "analysisProgress", AnalysisProgress.FAILED);
+
+        FileMetadata fileMetadata = mock(FileMetadata.class);
+        given(fileMetadata.getS3Key()).willReturn("videos/100/qs_1.webm");
+        ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
+
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
 
         // when
         internalQuestionSetService.retryAnalysis(1L);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.PENDING_UPLOAD);
-        assertThat(questionSet.getAnalysisProgress()).isNull();
+        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
+        assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.STARTED);
+        then(s3Service).should().retriggerUploadEvent("videos/100/qs_1.webm");
     }
 
     @Test

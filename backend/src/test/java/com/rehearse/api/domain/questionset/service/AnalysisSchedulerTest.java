@@ -117,6 +117,44 @@ class AnalysisSchedulerTest {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // detectPendingUploadZombies
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("detectPendingUploadZombies: PENDING_UPLOAD 상태로 타임아웃된 QuestionSet을 FAILED로 마킹한다")
+    void detectPendingUploadZombies_좀비감지시_FAILED로마킹() {
+        // given
+        QuestionSet zombie = createPendingUploadQuestionSet();
+
+        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.PENDING_UPLOAD), any()))
+                .willReturn(List.of(zombie));
+
+        // when
+        analysisScheduler.detectPendingUploadZombies();
+
+        // then
+        assertThat(zombie.getAnalysisStatus()).isEqualTo(AnalysisStatus.FAILED);
+        assertThat(zombie.getFailureReason()).isEqualTo("UPLOAD_PENDING_TIMEOUT");
+        assertThat(zombie.getFailureDetail()).contains("30분");
+    }
+
+    @Test
+    @DisplayName("detectPendingUploadZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
+    void detectPendingUploadZombies_좀비없을때_아무동작없음() {
+        // given
+        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.PENDING_UPLOAD), any()))
+                .willReturn(List.of());
+
+        // when
+        analysisScheduler.detectPendingUploadZombies();
+
+        // then
+        then(questionSetRepository).should(never()).save(any());
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // detectUploadZombies
     // ─────────────────────────────────────────────────────────────
 
@@ -173,6 +211,23 @@ class AnalysisSchedulerTest {
         // PENDING -> PENDING_UPLOAD -> ANALYZING
         qs.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
         qs.updateAnalysisStatus(AnalysisStatus.ANALYZING);
+        return qs;
+    }
+
+    private QuestionSet createPendingUploadQuestionSet() {
+        Interview interview = Interview.builder()
+                .position(Position.BACKEND)
+                .level(InterviewLevel.JUNIOR)
+                .durationMinutes(30)
+                .build();
+
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview)
+                .category(QuestionCategory.CS)
+                .orderIndex(1)
+                .build();
+        // PENDING -> PENDING_UPLOAD
+        qs.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
         return qs;
     }
 
