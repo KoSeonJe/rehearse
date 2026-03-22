@@ -1,38 +1,50 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
-import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.questionpool.config.CacheStrategyConfig;
+import com.rehearse.api.domain.questionpool.entity.CacheStrategy;
+import com.rehearse.api.domain.questionpool.entity.QuestionPool;
+import com.rehearse.api.domain.questionpool.service.CacheableQuestionProvider;
+import com.rehearse.api.domain.questionpool.service.FreshQuestionProvider;
 import com.rehearse.api.domain.questionset.entity.*;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
-import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
-import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
-import lombok.RequiredArgsConstructor;
+import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class QuestionGenerationService {
 
-    private final InterviewRepository interviewRepository;
-    private final QuestionSetRepository questionSetRepository;
-    private final AiClient aiClient;
+    private final QuestionGenerationTransactionHelper transactionHelper;
+    private final CacheableQuestionProvider cacheableProvider;
+    private final FreshQuestionProvider freshProvider;
+    private final Executor questionGenerationExecutor;
+
+    public QuestionGenerationService(
+            QuestionGenerationTransactionHelper transactionHelper,
+            CacheableQuestionProvider cacheableProvider,
+            FreshQuestionProvider freshProvider,
+            @Qualifier("questionGenerationExecutor") Executor questionGenerationExecutor) {
+        this.transactionHelper = transactionHelper;
+        this.cacheableProvider = cacheableProvider;
+        this.freshProvider = freshProvider;
+        this.questionGenerationExecutor = questionGenerationExecutor;
+    }
 
     @Async("questionGenerationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -43,71 +55,155 @@ public class QuestionGenerationService {
                     event.getResumeText(), event.getDurationMinutes(), event.getTechStack());
         } catch (Exception e) {
             log.error("질문 생성 비동기 작업 실패: interviewId={}", event.getInterviewId(), e);
-            // self-invocation 방지: 직접 Repository 사용
-            interviewRepository.findById(event.getInterviewId()).ifPresent(interview -> {
-                interview.failQuestionGeneration(e.getMessage());
-                interviewRepository.save(interview);
-            });
+            String reason = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            transactionHelper.failGeneration(event.getInterviewId(),
+                    reason != null ? reason : "알 수 없는 오류");
         }
     }
 
-    @Transactional
     public void generateQuestions(Long interviewId, Position position, String positionDetail,
                                   InterviewLevel level, List<InterviewType> interviewTypes,
                                   List<String> csSubTopics, String resumeText,
                                   Integer durationMinutes, TechStack techStack) {
-        Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new IllegalStateException("Interview not found: " + interviewId));
 
-        interview.startQuestionGeneration();
-        interviewRepository.flush();
+        // Phase A: 상태 전환 (별도 트랜잭션)
+        transactionHelper.startGeneration(interviewId);
 
-        QuestionGenerationRequest request = new QuestionGenerationRequest(
-                position, positionDetail, level,
-                new HashSet<>(interviewTypes),
-                csSubTopics != null ? new HashSet<>(csSubTopics) : Set.of(),
-                resumeText, durationMinutes, techStack
-        );
+        // 유형별 질문 수 배분
+        int totalCount = QuestionCountCalculator.calculate(durationMinutes, interviewTypes.size());
+        Map<InterviewType, Integer> distribution = distributeQuestionCount(interviewTypes, totalCount);
 
-        List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(request);
+        // CACHEABLE / FRESH 분류
+        Map<CacheStrategy, Map<InterviewType, Integer>> grouped = distribution.entrySet().stream()
+                .collect(Collectors.groupingBy(
+                        e -> CacheStrategyConfig.getStrategy(e.getKey()),
+                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
-        List<QuestionSet> questionSets = createQuestionSets(interview, generatedQuestions);
-        questionSetRepository.saveAll(questionSets);
+        Map<InterviewType, Integer> cacheableTypes = grouped.getOrDefault(CacheStrategy.CACHEABLE, Map.of());
+        Map<InterviewType, Integer> freshTypes = grouped.getOrDefault(CacheStrategy.FRESH, Map.of());
 
-        interview.completeQuestionGeneration();
-        interviewRepository.save(interview);
+        TechStack effectiveTechStack = techStack != null
+                ? techStack : TechStack.getDefaultForPosition(position);
 
-        log.info("질문 생성 완료: interviewId={}, questionSets={}", interviewId, questionSets.size());
+        // Phase B: 병렬 질문 생성
+        CompletableFuture<List<QuestionSet>> cacheableFuture = CompletableFuture.supplyAsync(() ->
+                provideCacheableQuestions(interviewId, position, level, effectiveTechStack,
+                        cacheableTypes, csSubTopics),
+                questionGenerationExecutor
+        ).orTimeout(60, TimeUnit.SECONDS);
+
+        CompletableFuture<List<QuestionSet>> freshFuture = CompletableFuture.supplyAsync(() ->
+                provideFreshQuestions(interviewId, position, level, effectiveTechStack,
+                        freshTypes, resumeText, csSubTopics, durationMinutes),
+                questionGenerationExecutor
+        ).orTimeout(60, TimeUnit.SECONDS);
+
+        List<QuestionSet> allQuestionSets = new ArrayList<>();
+        try {
+            allQuestionSets.addAll(cacheableFuture.join());
+            allQuestionSets.addAll(freshFuture.join());
+        } catch (java.util.concurrent.CompletionException e) {
+            cacheableFuture.cancel(true);
+            freshFuture.cancel(true);
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new RuntimeException("질문 생성 병렬 처리 실패: " + cause.getMessage(), cause);
+        }
+
+        // question_order 재배정
+        for (int i = 0; i < allQuestionSets.size(); i++) {
+            allQuestionSets.get(i).updateOrderIndex(i);
+        }
+
+        // Phase C: 결과 저장 (별도 트랜잭션)
+        transactionHelper.saveResults(interviewId, allQuestionSets);
     }
 
-    private List<QuestionSet> createQuestionSets(Interview interview, List<GeneratedQuestion> generatedQuestions) {
-        List<QuestionSet> questionSets = new ArrayList<>();
+    private List<QuestionSet> provideCacheableQuestions(
+            Long interviewId, Position position, InterviewLevel level,
+            TechStack techStack, Map<InterviewType, Integer> typeDistribution,
+            List<String> csSubTopics) {
 
-        for (int i = 0; i < generatedQuestions.size(); i++) {
-            GeneratedQuestion gq = generatedQuestions.get(i);
+        List<QuestionSet> result = new ArrayList<>();
+        for (var entry : typeDistribution.entrySet()) {
+            InterviewType type = entry.getKey();
+            int count = entry.getValue();
 
-            QuestionCategory category = parseQuestionCategory(gq.getQuestionCategory());
-            ReferenceType refType = parseReferenceType(gq.getReferenceType());
+            List<QuestionPool> poolQuestions = cacheableProvider.provide(
+                    position, level, techStack, type, count, csSubTopics);
 
-            QuestionSet questionSet = QuestionSet.builder()
-                    .interview(interview)
-                    .category(category)
-                    .orderIndex(i)
+            for (QuestionPool qp : poolQuestions) {
+                QuestionSet qs = QuestionSet.builder()
+                        .category(parseQuestionCategory(qp.getCategory()))
+                        .orderIndex(0)
+                        .build();
+
+                Question question = Question.builder()
+                        .questionType(QuestionType.MAIN)
+                        .questionText(qp.getContent())
+                        .modelAnswer(qp.getModelAnswer())
+                        .referenceType(parseReferenceType(qp.getReferenceType()))
+                        .orderIndex(0)
+                        .questionPool(qp)
+                        .build();
+
+                qs.addQuestion(question);
+                result.add(qs);
+            }
+        }
+
+        log.info("[CACHEABLE] 질문 제공 완료: interviewId={}, count={}", interviewId, result.size());
+        return result;
+    }
+
+    private List<QuestionSet> provideFreshQuestions(
+            Long interviewId, Position position, InterviewLevel level,
+            TechStack techStack, Map<InterviewType, Integer> typeDistribution,
+            String resumeText, List<String> csSubTopics, Integer durationMinutes) {
+
+        if (typeDistribution.isEmpty()) {
+            return List.of();
+        }
+
+        int totalFreshCount = typeDistribution.values().stream().mapToInt(Integer::intValue).sum();
+        Set<InterviewType> freshTypeSet = typeDistribution.keySet();
+
+        List<GeneratedQuestion> generated = freshProvider.provide(
+                position, level, techStack, freshTypeSet,
+                totalFreshCount, resumeText, csSubTopics, durationMinutes);
+
+        List<QuestionSet> result = new ArrayList<>();
+        for (GeneratedQuestion gq : generated) {
+            QuestionSet qs = QuestionSet.builder()
+                    .category(parseQuestionCategory(gq.getQuestionCategory()))
+                    .orderIndex(0)
                     .build();
 
             Question question = Question.builder()
                     .questionType(QuestionType.MAIN)
                     .questionText(gq.getContent())
                     .modelAnswer(gq.getModelAnswer())
-                    .referenceType(refType)
+                    .referenceType(parseReferenceType(gq.getReferenceType()))
                     .orderIndex(0)
                     .build();
 
-            questionSet.addQuestion(question);
-            questionSets.add(questionSet);
+            qs.addQuestion(question);
+            result.add(qs);
         }
 
-        return questionSets;
+        log.info("[FRESH] 질문 제공 완료: interviewId={}, count={}", interviewId, result.size());
+        return result;
+    }
+
+    private Map<InterviewType, Integer> distributeQuestionCount(
+            List<InterviewType> types, int totalCount) {
+        int base = totalCount / types.size();
+        int remainder = totalCount % types.size();
+
+        Map<InterviewType, Integer> distribution = new LinkedHashMap<>();
+        for (int i = 0; i < types.size(); i++) {
+            distribution.put(types.get(i), base + (i < remainder ? 1 : 0));
+        }
+        return distribution;
     }
 
     private QuestionCategory parseQuestionCategory(String categoryStr) {

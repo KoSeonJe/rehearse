@@ -16,4 +16,5 @@ public class GeneratedQuestion {
     private String questionCategory;
     private String modelAnswer;
     private String referenceType;
+    private String followUpStrategy;
 }

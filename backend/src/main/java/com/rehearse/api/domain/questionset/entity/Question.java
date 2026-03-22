@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.questionset.entity;
 
+import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -37,14 +38,20 @@ public class Question {
     @Column(nullable = false)
     private int orderIndex;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "question_pool_id")
+    private QuestionPool questionPool;
+
     @Builder
     public Question(QuestionType questionType, String questionText,
-                    String modelAnswer, ReferenceType referenceType, int orderIndex) {
+                    String modelAnswer, ReferenceType referenceType, int orderIndex,
+                    QuestionPool questionPool) {
         this.questionType = questionType;
         this.questionText = questionText;
         this.modelAnswer = modelAnswer;
         this.referenceType = referenceType;
         this.orderIndex = orderIndex;
+        this.questionPool = questionPool;
     }
 
     void assignQuestionSet(QuestionSet questionSet) {
