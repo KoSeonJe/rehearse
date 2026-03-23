@@ -37,21 +37,31 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 
 const PROGRESS_STEPS = [
   { key: 'STARTED', label: '준비', fullLabel: '분석 준비 중' },
-  { key: 'EXTRACTING', label: '영상', fullLabel: '영상 처리 중' },
-  { key: 'STT_PROCESSING', label: '음성', fullLabel: '음성 인식 중' },
-  { key: 'VERBAL_ANALYZING', label: '언어', fullLabel: '언어 분석 중' },
-  { key: 'NONVERBAL_ANALYZING', label: '비언어', fullLabel: '비언어 분석 중' },
-  { key: 'FINALIZING', label: '생성', fullLabel: '피드백 생성 중' },
+  { key: 'EXTRACTING', label: '추출', fullLabel: '영상 처리 중' },
+  { key: 'ANALYZING', label: '분석', fullLabel: 'AI가 답변을 분석 중' },
+  { key: 'FINALIZING', label: '생성', fullLabel: '종합 피드백 생성 중' },
 ] as const
+
+const LEGACY_ANALYZING_KEYS = ['STT_PROCESSING', 'VERBAL_ANALYZING', 'NONVERBAL_ANALYZING']
 
 const getProgressIndex = (progress: string | null): number => {
   if (!progress) return -1
-  return PROGRESS_STEPS.findIndex((s) => s.key === progress)
+  const index = PROGRESS_STEPS.findIndex((s) => s.key === progress)
+  if (index !== -1) return index
+  if (LEGACY_ANALYZING_KEYS.includes(progress)) {
+    return PROGRESS_STEPS.findIndex((s) => s.key === 'ANALYZING')
+  }
+  return -1
 }
 
 const getProgressLabel = (progress: string | null): string => {
   if (!progress) return '대기 중'
-  return PROGRESS_STEPS.find((s) => s.key === progress)?.fullLabel ?? progress
+  const step = PROGRESS_STEPS.find((s) => s.key === progress)
+  if (step) return step.fullLabel
+  if (LEGACY_ANALYZING_KEYS.includes(progress)) {
+    return 'AI가 답변을 분석 중'
+  }
+  return progress
 }
 
 interface AnalysisStatusFloatProps {

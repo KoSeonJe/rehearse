@@ -111,6 +111,7 @@ export type AnalysisProgress =
   | 'STT_PROCESSING'
   | 'VERBAL_ANALYZING'
   | 'NONVERBAL_ANALYZING'
+  | 'ANALYZING'
   | 'FINALIZING'
   | 'FAILED'
 
@@ -142,6 +143,14 @@ export interface NonverbalFeedback {
   nonverbalComment: string | null
 }
 
+export interface VocalFeedback {
+  fillerWords: string | null
+  speechPace: string | null
+  toneConfidence: number | null
+  emotionLabel: string | null
+  vocalComment: string | null
+}
+
 export interface TimestampFeedback {
   id: number
   questionId: number | null
@@ -153,6 +162,7 @@ export interface TimestampFeedback {
   transcript: string | null
   technical: TechnicalFeedback | null
   nonverbal: NonverbalFeedback | null
+  vocal: VocalFeedback | null
   isAnalyzed: boolean
 }
 
@@ -163,6 +173,12 @@ export interface QuestionSetFeedbackResponse {
   streamingUrl: string | null
   fallbackUrl: string | null
   timestampFeedbacks: TimestampFeedback[]
+  verbalSummary: string | null
+  vocalSummary: string | null
+  nonverbalSummary: string | null
+  strengths: string | null
+  improvements: string | null
+  topPriorityAdvice: string | null
 }
 
 export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
