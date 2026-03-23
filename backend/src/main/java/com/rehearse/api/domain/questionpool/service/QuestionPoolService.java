@@ -71,31 +71,29 @@ public class QuestionPoolService {
         });
 
         List<QuestionPool> result = new ArrayList<>();
-        Iterator<String> it = categories.iterator();
-        String currentCat = it.hasNext() ? it.next() : null;
+        int catIdx = 0;
 
-        while (result.size() < requiredCount && currentCat != null) {
-            Queue<QuestionPool> queue = byCategory.get(currentCat);
+        while (result.size() < requiredCount && !categories.isEmpty()) {
+            if (catIdx >= categories.size()) {
+                catIdx = 0;
+            }
+
+            String cat = categories.get(catIdx);
+            Queue<QuestionPool> queue = byCategory.get(cat);
 
             if (queue != null && !queue.isEmpty()) {
                 result.add(queue.poll());
-                currentCat = it.hasNext() ? it.next() : null;
-                if (currentCat == null && result.size() < requiredCount) {
-                    categories.removeIf(cat -> byCategory.get(cat) == null || byCategory.get(cat).isEmpty());
-                    if (categories.isEmpty()) break;
-                    it = categories.iterator();
-                    currentCat = it.next();
-                }
+                catIdx++;
             } else {
-                byCategory.remove(currentCat);
-                currentCat = it.hasNext() ? it.next() : null;
+                categories.remove(catIdx);
+                byCategory.remove(cat);
             }
         }
         return result;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public List<QuestionPool> convertAndCacheIfEligible(String cacheKey, List<GeneratedQuestion> generated) {
+    List<QuestionPool> convertAndCacheIfEligible(String cacheKey, List<GeneratedQuestion> generated) {
         List<QuestionPool> pools = generated.stream()
                 .map(gq -> QuestionPool.builder()
                         .cacheKey(cacheKey)

@@ -22,7 +22,7 @@ public final class CacheStrategyConfig {
             Map.entry(SQL_MODELING, CACHEABLE),
             Map.entry(FULLSTACK_STACK, CACHEABLE),
             Map.entry(RESUME_BASED, FRESH),
-            Map.entry(BEHAVIORAL, FRESH)
+            Map.entry(BEHAVIORAL, CACHEABLE)
     );
 
     private CacheStrategyConfig() {

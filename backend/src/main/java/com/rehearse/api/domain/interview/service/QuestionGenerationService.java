@@ -33,20 +33,20 @@ public class QuestionGenerationService {
     private final QuestionGenerationTransactionHelper transactionHelper;
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
-    private final Executor questionGenerationExecutor;
+    private final Executor questionSubTaskExecutor;
 
     public QuestionGenerationService(
             QuestionGenerationTransactionHelper transactionHelper,
             CacheableQuestionProvider cacheableProvider,
             FreshQuestionProvider freshProvider,
-            @Qualifier("questionGenerationExecutor") Executor questionGenerationExecutor) {
+            @Qualifier("questionSubTaskExecutor") Executor questionSubTaskExecutor) {
         this.transactionHelper = transactionHelper;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
-        this.questionGenerationExecutor = questionGenerationExecutor;
+        this.questionSubTaskExecutor = questionSubTaskExecutor;
     }
 
-    @Async("questionGenerationExecutor")
+    @Async("questionSubTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
         try {
@@ -89,13 +89,13 @@ public class QuestionGenerationService {
         CompletableFuture<List<QuestionSet>> cacheableFuture = CompletableFuture.supplyAsync(() ->
                 provideCacheableQuestions(interviewId, position, level, effectiveTechStack,
                         cacheableTypes, csSubTopics),
-                questionGenerationExecutor
+                questionSubTaskExecutor
         ).orTimeout(60, TimeUnit.SECONDS);
 
         CompletableFuture<List<QuestionSet>> freshFuture = CompletableFuture.supplyAsync(() ->
                 provideFreshQuestions(interviewId, position, level, effectiveTechStack,
                         freshTypes, resumeText, csSubTopics, durationMinutes),
-                questionGenerationExecutor
+                questionSubTaskExecutor
         ).orTimeout(60, TimeUnit.SECONDS);
 
         List<QuestionSet> allQuestionSets = new ArrayList<>();
