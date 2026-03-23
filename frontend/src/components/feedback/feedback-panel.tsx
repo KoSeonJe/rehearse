@@ -129,6 +129,56 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         </div>
       )}
 
+      {/* 4.5 음성 특성 섹션 */}
+      {feedback.vocal && (feedback.vocal.toneConfidence !== null || feedback.vocal.speechPace || feedback.vocal.emotionLabel) && (
+        <div className="mb-3 rounded-xl bg-surface p-3 space-y-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-500">음성 분석</span>
+            {feedback.vocal.toneConfidence !== null && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                자신감 {feedback.vocal.toneConfidence}
+              </span>
+            )}
+            {feedback.vocal.speechPace && (
+              <span className="text-[10px] font-semibold text-text-tertiary">
+                속도 {feedback.vocal.speechPace}
+              </span>
+            )}
+            {feedback.vocal.emotionLabel && (
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                feedback.vocal.emotionLabel === '자신감' ? 'bg-green-50 text-green-600' :
+                feedback.vocal.emotionLabel === '긴장' ? 'bg-orange-50 text-orange-600' :
+                feedback.vocal.emotionLabel === '불안' ? 'bg-red-50 text-red-600' :
+                'bg-blue-50 text-blue-600'
+              }`}>
+                {feedback.vocal.emotionLabel}
+              </span>
+            )}
+          </div>
+          {feedback.vocal.fillerWords && (() => {
+            try {
+              const words: string[] = JSON.parse(feedback.vocal.fillerWords)
+              if (words.length > 0) {
+                return (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-semibold text-text-tertiary">필러워드:</span>
+                    {words.map((word, idx) => (
+                      <span key={idx} className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                        {word}
+                      </span>
+                    ))}
+                  </div>
+                )
+              }
+              return null
+            } catch { return null }
+          })()}
+          {feedback.vocal.vocalComment && (
+            <p className="text-xs text-text-secondary leading-relaxed">{feedback.vocal.vocalComment}</p>
+          )}
+        </div>
+      )}
+
       {/* 5. Transcript (collapsed by default) */}
       {feedback.transcript && (
         <div className="border-t border-border/50 pt-3">
