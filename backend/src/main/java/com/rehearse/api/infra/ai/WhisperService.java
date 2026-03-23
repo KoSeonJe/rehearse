@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.WhisperErrorCode;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -44,6 +45,7 @@ public class WhisperService implements SttService {
     }
 
     @Override
+    @RateLimiter(name = "whisper-api")
     public String transcribe(MultipartFile audioFile) {
         try {
             HttpHeaders headers = new HttpHeaders();

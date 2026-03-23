@@ -1,6 +1,7 @@
 package com.rehearse.api.global.exception;
 
 import com.rehearse.api.global.common.ErrorResponse;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -52,6 +53,20 @@ public class GlobalExceptionHandler {
                 "요청 파라미터 타입이 올바르지 않습니다.");
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(RequestNotPermitted.class)
+    protected ResponseEntity<ErrorResponse> handleRateLimited(
+            RequestNotPermitted e, HttpServletRequest request) {
+
+        log.warn("Rate limit exceeded: uri={}", request.getRequestURI());
+
+        ErrorResponse response = ErrorResponse.of(
+                HttpStatus.TOO_MANY_REQUESTS.value(),
+                "RATE_LIMITED",
+                "현재 요청이 많습니다. 잠시 후 다시 시도해주세요.");
+
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
     }
 
     @ExceptionHandler(BusinessException.class)

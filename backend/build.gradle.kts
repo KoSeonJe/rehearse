@@ -37,6 +37,11 @@ dependencies {
     // HikariCP 6.x (Virtual Thread pinning 방지)
     implementation("com.zaxxer:HikariCP:6.2.1")
 
+    // Resilience4j RateLimiter (외부 API 동시성 제어)
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:2.2.0")
+    implementation("io.github.resilience4j:resilience4j-ratelimiter:2.2.0")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
     // Flyway (DB 마이그레이션)
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")

@@ -6,6 +6,7 @@ import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
@@ -65,6 +66,7 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
+    @RateLimiter(name = "claude-api")
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
         String userPrompt = questionPromptBuilder.buildUserPrompt(request);
@@ -80,6 +82,7 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
+    @RateLimiter(name = "claude-api")
     public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
