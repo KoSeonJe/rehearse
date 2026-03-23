@@ -10,8 +10,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "question_pool")
@@ -58,10 +56,6 @@ public class QuestionPool {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "questionPool", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("displayOrder ASC")
-    private List<PreparedFollowUp> preparedFollowUps = new ArrayList<>();
-
     @Builder
     public QuestionPool(String cacheKey, String content, String category, Integer questionOrder,
                         String evaluationCriteria, String modelAnswer, String referenceType,
@@ -73,14 +67,9 @@ public class QuestionPool {
         this.evaluationCriteria = evaluationCriteria;
         this.modelAnswer = modelAnswer;
         this.referenceType = referenceType;
-        this.followUpStrategy = followUpStrategy != null ? followUpStrategy : FollowUpStrategy.PREPARED;
+        this.followUpStrategy = followUpStrategy != null ? followUpStrategy : FollowUpStrategy.REALTIME;
         this.qualityScore = new BigDecimal("1.00");
         this.isActive = true;
-    }
-
-    public void addPreparedFollowUp(PreparedFollowUp followUp) {
-        preparedFollowUps.add(followUp);
-        followUp.assignQuestionPool(this);
     }
 
     public void deactivate() {

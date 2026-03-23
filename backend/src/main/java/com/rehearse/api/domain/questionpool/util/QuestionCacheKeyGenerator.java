@@ -7,7 +7,7 @@ import com.rehearse.api.domain.interview.entity.TechStack;
 
 import java.util.Set;
 
-public final class CacheKeyGenerator {
+public final class QuestionCacheKeyGenerator {
 
     /**
      * 포지션/스택에 무관한 공통 유형.
@@ -19,7 +19,7 @@ public final class CacheKeyGenerator {
             InterviewType.SYSTEM_DESIGN
     );
 
-    private CacheKeyGenerator() {
+    private QuestionCacheKeyGenerator() {
     }
 
     public static String generate(Position position, InterviewLevel level,

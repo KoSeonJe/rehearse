@@ -7,7 +7,6 @@ import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.questionpool.service.FollowUpQuestionService;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionRepository;
@@ -45,7 +44,6 @@ public class InterviewService {
     private final PdfTextExtractor pdfTextExtractor;
     private final SttService sttService;
     private final ApplicationEventPublisher eventPublisher;
-    private final FollowUpQuestionService followUpQuestionService;
 
     @Transactional
     public InterviewResponse createInterview(CreateInterviewRequest request, MultipartFile resumeFile) {

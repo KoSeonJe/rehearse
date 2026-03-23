@@ -6,7 +6,7 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.questionpool.entity.CsSubTopic;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
-import com.rehearse.api.domain.questionpool.util.CacheKeyGenerator;
+import com.rehearse.api.domain.questionpool.util.QuestionCacheKeyGenerator;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Slf4j
@@ -25,14 +24,13 @@ public class CacheableQuestionProvider {
 
     private final QuestionPoolService questionPoolService;
     private final AiClient aiClient;
-
-    private final ConcurrentHashMap<String, ReentrantLock> keyLocks = new ConcurrentHashMap<>();
+    private final QuestionGenerationLock questionGenerationLock;
 
     public List<QuestionPool> provide(Position position, InterviewLevel level,
                                       TechStack techStack, InterviewType type,
                                       int requiredCount, List<String> csSubTopics) {
 
-        String cacheKey = CacheKeyGenerator.generate(position, level, techStack, type);
+        String cacheKey = QuestionCacheKeyGenerator.generate(position, level, techStack, type);
         List<String> categoryFilter = toCategoryFilter(csSubTopics);
 
         if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
@@ -50,8 +48,7 @@ public class CacheableQuestionProvider {
             TechStack techStack, InterviewType type,
             int requiredCount, List<String> csSubTopics, List<String> categoryFilter) {
 
-        ReentrantLock lock = keyLocks.computeIfAbsent(cacheKey, k -> new ReentrantLock());
-        lock.lock();
+        ReentrantLock lock = questionGenerationLock.acquire(cacheKey);
         try {
             if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
                 log.info("[CACHE] lock 후 pool 히트: cacheKey={}", cacheKey);
@@ -87,8 +84,7 @@ public class CacheableQuestionProvider {
             log.error("[CACHE] Claude 호출 실패: cacheKey={}", cacheKey, e);
             throw e;
         } finally {
-            lock.unlock();
-            keyLocks.remove(cacheKey, lock);
+            questionGenerationLock.release(cacheKey, lock);
         }
     }
 

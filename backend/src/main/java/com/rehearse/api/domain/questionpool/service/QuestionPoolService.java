@@ -124,6 +124,6 @@ public class QuestionPoolService {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        return FollowUpStrategy.PREPARED;
+        return FollowUpStrategy.REALTIME;
     }
 }
