@@ -126,7 +126,10 @@ def analyze_answer_audio(
             raw = response.text
             result = parse_llm_json(raw)
 
-            print(f"[Gemini] 답변 분석 완료: verbal_score={result.get('verbal', {}).get('score')}")
+            keys = list(result.keys())
+            print(f"[Gemini] 답변 분석 완료: keys={keys}, verbal_score={result.get('verbal', {}).get('score')}")
+            if "transcript" not in result:
+                print(f"[Gemini] 경고: transcript 키 누락. 응답 원본: {raw[:500]}")
             return result
 
         except Exception as e:

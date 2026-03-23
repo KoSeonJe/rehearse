@@ -191,7 +191,7 @@ def _run_gemini_pipeline(
             "questionId": answer.get("questionId"),
             "startMs": answer["startMs"],
             "endMs": answer["endMs"],
-            "transcript": gemini["transcript"] if gemini else "",
+            "transcript": gemini.get("transcript", "") if gemini else "",
         }
 
         if gemini:
