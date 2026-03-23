@@ -37,9 +37,13 @@ _FALLBACK = {
 
 
 def analyze_frames(frame_paths: list[str]) -> dict:
+    if not frame_paths:
+        print("[Vision] 프레임 없음 — 폴백 사용")
+        return dict(_FALLBACK)
+
     client = OpenAI(api_key=Config.OPENAI_API_KEY)
 
-    selected = _select_frames(frame_paths, Config.MAX_VISION_FRAMES)
+    selected = _select_frames(frame_paths, Config.MAX_VISION_FRAMES_PER_ANSWER)
     print(f"[Vision] {len(selected)}장 프레임으로 분석 시작")
 
     user_text = f"다음은 면접 영상에서 {Config.FRAME_INTERVAL_SEC}초 간격으로 추출한 프레임입니다. 면접자의 비언어적 커뮤니케이션을 분석해주세요."
