@@ -19,6 +19,7 @@ public class TimestampFeedbackResponse {
     private final String transcript;
     private final TechnicalFeedback technical;
     private final NonverbalFeedback nonverbal;
+    private final VocalFeedback vocal;
     private final boolean isAnalyzed;
 
     @Getter
@@ -38,6 +39,16 @@ public class TimestampFeedbackResponse {
         private final String nonverbalComment;
     }
 
+    @Getter
+    @Builder
+    public static class VocalFeedback {
+        private final String fillerWords;       // JSON 배열 문자열 (프론트에서 파싱)
+        private final String speechPace;        // "빠름" / "적절" / "느림"
+        private final Integer toneConfidence;   // 0-100
+        private final String emotionLabel;      // "자신감" / "긴장" / "평온" / "불안"
+        private final String vocalComment;
+    }
+
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
         Question question = feedback.getQuestion();
 
@@ -54,6 +65,14 @@ public class TimestampFeedbackResponse {
                 .nonverbalComment(feedback.getNonverbalComment())
                 .build();
 
+        VocalFeedback vocal = VocalFeedback.builder()
+                .fillerWords(feedback.getFillerWords())
+                .speechPace(feedback.getSpeechPace())
+                .toneConfidence(feedback.getToneConfidence())
+                .emotionLabel(feedback.getEmotionLabel())
+                .vocalComment(feedback.getVocalComment())
+                .build();
+
         return TimestampFeedbackResponse.builder()
                 .id(feedback.getId())
                 .questionId(question != null ? question.getId() : null)
@@ -65,6 +84,7 @@ public class TimestampFeedbackResponse {
                 .transcript(feedback.getTranscript())
                 .technical(technical)
                 .nonverbal(nonverbal)
+                .vocal(vocal)
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
     }
