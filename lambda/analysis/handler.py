@@ -15,7 +15,7 @@ import api_client
 from api_client import get_answers, update_progress, save_feedback, backup_to_s3
 from config import Config
 from extractors.ffmpeg_extractor import extract_audio, extract_answer_audios, extract_frames, get_video_duration_ms
-from analyzers.gemini_analyzer import analyze_answer_audio, generate_overall_report
+from analyzers.gemini_analyzer import analyze_answer_audio
 from analyzers.stt_analyzer import transcribe_chunked
 from analyzers.vision_analyzer import analyze_frames
 from analyzers.verbal_analyzer import analyze_verbal
@@ -102,7 +102,7 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     if Config.USE_GEMINI and answer_audio_paths:
         update_progress(interview_id, question_set_id, "ANALYZING")
         try:
-            timestamp_feedbacks, report = _run_gemini_pipeline(
+            timestamp_feedbacks = _run_gemini_pipeline(
                 answers, answer_audio_paths, frame_paths, video_duration_ms,
                 position=position, tech_stack=tech_stack, level=level,
             )
@@ -113,14 +113,14 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
             if os.path.exists(audio_dir):
                 shutil.rmtree(audio_dir, ignore_errors=True)
             audio_path = extract_audio(video_path, WORK_DIR)
-            timestamp_feedbacks, report = _run_legacy_pipeline(
+            timestamp_feedbacks = _run_legacy_pipeline(
                 answers, audio_path, frame_paths, video_duration_ms,
                 interview_id, question_set_id,
                 position=position, tech_stack=tech_stack, level=level,
             )
     else:
         # 레거시 경로
-        timestamp_feedbacks, report = _run_legacy_pipeline(
+        timestamp_feedbacks = _run_legacy_pipeline(
             answers, audio_path, frame_paths, video_duration_ms,
             interview_id, question_set_id,
             position=position, tech_stack=tech_stack, level=level,
@@ -128,15 +128,11 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
 
     update_progress(interview_id, question_set_id, "FINALIZING")
 
+    overall_score, overall_comment = _compute_overall(timestamp_feedbacks)
+
     feedback_payload = {
-        "questionSetScore": report["overallScore"],
-        "questionSetComment": report["overallComment"],
-        "verbalSummary": report.get("verbalSummary"),
-        "vocalSummary": report.get("vocalSummary"),
-        "nonverbalSummary": report.get("nonverbalSummary"),
-        "strengths": report.get("strengths"),
-        "improvements": report.get("improvements"),
-        "topPriorityAdvice": report.get("topPriorityAdvice"),
+        "questionSetScore": overall_score,
+        "questionSetComment": overall_comment,
         "timestampFeedbacks": timestamp_feedbacks,
     }
 
@@ -154,8 +150,8 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
 def _run_gemini_pipeline(
     answers, audio_paths, frame_paths, video_duration_ms,
     position=None, tech_stack=None, level=None,
-) -> tuple[list[dict], dict]:
-    """Gemini 음성 + Vision 비언어를 병렬 실행하고 종합 리포트를 생성한다."""
+) -> list[dict]:
+    """Gemini 음성 + Vision 비언어를 병렬 실행한다."""
 
     with ThreadPoolExecutor(max_workers=6) as executor:
         # Gemini 음성 분석 (답변별)
@@ -218,18 +214,14 @@ def _run_gemini_pipeline(
         fb["overallComment"] = gemini.get("overallComment", "") if gemini else ""
         timestamp_feedbacks.append(fb)
 
-    # Gemini 종합 리포트
-    questions = [a.get("questionText", "") for a in answers]
-    report = generate_overall_report(gemini_results, vision_results, questions)
-
-    return timestamp_feedbacks, report
+    return timestamp_feedbacks
 
 
 def _run_legacy_pipeline(
     answers, audio_path, frame_paths, video_duration_ms,
     interview_id, question_set_id,
     position=None, tech_stack=None, level=None,
-) -> tuple[list[dict], dict]:
+) -> list[dict]:
     """기존 Whisper+GPT-4o 파이프라인 (폴백용)."""
 
     update_progress(interview_id, question_set_id, "STT_PROCESSING")
@@ -241,13 +233,7 @@ def _run_legacy_pipeline(
         position=position, tech_stack=tech_stack, level=level,
     )
 
-    overall_score, overall_comment = _compute_overall(timestamp_feedbacks)
-    report = {
-        "overallScore": overall_score,
-        "overallComment": overall_comment,
-    }
-
-    return timestamp_feedbacks, report
+    return timestamp_feedbacks
 
 
 def _safe_gemini_audio(
