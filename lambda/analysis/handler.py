@@ -119,7 +119,9 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
                 position=position, tech_stack=tech_stack, level=level,
             )
     else:
-        # 레거시 경로
+        # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
+        if "audio_path" not in dir():
+            audio_path = extract_audio(video_path, WORK_DIR)
         timestamp_feedbacks = _run_legacy_pipeline(
             answers, audio_path, frame_paths, video_duration_ms,
             interview_id, question_set_id,
