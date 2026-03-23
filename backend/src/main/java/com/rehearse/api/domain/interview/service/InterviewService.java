@@ -44,6 +44,7 @@ public class InterviewService {
     private final PdfTextExtractor pdfTextExtractor;
     private final SttService sttService;
     private final ApplicationEventPublisher eventPublisher;
+    private final FollowUpTransactionHandler followUpTransactionHandler;
 
     @Transactional
     public InterviewResponse createInterview(CreateInterviewRequest request, MultipartFile resumeFile) {
@@ -146,36 +147,18 @@ public class InterviewService {
         return InterviewResponse.from(interview, questionSets);
     }
 
-    @Transactional
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request, MultipartFile audioFile) {
-        Interview interview = interviewFinder.findById(id);
+        // Phase 1: answerText 결정 (트랜잭션 없음 — 외부 API 호출 가능)
+        String answerText = resolveAnswerText(request, audioFile);
 
-        if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
-            throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
-        }
+        // Phase 2: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
+        FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, request.getQuestionSetId());
 
-        String answerText;
-        if (audioFile != null && !audioFile.isEmpty()) {
-            answerText = sttService.transcribe(audioFile);
-            if (answerText == null || answerText.isBlank()) {
-                throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
-            }
-        } else if (request.getAnswerText() != null && !request.getAnswerText().isBlank()) {
-            answerText = request.getAnswerText();
-        } else {
-            throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
-        }
-
-        QuestionSet questionSet = questionSetRepository.findById(request.getQuestionSetId())
-                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-
-        validateFollowUpRoundLimit(questionSet);
-        int nextOrderIndex = questionSet.getQuestions().size();
-
+        // Phase 3: Claude API 호출 (트랜잭션 없음)
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
-                interview.getPosition(),
-                interview.getEffectiveTechStack(),
-                interview.getLevel(),
+                context.position(),
+                context.effectiveTechStack(),
+                context.level(),
                 request.getQuestionContent(),
                 answerText,
                 request.getNonVerbalSummary(),
@@ -183,27 +166,35 @@ public class InterviewService {
         );
         GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(followUpReq);
 
-        Question followUpQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
-                .questionText(followUp.getQuestion())
-                .modelAnswer(followUp.getModelAnswer())
-                .orderIndex(nextOrderIndex)
-                .build();
-
-        questionSet.addQuestion(followUpQuestion);
-        questionRepository.save(followUpQuestion);
+        // Phase 4: 결과 저장 (짧은 write 트랜잭션)
+        Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
+                context.questionSetId(), followUp, context.nextOrderIndex());
 
         log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
-                id, request.getQuestionSetId(), followUpQuestion.getId(), followUp.getType());
+                id, request.getQuestionSetId(), savedQuestion.getId(), followUp.getType());
 
         return FollowUpResponse.builder()
-                .questionId(followUpQuestion.getId())
+                .questionId(savedQuestion.getId())
                 .question(followUp.getQuestion())
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .answerText(answerText)
-                .modelAnswer(followUpQuestion.getModelAnswer())
+                .modelAnswer(savedQuestion.getModelAnswer())
                 .build();
+    }
+
+    private String resolveAnswerText(FollowUpRequest request, MultipartFile audioFile) {
+        if (audioFile != null && !audioFile.isEmpty()) {
+            String text = sttService.transcribe(audioFile);
+            if (text == null || text.isBlank()) {
+                throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
+            }
+            return text;
+        }
+        if (request.getAnswerText() != null && !request.getAnswerText().isBlank()) {
+            return request.getAnswerText();
+        }
+        throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
     }
 
     @Transactional
@@ -217,17 +208,5 @@ public class InterviewService {
         questionSetService.skipRemaining(id);
 
         log.info("미응답 질문세트 스킵 처리: interviewId={}", id);
-    }
-
-    private static final int MAX_FOLLOWUP_ROUNDS = 2;
-
-    private void validateFollowUpRoundLimit(QuestionSet questionSet) {
-        long followUpCount = questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
-                .count();
-
-        if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
-            throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
-        }
     }
 }
