@@ -147,6 +147,7 @@ public class InterviewService {
         return InterviewResponse.from(interview, questionSets);
     }
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request, MultipartFile audioFile) {
         // Phase 1: answerText 결정 (트랜잭션 없음 — 외부 API 호출 가능)
         String answerText = resolveAnswerText(request, audioFile);

@@ -16,6 +16,7 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +47,11 @@ public class QuestionGenerationService {
         this.questionSetRepository = questionSetRepository;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
+    }
+
+    @PreDestroy
+    void shutdown() {
+        virtualExecutor.close();
     }
 
     public void generateQuestions(Long interviewId, Position position,
