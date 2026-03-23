@@ -173,12 +173,6 @@ export interface QuestionSetFeedbackResponse {
   streamingUrl: string | null
   fallbackUrl: string | null
   timestampFeedbacks: TimestampFeedback[]
-  verbalSummary: string | null
-  vocalSummary: string | null
-  nonverbalSummary: string | null
-  strengths: string | null
-  improvements: string | null
-  topPriorityAdvice: string | null
 }
 
 export type UploadState = 'pending' | 'uploading' | 'completed' | 'failed'
