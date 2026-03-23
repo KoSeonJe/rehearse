@@ -1,12 +1,23 @@
+import { useNavigate } from 'react-router-dom'
 import { Character } from '@/components/ui/character'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface HeroSectionProps {
   onNavigate: () => void
+  isAuthenticated: boolean
 }
 
-export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
+export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) => {
+  const navigate = useNavigate()
   const { ref, style } = useFadeInOnScroll<HTMLElement>()
+
+  const handleStart = () => {
+    if (isAuthenticated) {
+      onNavigate()
+    } else {
+      navigate('/login?redirect=/interview/setup')
+    }
+  }
 
   return (
     <section
@@ -29,14 +40,14 @@ export const HeroSection = ({ onNavigate }: HeroSectionProps) => {
             </p>
             <div className="mt-10">
               <button
-                className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20"
-                onClick={onNavigate}
+                className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                onClick={handleStart}
                 aria-label="무료로 시작하기"
               >
                 무료로 시작하기
               </button>
               <p className="mt-4 text-sm text-text-tertiary">
-                회원가입 없이 바로 체험 · 이력서 업로드만 하면 끝
+                GitHub 또는 Google 계정으로 30초 만에 시작
               </p>
             </div>
           </div>
