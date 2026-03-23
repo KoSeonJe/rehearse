@@ -1,35 +1,10 @@
 package com.rehearse.api.global.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-
-import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-
-    @Bean(name = "questionGenerationExecutor")
-    public Executor questionGenerationExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(5);
-        executor.setQueueCapacity(10);
-        executor.setThreadNamePrefix("question-gen-");
-        executor.initialize();
-        return executor;
-    }
-
-    @Bean(name = "questionSubTaskExecutor")
-    public Executor questionSubTaskExecutor() {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(4);
-        executor.setMaxPoolSize(10);
-        executor.setQueueCapacity(20);
-        executor.setThreadNamePrefix("question-sub-");
-        executor.initialize();
-        return executor;
-    }
+    // Virtual Thread 환경: Spring Boot 3.4가 자동으로 VT executor 사용
 }

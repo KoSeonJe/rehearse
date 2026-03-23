@@ -15,7 +15,7 @@ public class QuestionGenerationEventHandler {
 
     private final QuestionGenerationService questionGenerationService;
 
-    @Async("questionGenerationExecutor")
+    @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
         try {
