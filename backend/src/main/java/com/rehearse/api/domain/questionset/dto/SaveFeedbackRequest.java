@@ -21,14 +21,6 @@ public class SaveFeedbackRequest {
     @Valid
     private List<TimestampFeedbackItem> timestampFeedbacks;
 
-    // Gemini 네이티브 오디오 분석 종합 리포트 필드 (nullable — 기존 API 호환)
-    private String verbalSummary;
-    private String vocalSummary;
-    private String nonverbalSummary;
-    private List<String> strengths;
-    private List<String> improvements;
-    private String topPriorityAdvice;
-
     @Getter
     @NoArgsConstructor
     public static class TimestampFeedbackItem {

@@ -40,38 +40,11 @@ public class QuestionSetFeedback {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    // Gemini 네이티브 오디오 분석 종합 리포트 필드 (nullable — 기존 데이터 호환)
-    @Column(columnDefinition = "TEXT")
-    private String verbalSummary;
-
-    @Column(columnDefinition = "TEXT")
-    private String vocalSummary;
-
-    @Column(columnDefinition = "TEXT")
-    private String nonverbalSummary;
-
-    @Column(columnDefinition = "TEXT")
-    private String strengths;  // JSON 배열 문자열
-
-    @Column(columnDefinition = "TEXT")
-    private String improvements;  // JSON 배열 문자열
-
-    @Column(columnDefinition = "TEXT")
-    private String topPriorityAdvice;
-
     @Builder
-    public QuestionSetFeedback(QuestionSet questionSet, int questionSetScore, String questionSetComment,
-                               String verbalSummary, String vocalSummary, String nonverbalSummary,
-                               String strengths, String improvements, String topPriorityAdvice) {
+    public QuestionSetFeedback(QuestionSet questionSet, int questionSetScore, String questionSetComment) {
         this.questionSet = questionSet;
         this.questionSetScore = questionSetScore;
         this.questionSetComment = questionSetComment;
-        this.verbalSummary = verbalSummary;
-        this.vocalSummary = vocalSummary;
-        this.nonverbalSummary = nonverbalSummary;
-        this.strengths = strengths;
-        this.improvements = improvements;
-        this.topPriorityAdvice = topPriorityAdvice;
     }
 
     public void addTimestampFeedback(TimestampFeedback feedback) {

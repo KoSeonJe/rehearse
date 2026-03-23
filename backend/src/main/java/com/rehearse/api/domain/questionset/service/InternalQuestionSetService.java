@@ -67,12 +67,6 @@ public class InternalQuestionSetService {
                 .questionSet(questionSet)
                 .questionSetScore(request.getQuestionSetScore())
                 .questionSetComment(request.getQuestionSetComment())
-                .verbalSummary(request.getVerbalSummary())
-                .vocalSummary(request.getVocalSummary())
-                .nonverbalSummary(request.getNonverbalSummary())
-                .strengths(toJson(request.getStrengths()))
-                .improvements(toJson(request.getImprovements()))
-                .topPriorityAdvice(request.getTopPriorityAdvice())
                 .build();
 
         if (request.getTimestampFeedbacks() != null) {

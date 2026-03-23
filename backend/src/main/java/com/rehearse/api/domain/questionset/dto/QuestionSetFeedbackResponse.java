@@ -17,12 +17,6 @@ public class QuestionSetFeedbackResponse {
     private final String streamingUrl;
     private final String fallbackUrl;
     private final List<TimestampFeedbackResponse> timestampFeedbacks;
-    private final String verbalSummary;
-    private final String vocalSummary;
-    private final String nonverbalSummary;
-    private final String strengths;          // JSON 배열 문자열
-    private final String improvements;       // JSON 배열 문자열
-    private final String topPriorityAdvice;
 
     public static QuestionSetFeedbackResponse from(QuestionSetFeedback feedback,
                                                      String streamingUrl, String fallbackUrl) {
@@ -37,12 +31,6 @@ public class QuestionSetFeedbackResponse {
                 .streamingUrl(streamingUrl)
                 .fallbackUrl(fallbackUrl)
                 .timestampFeedbacks(timestamps)
-                .verbalSummary(feedback.getVerbalSummary())
-                .vocalSummary(feedback.getVocalSummary())
-                .nonverbalSummary(feedback.getNonverbalSummary())
-                .strengths(feedback.getStrengths())
-                .improvements(feedback.getImprovements())
-                .topPriorityAdvice(feedback.getTopPriorityAdvice())
                 .build();
     }
 }
