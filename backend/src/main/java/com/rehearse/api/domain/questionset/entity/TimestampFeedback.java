@@ -56,12 +56,29 @@ public class TimestampFeedback {
     @Column(nullable = false)
     private boolean isAnalyzed;
 
+    // Gemini 네이티브 오디오 분석 음성 특성 필드 (nullable — 기존 데이터 호환)
+    @Column(columnDefinition = "TEXT")
+    private String fillerWords;  // JSON 배열 문자열 예: ["음", "어"]
+
+    @Column(length = 10)
+    private String speechPace;  // "빠름" / "적절" / "느림"
+
+    private Integer toneConfidence;  // 0-100
+
+    @Column(length = 20)
+    private String emotionLabel;  // "자신감" / "긴장" / "평온" / "불안"
+
+    @Column(columnDefinition = "TEXT")
+    private String vocalComment;
+
     @Builder
     public TimestampFeedback(Question question, long startMs, long endMs,
                              String transcript, Integer verbalScore, String verbalComment,
                              Integer fillerWordCount, Integer eyeContactScore, Integer postureScore,
                              String expressionLabel, String nonverbalComment, String overallComment,
-                             boolean isAnalyzed) {
+                             boolean isAnalyzed,
+                             String fillerWords, String speechPace, Integer toneConfidence,
+                             String emotionLabel, String vocalComment) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
@@ -75,6 +92,11 @@ public class TimestampFeedback {
         this.nonverbalComment = nonverbalComment;
         this.overallComment = overallComment;
         this.isAnalyzed = isAnalyzed;
+        this.fillerWords = fillerWords;
+        this.speechPace = speechPace;
+        this.toneConfidence = toneConfidence;
+        this.emotionLabel = emotionLabel;
+        this.vocalComment = vocalComment;
     }
 
     void assignQuestionSetFeedback(QuestionSetFeedback questionSetFeedback) {

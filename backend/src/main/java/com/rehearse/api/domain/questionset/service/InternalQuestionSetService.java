@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
@@ -29,6 +31,7 @@ public class InternalQuestionSetService {
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
     private final S3Service s3Service;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
@@ -64,6 +67,12 @@ public class InternalQuestionSetService {
                 .questionSet(questionSet)
                 .questionSetScore(request.getQuestionSetScore())
                 .questionSetComment(request.getQuestionSetComment())
+                .verbalSummary(request.getVerbalSummary())
+                .vocalSummary(request.getVocalSummary())
+                .nonverbalSummary(request.getNonverbalSummary())
+                .strengths(toJson(request.getStrengths()))
+                .improvements(toJson(request.getImprovements()))
+                .topPriorityAdvice(request.getTopPriorityAdvice())
                 .build();
 
         if (request.getTimestampFeedbacks() != null) {
@@ -91,6 +100,11 @@ public class InternalQuestionSetService {
                         .nonverbalComment(item.getNonverbalComment())
                         .overallComment(item.getOverallComment())
                         .isAnalyzed(true)
+                        .fillerWords(toJson(item.getFillerWords()))
+                        .speechPace(item.getSpeechPace())
+                        .toneConfidence(item.getToneConfidence())
+                        .emotionLabel(item.getEmotionLabel())
+                        .vocalComment(item.getVocalComment())
                         .build();
                 feedback.addTimestampFeedback(tf);
             }
@@ -143,5 +157,15 @@ public class InternalQuestionSetService {
     private QuestionSet findQuestionSet(Long questionSetId) {
         return questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+    }
+
+    private String toJson(List<String> list) {
+        if (list == null) return null;
+        try {
+            return objectMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            log.warn("List<String> JSON 직렬화 실패: {}", list, e);
+            return null;
+        }
     }
 }
