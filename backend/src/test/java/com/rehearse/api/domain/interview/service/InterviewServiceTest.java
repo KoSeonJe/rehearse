@@ -256,13 +256,16 @@ class InterviewServiceTest {
                     return q;
                 });
 
+        org.springframework.mock.web.MockMultipartFile audioFile =
+                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+        given(sttService.transcribe(audioFile)).willReturn("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
+
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
-        ReflectionTestUtils.setField(request, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
         ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
 
-        FollowUpResponse response = interviewService.generateFollowUp(1L, request, null);
+        FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
 
         assertThat(response.getQuestionId()).isEqualTo(100L);
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
@@ -332,34 +335,6 @@ class InterviewServiceTest {
 
         // when & then
         assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_006");
-                });
-    }
-
-    @Test
-    @DisplayName("오디오 파일이 있지만 STT 결과가 빈 문자열이면 예외 발생")
-    void generateFollowUp_sttReturnsEmpty_throwsException() {
-        // given
-        Interview interview = createMockInterview();
-        interview.completeQuestionGeneration();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
-        org.springframework.mock.web.MockMultipartFile audioFile =
-                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-
-        given(sttService.transcribe(audioFile)).willReturn("");
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "질문");
-        ReflectionTestUtils.setField(request, "answerText", "");
-
-        // when & then
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;

@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.questionpool.entity.CsSubTopic;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.util.CacheKeyGenerator;
 import com.rehearse.api.infra.ai.AiClient;
@@ -21,13 +22,6 @@ import java.util.concurrent.locks.ReentrantLock;
 @Service
 @RequiredArgsConstructor
 public class CacheableQuestionProvider {
-
-    private static final Map<String, String> CS_SUBTOPIC_TO_CATEGORY = Map.of(
-            "DATA_STRUCTURE", "자료구조",
-            "OS", "운영체제",
-            "NETWORK", "네트워크",
-            "DATABASE", "데이터베이스"
-    );
 
     private final QuestionPoolService questionPoolService;
     private final AiClient aiClient;
@@ -103,8 +97,7 @@ public class CacheableQuestionProvider {
             return List.of();
         }
         return csSubTopics.stream()
-                .map(CS_SUBTOPIC_TO_CATEGORY::get)
-                .filter(Objects::nonNull)
+                .flatMap(s -> CsSubTopic.toCategoryName(s).stream())
                 .toList();
     }
 }

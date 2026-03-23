@@ -4,83 +4,66 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
-import com.rehearse.api.domain.questionpool.config.CacheStrategyConfig;
-import com.rehearse.api.domain.questionpool.entity.CacheStrategy;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.interview.vo.QuestionDistribution;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.service.CacheableQuestionProvider;
 import com.rehearse.api.domain.questionpool.service.FreshQuestionProvider;
 import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 public class QuestionGenerationService {
 
-    private final QuestionGenerationTransactionHelper transactionHelper;
+    private final InterviewRepository interviewRepository;
+    private final QuestionSetRepository questionSetRepository;
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
     private final Executor questionSubTaskExecutor;
 
     public QuestionGenerationService(
-            QuestionGenerationTransactionHelper transactionHelper,
+            InterviewRepository interviewRepository,
+            QuestionSetRepository questionSetRepository,
             CacheableQuestionProvider cacheableProvider,
             FreshQuestionProvider freshProvider,
             @Qualifier("questionSubTaskExecutor") Executor questionSubTaskExecutor) {
-        this.transactionHelper = transactionHelper;
+        this.interviewRepository = interviewRepository;
+        this.questionSetRepository = questionSetRepository;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
         this.questionSubTaskExecutor = questionSubTaskExecutor;
     }
 
-    @Async("questionSubTaskExecutor")
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
-        try {
-            generateQuestions(event.getInterviewId(), event.getPosition(), event.getPositionDetail(),
-                    event.getLevel(), event.getInterviewTypes(), event.getCsSubTopics(),
-                    event.getResumeText(), event.getDurationMinutes(), event.getTechStack());
-        } catch (Exception e) {
-            log.error("질문 생성 비동기 작업 실패: interviewId={}", event.getInterviewId(), e);
-            String reason = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-            transactionHelper.failGeneration(event.getInterviewId(),
-                    reason != null ? reason : "알 수 없는 오류");
-        }
-    }
-
-    public void generateQuestions(Long interviewId, Position position, String positionDetail,
+    public void generateQuestions(Long interviewId, Position position,
                                   InterviewLevel level, List<InterviewType> interviewTypes,
                                   List<String> csSubTopics, String resumeText,
                                   Integer durationMinutes, TechStack techStack) {
 
         // Phase A: 상태 전환 (별도 트랜잭션)
-        transactionHelper.startGeneration(interviewId);
+        startGeneration(interviewId);
 
-        // 유형별 질문 수 배분
+        // 유형별 질문 수 배분 및 CACHEABLE / FRESH 분류
         int totalCount = QuestionCountCalculator.calculate(durationMinutes, interviewTypes.size());
-        Map<InterviewType, Integer> distribution = distributeQuestionCount(interviewTypes, totalCount);
+        QuestionDistribution distribution = QuestionDistribution.create(interviewTypes, totalCount);
 
-        // CACHEABLE / FRESH 분류
-        Map<CacheStrategy, Map<InterviewType, Integer>> grouped = distribution.entrySet().stream()
-                .collect(Collectors.groupingBy(
-                        e -> CacheStrategyConfig.getStrategy(e.getKey()),
-                        Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-
-        Map<InterviewType, Integer> cacheableTypes = grouped.getOrDefault(CacheStrategy.CACHEABLE, Map.of());
-        Map<InterviewType, Integer> freshTypes = grouped.getOrDefault(CacheStrategy.FRESH, Map.of());
+        Map<InterviewType, Integer> cacheableTypes = distribution.getCacheableTypes();
+        Map<InterviewType, Integer> freshTypes = distribution.getFreshTypes();
 
         TechStack effectiveTechStack = techStack != null
                 ? techStack : TechStack.getDefaultForPosition(position);
@@ -102,7 +85,7 @@ public class QuestionGenerationService {
         try {
             allQuestionSets.addAll(cacheableFuture.join());
             allQuestionSets.addAll(freshFuture.join());
-        } catch (java.util.concurrent.CompletionException e) {
+        } catch (CompletionException e) {
             cacheableFuture.cancel(true);
             freshFuture.cancel(true);
             Throwable cause = e.getCause() != null ? e.getCause() : e;
@@ -115,7 +98,38 @@ public class QuestionGenerationService {
         }
 
         // Phase C: 결과 저장 (별도 트랜잭션)
-        transactionHelper.saveResults(interviewId, allQuestionSets);
+        saveResults(interviewId, allQuestionSets);
+    }
+
+    @Transactional
+    public void startGeneration(Long interviewId) {
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
+        interview.startQuestionGeneration();
+        interviewRepository.flush();
+        log.info("질문 생성 시작: interviewId={}", interviewId);
+    }
+
+    @Transactional
+    public void saveResults(Long interviewId, List<QuestionSet> questionSets) {
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
+
+        questionSets.forEach(qs -> qs.assignInterview(interview));
+        questionSetRepository.saveAll(questionSets);
+        interview.completeQuestionGeneration();
+        interviewRepository.save(interview);
+
+        log.info("질문 생성 완료: interviewId={}, questionSets={}", interviewId, questionSets.size());
+    }
+
+    @Transactional
+    public void failGeneration(Long interviewId, String reason) {
+        interviewRepository.findById(interviewId).ifPresent(interview -> {
+            interview.failQuestionGeneration(reason);
+            interviewRepository.save(interview);
+            log.error("질문 생성 실패: interviewId={}, reason={}", interviewId, reason);
+        });
     }
 
     private List<QuestionSet> provideCacheableQuestions(
@@ -192,18 +206,6 @@ public class QuestionGenerationService {
 
         log.info("[FRESH] 질문 제공 완료: interviewId={}, count={}", interviewId, result.size());
         return result;
-    }
-
-    private Map<InterviewType, Integer> distributeQuestionCount(
-            List<InterviewType> types, int totalCount) {
-        int base = totalCount / types.size();
-        int remainder = totalCount % types.size();
-
-        Map<InterviewType, Integer> distribution = new LinkedHashMap<>();
-        for (int i = 0; i < types.size(); i++) {
-            distribution.put(types.get(i), base + (i < remainder ? 1 : 0));
-        }
-        return distribution;
     }
 
     private QuestionCategory parseQuestionCategory(String categoryStr) {
