@@ -6,6 +6,8 @@ import time
 import google.generativeai as genai
 
 from config import Config
+import json as _json
+
 from analyzers.json_utils import parse_llm_json
 from analyzers.prompts import KOREAN_INSTRUCTION
 from analyzers.verbal_prompt_factory import (
@@ -124,12 +126,12 @@ def analyze_answer_audio(
 
             response = model.generate_content([audio_file, user_prompt])
             raw = response.text
-            result = parse_llm_json(raw)
+            try:
+                result = _json.loads(raw)
+            except _json.JSONDecodeError:
+                result = parse_llm_json(raw)
 
-            keys = list(result.keys())
-            print(f"[Gemini] 답변 분석 완료: keys={keys}, verbal_score={result.get('verbal', {}).get('score')}")
-            if "transcript" not in result:
-                print(f"[Gemini] 경고: transcript 키 누락. 응답 원본: {raw[:500]}")
+            print(f"[Gemini] 답변 분석 완료: keys={list(result.keys())}, verbal_score={result.get('verbal', {}).get('score')}")
             return result
 
         except Exception as e:
