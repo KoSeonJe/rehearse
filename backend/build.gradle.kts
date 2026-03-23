@@ -34,6 +34,9 @@ dependencies {
     runtimeOnly("com.h2database:h2")
     runtimeOnly("com.mysql:mysql-connector-j")
 
+    // HikariCP 6.x (Virtual Thread pinning 방지)
+    implementation("com.zaxxer:HikariCP:6.2.1")
+
     // Flyway (DB 마이그레이션)
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
@@ -62,4 +65,8 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    jvmArgs("-Djdk.tracePinnedThreads=short")
 }
