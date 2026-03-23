@@ -154,14 +154,23 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
         }
 
-        String answerText = request.getAnswerText();
+        String answerText;
         if (audioFile != null && !audioFile.isEmpty()) {
             answerText = sttService.transcribe(audioFile);
-        }
-
-        if (answerText == null || answerText.isBlank()) {
+            if (answerText == null || answerText.isBlank()) {
+                throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
+            }
+        } else if (request.getAnswerText() != null && !request.getAnswerText().isBlank()) {
+            answerText = request.getAnswerText();
+        } else {
             throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
         }
+
+        QuestionSet questionSet = questionSetRepository.findById(request.getQuestionSetId())
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+
+        validateFollowUpRoundLimit(questionSet);
+        int nextOrderIndex = questionSet.getQuestions().size();
 
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
                 interview.getPosition(),
@@ -174,14 +183,8 @@ public class InterviewService {
         );
         GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(followUpReq);
 
-        QuestionSet questionSet = questionSetRepository.findById(request.getQuestionSetId())
-                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-
-        QuestionType followUpType = determineFollowUpType(questionSet);
-        int nextOrderIndex = questionSet.getQuestions().size();
-
         Question followUpQuestion = Question.builder()
-                .questionType(followUpType)
+                .questionType(QuestionType.FOLLOWUP)
                 .questionText(followUp.getQuestion())
                 .modelAnswer(followUp.getModelAnswer())
                 .orderIndex(nextOrderIndex)
@@ -190,7 +193,7 @@ public class InterviewService {
         questionSet.addQuestion(followUpQuestion);
         questionRepository.save(followUpQuestion);
 
-        log.info("후속 질문 생성 및 저장 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
+        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
                 id, request.getQuestionSetId(), followUpQuestion.getId(), followUp.getType());
 
         return FollowUpResponse.builder()
@@ -218,7 +221,7 @@ public class InterviewService {
 
     private static final int MAX_FOLLOWUP_ROUNDS = 2;
 
-    private QuestionType determineFollowUpType(QuestionSet questionSet) {
+    private void validateFollowUpRoundLimit(QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
                 .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
                 .count();
@@ -226,6 +229,5 @@ public class InterviewService {
         if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
             throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
         }
-        return QuestionType.FOLLOWUP;
     }
 }

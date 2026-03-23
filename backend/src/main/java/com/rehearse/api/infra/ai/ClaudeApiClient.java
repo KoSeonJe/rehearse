@@ -28,8 +28,12 @@ public class ClaudeApiClient implements AiClient {
     private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
-    private static final int MAX_TOKENS_QUESTION = 4096;
+    private static final int MAX_TOKENS_QUESTION = 8192;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
+    private static final String FOLLOW_UP_MODEL = "claude-haiku-4-5-20251001";
+
+    private static final int MAX_RETRY_ATTEMPTS = 3;
+    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
@@ -80,15 +84,22 @@ public class ClaudeApiClient implements AiClient {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
 
-        String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
+        String text = callClaudeApiWithModel(FOLLOW_UP_MODEL, systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
+        return callClaudeApiWithModel(model, systemPrompt, userPrompt, maxTokens, temperature);
+    }
+
+    private String callClaudeApiWithModel(String requestModel, String systemPrompt, String userPrompt,
+                                          int maxTokens, Double temperature) {
+        SystemContent systemContent = SystemContent.withCaching(systemPrompt);
+
         ClaudeRequest request = ClaudeRequest.builder()
-                .model(model)
+                .model(requestModel)
                 .maxTokens(maxTokens)
-                .system(systemPrompt)
+                .system(List.of(systemContent))
                 .messages(List.of(
                         ClaudeRequest.Message.builder()
                                 .role("user")
@@ -98,10 +109,9 @@ public class ClaudeApiClient implements AiClient {
                 .temperature(temperature)
                 .build();
 
-        int maxAttempts = 3;
-        long delayMs = 1000;
+        long delayMs = INITIAL_RETRY_DELAY_MS;
 
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
             try {
                 ClaudeResponse response = restClient.post()
                         .contentType(MediaType.APPLICATION_JSON)
@@ -129,10 +139,16 @@ public class ClaudeApiClient implements AiClient {
                 }
 
                 if (response.getUsage() != null) {
-                    log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, total: {}",
-                            response.getUsage().getInputTokens(),
-                            response.getUsage().getOutputTokens(),
-                            response.getUsage().getInputTokens() + response.getUsage().getOutputTokens());
+                    var usage = response.getUsage();
+                    log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, cache_write: {}, cache_read: {}, total: {}",
+                            usage.getInputTokens(), usage.getOutputTokens(),
+                            usage.getCacheCreationInputTokens(), usage.getCacheReadInputTokens(),
+                            usage.getInputTokens() + usage.getOutputTokens()
+                                    + usage.getCacheCreationInputTokens() + usage.getCacheReadInputTokens());
+                }
+
+                if ("max_tokens".equals(response.getStopReason())) {
+                    log.warn("[Claude API] 응답이 max_tokens({})에 도달하여 잘림. model={}", maxTokens, requestModel);
                 }
 
                 return response.getContent().get(0).getText();
@@ -140,8 +156,8 @@ public class ClaudeApiClient implements AiClient {
             } catch (BusinessException e) {
                 throw e;
             } catch (RetryableApiException | RestClientException e) {
-                if (attempt < maxAttempts) {
-                    log.info("[Claude API] 재시도 {}/{}: {}", attempt, maxAttempts, e.getMessage());
+                if (attempt < MAX_RETRY_ATTEMPTS) {
+                    log.info("[Claude API] 재시도 {}/{}: {}", attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
                     try {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {

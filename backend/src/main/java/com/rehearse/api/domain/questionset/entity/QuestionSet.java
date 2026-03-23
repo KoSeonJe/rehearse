@@ -78,6 +78,14 @@ public class QuestionSet {
         this.analysisStatus = AnalysisStatus.PENDING;
     }
 
+    public void assignInterview(Interview interview) {
+        this.interview = interview;
+    }
+
+    public void updateOrderIndex(int orderIndex) {
+        this.orderIndex = orderIndex;
+    }
+
     public void addQuestion(Question question) {
         this.questions.add(question);
         question.assignQuestionSet(this);

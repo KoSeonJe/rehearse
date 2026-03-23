@@ -29,10 +29,20 @@ public class ClaudeResponseParser {
         String json = text;
         if (json.contains("```json")) {
             json = json.substring(json.indexOf("```json") + 7);
-            json = json.substring(0, json.indexOf("```"));
+            int closingIdx = json.indexOf("```");
+            if (closingIdx >= 0) {
+                json = json.substring(0, closingIdx);
+            } else {
+                log.warn("닫는 ``` 없음 (응답 잘림 가능성). 전체 텍스트를 JSON으로 파싱 시도합니다.");
+            }
         } else if (json.contains("```")) {
             json = json.substring(json.indexOf("```") + 3);
-            json = json.substring(0, json.indexOf("```"));
+            int closingIdx = json.indexOf("```");
+            if (closingIdx >= 0) {
+                json = json.substring(0, closingIdx);
+            } else {
+                log.warn("닫는 ``` 없음 (응답 잘림 가능성). 전체 텍스트를 JSON으로 파싱 시도합니다.");
+            }
         }
         return json.trim();
     }

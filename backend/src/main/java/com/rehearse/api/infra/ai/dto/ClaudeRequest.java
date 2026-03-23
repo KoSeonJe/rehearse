@@ -16,7 +16,7 @@ public class ClaudeRequest {
     @JsonProperty("max_tokens")
     private final int maxTokens;
 
-    private final String system;
+    private final List<SystemContent> system;
 
     private final List<Message> messages;
 
