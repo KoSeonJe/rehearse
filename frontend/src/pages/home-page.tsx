@@ -17,7 +17,7 @@ export const HomePage = () => {
   const { user, isAuthenticated } = useAuth()
   const { logout } = useAuthStore()
 
-  const handleNavigateSetup = () => navigate('/interview/setup')
+  const handleNavigateLogin = () => navigate('/login')
 
   const handleLogout = async () => {
     try {
@@ -39,7 +39,6 @@ export const HomePage = () => {
             </span>
           </div>
 
-          {/* 헤더 우측: 로그인 상태 */}
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
@@ -66,12 +65,12 @@ export const HomePage = () => {
       </header>
 
       <main>
-        <HeroSection onNavigate={handleNavigateSetup} isAuthenticated={isAuthenticated} />
+        <HeroSection onNavigate={handleNavigateLogin} isAuthenticated={isAuthenticated} />
         <HowItWorksSection />
         <KeyFeaturesSection />
         <BeforeYouStartSection />
         <FaqSection />
-        <CtaSection onNavigate={handleNavigateSetup} />
+        <CtaSection onNavigate={handleNavigateLogin} />
       </main>
 
       <footer className="border-t border-border py-12 text-center">
