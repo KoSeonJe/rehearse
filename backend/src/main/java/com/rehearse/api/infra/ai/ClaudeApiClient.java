@@ -26,7 +26,7 @@ import java.util.List;
 @ConditionalOnExpression("!'${claude.api-key:}'.isEmpty()")
 public class ClaudeApiClient implements AiClient {
 
-    private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+    private static final String DEFAULT_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
     private static final int MAX_TOKENS_QUESTION = 8192;
@@ -49,13 +49,14 @@ public class ClaudeApiClient implements AiClient {
             FollowUpPromptBuilder followUpPromptBuilder,
             ClaudeResponseParser responseParser,
             @Value("${claude.api-key}") String apiKey,
-            @Value("${claude.model:claude-sonnet-4-20250514}") String model) {
+            @Value("${claude.model:claude-sonnet-4-20250514}") String model,
+            @Value("${claude.api.url:https://api.anthropic.com/v1/messages}") String apiUrl) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
-                .baseUrl(ANTHROPIC_API_URL)
+                .baseUrl(apiUrl)
                 .requestFactory(ClientHttpRequestFactories.get(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;

@@ -25,13 +25,17 @@ import java.time.Duration;
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
 public class WhisperService implements SttService {
 
-    private static final String WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
+    private static final String DEFAULT_WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions";
 
     private final String apiKey;
+    private final String whisperApiUrl;
     private final RestTemplate restTemplate;
 
-    public WhisperService(@Value("${openai.api-key:}") String apiKey) {
+    public WhisperService(
+            @Value("${openai.api-key:}") String apiKey,
+            @Value("${openai.api.url:https://api.openai.com/v1/audio/transcriptions}") String whisperApiUrl) {
         this.apiKey = apiKey;
+        this.whisperApiUrl = whisperApiUrl;
 
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(5));
@@ -67,7 +71,7 @@ public class WhisperService implements SttService {
             HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<String> response = restTemplate.exchange(
-                    WHISPER_API_URL, HttpMethod.POST, request, String.class);
+                    whisperApiUrl, HttpMethod.POST, request, String.class);
 
             String transcript = response.getBody();
             log.info("Whisper STT 완료: {}자", transcript != null ? transcript.length() : 0);

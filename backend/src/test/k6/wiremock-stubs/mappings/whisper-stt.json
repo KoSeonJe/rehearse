@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "POST",
+    "urlPattern": "/v1/audio/transcriptions"
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 1000,
+    "headers": {
+      "Content-Type": "text/plain"
+    },
+    "body": "안녕하세요. 저는 백엔드 개발자입니다. Spring Framework를 주로 사용하고 있으며, JPA와 MySQL을 활용한 데이터베이스 설계 경험이 있습니다."
+  }
+}

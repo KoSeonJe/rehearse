@@ -1,0 +1,71 @@
+spring:
+  threads:
+    virtual:
+      enabled: ${VIRTUAL_THREAD_ENABLED:true}
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/rehearse_loadtest?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: root
+    password: loadtest
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 3000
+      max-lifetime: 1200000
+      leak-detection-threshold: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# CORS
+cors:
+  allowed-origins: http://localhost:5173
+
+# 외부 API → Mock Server (localhost:9090)
+claude:
+  api-key: sk-test-dummy-key
+  api:
+    url: http://localhost:9090/v1/messages
+
+openai:
+  api-key: sk-test-dummy-key
+  api:
+    url: http://localhost:9090/v1/audio/transcriptions
+
+# Resilience4j — GPT-4o Tier 1 기준 (500 RPM = ~8 req/s)
+resilience4j:
+  ratelimiter:
+    instances:
+      claude-api:
+        limitForPeriod: ${RATELIMITER_LIMIT:8}
+        limitRefreshPeriod: 1s
+        timeoutDuration: ${RATELIMITER_TIMEOUT:60s}
+      whisper-api:
+        limitForPeriod: ${RATELIMITER_LIMIT:8}
+        limitRefreshPeriod: 1s
+        timeoutDuration: ${RATELIMITER_TIMEOUT:60s}
+
+# 글로벌 동시성 제한 (0 = 비활성화)
+api:
+  global-concurrency-limit: ${GLOBAL_CONCURRENCY_LIMIT:0}
+
+# Actuator metrics 활성화
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, info
+  endpoint:
+    health:
+      show-details: always
+
+# 내부 API 키
+internal:
+  api-key: loadtest-key
