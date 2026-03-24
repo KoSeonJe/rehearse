@@ -36,32 +36,22 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 }
 
 const PROGRESS_STEPS = [
-  { key: 'STARTED', label: '준비', fullLabel: '분석 준비 중' },
+  { key: 'PENDING_UPLOAD', label: '대기', fullLabel: '업로드 대기 중' },
   { key: 'EXTRACTING', label: '추출', fullLabel: '영상 처리 중' },
   { key: 'ANALYZING', label: '분석', fullLabel: 'AI가 답변을 분석 중' },
   { key: 'FINALIZING', label: '생성', fullLabel: '종합 피드백 생성 중' },
 ] as const
 
-const LEGACY_ANALYZING_KEYS = ['STT_PROCESSING', 'VERBAL_ANALYZING', 'NONVERBAL_ANALYZING']
-
-const getProgressIndex = (progress: string | null): number => {
-  if (!progress) return -1
-  const index = PROGRESS_STEPS.findIndex((s) => s.key === progress)
-  if (index !== -1) return index
-  if (LEGACY_ANALYZING_KEYS.includes(progress)) {
-    return PROGRESS_STEPS.findIndex((s) => s.key === 'ANALYZING')
-  }
-  return -1
+const getProgressIndex = (analysisStatus: string | null): number => {
+  if (!analysisStatus) return -1
+  return PROGRESS_STEPS.findIndex((s) => s.key === analysisStatus)
 }
 
-const getProgressLabel = (progress: string | null): string => {
-  if (!progress) return '대기 중'
-  const step = PROGRESS_STEPS.find((s) => s.key === progress)
+const getProgressLabel = (analysisStatus: string | null): string => {
+  if (!analysisStatus) return '대기 중'
+  const step = PROGRESS_STEPS.find((s) => s.key === analysisStatus)
   if (step) return step.fullLabel
-  if (LEGACY_ANALYZING_KEYS.includes(progress)) {
-    return 'AI가 답변을 분석 중'
-  }
-  return progress
+  return '대기 중'
 }
 
 interface AnalysisStatusFloatProps {
@@ -75,7 +65,7 @@ interface AnalysisStatusFloatProps {
   isRetrying: boolean
   onRetry: () => void
   onNavigateFeedback: () => void
-  statuses: Array<{ analysisProgress: string | null; analysisStatus: string; fileStatus: string | null } | null>
+  statuses: Array<{ analysisStatus: string; convertStatus: string | null; failureReason: string | null } | null>
   questionSets: Array<{ id: number; category: string }>
 }
 
@@ -113,8 +103,8 @@ const AnalysisStatusFloat = ({
               {statuses.map((status, idx) => {
                 if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
                 const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
-                const currentStep = getProgressIndex(status.analysisProgress)
-                const progressLabel = getProgressLabel(status.analysisProgress)
+                const currentStep = getProgressIndex(status.analysisStatus)
+                const progressLabel = getProgressLabel(status.analysisStatus)
 
                 return (
                   <div key={questionSets[idx]?.id ?? idx} className="space-y-1.5">
@@ -226,7 +216,7 @@ export const InterviewAnalysisPage = () => {
     setIsRetrying(true)
     const failedSets = questionSets
       .map((qs, idx) => ({ qs, idx }))
-      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED' || statuses[idx]?.fileStatus === 'FAILED')
+      .filter(({ idx }) => statuses[idx]?.analysisStatus === 'FAILED' || statuses[idx]?.analysisStatus === 'PARTIAL' || statuses[idx]?.convertStatus === 'FAILED')
 
     await Promise.allSettled(
       failedSets.map(({ qs, idx }) =>
@@ -238,14 +228,14 @@ export const InterviewAnalysisPage = () => {
     setIsRetrying(false)
   }, [interview, isRetrying, questionSets, statuses, retryMutation, statusQueries])
 
-  const allTerminal = hasQuestionSets && statuses.every((s) =>
-    s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'SKIPPED',
-  )
-  const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED').length
-  const allCompleted = allTerminal && completedCount > 0
-  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED' || s?.fileStatus === 'FAILED')
+  const isTerminal = (s: typeof statuses[number]) =>
+    s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'PARTIAL' || s?.analysisStatus === 'FAILED' || s?.analysisStatus === 'SKIPPED'
+  const allTerminal = hasQuestionSets && statuses.every(isTerminal)
+  const completedCount = statuses.filter((s) => s?.analysisStatus === 'COMPLETED' || s?.analysisStatus === 'PARTIAL').length
+  const allCompleted = allTerminal && completedCount > 0 && !statuses.some((s) => s?.analysisStatus === 'FAILED')
+  const hasFailed = statuses.some((s) => s?.analysisStatus === 'FAILED' || s?.analysisStatus === 'PARTIAL' || s?.convertStatus === 'FAILED')
   const isAnalyzing = hasQuestionSets && statuses.some(
-    (s) => s?.analysisStatus === 'ANALYZING' || s?.analysisStatus === 'PENDING' || s?.analysisStatus === 'PENDING_UPLOAD',
+    (s) => ['PENDING', 'PENDING_UPLOAD', 'EXTRACTING', 'ANALYZING', 'FINALIZING'].includes(s?.analysisStatus ?? ''),
   )
 
   // 페이지 이탈 시 알림 권한 요청 + 완료 시 알림

@@ -33,10 +33,11 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
   const videoRef = useRef<VideoPlayerHandle>(null)
   const queryClient = useQueryClient()
 
+  const shouldFetchFeedback = analysisStatus === 'COMPLETED' || analysisStatus === 'PARTIAL'
   const { data: feedbackRes, isLoading: feedbackLoading } = useQuestionSetFeedback(
-    interviewId, questionSetId, analysisStatus === 'COMPLETED',
+    interviewId, questionSetId, shouldFetchFeedback,
   )
-  const { data: questionsRes } = useQuestionsWithAnswers(interviewId, questionSetId, analysisStatus === 'COMPLETED')
+  const { data: questionsRes } = useQuestionsWithAnswers(interviewId, questionSetId, shouldFetchFeedback)
 
   const feedback = feedbackRes?.data
   const feedbacks = feedback?.timestampFeedbacks ?? []
@@ -82,7 +83,20 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
   }
 
   // 분석 미완료 상태
-  if (analysisStatus !== 'COMPLETED') {
+  if (analysisStatus !== 'COMPLETED' && analysisStatus !== 'PARTIAL') {
+    const analysisInProgressBody = (
+      <div className="rounded-2xl bg-surface p-8 text-center space-y-4">
+        <Character mood="thinking" size={80} className="mx-auto" />
+        <div>
+          <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
+          <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
+        </div>
+        <div className="h-1 w-32 bg-accent/20 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-accent animate-progress-loading" />
+        </div>
+      </div>
+    )
+
     const statusConfig: Record<string, { subtitle: string; body: ReactNode }> = {
       PENDING: {
         subtitle: '업로드 대기 중',
@@ -102,20 +116,17 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           </div>
         ),
       },
+      EXTRACTING: {
+        subtitle: '영상 처리 중',
+        body: analysisInProgressBody,
+      },
       ANALYZING: {
         subtitle: '분석 진행 중',
-        body: (
-          <div className="rounded-2xl bg-surface p-8 text-center space-y-4">
-            <Character mood="thinking" size={80} className="mx-auto" />
-            <div>
-              <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
-              <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
-            </div>
-            <div className="h-1 w-32 bg-accent/20 rounded-full mx-auto overflow-hidden">
-              <div className="h-full bg-accent animate-progress-loading" />
-            </div>
-          </div>
-        ),
+        body: analysisInProgressBody,
+      },
+      FINALIZING: {
+        subtitle: '피드백 생성 중',
+        body: analysisInProgressBody,
       },
       SKIPPED: {
         subtitle: '건너뜀',
