@@ -73,9 +73,9 @@ class InternalFileServiceTest {
     @DisplayName("updateFileStatus: streamingS3Key가 있으면 updateStreamingS3Key를 호출한다")
     void updateFileStatus_streamingS3Key업데이트() {
         // given
-        FileMetadata file = createConvertingFile(3L);
+        FileMetadata file = createPendingFile(3L);
         UpdateFileStatusRequest request = createRequest(
-                FileStatus.CONVERTED, "streaming/video.mp4", null, null, null);
+                FileStatus.UPLOADED, "streaming/video.mp4", null, null, null);
 
         given(fileMetadataRepository.findById(3L)).willReturn(Optional.of(file));
 
@@ -83,7 +83,7 @@ class InternalFileServiceTest {
         internalFileService.updateFileStatus(3L, request);
 
         // then
-        assertThat(file.getStatus()).isEqualTo(FileStatus.CONVERTED);
+        assertThat(file.getStatus()).isEqualTo(FileStatus.UPLOADED);
         assertThat(file.getStreamingS3Key()).isEqualTo("streaming/video.mp4");
     }
 
@@ -167,13 +167,6 @@ class InternalFileServiceTest {
                 .contentType("video/webm")
                 .build();
         ReflectionTestUtils.setField(file, "id", id);
-        return file;
-    }
-
-    private FileMetadata createConvertingFile(Long id) {
-        FileMetadata file = createPendingFile(id);
-        file.updateStatus(FileStatus.UPLOADED);
-        file.updateStatus(FileStatus.CONVERTING);
         return file;
     }
 

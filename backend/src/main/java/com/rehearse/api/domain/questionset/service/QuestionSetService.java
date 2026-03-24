@@ -23,6 +23,7 @@ import java.util.List;
 public class QuestionSetService {
 
     private final QuestionSetRepository questionSetRepository;
+    private final QuestionSetAnalysisRepository analysisRepository;
     private final QuestionRepository questionRepository;
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
@@ -46,7 +47,9 @@ public class QuestionSetService {
                 .toList();
 
         answerRepository.saveAll(answers);
-        questionSet.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
+
+        QuestionSetAnalysis analysis = findOrCreateAnalysis(questionSet);
+        analysis.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
 
         log.info("답변 구간 저장 완료: questionSetId={}, count={}", questionSetId, answers.size());
     }
@@ -113,18 +116,36 @@ public class QuestionSetService {
 
     @Transactional
     public void skipRemaining(Long interviewId) {
-        List<QuestionSet> pendingSets = questionSetRepository.findByInterviewIdAndAnalysisStatus(
-                interviewId, AnalysisStatus.PENDING);
-
-        for (QuestionSet qs : pendingSets) {
-            qs.updateAnalysisStatus(AnalysisStatus.SKIPPED);
+        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+        int count = 0;
+        for (QuestionSet qs : questionSets) {
+            QuestionSetAnalysis analysis = qs.getAnalysis();
+            if (analysis == null) {
+                // analysis 미생성 QuestionSet도 SKIPPED 처리
+                analysis = analysisRepository.save(QuestionSetAnalysis.builder().questionSet(qs).build());
+                analysis.updateAnalysisStatus(AnalysisStatus.SKIPPED);
+                count++;
+            } else if (analysis.getAnalysisStatus() == AnalysisStatus.PENDING) {
+                analysis.updateAnalysisStatus(AnalysisStatus.SKIPPED);
+                count++;
+            }
         }
 
-        log.info("미응답 질문세트 SKIPPED 처리: interviewId={}, count={}", interviewId, pendingSets.size());
+        log.info("미응답 질문세트 SKIPPED 처리: interviewId={}, count={}", interviewId, count);
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {
         return questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+    }
+
+    private QuestionSetAnalysis findOrCreateAnalysis(QuestionSet questionSet) {
+        return analysisRepository.findByQuestionSetId(questionSet.getId())
+                .orElseGet(() -> {
+                    QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                            .questionSet(questionSet)
+                            .build();
+                    return analysisRepository.save(analysis);
+                });
     }
 }

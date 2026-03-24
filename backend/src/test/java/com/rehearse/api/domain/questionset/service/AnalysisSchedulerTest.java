@@ -10,7 +10,8 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,7 +36,7 @@ class AnalysisSchedulerTest {
     private AnalysisScheduler analysisScheduler;
 
     @Mock
-    private QuestionSetRepository questionSetRepository;
+    private QuestionSetAnalysisRepository analysisRepository;
 
     @Mock
     private FileMetadataRepository fileMetadataRepository;
@@ -45,14 +46,20 @@ class AnalysisSchedulerTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("detectAnalysisZombies: ANALYZING 상태로 타임아웃된 QuestionSet을 FAILED로 마킹한다")
+    @DisplayName("detectAnalysisZombies: ANALYZING 상태로 타임아웃된 QuestionSetAnalysis를 FAILED로 마킹한다")
     void detectAnalysisZombies_좀비감지시_FAILED로마킹() {
         // given
-        QuestionSet zombie = createAnalyzingQuestionSet();
+        QuestionSetAnalysis zombie = createAnalysisInStatus(AnalysisStatus.ANALYZING);
 
-        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.EXTRACTING), any()))
+                .willReturn(List.of());
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
                 eq(AnalysisStatus.ANALYZING), any()))
                 .willReturn(List.of(zombie));
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.FINALIZING), any()))
+                .willReturn(List.of());
 
         // when
         analysisScheduler.detectAnalysisZombies();
@@ -67,53 +74,21 @@ class AnalysisSchedulerTest {
     @DisplayName("detectAnalysisZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
     void detectAnalysisZombies_좀비없을때_아무동작없음() {
         // given
-        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.EXTRACTING), any()))
+                .willReturn(List.of());
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
                 eq(AnalysisStatus.ANALYZING), any()))
+                .willReturn(List.of());
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
+                eq(AnalysisStatus.FINALIZING), any()))
                 .willReturn(List.of());
 
         // when
         analysisScheduler.detectAnalysisZombies();
 
         // then
-        then(questionSetRepository).should(never()).save(any());
-    }
-
-    // ─────────────────────────────────────────────────────────────
-    // detectFileConvertingZombies
-    // ─────────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("detectFileConvertingZombies: CONVERTING 상태로 타임아웃된 FileMetadata를 FAILED로 마킹한다")
-    void detectFileConvertingZombies_좀비감지시_FAILED로마킹() {
-        // given
-        FileMetadata zombie = createFileMetadataInStatus(FileStatus.CONVERTING);
-
-        given(fileMetadataRepository.findByStatusAndUpdatedAtBefore(
-                eq(FileStatus.CONVERTING), any()))
-                .willReturn(List.of(zombie));
-
-        // when
-        analysisScheduler.detectFileConvertingZombies();
-
-        // then
-        assertThat(zombie.getStatus()).isEqualTo(FileStatus.FAILED);
-        assertThat(zombie.getFailureReason()).isEqualTo("CONVERTING_TIMEOUT");
-        assertThat(zombie.getFailureDetail()).contains("10분");
-    }
-
-    @Test
-    @DisplayName("detectFileConvertingZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
-    void detectFileConvertingZombies_좀비없을때_아무동작없음() {
-        // given
-        given(fileMetadataRepository.findByStatusAndUpdatedAtBefore(
-                eq(FileStatus.CONVERTING), any()))
-                .willReturn(List.of());
-
-        // when
-        analysisScheduler.detectFileConvertingZombies();
-
-        // then
-        then(fileMetadataRepository).should(never()).save(any());
+        then(analysisRepository).should(never()).save(any());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -121,12 +96,12 @@ class AnalysisSchedulerTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("detectPendingUploadZombies: PENDING_UPLOAD 상태로 타임아웃된 QuestionSet을 FAILED로 마킹한다")
+    @DisplayName("detectPendingUploadZombies: PENDING_UPLOAD 상태로 타임아웃된 QuestionSetAnalysis를 FAILED로 마킹한다")
     void detectPendingUploadZombies_좀비감지시_FAILED로마킹() {
         // given
-        QuestionSet zombie = createPendingUploadQuestionSet();
+        QuestionSetAnalysis zombie = createAnalysisInStatus(AnalysisStatus.PENDING_UPLOAD);
 
-        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
                 eq(AnalysisStatus.PENDING_UPLOAD), any()))
                 .willReturn(List.of(zombie));
 
@@ -143,7 +118,7 @@ class AnalysisSchedulerTest {
     @DisplayName("detectPendingUploadZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
     void detectPendingUploadZombies_좀비없을때_아무동작없음() {
         // given
-        given(questionSetRepository.findByAnalysisStatusAndUpdatedAtBefore(
+        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
                 eq(AnalysisStatus.PENDING_UPLOAD), any()))
                 .willReturn(List.of());
 
@@ -151,7 +126,7 @@ class AnalysisSchedulerTest {
         analysisScheduler.detectPendingUploadZombies();
 
         // then
-        then(questionSetRepository).should(never()).save(any());
+        then(analysisRepository).should(never()).save(any());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -196,7 +171,7 @@ class AnalysisSchedulerTest {
     // 헬퍼
     // ─────────────────────────────────────────────────────────────
 
-    private QuestionSet createAnalyzingQuestionSet() {
+    private QuestionSetAnalysis createAnalysisInStatus(AnalysisStatus targetStatus) {
         Interview interview = Interview.builder()
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
@@ -208,27 +183,15 @@ class AnalysisSchedulerTest {
                 .category(QuestionCategory.CS)
                 .orderIndex(1)
                 .build();
-        // PENDING -> PENDING_UPLOAD -> ANALYZING
-        qs.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
-        qs.updateAnalysisStatus(AnalysisStatus.ANALYZING);
-        return qs;
-    }
 
-    private QuestionSet createPendingUploadQuestionSet() {
-        Interview interview = Interview.builder()
-                .position(Position.BACKEND)
-                .level(InterviewLevel.JUNIOR)
-                .durationMinutes(30)
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(qs)
                 .build();
 
-        QuestionSet qs = QuestionSet.builder()
-                .interview(interview)
-                .category(QuestionCategory.CS)
-                .orderIndex(1)
-                .build();
-        // PENDING -> PENDING_UPLOAD
-        qs.updateAnalysisStatus(AnalysisStatus.PENDING_UPLOAD);
-        return qs;
+        if (targetStatus != AnalysisStatus.PENDING) {
+            ReflectionTestUtils.setField(analysis, "analysisStatus", targetStatus);
+        }
+        return analysis;
     }
 
     private FileMetadata createFileMetadataInStatus(FileStatus targetStatus) {
@@ -238,12 +201,6 @@ class AnalysisSchedulerTest {
                 .bucket("rehearse-bucket")
                 .contentType("video/webm")
                 .build();
-
-        // PENDING 이 기본값 — CONVERTING 이 필요하면 단계별 전이
-        if (targetStatus == FileStatus.CONVERTING) {
-            file.updateStatus(FileStatus.UPLOADED);
-            file.updateStatus(FileStatus.CONVERTING);
-        }
         // PENDING 은 초기 상태이므로 추가 전이 불필요
         return file;
     }

@@ -50,7 +50,7 @@ class InternalQuestionSetControllerTest {
 
         String requestBody = """
                 {
-                    "progress": "EXTRACTING"
+                    "status": "EXTRACTING"
                 }
                 """;
 
@@ -62,7 +62,7 @@ class InternalQuestionSetControllerTest {
     }
 
     @Test
-    @DisplayName("PUT /progress - progress 누락 시 400을 반환한다")
+    @DisplayName("PUT /progress - status 누락 시 400을 반환한다")
     void updateProgress_missingProgress_returns400() throws Exception {
         String requestBody = "{}";
 
@@ -177,7 +177,7 @@ class InternalQuestionSetControllerTest {
 
         String requestBody = """
                 {
-                    "progress": "EXTRACTING"
+                    "status": "EXTRACTING"
                 }
                 """;
 

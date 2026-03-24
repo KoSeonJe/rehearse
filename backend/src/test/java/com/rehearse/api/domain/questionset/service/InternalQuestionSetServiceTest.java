@@ -37,6 +37,9 @@ class InternalQuestionSetServiceTest {
     private QuestionSetRepository questionSetRepository;
 
     @Mock
+    private QuestionSetAnalysisRepository analysisRepository;
+
+    @Mock
     private QuestionAnswerRepository answerRepository;
 
     @Mock
@@ -53,49 +56,47 @@ class InternalQuestionSetServiceTest {
     // ----------------------------------------------------------------
 
     @Test
-    @DisplayName("updateProgress: PENDING_UPLOAD 상태에서 ANALYZING으로 전이되고 progress가 업데이트된다")
-    void updateProgress_transitionsToAnalyzing() {
+    @DisplayName("updateProgress: PENDING_UPLOAD 상태에서 EXTRACTING으로 전이된다")
+    void updateProgress_transitionsToExtracting() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.PENDING_UPLOAD);
-        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.PENDING_UPLOAD);
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
 
         UpdateProgressRequest request = new UpdateProgressRequest();
-        ReflectionTestUtils.setField(request, "progress", AnalysisProgress.EXTRACTING);
+        ReflectionTestUtils.setField(request, "status", AnalysisStatus.EXTRACTING);
 
         // when
         internalQuestionSetService.updateProgress(1L, request);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
-        assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.EXTRACTING);
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.EXTRACTING);
     }
 
     @Test
-    @DisplayName("updateProgress: 이미 ANALYZING 상태이면 상태 전이 없이 progress만 업데이트된다")
-    void updateProgress_alreadyAnalyzing_onlyProgressUpdated() {
+    @DisplayName("updateProgress: EXTRACTING 상태에서 ANALYZING으로 전이된다")
+    void updateProgress_alreadyExtracting_transitionsToAnalyzing() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
-        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.EXTRACTING);
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
 
         UpdateProgressRequest request = new UpdateProgressRequest();
-        ReflectionTestUtils.setField(request, "progress", AnalysisProgress.VERBAL_ANALYZING);
+        ReflectionTestUtils.setField(request, "status", AnalysisStatus.ANALYZING);
 
         // when
         internalQuestionSetService.updateProgress(1L, request);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
-        assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.VERBAL_ANALYZING);
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
     }
 
     @Test
     @DisplayName("updateProgress: 존재하지 않는 질문세트 ID로 요청하면 BusinessException이 발생한다")
     void updateProgress_questionSetNotFound() {
         // given
-        given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
+        given(analysisRepository.findByQuestionSetId(999L)).willReturn(Optional.empty());
 
         UpdateProgressRequest request = new UpdateProgressRequest();
-        ReflectionTestUtils.setField(request, "progress", AnalysisProgress.EXTRACTING);
+        ReflectionTestUtils.setField(request, "status", AnalysisStatus.EXTRACTING);
 
         // when & then
         assertThatThrownBy(() -> internalQuestionSetService.updateProgress(999L, request))
@@ -143,9 +144,11 @@ class InternalQuestionSetServiceTest {
     @DisplayName("saveFeedback: 피드백과 타임스탬프 피드백이 저장되고 상태가 COMPLETED로 변경된다")
     void saveFeedback_withTimestampFeedbacks_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
         Question question = createQuestion(10L);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
         given(questionRepository.findById(10L)).willReturn(Optional.of(question));
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
@@ -161,13 +164,14 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(request, "questionSetScore", 85);
         ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", List.of(item));
+        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
+        ReflectionTestUtils.setField(request, "isNonverbalCompleted", true);
 
         // when
         internalQuestionSetService.saveFeedback(1L, request);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.COMPLETED);
-        assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.FINALIZING);
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.COMPLETED);
         then(feedbackRepository).should().save(any(QuestionSetFeedback.class));
     }
 
@@ -175,8 +179,10 @@ class InternalQuestionSetServiceTest {
     @DisplayName("saveFeedback: 타임스탬프 피드백 없이도 정상적으로 저장된다")
     void saveFeedback_withoutTimestampFeedbacks_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
@@ -184,12 +190,15 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(request, "questionSetScore", 70);
         ReflectionTestUtils.setField(request, "questionSetComment", "개선이 필요합니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
+        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
+        ReflectionTestUtils.setField(request, "isNonverbalCompleted", false);
 
         // when
         internalQuestionSetService.saveFeedback(1L, request);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.COMPLETED);
+        // verbal=true, nonverbal=false → PARTIAL
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.PARTIAL);
         then(feedbackRepository).should().save(any(QuestionSetFeedback.class));
     }
 
@@ -198,17 +207,21 @@ class InternalQuestionSetServiceTest {
     // ----------------------------------------------------------------
 
     @Test
-    @DisplayName("retryAnalysis: FAILED 상태에서 ANALYZING으로 전이되고 progress가 STARTED로 설정된다")
+    @DisplayName("retryAnalysis: FAILED 상태에서 EXTRACTING으로 전이된다")
     void retryAnalysis_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.FAILED);
-        ReflectionTestUtils.setField(questionSet, "analysisProgress", AnalysisProgress.FAILED);
-
+        QuestionSet questionSet = createQuestionSet(1L);
         FileMetadata fileMetadata = mock(FileMetadata.class);
         given(fileMetadata.getS3Key()).willReturn("videos/100/qs_1.webm");
         ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
 
-        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        // analysis가 참조하는 questionSet에 fileMetadata가 있어야 함
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        ReflectionTestUtils.setField(analysis, "analysisStatus", AnalysisStatus.FAILED);
+
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
 
         // TransactionSynchronizationManager 활성화 (afterCommit 콜백 등록용)
         TransactionSynchronizationManager.initSynchronization();
@@ -217,24 +230,18 @@ class InternalQuestionSetServiceTest {
             internalQuestionSetService.retryAnalysis(1L);
 
             // then
-            assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
-            assertThat(questionSet.getAnalysisProgress()).isEqualTo(AnalysisProgress.STARTED);
+            assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.EXTRACTING);
         } finally {
             TransactionSynchronizationManager.clearSynchronization();
         }
     }
 
     @Test
-    @DisplayName("retryAnalysis: 분석/파일 모두 실패가 아닌 상태에서 호출하면 BusinessException이 발생한다")
+    @DisplayName("retryAnalysis: FAILED/PARTIAL이 아닌 상태에서 호출하면 BusinessException이 발생한다")
     void retryAnalysis_notFailedStatus() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
-
-        FileMetadata fileMetadata = mock(FileMetadata.class);
-        given(fileMetadata.getStatus()).willReturn(FileStatus.UPLOADED);
-        ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
-
-        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.ANALYZING);
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
 
         // when & then
         assertThatThrownBy(() -> internalQuestionSetService.retryAnalysis(1L))
@@ -249,9 +256,13 @@ class InternalQuestionSetServiceTest {
     @DisplayName("retryAnalysis: fileMetadata가 없으면 BusinessException이 발생한다")
     void retryAnalysis_fileNotFound() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.FAILED);
-        ReflectionTestUtils.setField(questionSet, "fileMetadata", null);
-        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        QuestionSet questionSet = createQuestionSet(1L);
+        // fileMetadata는 null (기본값)
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        ReflectionTestUtils.setField(analysis, "analysisStatus", AnalysisStatus.FAILED);
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
 
         // when & then
         assertThatThrownBy(() -> internalQuestionSetService.retryAnalysis(1L))
@@ -266,7 +277,7 @@ class InternalQuestionSetServiceTest {
     @DisplayName("retryAnalysis: 존재하지 않는 질문세트 ID로 요청하면 BusinessException이 발생한다")
     void retryAnalysis_questionSetNotFound() {
         // given
-        given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
+        given(analysisRepository.findByQuestionSetId(999L)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> internalQuestionSetService.retryAnalysis(999L))
@@ -282,7 +293,7 @@ class InternalQuestionSetServiceTest {
     // helpers
     // ----------------------------------------------------------------
 
-    private QuestionSet createQuestionSet(Long id, AnalysisStatus status) {
+    private QuestionSet createQuestionSet(Long id) {
         Interview interview = mock(Interview.class);
         lenient().when(interview.getId()).thenReturn(100L);
 
@@ -292,10 +303,19 @@ class InternalQuestionSetServiceTest {
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);
-        if (status != AnalysisStatus.PENDING) {
-            ReflectionTestUtils.setField(questionSet, "analysisStatus", status);
-        }
         return questionSet;
+    }
+
+    private QuestionSetAnalysis createAnalysis(Long questionSetId, AnalysisStatus targetStatus) {
+        QuestionSet questionSet = createQuestionSet(questionSetId);
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        // PENDING → target 으로 ReflectionTestUtils로 강제 설정
+        if (targetStatus != AnalysisStatus.PENDING) {
+            ReflectionTestUtils.setField(analysis, "analysisStatus", targetStatus);
+        }
+        return analysis;
     }
 
     private Question createQuestion(Long id) {

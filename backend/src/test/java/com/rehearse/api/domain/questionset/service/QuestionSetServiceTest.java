@@ -47,6 +47,9 @@ class QuestionSetServiceTest {
     private FileMetadataRepository fileMetadataRepository;
 
     @Mock
+    private QuestionSetAnalysisRepository analysisRepository;
+
+    @Mock
     private S3Service s3Service;
 
     // ----------------------------------------------------------------
@@ -57,8 +60,11 @@ class QuestionSetServiceTest {
     @DisplayName("saveAnswers: 답변 구간이 저장되고 질문세트 상태가 PENDING_UPLOAD로 변경된다")
     void saveAnswers_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.PENDING);
+        QuestionSet questionSet = createQuestionSet(1L);
+        // saveAnswers 내부에서 findOrCreateAnalysis 호출 시 새 analysis 반환
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.empty());
+        given(analysisRepository.save(any(QuestionSetAnalysis.class))).willAnswer(inv -> inv.getArgument(0));
 
         Question question = createQuestion(10L);
         given(questionRepository.findById(10L)).willReturn(Optional.of(question));
@@ -75,8 +81,8 @@ class QuestionSetServiceTest {
         questionSetService.saveAnswers(1L, request);
 
         // then
-        assertThat(questionSet.getAnalysisStatus()).isEqualTo(AnalysisStatus.PENDING_UPLOAD);
         then(answerRepository).should().saveAll(anyList());
+        then(analysisRepository).should().save(any(QuestionSetAnalysis.class));
     }
 
     @Test
@@ -106,7 +112,7 @@ class QuestionSetServiceTest {
     @DisplayName("generateUploadUrl: S3 키가 생성되고 FileMetadata가 저장된 뒤 Presigned URL이 반환된다")
     void generateUploadUrl_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.PENDING_UPLOAD);
+        QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.PENDING_UPLOAD);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(s3Service.getBucket()).willReturn("test-bucket");
         given(s3Service.generatePutPresignedUrl(anyString(), anyString()))
@@ -140,7 +146,7 @@ class QuestionSetServiceTest {
     @DisplayName("getStatus: 질문세트 분석 상태가 정상 반환된다")
     void getStatus_success() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.ANALYZING);
+        QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.ANALYZING);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
 
         // when
@@ -183,7 +189,7 @@ class QuestionSetServiceTest {
                 .build();
         ReflectionTestUtils.setField(fileMetadata, "streamingS3Key", "videos/5/qs_1.mp4");
 
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.COMPLETED);
+        QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.COMPLETED);
         ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
 
         QuestionSetFeedback feedback = QuestionSetFeedback.builder()
@@ -215,7 +221,7 @@ class QuestionSetServiceTest {
     @DisplayName("getFeedback: 피드백이 존재하지 않으면 BusinessException이 발생한다")
     void getFeedback_feedbackNotFound() {
         // given
-        QuestionSet questionSet = createQuestionSet(1L, AnalysisStatus.COMPLETED);
+        QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.COMPLETED);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
                 .willReturn(Optional.empty());
@@ -264,16 +270,24 @@ class QuestionSetServiceTest {
     // helpers
     // ----------------------------------------------------------------
 
-    private QuestionSet createQuestionSet(Long id, AnalysisStatus status) {
+    private QuestionSet createQuestionSet(Long id) {
         QuestionSet questionSet = QuestionSet.builder()
                 .category(QuestionCategory.CS)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);
-        // PENDING → target 으로 강제 전환
+        return questionSet;
+    }
+
+    private QuestionSet createQuestionSetWithAnalysis(Long id, AnalysisStatus status) {
+        QuestionSet questionSet = createQuestionSet(id);
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
         if (status != AnalysisStatus.PENDING) {
-            ReflectionTestUtils.setField(questionSet, "analysisStatus", status);
+            ReflectionTestUtils.setField(analysis, "analysisStatus", status);
         }
+        ReflectionTestUtils.setField(questionSet, "analysis", analysis);
         return questionSet;
     }
 
