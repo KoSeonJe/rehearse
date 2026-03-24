@@ -4,6 +4,7 @@ import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
@@ -203,8 +204,118 @@ class InternalQuestionSetServiceTest {
     }
 
     // ----------------------------------------------------------------
+    // updateConvertStatus
+    // ----------------------------------------------------------------
+
+    @Test
+    @DisplayName("updateConvertStatus: PROCESSING 전이 + streamingS3Key가 FileMetadata에 저장된다")
+    void updateConvertStatus_processing_savesStreamingS3Key() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        FileMetadata fileMetadata = mock(FileMetadata.class);
+        ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
+
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        // PENDING → PROCESSING 전이를 위해 convertStatus는 기본값(PENDING) 유지
+
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+
+        UpdateConvertStatusRequest request = new UpdateConvertStatusRequest();
+        ReflectionTestUtils.setField(request, "status", ConvertStatus.PROCESSING);
+        ReflectionTestUtils.setField(request, "streamingS3Key", "streaming/1/output.m3u8");
+        ReflectionTestUtils.setField(request, "failureReason", null);
+
+        // when
+        internalQuestionSetService.updateConvertStatus(1L, request);
+
+        // then
+        assertThat(analysis.getConvertStatus()).isEqualTo(ConvertStatus.PROCESSING);
+        then(fileMetadata).should().updateStreamingS3Key("streaming/1/output.m3u8");
+    }
+
+    @Test
+    @DisplayName("updateConvertStatus: FAILED 전이 + convertFailureReason이 저장된다")
+    void updateConvertStatus_failed_savesConvertFailureReason() {
+        // given
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.PENDING);
+        // PENDING → FAILED 전이는 ConvertStatus 기준: PENDING → FAILED 허용
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+
+        UpdateConvertStatusRequest request = new UpdateConvertStatusRequest();
+        ReflectionTestUtils.setField(request, "status", ConvertStatus.FAILED);
+        ReflectionTestUtils.setField(request, "streamingS3Key", null);
+        ReflectionTestUtils.setField(request, "failureReason", "MediaConvert job failed");
+
+        // when
+        internalQuestionSetService.updateConvertStatus(1L, request);
+
+        // then
+        assertThat(analysis.getConvertStatus()).isEqualTo(ConvertStatus.FAILED);
+        assertThat(analysis.getConvertFailureReason()).isEqualTo("MediaConvert job failed");
+    }
+
+    // ----------------------------------------------------------------
     // retryAnalysis
     // ----------------------------------------------------------------
+
+    @Test
+    @DisplayName("saveFeedback: isVerbalCompleted=true, isNonverbalCompleted=false → PARTIAL 상태가 된다")
+    void saveFeedback_verbalOnlyCompleted_statusIsPartial() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+        given(feedbackRepository.save(any(QuestionSetFeedback.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        SaveFeedbackRequest request = new SaveFeedbackRequest();
+        ReflectionTestUtils.setField(request, "questionSetScore", 60);
+        ReflectionTestUtils.setField(request, "questionSetComment", "비언어 분석 실패");
+        ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
+        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
+        ReflectionTestUtils.setField(request, "isNonverbalCompleted", false);
+
+        // when
+        internalQuestionSetService.saveFeedback(1L, request);
+
+        // then
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.PARTIAL);
+        assertThat(analysis.isVerbalCompleted()).isTrue();
+        assertThat(analysis.isNonverbalCompleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("retryAnalysis: PARTIAL 상태에서 EXTRACTING으로 재시도 성공한다")
+    void retryAnalysis_fromPartial_success() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        FileMetadata fileMetadata = mock(FileMetadata.class);
+        given(fileMetadata.getS3Key()).willReturn("videos/100/qs_1.webm");
+        ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
+
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        ReflectionTestUtils.setField(analysis, "analysisStatus", AnalysisStatus.PARTIAL);
+
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+
+        TransactionSynchronizationManager.initSynchronization();
+        try {
+            // when
+            internalQuestionSetService.retryAnalysis(1L);
+
+            // then
+            assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.EXTRACTING);
+            assertThat(analysis.isVerbalCompleted()).isFalse();
+            assertThat(analysis.isNonverbalCompleted()).isFalse();
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
 
     @Test
     @DisplayName("retryAnalysis: FAILED 상태에서 EXTRACTING으로 전이된다")

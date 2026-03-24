@@ -189,6 +189,36 @@ class InternalQuestionSetControllerTest {
     }
 
     @Test
+    @DisplayName("PUT /convert-status - 정상 요청 시 200 OK를 반환한다")
+    void updateConvertStatus_success() throws Exception {
+        willDoNothing().given(internalQuestionSetService).updateConvertStatus(eq(1L), any());
+
+        String requestBody = """
+                {
+                    "status": "PROCESSING"
+                }
+                """;
+
+        mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+    }
+
+    @Test
+    @DisplayName("PUT /convert-status - status 누락 시 400을 반환한다")
+    void updateConvertStatus_missingStatus_returns400() throws Exception {
+        String requestBody = "{}";
+
+        mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Test
     @DisplayName("POST /retry-analysis - 존재하지 않는 질문세트 ID로 요청 시 404를 반환한다")
     void retryAnalysis_notFound_returns404() throws Exception {
         willThrow(new BusinessException(QuestionSetErrorCode.NOT_FOUND))

@@ -8,6 +8,7 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.ConvertStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
@@ -124,6 +125,45 @@ class AnalysisSchedulerTest {
 
         // when
         analysisScheduler.detectPendingUploadZombies();
+
+        // then
+        then(analysisRepository).should(never()).save(any());
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // detectConvertZombies
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("detectConvertZombies: PROCESSING 상태로 타임아웃된 QuestionSetAnalysis를 ConvertStatus.FAILED로 마킹한다")
+    void detectConvertZombies_좀비감지시_ConvertFAILED로마킹() {
+        // given
+        QuestionSetAnalysis zombie = createAnalysisInStatus(AnalysisStatus.PENDING);
+        ReflectionTestUtils.setField(zombie, "convertStatus", ConvertStatus.PROCESSING);
+
+        given(analysisRepository.findByConvertStatusAndUpdatedAtBefore(
+                eq(ConvertStatus.PROCESSING), any()))
+                .willReturn(List.of(zombie));
+
+        // when
+        analysisScheduler.detectConvertZombies();
+
+        // then
+        assertThat(zombie.getConvertStatus()).isEqualTo(ConvertStatus.FAILED);
+        assertThat(zombie.getConvertFailureReason()).contains("CONVERT_TIMEOUT");
+        assertThat(zombie.getConvertFailureReason()).contains("10분");
+    }
+
+    @Test
+    @DisplayName("detectConvertZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
+    void detectConvertZombies_좀비없을때_아무동작없음() {
+        // given
+        given(analysisRepository.findByConvertStatusAndUpdatedAtBefore(
+                eq(ConvertStatus.PROCESSING), any()))
+                .willReturn(List.of());
+
+        // when
+        analysisScheduler.detectConvertZombies();
 
         // then
         then(analysisRepository).should(never()).save(any());
