@@ -6,9 +6,10 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.web.client.ClientHttpRequestFactories;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -25,8 +26,6 @@ import java.time.Duration;
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
 public class WhisperService implements SttService {
 
-    private static final String DEFAULT_WHISPER_URL = "https://api.openai.com/v1/audio/transcriptions";
-
     private final String apiKey;
     private final String whisperApiUrl;
     private final RestTemplate restTemplate;
@@ -37,10 +36,10 @@ public class WhisperService implements SttService {
         this.apiKey = apiKey;
         this.whisperApiUrl = whisperApiUrl;
 
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(60));
-        this.restTemplate = new RestTemplate(factory);
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofSeconds(5))
+                .withReadTimeout(Duration.ofSeconds(60));
+        this.restTemplate = new RestTemplate(ClientHttpRequestFactories.get(settings));
     }
 
     @PostConstruct

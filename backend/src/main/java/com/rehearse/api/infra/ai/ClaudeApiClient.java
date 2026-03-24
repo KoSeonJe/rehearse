@@ -166,7 +166,7 @@ public class ClaudeApiClient implements AiClient {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new BusinessException(AiErrorCode.TIMEOUT);
+                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
                     }
                     delayMs *= 2;
                 } else {
