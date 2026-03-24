@@ -16,15 +16,16 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -35,19 +36,22 @@ public class QuestionGenerationService {
     private final QuestionSetRepository questionSetRepository;
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
-    private final Executor questionSubTaskExecutor;
+    private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public QuestionGenerationService(
             InterviewRepository interviewRepository,
             QuestionSetRepository questionSetRepository,
             CacheableQuestionProvider cacheableProvider,
-            FreshQuestionProvider freshProvider,
-            @Qualifier("questionSubTaskExecutor") Executor questionSubTaskExecutor) {
+            FreshQuestionProvider freshProvider) {
         this.interviewRepository = interviewRepository;
         this.questionSetRepository = questionSetRepository;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
-        this.questionSubTaskExecutor = questionSubTaskExecutor;
+    }
+
+    @PreDestroy
+    void shutdown() {
+        virtualExecutor.close();
     }
 
     public void generateQuestions(Long interviewId, Position position,
@@ -72,13 +76,13 @@ public class QuestionGenerationService {
         CompletableFuture<List<QuestionSet>> cacheableFuture = CompletableFuture.supplyAsync(() ->
                 provideCacheableQuestions(interviewId, position, level, effectiveTechStack,
                         cacheableTypes, csSubTopics),
-                questionSubTaskExecutor
+                virtualExecutor
         ).orTimeout(60, TimeUnit.SECONDS);
 
         CompletableFuture<List<QuestionSet>> freshFuture = CompletableFuture.supplyAsync(() ->
                 provideFreshQuestions(interviewId, position, level, effectiveTechStack,
                         freshTypes, resumeText, csSubTopics, durationMinutes),
-                questionSubTaskExecutor
+                virtualExecutor
         ).orTimeout(60, TimeUnit.SECONDS);
 
         List<QuestionSet> allQuestionSets = new ArrayList<>();

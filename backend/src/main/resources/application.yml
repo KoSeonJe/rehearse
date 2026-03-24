@@ -4,6 +4,10 @@ spring:
   profiles:
     active: local
 
+  threads:
+    virtual:
+      enabled: true
+
   jpa:
     open-in-view: false
     properties:
@@ -13,6 +17,21 @@ spring:
 
 server:
   port: 8080
+  tomcat:
+    max-connections: 8192
+    accept-count: 100
+
+resilience4j:
+  ratelimiter:
+    instances:
+      claude-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 120s
+      whisper-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 120s
 
 management:
   endpoints:

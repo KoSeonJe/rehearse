@@ -2,9 +2,12 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.WhisperErrorCode;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.web.client.ClientHttpRequestFactories;
+import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -16,20 +19,27 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.Duration;
 
 @Slf4j
 @Component
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
 public class WhisperService implements SttService {
 
-    private static final String WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions";
-
     private final String apiKey;
+    private final String whisperApiUrl;
     private final RestTemplate restTemplate;
 
-    public WhisperService(@Value("${openai.api-key:}") String apiKey) {
+    public WhisperService(
+            @Value("${openai.api-key:}") String apiKey,
+            @Value("${openai.api.url:https://api.openai.com/v1/audio/transcriptions}") String whisperApiUrl) {
         this.apiKey = apiKey;
-        this.restTemplate = new RestTemplate();
+        this.whisperApiUrl = whisperApiUrl;
+
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofSeconds(5))
+                .withReadTimeout(Duration.ofSeconds(60));
+        this.restTemplate = new RestTemplate(ClientHttpRequestFactories.get(settings));
     }
 
     @PostConstruct
@@ -38,6 +48,7 @@ public class WhisperService implements SttService {
     }
 
     @Override
+    @RateLimiter(name = "whisper-api")
     public String transcribe(MultipartFile audioFile) {
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -59,7 +70,7 @@ public class WhisperService implements SttService {
             HttpEntity<MultiValueMap<String, Object>> request = new HttpEntity<>(body, headers);
 
             ResponseEntity<String> response = restTemplate.exchange(
-                    WHISPER_API_URL, HttpMethod.POST, request, String.class);
+                    whisperApiUrl, HttpMethod.POST, request, String.class);
 
             String transcript = response.getBody();
             log.info("Whisper STT 완료: {}자", transcript != null ? transcript.length() : 0);

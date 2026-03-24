@@ -4,6 +4,12 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+      connection-timeout: 3000
+      max-lifetime: 1200000
+      leak-detection-threshold: 30000
 
   jpa:
     hibernate:
@@ -27,6 +33,18 @@ internal:
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:https://rehearse.app}
+
+resilience4j:
+  ratelimiter:
+    instances:
+      claude-api:
+        limitForPeriod: 20
+        limitRefreshPeriod: 1s
+        timeoutDuration: 60s
+      whisper-api:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 60s
 
 logging:
   level:

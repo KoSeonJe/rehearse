@@ -6,6 +6,7 @@ import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
@@ -25,7 +26,7 @@ import java.util.List;
 @ConditionalOnExpression("!'${claude.api-key:}'.isEmpty()")
 public class ClaudeApiClient implements AiClient {
 
-    private static final String ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+    private static final String DEFAULT_API_URL = "https://api.anthropic.com/v1/messages";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
     private static final int MAX_TOKENS_QUESTION = 8192;
@@ -48,13 +49,14 @@ public class ClaudeApiClient implements AiClient {
             FollowUpPromptBuilder followUpPromptBuilder,
             ClaudeResponseParser responseParser,
             @Value("${claude.api-key}") String apiKey,
-            @Value("${claude.model:claude-sonnet-4-20250514}") String model) {
+            @Value("${claude.model:claude-sonnet-4-20250514}") String model,
+            @Value("${claude.api.url:https://api.anthropic.com/v1/messages}") String apiUrl) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
-                .baseUrl(ANTHROPIC_API_URL)
+                .baseUrl(apiUrl)
                 .requestFactory(ClientHttpRequestFactories.get(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
@@ -65,6 +67,7 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
+    @RateLimiter(name = "claude-api")
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
         String userPrompt = questionPromptBuilder.buildUserPrompt(request);
@@ -80,6 +83,7 @@ public class ClaudeApiClient implements AiClient {
     }
 
     @Override
+    @RateLimiter(name = "claude-api")
     public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
@@ -162,7 +166,7 @@ public class ClaudeApiClient implements AiClient {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
                         Thread.currentThread().interrupt();
-                        throw new BusinessException(AiErrorCode.TIMEOUT);
+                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
                     }
                     delayMs *= 2;
                 } else {

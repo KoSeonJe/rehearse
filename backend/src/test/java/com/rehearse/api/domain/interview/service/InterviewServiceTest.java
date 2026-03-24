@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.*;
+import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
@@ -64,6 +65,9 @@ class InterviewServiceTest {
 
     @Mock
     private com.rehearse.api.domain.questionset.service.QuestionSetService questionSetService;
+
+    @Mock
+    private FollowUpTransactionHandler followUpTransactionHandler;
 
     @Test
     @DisplayName("면접 세션 생성 시 비동기 질문 생성을 트리거하고 즉시 응답한다")
@@ -229,13 +233,10 @@ class InterviewServiceTest {
     @Test
     @DisplayName("후속 질문 생성 성공")
     void generateFollowUp_success() {
-        Interview interview = createMockInterview();
-        interview.completeQuestionGeneration();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
-        QuestionSet questionSet = createMockQuestionSet(interview);
-        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
+        // given
+        FollowUpContext context = new FollowUpContext(
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
@@ -245,12 +246,14 @@ class InterviewServiceTest {
         given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
-        given(questionRepository.save(any(Question.class)))
-                .willAnswer(invocation -> {
-                    Question q = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(q, "id", 100L);
-                    return q;
-                });
+        Question savedQuestion = Question.builder()
+                .questionType(QuestionType.FOLLOWUP)
+                .questionText("HashMap의 해시 충돌 해결 방법은?")
+                .orderIndex(1)
+                .build();
+        ReflectionTestUtils.setField(savedQuestion, "id", 100L);
+        given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
+                .willReturn(savedQuestion);
 
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -261,8 +264,10 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
         ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
 
+        // when
         FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
 
+        // then
         assertThat(response.getQuestionId()).isEqualTo(100L);
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
@@ -273,13 +278,9 @@ class InterviewServiceTest {
     @DisplayName("오디오 파일이 있으면 STT로 텍스트를 추출하여 후속질문 생성")
     void generateFollowUp_withAudioFile() {
         // given
-        Interview interview = createMockInterview();
-        interview.completeQuestionGeneration();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
-        QuestionSet questionSet = createMockQuestionSet(interview);
-        given(questionSetRepository.findById(10L)).willReturn(java.util.Optional.of(questionSet));
+        FollowUpContext context = new FollowUpContext(
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
 
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -294,12 +295,14 @@ class InterviewServiceTest {
         given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
-        given(questionRepository.save(any(Question.class)))
-                .willAnswer(invocation -> {
-                    Question q = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(q, "id", 101L);
-                    return q;
-                });
+        Question savedQuestion = Question.builder()
+                .questionType(QuestionType.FOLLOWUP)
+                .questionText("구체적으로 어떤 최적화를 하셨나요?")
+                .orderIndex(1)
+                .build();
+        ReflectionTestUtils.setField(savedQuestion, "id", 101L);
+        given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
+                .willReturn(savedQuestion);
 
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
@@ -319,17 +322,12 @@ class InterviewServiceTest {
     @DisplayName("오디오 파일과 answerText 모두 비어있으면 예외 발생")
     void generateFollowUp_noAnswerText_noAudio() {
         // given
-        Interview interview = createMockInterview();
-        interview.completeQuestionGeneration();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "질문");
         ReflectionTestUtils.setField(request, "answerText", "");
 
-        // when & then
+        // when & then — resolveAnswerText에서 예외 발생 (DB 호출 전)
         assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
@@ -342,11 +340,6 @@ class InterviewServiceTest {
     @DisplayName("STT 호출 중 예외 발생 시 그대로 전파된다")
     void generateFollowUp_sttThrowsException_propagates() {
         // given
-        Interview interview = createMockInterview();
-        interview.completeQuestionGeneration();
-        interview.updateStatus(InterviewStatus.IN_PROGRESS);
-        given(interviewFinder.findById(1L)).willReturn(interview);
-
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
 
@@ -370,13 +363,16 @@ class InterviewServiceTest {
     @Test
     @DisplayName("진행 중이 아닌 면접에서 후속질문 생성 시 예외 발생")
     void generateFollowUp_notInProgress() {
-        Interview interview = createMockInterview(); // status = READY
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        // given
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L))
+                .willThrow(new BusinessException(HttpStatus.CONFLICT, "INTERVIEW_003", "면접이 진행 중이 아닙니다."));
 
         FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "질문");
         ReflectionTestUtils.setField(request, "answerText", "답변");
 
+        // when & then
         assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
