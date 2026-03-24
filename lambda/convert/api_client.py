@@ -43,3 +43,24 @@ def update_file_status(file_id: int, status: str, **kwargs) -> None:
     body = {"status": status, **kwargs}
     resp = httpx.put(url, json=body, headers=_get_headers(), timeout=TIMEOUT)
     resp.raise_for_status()
+
+
+@retry_on_transient()
+def update_convert_status(
+    interview_id: int,
+    question_set_id: int,
+    status: str,
+    streaming_s3_key: str | None = None,
+    failure_reason: str | None = None,
+) -> None:
+    url = (
+        f"{Config.API_SERVER_URL}/api/internal/interviews/{interview_id}"
+        f"/question-sets/{question_set_id}/convert-status"
+    )
+    body: dict = {"status": status}
+    if streaming_s3_key:
+        body["streamingS3Key"] = streaming_s3_key
+    if failure_reason:
+        body["failureReason"] = failure_reason
+    resp = httpx.put(url, json=body, headers=_get_headers(), timeout=TIMEOUT)
+    resp.raise_for_status()

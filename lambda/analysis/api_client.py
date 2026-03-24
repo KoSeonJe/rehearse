@@ -50,12 +50,12 @@ def get_answers(interview_id: int, question_set_id: int) -> dict:
 def update_progress(
     interview_id: int,
     question_set_id: int,
-    progress: str,
+    status: str,
     failure_reason: str | None = None,
     failure_detail: str | None = None,
 ) -> None:
     url = f"{_base_url(interview_id, question_set_id)}/progress"
-    body: dict = {"progress": progress}
+    body: dict = {"status": status}
     if failure_reason:
         body["failureReason"] = failure_reason
     if failure_detail:
