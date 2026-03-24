@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
-import com.rehearse.api.domain.questionset.entity.AnalysisProgress;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class UpdateProgressRequest {
 
-    @NotNull(message = "분석 진행 상태는 필수입니다.")
-    private AnalysisProgress progress;
+    @NotNull(message = "분석 상태는 필수입니다.")
+    private AnalysisStatus status;
 
     private String failureReason;
     private String failureDetail;

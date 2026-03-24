@@ -2,9 +2,8 @@ package com.rehearse.api.domain.questionset.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.file.entity.FileMetadata;
-import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
@@ -13,6 +12,9 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.aws.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -27,28 +29,26 @@ import java.util.List;
 public class InternalQuestionSetService {
 
     private final QuestionSetRepository questionSetRepository;
+    private final QuestionSetAnalysisRepository analysisRepository;
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
     public void updateProgress(Long questionSetId, UpdateProgressRequest request) {
-        QuestionSet questionSet = findQuestionSet(questionSetId);
+        QuestionSetAnalysis analysis = findAnalysis(questionSetId);
 
-        if (request.getProgress() == AnalysisProgress.FAILED) {
-            questionSet.markFailed(request.getFailureReason(), request.getFailureDetail());
+        if (request.getStatus() == AnalysisStatus.FAILED) {
+            analysis.markFailed(request.getFailureReason(), request.getFailureDetail());
             log.warn("분석 실패: questionSetId={}, reason={}", questionSetId, request.getFailureReason());
             return;
         }
 
-        if (questionSet.getAnalysisStatus() != AnalysisStatus.ANALYZING) {
-            questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
-        }
-        questionSet.updateAnalysisProgress(request.getProgress());
-
-        log.info("분석 진행 상태 업데이트: questionSetId={}, progress={}", questionSetId, request.getProgress());
+        analysis.updateAnalysisStatus(request.getStatus());
+        log.info("분석 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
     }
 
     public QuestionSet getQuestionSet(Long questionSetId) {
@@ -59,9 +59,11 @@ public class InternalQuestionSetService {
         return answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
     public void saveFeedback(Long questionSetId, SaveFeedbackRequest request) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
+        QuestionSetAnalysis analysis = findAnalysis(questionSetId);
 
         QuestionSetFeedback feedback = QuestionSetFeedback.builder()
                 .questionSet(questionSet)
@@ -105,31 +107,63 @@ public class InternalQuestionSetService {
         }
 
         feedbackRepository.save(feedback);
-        questionSet.updateAnalysisStatus(AnalysisStatus.COMPLETED);
-        questionSet.updateAnalysisProgress(AnalysisProgress.FINALIZING);
+        analysis.completeAnalysis(
+                request.isVerbalCompleted(),
+                request.isNonverbalCompleted()
+        );
 
-        log.info("분석 결과 저장 완료: questionSetId={}, score={}", questionSetId, request.getQuestionSetScore());
+        log.info("분석 결과 저장 완료: questionSetId={}, score={}, verbal={}, nonverbal={}",
+                questionSetId, request.getQuestionSetScore(),
+                request.isVerbalCompleted(), request.isNonverbalCompleted());
     }
 
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
-    public void retryAnalysis(Long questionSetId) {
-        QuestionSet questionSet = findQuestionSet(questionSetId);
+    public void updateConvertStatus(Long questionSetId, UpdateConvertStatusRequest request) {
+        QuestionSetAnalysis analysis = findAnalysis(questionSetId);
+        analysis.updateConvertStatus(request.getStatus());
 
-        FileMetadata file = questionSet.getFileMetadata();
-        if (file == null) {
-            throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
+        if (request.getStreamingS3Key() != null) {
+            QuestionSet qs = analysis.getQuestionSet();
+            var file = qs.getFileMetadata();
+            if (file != null) {
+                file.updateStreamingS3Key(request.getStreamingS3Key());
+            }
         }
 
-        boolean analysisNeedsRetry = questionSet.getAnalysisStatus() == AnalysisStatus.FAILED;
-        boolean fileNeedsRetry = file.getStatus() == FileStatus.FAILED;
+        if (request.getStatus() == ConvertStatus.FAILED) {
+            analysis.setConvertFailureReason(request.getFailureReason());
+        }
 
-        if (!analysisNeedsRetry && !fileNeedsRetry) {
+        log.info("변환 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
+    }
+
+    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
+    @Transactional
+    public void retryAnalysis(Long questionSetId) {
+        QuestionSetAnalysis analysis = findAnalysis(questionSetId);
+        AnalysisStatus status = analysis.getAnalysisStatus();
+
+        if (status != AnalysisStatus.FAILED && status != AnalysisStatus.PARTIAL) {
             throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
         }
 
-        if (analysisNeedsRetry) {
-            questionSet.updateAnalysisStatus(AnalysisStatus.ANALYZING);
-            questionSet.updateAnalysisProgress(AnalysisProgress.STARTED);
+        if (status == AnalysisStatus.FAILED) {
+            // 전체 실패: 양쪽 모두 리셋
+            analysis.resetVerbalResult();
+            analysis.resetNonverbalResult();
+        } else {
+            // PARTIAL: 실패한 쪽만 리셋 (성공한 쪽은 유지하지 않고 전체 재분석)
+            analysis.resetVerbalResult();
+            analysis.resetNonverbalResult();
+        }
+
+        analysis.updateAnalysisStatus(AnalysisStatus.EXTRACTING);
+
+        QuestionSet questionSet = analysis.getQuestionSet();
+        var file = questionSet.getFileMetadata();
+        if (file == null) {
+            throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
         }
 
         String s3Key = file.getS3Key();
@@ -145,11 +179,16 @@ public class InternalQuestionSetService {
             }
         });
 
-        log.info("피드백 생성 재시도 트리거: questionSetId={}, analysisRetry={}, fileRetry={}", questionSetId, analysisNeedsRetry, fileNeedsRetry);
+        log.info("분석 재시도 트리거: questionSetId={}, previousStatus={}", questionSetId, status);
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {
         return questionSetRepository.findById(questionSetId)
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+    }
+
+    private QuestionSetAnalysis findAnalysis(Long questionSetId) {
+        return analysisRepository.findByQuestionSetId(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
     }
 

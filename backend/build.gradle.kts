@@ -42,6 +42,9 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-ratelimiter:2.2.0")
     implementation("org.springframework.boot:spring-boot-starter-aop")
 
+    // Spring Retry (낙관적 잠금 재시도)
+    implementation("org.springframework.retry:spring-retry")
+
     // Flyway (DB 마이그레이션)
     implementation("org.flywaydb:flyway-core")
     implementation("org.flywaydb:flyway-mysql")
