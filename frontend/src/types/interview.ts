@@ -55,9 +55,11 @@ export type QuestionType = 'MAIN' | 'FOLLOWUP'
 
 export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
 
-export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'ANALYZING' | 'COMPLETED' | 'FAILED' | 'SKIPPED'
+export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
-export type FileStatus = 'PENDING' | 'UPLOADED' | 'CONVERTING' | 'CONVERTED' | 'FAILED'
+export type ConvertStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
+
+export type FileStatus = 'PENDING' | 'UPLOADED' | 'FAILED'
 
 export interface QuestionDetail {
   id: number
@@ -100,20 +102,13 @@ export interface SaveAnswersRequest {
 export interface QuestionSetStatusResponse {
   id: number
   analysisStatus: AnalysisStatus
-  analysisProgress: string | null
+  convertStatus: ConvertStatus | null
   fileStatus: FileStatus | null
+  isVerbalCompleted: boolean
+  isNonverbalCompleted: boolean
+  fullyReady: boolean
   failureReason: string | null
 }
-
-export type AnalysisProgress =
-  | 'STARTED'
-  | 'EXTRACTING'
-  | 'STT_PROCESSING'
-  | 'VERBAL_ANALYZING'
-  | 'NONVERBAL_ANALYZING'
-  | 'ANALYZING'
-  | 'FINALIZING'
-  | 'FAILED'
 
 export interface QuestionWithAnswer {
   questionId: number
