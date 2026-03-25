@@ -91,13 +91,15 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     frame_paths = extract_frames(video_path, WORK_DIR)
     video_duration_ms = get_video_duration_ms(video_path)
 
+    audio_path = None
+    answer_audio_paths = None
+
     if Config.USE_GEMINI:
         # Gemini 경로: 답변별 mp3 추출
         audio_dir = os.path.join(WORK_DIR, "answer_audios")
         answer_audio_paths = extract_answer_audios(video_path, answers, audio_dir)
     else:
         # 폴백 경로: 전체 WAV 추출 (기존)
-        answer_audio_paths = None
         audio_path = extract_audio(video_path, WORK_DIR)
 
     if Config.USE_GEMINI and answer_audio_paths:
@@ -118,13 +120,14 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
                 answers, audio_path, frame_paths, video_duration_ms,
                 interview_id, question_set_id,
                 position=position, tech_stack=tech_stack, level=level,
+                skip_analyzing_update=True,
             )
-            # 레거시 폴백은 항상 verbal=true, nonverbal은 결과에 따라 판단
+            # 레거시 폴백은 이미 ANALYZING 상태이므로 중복 호출 스킵
             verbal_ok = any(f.get("verbalScore") is not None for f in timestamp_feedbacks)
             nonverbal_ok = any(f.get("eyeContactScore") is not None for f in timestamp_feedbacks)
     else:
         # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
-        if "audio_path" not in dir():
+        if audio_path is None:
             audio_path = extract_audio(video_path, WORK_DIR)
         timestamp_feedbacks = _run_legacy_pipeline(
             answers, audio_path, frame_paths, video_duration_ms,
@@ -267,11 +270,12 @@ def _run_legacy_pipeline(
     answers, audio_path, frame_paths, video_duration_ms,
     interview_id, question_set_id,
     position=None, tech_stack=None, level=None,
+    skip_analyzing_update=False,
 ) -> list[dict]:
     """기존 Whisper+GPT-4o 파이프라인 (폴백용)."""
 
-    # STT_PROCESSING, NONVERBAL_ANALYZING 제거 — ANALYZING에 통합
-    update_progress(interview_id, question_set_id, "ANALYZING")
+    if not skip_analyzing_update:
+        update_progress(interview_id, question_set_id, "ANALYZING")
     stt_result = _safe_stt(audio_path)
 
     timestamp_feedbacks = _build_timestamp_feedbacks(

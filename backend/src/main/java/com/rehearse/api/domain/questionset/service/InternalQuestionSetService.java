@@ -148,15 +148,9 @@ public class InternalQuestionSetService {
             throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
         }
 
-        if (status == AnalysisStatus.FAILED) {
-            // 전체 실패: 양쪽 모두 리셋
-            analysis.resetVerbalResult();
-            analysis.resetNonverbalResult();
-        } else {
-            // PARTIAL: 실패한 쪽만 리셋 (성공한 쪽은 유지하지 않고 전체 재분석)
-            analysis.resetVerbalResult();
-            analysis.resetNonverbalResult();
-        }
+        // FAILED/PARTIAL 모두 전체 재분석 — 양쪽 리셋
+        analysis.resetVerbalResult();
+        analysis.resetNonverbalResult();
 
         analysis.updateAnalysisStatus(AnalysisStatus.EXTRACTING);
 
