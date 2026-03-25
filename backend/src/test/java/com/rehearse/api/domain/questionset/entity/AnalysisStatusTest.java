@@ -178,9 +178,9 @@ class AnalysisStatusTest {
     }
 
     @Test
-    @DisplayName("FAILED → COMPLETED: 허용되지 않는다")
-    void failed_cannotTransitionTo_completed() {
-        assertThat(AnalysisStatus.FAILED.canTransitionTo(AnalysisStatus.COMPLETED)).isFalse();
+    @DisplayName("FAILED → COMPLETED: 허용된다 (좀비 스케줄러 FAILED 처리 후 Lambda 뒤늦은 성공)")
+    void failed_canTransitionTo_completed() {
+        assertThat(AnalysisStatus.FAILED.canTransitionTo(AnalysisStatus.COMPLETED)).isTrue();
     }
 
     // ─────────────────────────────────────────────────────────────
