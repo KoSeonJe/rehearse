@@ -121,7 +121,11 @@ public class InternalQuestionSetService {
     @Transactional
     public void updateConvertStatus(Long questionSetId, UpdateConvertStatusRequest request) {
         QuestionSetAnalysis analysis = findAnalysis(questionSetId);
-        analysis.updateConvertStatus(request.getStatus());
+        if (request.getStatus() == ConvertStatus.FAILED) {
+            analysis.markConvertFailed(request.getFailureReason());
+        } else {
+            analysis.updateConvertStatus(request.getStatus());
+        }
 
         if (request.getStreamingS3Key() != null) {
             QuestionSet qs = analysis.getQuestionSet();
@@ -131,10 +135,6 @@ public class InternalQuestionSetService {
             }
         }
 
-        if (request.getStatus() == ConvertStatus.FAILED) {
-            analysis.setConvertFailureReason(request.getFailureReason());
-        }
-
         log.info("변환 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
     }
 
@@ -142,17 +142,13 @@ public class InternalQuestionSetService {
     @Transactional
     public void retryAnalysis(Long questionSetId) {
         QuestionSetAnalysis analysis = findAnalysis(questionSetId);
-        AnalysisStatus status = analysis.getAnalysisStatus();
 
-        if (status != AnalysisStatus.FAILED && status != AnalysisStatus.PARTIAL) {
+        if (!analysis.getAnalysisStatus().isRetryable()) {
             throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
         }
 
-        // FAILED/PARTIAL 모두 전체 재분석 — 양쪽 리셋
-        analysis.resetVerbalResult();
-        analysis.resetNonverbalResult();
-
-        analysis.updateAnalysisStatus(AnalysisStatus.EXTRACTING);
+        AnalysisStatus previousStatus = analysis.getAnalysisStatus();
+        analysis.retry();
 
         QuestionSet questionSet = analysis.getQuestionSet();
         var file = questionSet.getFileMetadata();
@@ -173,7 +169,7 @@ public class InternalQuestionSetService {
             }
         });
 
-        log.info("분석 재시도 트리거: questionSetId={}, previousStatus={}", questionSetId, status);
+        log.info("분석 재시도 트리거: questionSetId={}, previousStatus={}", questionSetId, previousStatus);
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {

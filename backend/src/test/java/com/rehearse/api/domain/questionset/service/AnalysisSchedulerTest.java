@@ -52,15 +52,9 @@ class AnalysisSchedulerTest {
         // given
         QuestionSetAnalysis zombie = createAnalysisInStatus(AnalysisStatus.ANALYZING);
 
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.EXTRACTING), any()))
-                .willReturn(List.of());
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.ANALYZING), any()))
+        given(analysisRepository.findByAnalysisStatusInAndUpdatedAtBefore(
+                eq(AnalysisStatus.inProgressStatuses()), any()))
                 .willReturn(List.of(zombie));
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.FINALIZING), any()))
-                .willReturn(List.of());
 
         // when
         analysisScheduler.detectAnalysisZombies();
@@ -75,21 +69,15 @@ class AnalysisSchedulerTest {
     @DisplayName("detectAnalysisZombies: 좀비가 없을 때 아무 상태 변경도 일어나지 않는다")
     void detectAnalysisZombies_좀비없을때_아무동작없음() {
         // given
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.EXTRACTING), any()))
-                .willReturn(List.of());
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.ANALYZING), any()))
-                .willReturn(List.of());
-        given(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(
-                eq(AnalysisStatus.FINALIZING), any()))
+        given(analysisRepository.findByAnalysisStatusInAndUpdatedAtBefore(
+                eq(AnalysisStatus.inProgressStatuses()), any()))
                 .willReturn(List.of());
 
         // when
         analysisScheduler.detectAnalysisZombies();
 
         // then
-        then(analysisRepository).should(never()).save(any());
+        then(analysisRepository).should(never()).saveAndFlush(any());
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -100,22 +100,29 @@ public class QuestionSetAnalysis {
         this.failureDetail = detail;
     }
 
-    public void setConvertFailureReason(String reason) {
+    public void markConvertFailed(String reason) {
+        updateConvertStatus(ConvertStatus.FAILED);
         this.convertFailureReason = reason;
     }
 
-    public void resetVerbalResult() {
-        this.isVerbalCompleted = false;
+    public void retry() {
+        if (!this.analysisStatus.isRetryable()) {
+            throw new IllegalStateException(
+                String.format("현재 상태(%s)에서 재시도할 수 없습니다.", this.analysisStatus));
+        }
+        resetAnalysisResults();
+        updateAnalysisStatus(AnalysisStatus.EXTRACTING);
+        this.failureReason = null;
+        this.failureDetail = null;
     }
 
-    public void resetNonverbalResult() {
+    public void resetAnalysisResults() {
+        this.isVerbalCompleted = false;
         this.isNonverbalCompleted = false;
     }
 
     public boolean isFullyReady() {
-        boolean analysisOk = analysisStatus == AnalysisStatus.COMPLETED
-                          || analysisStatus == AnalysisStatus.PARTIAL;
-        boolean convertOk = convertStatus == ConvertStatus.COMPLETED;
-        return analysisOk && convertOk;
+        return analysisStatus.hasAnalysisResult()
+            && convertStatus == ConvertStatus.COMPLETED;
     }
 }

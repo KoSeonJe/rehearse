@@ -112,29 +112,76 @@ class QuestionSetAnalysisTest {
     }
 
     // ─────────────────────────────────────────────────────────────
-    // resetVerbalResult / resetNonverbalResult
+    // resetAnalysisResults
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("resetVerbalResult: isVerbalCompleted가 false로 초기화된다")
-    void resetVerbalResult_setsVerbalCompletedToFalse() {
+    @DisplayName("resetAnalysisResults: verbal/nonverbal 모두 false로 초기화된다")
+    void resetAnalysisResults_resetsBothToFalse() {
         QuestionSetAnalysis analysis = createAnalysisInStatus(AnalysisStatus.PENDING);
         ReflectionTestUtils.setField(analysis, "isVerbalCompleted", true);
+        ReflectionTestUtils.setField(analysis, "isNonverbalCompleted", true);
 
-        analysis.resetVerbalResult();
+        analysis.resetAnalysisResults();
 
         assertThat(analysis.isVerbalCompleted()).isFalse();
+        assertThat(analysis.isNonverbalCompleted()).isFalse();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // retry
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("retry: FAILED 상태에서 EXTRACTING으로 전이 + 결과/실패사유 리셋")
+    void retry_fromFailed() {
+        QuestionSetAnalysis analysis = createAnalysisInStatus(AnalysisStatus.FAILED);
+        ReflectionTestUtils.setField(analysis, "isVerbalCompleted", true);
+        ReflectionTestUtils.setField(analysis, "failureReason", "ZOMBIE_TIMEOUT");
+        ReflectionTestUtils.setField(analysis, "failureDetail", "detail");
+
+        analysis.retry();
+
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.EXTRACTING);
+        assertThat(analysis.isVerbalCompleted()).isFalse();
+        assertThat(analysis.isNonverbalCompleted()).isFalse();
+        assertThat(analysis.getFailureReason()).isNull();
+        assertThat(analysis.getFailureDetail()).isNull();
     }
 
     @Test
-    @DisplayName("resetNonverbalResult: isNonverbalCompleted가 false로 초기화된다")
-    void resetNonverbalResult_setsNonverbalCompletedToFalse() {
+    @DisplayName("retry: PARTIAL 상태에서 EXTRACTING으로 전이")
+    void retry_fromPartial() {
+        QuestionSetAnalysis analysis = createAnalysisInStatus(AnalysisStatus.PARTIAL);
+
+        analysis.retry();
+
+        assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.EXTRACTING);
+    }
+
+    @Test
+    @DisplayName("retry: COMPLETED 상태에서 호출 시 예외 발생")
+    void retry_fromCompleted_throwsException() {
+        QuestionSetAnalysis analysis = createAnalysisInStatus(AnalysisStatus.COMPLETED);
+
+        assertThatThrownBy(analysis::retry)
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // markConvertFailed
+    // ─────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("markConvertFailed: 상태 전이 + 사유 기록이 원자적으로 실행된다")
+    void markConvertFailed_setsStatusAndReason() {
         QuestionSetAnalysis analysis = createAnalysisInStatus(AnalysisStatus.PENDING);
-        ReflectionTestUtils.setField(analysis, "isNonverbalCompleted", true);
+        ReflectionTestUtils.setField(analysis, "convertStatus", ConvertStatus.PROCESSING);
 
-        analysis.resetNonverbalResult();
+        analysis.markConvertFailed("CONVERT_TIMEOUT");
 
-        assertThat(analysis.isNonverbalCompleted()).isFalse();
+        assertThat(analysis.getConvertStatus()).isEqualTo(ConvertStatus.FAILED);
+        assertThat(analysis.getConvertFailureReason()).isEqualTo("CONVERT_TIMEOUT");
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -50,7 +50,7 @@ public class InterviewCompletionService {
                 }
 
                 AnalysisStatus status = analysis.getAnalysisStatus();
-                if (status == AnalysisStatus.COMPLETED || status == AnalysisStatus.PARTIAL) {
+                if (status.hasAnalysisResult()) {
                     completedCount++;
                 } else if (status == AnalysisStatus.SKIPPED) {
                     skippedCount++;
@@ -80,8 +80,7 @@ public class InterviewCompletionService {
         List<Long> questionSetIds = questionSets.stream()
                 .filter(qs -> {
                     QuestionSetAnalysis analysis = qs.getAnalysis();
-                    return analysis != null && (analysis.getAnalysisStatus() == AnalysisStatus.COMPLETED
-                            || analysis.getAnalysisStatus() == AnalysisStatus.PARTIAL);
+                    return analysis != null && analysis.getAnalysisStatus().hasAnalysisResult();
                 })
                 .map(QuestionSet::getId)
                 .toList();

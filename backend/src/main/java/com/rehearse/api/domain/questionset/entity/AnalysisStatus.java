@@ -1,5 +1,8 @@
 package com.rehearse.api.domain.questionset.entity;
 
+import java.util.Arrays;
+import java.util.List;
+
 public enum AnalysisStatus {
     PENDING,
     PENDING_UPLOAD,
@@ -31,5 +34,24 @@ public enum AnalysisStatus {
      */
     public boolean isResolved() {
         return this == COMPLETED || this == PARTIAL || this == SKIPPED;
+    }
+
+    /** 재시도 가능한 상태 (FAILED 또는 PARTIAL) */
+    public boolean isRetryable() {
+        return this == FAILED || this == PARTIAL;
+    }
+
+    /** 분석 결과(피드백)가 존재하는 상태 */
+    public boolean hasAnalysisResult() {
+        return this == COMPLETED || this == PARTIAL;
+    }
+
+    /** Lambda가 처리 중인 상태 (좀비 감지 대상) */
+    public boolean isInProgress() {
+        return this == EXTRACTING || this == ANALYZING || this == FINALIZING;
+    }
+
+    public static List<AnalysisStatus> inProgressStatuses() {
+        return Arrays.stream(values()).filter(AnalysisStatus::isInProgress).toList();
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Slf4j
 @Component
@@ -33,30 +35,13 @@ public class AnalysisScheduler {
     @Transactional
     public void detectAnalysisZombies() {
         LocalDateTime threshold = LocalDateTime.now().minusMinutes(ANALYSIS_TIMEOUT_MINUTES);
+        List<QuestionSetAnalysis> zombies = analysisRepository
+                .findByAnalysisStatusInAndUpdatedAtBefore(AnalysisStatus.inProgressStatuses(), threshold);
 
-        // EXTRACTING, ANALYZING, FINALIZING 모두 감지
-        List<QuestionSetAnalysis> zombies = new java.util.ArrayList<>();
-        zombies.addAll(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(AnalysisStatus.EXTRACTING, threshold));
-        zombies.addAll(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(AnalysisStatus.ANALYZING, threshold));
-        zombies.addAll(analysisRepository.findByAnalysisStatusAndUpdatedAtBefore(AnalysisStatus.FINALIZING, threshold));
-
-        int processed = 0;
-        for (QuestionSetAnalysis analysis : zombies) {
-            try {
-                analysis.markFailed("ZOMBIE_TIMEOUT", "분석이 " + ANALYSIS_TIMEOUT_MINUTES + "분 내 완료되지 않음");
-                analysisRepository.saveAndFlush(analysis);
-                log.warn("분석 좀비 감지: questionSetId={}", analysis.getQuestionSet().getId());
-                processed++;
-            } catch (ObjectOptimisticLockingFailureException e) {
-                log.info("분석 좀비 처리 스킵 (동시 업데이트): questionSetId={}", analysis.getQuestionSet().getId());
-            } catch (Exception e) {
-                log.error("분석 좀비 처리 실패: questionSetId={}", analysis.getQuestionSet().getId(), e);
-            }
-        }
-
-        if (processed > 0) {
-            log.info("분석 좀비 처리 완료: {}건", processed);
-        }
+        processZombies(zombies, analysis -> {
+            analysis.markFailed("ZOMBIE_TIMEOUT", "분석이 " + ANALYSIS_TIMEOUT_MINUTES + "분 내 완료되지 않음");
+            analysisRepository.saveAndFlush(analysis);
+        }, a -> a.getQuestionSet().getId(), "분석");
     }
 
     @Scheduled(fixedDelay = 60_000)
@@ -66,24 +51,10 @@ public class AnalysisScheduler {
         List<QuestionSetAnalysis> zombies = analysisRepository
                 .findByConvertStatusAndUpdatedAtBefore(ConvertStatus.PROCESSING, threshold);
 
-        int processed = 0;
-        for (QuestionSetAnalysis analysis : zombies) {
-            try {
-                analysis.updateConvertStatus(ConvertStatus.FAILED);
-                analysis.setConvertFailureReason("CONVERT_TIMEOUT: 변환이 " + CONVERT_TIMEOUT_MINUTES + "분 내 완료되지 않음");
-                analysisRepository.saveAndFlush(analysis);
-                log.warn("변환 좀비 감지: questionSetId={}", analysis.getQuestionSet().getId());
-                processed++;
-            } catch (ObjectOptimisticLockingFailureException e) {
-                log.info("변환 좀비 처리 스킵 (동시 업데이트): questionSetId={}", analysis.getQuestionSet().getId());
-            } catch (Exception e) {
-                log.error("변환 좀비 처리 실패: questionSetId={}", analysis.getQuestionSet().getId(), e);
-            }
-        }
-
-        if (processed > 0) {
-            log.info("변환 좀비 처리 완료: {}건", processed);
-        }
+        processZombies(zombies, analysis -> {
+            analysis.markConvertFailed("CONVERT_TIMEOUT: 변환이 " + CONVERT_TIMEOUT_MINUTES + "분 내 완료되지 않음");
+            analysisRepository.saveAndFlush(analysis);
+        }, a -> a.getQuestionSet().getId(), "변환");
     }
 
     @Scheduled(fixedDelay = 300_000)
@@ -93,24 +64,10 @@ public class AnalysisScheduler {
         List<QuestionSetAnalysis> zombies = analysisRepository
                 .findByAnalysisStatusAndUpdatedAtBefore(AnalysisStatus.PENDING_UPLOAD, threshold);
 
-        int processed = 0;
-        for (QuestionSetAnalysis analysis : zombies) {
-            try {
-                analysis.markFailed("UPLOAD_PENDING_TIMEOUT",
-                        "업로드 대기가 " + UPLOAD_TIMEOUT_MINUTES + "분 내 완료되지 않음");
-                analysisRepository.saveAndFlush(analysis);
-                log.warn("업로드 대기 좀비 감지: questionSetId={}", analysis.getQuestionSet().getId());
-                processed++;
-            } catch (ObjectOptimisticLockingFailureException e) {
-                log.info("업로드 대기 좀비 처리 스킵 (동시 업데이트): questionSetId={}", analysis.getQuestionSet().getId());
-            } catch (Exception e) {
-                log.error("업로드 대기 좀비 처리 실패: questionSetId={}", analysis.getQuestionSet().getId(), e);
-            }
-        }
-
-        if (processed > 0) {
-            log.info("업로드 대기 좀비 처리 완료: {}건", processed);
-        }
+        processZombies(zombies, analysis -> {
+            analysis.markFailed("UPLOAD_PENDING_TIMEOUT", "업로드 대기가 " + UPLOAD_TIMEOUT_MINUTES + "분 내 완료되지 않음");
+            analysisRepository.saveAndFlush(analysis);
+        }, a -> a.getQuestionSet().getId(), "업로드 대기");
     }
 
     @Scheduled(fixedDelay = 300_000)
@@ -120,22 +77,28 @@ public class AnalysisScheduler {
         List<FileMetadata> zombies = fileMetadataRepository
                 .findByStatusAndUpdatedAtBefore(FileStatus.PENDING, threshold);
 
+        processZombies(zombies, file -> {
+            file.markFailed("UPLOAD_TIMEOUT", "업로드가 " + UPLOAD_TIMEOUT_MINUTES + "분 내 완료되지 않음");
+            fileMetadataRepository.saveAndFlush(file);
+        }, FileMetadata::getId, "업로드");
+    }
+
+    private <T> void processZombies(List<T> zombies, Consumer<T> failAction,
+                                     Function<T, Object> idExtractor, String label) {
         int processed = 0;
-        for (FileMetadata file : zombies) {
+        for (T entity : zombies) {
             try {
-                file.markFailed("UPLOAD_TIMEOUT", "업로드가 " + UPLOAD_TIMEOUT_MINUTES + "분 내 완료되지 않음");
-                fileMetadataRepository.saveAndFlush(file);
-                log.warn("업로드 좀비 감지: fileMetadataId={}", file.getId());
+                failAction.accept(entity);
+                log.warn("{} 좀비 감지: id={}", label, idExtractor.apply(entity));
                 processed++;
             } catch (ObjectOptimisticLockingFailureException e) {
-                log.info("업로드 좀비 처리 스킵 (동시 업데이트): fileMetadataId={}", file.getId());
+                log.info("{} 좀비 처리 스킵 (동시 업데이트): id={}", label, idExtractor.apply(entity));
             } catch (Exception e) {
-                log.error("업로드 좀비 처리 실패: fileMetadataId={}", file.getId(), e);
+                log.error("{} 좀비 처리 실패: id={}", label, idExtractor.apply(entity), e);
             }
         }
-
         if (processed > 0) {
-            log.info("업로드 좀비 처리 완료: {}건", processed);
+            log.info("{} 좀비 처리 완료: {}건", label, processed);
         }
     }
 }
