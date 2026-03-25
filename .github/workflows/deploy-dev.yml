@@ -176,6 +176,7 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
             docker compose --env-file .env stop backend
             docker rmi $(docker images --filter "reference=*/rehearse-backend" -q) 2>/dev/null || true
+            docker system prune -af --volumes 2>/dev/null || true
             docker compose --env-file .env pull backend
             docker compose --env-file .env up -d backend
             sleep 15
