@@ -176,13 +176,13 @@ jobs:
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
             docker compose --env-file .env stop backend
             docker rmi $(docker images --filter "reference=*/rehearse-backend" -q) 2>/dev/null || true
-            docker system prune -af --volumes 2>/dev/null || true
+            docker system prune -af 2>/dev/null || true
             docker compose --env-file .env pull backend
             docker compose --env-file .env up -d backend
             echo "Waiting for backend to start..."
             for i in $(seq 1 12); do
               sleep 5
-              if curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
+              if docker exec rehearse-backend curl -sf http://localhost:8080/actuator/health > /dev/null 2>&1; then
                 echo "Health check passed (attempt $i)"
                 exit 0
               fi
