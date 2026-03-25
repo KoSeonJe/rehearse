@@ -1,0 +1,26 @@
+services:
+  mysql-loadtest:
+    image: mysql:8.0
+    container_name: rehearse-loadtest-db
+    environment:
+      MYSQL_ROOT_PASSWORD: loadtest
+      MYSQL_DATABASE: rehearse_loadtest
+    ports:
+      - "3306:3306"
+    tmpfs:
+      - /var/lib/mysql
+    command: --max-connections=500 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  wiremock:
+    image: wiremock/wiremock:3.12.1
+    container_name: rehearse-wiremock
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./wiremock-stubs:/home/wiremock
+    command: --global-response-templating --container-threads 1000 --max-request-journal-entries 0 --async-response-enabled true

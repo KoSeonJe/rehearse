@@ -24,12 +24,15 @@ public class QuestionSetResponse {
                 .map(QuestionDetailResponse::from)
                 .toList();
 
+        AnalysisStatus status = questionSet.getEffectiveAnalysisStatus();
+        String failureReason = questionSet.getAnalysisFailureReason();
+
         return QuestionSetResponse.builder()
                 .id(questionSet.getId())
                 .category(questionSet.getCategory())
                 .orderIndex(questionSet.getOrderIndex())
-                .analysisStatus(questionSet.getAnalysisStatus())
-                .failureReason(questionSet.getFailureReason())
+                .analysisStatus(status)
+                .failureReason(failureReason)
                 .questions(questionDetails)
                 .build();
     }

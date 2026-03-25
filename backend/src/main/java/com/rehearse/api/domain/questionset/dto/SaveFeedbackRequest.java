@@ -21,6 +21,9 @@ public class SaveFeedbackRequest {
     @Valid
     private List<TimestampFeedbackItem> timestampFeedbacks;
 
+    private boolean isVerbalCompleted;
+    private boolean isNonverbalCompleted;
+
     @Getter
     @NoArgsConstructor
     public static class TimestampFeedbackItem {

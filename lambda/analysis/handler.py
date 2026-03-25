@@ -4,6 +4,7 @@ import json
 import os
 import re
 import shutil
+import time
 import traceback
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
@@ -78,7 +79,7 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     tech_stack = answers_data.get("techStack")
     level = answers_data.get("level")
 
-    update_progress(interview_id, question_set_id, "STARTED")
+    # STARTED 호출 제거 — BE가 이미 PENDING_UPLOAD 상태, EXTRACTING이 첫 상태 업데이트
 
     os.makedirs(WORK_DIR, exist_ok=True)
     video_path = os.path.join(WORK_DIR, "video.webm")
@@ -90,19 +91,21 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
     frame_paths = extract_frames(video_path, WORK_DIR)
     video_duration_ms = get_video_duration_ms(video_path)
 
+    audio_path = None
+    answer_audio_paths = None
+
     if Config.USE_GEMINI:
         # Gemini 경로: 답변별 mp3 추출
         audio_dir = os.path.join(WORK_DIR, "answer_audios")
         answer_audio_paths = extract_answer_audios(video_path, answers, audio_dir)
     else:
         # 폴백 경로: 전체 WAV 추출 (기존)
-        answer_audio_paths = None
         audio_path = extract_audio(video_path, WORK_DIR)
 
     if Config.USE_GEMINI and answer_audio_paths:
         update_progress(interview_id, question_set_id, "ANALYZING")
         try:
-            timestamp_feedbacks = _run_gemini_pipeline(
+            timestamp_feedbacks, verbal_ok, nonverbal_ok = _run_gemini_pipeline(
                 answers, answer_audio_paths, frame_paths, video_duration_ms,
                 position=position, tech_stack=tech_stack, level=level,
             )
@@ -117,16 +120,22 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
                 answers, audio_path, frame_paths, video_duration_ms,
                 interview_id, question_set_id,
                 position=position, tech_stack=tech_stack, level=level,
+                skip_analyzing_update=True,
             )
+            # 레거시 폴백은 이미 ANALYZING 상태이므로 중복 호출 스킵
+            verbal_ok = any(f.get("verbalScore") is not None for f in timestamp_feedbacks)
+            nonverbal_ok = any(f.get("eyeContactScore") is not None for f in timestamp_feedbacks)
     else:
         # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
-        if "audio_path" not in dir():
+        if audio_path is None:
             audio_path = extract_audio(video_path, WORK_DIR)
         timestamp_feedbacks = _run_legacy_pipeline(
             answers, audio_path, frame_paths, video_duration_ms,
             interview_id, question_set_id,
             position=position, tech_stack=tech_stack, level=level,
         )
+        verbal_ok = any(f.get("verbalScore") is not None for f in timestamp_feedbacks)
+        nonverbal_ok = any(f.get("eyeContactScore") is not None for f in timestamp_feedbacks)
 
     update_progress(interview_id, question_set_id, "FINALIZING")
 
@@ -136,6 +145,8 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         "questionSetScore": overall_score,
         "questionSetComment": overall_comment,
         "timestampFeedbacks": timestamp_feedbacks,
+        "isVerbalCompleted": verbal_ok,
+        "isNonverbalCompleted": nonverbal_ok,
     }
 
     try:
@@ -145,15 +156,15 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         backup_to_s3(interview_id, question_set_id, feedback_payload)
         raise
 
-    print(f"[Analysis] 파이프라인 완료: interview={interview_id}, qs={question_set_id}")
+    print(f"[Analysis] 파이프라인 완료: interview={interview_id}, qs={question_set_id}, verbal={verbal_ok}, nonverbal={nonverbal_ok}")
     return {"statusCode": 200, "body": json.dumps({"message": "Analysis complete"})}
 
 
 def _run_gemini_pipeline(
     answers, audio_paths, frame_paths, video_duration_ms,
     position=None, tech_stack=None, level=None,
-) -> list[dict]:
-    """Gemini 음성 + Vision 비언어를 병렬 실행한다."""
+) -> tuple[list[dict], bool, bool]:
+    """Gemini 음성 + Vision 비언어를 병렬 실행한다. 모델 단위 재시도 포함."""
 
     with ThreadPoolExecutor(max_workers=6) as executor:
         # Gemini 음성 분석 (답변별)
@@ -180,8 +191,44 @@ def _run_gemini_pipeline(
         gemini_results = [f.result() for f in gemini_futures]
         vision_results = [f.result() for f in vision_futures]
 
+    # Gemini 전체 실패 → 2초 대기 → 1회 재시도
     if all(r is None for r in gemini_results):
-        raise RuntimeError("All Gemini audio analyses failed — triggering fallback")
+        print("[Analysis] Gemini 전체 실패, 2초 후 1회 재시도")
+        time.sleep(2)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            gemini_futures = [
+                executor.submit(
+                    _safe_gemini_audio,
+                    audio_paths[i],
+                    answer.get("questionText", ""),
+                    position, tech_stack, level,
+                    answer.get("modelAnswer"),
+                )
+                for i, answer in enumerate(answers)
+            ]
+            gemini_results = [f.result() for f in gemini_futures]
+
+        # 재시도도 전체 실패 → 폴백 (Whisper+GPT-4o)
+        if all(r is None for r in gemini_results):
+            raise RuntimeError("Gemini retry failed — triggering fallback")
+
+    # Vision 전체 실패 → 2초 대기 → 1회 재시도
+    if all(r is None for r in vision_results):
+        print("[Analysis] Vision 전체 실패, 2초 후 1회 재시도")
+        time.sleep(2)
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            vision_futures = [
+                executor.submit(
+                    _safe_vision,
+                    _filter_frames_for_range(frame_paths, answer["startMs"], answer["endMs"]),
+                )
+                for answer in answers
+            ]
+            vision_results = [f.result() for f in vision_futures]
+        # 재시도도 실패 → vision_results는 전부 None → PARTIAL로 저장
+
+    verbal_ok = any(r is not None for r in gemini_results)
+    nonverbal_ok = any(r is not None for r in vision_results)
 
     # 피드백 조립
     timestamp_feedbacks = []
@@ -216,20 +263,21 @@ def _run_gemini_pipeline(
         fb["overallComment"] = gemini.get("overallComment", "") if gemini else ""
         timestamp_feedbacks.append(fb)
 
-    return timestamp_feedbacks
+    return timestamp_feedbacks, verbal_ok, nonverbal_ok
 
 
 def _run_legacy_pipeline(
     answers, audio_path, frame_paths, video_duration_ms,
     interview_id, question_set_id,
     position=None, tech_stack=None, level=None,
+    skip_analyzing_update=False,
 ) -> list[dict]:
     """기존 Whisper+GPT-4o 파이프라인 (폴백용)."""
 
-    update_progress(interview_id, question_set_id, "STT_PROCESSING")
+    if not skip_analyzing_update:
+        update_progress(interview_id, question_set_id, "ANALYZING")
     stt_result = _safe_stt(audio_path)
 
-    update_progress(interview_id, question_set_id, "NONVERBAL_ANALYZING")
     timestamp_feedbacks = _build_timestamp_feedbacks(
         answers, stt_result, frame_paths, video_duration_ms,
         position=position, tech_stack=tech_stack, level=level,
@@ -400,9 +448,9 @@ def _safe_verbal(
         return None
 
 
-def _safe_update_progress(interview_id, question_set_id, progress, **kwargs):
+def _safe_update_progress(interview_id, question_set_id, status, **kwargs):
     try:
-        update_progress(interview_id, question_set_id, progress, **kwargs)
+        update_progress(interview_id, question_set_id, status, **kwargs)
     except Exception as e:
         print(f"[Analysis] 진행 상태 업데이트 실패: {e}")
 

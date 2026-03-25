@@ -4,6 +4,8 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,52 +32,74 @@ public class InterviewCompletionService {
 
         for (Interview interview : inProgressInterviews) {
             Long interviewId = interview.getId();
-            long totalCount = questionSetRepository.countByInterviewId(interviewId);
+            List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
 
-            if (totalCount == 0) {
+            if (questionSets.isEmpty()) {
                 continue;
             }
 
-            long completedCount = questionSetRepository.countByInterviewIdAndAnalysisStatus(
-                    interviewId, AnalysisStatus.COMPLETED);
-            long skippedCount = questionSetRepository.countByInterviewIdAndAnalysisStatus(
-                    interviewId, AnalysisStatus.SKIPPED);
+            CompletionSummary summary = summarize(questionSets);
 
-            if (completedCount + skippedCount == totalCount && completedCount > 0) {
-                // FE에서 이미 COMPLETED로 전이했을 수 있음 (중도 종료 시) — DB 재조회로 최신 상태 확인
+            if (summary.isAllResolved()) {
                 Interview freshInterview = interviewRepository.findById(interviewId).orElse(null);
                 if (freshInterview == null || freshInterview.getStatus() == InterviewStatus.COMPLETED) {
                     continue;
                 }
 
-                int overallScore = calculateOverallScore(interviewId);
-                String overallComment = String.format("전체 %d개 질문세트 중 %d개 분석 완료, %d개 건너뜀",
-                        totalCount, completedCount, skippedCount);
-
-                freshInterview.updateOverallResult(overallScore, overallComment);
+                int overallScore = calculateOverallScore(questionSets);
+                freshInterview.updateOverallResult(overallScore, summary.toComment());
                 freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
-                log.info("면접 완료 처리: interviewId={}, overallScore={}, completed={}, skipped={}",
-                        interviewId, overallScore, completedCount, skippedCount);
+                log.info("면접 완료 처리: interviewId={}, overallScore={}, completed={}, partial={}, skipped={}",
+                        interviewId, overallScore, summary.completed, summary.partial, summary.skipped);
             }
         }
     }
 
-    private int calculateOverallScore(Long interviewId) {
-        var questionSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+    private record CompletionSummary(long total, long completed, long partial, long skipped) {
+        boolean isAllResolved() {
+            return completed + partial + skipped == total && (completed + partial) > 0;
+        }
+
+        String toComment() {
+            return String.format("전체 %d개 질문세트 중 %d개 완료, %d개 부분완료, %d개 건너뜀",
+                    total, completed, partial, skipped);
+        }
+    }
+
+    private CompletionSummary summarize(List<QuestionSet> questionSets) {
+        long completed = 0;
+        long partial = 0;
+        long skipped = 0;
+
+        for (QuestionSet qs : questionSets) {
+            AnalysisStatus status = qs.getEffectiveAnalysisStatus();
+            if (status.isFullyCompleted()) {
+                completed++;
+            } else if (status.isPartiallyCompleted()) {
+                partial++;
+            } else if (status == AnalysisStatus.SKIPPED) {
+                skipped++;
+            }
+        }
+
+        return new CompletionSummary(questionSets.size(), completed, partial, skipped);
+    }
+
+    private int calculateOverallScore(List<QuestionSet> questionSets) {
         List<Long> questionSetIds = questionSets.stream()
-                .filter(qs -> qs.getAnalysisStatus() == AnalysisStatus.COMPLETED)
-                .map(qs -> qs.getId())
+                .filter(qs -> qs.getEffectiveAnalysisStatus().hasAnalysisResult())
+                .map(QuestionSet::getId)
                 .toList();
 
-        var feedbacks = feedbackRepository.findByQuestionSetIdIn(questionSetIds);
+        List<QuestionSetFeedback> feedbacks = feedbackRepository.findByQuestionSetIdIn(questionSetIds);
 
         if (feedbacks.isEmpty()) {
             return 0;
         }
 
         int totalScore = feedbacks.stream()
-                .mapToInt(f -> f.getQuestionSetScore())
+                .mapToInt(QuestionSetFeedback::getQuestionSetScore)
                 .sum();
 
         return totalScore / feedbacks.size();

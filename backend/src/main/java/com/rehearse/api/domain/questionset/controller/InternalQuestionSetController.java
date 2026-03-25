@@ -1,12 +1,6 @@
 package com.rehearse.api.domain.questionset.controller;
 
-import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.questionset.dto.AnswerResponse;
-import com.rehearse.api.domain.questionset.dto.AnswersResponse;
-import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.dto.*;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.global.common.ApiResponse;
 import jakarta.validation.Valid;
@@ -14,15 +8,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/internal/interviews/{interviewId}/question-sets/{questionSetId}")
 @RequiredArgsConstructor
 public class InternalQuestionSetController {
 
     private final InternalQuestionSetService internalQuestionSetService;
-    private final InterviewFinder interviewFinder;
 
     @PutMapping("/progress")
     public ResponseEntity<ApiResponse<Void>> updateProgress(
@@ -38,21 +29,7 @@ public class InternalQuestionSetController {
     public ResponseEntity<ApiResponse<AnswersResponse>> getAnswers(
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
-
-        QuestionSet questionSet = internalQuestionSetService.getQuestionSet(questionSetId);
-        Interview interview = interviewFinder.findById(interviewId);
-
-        List<AnswerResponse> answers = internalQuestionSetService.getAnswers(questionSetId).stream()
-                .map(AnswerResponse::from)
-                .toList();
-
-        AnswersResponse response = AnswersResponse.builder()
-                .analysisStatus(questionSet.getAnalysisStatus().name())
-                .position(interview.getPosition().name())
-                .techStack(interview.getTechStack() != null ? interview.getTechStack().name() : null)
-                .level(interview.getLevel().name())
-                .answers(answers)
-                .build();
+        AnswersResponse response = internalQuestionSetService.getAnswersResponse(interviewId, questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -66,6 +43,16 @@ public class InternalQuestionSetController {
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
+    @PutMapping("/convert-status")
+    public ResponseEntity<ApiResponse<Void>> updateConvertStatus(
+            @PathVariable Long interviewId,
+            @PathVariable Long questionSetId,
+            @Valid @RequestBody UpdateConvertStatusRequest request) {
+
+        internalQuestionSetService.updateConvertStatus(questionSetId, request);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
     @PostMapping("/retry-analysis")
     public ResponseEntity<ApiResponse<Void>> retryAnalysis(
             @PathVariable Long interviewId,
@@ -74,5 +61,4 @@ public class InternalQuestionSetController {
         internalQuestionSetService.retryAnalysis(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
-
 }

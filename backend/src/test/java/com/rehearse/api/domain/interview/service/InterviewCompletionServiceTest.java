@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -21,7 +22,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -50,20 +50,15 @@ class InterviewCompletionServiceTest {
     void checkAndCompleteInterviews_모든질문세트완료시_면접COMPLETED() {
         // given
         Interview interview = createInProgressInterview(1L);
-        QuestionSet qs1 = createQuestionSet(10L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs2 = createQuestionSet(11L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.COMPLETED);
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
-        given(questionSetRepository.countByInterviewId(1L)).willReturn(2L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.COMPLETED))
-                .willReturn(2L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.SKIPPED))
-                .willReturn(0L);
-        given(interviewRepository.findById(1L))
-                .willReturn(java.util.Optional.of(interview));
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                 .willReturn(List.of(qs1, qs2));
+        given(interviewRepository.findById(1L))
+                .willReturn(java.util.Optional.of(interview));
 
         QuestionSetFeedback fb1 = createFeedback(qs1, 80);
         QuestionSetFeedback fb2 = createFeedback(qs2, 60);
@@ -76,7 +71,7 @@ class InterviewCompletionServiceTest {
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
         assertThat(interview.getOverallScore()).isEqualTo(70); // (80+60)/2
-        assertThat(interview.getOverallComment()).contains("분석 완료");
+        assertThat(interview.getOverallComment()).contains("완료");
     }
 
     @Test
@@ -84,14 +79,13 @@ class InterviewCompletionServiceTest {
     void checkAndCompleteInterviews_일부만완료시_상태유지() {
         // given
         Interview interview = createInProgressInterview(1L);
+        QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.ANALYZING);
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
-        given(questionSetRepository.countByInterviewId(1L)).willReturn(2L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.COMPLETED))
-                .willReturn(1L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(1L, AnalysisStatus.SKIPPED))
-                .willReturn(0L);
+        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                .willReturn(List.of(qs1, qs2));
 
         // when
         interviewCompletionService.checkAndCompleteInterviews();
@@ -109,15 +103,15 @@ class InterviewCompletionServiceTest {
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
-        given(questionSetRepository.countByInterviewId(1L)).willReturn(0L);
+        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                .willReturn(List.of());
 
         // when
         interviewCompletionService.checkAndCompleteInterviews();
 
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
-        then(questionSetRepository).should(never())
-                .countByInterviewIdAndAnalysisStatus(anyLong(), eq(AnalysisStatus.COMPLETED));
+        then(feedbackRepository).should(never()).findByQuestionSetIdIn(anyList());
     }
 
     @Test
@@ -131,7 +125,7 @@ class InterviewCompletionServiceTest {
         interviewCompletionService.checkAndCompleteInterviews();
 
         // then
-        then(questionSetRepository).should(never()).countByInterviewId(anyLong());
+        then(questionSetRepository).should(never()).findByInterviewIdOrderByOrderIndex(anyLong());
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -143,21 +137,16 @@ class InterviewCompletionServiceTest {
     void calculateOverallScore_배치쿼리로평균점수계산() {
         // given
         Interview interview = createInProgressInterview(2L);
-        QuestionSet qs1 = createQuestionSet(20L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs2 = createQuestionSet(21L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs3 = createQuestionSet(22L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs1 = createQuestionSetWithAnalysis(20L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs2 = createQuestionSetWithAnalysis(21L, interview, AnalysisStatus.COMPLETED);
+        QuestionSet qs3 = createQuestionSetWithAnalysis(22L, interview, AnalysisStatus.COMPLETED);
 
         given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
                 .willReturn(List.of(interview));
-        given(questionSetRepository.countByInterviewId(2L)).willReturn(3L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(2L, AnalysisStatus.COMPLETED))
-                .willReturn(3L);
-        given(questionSetRepository.countByInterviewIdAndAnalysisStatus(2L, AnalysisStatus.SKIPPED))
-                .willReturn(0L);
-        given(interviewRepository.findById(2L))
-                .willReturn(java.util.Optional.of(interview));
         given(questionSetRepository.findByInterviewIdOrderByOrderIndex(2L))
                 .willReturn(List.of(qs1, qs2, qs3));
+        given(interviewRepository.findById(2L))
+                .willReturn(java.util.Optional.of(interview));
 
         QuestionSetFeedback fb1 = createFeedback(qs1, 90);
         QuestionSetFeedback fb2 = createFeedback(qs2, 75);
@@ -188,18 +177,21 @@ class InterviewCompletionServiceTest {
         return interview;
     }
 
-    private QuestionSet createQuestionSet(Long id, Interview interview) {
-        return createQuestionSet(id, interview, AnalysisStatus.PENDING);
-    }
-
-    private QuestionSet createQuestionSet(Long id, Interview interview, AnalysisStatus status) {
+    private QuestionSet createQuestionSetWithAnalysis(Long id, Interview interview, AnalysisStatus status) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
                 .category(QuestionCategory.CS)
                 .orderIndex(id.intValue())
                 .build();
         ReflectionTestUtils.setField(qs, "id", id);
-        ReflectionTestUtils.setField(qs, "analysisStatus", status);
+
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(qs)
+                .build();
+        if (status != AnalysisStatus.PENDING) {
+            ReflectionTestUtils.setField(analysis, "analysisStatus", status);
+        }
+        ReflectionTestUtils.setField(qs, "analysis", analysis);
         return qs;
     }
 
