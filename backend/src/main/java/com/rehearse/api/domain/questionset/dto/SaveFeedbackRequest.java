@@ -3,6 +3,7 @@ package com.rehearse.api.domain.questionset.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -21,8 +22,11 @@ public class SaveFeedbackRequest {
     @Valid
     private List<TimestampFeedbackItem> timestampFeedbacks;
 
-    private boolean isVerbalCompleted;
-    private boolean isNonverbalCompleted;
+    @JsonProperty("isVerbalCompleted")
+    private boolean verbalCompleted;
+
+    @JsonProperty("isNonverbalCompleted")
+    private boolean nonverbalCompleted;
 
     @Getter
     @NoArgsConstructor
