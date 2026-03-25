@@ -48,7 +48,11 @@ public class InternalQuestionSetService {
             return;
         }
 
-        analysis.updateAnalysisStatus(request.getStatus());
+        try {
+            analysis.updateAnalysisStatus(request.getStatus());
+        } catch (IllegalStateException e) {
+            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
+        }
         log.info("분석 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
     }
 
@@ -142,7 +146,11 @@ public class InternalQuestionSetService {
         if (request.getStatus() == ConvertStatus.FAILED) {
             analysis.markConvertFailed(request.getFailureReason());
         } else {
-            analysis.updateConvertStatus(request.getStatus());
+            try {
+                analysis.updateConvertStatus(request.getStatus());
+            } catch (IllegalStateException e) {
+                throw new BusinessException(QuestionSetErrorCode.INVALID_CONVERT_STATUS_TRANSITION);
+            }
         }
 
         if (request.getStreamingS3Key() != null) {

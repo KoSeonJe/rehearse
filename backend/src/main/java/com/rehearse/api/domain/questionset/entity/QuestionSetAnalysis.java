@@ -66,6 +66,7 @@ public class QuestionSetAnalysis {
     }
 
     public void updateAnalysisStatus(AnalysisStatus newStatus) {
+        if (this.analysisStatus == newStatus) return; // 멱등성
         if (!this.analysisStatus.canTransitionTo(newStatus)) {
             throw new IllegalStateException(
                 String.format("분석 상태를 %s에서 %s로 변경할 수 없습니다.", this.analysisStatus, newStatus));
@@ -74,6 +75,7 @@ public class QuestionSetAnalysis {
     }
 
     public void updateConvertStatus(ConvertStatus newStatus) {
+        if (this.convertStatus == newStatus) return; // 멱등성
         if (!this.convertStatus.canTransitionTo(newStatus)) {
             throw new IllegalStateException(
                 String.format("변환 상태를 %s에서 %s로 변경할 수 없습니다.", this.convertStatus, newStatus));
