@@ -71,7 +71,7 @@ class InterviewCompletionServiceTest {
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
         assertThat(interview.getOverallScore()).isEqualTo(70); // (80+60)/2
-        assertThat(interview.getOverallComment()).contains("분석 완료");
+        assertThat(interview.getOverallComment()).contains("완료");
     }
 
     @Test

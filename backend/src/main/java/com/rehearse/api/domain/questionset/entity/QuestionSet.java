@@ -71,6 +71,14 @@ public class QuestionSet {
         this.orderIndex = orderIndex;
     }
 
+    public AnalysisStatus getEffectiveAnalysisStatus() {
+        return analysis != null ? analysis.getAnalysisStatus() : AnalysisStatus.PENDING;
+    }
+
+    public String getAnalysisFailureReason() {
+        return analysis != null ? analysis.getFailureReason() : null;
+    }
+
     public void addQuestion(Question question) {
         this.questions.add(question);
         question.assignQuestionSet(this);

@@ -22,7 +22,7 @@ public enum AnalysisStatus {
             case ANALYZING -> target == FINALIZING || target == FAILED;
             case FINALIZING -> target == COMPLETED || target == PARTIAL || target == FAILED;
             case COMPLETED -> target == FAILED;
-            case PARTIAL -> target == EXTRACTING || target == FAILED;
+            case PARTIAL -> target == EXTRACTING || target == COMPLETED || target == FAILED;
             case FAILED -> target == EXTRACTING || target == COMPLETED;
             case SKIPPED -> false;
         };
@@ -34,6 +34,16 @@ public enum AnalysisStatus {
      */
     public boolean isResolved() {
         return this == COMPLETED || this == PARTIAL || this == SKIPPED;
+    }
+
+    /** 완전히 분석 완료된 상태 */
+    public boolean isFullyCompleted() {
+        return this == COMPLETED;
+    }
+
+    /** 부분 완료 상태 (일부 분석 성공, 일부 실패) */
+    public boolean isPartiallyCompleted() {
+        return this == PARTIAL;
     }
 
     /** 재시도 가능한 상태 (FAILED 또는 PARTIAL) */

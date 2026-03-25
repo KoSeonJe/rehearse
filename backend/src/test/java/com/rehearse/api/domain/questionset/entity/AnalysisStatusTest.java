@@ -162,9 +162,9 @@ class AnalysisStatusTest {
     }
 
     @Test
-    @DisplayName("PARTIAL → COMPLETED: 허용되지 않는다")
-    void partial_cannotTransitionTo_completed() {
-        assertThat(AnalysisStatus.PARTIAL.canTransitionTo(AnalysisStatus.COMPLETED)).isFalse();
+    @DisplayName("PARTIAL → COMPLETED: 허용된다 (재분석 없이 추가 데이터로 보정)")
+    void partial_canTransitionTo_completed() {
+        assertThat(AnalysisStatus.PARTIAL.canTransitionTo(AnalysisStatus.COMPLETED)).isTrue();
     }
 
     // ─────────────────────────────────────────────────────────────

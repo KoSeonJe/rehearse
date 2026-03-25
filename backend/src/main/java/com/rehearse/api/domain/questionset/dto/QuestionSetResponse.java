@@ -3,7 +3,6 @@ package com.rehearse.api.domain.questionset.dto;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -25,9 +24,8 @@ public class QuestionSetResponse {
                 .map(QuestionDetailResponse::from)
                 .toList();
 
-        QuestionSetAnalysis analysis = questionSet.getAnalysis();
-        AnalysisStatus status = analysis != null ? analysis.getAnalysisStatus() : AnalysisStatus.PENDING;
-        String failureReason = analysis != null ? analysis.getFailureReason() : null;
+        AnalysisStatus status = questionSet.getEffectiveAnalysisStatus();
+        String failureReason = questionSet.getAnalysisFailureReason();
 
         return QuestionSetResponse.builder()
                 .id(questionSet.getId())

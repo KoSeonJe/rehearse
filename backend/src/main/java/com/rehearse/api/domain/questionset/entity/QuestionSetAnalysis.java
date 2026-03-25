@@ -121,6 +121,14 @@ public class QuestionSetAnalysis {
         this.isNonverbalCompleted = false;
     }
 
+    public boolean trySkip() {
+        if (!analysisStatus.canTransitionTo(AnalysisStatus.SKIPPED)) {
+            return false;
+        }
+        updateAnalysisStatus(AnalysisStatus.SKIPPED);
+        return true;
+    }
+
     public boolean isFullyReady() {
         return analysisStatus.hasAnalysisResult()
             && convertStatus == ConvertStatus.COMPLETED;

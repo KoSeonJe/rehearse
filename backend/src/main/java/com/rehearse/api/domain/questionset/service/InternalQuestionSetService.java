@@ -2,9 +2,9 @@ package com.rehearse.api.domain.questionset.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
-import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.questionset.dto.*;
 import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
@@ -33,6 +33,7 @@ public class InternalQuestionSetService {
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final QuestionRepository questionRepository;
+    private final InterviewFinder interviewFinder;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
 
@@ -57,6 +58,23 @@ public class InternalQuestionSetService {
 
     public List<QuestionAnswer> getAnswers(Long questionSetId) {
         return answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
+    }
+
+    public AnswersResponse getAnswersResponse(Long interviewId, Long questionSetId) {
+        QuestionSet questionSet = findQuestionSet(questionSetId);
+        Interview interview = interviewFinder.findById(interviewId);
+
+        List<AnswerResponse> answers = getAnswers(questionSetId).stream()
+                .map(AnswerResponse::from)
+                .toList();
+
+        return AnswersResponse.builder()
+                .analysisStatus(questionSet.getEffectiveAnalysisStatus().name())
+                .position(interview.getPosition().name())
+                .techStack(interview.getTechStack() != null ? interview.getTechStack().name() : null)
+                .level(interview.getLevel().name())
+                .answers(answers)
+                .build();
     }
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))

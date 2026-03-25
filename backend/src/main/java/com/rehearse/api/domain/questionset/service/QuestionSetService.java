@@ -121,12 +121,9 @@ public class QuestionSetService {
         for (QuestionSet qs : questionSets) {
             QuestionSetAnalysis analysis = qs.getAnalysis();
             if (analysis == null) {
-                // analysis 미생성 QuestionSet도 SKIPPED 처리
                 analysis = analysisRepository.save(QuestionSetAnalysis.builder().questionSet(qs).build());
-                analysis.updateAnalysisStatus(AnalysisStatus.SKIPPED);
-                count++;
-            } else if (analysis.getAnalysisStatus() == AnalysisStatus.PENDING) {
-                analysis.updateAnalysisStatus(AnalysisStatus.SKIPPED);
+            }
+            if (analysis.trySkip()) {
                 count++;
             }
         }

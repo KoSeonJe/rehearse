@@ -27,24 +27,16 @@ public class QuestionSetStatusResponse {
                 : null;
 
         QuestionSetAnalysis analysis = questionSet.getAnalysis();
-        if (analysis == null) {
-            return QuestionSetStatusResponse.builder()
-                    .id(questionSet.getId())
-                    .analysisStatus(AnalysisStatus.PENDING)
-                    .convertStatus(ConvertStatus.PENDING)
-                    .fileStatus(fileStatus)
-                    .build();
-        }
 
         return QuestionSetStatusResponse.builder()
                 .id(questionSet.getId())
-                .analysisStatus(analysis.getAnalysisStatus())
-                .convertStatus(analysis.getConvertStatus())
+                .analysisStatus(questionSet.getEffectiveAnalysisStatus())
+                .convertStatus(analysis != null ? analysis.getConvertStatus() : ConvertStatus.PENDING)
                 .fileStatus(fileStatus)
-                .isVerbalCompleted(analysis.isVerbalCompleted())
-                .isNonverbalCompleted(analysis.isNonverbalCompleted())
-                .fullyReady(analysis.isFullyReady())
-                .failureReason(analysis.getFailureReason())
+                .isVerbalCompleted(analysis != null && analysis.isVerbalCompleted())
+                .isNonverbalCompleted(analysis != null && analysis.isNonverbalCompleted())
+                .fullyReady(analysis != null && analysis.isFullyReady())
+                .failureReason(questionSet.getAnalysisFailureReason())
                 .build();
     }
 }
