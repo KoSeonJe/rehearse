@@ -16,7 +16,7 @@ public enum AnalysisStatus {
 
     public boolean canTransitionTo(AnalysisStatus target) {
         return switch (this) {
-            case PENDING -> target == PENDING_UPLOAD || target == SKIPPED || target == FAILED;
+            case PENDING -> target == PENDING_UPLOAD || target == EXTRACTING || target == SKIPPED || target == FAILED;
             case PENDING_UPLOAD -> target == EXTRACTING || target == FAILED;
             case EXTRACTING -> target == ANALYZING || target == FAILED;
             case ANALYZING -> target == FINALIZING || target == FAILED;

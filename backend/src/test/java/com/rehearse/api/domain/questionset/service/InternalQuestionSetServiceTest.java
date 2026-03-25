@@ -165,8 +165,8 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(request, "questionSetScore", 85);
         ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", List.of(item));
-        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
-        ReflectionTestUtils.setField(request, "isNonverbalCompleted", true);
+        ReflectionTestUtils.setField(request, "verbalCompleted", true);
+        ReflectionTestUtils.setField(request, "nonverbalCompleted", true);
 
         // when
         internalQuestionSetService.saveFeedback(1L, request);
@@ -191,8 +191,8 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(request, "questionSetScore", 70);
         ReflectionTestUtils.setField(request, "questionSetComment", "개선이 필요합니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
-        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
-        ReflectionTestUtils.setField(request, "isNonverbalCompleted", false);
+        ReflectionTestUtils.setField(request, "verbalCompleted", true);
+        ReflectionTestUtils.setField(request, "nonverbalCompleted", false);
 
         // when
         internalQuestionSetService.saveFeedback(1L, request);
@@ -275,8 +275,8 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(request, "questionSetScore", 60);
         ReflectionTestUtils.setField(request, "questionSetComment", "비언어 분석 실패");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
-        ReflectionTestUtils.setField(request, "isVerbalCompleted", true);
-        ReflectionTestUtils.setField(request, "isNonverbalCompleted", false);
+        ReflectionTestUtils.setField(request, "verbalCompleted", true);
+        ReflectionTestUtils.setField(request, "nonverbalCompleted", false);
 
         // when
         internalQuestionSetService.saveFeedback(1L, request);
