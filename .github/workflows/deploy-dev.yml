@@ -174,10 +174,12 @@ jobs:
           script: |
             cd ~/rehearse/backend
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            docker compose --env-file .env stop backend
+            docker rmi $(docker images --filter "reference=*/rehearse-backend" -q) 2>/dev/null || true
             docker compose --env-file .env pull backend
-            docker compose --env-file .env up -d
-            sleep 10
-            curl -f http://localhost:8080/actuator/health || echo "Health check failed"
+            docker compose --env-file .env up -d backend
+            sleep 15
+            curl -f http://localhost:8080/actuator/health || exit 1
 
       - name: Restart Nginx on config change
         if: needs.changes.outputs.nginx == 'true'
