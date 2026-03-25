@@ -20,7 +20,7 @@ public enum AnalysisStatus {
             case FINALIZING -> target == COMPLETED || target == PARTIAL || target == FAILED;
             case COMPLETED -> target == FAILED;
             case PARTIAL -> target == EXTRACTING || target == FAILED;
-            case FAILED -> target == EXTRACTING;
+            case FAILED -> target == EXTRACTING || target == COMPLETED;
             case SKIPPED -> false;
         };
     }

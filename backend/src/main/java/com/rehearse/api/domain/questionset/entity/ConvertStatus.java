@@ -10,7 +10,7 @@ public enum ConvertStatus {
         return switch (this) {
             case PENDING -> target == PROCESSING || target == FAILED;
             case PROCESSING -> target == COMPLETED || target == FAILED;
-            case COMPLETED -> false;
+            case COMPLETED -> target == FAILED;
             case FAILED -> target == PROCESSING;
         };
     }

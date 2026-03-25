@@ -56,9 +56,16 @@ class ConvertStatusTest {
     // ─────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("COMPLETED → 모든 상태: 허용되지 않는다")
-    void completed_cannotTransitionToAnyStatus() {
+    @DisplayName("COMPLETED → FAILED: 허용된다 (변환 후 무결성 검사 실패)")
+    void completed_canTransitionTo_failed() {
+        assertThat(ConvertStatus.COMPLETED.canTransitionTo(ConvertStatus.FAILED)).isTrue();
+    }
+
+    @Test
+    @DisplayName("COMPLETED → FAILED 외 상태: 허용되지 않는다")
+    void completed_cannotTransitionToOtherStatus() {
         for (ConvertStatus target : ConvertStatus.values()) {
+            if (target == ConvertStatus.FAILED) continue;
             assertThat(ConvertStatus.COMPLETED.canTransitionTo(target))
                     .as("COMPLETED → %s 는 허용되지 않아야 한다", target)
                     .isFalse();
