@@ -24,6 +24,10 @@ server:
 resilience4j:
   ratelimiter:
     instances:
+      openai-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 120s
       claude-api:
         limitForPeriod: 50
         limitRefreshPeriod: 1s

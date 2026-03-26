@@ -38,7 +38,7 @@ public class CacheableQuestionProvider {
             return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
         }
 
-        log.info("[CACHE] pool 부족, Claude 호출: cacheKey={}", cacheKey);
+        log.info("[CACHE] pool 부족, AI 호출: cacheKey={}", cacheKey);
         return generateWithStampedeProtection(cacheKey, position, level, techStack, type,
                 requiredCount, csSubTopics, categoryFilter);
     }
@@ -81,7 +81,7 @@ public class CacheableQuestionProvider {
 
             return questionPoolService.selectWithCategoryDistribution(allGenerated, requiredCount);
         } catch (Exception e) {
-            log.error("[CACHE] Claude 호출 실패: cacheKey={}", cacheKey, e);
+            log.error("[CACHE] AI 호출 실패: cacheKey={}", cacheKey, e);
             throw e;
         } finally {
             questionGenerationLock.release(cacheKey, lock);

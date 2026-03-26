@@ -16,6 +16,10 @@ spring:
       ddl-auto: validate
     show-sql: false
 
+openai:
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-4o-mini}
+
 claude:
   api-key: ${CLAUDE_API_KEY}
   model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
@@ -37,6 +41,10 @@ cors:
 resilience4j:
   ratelimiter:
     instances:
+      openai-api:
+        limitForPeriod: 30
+        limitRefreshPeriod: 1s
+        timeoutDuration: 60s
       claude-api:
         limitForPeriod: 20
         limitRefreshPeriod: 1s
