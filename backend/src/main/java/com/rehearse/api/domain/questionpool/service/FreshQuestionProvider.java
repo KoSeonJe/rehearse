@@ -36,7 +36,7 @@ public class FreshQuestionProvider {
 
         List<GeneratedQuestion> generated = aiClient.generateQuestions(request);
 
-        log.info("[FRESH] Claude 호출 완료: types={}, generated={}", types, generated.size());
+        log.info("[FRESH] AI 호출 완료: types={}, generated={}", types, generated.size());
 
         if (generated.size() > requiredCount) {
             return generated.subList(0, requiredCount);

@@ -155,7 +155,7 @@ public class InterviewService {
         // Phase 2: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, request.getQuestionSetId());
 
-        // Phase 3: Claude API 호출 (트랜잭션 없음)
+        // Phase 3: AI API 호출 (트랜잭션 없음)
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
                 context.position(),
                 context.effectiveTechStack(),

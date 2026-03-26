@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @Component
-@ConditionalOnMissingBean(ClaudeApiClient.class)
+@ConditionalOnMissingBean(ResilientAiClient.class)
 @RequiredArgsConstructor
 public class MockAiClient implements AiClient {
 
