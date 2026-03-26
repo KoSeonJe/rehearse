@@ -64,7 +64,7 @@ public class ResilientAiClient implements AiClient {
     @Override
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         if (openAiClient == null) {
-            return claudeApiClient.generateQuestions(request);
+            return fallbackGenerateQuestions(request);
         }
 
         try {
@@ -84,7 +84,7 @@ public class ResilientAiClient implements AiClient {
     @Override
     public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
         if (openAiClient == null) {
-            return claudeApiClient.generateFollowUpQuestion(request);
+            return fallbackGenerateFollowUp(request);
         }
 
         try {
