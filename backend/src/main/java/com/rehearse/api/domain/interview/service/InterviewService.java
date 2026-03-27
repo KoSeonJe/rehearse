@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
+import static org.springframework.transaction.annotation.Propagation.*;
+
 import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
@@ -147,7 +149,7 @@ public class InterviewService {
         return InterviewResponse.from(interview, questionSets);
     }
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
+    @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request, MultipartFile audioFile) {
         // Phase 1: answerText 결정 (트랜잭션 없음 — 외부 API 호출 가능)
         String answerText = resolveAnswerText(request, audioFile);

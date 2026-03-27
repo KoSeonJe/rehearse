@@ -58,3 +58,15 @@ secrets.*
 # === Lambda 빌드 아티팩트 ===
 lambda/**/package/
 lambda/**/*.zip
+
+# === Claude Code 설정 ===
+.claude/
+
+# === 부하테스트 ===
+docs/plans/virtual-thread-migration/k6-reports/
+docs/plans/virtual-thread-migration/load-test-plan-v2.md
+docs/plans/virtual-thread-migration/load-test-results-v2.md
+
+# === 미완성 계획 문서 ===
+docs/plans/partial-failure-retry/
+docs/plans/sprint-2/

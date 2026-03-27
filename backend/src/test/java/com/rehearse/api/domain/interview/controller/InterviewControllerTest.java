@@ -38,6 +38,9 @@ class InterviewControllerTest {
     @MockitoBean
     private InterviewService interviewService;
 
+    @MockitoBean(name = "vtExecutor")
+    private java.util.concurrent.Executor vtExecutor;
+
     @Test
     @DisplayName("POST /api/v1/interviews - 면접 세션 생성 성공 (201)")
     void createInterview_success() throws Exception {

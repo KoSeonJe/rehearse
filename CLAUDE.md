@@ -15,6 +15,24 @@
 
 ---
 
+## AWS 접근 정보
+
+- **AWS CLI**: 설정 완료 (`~/.aws/config`, `~/.aws/credentials`)
+  - Account: `776735194358` (root)
+  - Region: `ap-northeast-2`
+  - `aws` 명령어로 직접 리소스 조회/관리 가능
+- **EC2 SSH**: `ssh -i ~/.ssh/rehearse-key.pem ubuntu@54.180.188.135`
+- **주요 AWS 리소스**:
+  - S3: `rehearse-videos-dev`
+  - Lambda: `rehearse-analysis-dev`, `rehearse-convert-dev`
+  - EventBridge Rule: `rehearse-video-uploaded-dev`
+  - ECR: `rehearse-backend`
+  - CloudFront: `d2n8xljv54hfw0`
+
+AWS 인프라 상태 확인이 필요하면 `aws` CLI로 직접 조회할 것 (코드에 없는 설정도 콘솔에서 구성되어 있을 수 있음).
+
+---
+
 ## Tech Stack (Summary)
 
 - **Frontend**: React 18 + TypeScript 5+ / Tailwind CSS / Vite / Zustand / TanStack Query
