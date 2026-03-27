@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 
@@ -55,6 +57,19 @@ public class MockAiClient implements AiClient {
 
         String json = """
                 {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "modelAnswer": "[Mock] 성능 최적화를 위해 캐싱 전략, 쿼리 최적화, 비동기 처리 등의 접근 방식을 구체적으로 설명할 수 있어야 합니다."}
+                """;
+
+        return parseJson(json, new TypeReference<>() {});
+    }
+
+    @Override
+    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
+        log.info("[Mock] generateFollowUpWithAudio 호출 - audioFile={}, size={}bytes",
+                audioFile != null ? audioFile.getOriginalFilename() : "null",
+                audioFile != null ? audioFile.getSize() : 0);
+
+        String json = """
+                {"question": "[Mock] 방금 말씀하신 정렬 알고리즘에서 실무에서는 어떤 기준으로 선택하시나요?", "reason": "실무 적용 경험을 확인하기 위함", "type": "DEEP_DIVE", "answerText": "[Mock] 퀵정렬은 평균 O(n log n)이고 최악은 O(n^2)입니다.", "modelAnswer": "[Mock] 데이터 크기, 안정성 요구사항, 메모리 제약 등을 고려하여 적절한 정렬 알고리즘을 선택해야 합니다."}
                 """;
 
         return parseJson(json, new TypeReference<>() {});

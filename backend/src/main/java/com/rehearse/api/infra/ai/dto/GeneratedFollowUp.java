@@ -13,4 +13,10 @@ public class GeneratedFollowUp {
     private String reason;
     private String type;
     private String modelAnswer;
+    private String answerText;
+
+    public GeneratedFollowUp withAnswerText(String answerText) {
+        this.answerText = answerText;
+        return this;
+    }
 }

@@ -43,7 +43,17 @@ public class FollowUpPromptBuilder {
             .replace("{FOLLOWUP_DEPTH}", profile.followUpDepth());
     }
 
+    public String buildUserPromptForAudio(FollowUpGenerationRequest req) {
+        return buildUserPromptInternal(req,
+                "[첨부된 오디오를 전사하여 사용하세요]",
+                "오디오를 전사한 뒤, 그 내용을 바탕으로 후속 질문을 생성하세요. answerText 필드에 전사 결과를 포함하세요.");
+    }
+
     public String buildUserPrompt(FollowUpGenerationRequest req) {
+        return buildUserPromptInternal(req, req.answerText(), "새 후속 질문을 생성하세요.");
+    }
+
+    private String buildUserPromptInternal(FollowUpGenerationRequest req, String answerSection, String instruction) {
         TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
 
         StringBuilder sb = new StringBuilder();
@@ -52,7 +62,7 @@ public class FollowUpPromptBuilder {
           .append("레벨: ").append(levelKorean(req.level())).append("\n\n");
 
         sb.append("질문: ").append(req.questionContent()).append("\n");
-        sb.append("답변: ").append(req.answerText()).append("\n");
+        sb.append("답변: ").append(answerSection).append("\n");
         sb.append("비언어: ").append(
             req.nonVerbalSummary() != null ? req.nonVerbalSummary() : "없음").append("\n");
 
@@ -65,7 +75,7 @@ public class FollowUpPromptBuilder {
             }
         }
 
-        sb.append("\n새 후속 질문을 생성하세요.");
+        sb.append("\n").append(instruction);
         return sb.toString();
     }
 
