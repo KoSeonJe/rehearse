@@ -4,22 +4,16 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.interview.vo.QuestionDistribution;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.service.CacheableQuestionProvider;
 import com.rehearse.api.domain.questionpool.service.FreshQuestionProvider;
 import com.rehearse.api.domain.questionset.entity.*;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
-import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -32,19 +26,16 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class QuestionGenerationService {
 
-    private final InterviewRepository interviewRepository;
-    private final QuestionSetRepository questionSetRepository;
+    private final QuestionGenerationTransactionHandler transactionHandler;
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
     private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public QuestionGenerationService(
-            InterviewRepository interviewRepository,
-            QuestionSetRepository questionSetRepository,
+            QuestionGenerationTransactionHandler transactionHandler,
             CacheableQuestionProvider cacheableProvider,
             FreshQuestionProvider freshProvider) {
-        this.interviewRepository = interviewRepository;
-        this.questionSetRepository = questionSetRepository;
+        this.transactionHandler = transactionHandler;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
     }
@@ -59,8 +50,8 @@ public class QuestionGenerationService {
                                   List<String> csSubTopics, String resumeText,
                                   Integer durationMinutes, TechStack techStack) {
 
-        // Phase A: 상태 전환 (별도 트랜잭션)
-        startGeneration(interviewId);
+        // Phase A: 상태 전환 (별도 트랜잭션 — 외부 Bean 호출로 프록시 적용)
+        transactionHandler.startGeneration(interviewId);
 
         // 유형별 질문 수 배분 및 CACHEABLE / FRESH 분류
         int totalCount = QuestionCountCalculator.calculate(durationMinutes, interviewTypes.size());
@@ -101,39 +92,8 @@ public class QuestionGenerationService {
             allQuestionSets.get(i).updateOrderIndex(i);
         }
 
-        // Phase C: 결과 저장 (별도 트랜잭션)
-        saveResults(interviewId, allQuestionSets);
-    }
-
-    @Transactional
-    public void startGeneration(Long interviewId) {
-        Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
-        interview.startQuestionGeneration();
-        interviewRepository.flush();
-        log.info("질문 생성 시작: interviewId={}", interviewId);
-    }
-
-    @Transactional
-    public void saveResults(Long interviewId, List<QuestionSet> questionSets) {
-        Interview interview = interviewRepository.findById(interviewId)
-                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
-
-        questionSets.forEach(qs -> qs.assignInterview(interview));
-        questionSetRepository.saveAll(questionSets);
-        interview.completeQuestionGeneration();
-        interviewRepository.save(interview);
-
-        log.info("질문 생성 완료: interviewId={}, questionSets={}", interviewId, questionSets.size());
-    }
-
-    @Transactional
-    public void failGeneration(Long interviewId, String reason) {
-        interviewRepository.findById(interviewId).ifPresent(interview -> {
-            interview.failQuestionGeneration(reason);
-            interviewRepository.save(interview);
-            log.error("질문 생성 실패: interviewId={}, reason={}", interviewId, reason);
-        });
+        // Phase C: 결과 저장 (별도 트랜잭션 — 외부 Bean 호출로 프록시 적용)
+        transactionHandler.saveResults(interviewId, allQuestionSets);
     }
 
     private List<QuestionSet> provideCacheableQuestions(

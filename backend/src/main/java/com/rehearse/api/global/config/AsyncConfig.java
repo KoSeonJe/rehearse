@@ -1,10 +1,20 @@
 package com.rehearse.api.global.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @Configuration
 @EnableAsync
 public class AsyncConfig {
-    // Virtual Thread 환경: Spring Boot 3.4가 자동으로 VT executor 사용
+
+    public static final String VT_EXECUTOR = "vtExecutor";
+
+    @Bean(VT_EXECUTOR)
+    public Executor vtExecutor() {
+        return Executors.newVirtualThreadPerTaskExecutor();
+    }
 }
