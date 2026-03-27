@@ -3,6 +3,9 @@ package com.rehearse.api.domain.interview.controller;
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.dto.UpdateStatusResponse;
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.interview.service.FollowUpService;
+import com.rehearse.api.domain.interview.service.InterviewCreationService;
+import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.global.exception.BusinessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +39,16 @@ class InterviewControllerTest {
     private ObjectMapper objectMapper;
 
     @MockitoBean
+    private InterviewCreationService interviewCreationService;
+
+    @MockitoBean
+    private InterviewQueryService interviewQueryService;
+
+    @MockitoBean
     private InterviewService interviewService;
+
+    @MockitoBean
+    private FollowUpService followUpService;
 
     @MockitoBean(name = "vtExecutor")
     private java.util.concurrent.Executor vtExecutor;
@@ -45,7 +57,7 @@ class InterviewControllerTest {
     @DisplayName("POST /api/v1/interviews - 면접 세션 생성 성공 (201)")
     void createInterview_success() throws Exception {
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewService.createInterview(any(), any())).willReturn(response);
+        given(interviewCreationService.createInterview(any(), any())).willReturn(response);
 
         String requestJson = """
                 {
@@ -115,7 +127,7 @@ class InterviewControllerTest {
     @DisplayName("GET /api/v1/interviews/{id} - 조회 성공 (200)")
     void getInterview_success() throws Exception {
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewService.getInterview(1L)).willReturn(response);
+        given(interviewQueryService.getInterview(1L)).willReturn(response);
 
         mockMvc.perform(get("/api/v1/interviews/1"))
                 .andExpect(status().isOk())
@@ -127,7 +139,7 @@ class InterviewControllerTest {
     @Test
     @DisplayName("GET /api/v1/interviews/{id} - 존재하지 않는 세션 404")
     void getInterview_notFound() throws Exception {
-        given(interviewService.getInterview(999L))
+        given(interviewQueryService.getInterview(999L))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         mockMvc.perform(get("/api/v1/interviews/999"))

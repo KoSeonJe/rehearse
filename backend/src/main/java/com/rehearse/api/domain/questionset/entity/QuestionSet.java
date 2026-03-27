@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -77,6 +78,10 @@ public class QuestionSet {
 
     public String getAnalysisFailureReason() {
         return analysis != null ? analysis.getFailureReason() : null;
+    }
+
+    public List<Question> getQuestions() {
+        return Collections.unmodifiableList(questions);
     }
 
     public void addQuestion(Question question) {

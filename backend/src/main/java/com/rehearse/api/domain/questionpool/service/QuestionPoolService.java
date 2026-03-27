@@ -95,16 +95,15 @@ public class QuestionPoolService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     List<QuestionPool> convertAndCacheIfEligible(String cacheKey, List<GeneratedQuestion> generated) {
         List<QuestionPool> pools = generated.stream()
-                .map(gq -> QuestionPool.builder()
-                        .cacheKey(cacheKey)
-                        .content(gq.getContent())
-                        .category(gq.getCategory())
-                        .questionOrder(gq.getOrder())
-                        .evaluationCriteria(gq.getEvaluationCriteria())
-                        .modelAnswer(gq.getModelAnswer())
-                        .referenceType(gq.getReferenceType())
-                        .followUpStrategy(parseFollowUpStrategy(gq.getFollowUpStrategy()))
-                        .build())
+                .map(gq -> QuestionPool.create(
+                        cacheKey,
+                        gq.getContent(),
+                        gq.getCategory(),
+                        gq.getOrder(),
+                        gq.getEvaluationCriteria(),
+                        gq.getModelAnswer(),
+                        gq.getReferenceType(),
+                        parseFollowUpStrategy(gq.getFollowUpStrategy())))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {
