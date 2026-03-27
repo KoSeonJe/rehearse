@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -42,11 +43,16 @@ public class ResilientAiClient implements AiClient {
     @Nullable
     private final ClaudeApiClient claudeApiClient;
 
+    @Nullable
+    private final SttService sttService;
+
     public ResilientAiClient(
             @Nullable OpenAiClient openAiClient,
-            @Nullable ClaudeApiClient claudeApiClient) {
+            @Nullable ClaudeApiClient claudeApiClient,
+            @Nullable SttService sttService) {
         this.openAiClient = openAiClient;
         this.claudeApiClient = claudeApiClient;
+        this.sttService = sttService;
 
         if (openAiClient == null && claudeApiClient == null) {
             throw new IllegalStateException("OpenAiClient와 ClaudeApiClient 중 하나 이상 설정되어야 합니다.");
@@ -98,6 +104,44 @@ public class ResilientAiClient implements AiClient {
         } catch (Exception e) {
             log.warn("[AI Fallback] OpenAI 후속 질문 실패 → Claude 전환: {}", e.getMessage());
             return fallbackGenerateFollowUp(request);
+        }
+    }
+
+    @Override
+    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
+        if (openAiClient == null) {
+            return fallbackWithSttAndClaude(audioFile, request);
+        }
+
+        try {
+            return openAiClient.generateFollowUpWithAudio(audioFile, request);
+        } catch (BusinessException e) {
+            if (isNonRetryableError(e)) {
+                throw e;
+            }
+            log.warn("[AI Fallback] GPT-audio 실패 → Whisper+Claude 전환: {}", e.getMessage());
+            return fallbackWithSttAndClaude(audioFile, request);
+        } catch (Exception e) {
+            log.warn("[AI Fallback] GPT-audio 실패 → Whisper+Claude 전환: {}", e.getMessage());
+            return fallbackWithSttAndClaude(audioFile, request);
+        }
+    }
+
+    private GeneratedFollowUp fallbackWithSttAndClaude(MultipartFile audioFile, FollowUpGenerationRequest request) {
+        if (sttService == null || claudeApiClient == null) {
+            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+        }
+        try {
+            String answerText = sttService.transcribe(audioFile);
+            FollowUpGenerationRequest updatedReq = new FollowUpGenerationRequest(
+                    request.position(), request.techStack(), request.level(),
+                    request.questionContent(), answerText,
+                    request.nonVerbalSummary(), request.previousExchanges()
+            );
+            return claudeApiClient.generateFollowUpQuestion(updatedReq).withAnswerText(answerText);
+        } catch (Exception fallbackEx) {
+            log.error("[AI Fallback] Whisper+Claude도 실패 — 이중 장애: {}", fallbackEx.getMessage());
+            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
     }
 

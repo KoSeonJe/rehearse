@@ -18,8 +18,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -85,8 +90,41 @@ public class OpenAiClient {
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
+    @RateLimiter(name = "openai-api")
+    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
+        String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
+        String userPrompt = followUpPromptBuilder.buildUserPromptForAudio(request);
+
+        String audioBase64;
+        try {
+            audioBase64 = Base64.getEncoder().encodeToString(audioFile.getBytes());
+        } catch (IOException e) {
+            log.error("[OpenAI Audio API] 오디오 파일 읽기 실패: {}", e.getMessage());
+            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+        }
+
+        String audioFormat = resolveAudioFormat(audioFile.getOriginalFilename());
+
+        String text = callOpenAiAudioApi(systemPrompt, userPrompt, audioBase64, audioFormat);
+        return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
+    }
+
+    private String resolveAudioFormat(String filename) {
+        if (filename != null && filename.contains(".")) {
+            String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+            return switch (ext) {
+                case "webm" -> "webm";
+                case "wav" -> "wav";
+                case "mp3" -> "mp3";
+                case "ogg" -> "ogg";
+                default -> "webm";
+            };
+        }
+        return "webm";
+    }
+
     private String callOpenAiApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
-        OpenAiRequest request = OpenAiRequest.builder()
+        Object requestBody = OpenAiRequest.builder()
                 .model(model)
                 .messages(List.of(
                         OpenAiRequest.Message.builder()
@@ -102,6 +140,28 @@ public class OpenAiClient {
                 .temperature(temperature)
                 .build();
 
+        return executeWithRetry(requestBody, "OpenAI API", maxTokens);
+    }
+
+    private String callOpenAiAudioApi(String systemPrompt, String userPrompt, String audioBase64, String audioFormat) {
+        Object requestBody = Map.of(
+                "model", "gpt-4o-mini-audio-preview",
+                "messages", List.of(
+                        Map.of("role", "system", "content", systemPrompt),
+                        Map.of("role", "user", "content", List.of(
+                                Map.of("type", "text", "text", userPrompt),
+                                Map.of("type", "input_audio", "input_audio",
+                                        Map.of("data", audioBase64, "format", audioFormat))
+                        ))
+                ),
+                "max_tokens", MAX_TOKENS_FOLLOW_UP,
+                "temperature", 1.0
+        );
+
+        return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP);
+    }
+
+    private String executeWithRetry(Object requestBody, String apiLabel, int maxTokens) {
         long delayMs = INITIAL_RETRY_DELAY_MS;
 
         for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
@@ -109,20 +169,20 @@ public class OpenAiClient {
                 OpenAiResponse response = restClient.post()
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + apiKey)
-                        .body(request)
+                        .body(requestBody)
                         .retrieve()
                         .onStatus(status -> status.value() == 429, (req, res) -> {
-                            log.warn("[OpenAI API] Rate Limited (429)");
-                            throw new RetryableApiException("OpenAI API rate limited (429)");
+                            log.warn("[{}] Rate Limited (429)", apiLabel);
+                            throw new RetryableApiException(apiLabel + " rate limited (429)");
                         })
                         .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
                             String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
-                            log.error("[OpenAI API] 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
+                            log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
                             throw new BusinessException(AiErrorCode.CLIENT_ERROR);
                         })
                         .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                            log.warn("[OpenAI API] 서버 에러: status={}", res.getStatusCode());
-                            throw new RetryableApiException("OpenAI API 서버 에러: " + res.getStatusCode());
+                            log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
+                            throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
                         })
                         .body(OpenAiResponse.class);
 
@@ -132,13 +192,13 @@ public class OpenAiClient {
 
                 if (response.getUsage() != null) {
                     var usage = response.getUsage();
-                    log.info("[OpenAI API] 토큰 사용량 - prompt: {}, completion: {}, total: {}",
-                            usage.getPromptTokens(), usage.getCompletionTokens(), usage.getTotalTokens());
+                    log.info("[{}] 토큰 사용량 - prompt: {}, completion: {}, total: {}",
+                            apiLabel, usage.getPromptTokens(), usage.getCompletionTokens(), usage.getTotalTokens());
                 }
 
                 OpenAiResponse.Choice choice = response.getChoices().get(0);
                 if ("length".equals(choice.getFinishReason())) {
-                    log.warn("[OpenAI API] 응답이 max_tokens({})에 도달하여 잘림. model={}", maxTokens, model);
+                    log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림", apiLabel, maxTokens);
                 }
 
                 String content = choice.getMessage() != null ? choice.getMessage().getContent() : null;
@@ -151,7 +211,7 @@ public class OpenAiClient {
                 throw e;
             } catch (RetryableApiException | RestClientException e) {
                 if (attempt < MAX_RETRY_ATTEMPTS) {
-                    log.info("[OpenAI API] 재시도 {}/{}: {}", attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
+                    log.info("[{}] 재시도 {}/{}: {}", apiLabel, attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
                     try {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
@@ -160,7 +220,7 @@ public class OpenAiClient {
                     }
                     delayMs *= 2;
                 } else {
-                    log.error("[OpenAI API] 모든 재시도 실패", e);
+                    log.error("[{}] 모든 재시도 실패", apiLabel, e);
                     throw new BusinessException(AiErrorCode.TIMEOUT);
                 }
             }

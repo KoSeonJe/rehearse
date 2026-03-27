@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,9 +57,6 @@ class InterviewServiceTest {
 
     @Mock
     private PdfTextExtractor pdfTextExtractor;
-
-    @Mock
-    private com.rehearse.api.infra.ai.SttService sttService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -231,7 +229,7 @@ class InterviewServiceTest {
     }
 
     @Test
-    @DisplayName("후속 질문 생성 성공")
+    @DisplayName("후속 질문 생성 성공 — GPT-audio가 STT + 후속질문을 한 번에 처리")
     void generateFollowUp_success() {
         // given
         FollowUpContext context = new FollowUpContext(
@@ -242,8 +240,9 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
         ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+        ReflectionTestUtils.setField(followUp, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
 
-        given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
+        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
         Question savedQuestion = Question.builder()
@@ -257,7 +256,6 @@ class InterviewServiceTest {
 
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-        given(sttService.transcribe(audioFile)).willReturn("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
 
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
@@ -272,10 +270,12 @@ class InterviewServiceTest {
         assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
         assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
         assertThat(response.getType()).isEqualTo("DEEP_DIVE");
+        assertThat(response.getAnswerText()).isEqualTo("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
+        then(aiClient).should().generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class));
     }
 
     @Test
-    @DisplayName("오디오 파일이 있으면 STT로 텍스트를 추출하여 후속질문 생성")
+    @DisplayName("오디오 파일로 GPT-audio 호출 시 answerText가 응답에 포함된다")
     void generateFollowUp_withAudioFile() {
         // given
         FollowUpContext context = new FollowUpContext(
@@ -285,14 +285,13 @@ class InterviewServiceTest {
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
 
-        given(sttService.transcribe(audioFile)).willReturn("STT로 추출된 답변 텍스트입니다.");
-
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "구체적으로 어떤 최적화를 하셨나요?");
         ReflectionTestUtils.setField(followUp, "reason", "깊이 확인");
         ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+        ReflectionTestUtils.setField(followUp, "answerText", "GPT-audio로 추출된 답변 텍스트입니다.");
 
-        given(aiClient.generateFollowUpQuestion(any(FollowUpGenerationRequest.class)))
+        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
                 .willReturn(followUp);
 
         Question savedQuestion = Question.builder()
@@ -307,27 +306,24 @@ class InterviewServiceTest {
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "성능 최적화 경험을 말씀해주세요.");
-        ReflectionTestUtils.setField(request, "answerText", "");
 
         // when
         FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
 
         // then
         assertThat(response.getQuestionId()).isEqualTo(101L);
-        assertThat(response.getAnswerText()).isEqualTo("STT로 추출된 답변 텍스트입니다.");
-        then(sttService).should().transcribe(audioFile);
+        assertThat(response.getAnswerText()).isEqualTo("GPT-audio로 추출된 답변 텍스트입니다.");
     }
 
     @Test
-    @DisplayName("오디오 파일과 answerText 모두 비어있으면 예외 발생")
-    void generateFollowUp_noAnswerText_noAudio() {
+    @DisplayName("오디오 파일이 없으면 예외 발생")
+    void generateFollowUp_noAudioFile() {
         // given
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "질문");
-        ReflectionTestUtils.setField(request, "answerText", "");
 
-        // when & then — resolveAnswerText에서 예외 발생 (DB 호출 전)
+        // when & then — audioFile null이면 즉시 예외 (DB 호출 전)
         assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
@@ -337,26 +333,29 @@ class InterviewServiceTest {
     }
 
     @Test
-    @DisplayName("STT 호출 중 예외 발생 시 그대로 전파된다")
-    void generateFollowUp_sttThrowsException_propagates() {
+    @DisplayName("GPT-audio 호출 중 예외 발생 시 그대로 전파된다")
+    void generateFollowUp_audioApiThrowsException_propagates() {
         // given
+        FollowUpContext context = new FollowUpContext(
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
+
         org.springframework.mock.web.MockMultipartFile audioFile =
                 new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
 
-        given(sttService.transcribe(audioFile))
-                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "WHISPER_003", "음성 인식 API 호출에 실패했습니다."));
+        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
+                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 서비스를 사용할 수 없습니다."));
 
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "질문");
-        ReflectionTestUtils.setField(request, "answerText", "");
 
         // when & then
         assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("WHISPER_003");
+                    assertThat(be.getCode()).isEqualTo("AI_005");
                 });
     }
 
@@ -367,13 +366,15 @@ class InterviewServiceTest {
         given(followUpTransactionHandler.loadFollowUpContext(1L, 10L))
                 .willThrow(new BusinessException(HttpStatus.CONFLICT, "INTERVIEW_003", "면접이 진행 중이 아닙니다."));
 
+        org.springframework.mock.web.MockMultipartFile audioFile =
+                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
         FollowUpRequest request = new FollowUpRequest();
         ReflectionTestUtils.setField(request, "questionSetId", 10L);
         ReflectionTestUtils.setField(request, "questionContent", "질문");
-        ReflectionTestUtils.setField(request, "answerText", "답변");
 
         // when & then
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
+        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;

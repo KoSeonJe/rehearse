@@ -17,7 +17,6 @@ import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
-import com.rehearse.api.infra.ai.SttService;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,6 @@ public class InterviewService {
     private final QuestionSetService questionSetService;
     private final AiClient aiClient;
     private final PdfTextExtractor pdfTextExtractor;
-    private final SttService sttService;
     private final ApplicationEventPublisher eventPublisher;
     private final FollowUpTransactionHandler followUpTransactionHandler;
 
@@ -151,25 +149,26 @@ public class InterviewService {
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request, MultipartFile audioFile) {
-        // Phase 1: answerText 결정 (트랜잭션 없음 — 외부 API 호출 가능)
-        String answerText = resolveAnswerText(request, audioFile);
+        if (audioFile == null || audioFile.isEmpty()) {
+            throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
+        }
 
-        // Phase 2: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
+        // Phase 1: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, request.getQuestionSetId());
 
-        // Phase 3: AI API 호출 (트랜잭션 없음)
+        // Phase 2: GPT-audio 호출 — STT + 후속질문 한 번에 (트랜잭션 없음)
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
                 context.position(),
                 context.effectiveTechStack(),
                 context.level(),
                 request.getQuestionContent(),
-                answerText,
+                null,
                 request.getNonVerbalSummary(),
                 request.getPreviousExchanges()
         );
-        GeneratedFollowUp followUp = aiClient.generateFollowUpQuestion(followUpReq);
+        GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
 
-        // Phase 4: 결과 저장 (짧은 write 트랜잭션)
+        // Phase 3: 결과 저장 (짧은 write 트랜잭션)
         Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
                 context.questionSetId(), followUp, context.nextOrderIndex());
 
@@ -181,23 +180,9 @@ public class InterviewService {
                 .question(followUp.getQuestion())
                 .reason(followUp.getReason())
                 .type(followUp.getType())
-                .answerText(answerText)
+                .answerText(followUp.getAnswerText())
                 .modelAnswer(savedQuestion.getModelAnswer())
                 .build();
-    }
-
-    private String resolveAnswerText(FollowUpRequest request, MultipartFile audioFile) {
-        if (audioFile != null && !audioFile.isEmpty()) {
-            String text = sttService.transcribe(audioFile);
-            if (text == null || text.isBlank()) {
-                throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
-            }
-            return text;
-        }
-        if (request.getAnswerText() != null && !request.getAnswerText().isBlank()) {
-            return request.getAnswerText();
-        }
-        throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
     }
 
     @Transactional
