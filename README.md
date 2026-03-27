@@ -104,42 +104,6 @@ Google Meet 스타일의 면접 화면에서 AI 면접관과 1:1 모의면접을
 
 ---
 
-## Architecture
-
-```mermaid
-graph LR
-    subgraph Client
-        FE[React SPA]
-    end
-
-    subgraph Backend
-        API[Spring Boot API]
-        DB[(MySQL)]
-    end
-
-    subgraph AWS
-        S3[(S3)]
-        EB[EventBridge]
-        L1[Lambda: Analysis]
-        L2[Lambda: Convert]
-        CF[CloudFront]
-    end
-
-    FE -->|REST API| API
-    API --> DB
-    FE -->|Presigned URL| S3
-    S3 -->|ObjectCreated| EB
-    EB --> L1
-    EB --> L2
-    L1 -->|Whisper + GPT-4o Vision| L1
-    L1 -->|피드백 저장| API
-    L2 -->|WebM → MP4| L2
-    L2 -->|변환 완료| API
-    CF -->|영상 스트리밍| FE
-```
-
----
-
 ## Quick Start
 
 ### Prerequisites
