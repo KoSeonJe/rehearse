@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.dto.*;
@@ -33,6 +35,7 @@ public class InternalQuestionSetService {
     private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
     private final S3Service s3Service;
+    private final ObjectMapper objectMapper;
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
@@ -115,7 +118,7 @@ public class InternalQuestionSetService {
                         .nonverbalComment(item.getNonverbalComment())
                         .overallComment(item.getOverallComment())
                         .isAnalyzed(true)
-                        .fillerWords(item.getFillerWords())
+                        .fillerWords(toJson(item.getFillerWords()))
                         .speechPace(item.getSpeechPace())
                         .toneConfidence(item.getToneConfidence())
                         .emotionLabel(item.getEmotionLabel())
@@ -205,4 +208,13 @@ public class InternalQuestionSetService {
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
     }
 
+    private String toJson(List<String> list) {
+        if (list == null) return null;
+        try {
+            return objectMapper.writeValueAsString(list);
+        } catch (JsonProcessingException e) {
+            log.warn("List<String> JSON 직렬화 실패: {}", list, e);
+            return null;
+        }
+    }
 }
