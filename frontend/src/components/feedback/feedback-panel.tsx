@@ -155,24 +155,16 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
               </span>
             )}
           </div>
-          {feedback.vocal.fillerWords && (() => {
-            try {
-              const words: string[] = JSON.parse(feedback.vocal.fillerWords)
-              if (words.length > 0) {
-                return (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-semibold text-text-tertiary">필러워드:</span>
-                    {words.map((word, idx) => (
-                      <span key={idx} className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
-                        {word}
-                      </span>
-                    ))}
-                  </div>
-                )
-              }
-              return null
-            } catch { return null }
-          })()}
+          {feedback.vocal.fillerWords && feedback.vocal.fillerWords.length > 0 && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-semibold text-text-tertiary">필러워드:</span>
+              {feedback.vocal.fillerWords.map((word, idx) => (
+                <span key={idx} className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+                  {word}
+                </span>
+              ))}
+            </div>
+          )}
           {feedback.vocal.vocalComment && (
             <p className="text-xs text-text-secondary leading-relaxed">{feedback.vocal.vocalComment}</p>
           )}
