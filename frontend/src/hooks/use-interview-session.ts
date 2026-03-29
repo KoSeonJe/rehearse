@@ -188,7 +188,9 @@ export const useInterviewSession = ({
           const hasAnswers = answers.length > 0
 
           if (hasAnswers) {
-            await saveVideoBlob(interview.id, blob, currentSet.id).catch(() => {})
+            await saveVideoBlob(interview.id, blob, currentSet.id).catch((err: unknown) => {
+              console.error('[S3 업로드] 실패:', err)
+            })
 
             try {
               await apiClient.post(
@@ -212,7 +214,9 @@ export const useInterviewSession = ({
           }
         }
       } else {
-        saveVideoBlob(interview.id, blob).catch(() => {})
+        saveVideoBlob(interview.id, blob).catch((err: unknown) => {
+          console.error('[S3 업로드] 실패:', err)
+        })
       }
     }
 

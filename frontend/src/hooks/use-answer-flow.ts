@@ -173,10 +173,12 @@ export const useAnswerFlow = ({
 
     if (isLast || (isSetEnd && isLastSet)) {
       // 면접 종료 → finishing phase로 전환 (사용자가 [면접 종료하기] 클릭 대기)
-      pendingTtsActionRef.current = () => {
+      pendingTtsActionRef.current = async () => {
         if (hasQuestionSets) {
           const currentSet = state.questionSets[state.currentQuestionSetIndex]
-          handleQuestionSetComplete(currentSet.id).catch(() => {})
+          await handleQuestionSetComplete(currentSet.id).catch((err: unknown) => {
+            console.error('[S3 업로드] 질문세트 업로드 실패:', err)
+          })
         }
         setPhase('finishing')
       }
@@ -184,8 +186,10 @@ export const useAnswerFlow = ({
     } else if (isSetEnd && !isLastSet) {
       // 질문세트 전환
       const currentSet = state.questionSets[state.currentQuestionSetIndex]
-      pendingTtsActionRef.current = () => {
-        handleQuestionSetComplete(currentSet.id).catch(() => {})
+      pendingTtsActionRef.current = async () => {
+        handleQuestionSetComplete(currentSet.id).catch((err: unknown) => {
+          console.error('[S3 업로드] 질문세트 업로드 실패:', err)
+        })
         nextQuestionSet()
         nextQuestion()
       }
