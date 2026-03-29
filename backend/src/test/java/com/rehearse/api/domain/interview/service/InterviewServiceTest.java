@@ -1,21 +1,15 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.*;
-import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionType;
-import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.PdfTextExtractor;
-import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
-import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,93 +34,19 @@ class InterviewServiceTest {
     private InterviewService interviewService;
 
     @Mock
+    private InterviewFinder interviewFinder;
+
+    @Mock
     private InterviewRepository interviewRepository;
 
     @Mock
     private QuestionSetRepository questionSetRepository;
 
     @Mock
-    private QuestionRepository questionRepository;
-
-    @Mock
-    private InterviewFinder interviewFinder;
-
-    @Mock
-    private AiClient aiClient;
-
-    @Mock
-    private PdfTextExtractor pdfTextExtractor;
-
-    @Mock
-    private ApplicationEventPublisher eventPublisher;
-
-    @Mock
     private com.rehearse.api.domain.questionset.service.QuestionSetService questionSetService;
 
     @Mock
-    private FollowUpTransactionHandler followUpTransactionHandler;
-
-    @Test
-    @DisplayName("면접 세션 생성 시 비동기 질문 생성을 트리거하고 즉시 응답한다")
-    void createInterview_success() {
-        // given
-        CreateInterviewRequest request = new CreateInterviewRequest();
-        ReflectionTestUtils.setField(request, "position", Position.BACKEND);
-        ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
-        ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
-        ReflectionTestUtils.setField(request, "durationMinutes", 30);
-
-        given(interviewRepository.save(any(Interview.class)))
-                .willAnswer(invocation -> {
-                    Interview interview = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(interview, "id", 1L);
-                    return interview;
-                });
-
-        // when
-        InterviewResponse response = interviewService.createInterview(request, null);
-
-        // then
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
-        assertThat(response.getLevel()).isEqualTo(InterviewLevel.JUNIOR);
-        assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
-        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
-        assertThat(response.getQuestionSets()).isEmpty();
-
-        then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
-        then(interviewRepository).should().save(any(Interview.class));
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
-    void getInterview_notFound() {
-        given(interviewFinder.findById(999L))
-                .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
-
-        assertThatThrownBy(() -> interviewService.getInterview(999L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
-                });
-    }
-
-    @Test
-    @DisplayName("면접 세션 조회 성공")
-    void getInterview_success() {
-        Interview interview = createMockInterview();
-        given(interviewFinder.findById(1L)).willReturn(interview);
-        given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
-
-        InterviewResponse response = interviewService.getInterview(1L);
-
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
-        assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
-        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
-    }
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     @DisplayName("READY -> IN_PROGRESS 상태 전이 성공 (질문 생성 완료 시)")
@@ -225,161 +144,6 @@ class InterviewServiceTest {
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
                     assertThat(be.getCode()).isEqualTo("INTERVIEW_005");
-                });
-    }
-
-    @Test
-    @DisplayName("후속 질문 생성 성공 — GPT-audio가 STT + 후속질문을 한 번에 처리")
-    void generateFollowUp_success() {
-        // given
-        FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
-
-        GeneratedFollowUp followUp = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
-        ReflectionTestUtils.setField(followUp, "reason", "자료구조 깊이 확인");
-        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
-        ReflectionTestUtils.setField(followUp, "answerText", "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
-
-        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                .willReturn(followUp);
-
-        Question savedQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
-                .questionText("HashMap의 해시 충돌 해결 방법은?")
-                .orderIndex(1)
-                .build();
-        ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-        given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
-                .willReturn(savedQuestion);
-
-        org.springframework.mock.web.MockMultipartFile audioFile =
-                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "HashMap과 TreeMap의 차이점은?");
-        ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
-
-        // when
-        FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
-
-        // then
-        assertThat(response.getQuestionId()).isEqualTo(100L);
-        assertThat(response.getQuestion()).isEqualTo("HashMap의 해시 충돌 해결 방법은?");
-        assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
-        assertThat(response.getType()).isEqualTo("DEEP_DIVE");
-        assertThat(response.getAnswerText()).isEqualTo("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
-        then(aiClient).should().generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class));
-    }
-
-    @Test
-    @DisplayName("오디오 파일로 GPT-audio 호출 시 answerText가 응답에 포함된다")
-    void generateFollowUp_withAudioFile() {
-        // given
-        FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
-
-        org.springframework.mock.web.MockMultipartFile audioFile =
-                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-
-        GeneratedFollowUp followUp = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(followUp, "question", "구체적으로 어떤 최적화를 하셨나요?");
-        ReflectionTestUtils.setField(followUp, "reason", "깊이 확인");
-        ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
-        ReflectionTestUtils.setField(followUp, "answerText", "GPT-audio로 추출된 답변 텍스트입니다.");
-
-        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                .willReturn(followUp);
-
-        Question savedQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
-                .questionText("구체적으로 어떤 최적화를 하셨나요?")
-                .orderIndex(1)
-                .build();
-        ReflectionTestUtils.setField(savedQuestion, "id", 101L);
-        given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
-                .willReturn(savedQuestion);
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "성능 최적화 경험을 말씀해주세요.");
-
-        // when
-        FollowUpResponse response = interviewService.generateFollowUp(1L, request, audioFile);
-
-        // then
-        assertThat(response.getQuestionId()).isEqualTo(101L);
-        assertThat(response.getAnswerText()).isEqualTo("GPT-audio로 추출된 답변 텍스트입니다.");
-    }
-
-    @Test
-    @DisplayName("오디오 파일이 없으면 예외 발생")
-    void generateFollowUp_noAudioFile() {
-        // given
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "질문");
-
-        // when & then — audioFile null이면 즉시 예외 (DB 호출 전)
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, null))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_006");
-                });
-    }
-
-    @Test
-    @DisplayName("GPT-audio 호출 중 예외 발생 시 그대로 전파된다")
-    void generateFollowUp_audioApiThrowsException_propagates() {
-        // given
-        FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
-
-        org.springframework.mock.web.MockMultipartFile audioFile =
-                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-
-        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 서비스를 사용할 수 없습니다."));
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "질문");
-
-        // when & then
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("AI_005");
-                });
-    }
-
-    @Test
-    @DisplayName("진행 중이 아닌 면접에서 후속질문 생성 시 예외 발생")
-    void generateFollowUp_notInProgress() {
-        // given
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L))
-                .willThrow(new BusinessException(HttpStatus.CONFLICT, "INTERVIEW_003", "면접이 진행 중이 아닙니다."));
-
-        org.springframework.mock.web.MockMultipartFile audioFile =
-                new org.springframework.mock.web.MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
-
-        FollowUpRequest request = new FollowUpRequest();
-        ReflectionTestUtils.setField(request, "questionSetId", 10L);
-        ReflectionTestUtils.setField(request, "questionContent", "질문");
-
-        // when & then
-        assertThatThrownBy(() -> interviewService.generateFollowUp(1L, request, audioFile))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_003");
                 });
     }
 

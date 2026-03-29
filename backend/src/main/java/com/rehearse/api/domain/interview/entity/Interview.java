@@ -10,6 +10,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -104,6 +105,14 @@ public class Interview {
         this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
     }
 
+    public Set<InterviewType> getInterviewTypes() {
+        return Collections.unmodifiableSet(interviewTypes);
+    }
+
+    public Set<String> getCsSubTopics() {
+        return Collections.unmodifiableSet(csSubTopics);
+    }
+
     public TechStack getEffectiveTechStack() {
         return techStack != null ? techStack : TechStack.getDefaultForPosition(this.position);
     }
@@ -135,8 +144,14 @@ public class Interview {
         this.status = newStatus;
     }
 
-    public void updateOverallResult(Integer overallScore, String overallComment) {
-        this.overallScore = overallScore;
-        this.overallComment = overallComment;
+    public void completeWithScores(List<Integer> questionSetScores, String comment) {
+        this.overallScore = calculateAverageScore(questionSetScores);
+        this.overallComment = comment;
+    }
+
+    private int calculateAverageScore(List<Integer> scores) {
+        if (scores == null || scores.isEmpty()) return 0;
+        int total = scores.stream().mapToInt(Integer::intValue).sum();
+        return total / scores.size();
     }
 }

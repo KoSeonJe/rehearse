@@ -5,6 +5,8 @@ import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class TimestampFeedbackResponse {
@@ -42,7 +44,7 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class VocalFeedback {
-        private final String fillerWords;       // JSON 배열 문자열 (프론트에서 파싱)
+        private final List<String> fillerWords;
         private final String speechPace;        // "빠름" / "적절" / "느림"
         private final Integer toneConfidence;   // 0-100
         private final String emotionLabel;      // "자신감" / "긴장" / "평온" / "불안"

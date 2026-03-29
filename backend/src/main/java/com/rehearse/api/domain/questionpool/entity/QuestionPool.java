@@ -56,10 +56,10 @@ public class QuestionPool {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Builder
-    public QuestionPool(String cacheKey, String content, String category, Integer questionOrder,
-                        String evaluationCriteria, String modelAnswer, String referenceType,
-                        FollowUpStrategy followUpStrategy) {
+    @Builder(access = AccessLevel.PRIVATE)
+    private QuestionPool(String cacheKey, String content, String category, Integer questionOrder,
+                         String evaluationCriteria, String modelAnswer, String referenceType,
+                         FollowUpStrategy followUpStrategy) {
         this.cacheKey = cacheKey;
         this.content = content;
         this.category = category;
@@ -70,6 +70,30 @@ public class QuestionPool {
         this.followUpStrategy = followUpStrategy != null ? followUpStrategy : FollowUpStrategy.REALTIME;
         this.qualityScore = new BigDecimal("1.00");
         this.isActive = true;
+    }
+
+    public static QuestionPool create(String cacheKey, String content, String category,
+            Integer questionOrder, String evaluationCriteria, String modelAnswer,
+            String referenceType, FollowUpStrategy followUpStrategy) {
+        if (cacheKey == null || cacheKey.isBlank()) {
+            throw new IllegalArgumentException("cacheKey는 필수입니다");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content는 필수입니다");
+        }
+        if (evaluationCriteria == null || evaluationCriteria.isBlank()) {
+            throw new IllegalArgumentException("evaluationCriteria는 필수입니다");
+        }
+        return QuestionPool.builder()
+                .cacheKey(cacheKey)
+                .content(content)
+                .category(category)
+                .questionOrder(questionOrder)
+                .evaluationCriteria(evaluationCriteria)
+                .modelAnswer(modelAnswer)
+                .referenceType(referenceType)
+                .followUpStrategy(followUpStrategy)
+                .build();
     }
 
     public void deactivate() {

@@ -46,12 +46,12 @@ public class InterviewCompletionService {
                     continue;
                 }
 
-                int overallScore = calculateOverallScore(questionSets);
-                freshInterview.updateOverallResult(overallScore, summary.toComment());
+                List<Integer> scores = extractScores(questionSets);
+                freshInterview.completeWithScores(scores, summary.toComment());
                 freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
-                log.info("면접 완료 처리: interviewId={}, overallScore={}, completed={}, partial={}, skipped={}",
-                        interviewId, overallScore, summary.completed, summary.partial, summary.skipped);
+                log.info("면접 완료 처리: interviewId={}, scores={}, completed={}, partial={}, skipped={}",
+                        interviewId, scores, summary.completed, summary.partial, summary.skipped);
             }
         }
     }
@@ -86,22 +86,14 @@ public class InterviewCompletionService {
         return new CompletionSummary(questionSets.size(), completed, partial, skipped);
     }
 
-    private int calculateOverallScore(List<QuestionSet> questionSets) {
+    private List<Integer> extractScores(List<QuestionSet> questionSets) {
         List<Long> questionSetIds = questionSets.stream()
                 .filter(qs -> qs.getEffectiveAnalysisStatus().hasAnalysisResult())
                 .map(QuestionSet::getId)
                 .toList();
 
-        List<QuestionSetFeedback> feedbacks = feedbackRepository.findByQuestionSetIdIn(questionSetIds);
-
-        if (feedbacks.isEmpty()) {
-            return 0;
-        }
-
-        int totalScore = feedbacks.stream()
-                .mapToInt(QuestionSetFeedback::getQuestionSetScore)
-                .sum();
-
-        return totalScore / feedbacks.size();
+        return feedbackRepository.findByQuestionSetIdIn(questionSetIds).stream()
+                .map(QuestionSetFeedback::getQuestionSetScore)
+                .toList();
     }
 }

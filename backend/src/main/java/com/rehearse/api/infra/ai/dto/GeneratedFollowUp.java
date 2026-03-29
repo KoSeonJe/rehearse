@@ -15,8 +15,14 @@ public class GeneratedFollowUp {
     private String modelAnswer;
     private String answerText;
 
+    /** Jackson 역직렬화 후 answerText를 추가한 새 인스턴스를 반환한다 (불변 복사). */
     public GeneratedFollowUp withAnswerText(String answerText) {
-        this.answerText = answerText;
-        return this;
+        GeneratedFollowUp copy = new GeneratedFollowUp();
+        copy.question = this.question;
+        copy.reason = this.reason;
+        copy.type = this.type;
+        copy.modelAnswer = this.modelAnswer;
+        copy.answerText = answerText;
+        return copy;
     }
 }

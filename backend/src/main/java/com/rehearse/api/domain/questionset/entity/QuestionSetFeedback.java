@@ -10,6 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Entity
@@ -45,6 +46,10 @@ public class QuestionSetFeedback {
         this.questionSet = questionSet;
         this.questionSetScore = questionSetScore;
         this.questionSetComment = questionSetComment;
+    }
+
+    public List<TimestampFeedback> getTimestampFeedbacks() {
+        return Collections.unmodifiableList(timestampFeedbacks);
     }
 
     public void addTimestampFeedback(TimestampFeedback feedback) {

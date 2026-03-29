@@ -1,10 +1,13 @@
 package com.rehearse.api.domain.questionset.entity;
 
+import com.rehearse.api.domain.questionpool.converter.StringListJsonConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Table(name = "timestamp_feedback")
@@ -57,8 +60,9 @@ public class TimestampFeedback {
     private boolean isAnalyzed;
 
     // Gemini 네이티브 오디오 분석 음성 특성 필드 (nullable — 기존 데이터 호환)
+    @Convert(converter = StringListJsonConverter.class)
     @Column(columnDefinition = "TEXT")
-    private String fillerWords;  // JSON 배열 문자열 예: ["음", "어"]
+    private List<String> fillerWords;  // JSON 배열로 저장 예: ["음", "어"]
 
     @Column(length = 10)
     private String speechPace;  // "빠름" / "적절" / "느림"
@@ -77,7 +81,7 @@ public class TimestampFeedback {
                              Integer fillerWordCount, Integer eyeContactScore, Integer postureScore,
                              String expressionLabel, String nonverbalComment, String overallComment,
                              boolean isAnalyzed,
-                             String fillerWords, String speechPace, Integer toneConfidence,
+                             List<String> fillerWords, String speechPace, Integer toneConfidence,
                              String emotionLabel, String vocalComment) {
         this.question = question;
         this.startMs = startMs;
