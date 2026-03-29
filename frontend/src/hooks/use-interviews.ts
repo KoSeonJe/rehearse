@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, ApiError } from '@/lib/api-client'
+import { convertBlobToWav } from '@/utils/audio-converter'
 import type {
   ApiResponse,
   InterviewSession,
@@ -163,7 +164,8 @@ export const useFollowUpQuestion = () => {
       formData.append('request', requestBlob)
 
       if (audioBlob && audioBlob.size > 0) {
-        formData.append('audio', audioBlob, 'answer.webm')
+        const wavBlob = await convertBlobToWav(audioBlob)
+        formData.append('audio', wavBlob, 'answer.wav')
       }
 
       const response = await fetch(`${API_BASE_URL}/api/v1/interviews/${id}/follow-up`, {
