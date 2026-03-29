@@ -33,7 +33,7 @@ public class CacheableQuestionProvider {
         String cacheKey = QuestionCacheKeyGenerator.generate(position, level, techStack, type);
         List<String> categoryFilter = toCategoryFilter(csSubTopics);
 
-        if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
+        if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter)) {
             log.info("[CACHE] pool 히트: cacheKey={}, required={}, categoryFilter={}", cacheKey, requiredCount, categoryFilter);
             return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
         }
@@ -50,7 +50,7 @@ public class CacheableQuestionProvider {
 
         ReentrantLock lock = questionGenerationLock.acquire(cacheKey);
         try {
-            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount)) {
+            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter)) {
                 log.info("[CACHE] lock 후 pool 히트: cacheKey={}", cacheKey);
                 return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
             }
@@ -90,7 +90,7 @@ public class CacheableQuestionProvider {
 
     private List<String> toCategoryFilter(List<String> csSubTopics) {
         if (csSubTopics == null || csSubTopics.isEmpty()) {
-            return List.of();
+            return CsSubTopic.allCategoryNames();
         }
         return csSubTopics.stream()
                 .flatMap(s -> CsSubTopic.toCategoryName(s).stream())

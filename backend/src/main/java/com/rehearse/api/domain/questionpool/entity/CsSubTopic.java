@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.questionpool.entity;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 public enum CsSubTopic {
@@ -24,5 +26,11 @@ public enum CsSubTopic {
         } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
+    }
+
+    public static List<String> allCategoryNames() {
+        return Arrays.stream(values())
+                .map(CsSubTopic::getCategoryName)
+                .toList();
     }
 }

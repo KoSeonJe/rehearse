@@ -48,9 +48,12 @@ public class QuestionGenerationPromptBuilder {
             .collect(Collectors.joining("\n"));
 
         String csBlock = "";
-        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)
-                && req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
-            csBlock = "## CS 세부 주제\n" + String.join(", ", req.csSubTopics()) + "에서만 출제.";
+        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)) {
+            if (req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
+                csBlock = "## CS 세부 주제\n" + String.join(", ", req.csSubTopics()) + "에서만 출제.";
+            } else {
+                csBlock = "## CS 세부 주제\n자료구조, 운영체제, 네트워크, 데이터베이스에서만 출제. 그 외 주제(함수형 프로그래밍, 디자인 패턴 등)는 제외.";
+            }
         }
 
         String levelGuide = LevelGuideProvider.get(req.level());
@@ -80,9 +83,12 @@ public class QuestionGenerationPromptBuilder {
         sb.append("유형: ").append(typesKorean(req.interviewTypes())).append("\n");
         sb.append("질문 수: ").append(questionCount).append("개\n");
 
-        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)
-                && req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
-            sb.append("CS 세부: ").append(String.join(", ", req.csSubTopics())).append("\n");
+        if (req.interviewTypes().contains(InterviewType.CS_FUNDAMENTAL)) {
+            if (req.csSubTopics() != null && !req.csSubTopics().isEmpty()) {
+                sb.append("CS 세부: ").append(String.join(", ", req.csSubTopics())).append("\n");
+            } else {
+                sb.append("CS 세부: 자료구조, 운영체제, 네트워크, 데이터베이스\n");
+            }
         }
         if (req.resumeText() != null && !req.resumeText().isBlank()) {
             sb.append("이력서:\n").append(req.resumeText()).append("\n");
