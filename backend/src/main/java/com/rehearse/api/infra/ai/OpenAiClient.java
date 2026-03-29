@@ -113,14 +113,14 @@ public class OpenAiClient {
         if (filename != null && filename.contains(".")) {
             String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
             return switch (ext) {
-                case "webm" -> "webm";
+                case "webm" -> "wav";
                 case "wav" -> "wav";
                 case "mp3" -> "mp3";
-                case "ogg" -> "ogg";
-                default -> "webm";
+                case "ogg" -> "wav";
+                default -> "wav";
             };
         }
-        return "webm";
+        return "wav";
     }
 
     private String callOpenAiApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
