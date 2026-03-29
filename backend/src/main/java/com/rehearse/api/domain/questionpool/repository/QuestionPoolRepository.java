@@ -9,6 +9,8 @@ public interface QuestionPoolRepository extends JpaRepository<QuestionPool, Long
 
     long countByCacheKeyAndIsActiveTrue(String cacheKey);
 
+    long countByCacheKeyAndIsActiveTrueAndCategoryIn(String cacheKey, List<String> categories);
+
     List<QuestionPool> findByCacheKeyAndIsActiveTrue(String cacheKey);
 
     List<QuestionPool> findByCacheKeyAndIsActiveTrueAndCategoryIn(String cacheKey, List<String> categories);

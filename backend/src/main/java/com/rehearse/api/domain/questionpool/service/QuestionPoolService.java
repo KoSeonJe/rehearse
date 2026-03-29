@@ -29,6 +29,15 @@ public class QuestionPoolService {
         return activeCount >= (long) requiredCount * POOL_SUFFICIENCY_MULTIPLIER;
     }
 
+    public boolean isPoolSufficient(String cacheKey, int requiredCount, List<String> categoryFilter) {
+        if (categoryFilter == null || categoryFilter.isEmpty()) {
+            return isPoolSufficient(cacheKey, requiredCount);
+        }
+        long filteredCount = questionPoolRepository
+                .countByCacheKeyAndIsActiveTrueAndCategoryIn(cacheKey, categoryFilter);
+        return filteredCount >= (long) requiredCount * POOL_SUFFICIENCY_MULTIPLIER;
+    }
+
     public boolean shouldSaveToPool(String cacheKey) {
         long activeCount = questionPoolRepository.countByCacheKeyAndIsActiveTrue(cacheKey);
         return activeCount < POOL_SOFT_CAP;
