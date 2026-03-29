@@ -139,7 +139,7 @@ export interface NonverbalFeedback {
 }
 
 export interface VocalFeedback {
-  fillerWords: string[] | null
+  fillerWords: string | null
   speechPace: string | null
   toneConfidence: number | null
   emotionLabel: string | null
