@@ -90,7 +90,7 @@ public class CacheableQuestionProvider {
 
     private List<String> toCategoryFilter(List<String> csSubTopics) {
         if (csSubTopics == null || csSubTopics.isEmpty()) {
-            return List.of();
+            return CsSubTopic.allCategoryNames();
         }
         return csSubTopics.stream()
                 .flatMap(s -> CsSubTopic.toCategoryName(s).stream())
