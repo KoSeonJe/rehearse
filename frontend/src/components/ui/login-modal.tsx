@@ -1,38 +1,66 @@
-import { useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
 import { Logo } from '@/components/ui/logo'
-import { BackLink } from '@/components/ui/back-link'
+import { useAuthStore } from '@/stores/auth-store'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
-export const LoginPage = () => {
-  const [searchParams] = useSearchParams()
-  const redirect = searchParams.get('redirect') ?? '/interview/setup'
+export const LoginModal = () => {
+  const { showLoginModal, closeLoginModal } = useAuthStore()
+
+  useEffect(() => {
+    if (showLoginModal) {
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = '' }
+    }
+  }, [showLoginModal])
+
+  if (!showLoginModal) return null
 
   const handleGithubLogin = () => {
+    const redirect = window.location.pathname
     window.location.href = `${API_URL}/oauth2/authorization/github?redirect=${encodeURIComponent(redirect)}`
   }
 
   const handleGoogleLogin = () => {
+    const redirect = window.location.pathname
     window.location.href = `${API_URL}/oauth2/authorization/google?redirect=${encodeURIComponent(redirect)}`
   }
 
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) closeLoginModal()
+  }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-4">
-      <div className="w-full max-w-sm animate-fade-in">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 animate-fade-in"
+      onClick={handleBackdropClick}
+      role="dialog"
+      aria-modal="true"
+      aria-label="로그인"
+    >
+      <div className="relative w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg animate-fade-in">
+        {/* 닫기 버튼 */}
+        <button
+          onClick={closeLoginModal}
+          aria-label="닫기"
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+
         {/* 로고 */}
-        <div className="mb-10 flex flex-col items-center gap-1.5">
-          <Logo size={64} />
+        <div className="mb-8 flex flex-col items-center gap-1.5">
+          <Logo size={56} />
           <span className="text-base font-extrabold tracking-tight text-text-primary">리허설</span>
         </div>
 
         {/* 제목 */}
-        <div className="mb-8 text-center">
-          <h1 className="text-xl font-extrabold tracking-tight text-text-primary">
-            시작하기
-          </h1>
-          <p className="mt-1.5 text-[13px] font-medium text-text-secondary">
-            30초면 충분합니다
-          </p>
+        <div className="mb-7 text-center">
+          <h2 className="text-lg font-extrabold tracking-tight text-text-primary">
+            로그인
+          </h2>
         </div>
 
         {/* OAuth 버튼 */}
@@ -63,15 +91,6 @@ export const LoginPage = () => {
           </button>
         </div>
 
-        {/* 안내 문구 */}
-        <p className="mt-5 text-center text-[11px] font-medium text-text-tertiary">
-          처음 방문이라면 자동으로 계정이 만들어져요.
-        </p>
-
-        {/* 홈으로 */}
-        <div className="mt-5 flex justify-center">
-          <BackLink to="/" label="리허설 홈으로 돌아가기" />
-        </div>
       </div>
     </div>
   )

@@ -1,4 +1,3 @@
-import { useNavigate, Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
@@ -12,12 +11,11 @@ import { useAuthStore } from '@/stores/auth-store'
 import { apiClient } from '@/lib/api-client'
 
 export const HomePage = () => {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user, isAuthenticated } = useAuth()
-  const { logout } = useAuthStore()
+  const { logout, openLoginModal } = useAuthStore()
 
-  const handleNavigateLogin = () => navigate('/login')
+  const handleOpenLogin = () => openLoginModal()
 
   const handleLogout = async () => {
     try {
@@ -53,24 +51,24 @@ export const HomePage = () => {
                 </button>
               </>
             ) : (
-              <Link
-                to="/login"
+              <button
+                onClick={handleOpenLogin}
                 className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
               >
                 로그인
-              </Link>
+              </button>
             )}
           </div>
         </div>
       </header>
 
       <main>
-        <HeroSection onNavigate={handleNavigateLogin} isAuthenticated={isAuthenticated} />
+        <HeroSection onNavigate={handleOpenLogin} isAuthenticated={isAuthenticated} />
         <HowItWorksSection />
         <KeyFeaturesSection />
         <BeforeYouStartSection />
         <FaqSection />
-        <CtaSection onNavigate={handleNavigateLogin} />
+        <CtaSection onNavigate={handleOpenLogin} />
       </main>
 
       <footer className="border-t border-border py-12 text-center">

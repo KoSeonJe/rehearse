@@ -1,10 +1,18 @@
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { useAuthStore } from '@/stores/auth-store'
 import { Spinner } from '@/components/ui/spinner'
 
 export const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuth()
-  const location = useLocation()
+  const { openLoginModal } = useAuthStore()
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      openLoginModal()
+    }
+  }, [isLoading, isAuthenticated, openLoginModal])
 
   if (isLoading) {
     return (
@@ -15,12 +23,7 @@ export const ProtectedRoute = () => {
   }
 
   if (!isAuthenticated) {
-    return (
-      <Navigate
-        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
-        replace
-      />
-    )
+    return <Navigate to="/" replace />
   }
 
   return <Outlet />
