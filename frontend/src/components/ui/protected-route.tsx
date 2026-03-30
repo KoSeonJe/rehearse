@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Navigate, Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { Spinner } from '@/components/ui/spinner'
@@ -7,12 +7,13 @@ import { Spinner } from '@/components/ui/spinner'
 export const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuth()
   const { openLoginModal } = useAuthStore()
+  const location = useLocation()
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      openLoginModal()
+      openLoginModal(location.pathname, '로그인이 필요합니다')
     }
-  }, [isLoading, isAuthenticated, openLoginModal])
+  }, [isLoading, isAuthenticated, openLoginModal, location.pathname])
 
   if (isLoading) {
     return (
@@ -23,7 +24,7 @@ export const ProtectedRoute = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <div className="min-h-screen bg-surface" />
   }
 
   return <Outlet />

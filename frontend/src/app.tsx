@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { HomePage } from '@/pages/home-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
@@ -22,6 +22,7 @@ export const App = () => {
           <Route path="/interview/:publicId/feedback" element={<InterviewFeedbackPage />} />
           <Route path="/interview/:publicId/review" element={<InterviewFeedbackPage />} />
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <LoginModal />
     </>

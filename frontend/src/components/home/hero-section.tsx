@@ -13,9 +13,9 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
 
   const handleStart = () => {
     if (isAuthenticated) {
-      onNavigate()
+      navigate('/interview/setup')
     } else {
-      navigate('/login?redirect=/interview/setup')
+      onNavigate()
     }
   }
 

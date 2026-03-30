@@ -34,6 +34,6 @@ export const useAuth = () => {
   return {
     user,
     isLoading: isPending,
-    isAuthenticated: user !== null,
+    isAuthenticated: data != null,
   }
 }

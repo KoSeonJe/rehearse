@@ -16,6 +16,7 @@ export const HomePage = () => {
   const { logout, openLoginModal } = useAuthStore()
 
   const handleOpenLogin = () => openLoginModal()
+  const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   const handleLogout = async () => {
     try {
@@ -63,12 +64,12 @@ export const HomePage = () => {
       </header>
 
       <main>
-        <HeroSection onNavigate={handleOpenLogin} isAuthenticated={isAuthenticated} />
+        <HeroSection onNavigate={handleStartLogin} isAuthenticated={isAuthenticated} />
         <HowItWorksSection />
         <KeyFeaturesSection />
         <BeforeYouStartSection />
         <FaqSection />
-        <CtaSection onNavigate={handleOpenLogin} />
+        <CtaSection onNavigate={handleStartLogin} />
       </main>
 
       <footer className="border-t border-border py-12 text-center">

@@ -1,11 +1,13 @@
 import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { useAuthStore } from '@/stores/auth-store'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
 export const LoginModal = () => {
-  const { showLoginModal, closeLoginModal } = useAuthStore()
+  const { showLoginModal, closeLoginModal, redirectAfterLogin, loginModalMessage } = useAuthStore()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (showLoginModal) {
@@ -16,18 +18,23 @@ export const LoginModal = () => {
 
   if (!showLoginModal) return null
 
+  const redirect = redirectAfterLogin ?? '/interview/setup'
+
   const handleGithubLogin = () => {
-    const redirect = window.location.pathname
     window.location.href = `${API_URL}/oauth2/authorization/github?redirect=${encodeURIComponent(redirect)}`
   }
 
   const handleGoogleLogin = () => {
-    const redirect = window.location.pathname
     window.location.href = `${API_URL}/oauth2/authorization/google?redirect=${encodeURIComponent(redirect)}`
   }
 
+  const handleClose = () => {
+    closeLoginModal()
+    navigate('/', { replace: true })
+  }
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) closeLoginModal()
+    if (e.target === e.currentTarget) handleClose()
   }
 
   return (
@@ -41,7 +48,7 @@ export const LoginModal = () => {
       <div className="relative w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg animate-fade-in">
         {/* 닫기 버튼 */}
         <button
-          onClick={closeLoginModal}
+          onClick={handleClose}
           aria-label="닫기"
           className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
@@ -59,7 +66,7 @@ export const LoginModal = () => {
         {/* 제목 */}
         <div className="mb-7 text-center">
           <h2 className="text-lg font-extrabold tracking-tight text-text-primary">
-            로그인
+            {loginModalMessage ?? '로그인'}
           </h2>
         </div>
 
@@ -90,7 +97,6 @@ export const LoginModal = () => {
             Google로 계속하기
           </button>
         </div>
-
       </div>
     </div>
   )
