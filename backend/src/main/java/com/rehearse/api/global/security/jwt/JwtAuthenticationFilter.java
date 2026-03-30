@@ -1,7 +1,6 @@
 package com.rehearse.api.global.security.jwt;
 
-import com.rehearse.api.domain.user.entity.User;
-import com.rehearse.api.domain.user.service.UserService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -25,7 +24,6 @@ import java.util.Optional;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserService userService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -34,12 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         extractToken(request).ifPresent(token -> {
             if (jwtTokenProvider.validateToken(token)) {
                 try {
-                    Long userId = jwtTokenProvider.getUserId(token);
-                    User user = userService.findById(userId);
+                    Claims claims = jwtTokenProvider.parseToken(token);
+                    Long userId = Long.parseLong(claims.getSubject());
+                    String role = claims.get("role", String.class);
                     var auth = new UsernamePasswordAuthenticationToken(
-                            user,
+                            userId,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role))
                     );
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } catch (Exception e) {

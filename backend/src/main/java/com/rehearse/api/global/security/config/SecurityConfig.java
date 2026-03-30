@@ -1,6 +1,5 @@
 package com.rehearse.api.global.security.config;
 
-import com.rehearse.api.domain.user.service.UserService;
 import com.rehearse.api.global.security.jwt.JwtAuthenticationFilter;
 import com.rehearse.api.global.security.jwt.JwtTokenProvider;
 import com.rehearse.api.global.security.oauth2.CustomOAuth2UserService;
@@ -27,7 +26,6 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
     private final OAuth2FailureHandler oAuth2FailureHandler;
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserService userService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,7 +57,7 @@ public class SecurityConfig {
                 })
             )
             .addFilterBefore(
-                new JwtAuthenticationFilter(jwtTokenProvider, userService),
+                new JwtAuthenticationFilter(jwtTokenProvider),
                 UsernamePasswordAuthenticationFilter.class
             );
 

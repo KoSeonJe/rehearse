@@ -32,15 +32,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         String token = jwtTokenProvider.createToken(
                 user.getId(),
-                user.getEmail(),
-                user.getName(),
                 user.getRole().name()
         );
 
         Cookie cookie = new Cookie("rehearse_token", token);
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60);
+        cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
 
         String redirectUrl = resolveRedirectUrl(request);
@@ -50,7 +50,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private String resolveRedirectUrl(HttpServletRequest request) {
         String redirect = request.getParameter("redirect");
-        if (redirect != null && !redirect.isBlank() && redirect.startsWith("/")) {
+        if (redirect != null && !redirect.isBlank()
+                && redirect.startsWith("/") && !redirect.startsWith("//")) {
             return frontendUrl + redirect;
         }
         return frontendUrl + "/interview/setup";

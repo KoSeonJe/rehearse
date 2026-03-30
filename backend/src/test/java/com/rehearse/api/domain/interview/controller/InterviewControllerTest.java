@@ -8,8 +8,10 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(InterviewController.class)
+@Import(TestSecurityConfig.class)
 class InterviewControllerTest {
 
     @Autowired

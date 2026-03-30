@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.security.MessageDigest;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,7 +57,9 @@ public class InternalApiKeyFilter extends OncePerRequestFilter {
             }
 
             String providedKey = request.getHeader(API_KEY_HEADER);
-            if (providedKey == null || !providedKey.equals(internalApiKey)) {
+            if (providedKey == null ||
+                    !MessageDigest.isEqual(
+                            providedKey.getBytes(), internalApiKey.getBytes())) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json;charset=UTF-8");
                 response.getWriter().write(UNAUTHORIZED_RESPONSE);

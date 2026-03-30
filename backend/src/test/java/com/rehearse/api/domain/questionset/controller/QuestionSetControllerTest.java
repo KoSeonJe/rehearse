@@ -10,10 +10,12 @@ import com.rehearse.api.global.config.InternalApiKeyFilter;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -27,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(value = QuestionSetController.class,
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = InternalApiKeyFilter.class))
+@Import(TestSecurityConfig.class)
 class QuestionSetControllerTest {
 
     private static final String BASE_URL =
