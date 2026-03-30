@@ -249,7 +249,9 @@ def _run_gemini_pipeline(
             vocal = gemini.get("vocal", {})
             technical = gemini.get("technical", {})
             fb["verbalComment"] = verbal.get("comment")
-            fb["fillerWords"] = vocal.get("fillerWords", [])
+            filler_list = vocal.get("fillerWords", [])
+            fb["fillerWords"] = filler_list
+            fb["fillerWordCount"] = len(filler_list) if isinstance(filler_list, list) else 0
             fb["speechPace"] = vocal.get("speechPace")
             fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
             fb["emotionLabel"] = vocal.get("emotionLabel")
@@ -351,6 +353,14 @@ def _build_timestamp_feedbacks(
         if verbal:
             fb["verbalComment"] = verbal.get("comment")
             fb["fillerWordCount"] = verbal.get("filler_word_count", 0)
+            fb["fillerWords"] = []
+            fb["speechPace"] = ""
+            fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
+            fb["emotionLabel"] = ""
+            fb["vocalComment"] = verbal.get("tone_comment", "")
+            fb["accuracyIssues"] = "[]"
+            fb["coachingStructure"] = ""
+            fb["coachingImprovement"] = ""
 
         if vision_result:
             fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
@@ -394,6 +404,17 @@ def _compute_overall(feedbacks: list[dict]) -> str:
 
     comment = "전반적으로 " + ", ".join(parts) + "되었습니다."
     return comment
+
+
+def _tone_label_to_level(tone_label: str | None) -> str:
+    """verbal_analyzer의 tone_label을 3단계 라벨로 변환한다."""
+    if tone_label in ("PROFESSIONAL", "CONFIDENT"):
+        return "GOOD"
+    if tone_label in ("CASUAL", "VERBOSE"):
+        return "AVERAGE"
+    if tone_label == "HESITANT":
+        return "NEEDS_IMPROVEMENT"
+    return "AVERAGE"
 
 
 def _build_overall_comment(verbal: dict | None, vision: dict | None) -> str:
