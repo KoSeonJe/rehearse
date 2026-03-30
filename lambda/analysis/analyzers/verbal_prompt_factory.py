@@ -94,37 +94,51 @@ API Gateway, BFF, MSA, 이벤트 드리븐, 메시지 큐,
 CI/CD, Docker, 무중단 배포, 블루-그린, 카나리""",
 }
 
+FEEDBACK_PERSPECTIVES: dict[str, str] = {
+    "TECHNICAL": """## 기술 피드백 관점
+- comment에 기술 용어 정확성, 개념 깊이를 중심으로 피드백
+- 키워드 사전의 용어가 정확히 사용되었는지 확인""",
+    "BEHAVIORAL": """## 경험 피드백 관점
+- comment에 STAR 기법 적용 여부, 본인 역할의 구체성을 중심으로 피드백
+- 수치화된 성과, 구체적 사례 포함 여부 확인""",
+    "EXPERIENCE": """## 이력서 기반 피드백 관점
+- comment에 프로젝트 기여도, 기술적 의사결정 배경을 중심으로 피드백
+- 기술 선택 이유(대안 비교), 결과의 정량화 여부 확인""",
+}
+
 SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """{minimal_persona}
 
 ## 전문 분야
 {verbal_expertise}
 
+{feedback_perspective}
 ## 평가
-1. verbal_score(0-100): 90+=핵심정확+기술깊이, 70+=대체로양호, 50+=핵심빗나감, 30+=이해부족/오류, 0+=무관
-   평가요소: 핵심답변포함, 구조화(STAR), 기술키워드정확성, 논리흐름, 구체적수치/사례
-2. filler_word_count: "음","어","그","아","뭐","이제","약간","좀","그러니까" 등장 횟수
-3. tone_label: PROFESSIONAL|CASUAL|HESITANT|CONFIDENT|VERBOSE
-4. comment: 3-4문장. 키워드 사전 기반으로 기술 용어 정확성/오용도 comment에 포함하여 피드백
+1. filler_word_count: "음","어","그","아","뭐","이제","약간","좀","그러니까" 등장 횟수
+2. tone_label: PROFESSIONAL|CASUAL|HESITANT|CONFIDENT|VERBOSE
+3. tone_comment: 1-2문장의 말투 피드백
+4. comment: 3줄 형식으로 작성. ✓ 잘한 점 / △ 보완할 점 / → 개선 방법. 키워드 사전 기반으로 기술 용어 정확성/오용도 포함
 
 ## 응답
 JSON만 응답:
-{{"verbal_score":0,"filler_word_count":0,"tone_label":"","tone_comment":"","comment":""}}"""
+{{"filler_word_count":0,"tone_label":"","tone_comment":"","comment":""}}"""
 
 USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 질문: {question}
 {model_answer_line}답변(STT): {transcript}"""
 
 
-def build_system_prompt(position: str, tech_stack: str | None) -> str:
+def build_system_prompt(position: str, tech_stack: str | None, feedback_perspective: str | None = None) -> str:
     effective_stack = tech_stack or DEFAULT_TECH_STACKS.get(position, "JAVA_SPRING")
     key = f"{position}_{effective_stack}"
 
     persona = MINIMAL_PERSONAS.get(key, f"{position} 면접 답변의 언어적 커뮤니케이션을 분석합니다.")
     expertise = VERBAL_EXPERTISE.get(key, "")
+    perspective_text = FEEDBACK_PERSPECTIVES.get(feedback_perspective, "") if feedback_perspective else ""
 
     return SYSTEM_TEMPLATE.format(
         minimal_persona=persona,
         verbal_expertise=expertise,
+        feedback_perspective=perspective_text,
     )
 
 

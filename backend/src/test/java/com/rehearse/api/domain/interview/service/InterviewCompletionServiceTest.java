@@ -6,8 +6,6 @@ import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
-import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,7 +18,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -37,9 +34,6 @@ class InterviewCompletionServiceTest {
 
     @Mock
     private QuestionSetRepository questionSetRepository;
-
-    @Mock
-    private QuestionSetFeedbackRepository feedbackRepository;
 
     // ─────────────────────────────────────────────────────────────
     // checkAndCompleteInterviews
@@ -60,17 +54,11 @@ class InterviewCompletionServiceTest {
         given(interviewRepository.findById(1L))
                 .willReturn(java.util.Optional.of(interview));
 
-        QuestionSetFeedback fb1 = createFeedback(qs1, 80);
-        QuestionSetFeedback fb2 = createFeedback(qs2, 60);
-        given(feedbackRepository.findByQuestionSetIdIn(List.of(10L, 11L)))
-                .willReturn(List.of(fb1, fb2));
-
         // when
         interviewCompletionService.checkAndCompleteInterviews();
 
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-        assertThat(interview.getOverallScore()).isEqualTo(70); // (80+60)/2
         assertThat(interview.getOverallComment()).contains("완료");
     }
 
@@ -92,7 +80,6 @@ class InterviewCompletionServiceTest {
 
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
-        then(feedbackRepository).should(never()).findByQuestionSetIdIn(anyList());
     }
 
     @Test
@@ -111,7 +98,6 @@ class InterviewCompletionServiceTest {
 
         // then
         assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
-        then(feedbackRepository).should(never()).findByQuestionSetIdIn(anyList());
     }
 
     @Test
@@ -128,13 +114,9 @@ class InterviewCompletionServiceTest {
         then(questionSetRepository).should(never()).findByInterviewIdOrderByOrderIndex(anyLong());
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // calculateOverallScore (배치 쿼리 경로 검증)
-    // ─────────────────────────────────────────────────────────────
-
     @Test
-    @DisplayName("calculateOverallScore: findByQuestionSetIdIn 배치 쿼리로 평균 점수를 계산한다")
-    void calculateOverallScore_배치쿼리로평균점수계산() {
+    @DisplayName("checkAndCompleteInterviews: COMPLETED + PARTIAL 조합이면 면접을 완료 처리한다")
+    void checkAndCompleteInterviews_완료및부분완료시_면접COMPLETED() {
         // given
         Interview interview = createInProgressInterview(2L);
         QuestionSet qs1 = createQuestionSetWithAnalysis(20L, interview, AnalysisStatus.COMPLETED);
@@ -148,18 +130,12 @@ class InterviewCompletionServiceTest {
         given(interviewRepository.findById(2L))
                 .willReturn(java.util.Optional.of(interview));
 
-        QuestionSetFeedback fb1 = createFeedback(qs1, 90);
-        QuestionSetFeedback fb2 = createFeedback(qs2, 75);
-        QuestionSetFeedback fb3 = createFeedback(qs3, 60);
-        given(feedbackRepository.findByQuestionSetIdIn(List.of(20L, 21L, 22L)))
-                .willReturn(List.of(fb1, fb2, fb3));
-
         // when
         interviewCompletionService.checkAndCompleteInterviews();
 
-        // then — (90+75+60)/3 = 75
-        assertThat(interview.getOverallScore()).isEqualTo(75);
-        then(feedbackRepository).should().findByQuestionSetIdIn(List.of(20L, 21L, 22L));
+        // then
+        assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
+        assertThat(interview.getOverallComment()).contains("완료");
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -193,13 +169,5 @@ class InterviewCompletionServiceTest {
         }
         ReflectionTestUtils.setField(qs, "analysis", analysis);
         return qs;
-    }
-
-    private QuestionSetFeedback createFeedback(QuestionSet qs, int score) {
-        return QuestionSetFeedback.builder()
-                .questionSet(qs)
-                .questionSetScore(score)
-                .questionSetComment("피드백 코멘트")
-                .build();
     }
 }

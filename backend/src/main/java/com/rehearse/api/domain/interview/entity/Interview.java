@@ -70,8 +70,6 @@ public class Interview {
     @Column(columnDefinition = "TEXT")
     private String failureReason;
 
-    private Integer overallScore;
-
     @Column(columnDefinition = "TEXT")
     private String overallComment;
 
@@ -144,14 +142,7 @@ public class Interview {
         this.status = newStatus;
     }
 
-    public void completeWithScores(List<Integer> questionSetScores, String comment) {
-        this.overallScore = calculateAverageScore(questionSetScores);
+    public void completeWithComment(String comment) {
         this.overallComment = comment;
-    }
-
-    private int calculateAverageScore(List<Integer> scores) {
-        if (scores == null || scores.isEmpty()) return 0;
-        int total = scores.stream().mapToInt(Integer::intValue).sum();
-        return total / scores.size();
     }
 }

@@ -35,6 +35,10 @@ public class Question {
     @Column(length = 20)
     private ReferenceType referenceType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private FeedbackPerspective feedbackPerspective;
+
     @Column(nullable = false)
     private int orderIndex;
 
@@ -44,12 +48,14 @@ public class Question {
 
     @Builder
     public Question(QuestionType questionType, String questionText,
-                    String modelAnswer, ReferenceType referenceType, int orderIndex,
-                    QuestionPool questionPool) {
+                    String modelAnswer, ReferenceType referenceType,
+                    FeedbackPerspective feedbackPerspective,
+                    int orderIndex, QuestionPool questionPool) {
         this.questionType = questionType;
         this.questionText = questionText;
         this.modelAnswer = modelAnswer;
         this.referenceType = referenceType;
+        this.feedbackPerspective = feedbackPerspective;
         this.orderIndex = orderIndex;
         this.questionPool = questionPool;
     }

@@ -28,9 +28,6 @@ public class QuestionSetFeedback {
     @JoinColumn(name = "question_set_id", nullable = false, unique = true)
     private QuestionSet questionSet;
 
-    @Column(nullable = false)
-    private int questionSetScore;
-
     @Column(nullable = false, columnDefinition = "TEXT")
     private String questionSetComment;
 
@@ -42,9 +39,8 @@ public class QuestionSetFeedback {
     private LocalDateTime createdAt;
 
     @Builder
-    public QuestionSetFeedback(QuestionSet questionSet, int questionSetScore, String questionSetComment) {
+    public QuestionSetFeedback(QuestionSet questionSet, String questionSetComment) {
         this.questionSet = questionSet;
-        this.questionSetScore = questionSetScore;
         this.questionSetComment = questionSetComment;
     }
 

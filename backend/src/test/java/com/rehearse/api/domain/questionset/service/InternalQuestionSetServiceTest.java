@@ -158,11 +158,12 @@ class InternalQuestionSetServiceTest {
         ReflectionTestUtils.setField(item, "questionId", 10L);
         ReflectionTestUtils.setField(item, "startMs", 0L);
         ReflectionTestUtils.setField(item, "endMs", 5000L);
-        ReflectionTestUtils.setField(item, "verbalScore", 80);
         ReflectionTestUtils.setField(item, "verbalComment", "명확한 설명");
+        ReflectionTestUtils.setField(item, "eyeContactLevel", "GOOD");
+        ReflectionTestUtils.setField(item, "postureLevel", "AVERAGE");
+        ReflectionTestUtils.setField(item, "toneConfidenceLevel", "GOOD");
 
         SaveFeedbackRequest request = new SaveFeedbackRequest();
-        ReflectionTestUtils.setField(request, "questionSetScore", 85);
         ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", List.of(item));
         ReflectionTestUtils.setField(request, "verbalCompleted", true);
@@ -188,7 +189,6 @@ class InternalQuestionSetServiceTest {
                 .willAnswer(inv -> inv.getArgument(0));
 
         SaveFeedbackRequest request = new SaveFeedbackRequest();
-        ReflectionTestUtils.setField(request, "questionSetScore", 70);
         ReflectionTestUtils.setField(request, "questionSetComment", "개선이 필요합니다.");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
         ReflectionTestUtils.setField(request, "verbalCompleted", true);
@@ -272,7 +272,6 @@ class InternalQuestionSetServiceTest {
                 .willAnswer(inv -> inv.getArgument(0));
 
         SaveFeedbackRequest request = new SaveFeedbackRequest();
-        ReflectionTestUtils.setField(request, "questionSetScore", 60);
         ReflectionTestUtils.setField(request, "questionSetComment", "비언어 분석 실패");
         ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
         ReflectionTestUtils.setField(request, "verbalCompleted", true);

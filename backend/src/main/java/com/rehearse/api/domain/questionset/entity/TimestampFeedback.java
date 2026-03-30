@@ -33,16 +33,16 @@ public class TimestampFeedback {
     @Column(columnDefinition = "TEXT")
     private String transcript;
 
-    private Integer verbalScore;
-
     @Column(columnDefinition = "TEXT")
     private String verbalComment;
 
     private Integer fillerWordCount;
 
-    private Integer eyeContactScore;
+    @Column(length = 20)
+    private String eyeContactLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
 
-    private Integer postureScore;
+    @Column(length = 20)
+    private String postureLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
 
     @Column(length = 50)
     private String expressionLabel;
@@ -56,14 +56,14 @@ public class TimestampFeedback {
     @Column(nullable = false)
     private boolean isAnalyzed;
 
-    // Gemini 네이티브 오디오 분석 음성 특성 필드 (nullable — 기존 데이터 호환)
     @Column(columnDefinition = "TEXT")
     private String fillerWords;  // JSON 배열 문자열 예: ["음", "어"]
 
     @Column(length = 10)
     private String speechPace;  // "빠름" / "적절" / "느림"
 
-    private Integer toneConfidence;  // 0-100
+    @Column(length = 20)
+    private String toneConfidenceLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
 
     @Column(length = 20)
     private String emotionLabel;  // "자신감" / "긴장" / "평온" / "불안"
@@ -71,32 +71,45 @@ public class TimestampFeedback {
     @Column(columnDefinition = "TEXT")
     private String vocalComment;
 
+    @Column(columnDefinition = "TEXT")
+    private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
+
+    @Column(length = 500)
+    private String coachingStructure;
+
+    @Column(length = 500)
+    private String coachingImprovement;
+
     @Builder
     public TimestampFeedback(Question question, long startMs, long endMs,
-                             String transcript, Integer verbalScore, String verbalComment,
-                             Integer fillerWordCount, Integer eyeContactScore, Integer postureScore,
+                             String transcript, String verbalComment,
+                             Integer fillerWordCount,
+                             String eyeContactLevel, String postureLevel,
                              String expressionLabel, String nonverbalComment, String overallComment,
                              boolean isAnalyzed,
-                             String fillerWords, String speechPace, Integer toneConfidence,
-                             String emotionLabel, String vocalComment) {
+                             String fillerWords, String speechPace, String toneConfidenceLevel,
+                             String emotionLabel, String vocalComment,
+                             String accuracyIssues, String coachingStructure, String coachingImprovement) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
         this.transcript = transcript;
-        this.verbalScore = verbalScore;
         this.verbalComment = verbalComment;
         this.fillerWordCount = fillerWordCount;
-        this.eyeContactScore = eyeContactScore;
-        this.postureScore = postureScore;
+        this.eyeContactLevel = eyeContactLevel;
+        this.postureLevel = postureLevel;
         this.expressionLabel = expressionLabel;
         this.nonverbalComment = nonverbalComment;
         this.overallComment = overallComment;
         this.isAnalyzed = isAnalyzed;
         this.fillerWords = fillerWords;
         this.speechPace = speechPace;
-        this.toneConfidence = toneConfidence;
+        this.toneConfidenceLevel = toneConfidenceLevel;
         this.emotionLabel = emotionLabel;
         this.vocalComment = vocalComment;
+        this.accuracyIssues = accuracyIssues;
+        this.coachingStructure = coachingStructure;
+        this.coachingImprovement = coachingImprovement;
     }
 
     void assignQuestionSetFeedback(QuestionSetFeedback questionSetFeedback) {
