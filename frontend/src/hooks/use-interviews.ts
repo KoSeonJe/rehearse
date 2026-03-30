@@ -37,6 +37,7 @@ export const useCreateInterview = () => {
       const response = await fetch(`${API_BASE_URL}/api/v1/interviews`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       })
 
       if (!response.ok) {
@@ -171,6 +172,7 @@ export const useFollowUpQuestion = () => {
       const response = await fetch(`${API_BASE_URL}/api/v1/interviews/${id}/follow-up`, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       })
 
       if (!response.ok) {
