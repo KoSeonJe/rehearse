@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { HomePage } from '@/pages/home-page'
+import { DashboardPage } from '@/pages/dashboard-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
 import { InterviewPage } from '@/pages/interview-page'
@@ -18,6 +19,7 @@ export const App = () => {
         <Route path="/" element={<HomePage />} />
 
         <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/interview/setup" element={<InterviewSetupPage />} />
           <Route path="/interview/:id/ready" element={<InterviewReadyPage />} />
           <Route path="/interview/:id/conduct" element={<InterviewPage />} />

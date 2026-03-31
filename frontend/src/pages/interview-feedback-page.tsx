@@ -9,7 +9,54 @@ import { TimelineBar } from '@/components/feedback/timeline-bar'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
-import type { AnalysisStatus } from '@/types/interview'
+import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
+import type { AnalysisStatus, InterviewSession } from '@/types/interview'
+
+interface InterviewInfoBarProps {
+  interview: InterviewSession
+}
+
+const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
+  const positionLabel = POSITION_LABELS[interview.position]?.label ?? interview.position
+  const createdDate = new Date(interview.createdAt).toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  return (
+    <div className="border-b border-border bg-surface px-5 py-3">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 md:px-8">
+        <span className="text-sm font-bold text-text-primary">{positionLabel}</span>
+        {interview.positionDetail && (
+          <>
+            <span className="text-text-tertiary">·</span>
+            <span className="text-sm font-medium text-text-secondary">{interview.positionDetail}</span>
+          </>
+        )}
+        {interview.interviewTypes.length > 0 && (
+          <>
+            <span className="text-text-tertiary">·</span>
+            <div className="flex flex-wrap gap-1">
+              {interview.interviewTypes.map((type) => (
+                <span
+                  key={type}
+                  className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent"
+                >
+                  {INTERVIEW_TYPE_LABELS[type]?.label ?? type}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+        <span className="text-text-tertiary">·</span>
+        <span className="text-xs font-medium text-text-tertiary">{interview.durationMinutes}분</span>
+        <span className="text-text-tertiary">·</span>
+        <span className="text-xs font-medium text-text-tertiary">{createdDate}</span>
+      </div>
+    </div>
+  )
+}
 
 const failureMessages: Record<string, string> = {
   TIMEOUT: '분석 시간이 초과되었습니다. 다시 시도해주세요.',
@@ -276,20 +323,26 @@ export const InterviewFeedbackPage = () => {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <button className="flex items-center gap-2" onClick={() => navigate('/')}>
+          <button className="flex items-center gap-2" onClick={() => navigate('/dashboard')}>
             <Logo size={60} />
             <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/')}
-              className="text-sm font-semibold text-text-secondary hover:text-text-primary"
+              onClick={() => navigate('/dashboard')}
+              className="flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-text-primary"
             >
-              닫기
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5M12 5l-7 7 7 7" />
+              </svg>
+              대시보드
             </button>
           </div>
         </div>
       </header>
+
+      {/* 면접 정보 요약 바 */}
+      <InterviewInfoBar interview={interview} />
 
       <main className="mx-auto max-w-6xl px-5 pt-10 md:px-8">
         {/* Hero */}
