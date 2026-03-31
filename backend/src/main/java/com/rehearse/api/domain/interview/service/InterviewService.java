@@ -1,6 +1,8 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.interview.dto.InterviewListResponse;
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
+import com.rehearse.api.domain.interview.dto.InterviewStatsResponse;
 import com.rehearse.api.domain.interview.dto.UpdateStatusRequest;
 import com.rehearse.api.domain.interview.dto.UpdateStatusResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -16,11 +18,19 @@ import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -93,5 +103,74 @@ public class InterviewService {
         questionSetService.skipRemaining(id);
 
         log.info("미응답 질문세트 스킵 처리: interviewId={}", id);
+    }
+
+    public Page<InterviewListResponse> getInterviews(Long userId, Pageable pageable) {
+        Page<Interview> interviews = interviewRepository.findAllByUserId(userId, pageable);
+
+        List<Long> interviewIds = interviews.getContent().stream()
+                .map(Interview::getId)
+                .toList();
+
+        Map<Long, Long> questionCountMap = buildQuestionCountMap(interviewIds);
+
+        return interviews.map(interview -> toListResponse(interview, questionCountMap));
+    }
+
+    public InterviewStatsResponse getStats(Long userId) {
+        long totalCount = interviewRepository.countByUserId(userId);
+        long completedCount = interviewRepository.countByUserIdAndStatus(userId, InterviewStatus.COMPLETED);
+
+        LocalDateTime weekStart = LocalDate.now()
+                .with(DayOfWeek.MONDAY)
+                .atTime(LocalTime.MIDNIGHT);
+        long thisWeekCount = interviewRepository.countByUserIdAndCreatedAtAfter(userId, weekStart);
+
+        return InterviewStatsResponse.builder()
+                .totalCount(totalCount)
+                .completedCount(completedCount)
+                .thisWeekCount(thisWeekCount)
+                .build();
+    }
+
+    @Transactional
+    public void deleteInterview(Long id, Long userId) {
+        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
+
+        if (!interview.getStatus().isDeletable()) {
+            throw new BusinessException(InterviewErrorCode.CANNOT_DELETE_COMPLETED);
+        }
+
+        questionSetRepository.deleteAll(questionSetRepository.findByInterviewIdOrderByOrderIndex(id));
+        interviewRepository.delete(interview);
+
+        log.info("면접 세션 삭제: id={}, userId={}", id, userId);
+    }
+
+    private Map<Long, Long> buildQuestionCountMap(List<Long> interviewIds) {
+        if (interviewIds.isEmpty()) {
+            return Map.of();
+        }
+        List<Object[]> rows = interviewRepository.countQuestionsByInterviewIds(interviewIds);
+        return rows.stream()
+                .collect(Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (Long) row[1]
+                ));
+    }
+
+    private InterviewListResponse toListResponse(Interview interview, Map<Long, Long> questionCountMap) {
+        return InterviewListResponse.builder()
+                .id(interview.getId())
+                .publicId(interview.getPublicId())
+                .position(interview.getPosition())
+                .positionDetail(interview.getPositionDetail())
+                .interviewTypes(new ArrayList<>(interview.getInterviewTypes()))
+                .csSubTopics(new ArrayList<>(interview.getCsSubTopics()))
+                .durationMinutes(interview.getDurationMinutes())
+                .status(interview.getStatus())
+                .questionCount(questionCountMap.getOrDefault(interview.getId(), 0L))
+                .createdAt(interview.getCreatedAt())
+                .build();
     }
 }
