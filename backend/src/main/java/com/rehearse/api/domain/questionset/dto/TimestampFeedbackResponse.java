@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.questionset.entity.Question;
@@ -25,6 +26,7 @@ public class TimestampFeedbackResponse {
     private final String transcript;
     private final ContentFeedback content;
     private final DeliveryFeedback delivery;
+    @JsonProperty("isAnalyzed")
     private final boolean isAnalyzed;
 
     @Getter
