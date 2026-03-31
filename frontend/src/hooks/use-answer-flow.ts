@@ -210,7 +210,7 @@ export const useAnswerFlow = ({
       pendingTtsActionRef.current = () => nextQuestion()
       tts.speak(pickRandom(TRANSITION_PHRASES))
     }
-  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete])
+  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
