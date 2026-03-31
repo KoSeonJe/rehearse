@@ -43,13 +43,13 @@ class FollowUpTransactionHandlerTest {
     void loadFollowUpContext_success() {
         // given
         Interview interview = createInProgressInterview();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
         given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
         // when
-        FollowUpContext context = handler.loadFollowUpContext(1L, 10L);
+        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
 
         // then
         assertThat(context.position()).isEqualTo(Position.BACKEND);
@@ -63,10 +63,10 @@ class FollowUpTransactionHandlerTest {
     void loadFollowUpContext_notInProgress() {
         // given
         Interview interview = createMockInterview(); // READY 상태
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 10L))
+        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -79,11 +79,11 @@ class FollowUpTransactionHandlerTest {
     void loadFollowUpContext_questionSetNotFound() {
         // given
         Interview interview = createInProgressInterview();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
         given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 999L))
+        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 999L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -96,13 +96,13 @@ class FollowUpTransactionHandlerTest {
     void loadFollowUpContext_maxFollowUpExceeded() {
         // given
         Interview interview = createInProgressInterview();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 2);
         given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
         // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 10L))
+        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;

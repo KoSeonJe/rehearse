@@ -28,7 +28,7 @@ public class InterviewCreationService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public InterviewResponse createInterview(CreateInterviewRequest request, MultipartFile resumeFile) {
+    public InterviewResponse createInterview(Long userId, CreateInterviewRequest request, MultipartFile resumeFile) {
         String resumeText = null;
         if (resumeFile != null && !resumeFile.isEmpty()) {
             resumeText = pdfTextExtractor.extract(resumeFile);
@@ -39,6 +39,7 @@ public class InterviewCreationService {
         }
 
         Interview interview = Interview.builder()
+                .userId(userId)
                 .position(request.getPosition())
                 .positionDetail(request.getPositionDetail())
                 .level(request.getLevel())

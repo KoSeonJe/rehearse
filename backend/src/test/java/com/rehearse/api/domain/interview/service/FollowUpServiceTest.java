@@ -43,7 +43,7 @@ class FollowUpServiceTest {
         // given
         FollowUpContext context = new FollowUpContext(
                 Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
         ReflectionTestUtils.setField(followUp, "question", "HashMap의 해시 충돌 해결 방법은?");
@@ -72,7 +72,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(request, "nonVerbalSummary", "시선 안정적");
 
         // when
-        FollowUpResponse response = followUpService.generateFollowUp(1L, request, audioFile);
+        FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request, audioFile);
 
         // then
         assertThat(response.getQuestionId()).isEqualTo(100L);
@@ -89,7 +89,7 @@ class FollowUpServiceTest {
         // given
         FollowUpContext context = new FollowUpContext(
                 Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         MockMultipartFile audioFile =
                 new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -117,7 +117,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(request, "questionContent", "성능 최적화 경험을 말씀해주세요.");
 
         // when
-        FollowUpResponse response = followUpService.generateFollowUp(1L, request, audioFile);
+        FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request, audioFile);
 
         // then
         assertThat(response.getQuestionId()).isEqualTo(101L);
@@ -133,7 +133,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(request, "questionContent", "질문");
 
         // when & then — audioFile null이면 즉시 예외 (DB 호출 전)
-        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, request, null))
+        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request, null))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -147,7 +147,7 @@ class FollowUpServiceTest {
         // given
         FollowUpContext context = new FollowUpContext(
                 Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L)).willReturn(context);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         MockMultipartFile audioFile =
                 new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -160,7 +160,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(request, "questionContent", "질문");
 
         // when & then
-        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, request, audioFile))
+        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request, audioFile))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -172,7 +172,7 @@ class FollowUpServiceTest {
     @DisplayName("진행 중이 아닌 면접에서 후속질문 생성 시 예외 발생")
     void generateFollowUp_notInProgress() {
         // given
-        given(followUpTransactionHandler.loadFollowUpContext(1L, 10L))
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L))
                 .willThrow(new BusinessException(HttpStatus.CONFLICT, "INTERVIEW_003", "면접이 진행 중이 아닙니다."));
 
         MockMultipartFile audioFile =
@@ -183,7 +183,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(request, "questionContent", "질문");
 
         // when & then
-        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, request, audioFile))
+        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request, audioFile))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;

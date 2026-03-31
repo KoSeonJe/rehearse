@@ -4,10 +4,11 @@ import com.rehearse.api.domain.questionset.dto.AnswersResponse;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.security.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -25,7 +26,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(value = InternalQuestionSetController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = InternalApiKeyFilter.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, InternalApiKeyFilter.class}))
 @Import(TestSecurityConfig.class)
 class InternalQuestionSetControllerTest {
 

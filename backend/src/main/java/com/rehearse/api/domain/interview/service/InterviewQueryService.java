@@ -20,8 +20,8 @@ public class InterviewQueryService {
     private final InterviewFinder interviewFinder;
     private final QuestionSetRepository questionSetRepository;
 
-    public InterviewResponse getInterview(Long id) {
-        Interview interview = interviewFinder.findById(id);
+    public InterviewResponse getInterview(Long id, Long userId) {
+        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
         List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(id);
         return InterviewResponse.from(interview, questionSets);
     }

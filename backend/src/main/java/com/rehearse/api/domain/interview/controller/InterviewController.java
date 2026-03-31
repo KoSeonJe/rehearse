@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,15 +44,18 @@ public class InterviewController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<InterviewResponse>> createInterview(
+            @AuthenticationPrincipal Long userId,
             @Valid @RequestPart("request") CreateInterviewRequest request,
             @RequestPart(value = "resumeFile", required = false) MultipartFile resumeFile) {
-        InterviewResponse response = interviewCreationService.createInterview(request, resumeFile);
+        InterviewResponse response = interviewCreationService.createInterview(userId, request, resumeFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<InterviewResponse>> getInterview(@PathVariable Long id) {
-        InterviewResponse response = interviewQueryService.getInterview(id);
+    public ResponseEntity<ApiResponse<InterviewResponse>> getInterview(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id) {
+        InterviewResponse response = interviewQueryService.getInterview(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -63,34 +67,38 @@ public class InterviewController {
 
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<UpdateStatusResponse>> updateStatus(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest request) {
-        UpdateStatusResponse response = interviewService.updateStatus(id, request);
+        UpdateStatusResponse response = interviewService.updateStatus(id, userId, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping(value = "/{id}/follow-up", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CompletableFuture<ResponseEntity<ApiResponse<FollowUpResponse>>> generateFollowUp(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id,
             @Valid @RequestPart("request") FollowUpRequest request,
             @RequestPart(value = "audio", required = false) MultipartFile audioFile) {
         return CompletableFuture.supplyAsync(
-                () -> followUpService.generateFollowUp(id, request, audioFile),
+                () -> followUpService.generateFollowUp(id, userId, request, audioFile),
                 vtExecutor
         ).thenApply(response -> ResponseEntity.ok(ApiResponse.ok(response)));
     }
 
     @PostMapping("/{id}/retry-questions")
     public ResponseEntity<ApiResponse<InterviewResponse>> retryQuestionGeneration(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
-        InterviewResponse response = interviewService.retryQuestionGeneration(id);
+        InterviewResponse response = interviewService.retryQuestionGeneration(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping("/{id}/skip-remaining")
     public ResponseEntity<ApiResponse<Void>> skipRemainingQuestionSets(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
-        interviewService.skipRemainingQuestionSets(id);
+        interviewService.skipRemainingQuestionSets(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

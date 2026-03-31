@@ -33,10 +33,10 @@ class InterviewQueryServiceTest {
     @Test
     @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
     void getInterview_notFound() {
-        given(interviewFinder.findById(999L))
+        given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
-        assertThatThrownBy(() -> interviewQueryService.getInterview(999L))
+        assertThatThrownBy(() -> interviewQueryService.getInterview(999L, 1L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -49,10 +49,10 @@ class InterviewQueryServiceTest {
     @DisplayName("면접 세션 조회 성공")
     void getInterview_success() {
         Interview interview = createMockInterview();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
         given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
-        InterviewResponse response = interviewQueryService.getInterview(1L);
+        InterviewResponse response = interviewQueryService.getInterview(1L, 1L);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getPosition()).isEqualTo(Position.BACKEND);

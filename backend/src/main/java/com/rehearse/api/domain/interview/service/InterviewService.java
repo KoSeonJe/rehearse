@@ -35,8 +35,8 @@ public class InterviewService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public UpdateStatusResponse updateStatus(Long id, UpdateStatusRequest request) {
-        Interview interview = interviewFinder.findById(id);
+    public UpdateStatusResponse updateStatus(Long id, Long userId, UpdateStatusRequest request) {
+        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
 
         if (request.getStatus() == InterviewStatus.IN_PROGRESS
                 && interview.getQuestionGenerationStatus() != QuestionGenerationStatus.COMPLETED) {
@@ -55,8 +55,8 @@ public class InterviewService {
     }
 
     @Transactional
-    public InterviewResponse retryQuestionGeneration(Long id) {
-        Interview interview = interviewFinder.findById(id);
+    public InterviewResponse retryQuestionGeneration(Long id, Long userId) {
+        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
 
         if (interview.getQuestionGenerationStatus() != QuestionGenerationStatus.FAILED) {
             throw new BusinessException(InterviewErrorCode.QUESTION_GENERATION_NOT_FAILED);
@@ -83,8 +83,8 @@ public class InterviewService {
     }
 
     @Transactional
-    public void skipRemainingQuestionSets(Long id) {
-        Interview interview = interviewFinder.findById(id);
+    public void skipRemainingQuestionSets(Long id, Long userId) {
+        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
 
         if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);

@@ -1,16 +1,19 @@
 package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.dto.*;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.security.config.SecurityConfig;
+import com.rehearse.api.global.support.WithMockUserId;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -28,8 +31,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(value = QuestionSetController.class,
-        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = InternalApiKeyFilter.class))
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, InternalApiKeyFilter.class}))
 @Import(TestSecurityConfig.class)
+@WithMockUserId
 class QuestionSetControllerTest {
 
     private static final String BASE_URL =
@@ -46,6 +51,9 @@ class QuestionSetControllerTest {
 
     @MockitoBean
     private InternalQuestionSetService internalQuestionSetService;
+
+    @MockitoBean
+    private InterviewFinder interviewFinder;
 
     // ----------------------------------------------------------------
     // POST /answers
