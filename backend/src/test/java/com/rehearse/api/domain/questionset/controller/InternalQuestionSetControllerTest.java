@@ -95,15 +95,15 @@ class InternalQuestionSetControllerTest {
 
         String requestBody = """
                 {
-                    "questionSetScore": 85,
                     "questionSetComment": "전반적으로 좋은 답변입니다.",
                     "timestampFeedbacks": [
                         {
                             "questionId": 10,
                             "startMs": 0,
                             "endMs": 5000,
-                            "verbalScore": 80,
-                            "verbalComment": "명확한 설명"
+                            "verbalComment": "명확한 설명",
+                            "eyeContactLevel": "GOOD",
+                            "postureLevel": "AVERAGE"
                         }
                     ]
                 }
@@ -117,27 +117,10 @@ class InternalQuestionSetControllerTest {
     }
 
     @Test
-    @DisplayName("POST /feedback - questionSetScore 누락 시 400을 반환한다")
-    void saveFeedback_missingScore_returns400() throws Exception {
-        String requestBody = """
-                {
-                    "questionSetComment": "코멘트만 있고 점수 없음"
-                }
-                """;
-
-        mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
-    }
-
-    @Test
     @DisplayName("POST /feedback - questionSetComment 누락 시 400을 반환한다")
     void saveFeedback_missingComment_returns400() throws Exception {
         String requestBody = """
                 {
-                    "questionSetScore": 85
                 }
                 """;
 

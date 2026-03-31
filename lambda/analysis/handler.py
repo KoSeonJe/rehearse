@@ -123,8 +123,8 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
                 skip_analyzing_update=True,
             )
             # 레거시 폴백은 이미 ANALYZING 상태이므로 중복 호출 스킵
-            verbal_ok = any(f.get("verbalScore") is not None for f in timestamp_feedbacks)
-            nonverbal_ok = any(f.get("eyeContactScore") is not None for f in timestamp_feedbacks)
+            verbal_ok = any(f.get("verbalComment") is not None for f in timestamp_feedbacks)
+            nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
     else:
         # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
         if audio_path is None:
@@ -134,15 +134,14 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
             interview_id, question_set_id,
             position=position, tech_stack=tech_stack, level=level,
         )
-        verbal_ok = any(f.get("verbalScore") is not None for f in timestamp_feedbacks)
-        nonverbal_ok = any(f.get("eyeContactScore") is not None for f in timestamp_feedbacks)
+        verbal_ok = any(f.get("verbalComment") is not None for f in timestamp_feedbacks)
+        nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
 
     update_progress(interview_id, question_set_id, "FINALIZING")
 
-    overall_score, overall_comment = _compute_overall(timestamp_feedbacks)
+    overall_comment = _compute_overall(timestamp_feedbacks)
 
     feedback_payload = {
-        "questionSetScore": overall_score,
         "questionSetComment": overall_comment,
         "timestampFeedbacks": timestamp_feedbacks,
         "isVerbalCompleted": verbal_ok,
@@ -175,6 +174,7 @@ def _run_gemini_pipeline(
                 answer.get("questionText", ""),
                 position, tech_stack, level,
                 answer.get("modelAnswer"),
+                answer.get("feedbackPerspective", "TECHNICAL"),
             )
             for i, answer in enumerate(answers)
         ]
@@ -203,6 +203,7 @@ def _run_gemini_pipeline(
                     answer.get("questionText", ""),
                     position, tech_stack, level,
                     answer.get("modelAnswer"),
+                    answer.get("feedbackPerspective", "TECHNICAL"),
                 )
                 for i, answer in enumerate(answers)
             ]
@@ -246,18 +247,23 @@ def _run_gemini_pipeline(
         if gemini:
             verbal = gemini.get("verbal", {})
             vocal = gemini.get("vocal", {})
-            fb["verbalScore"] = verbal.get("score")
+            technical = gemini.get("technical", {})
             fb["verbalComment"] = verbal.get("comment")
-            fb["fillerWords"] = vocal.get("fillerWords", [])
+            filler_list = vocal.get("fillerWords", [])
+            fb["fillerWords"] = filler_list
+            fb["fillerWordCount"] = len(filler_list) if isinstance(filler_list, list) else 0
             fb["speechPace"] = vocal.get("speechPace")
-            fb["toneConfidence"] = vocal.get("toneConfidence")
+            fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
             fb["emotionLabel"] = vocal.get("emotionLabel")
             fb["vocalComment"] = vocal.get("comment")
+            fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
+            fb["coachingStructure"] = technical.get("coaching", {}).get("structure", "")
+            fb["coachingImprovement"] = technical.get("coaching", {}).get("improvement", "")
 
         if vision:
-            fb["eyeContactScore"] = vision.get("eye_contact_score")
-            fb["postureScore"] = vision.get("posture_score")
-            fb["expressionLabel"] = vision.get("expression_label")
+            fb["eyeContactLevel"] = vision.get("eyeContactLevel")
+            fb["postureLevel"] = vision.get("postureLevel")
+            fb["expressionLabel"] = vision.get("expressionLabel")
             fb["nonverbalComment"] = vision.get("comment")
 
         fb["overallComment"] = gemini.get("overallComment", "") if gemini else ""
@@ -289,12 +295,14 @@ def _run_legacy_pipeline(
 def _safe_gemini_audio(
     audio_path, question_text,
     position=None, tech_stack=None, level=None, model_answer=None,
+    feedback_perspective=None,
 ) -> dict | None:
     try:
         return analyze_answer_audio(
             audio_path, question_text,
             position=position, tech_stack=tech_stack,
             level=level, model_answer=model_answer,
+            feedback_perspective=feedback_perspective,
         )
     except Exception as e:
         print(f"[Analysis] Gemini 음성 분석 실패: {e}")
@@ -332,6 +340,7 @@ def _build_timestamp_feedbacks(
             question_text, transcript,
             position=position, tech_stack=tech_stack,
             level=level, model_answer=answer.get("modelAnswer"),
+            feedback_perspective=answer.get("feedbackPerspective", "TECHNICAL"),
         )
 
         fb = {
@@ -342,14 +351,21 @@ def _build_timestamp_feedbacks(
         }
 
         if verbal:
-            fb["verbalScore"] = verbal.get("verbal_score")
             fb["verbalComment"] = verbal.get("comment")
             fb["fillerWordCount"] = verbal.get("filler_word_count", 0)
+            fb["fillerWords"] = []
+            fb["speechPace"] = ""
+            fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
+            fb["emotionLabel"] = ""
+            fb["vocalComment"] = verbal.get("tone_comment", "")
+            fb["accuracyIssues"] = "[]"
+            fb["coachingStructure"] = ""
+            fb["coachingImprovement"] = ""
 
         if vision_result:
-            fb["eyeContactScore"] = vision_result.get("eye_contact_score")
-            fb["postureScore"] = vision_result.get("posture_score")
-            fb["expressionLabel"] = vision_result.get("expression_label")
+            fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
+            fb["postureLevel"] = vision_result.get("postureLevel")
+            fb["expressionLabel"] = vision_result.get("expressionLabel")
             fb["nonverbalComment"] = vision_result.get("comment")
 
         fb["overallComment"] = _build_overall_comment(verbal, vision_result)
@@ -371,35 +387,34 @@ def _extract_transcript_for_range(
     return " ".join(texts)
 
 
-def _compute_overall(feedbacks: list[dict]) -> tuple[int, str]:
-    verbal_scores = [f["verbalScore"] for f in feedbacks if f.get("verbalScore") is not None]
-    nonverbal_scores = []
-    for f in feedbacks:
-        scores = [s for s in [f.get("eyeContactScore"), f.get("postureScore")] if s is not None]
-        if scores:
-            nonverbal_scores.append(sum(scores) / len(scores))
-
-    avg_verbal = sum(verbal_scores) / len(verbal_scores) if verbal_scores else 50
-    avg_nonverbal = sum(nonverbal_scores) / len(nonverbal_scores) if nonverbal_scores else 50
-
-    overall = int(avg_verbal * 0.6 + avg_nonverbal * 0.4)
+def _compute_overall(feedbacks: list[dict]) -> str:
+    """라벨 기반 종합 코멘트를 생성한다."""
+    verbal_count = sum(1 for f in feedbacks if f.get("verbalComment"))
+    nonverbal_count = sum(1 for f in feedbacks if f.get("eyeContactLevel"))
+    total = len(feedbacks)
 
     parts = []
-    if verbal_scores:
-        parts.append(f"언어 분석 평균 {int(avg_verbal)}점")
-    if nonverbal_scores:
-        parts.append(f"비언어 분석 평균 {int(avg_nonverbal)}점")
-    parts.append(f"종합 {overall}점입니다.")
+    if verbal_count:
+        parts.append(f"언어 분석 {verbal_count}/{total}개 완료")
+    if nonverbal_count:
+        parts.append(f"비언어 분석 {nonverbal_count}/{total}개 완료")
 
-    comment = "전반적으로 " + ", ".join(parts)
-    if overall >= 80:
-        comment += " 좋은 면접 수행을 보여주셨습니다."
-    elif overall >= 60:
-        comment += " 몇 가지 개선 포인트가 있습니다."
-    else:
-        comment += " 연습을 통해 개선이 필요합니다."
+    if not parts:
+        return "분석 결과를 확인해주세요."
 
-    return overall, comment
+    comment = "전반적으로 " + ", ".join(parts) + "되었습니다."
+    return comment
+
+
+def _tone_label_to_level(tone_label: str | None) -> str:
+    """verbal_analyzer의 tone_label을 3단계 라벨로 변환한다."""
+    if tone_label in ("PROFESSIONAL", "CONFIDENT"):
+        return "GOOD"
+    if tone_label in ("CASUAL", "VERBOSE"):
+        return "AVERAGE"
+    if tone_label == "HESITANT":
+        return "NEEDS_IMPROVEMENT"
+    return "AVERAGE"
 
 
 def _build_overall_comment(verbal: dict | None, vision: dict | None) -> str:
@@ -436,12 +451,14 @@ def _safe_verbal(
     tech_stack: str | None = None,
     level: str | None = None,
     model_answer: str | None = None,
+    feedback_perspective: str | None = None,
 ) -> dict | None:
     try:
         return analyze_verbal(
             question_text, transcript,
             position=position, tech_stack=tech_stack,
             level=level, model_answer=model_answer,
+            feedback_perspective=feedback_perspective,
         )
     except Exception as e:
         print(f"[Analysis] Verbal 분석 실패: {e}")

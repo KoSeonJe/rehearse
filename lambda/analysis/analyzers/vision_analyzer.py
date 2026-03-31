@@ -15,24 +15,30 @@ RETRY_DELAY = 2
 _SYSTEM_PROMPT = KOREAN_INSTRUCTION + """면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
 
 ## 평가
-1. eye_contact_score(0-100): 90+=안정응시, 70+=간헐흐트러짐, 50+=자주딴곳, 30+=불안정, 0+=미응시
-2. posture_score(0-100): 90+=바른자세유지, 70+=간헐구부정, 50+=불안정/흔듦, 30+=지속구부정, 0+=부적절
-3. expression_label: CONFIDENT(자신감) | ENGAGED(몰입) | NEUTRAL(무표정) | NERVOUS(긴장) | UNCERTAIN(혼란)
+1. eyeContactLevel: GOOD(안정적 응시) | AVERAGE(간헐적 흐트러짐) | NEEDS_IMPROVEMENT(자주 딴 곳 응시/불안정)
+2. postureLevel: GOOD(바른 자세 유지) | AVERAGE(간헐적 구부정) | NEEDS_IMPROVEMENT(지속적 불안정/흔들림)
+3. expressionLabel: CONFIDENT(자신감) | ENGAGED(몰입) | NEUTRAL(무표정) | NERVOUS(긴장) | UNCERTAIN(혼란)
 
 ## 주의
 - 여러 프레임의 평균 경향 평가. 이상치에 과도한 가중치 금지.
-- 사람 미확인 시 점수 50, comment에 설명.
+- 사람 미확인 시 AVERAGE, comment에 설명.
 - 한국 면접 문화 고려(차분함 긍정적).
+
+## comment 작성 규칙
+반드시 아래 3줄 형식으로 작성:
+  ✓ {잘한 점 1문장}
+  △ {보완할 점 1문장}
+  → {구체적 개선 방법 1문장}
 
 ## 응답
 JSON만 응답:
-{"eye_contact_score":0,"posture_score":0,"expression_label":"","comment":"한국어 2-3문장"}"""
+{"eyeContactLevel":"","postureLevel":"","expressionLabel":"","comment":"한국어 3줄"}"""
 
 _FALLBACK = {
-    "eye_contact_score": 50,
-    "posture_score": 50,
-    "expression_label": "NEUTRAL",
-    "comment": "비언어 분석을 수행할 수 없어 기본값으로 설정되었습니다.",
+    "eyeContactLevel": "AVERAGE",
+    "postureLevel": "AVERAGE",
+    "expressionLabel": "NEUTRAL",
+    "comment": "✓ 분석 대상 확인됨\n△ 비언어 분석을 수행할 수 없어 기본값 설정\n→ 카메라가 얼굴을 잘 비추도록 조정해보세요",
 }
 
 
@@ -75,7 +81,7 @@ def analyze_frames(frame_paths: list[str]) -> dict:
 
             result = parse_llm_json(raw.strip())
             result = _validate_result(result)
-            print(f"[Vision] 분석 완료: eye={result.get('eye_contact_score')}, posture={result.get('posture_score')}")
+            print(f"[Vision] 분석 완료: eye={result.get('eyeContactLevel')}, posture={result.get('postureLevel')}")
             return result
 
         except AuthenticationError:
@@ -112,23 +118,24 @@ def _encode_image(path: str) -> str:
 
 
 def _validate_result(result: dict) -> dict:
-    validated = {}
-    validated["eye_contact_score"] = _clamp_int(result.get("eye_contact_score"), 0, 100, 50)
-    validated["posture_score"] = _clamp_int(result.get("posture_score"), 0, 100, 50)
-
-    label = result.get("expression_label", "NEUTRAL")
+    valid_levels = {"GOOD", "AVERAGE", "NEEDS_IMPROVEMENT"}
     valid_labels = {"CONFIDENT", "NERVOUS", "NEUTRAL", "ENGAGED", "UNCERTAIN"}
-    validated["expression_label"] = label if label in valid_labels else "NEUTRAL"
 
+    validated = {}
+    validated["eyeContactLevel"] = (
+        result.get("eyeContactLevel", "AVERAGE")
+        if result.get("eyeContactLevel") in valid_levels
+        else "AVERAGE"
+    )
+    validated["postureLevel"] = (
+        result.get("postureLevel", "AVERAGE")
+        if result.get("postureLevel") in valid_levels
+        else "AVERAGE"
+    )
+    validated["expressionLabel"] = (
+        result.get("expressionLabel", "NEUTRAL")
+        if result.get("expressionLabel") in valid_labels
+        else "NEUTRAL"
+    )
     validated["comment"] = result.get("comment") or _FALLBACK["comment"]
     return validated
-
-
-def _clamp_int(value, min_val: int, max_val: int, default: int) -> int:
-    if value is None:
-        return default
-    try:
-        v = int(value)
-        return max(min_val, min(max_val, v))
-    except (TypeError, ValueError):
-        return default

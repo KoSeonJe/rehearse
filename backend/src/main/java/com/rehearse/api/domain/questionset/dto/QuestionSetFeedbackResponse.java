@@ -12,7 +12,6 @@ import java.util.List;
 public class QuestionSetFeedbackResponse {
 
     private final Long id;
-    private final int questionSetScore;
     private final String questionSetComment;
     private final String streamingUrl;
     private final String fallbackUrl;
@@ -26,7 +25,6 @@ public class QuestionSetFeedbackResponse {
 
         return QuestionSetFeedbackResponse.builder()
                 .id(feedback.getId())
-                .questionSetScore(feedback.getQuestionSetScore())
                 .questionSetComment(feedback.getQuestionSetComment())
                 .streamingUrl(streamingUrl)
                 .fallbackUrl(fallbackUrl)

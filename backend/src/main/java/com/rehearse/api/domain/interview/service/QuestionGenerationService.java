@@ -9,6 +9,7 @@ import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.service.CacheableQuestionProvider;
 import com.rehearse.api.domain.questionpool.service.FreshQuestionProvider;
 import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.entity.FeedbackPerspective;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import jakarta.annotation.PreDestroy;
@@ -120,6 +121,7 @@ public class QuestionGenerationService {
                         .questionText(qp.getContent())
                         .modelAnswer(qp.getModelAnswer())
                         .referenceType(parseReferenceType(qp.getReferenceType()))
+                        .feedbackPerspective(determinePerspective(type))
                         .orderIndex(0)
                         .questionPool(qp)
                         .build();
@@ -156,11 +158,13 @@ public class QuestionGenerationService {
                     .orderIndex(0)
                     .build();
 
+            FeedbackPerspective perspective = parseFeedbackPerspective(gq.getQuestionCategory());
             Question question = Question.builder()
                     .questionType(QuestionType.MAIN)
                     .questionText(gq.getContent())
                     .modelAnswer(gq.getModelAnswer())
                     .referenceType(parseReferenceType(gq.getReferenceType()))
+                    .feedbackPerspective(perspective)
                     .orderIndex(0)
                     .build();
 
@@ -190,5 +194,20 @@ public class QuestionGenerationService {
             }
         }
         return ReferenceType.GUIDE;
+    }
+
+    private FeedbackPerspective determinePerspective(InterviewType type) {
+        return switch (type) {
+            case BEHAVIORAL -> FeedbackPerspective.BEHAVIORAL;
+            case RESUME_BASED -> FeedbackPerspective.EXPERIENCE;
+            default -> FeedbackPerspective.TECHNICAL;
+        };
+    }
+
+    private FeedbackPerspective parseFeedbackPerspective(String questionCategory) {
+        if ("RESUME".equalsIgnoreCase(questionCategory)) {
+            return FeedbackPerspective.EXPERIENCE;
+        }
+        return FeedbackPerspective.TECHNICAL;
     }
 }

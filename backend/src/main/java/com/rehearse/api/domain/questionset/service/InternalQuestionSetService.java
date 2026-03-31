@@ -89,7 +89,6 @@ public class InternalQuestionSetService {
 
         QuestionSetFeedback feedback = QuestionSetFeedback.builder()
                 .questionSet(questionSet)
-                .questionSetScore(request.getQuestionSetScore())
                 .questionSetComment(request.getQuestionSetComment())
                 .build();
 
@@ -109,20 +108,22 @@ public class InternalQuestionSetService {
                         .startMs(item.getStartMs())
                         .endMs(item.getEndMs())
                         .transcript(item.getTranscript())
-                        .verbalScore(item.getVerbalScore())
                         .verbalComment(item.getVerbalComment())
                         .fillerWordCount(item.getFillerWordCount())
-                        .eyeContactScore(item.getEyeContactScore())
-                        .postureScore(item.getPostureScore())
+                        .eyeContactLevel(item.getEyeContactLevel())
+                        .postureLevel(item.getPostureLevel())
                         .expressionLabel(item.getExpressionLabel())
                         .nonverbalComment(item.getNonverbalComment())
                         .overallComment(item.getOverallComment())
                         .isAnalyzed(true)
                         .fillerWords(toJson(item.getFillerWords()))
                         .speechPace(item.getSpeechPace())
-                        .toneConfidence(item.getToneConfidence())
+                        .toneConfidenceLevel(item.getToneConfidenceLevel())
                         .emotionLabel(item.getEmotionLabel())
                         .vocalComment(item.getVocalComment())
+                        .accuracyIssues(item.getAccuracyIssues())
+                        .coachingStructure(item.getCoachingStructure())
+                        .coachingImprovement(item.getCoachingImprovement())
                         .build();
                 feedback.addTimestampFeedback(tf);
             }
@@ -134,9 +135,8 @@ public class InternalQuestionSetService {
                 request.isNonverbalCompleted()
         );
 
-        log.info("분석 결과 저장 완료: questionSetId={}, score={}, verbal={}, nonverbal={}",
-                questionSetId, request.getQuestionSetScore(),
-                request.isVerbalCompleted(), request.isNonverbalCompleted());
+        log.info("분석 결과 저장 완료: questionSetId={}, verbal={}, nonverbal={}",
+                questionSetId, request.isVerbalCompleted(), request.isNonverbalCompleted());
     }
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))

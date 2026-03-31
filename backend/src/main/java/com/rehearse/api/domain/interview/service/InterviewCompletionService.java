@@ -5,8 +5,6 @@ import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
-import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +21,6 @@ public class InterviewCompletionService {
 
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
-    private final QuestionSetFeedbackRepository feedbackRepository;
 
     @Scheduled(fixedDelay = 30_000)
     @Transactional
@@ -46,12 +43,11 @@ public class InterviewCompletionService {
                     continue;
                 }
 
-                List<Integer> scores = extractScores(questionSets);
-                freshInterview.completeWithScores(scores, summary.toComment());
+                freshInterview.completeWithComment(summary.toComment());
                 freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
-                log.info("면접 완료 처리: interviewId={}, scores={}, completed={}, partial={}, skipped={}",
-                        interviewId, scores, summary.completed, summary.partial, summary.skipped);
+                log.info("면접 완료 처리: interviewId={}, completed={}, partial={}, skipped={}",
+                        interviewId, summary.completed, summary.partial, summary.skipped);
             }
         }
     }
@@ -86,14 +82,4 @@ public class InterviewCompletionService {
         return new CompletionSummary(questionSets.size(), completed, partial, skipped);
     }
 
-    private List<Integer> extractScores(List<QuestionSet> questionSets) {
-        List<Long> questionSetIds = questionSets.stream()
-                .filter(qs -> qs.getEffectiveAnalysisStatus().hasAnalysisResult())
-                .map(QuestionSet::getId)
-                .toList();
-
-        return feedbackRepository.findByQuestionSetIdIn(questionSetIds).stream()
-                .map(QuestionSetFeedback::getQuestionSetScore)
-                .toList();
-    }
 }

@@ -125,25 +125,43 @@ export interface QuestionsWithAnswersResponse {
 
 // 피드백 뷰어 타입 (Sprint 0 Task 10)
 
-export interface TechnicalFeedback {
-  verbalScore: number | null
+export type FeedbackLevel = 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT'
+
+export interface AccuracyIssue {
+  claim: string
+  correction: string
+}
+
+export interface CoachingResponse {
+  structure: string | null
+  improvement: string | null
+}
+
+export interface ContentFeedback {
   verbalComment: string | null
-  fillerWordCount: number | null
+  accuracyIssues: AccuracyIssue[]
+  coaching: CoachingResponse | null
 }
 
 export interface NonverbalFeedback {
-  eyeContactScore: number | null
-  postureScore: number | null
+  eyeContactLevel: FeedbackLevel | null
+  postureLevel: FeedbackLevel | null
   expressionLabel: string | null
   nonverbalComment: string | null
 }
 
 export interface VocalFeedback {
   fillerWords: string | null
+  fillerWordCount: number | null
   speechPace: string | null
-  toneConfidence: number | null
+  toneConfidenceLevel: FeedbackLevel | null
   emotionLabel: string | null
   vocalComment: string | null
+}
+
+export interface DeliveryFeedback {
+  nonverbal: NonverbalFeedback | null
+  vocal: VocalFeedback | null
 }
 
 export interface TimestampFeedback {
@@ -155,15 +173,13 @@ export interface TimestampFeedback {
   startMs: number
   endMs: number
   transcript: string | null
-  technical: TechnicalFeedback | null
-  nonverbal: NonverbalFeedback | null
-  vocal: VocalFeedback | null
+  content: ContentFeedback | null
+  delivery: DeliveryFeedback | null
   isAnalyzed: boolean
 }
 
 export interface QuestionSetFeedbackResponse {
   id: number
-  questionSetScore: number
   questionSetComment: string
   streamingUrl: string | null
   fallbackUrl: string | null

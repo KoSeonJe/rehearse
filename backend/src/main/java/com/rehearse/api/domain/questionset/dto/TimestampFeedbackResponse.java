@@ -1,13 +1,20 @@
 package com.rehearse.api.domain.questionset.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @Builder
 public class TimestampFeedbackResponse {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final Long id;
     private final Long questionId;
@@ -17,24 +24,45 @@ public class TimestampFeedbackResponse {
     private final long startMs;
     private final long endMs;
     private final String transcript;
-    private final TechnicalFeedback technical;
-    private final NonverbalFeedback nonverbal;
-    private final VocalFeedback vocal;
+    private final ContentFeedback content;
+    private final DeliveryFeedback delivery;
+    @JsonProperty("isAnalyzed")
     private final boolean isAnalyzed;
 
     @Getter
     @Builder
-    public static class TechnicalFeedback {
-        private final Integer verbalScore;
+    public static class ContentFeedback {
         private final String verbalComment;
-        private final Integer fillerWordCount;
+        private final List<AccuracyIssue> accuracyIssues;
+        private final CoachingResponse coaching;
+    }
+
+    @Getter
+    @Builder
+    public static class AccuracyIssue {
+        private final String claim;
+        private final String correction;
+    }
+
+    @Getter
+    @Builder
+    public static class CoachingResponse {
+        private final String structure;
+        private final String improvement;
+    }
+
+    @Getter
+    @Builder
+    public static class DeliveryFeedback {
+        private final NonverbalFeedback nonverbal;
+        private final VocalFeedback vocal;
     }
 
     @Getter
     @Builder
     public static class NonverbalFeedback {
-        private final Integer eyeContactScore;
-        private final Integer postureScore;
+        private final String eyeContactLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String postureLevel;
         private final String expressionLabel;
         private final String nonverbalComment;
     }
@@ -42,35 +70,49 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class VocalFeedback {
-        private final String fillerWords;       // JSON 배열 문자열 (프론트에서 파싱)
-        private final String speechPace;        // "빠름" / "적절" / "느림"
-        private final Integer toneConfidence;   // 0-100
-        private final String emotionLabel;      // "자신감" / "긴장" / "평온" / "불안"
+        private final String fillerWords;           // JSON 배열 문자열
+        private final Integer fillerWordCount;
+        private final String speechPace;
+        private final String toneConfidenceLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String emotionLabel;
         private final String vocalComment;
     }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
         Question question = feedback.getQuestion();
 
-        TechnicalFeedback technical = TechnicalFeedback.builder()
-                .verbalScore(feedback.getVerbalScore())
+        List<AccuracyIssue> accuracyIssues = parseAccuracyIssues(feedback.getAccuracyIssues());
+
+        CoachingResponse coaching = CoachingResponse.builder()
+                .structure(feedback.getCoachingStructure())
+                .improvement(feedback.getCoachingImprovement())
+                .build();
+
+        ContentFeedback content = ContentFeedback.builder()
                 .verbalComment(feedback.getVerbalComment())
-                .fillerWordCount(feedback.getFillerWordCount())
+                .accuracyIssues(accuracyIssues)
+                .coaching(coaching)
                 .build();
 
         NonverbalFeedback nonverbal = NonverbalFeedback.builder()
-                .eyeContactScore(feedback.getEyeContactScore())
-                .postureScore(feedback.getPostureScore())
+                .eyeContactLevel(feedback.getEyeContactLevel())
+                .postureLevel(feedback.getPostureLevel())
                 .expressionLabel(feedback.getExpressionLabel())
                 .nonverbalComment(feedback.getNonverbalComment())
                 .build();
 
         VocalFeedback vocal = VocalFeedback.builder()
                 .fillerWords(feedback.getFillerWords())
+                .fillerWordCount(feedback.getFillerWordCount())
                 .speechPace(feedback.getSpeechPace())
-                .toneConfidence(feedback.getToneConfidence())
+                .toneConfidenceLevel(feedback.getToneConfidenceLevel())
                 .emotionLabel(feedback.getEmotionLabel())
                 .vocalComment(feedback.getVocalComment())
+                .build();
+
+        DeliveryFeedback delivery = DeliveryFeedback.builder()
+                .nonverbal(nonverbal)
+                .vocal(vocal)
                 .build();
 
         return TimestampFeedbackResponse.builder()
@@ -82,10 +124,20 @@ public class TimestampFeedbackResponse {
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
-                .technical(technical)
-                .nonverbal(nonverbal)
-                .vocal(vocal)
+                .content(content)
+                .delivery(delivery)
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
+    }
+
+    private static List<AccuracyIssue> parseAccuracyIssues(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

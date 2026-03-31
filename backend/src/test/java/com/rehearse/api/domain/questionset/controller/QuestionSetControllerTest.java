@@ -146,7 +146,6 @@ class QuestionSetControllerTest {
     void getFeedback_success() throws Exception {
         QuestionSetFeedbackResponse response = QuestionSetFeedbackResponse.builder()
                 .id(50L)
-                .questionSetScore(85)
                 .questionSetComment("전반적으로 좋은 답변입니다.")
                 .streamingUrl("https://s3.example.com/streaming")
                 .fallbackUrl("https://s3.example.com/fallback")
@@ -158,7 +157,7 @@ class QuestionSetControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.id").value(50))
-                .andExpect(jsonPath("$.data.questionSetScore").value(85))
+                .andExpect(jsonPath("$.data.questionSetComment").value("전반적으로 좋은 답변입니다."))
                 .andExpect(jsonPath("$.data.streamingUrl").value("https://s3.example.com/streaming"));
     }
 

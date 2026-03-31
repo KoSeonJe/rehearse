@@ -13,9 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 public class SaveFeedbackRequest {
 
-    @NotNull(message = "점수는 필수입니다.")
-    private Integer questionSetScore;
-
     @NotBlank(message = "코멘트는 필수입니다.")
     private String questionSetComment;
 
@@ -35,20 +32,26 @@ public class SaveFeedbackRequest {
         @NotNull private Long startMs;
         @NotNull private Long endMs;
         private String transcript;
-        private Integer verbalScore;
         private String verbalComment;
         private Integer fillerWordCount;
-        private Integer eyeContactScore;
-        private Integer postureScore;
         private String expressionLabel;
         private String nonverbalComment;
         private String overallComment;
 
-        // Gemini 네이티브 오디오 분석 음성 특성 필드 (nullable — 기존 API 호환)
+        // 3단계 라벨 (GOOD / AVERAGE / NEEDS_IMPROVEMENT)
+        private String eyeContactLevel;
+        private String postureLevel;
+        private String toneConfidenceLevel;
+
+        // 음성 특성
         private List<String> fillerWords;
         private String speechPace;
-        private Integer toneConfidence;
         private String emotionLabel;
         private String vocalComment;
+
+        // 기술 피드백
+        private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
+        private String coachingStructure;
+        private String coachingImprovement;
     }
 }

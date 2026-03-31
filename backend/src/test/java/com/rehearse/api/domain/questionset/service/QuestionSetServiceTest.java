@@ -194,7 +194,6 @@ class QuestionSetServiceTest {
 
         QuestionSetFeedback feedback = QuestionSetFeedback.builder()
                 .questionSet(questionSet)
-                .questionSetScore(85)
                 .questionSetComment("전반적으로 좋은 답변입니다.")
                 .build();
         ReflectionTestUtils.setField(feedback, "id", 50L);
@@ -212,7 +211,7 @@ class QuestionSetServiceTest {
 
         // then
         assertThat(response.getId()).isEqualTo(50L);
-        assertThat(response.getQuestionSetScore()).isEqualTo(85);
+        assertThat(response.getQuestionSetComment()).isEqualTo("전반적으로 좋은 답변입니다.");
         assertThat(response.getStreamingUrl()).isEqualTo("https://s3.example.com/streaming");
         assertThat(response.getFallbackUrl()).isEqualTo("https://s3.example.com/fallback");
     }
