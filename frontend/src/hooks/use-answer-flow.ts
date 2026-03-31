@@ -103,50 +103,55 @@ export const useAnswerFlow = ({
   }, [])
 
   // 질문세트 완료 시 업로드 파이프라인 (백그라운드)
-  const handleQuestionSetComplete = useCallback(async (questionSetId: number) => {
-    if (!interview || !mediaStream.stream) return
+  // 반환값: recorder.restart() 직후 타임스탬프 (세트 전환 시 타임라인 기준점)
+  const handleQuestionSetComplete = useCallback(async (questionSetId: number): Promise<number | undefined> => {
+    if (!interview || !mediaStream.stream) return undefined
 
     const state = useInterviewStore.getState()
     const isLastSet = state.currentQuestionSetIndex >= state.questionSets.length - 1
 
-    // 1. recorder stop → blob
+    // 1. recorder stop/restart → blob + 타임스탬프 캡처
     let blob: Blob
+    let restartTimestamp: number | undefined
     if (isLastSet) {
       blob = await recorder.stop()
     } else {
       blob = await recorder.restart(mediaStream.stream)
+      restartTimestamp = Date.now()
     }
 
-    // 2. IndexedDB 폴백 저장
-    await saveVideoBlob(interview.id, blob, questionSetId).catch(() => {})
+    // 2. 이하 업로드 로직은 백그라운드 실행 (즉시 반환하여 세트 전환 블로킹 방지)
+    const uploadAsync = async () => {
+      await saveVideoBlob(interview.id, blob, questionSetId).catch(() => {})
 
-    // 3. 답변 타임스탬프 저장
-    const answers = state.questionSetAnswers.get(questionSetId) ?? []
-    if (answers.length > 0) {
+      const answers = state.questionSetAnswers.get(questionSetId) ?? []
+      if (answers.length > 0) {
+        try {
+          await apiClient.post(
+            `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/answers`,
+            { answers },
+          )
+        } catch {
+          // 답변 저장 실패 시에도 업로드는 시도
+        }
+      }
+
+      setUploadStatus(questionSetId, 'uploading')
       try {
-        await apiClient.post(
-          `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/answers`,
-          { answers },
+        const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+          `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/upload-url`,
+          { contentType: blob.type || 'video/webm' },
         )
+        await s3Upload.upload(blob, urlRes.data.uploadUrl)
+        setUploadStatus(questionSetId, 'completed')
+        deleteVideoBlob(interview.id, questionSetId).catch(() => {})
       } catch {
-        // 답변 저장 실패 시에도 업로드는 시도
+        setUploadStatus(questionSetId, 'failed')
       }
     }
+    uploadAsync().catch((err) => console.error('[S3 업로드] 업로드 실패:', err))
 
-    // 4. Presigned URL 발급 + S3 업로드
-    setUploadStatus(questionSetId, 'uploading')
-    try {
-      const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
-        `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/upload-url`,
-        { contentType: blob.type || 'video/webm' },
-      )
-      await s3Upload.upload(blob, urlRes.data.uploadUrl)
-      setUploadStatus(questionSetId, 'completed')
-      // 업로드 성공 시 IndexedDB 임시 데이터 정리
-      deleteVideoBlob(interview.id, questionSetId).catch(() => {})
-    } catch {
-      setUploadStatus(questionSetId, 'failed')
-    }
+    return restartTimestamp
   }, [interview, mediaStream.stream, recorder, s3Upload, setUploadStatus])
 
   // 질문세트 내 마지막 질문인지 확인
@@ -187,10 +192,16 @@ export const useAnswerFlow = ({
       // 질문세트 전환
       const currentSet = state.questionSets[state.currentQuestionSetIndex]
       pendingTtsActionRef.current = async () => {
-        handleQuestionSetComplete(currentSet.id).catch((err: unknown) => {
-          console.error('[S3 업로드] 질문세트 업로드 실패:', err)
-        })
+        let restartTime: number | undefined
+        try {
+          restartTime = await handleQuestionSetComplete(currentSet.id)
+        } catch (err) {
+          console.error('[S3 업로드] 질문세트 완료 처리 실패:', err)
+        }
         nextQuestionSet()
+        if (restartTime !== undefined) {
+          setQuestionSetRecordingStartTime(restartTime)
+        }
         nextQuestion()
       }
       tts.speak(pickRandom(SET_TRANSITION_PHRASES))
