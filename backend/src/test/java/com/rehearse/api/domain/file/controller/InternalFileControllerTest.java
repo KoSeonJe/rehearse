@@ -6,12 +6,16 @@ import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.exception.FileErrorCode;
 import com.rehearse.api.domain.file.service.InternalFileService;
+import com.rehearse.api.global.config.InternalApiKeyFilter;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.security.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,7 +31,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(InternalFileController.class)
+@WebMvcTest(value = InternalFileController.class,
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, InternalApiKeyFilter.class}))
 @Import(TestSecurityConfig.class)
 class InternalFileControllerTest {
 

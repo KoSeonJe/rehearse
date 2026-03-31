@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.questionset.controller;
 
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.dto.*;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
@@ -8,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,59 +19,72 @@ public class QuestionSetController {
 
     private final QuestionSetService questionSetService;
     private final InternalQuestionSetService internalQuestionSetService;
+    private final InterviewFinder interviewFinder;
 
     @PostMapping("/answers")
     public ResponseEntity<ApiResponse<Void>> saveAnswers(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId,
             @Valid @RequestBody SaveAnswersRequest request) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         questionSetService.saveAnswers(questionSetId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(null));
     }
 
     @PostMapping("/upload-url")
     public ResponseEntity<ApiResponse<UploadUrlResponse>> generateUploadUrl(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId,
             @Valid @RequestBody UploadUrlRequest request) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         UploadUrlResponse response = questionSetService.generateUploadUrl(interviewId, questionSetId, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/status")
     public ResponseEntity<ApiResponse<QuestionSetStatusResponse>> getStatus(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         QuestionSetStatusResponse response = questionSetService.getStatus(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/feedback")
     public ResponseEntity<ApiResponse<QuestionSetFeedbackResponse>> getFeedback(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         QuestionSetFeedbackResponse response = questionSetService.getFeedback(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/questions-with-answers")
     public ResponseEntity<ApiResponse<QuestionsWithAnswersResponse>> getQuestionsWithAnswers(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping("/retry-analysis")
     public ResponseEntity<ApiResponse<Void>> retryAnalysis(
+            @AuthenticationPrincipal Long userId,
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
+        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
         internalQuestionSetService.retryAnalysis(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }

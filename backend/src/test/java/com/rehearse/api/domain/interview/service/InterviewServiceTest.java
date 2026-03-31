@@ -53,12 +53,12 @@ class InterviewServiceTest {
     void updateStatus_readyToInProgress() {
         Interview interview = createMockInterview();
         interview.completeQuestionGeneration();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        UpdateStatusResponse response = interviewService.updateStatus(1L, request);
+        UpdateStatusResponse response = interviewService.updateStatus(1L, 1L, request);
 
         assertThat(response.getId()).isEqualTo(1L);
         assertThat(response.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
@@ -68,12 +68,12 @@ class InterviewServiceTest {
     @DisplayName("질문 생성 미완료 시 IN_PROGRESS 전환 실패")
     void updateStatus_questionGenerationNotCompleted() {
         Interview interview = createMockInterview(); // PENDING 상태
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        assertThatThrownBy(() -> interviewService.updateStatus(1L, request))
+        assertThatThrownBy(() -> interviewService.updateStatus(1L, 1L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -84,13 +84,13 @@ class InterviewServiceTest {
     @Test
     @DisplayName("존재하지 않는 면접 세션 상태 변경 시 BusinessException이 발생한다")
     void updateStatus_notFound() {
-        given(interviewFinder.findById(999L))
+        given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
 
-        assertThatThrownBy(() -> interviewService.updateStatus(999L, request))
+        assertThatThrownBy(() -> interviewService.updateStatus(999L, 1L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -104,12 +104,12 @@ class InterviewServiceTest {
     void updateStatus_invalidTransition() {
         Interview interview = createMockInterview();
         interview.completeQuestionGeneration();
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
         UpdateStatusRequest request = new UpdateStatusRequest();
         ReflectionTestUtils.setField(request, "status", InterviewStatus.COMPLETED);
 
-        assertThatThrownBy(() -> interviewService.updateStatus(1L, request))
+        assertThatThrownBy(() -> interviewService.updateStatus(1L, 1L, request))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;
@@ -123,10 +123,10 @@ class InterviewServiceTest {
     void retryQuestionGeneration_success() {
         Interview interview = createMockInterview();
         interview.failQuestionGeneration("Claude API timeout");
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
         given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
 
-        InterviewResponse response = interviewService.retryQuestionGeneration(1L);
+        InterviewResponse response = interviewService.retryQuestionGeneration(1L, 1L);
 
         assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
         assertThat(response.getFailureReason()).isNull();
@@ -137,9 +137,9 @@ class InterviewServiceTest {
     @DisplayName("FAILED가 아닌 상태에서 재시도 시 예외 발생")
     void retryQuestionGeneration_notFailed() {
         Interview interview = createMockInterview(); // PENDING
-        given(interviewFinder.findById(1L)).willReturn(interview);
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
-        assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L))
+        assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L, 1L))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> {
                     BusinessException be = (BusinessException) ex;

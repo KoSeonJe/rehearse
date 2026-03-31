@@ -27,13 +27,13 @@ public class FollowUpService {
     private final FollowUpTransactionHandler followUpTransactionHandler;
 
     @Transactional(propagation = NOT_SUPPORTED)
-    public FollowUpResponse generateFollowUp(Long id, FollowUpRequest request, MultipartFile audioFile) {
+    public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
         if (audioFile == null || audioFile.isEmpty()) {
             throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
         }
 
         // Phase 1: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
-        FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, request.getQuestionSetId());
+        FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
         // Phase 2: GPT-audio 호출 — STT + 후속질문 한 번에 (트랜잭션 없음)
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(

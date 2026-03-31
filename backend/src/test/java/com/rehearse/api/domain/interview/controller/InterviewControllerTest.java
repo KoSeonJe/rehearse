@@ -7,13 +7,18 @@ import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
+import com.rehearse.api.global.config.InternalApiKeyFilter;
+import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.security.config.SecurityConfig;
+import com.rehearse.api.global.support.WithMockUserId;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import com.rehearse.api.global.config.TestSecurityConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
@@ -31,8 +36,11 @@ import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(InterviewController.class)
+@WebMvcTest(value = InterviewController.class,
+        excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
+                classes = {SecurityConfig.class, InternalApiKeyFilter.class}))
 @Import(TestSecurityConfig.class)
+@WithMockUserId
 class InterviewControllerTest {
 
     @Autowired
@@ -60,7 +68,7 @@ class InterviewControllerTest {
     @DisplayName("POST /api/v1/interviews - 면접 세션 생성 성공 (201)")
     void createInterview_success() throws Exception {
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewCreationService.createInterview(any(), any())).willReturn(response);
+        given(interviewCreationService.createInterview(any(), any(), any())).willReturn(response);
 
         String requestJson = """
                 {
@@ -130,7 +138,7 @@ class InterviewControllerTest {
     @DisplayName("GET /api/v1/interviews/{id} - 조회 성공 (200)")
     void getInterview_success() throws Exception {
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewQueryService.getInterview(1L)).willReturn(response);
+        given(interviewQueryService.getInterview(eq(1L), any())).willReturn(response);
 
         mockMvc.perform(get("/api/v1/interviews/1"))
                 .andExpect(status().isOk())
@@ -142,7 +150,7 @@ class InterviewControllerTest {
     @Test
     @DisplayName("GET /api/v1/interviews/{id} - 존재하지 않는 세션 404")
     void getInterview_notFound() throws Exception {
-        given(interviewQueryService.getInterview(999L))
+        given(interviewQueryService.getInterview(eq(999L), any()))
                 .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
         mockMvc.perform(get("/api/v1/interviews/999"))
@@ -154,7 +162,7 @@ class InterviewControllerTest {
     @DisplayName("PATCH /api/v1/interviews/{id}/status - 상태 변경 성공 (200)")
     void updateStatus_success() throws Exception {
         UpdateStatusResponse response = UpdateStatusResponse.builder().id(1L).status(InterviewStatus.IN_PROGRESS).build();
-        given(interviewService.updateStatus(eq(1L), any())).willReturn(response);
+        given(interviewService.updateStatus(eq(1L), any(), any())).willReturn(response);
 
         String requestBody = """
                 {
@@ -174,7 +182,7 @@ class InterviewControllerTest {
     @Test
     @DisplayName("PATCH /api/v1/interviews/{id}/status - 잘못된 상태 전이 409")
     void updateStatus_invalidTransition() throws Exception {
-        given(interviewService.updateStatus(eq(1L), any()))
+        given(interviewService.updateStatus(eq(1L), any(), any()))
                 .willThrow(new BusinessException(HttpStatus.CONFLICT, "INTERVIEW_002", "잘못된 상태 전이입니다."));
 
         String requestBody = """
@@ -225,7 +233,7 @@ class InterviewControllerTest {
     @DisplayName("POST /api/v1/interviews/{id}/retry-questions - 재시도 성공 (200)")
     void retryQuestionGeneration_success() throws Exception {
         InterviewResponse response = createMockInterviewResponse();
-        given(interviewService.retryQuestionGeneration(1L)).willReturn(response);
+        given(interviewService.retryQuestionGeneration(eq(1L), any())).willReturn(response);
 
         mockMvc.perform(post("/api/v1/interviews/1/retry-questions"))
                 .andExpect(status().isOk())

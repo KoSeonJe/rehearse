@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -29,6 +31,9 @@ public class Interview {
 
     @Column(nullable = false, unique = true, updatable = false, length = 36)
     private String publicId;
+
+    @Column(name = "user_id")
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -89,9 +94,10 @@ public class Interview {
     }
 
     @Builder
-    public Interview(Position position, String positionDetail, InterviewLevel level,
+    public Interview(Long userId, Position position, String positionDetail, InterviewLevel level,
                      List<InterviewType> interviewTypes, List<String> csSubTopics,
                      Integer durationMinutes, TechStack techStack) {
+        this.userId = userId;
         this.position = position;
         this.positionDetail = positionDetail;
         this.level = level;
@@ -140,6 +146,12 @@ public class Interview {
                     String.format("상태를 %s에서 %s로 변경할 수 없습니다.", this.status, newStatus));
         }
         this.status = newStatus;
+    }
+
+    public void validateOwner(Long userId) {
+        if (this.userId != null && !this.userId.equals(userId)) {
+            throw new BusinessException(InterviewErrorCode.FORBIDDEN);
+        }
     }
 
     public void completeWithComment(String comment) {

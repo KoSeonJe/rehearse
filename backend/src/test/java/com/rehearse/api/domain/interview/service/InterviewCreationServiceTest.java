@@ -55,7 +55,7 @@ class InterviewCreationServiceTest {
                 });
 
         // when
-        InterviewResponse response = interviewCreationService.createInterview(request, null);
+        InterviewResponse response = interviewCreationService.createInterview(1L, request, null);
 
         // then
         assertThat(response.getId()).isEqualTo(1L);
