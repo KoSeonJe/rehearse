@@ -4,10 +4,20 @@ import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.domain.user.service.UserService;
+import com.rehearse.api.global.config.InternalApiKeyFilter;
+import com.rehearse.api.global.security.config.SecurityConfig;
+import com.rehearse.api.global.security.jwt.JwtTokenProvider;
+import com.rehearse.api.global.security.oauth2.CustomOAuth2UserService;
+import com.rehearse.api.global.security.oauth2.OAuth2FailureHandler;
+import com.rehearse.api.global.security.oauth2.OAuth2SuccessHandler;
 import org.junit.jupiter.api.DisplayName;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.context.annotation.Import;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -23,7 +33,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(AuthController.class)
+@WebMvcTest(
+    controllers = AuthController.class,
+    excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE, classes = InternalApiKeyFilter.class)
+)
+@Import(SecurityConfig.class)
 class AuthControllerTest {
 
     @Autowired
@@ -31,6 +45,21 @@ class AuthControllerTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @MockitoBean
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @MockitoBean
+    private OAuth2FailureHandler oAuth2FailureHandler;
+
+    @MockitoBean
+    private JwtTokenProvider jwtTokenProvider;
+
+    @MockitoBean
+    private ClientRegistrationRepository clientRegistrationRepository;
 
     private User createMockUser() {
         User user = User.builder()
@@ -70,13 +99,11 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/auth/me - 인증되지 않으면 인증 오류를 반환한다")
-    void getMe_unauthenticated_returnsAuthError() throws Exception {
-        // @WebMvcTest 기본 Security: 인증 없는 요청 → 403
-        // 실제 운영 SecurityConfig(permitAll + controller null 체크) → 401
-        // 둘 다 비인증 접근 차단이므로 4xx 검증
+    @DisplayName("GET /api/v1/auth/me - 인증되지 않으면 401을 반환한다")
+    void getMe_unauthenticated_returns401() throws Exception {
+        // SecurityConfig에서 /api/v1/auth/** permitAll → 컨트롤러 도달 → userId null → 401
         mockMvc.perform(get("/api/v1/auth/me"))
-                .andExpect(status().is4xxClientError());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
