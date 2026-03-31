@@ -37,23 +37,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         Cookie cookie = new Cookie("rehearse_token", token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(request.isSecure()); // HTTP 환경에서도 작동하도록 동적 설정
         cookie.setPath("/");
         cookie.setMaxAge(7 * 24 * 60 * 60);
         cookie.setAttribute("SameSite", "Lax");
         response.addCookie(cookie);
 
-        String redirectUrl = resolveRedirectUrl(request);
-        log.info("OAuth2 인증 성공, 리다이렉트: {}", redirectUrl);
-        getRedirectStrategy().sendRedirect(request, response, redirectUrl);
-    }
-
-    private String resolveRedirectUrl(HttpServletRequest request) {
-        String redirect = request.getParameter("redirect");
-        if (redirect != null && !redirect.isBlank()
-                && redirect.startsWith("/") && !redirect.startsWith("//")) {
-            return frontendUrl + redirect;
-        }
-        return frontendUrl + "/";
+        log.info("OAuth2 인증 성공, 프론트엔드로 리다이렉트: {}", frontendUrl);
+        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/");
     }
 }
