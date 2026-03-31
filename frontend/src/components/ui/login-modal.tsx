@@ -18,18 +18,21 @@ export const LoginModal = () => {
 
   if (!showLoginModal) return null
 
-  const redirect = redirectAfterLogin ?? '/interview/setup'
+  const redirect = redirectAfterLogin ?? '/'
 
   const handleGithubLogin = () => {
+    localStorage.setItem('oauth_redirect', redirect)
     window.location.href = `${API_URL}/oauth2/authorization/github?redirect=${encodeURIComponent(redirect)}`
   }
 
   const handleGoogleLogin = () => {
+    localStorage.setItem('oauth_redirect', redirect)
     window.location.href = `${API_URL}/oauth2/authorization/google?redirect=${encodeURIComponent(redirect)}`
   }
 
   const handleClose = () => {
     closeLoginModal()
+    localStorage.removeItem('oauth_redirect')
     navigate('/', { replace: true })
   }
 

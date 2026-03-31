@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { HomePage } from '@/pages/home-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
 import { InterviewReadyPage } from '@/pages/interview-ready-page'
@@ -9,6 +10,8 @@ import { ProtectedRoute } from '@/components/ui/protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
 
 export const App = () => {
+  usePostLoginRedirect()
+
   return (
     <>
       <Routes>
