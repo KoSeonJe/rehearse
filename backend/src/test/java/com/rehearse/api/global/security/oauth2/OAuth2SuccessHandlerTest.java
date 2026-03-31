@@ -75,7 +75,7 @@ class OAuth2SuccessHandlerTest {
     }
 
     @Test
-    @DisplayName("OAuth2 인증 성공 시 기본 리다이렉트 URL은 /interview/setup이다")
+    @DisplayName("OAuth2 인증 성공 시 기본 리다이렉트 URL은 /이다")
     void onAuthenticationSuccess_defaultRedirect() throws Exception {
         // given
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
@@ -88,7 +88,7 @@ class OAuth2SuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         // then
-        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/interview/setup");
+        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/");
     }
 
     @Test
@@ -124,7 +124,7 @@ class OAuth2SuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         // then
-        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/interview/setup");
+        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/");
     }
 
     @Test
@@ -142,6 +142,6 @@ class OAuth2SuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         // then
-        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/interview/setup");
+        assertThat(response.getRedirectedUrl()).isEqualTo(FRONTEND_URL + "/");
     }
 }

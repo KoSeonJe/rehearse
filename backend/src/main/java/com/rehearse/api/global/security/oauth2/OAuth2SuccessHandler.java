@@ -54,6 +54,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 && redirect.startsWith("/") && !redirect.startsWith("//")) {
             return frontendUrl + redirect;
         }
-        return frontendUrl + "/interview/setup";
+        return frontendUrl + "/";
     }
 }
