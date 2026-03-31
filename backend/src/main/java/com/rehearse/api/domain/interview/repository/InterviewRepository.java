@@ -2,11 +2,14 @@ package com.rehearse.api.domain.interview.repository;
 
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,4 +22,26 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     List<Interview> findByStatus(InterviewStatus status);
 
     Optional<Interview> findByPublicId(String publicId);
+
+    @Query(value = "SELECT i FROM Interview i WHERE i.userId = :userId ORDER BY i.createdAt DESC",
+            countQuery = "SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId")
+    Page<Interview> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+            SELECT qs.interview.id, COUNT(q)
+            FROM QuestionSet qs
+            JOIN qs.questions q
+            WHERE qs.interview.id IN :interviewIds
+            GROUP BY qs.interview.id
+            """)
+    List<Object[]> countQuestionsByInterviewIds(@Param("interviewIds") List<Long> interviewIds);
+
+    @Query("SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId")
+    long countByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId AND i.status = :status")
+    long countByUserIdAndStatus(@Param("userId") Long userId, @Param("status") InterviewStatus status);
+
+    @Query("SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId AND i.createdAt >= :from")
+    long countByUserIdAndCreatedAtAfter(@Param("userId") Long userId, @Param("from") LocalDateTime from);
 }

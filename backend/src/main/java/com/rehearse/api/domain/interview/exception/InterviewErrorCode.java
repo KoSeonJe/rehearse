@@ -15,7 +15,8 @@ public enum InterviewErrorCode implements ErrorCode {
     QUESTION_GENERATION_NOT_FAILED(HttpStatus.CONFLICT, "INTERVIEW_005", "실패 상태의 질문 생성만 재시도할 수 있습니다."),
     ANSWER_TEXT_REQUIRED(HttpStatus.BAD_REQUEST, "INTERVIEW_006", "답변 텍스트 또는 오디오 파일이 필요합니다."),
     INVALID_TECH_STACK(HttpStatus.BAD_REQUEST, "INTERVIEW_007", "해당 직무에서 지원하지 않는 기술 스택입니다."),
-    FORBIDDEN(HttpStatus.FORBIDDEN, "INTERVIEW_008", "해당 면접에 대한 접근 권한이 없습니다.");
+    FORBIDDEN(HttpStatus.FORBIDDEN, "INTERVIEW_008", "해당 면접에 대한 접근 권한이 없습니다."),
+    CANNOT_DELETE_COMPLETED(HttpStatus.BAD_REQUEST, "INTERVIEW_009", "완료된 면접은 삭제할 수 없습니다.");
 
     private final HttpStatus status;
     private final String code;
