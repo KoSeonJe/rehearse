@@ -111,6 +111,7 @@ class AuthControllerTest {
     void logout_success_clearsCookie() throws Exception {
         // when & then
         var result = mockMvc.perform(post("/api/v1/auth/logout")
+                        .secure(true)
                         .with(authentication(createAuth(1L)))
                         .with(csrf()))
                 .andExpect(status().isOk())

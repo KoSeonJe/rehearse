@@ -58,6 +58,7 @@ class OAuth2SuccessHandlerTest {
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSecure(true);
         MockHttpServletResponse response = new MockHttpServletResponse();
         Authentication authentication = createMockAuthentication();
 
@@ -81,6 +82,7 @@ class OAuth2SuccessHandlerTest {
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSecure(true);
         MockHttpServletResponse response = new MockHttpServletResponse();
         Authentication authentication = createMockAuthentication();
 
@@ -98,6 +100,7 @@ class OAuth2SuccessHandlerTest {
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSecure(true);
         request.setParameter("redirect", "/dashboard");
         MockHttpServletResponse response = new MockHttpServletResponse();
         Authentication authentication = createMockAuthentication();
@@ -116,6 +119,7 @@ class OAuth2SuccessHandlerTest {
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSecure(true);
         request.setParameter("redirect", "//evil.com");
         MockHttpServletResponse response = new MockHttpServletResponse();
         Authentication authentication = createMockAuthentication();
@@ -134,6 +138,7 @@ class OAuth2SuccessHandlerTest {
         given(jwtTokenProvider.createToken(1L, "USER")).willReturn("test-jwt-token");
 
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSecure(true);
         request.setParameter("redirect", "https://evil.com");
         MockHttpServletResponse response = new MockHttpServletResponse();
         Authentication authentication = createMockAuthentication();
