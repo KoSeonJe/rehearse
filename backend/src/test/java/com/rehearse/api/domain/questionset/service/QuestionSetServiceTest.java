@@ -265,6 +265,40 @@ class QuestionSetServiceTest {
         assertThat(response.getQuestions().get(0).getEndMs()).isEqualTo(5000L);
     }
 
+    @Test
+    @DisplayName("getQuestionsWithAnswers: 미답변 FOLLOWUP 질문은 결과에서 제외된다")
+    void getQuestionsWithAnswers_filtersUnansweredFollowup() {
+        // given
+        Question mainQuestion = createQuestion(10L);
+        Question answeredFollowup = createFollowupQuestion(20L);
+        Question unansweredFollowup = createFollowupQuestion(30L);
+
+        QuestionAnswer mainAnswer = QuestionAnswer.builder()
+                .question(mainQuestion)
+                .startMs(0L)
+                .endMs(5000L)
+                .build();
+        QuestionAnswer followupAnswer = QuestionAnswer.builder()
+                .question(answeredFollowup)
+                .startMs(5000L)
+                .endMs(10000L)
+                .build();
+
+        given(questionRepository.findByQuestionSetIdOrderByOrderIndex(1L))
+                .willReturn(List.of(mainQuestion, answeredFollowup, unansweredFollowup));
+        given(answerRepository.findByQuestionSetIdWithQuestion(1L))
+                .willReturn(List.of(mainAnswer, followupAnswer));
+
+        // when
+        QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(1L);
+
+        // then — unansweredFollowup(30L) 제외, mainQuestion(10L) + answeredFollowup(20L)만 포함
+        assertThat(response.getQuestions()).hasSize(2);
+        assertThat(response.getQuestions())
+                .extracting(QuestionsWithAnswersResponse.QuestionWithAnswer::getQuestionId)
+                .containsExactly(10L, 20L);
+    }
+
     // ----------------------------------------------------------------
     // helpers
     // ----------------------------------------------------------------
@@ -296,6 +330,17 @@ class QuestionSetServiceTest {
                 .questionText("Java의 GC 동작 원리를 설명하세요.")
                 .modelAnswer("Generational GC 기반으로 동작합니다.")
                 .orderIndex(1)
+                .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        return question;
+    }
+
+    private Question createFollowupQuestion(Long id) {
+        Question question = Question.builder()
+                .questionType(QuestionType.FOLLOWUP)
+                .questionText("GC 튜닝 경험이 있으신가요?")
+                .modelAnswer("G1GC 튜닝 사례를 설명합니다.")
+                .orderIndex(2)
                 .build();
         ReflectionTestUtils.setField(question, "id", id);
         return question;
