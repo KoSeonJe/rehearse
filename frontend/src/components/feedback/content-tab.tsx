@@ -22,7 +22,17 @@ const ContentTab = ({ content }: ContentTabProps) => {
   return (
     <div className="space-y-3">
       {content.verbalComment !== null && (
-        <div className="rounded-xl bg-surface p-3">
+        <div className="rounded-xl bg-surface p-3 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+              답변 평가
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] text-green-600 font-medium">✓ 잘한 점</span>
+              <span className="text-[10px] text-orange-500 font-medium">△ 개선점</span>
+              <span className="text-[10px] text-blue-600 font-medium">→ 제안</span>
+            </div>
+          </div>
           <StructuredComment comment={content.verbalComment} />
         </div>
       )}
