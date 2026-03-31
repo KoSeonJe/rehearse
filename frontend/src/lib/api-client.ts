@@ -48,14 +48,6 @@ class ApiClient {
     })
 
     if (!response.ok) {
-      if (
-        response.status === 401 &&
-        !endpoint.includes('/auth/me') &&
-        typeof window !== 'undefined' &&
-        window.location.pathname !== '/login'
-      ) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
-      }
       let errorBody: ApiErrorBody
       try {
         errorBody = (await response.json()) as ApiErrorBody

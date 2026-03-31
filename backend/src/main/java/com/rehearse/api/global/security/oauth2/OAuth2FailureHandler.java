@@ -22,6 +22,6 @@ public class OAuth2FailureHandler extends SimpleUrlAuthenticationFailureHandler 
                                         HttpServletResponse response,
                                         AuthenticationException exception) throws IOException {
         log.error("OAuth2 인증 실패: {}", exception.getMessage());
-        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/login?error=auth_failed");
+        getRedirectStrategy().sendRedirect(request, response, frontendUrl + "/?error=auth_failed");
     }
 }
