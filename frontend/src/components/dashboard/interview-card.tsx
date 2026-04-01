@@ -17,7 +17,7 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
     },
     READY: {
       label: '준비됨',
-      className: 'bg-blue-50 text-blue-600',
+      className: 'bg-blue-100 text-blue-700',
     },
     IN_PROGRESS: {
       label: '진행 중',
@@ -82,7 +82,7 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
     <>
       <div
         onClick={handleCardClick}
-        className={`rounded-card bg-surface p-5 shadow-toss transition-all duration-200 ${
+        className={`rounded-card bg-surface p-5 border border-border shadow-toss transition-all duration-200 ${
           isInProgress
             ? 'opacity-60 cursor-default'
             : 'cursor-pointer hover:shadow-toss-lg'

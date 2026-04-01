@@ -18,7 +18,7 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
     },
     READY: {
       label: '준비됨',
-      className: 'bg-blue-50 text-blue-600',
+      className: 'bg-blue-100 text-blue-700',
     },
     IN_PROGRESS: {
       label: '진행 중',
@@ -73,7 +73,7 @@ export const InterviewTable = ({
 
   if (isLoading) {
     return (
-      <div className="rounded-card bg-surface overflow-hidden">
+      <div className="rounded-card bg-surface overflow-hidden border border-border shadow-toss">
         <InterviewTableSkeleton />
       </div>
     )
@@ -108,29 +108,29 @@ export const InterviewTable = ({
 
   return (
     <>
-      <div className="rounded-card bg-surface overflow-hidden border border-border/50">
+      <div className="rounded-card bg-surface overflow-hidden border border-border shadow-toss">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-border/50">
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+            <tr className="border-b border-border bg-accent-light">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 포지션
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 카테고리
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 설정 시간
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 질문 수
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 날짜
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 상태
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 액션
               </th>
             </tr>

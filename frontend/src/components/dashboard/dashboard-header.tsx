@@ -8,7 +8,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({ user, onLogout }: DashboardHeaderProps) => {
   return (
-    <header className="lg:hidden sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+    <header className="lg:hidden sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
       <div className="flex h-16 items-center justify-between px-5">
         <div className="flex items-center gap-2">
           <Logo size={80} />

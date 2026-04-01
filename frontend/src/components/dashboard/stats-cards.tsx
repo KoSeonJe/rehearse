@@ -8,7 +8,7 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value, icon }: StatCardProps) => (
-  <div className="rounded-card bg-surface p-5 flex items-center gap-4">
+  <div className="rounded-card bg-surface p-5 flex items-center gap-4 border border-border shadow-toss">
     <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-accent-light flex items-center justify-center text-accent">
       {icon}
     </div>
@@ -20,7 +20,7 @@ const StatCard = ({ label, value, icon }: StatCardProps) => (
 )
 
 const StatCardSkeleton = () => (
-  <div className="rounded-card bg-surface p-5 animate-pulse flex items-center gap-4">
+  <div className="rounded-card bg-surface p-5 animate-pulse flex items-center gap-4 border border-border shadow-toss">
     <div className="flex-shrink-0 w-10 h-10 bg-border/50 rounded-xl" />
     <div>
       <div className="h-3 w-16 bg-border/50 rounded-lg" />
