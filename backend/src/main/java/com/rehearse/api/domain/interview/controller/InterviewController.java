@@ -9,6 +9,8 @@ import com.rehearse.api.global.common.ApiResponse;
 import com.rehearse.api.global.config.AsyncConfig;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,23 @@ public class InterviewController {
             @RequestPart(value = "resumeFile", required = false) MultipartFile resumeFile) {
         InterviewResponse response = interviewCreationService.createInterview(userId, request, resumeFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<InterviewListResponse>>> getInterviews(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Page<InterviewListResponse> response = interviewService.getInterviews(userId, PageRequest.of(page, safeSize));
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<InterviewStatsResponse>> getStats(
+            @AuthenticationPrincipal Long userId) {
+        InterviewStatsResponse response = interviewService.getStats(userId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/{id}")
@@ -99,6 +118,14 @@ public class InterviewController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
         interviewService.skipRemainingQuestionSets(id, userId);
+        return ResponseEntity.ok(ApiResponse.ok(null));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteInterview(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id) {
+        interviewService.deleteInterview(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

@@ -12,4 +12,8 @@ public enum InterviewStatus {
             case COMPLETED -> false;
         };
     }
+
+    public boolean isDeletable() {
+        return this == READY || this == IN_PROGRESS;
+    }
 }
