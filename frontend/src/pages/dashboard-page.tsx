@@ -1,17 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus } from 'lucide-react'
-import { Logo } from '@/components/ui/logo'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { InterviewList } from '@/components/dashboard/interview-list'
+import { InterviewTable } from '@/components/dashboard/interview-table'
+import { Sidebar } from '@/components/dashboard/sidebar'
+import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { useInterviews, useInterviewStats, useDeleteInterview } from '@/hooks/use-interviews'
 import { apiClient } from '@/lib/api-client'
 
 export const DashboardPage = () => {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const { logout } = useAuthStore()
@@ -43,66 +42,54 @@ export const DashboardPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5">
-          <div className="flex items-center gap-2">
-            <Logo size={80} />
-            <span className="text-xl font-extrabold tracking-tight text-text-primary">
-              리허설
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm font-medium text-text-secondary sm:block">
-              {user?.name}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
-            >
-              로그아웃
-            </button>
-          </div>
-        </div>
-      </header>
+      {/* 사이드바 — 데스크탑 전용 */}
+      <Sidebar user={user} onLogout={handleLogout} />
 
-      <main className="mx-auto max-w-3xl px-5 py-12">
-        {/* 인사 섹션 */}
-        <section className="mb-10">
-          <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary">
-            {user?.name ? `${user.name}님의 면접 기록` : '면접 기록'}
-          </h1>
-        </section>
+      {/* 메인 콘텐츠 */}
+      <div className="lg:ml-60">
+        {/* 모바일/데스크탑 헤더 통합 */}
+        <DashboardHeader user={user} onLogout={handleLogout} />
 
-        {/* 통계 카드 */}
-        <section className="mb-8">
+        <main className="px-5 py-8 lg:px-10 lg:py-10">
+          {/* 인사 섹션 — 데스크탑 */}
+          <div className="hidden lg:block mb-8">
+            <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
+              {user?.name ? `${user.name}님, 안녕하세요` : '안녕하세요'}
+            </h1>
+          </div>
+
+          {/* 통계 카드 */}
           <StatsCards stats={stats} isLoading={isStatsLoading} />
-        </section>
 
-        {/* CTA 버튼 */}
-        <section className="mb-12">
-          <button
-            onClick={() => navigate('/interview/setup')}
-            className="flex h-14 w-full items-center justify-center gap-2 rounded-button bg-accent font-bold text-white hover:bg-accent-hover active:scale-95 transition-all duration-200 cursor-pointer"
-          >
-            <Plus size={20} />
-            새 면접 시작하기
-          </button>
-        </section>
-
-        {/* 면접 목록 */}
-        <section>
+          {/* 면접 기록 */}
           {(!isInterviewsLoading && interviews.length > 0) && (
-            <h2 className="mb-4 text-lg font-bold text-text-primary">면접 기록</h2>
+            <h2 className="hidden lg:block mb-4 text-lg font-bold text-text-primary">면접 기록</h2>
           )}
-          <InterviewList
-            interviews={interviews}
-            isLoading={isInterviewsLoading}
-            onDelete={handleDelete}
-            deletingId={isDeletePending ? deletingId : null}
-          />
-        </section>
-      </main>
+
+          {/* 데스크탑: 테이블 뷰 */}
+          <div className="hidden lg:block">
+            <InterviewTable
+              interviews={interviews}
+              isLoading={isInterviewsLoading}
+              onDelete={handleDelete}
+              deletingId={isDeletePending ? deletingId : null}
+            />
+          </div>
+
+          {/* 모바일: 카드 뷰 */}
+          <div className="lg:hidden">
+            {(!isInterviewsLoading && interviews.length > 0) && (
+              <h2 className="mb-4 text-lg font-bold text-text-primary">면접 기록</h2>
+            )}
+            <InterviewList
+              interviews={interviews}
+              isLoading={isInterviewsLoading}
+              onDelete={handleDelete}
+              deletingId={isDeletePending ? deletingId : null}
+            />
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
