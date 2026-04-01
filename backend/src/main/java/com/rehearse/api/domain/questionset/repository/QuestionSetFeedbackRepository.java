@@ -2,6 +2,7 @@ package com.rehearse.api.domain.questionset.repository;
 
 import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,4 +18,8 @@ public interface QuestionSetFeedbackRepository extends JpaRepository<QuestionSet
 
     @Query("SELECT f FROM QuestionSetFeedback f WHERE f.questionSet.id IN :questionSetIds")
     List<QuestionSetFeedback> findByQuestionSetIdIn(@Param("questionSetIds") List<Long> questionSetIds);
+
+    @Modifying
+    @Query("DELETE FROM QuestionSetFeedback f WHERE f.questionSet.interview.id = :interviewId")
+    void deleteAllByInterviewId(@Param("interviewId") Long interviewId);
 }

@@ -58,7 +58,8 @@ public class InterviewController {
             @AuthenticationPrincipal Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<InterviewListResponse> response = interviewService.getInterviews(userId, PageRequest.of(page, size));
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        Page<InterviewListResponse> response = interviewService.getInterviews(userId, PageRequest.of(page, safeSize));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

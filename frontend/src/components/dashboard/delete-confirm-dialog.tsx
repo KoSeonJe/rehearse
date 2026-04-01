@@ -15,20 +15,20 @@ export const DeleteConfirmDialog = ({
 }: DeleteConfirmDialogProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
+      if (e.key === 'Escape' && !isPending) onCancel()
     }
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
     }
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel])
+  }, [isOpen, onCancel, isPending])
 
   if (!isOpen) return null
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onClick={onCancel}
+      onClick={isPending ? undefined : onCancel}
     >
       <div
         className="bg-white rounded-card p-6 shadow-toss-lg max-w-sm w-full"
