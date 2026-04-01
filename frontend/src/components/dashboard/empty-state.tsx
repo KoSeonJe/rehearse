@@ -1,13 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { Character } from '@/components/ui/character'
 
-const SUGGESTED_TOPICS = [
-  { label: 'CS 기초', path: '/interview/setup' },
-  { label: '프로젝트 경험', path: '/interview/setup' },
-  { label: 'Java/Spring', path: '/interview/setup' },
-  { label: 'React/TS', path: '/interview/setup' },
-  { label: '시스템 설계', path: '/interview/setup' },
-]
+const SUGGESTED_TOPICS = ['CS 기초', '프로젝트 경험', 'Java/Spring', 'React/TS', '시스템 설계']
 
 export const EmptyState = () => {
   const navigate = useNavigate()
@@ -25,18 +19,17 @@ export const EmptyState = () => {
         새 면접 시작하기
       </button>
 
-      {/* 추천 주제 칩 */}
+      {/* 추천 주제 칩 (시각적 표시만) */}
       <div className="mt-10">
         <p className="text-xs font-semibold text-text-tertiary mb-3">이런 주제로 시작해보세요</p>
         <div className="flex flex-wrap justify-center gap-2">
           {SUGGESTED_TOPICS.map((topic) => (
-            <button
-              key={topic.label}
-              onClick={() => navigate(topic.path)}
-              className="rounded-badge bg-accent-light px-3 py-1.5 text-sm font-semibold text-accent cursor-pointer hover:bg-accent/20 transition-colors"
+            <span
+              key={topic}
+              className="rounded-badge bg-accent-light px-3 py-1.5 text-sm font-semibold text-accent"
             >
-              {topic.label}
-            </button>
+              {topic}
+            </span>
           ))}
         </div>
       </div>
