@@ -282,6 +282,35 @@ export interface QuestionAnswer {
   transcripts: TranscriptSegment[]
 }
 
+// 대시보드 목록/통계 타입
+
+export interface InterviewListItem {
+  id: number
+  publicId: string
+  position: Position
+  positionDetail: string | null
+  interviewTypes: InterviewType[]
+  csSubTopics: string[]
+  durationMinutes: number
+  questionCount: number
+  status: InterviewStatus
+  createdAt: string
+}
+
+export interface InterviewListResponse {
+  content: InterviewListItem[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface InterviewStats {
+  totalCount: number
+  completedCount: number
+  thisWeekCount: number
+}
+
 // 면접 이벤트 타입 (타임스탬프 기록용)
 
 export type InterviewEventType =

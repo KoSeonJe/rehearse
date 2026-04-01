@@ -15,13 +15,13 @@ export default {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        background: '#FFFFFF',
-        surface: '#F8FAFC',
-        border: '#E2E8F0',
+        background: '#F1F5F9',   // Slate-100 — 페이지 배경 (연한 회색 틴트)
+        surface: '#FFFFFF',      // 카드/패널 배경 (깨끗한 흰색)
+        border: '#E2E8F0',       // Slate-200 — 명확한 경계선
         text: {
           primary: '#0F172A',   // Deep Charcoal (Our Signature Text)
-          secondary: '#475569',
-          tertiary: '#94A3B8',
+          secondary: '#334155',
+          tertiary: '#64748B',
         },
         accent: {
           DEFAULT: '#6366F1',   // Electric Violet (Our Brand Signature)

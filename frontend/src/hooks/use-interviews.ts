@@ -4,6 +4,9 @@ import { convertBlobToWav } from '@/utils/audio-converter'
 import type {
   ApiResponse,
   InterviewSession,
+  InterviewListItem,
+  InterviewListResponse,
+  InterviewStats,
   CreateInterviewRequest,
   UpdateInterviewStatusRequest,
   UpdateInterviewStatusResponse,
@@ -196,3 +199,35 @@ export const useFollowUpQuestion = () => {
     },
   })
 }
+
+export const useInterviews = () => {
+  return useQuery({
+    queryKey: ['interviews', 'list'],
+    queryFn: () =>
+      apiClient.get<ApiResponse<InterviewListResponse>>('/api/v1/interviews'),
+  })
+}
+
+export const useInterviewStats = () => {
+  return useQuery({
+    queryKey: ['interviews', 'stats'],
+    queryFn: () =>
+      apiClient.get<ApiResponse<InterviewStats>>('/api/v1/interviews/stats'),
+  })
+}
+
+export const useDeleteInterview = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.delete<ApiResponse<void>>(`/api/v1/interviews/${id}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['interviews', 'list'] })
+      void queryClient.invalidateQueries({ queryKey: ['interviews', 'stats'] })
+    },
+  })
+}
+
+// InterviewListItem을 re-export (대시보드 컴포넌트에서 사용)
+export type { InterviewListItem }

@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
@@ -12,8 +14,15 @@ import { apiClient } from '@/lib/api-client'
 
 export const HomePage = () => {
   const queryClient = useQueryClient()
-  const { user, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const { logout, openLoginModal } = useAuthStore()
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [isLoading, isAuthenticated, navigate])
 
   const handleOpenLogin = () => openLoginModal()
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
