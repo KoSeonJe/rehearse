@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { InterviewList } from '@/components/dashboard/interview-list'
@@ -11,6 +12,7 @@ import { useInterviews, useInterviewStats, useDeleteInterview } from '@/hooks/us
 import { apiClient } from '@/lib/api-client'
 
 export const DashboardPage = () => {
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuth()
   const { logout } = useAuthStore()
@@ -63,7 +65,15 @@ export const DashboardPage = () => {
 
           {/* 면접 기록 */}
           {(!isInterviewsLoading && interviews.length > 0) && (
-            <h2 className="hidden lg:block mb-4 text-lg font-bold text-text-primary">면접 기록</h2>
+            <div className="hidden lg:flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
+              <button
+                onClick={() => navigate('/interview/setup')}
+                className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
+              >
+                + 새 면접
+              </button>
+            </div>
           )}
 
           {/* 데스크탑: 테이블 뷰 */}
@@ -79,7 +89,15 @@ export const DashboardPage = () => {
           {/* 모바일: 카드 뷰 */}
           <div className="lg:hidden">
             {(!isInterviewsLoading && interviews.length > 0) && (
-              <h2 className="mb-4 text-lg font-bold text-text-primary">면접 기록</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
+                <button
+                  onClick={() => navigate('/interview/setup')}
+                  className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
+                >
+                  + 새 면접
+                </button>
+              </div>
             )}
             <InterviewList
               interviews={interviews}

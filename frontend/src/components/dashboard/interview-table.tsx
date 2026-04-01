@@ -111,26 +111,26 @@ export const InterviewTable = ({
       <div className="rounded-card bg-surface overflow-hidden border border-border/50">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border">
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+            <tr className="border-b border-border bg-border/50">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 포지션
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 카테고리
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 설정 시간
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 질문 수
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 날짜
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 상태
               </th>
-              <th className="py-3 px-4 text-left text-xs font-semibold text-text-tertiary uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-text-tertiary uppercase tracking-wide">
                 액션
               </th>
             </tr>
@@ -157,7 +157,7 @@ export const InterviewTable = ({
                   title={isInProgress ? '면접이 진행 중입니다' : undefined}
                 >
                   {/* 포지션 */}
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <span className="text-sm font-semibold text-text-primary">
                       {positionLabel}
                       {interview.positionDetail ? ` · ${interview.positionDetail}` : ''}
@@ -166,7 +166,7 @@ export const InterviewTable = ({
 
                   {/* 카테고리 */}
                   <td className="py-4 px-4">
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap justify-center gap-1">
                       {typeLabels.map((label) => (
                         <span
                           key={label}
@@ -184,32 +184,32 @@ export const InterviewTable = ({
                   </td>
 
                   {/* 설정 시간 */}
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <span className="text-sm text-text-secondary">
                       {interview.durationMinutes}분
                     </span>
                   </td>
 
                   {/* 질문 수 */}
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <span className="text-sm text-text-secondary">{interview.questionCount}</span>
                   </td>
 
                   {/* 날짜 */}
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <span className="text-sm text-text-tertiary">
                       {formatDate(interview.createdAt)}
                     </span>
                   </td>
 
                   {/* 상태 */}
-                  <td className="py-4 px-4">
+                  <td className="py-4 px-4 text-center">
                     <StatusBadge status={interview.status} />
                   </td>
 
                   {/* 액션 */}
                   <td className="py-4 px-4">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-center gap-1">
                       {isDeletable && (
                         <button
                           onClick={(e) => handleDeleteClick(e, interview.id)}
