@@ -12,7 +12,11 @@ import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.repository.QuestionAnswerRepository;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.questionset.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,10 @@ public class InterviewService {
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionSetService questionSetService;
+    private final QuestionAnswerRepository questionAnswerRepository;
+    private final TimestampFeedbackRepository timestampFeedbackRepository;
+    private final QuestionSetFeedbackRepository questionSetFeedbackRepository;
+    private final QuestionSetAnalysisRepository questionSetAnalysisRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -121,9 +129,9 @@ public class InterviewService {
         long totalCount = interviewRepository.countByUserId(userId);
         long completedCount = interviewRepository.countByUserIdAndStatus(userId, InterviewStatus.COMPLETED);
 
-        LocalDateTime weekStart = LocalDate.now()
+        LocalDateTime weekStart = LocalDate.now(ZoneId.of("Asia/Seoul"))
                 .with(DayOfWeek.MONDAY)
-                .atTime(LocalTime.MIDNIGHT);
+                .atStartOfDay();
         long thisWeekCount = interviewRepository.countByUserIdAndCreatedAtAfter(userId, weekStart);
 
         return InterviewStatsResponse.builder()
@@ -141,6 +149,11 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.CANNOT_DELETE_COMPLETED);
         }
 
+        // 하위 엔티티부터 명시적 삭제 (FK 제약조건 위반 방지)
+        questionAnswerRepository.deleteAllByInterviewId(id);
+        timestampFeedbackRepository.deleteAllByInterviewId(id);
+        questionSetFeedbackRepository.deleteAllByInterviewId(id);
+        questionSetAnalysisRepository.deleteAllByInterviewId(id);
         questionSetRepository.deleteAll(questionSetRepository.findByInterviewIdOrderByOrderIndex(id));
         interviewRepository.delete(interview);
 

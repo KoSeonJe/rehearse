@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import org.hibernate.annotations.BatchSize;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -50,11 +51,13 @@ public class Interview {
     @CollectionTable(name = "interview_interview_types", joinColumns = @JoinColumn(name = "interview_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "interview_type", nullable = false, length = 30)
+    @BatchSize(size = 100)
     private Set<InterviewType> interviewTypes = new HashSet<>();
 
     @ElementCollection
     @CollectionTable(name = "interview_cs_sub_topics", joinColumns = @JoinColumn(name = "interview_id"))
     @Column(name = "cs_sub_topic", length = 50)
+    @BatchSize(size = 100)
     private Set<String> csSubTopics = new HashSet<>();
 
     @Column(nullable = false)
