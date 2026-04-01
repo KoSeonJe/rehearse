@@ -45,11 +45,19 @@ export const StatsCards = ({ stats, isLoading }: StatsCardsProps) => {
     )
   }
 
+  const allZero = !stats || (stats.totalCount === 0 && stats.completedCount === 0 && stats.thisWeekCount === 0)
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <StatCard label="총 면접" value={stats?.totalCount ?? 0} icon={<FileText size={20} />} />
-      <StatCard label="완료" value={stats?.completedCount ?? 0} icon={<CheckCircle size={20} />} />
-      <StatCard label="이번 주" value={stats?.thisWeekCount ?? 0} icon={<Calendar size={20} />} />
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+        <StatCard label="총 면접" value={stats?.totalCount ?? 0} icon={<FileText size={20} />} />
+        <StatCard label="완료" value={stats?.completedCount ?? 0} icon={<CheckCircle size={20} />} />
+        <StatCard label="이번 주" value={stats?.thisWeekCount ?? 0} icon={<Calendar size={20} />} />
+      </div>
+      {allZero && (
+        <p className="text-xs text-text-tertiary mt-1 mb-6">면접을 완료하면 여기에 기록이 쌓여요</p>
+      )}
+      {!allZero && <div className="mb-8" />}
     </div>
   )
 }
