@@ -139,6 +139,8 @@ export interface CoachingResponse {
 
 export interface ContentFeedback {
   verbalComment: string | null
+  structureLevel: FeedbackLevel | null
+  structureComment: string | null
   accuracyIssues: AccuracyIssue[]
   coaching: CoachingResponse | null
 }
@@ -162,6 +164,7 @@ export interface VocalFeedback {
 export interface DeliveryFeedback {
   nonverbal: NonverbalFeedback | null
   vocal: VocalFeedback | null
+  attitudeComment: string | null
 }
 
 export interface TimestampFeedback {

@@ -33,6 +33,8 @@ public class TimestampFeedbackResponse {
     @Builder
     public static class ContentFeedback {
         private final String verbalComment;
+        private final String structureLevel;
+        private final String structureComment;
         private final List<AccuracyIssue> accuracyIssues;
         private final CoachingResponse coaching;
     }
@@ -56,6 +58,7 @@ public class TimestampFeedbackResponse {
     public static class DeliveryFeedback {
         private final NonverbalFeedback nonverbal;
         private final VocalFeedback vocal;
+        private final String attitudeComment;
     }
 
     @Getter
@@ -90,6 +93,8 @@ public class TimestampFeedbackResponse {
 
         ContentFeedback content = ContentFeedback.builder()
                 .verbalComment(feedback.getVerbalComment())
+                .structureLevel(feedback.getStructureLevel())
+                .structureComment(feedback.getStructureComment())
                 .accuracyIssues(accuracyIssues)
                 .coaching(coaching)
                 .build();
@@ -113,6 +118,7 @@ public class TimestampFeedbackResponse {
         DeliveryFeedback delivery = DeliveryFeedback.builder()
                 .nonverbal(nonverbal)
                 .vocal(vocal)
+                .attitudeComment(feedback.getAttitudeComment())
                 .build();
 
         return TimestampFeedbackResponse.builder()

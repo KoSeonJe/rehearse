@@ -9,20 +9,20 @@ const CoachingCard = ({ coaching }: CoachingCardProps) => {
 
   return (
     <div className="space-y-2">
-      <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+      <span className="text-xs font-bold uppercase tracking-widest text-accent">
         💡 코칭
       </span>
       <div className="rounded-xl bg-accent/5 border border-accent/10 p-3 space-y-2">
         {coaching.structure !== null && (
           <div className="space-y-0.5">
-            <p className="text-[10px] font-semibold text-accent uppercase tracking-wide">구조</p>
-            <p className="text-xs text-text-secondary leading-relaxed">{coaching.structure}</p>
+            <p className="text-xs font-semibold text-accent uppercase tracking-wide">구조</p>
+            <p className="text-sm text-text-secondary leading-relaxed">{coaching.structure}</p>
           </div>
         )}
         {coaching.improvement !== null && (
           <div className="space-y-0.5">
-            <p className="text-[10px] font-semibold text-accent uppercase tracking-wide">개선 방향</p>
-            <p className="text-xs text-text-secondary leading-relaxed">{coaching.improvement}</p>
+            <p className="text-xs font-semibold text-accent uppercase tracking-wide">개선 방향</p>
+            <p className="text-sm text-text-secondary leading-relaxed">{coaching.improvement}</p>
           </div>
         )}
       </div>

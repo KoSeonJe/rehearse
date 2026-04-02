@@ -1,5 +1,6 @@
 import type { ContentFeedback } from '@/types/interview'
 import StructuredComment from '@/components/feedback/structured-comment'
+import LevelBadge from '@/components/feedback/level-badge'
 import AccuracyIssues from '@/components/feedback/accuracy-issues'
 import CoachingCard from '@/components/feedback/coaching-card'
 
@@ -24,16 +25,32 @@ const ContentTab = ({ content }: ContentTabProps) => {
       {content.verbalComment !== null && (
         <div className="rounded-xl bg-surface p-3 space-y-2">
           <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
               답변 평가
             </span>
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[10px] text-green-600 font-medium">✓ 잘한 점</span>
-              <span className="text-[10px] text-orange-500 font-medium">△ 개선점</span>
-              <span className="text-[10px] text-blue-600 font-medium">→ 제안</span>
+              <span className="text-xs text-green-600 font-medium">✓ 잘한 점</span>
+              <span className="text-xs text-orange-500 font-medium">△ 개선점</span>
+              <span className="text-xs text-blue-600 font-medium">→ 제안</span>
             </div>
           </div>
           <StructuredComment comment={content.verbalComment} />
+        </div>
+      )}
+
+      {(content.structureLevel !== null || content.structureComment !== null) && (
+        <div className="rounded-xl bg-surface p-3 space-y-2">
+          <span className="text-xs font-bold uppercase tracking-widest text-indigo-500">
+            답변 구조
+          </span>
+          {content.structureLevel !== null && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <LevelBadge label="구조" level={content.structureLevel} />
+            </div>
+          )}
+          {content.structureComment !== null && (
+            <StructuredComment comment={content.structureComment} />
+          )}
         </div>
       )}
 
@@ -49,7 +66,8 @@ const ContentTab = ({ content }: ContentTabProps) => {
         </div>
       )}
 
-      {content.verbalComment === null && !hasAccuracyIssues && !hasCoaching && (
+      {content.verbalComment === null && !hasAccuracyIssues && !hasCoaching
+        && content.structureLevel === null && content.structureComment === null && (
         <div className="rounded-xl bg-surface p-4 text-center">
           <p className="text-xs text-text-tertiary">내용 분석 정보가 없습니다</p>
         </div>

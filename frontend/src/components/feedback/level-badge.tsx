@@ -15,17 +15,21 @@ const LEVEL_LABELS: Record<FeedbackLevel, string> = {
 interface LevelBadgeProps {
   label: string
   level: FeedbackLevel | null
+  subtitle?: string
 }
 
-const LevelBadge = ({ label, level }: LevelBadgeProps) => {
+const LevelBadge = ({ label, level, subtitle }: LevelBadgeProps) => {
   if (level === null) return null
 
   return (
     <div className="flex items-center gap-1.5">
-      <span className="text-[10px] font-semibold text-text-tertiary">{label}</span>
-      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${LEVEL_STYLES[level]}`}>
+      <span className="text-xs font-semibold text-text-tertiary">{label}</span>
+      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_STYLES[level]}`}>
         {LEVEL_LABELS[level]}
       </span>
+      {subtitle && (
+        <span className="text-[10px] text-text-tertiary">({subtitle})</span>
+      )}
     </div>
   )
 }

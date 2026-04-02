@@ -242,6 +242,9 @@ def _run_gemini_pipeline(
             "startMs": answer["startMs"],
             "endMs": answer["endMs"],
             "transcript": gemini.get("transcript", "") if gemini else "",
+            "structureLevel": None,
+            "structureComment": None,
+            "attitudeComment": None,
         }
 
         if gemini:
@@ -259,6 +262,13 @@ def _run_gemini_pipeline(
             fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
             fb["coachingStructure"] = technical.get("coaching", {}).get("structure", "")
             fb["coachingImprovement"] = technical.get("coaching", {}).get("improvement", "")
+
+            structure = gemini.get("structure", {})
+            fb["structureLevel"] = structure.get("level") or None
+            fb["structureComment"] = structure.get("comment")
+
+            attitude = gemini.get("attitude", {})
+            fb["attitudeComment"] = attitude.get("comment")
 
         if vision:
             fb["eyeContactLevel"] = vision.get("eyeContactLevel")
@@ -348,6 +358,9 @@ def _build_timestamp_feedbacks(
             "startMs": start_ms,
             "endMs": end_ms,
             "transcript": transcript or "",
+            "structureLevel": None,
+            "structureComment": None,
+            "attitudeComment": None,
         }
 
         if verbal:
@@ -361,6 +374,10 @@ def _build_timestamp_feedbacks(
             fb["accuracyIssues"] = "[]"
             fb["coachingStructure"] = ""
             fb["coachingImprovement"] = ""
+
+            fb["structureLevel"] = verbal.get("structure_level")
+            fb["structureComment"] = verbal.get("structure_comment")
+            fb["attitudeComment"] = verbal.get("attitude_comment")
 
         if vision_result:
             fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")

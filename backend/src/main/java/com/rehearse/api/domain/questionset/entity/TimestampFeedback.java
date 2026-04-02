@@ -80,6 +80,15 @@ public class TimestampFeedback {
     @Column(length = 500)
     private String coachingImprovement;
 
+    @Column(length = 20)
+    private String structureLevel;
+
+    @Column(columnDefinition = "TEXT")
+    private String structureComment;
+
+    @Column(columnDefinition = "TEXT")
+    private String attitudeComment;
+
     @Builder
     public TimestampFeedback(Question question, long startMs, long endMs,
                              String transcript, String verbalComment,
@@ -89,7 +98,8 @@ public class TimestampFeedback {
                              boolean isAnalyzed,
                              String fillerWords, String speechPace, String toneConfidenceLevel,
                              String emotionLabel, String vocalComment,
-                             String accuracyIssues, String coachingStructure, String coachingImprovement) {
+                             String accuracyIssues, String coachingStructure, String coachingImprovement,
+                             String structureLevel, String structureComment, String attitudeComment) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
@@ -110,6 +120,9 @@ public class TimestampFeedback {
         this.accuracyIssues = accuracyIssues;
         this.coachingStructure = coachingStructure;
         this.coachingImprovement = coachingImprovement;
+        this.structureLevel = structureLevel;
+        this.structureComment = structureComment;
+        this.attitudeComment = attitudeComment;
     }
 
     void assignQuestionSetFeedback(QuestionSetFeedback questionSetFeedback) {

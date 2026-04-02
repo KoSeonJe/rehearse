@@ -32,19 +32,36 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
 
   return (
     <div className="space-y-3">
+      {/* 태도 인상 섹션 */}
+      {delivery.attitudeComment !== null && (
+        <div className="rounded-xl bg-surface p-3 space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <span className="text-xs font-bold uppercase tracking-widest text-violet-500">
+              태도 인상
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-green-600 font-medium">✓ 긍정</span>
+              <span className="text-xs text-orange-500 font-medium">△ 부정</span>
+              <span className="text-xs text-blue-600 font-medium">→ 개선</span>
+            </div>
+          </div>
+          <StructuredComment comment={delivery.attitudeComment} />
+        </div>
+      )}
+
       {/* 비언어 섹션 */}
       {nonverbal !== null && (
         <div className="rounded-xl bg-surface p-3 space-y-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-blue-500">
+          <span className="text-xs font-bold uppercase tracking-widest text-blue-500">
             비언어
           </span>
           <div className="flex items-center gap-2 flex-wrap">
-            <LevelBadge label="시선" level={nonverbal.eyeContactLevel} />
+            <LevelBadge label="시선" level={nonverbal.eyeContactLevel} subtitle="온라인 면접 기준" />
             <LevelBadge label="자세" level={nonverbal.postureLevel} />
             {nonverbal.expressionLabel !== null && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-text-tertiary">표정</span>
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600">
+                <span className="text-xs font-semibold text-text-tertiary">표정</span>
+                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">
                   {nonverbal.expressionLabel}
                 </span>
               </div>
@@ -59,14 +76,14 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
       {/* 음성 섹션 */}
       {vocal !== null && (
         <div className="rounded-xl bg-surface p-3 space-y-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-purple-500">
+          <span className="text-xs font-bold uppercase tracking-widest text-purple-500">
             음성
           </span>
           <div className="flex items-center gap-2 flex-wrap">
             {vocal.speechPace !== null && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-text-tertiary">속도</span>
-                <span className="rounded-full bg-surface border border-border px-2 py-0.5 text-[10px] font-bold text-text-secondary">
+                <span className="text-xs font-semibold text-text-tertiary">속도</span>
+                <span className="rounded-full bg-surface border border-border px-2 py-0.5 text-xs font-bold text-text-secondary">
                   {vocal.speechPace}
                 </span>
               </div>
@@ -74,8 +91,8 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
             <LevelBadge label="자신감" level={vocal.toneConfidenceLevel} />
             {vocal.emotionLabel !== null && (
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-semibold text-text-tertiary">감정</span>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                <span className="text-xs font-semibold text-text-tertiary">감정</span>
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                   vocal.emotionLabel === '자신감' ? 'bg-green-50 text-green-600' :
                   vocal.emotionLabel === '긴장' ? 'bg-orange-50 text-orange-600' :
                   vocal.emotionLabel === '불안' ? 'bg-red-50 text-red-600' :
@@ -93,17 +110,17 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
             if (words.length === 0) return null
             return (
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-[10px] font-semibold text-text-tertiary">필러워드</span>
+                <span className="text-xs font-semibold text-text-tertiary">필러워드</span>
                 {words.map((word, idx) => (
                   <span
                     key={idx}
-                    className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent"
+                    className="rounded-md bg-accent/10 px-1.5 py-0.5 text-xs font-bold text-accent"
                   >
                     {word}
                   </span>
                 ))}
                 {vocal.fillerWordCount !== null && vocal.fillerWordCount > 0 && (
-                  <span className="text-[10px] font-semibold text-accent">
+                  <span className="text-xs font-semibold text-accent">
                     ({vocal.fillerWordCount}회)
                   </span>
                 )}
@@ -117,9 +134,9 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
         </div>
       )}
 
-      {nonverbal === null && vocal === null && (
+      {nonverbal === null && vocal === null && delivery.attitudeComment === null && (
         <div className="rounded-xl bg-surface p-4 text-center">
-          <p className="text-xs text-text-tertiary">전달력 분석 정보가 없습니다</p>
+          <p className="text-xs text-text-tertiary">자세·말투 분석 정보가 없습니다</p>
         </div>
       )}
     </div>
