@@ -54,9 +54,7 @@ public class SaveFeedbackRequest {
         private String coachingStructure;
         private String coachingImprovement;
 
-        // feedback-v2: 답변 구조 + 태도 인상
-        private String structureLevel;
-        private String structureComment;
+        // feedback-v2: 태도 인상
         private String attitudeComment;
     }
 }

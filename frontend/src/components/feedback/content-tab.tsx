@@ -1,6 +1,5 @@
 import type { ContentFeedback } from '@/types/interview'
 import StructuredComment from '@/components/feedback/structured-comment'
-import LevelBadge from '@/components/feedback/level-badge'
 import AccuracyIssues from '@/components/feedback/accuracy-issues'
 import CoachingCard from '@/components/feedback/coaching-card'
 
@@ -38,22 +37,6 @@ const ContentTab = ({ content }: ContentTabProps) => {
         </div>
       )}
 
-      {(content.structureLevel !== null || content.structureComment !== null) && (
-        <div className="rounded-xl bg-surface p-3 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-indigo-500">
-            답변 구조
-          </span>
-          {content.structureLevel !== null && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <LevelBadge label="구조" level={content.structureLevel} />
-            </div>
-          )}
-          {content.structureComment !== null && (
-            <StructuredComment comment={content.structureComment} />
-          )}
-        </div>
-      )}
-
       {hasAccuracyIssues && (
         <div className="rounded-xl bg-surface p-3">
           <AccuracyIssues issues={content.accuracyIssues} />
@@ -66,8 +49,7 @@ const ContentTab = ({ content }: ContentTabProps) => {
         </div>
       )}
 
-      {content.verbalComment === null && !hasAccuracyIssues && !hasCoaching
-        && content.structureLevel === null && content.structureComment === null && (
+      {content.verbalComment === null && !hasAccuracyIssues && !hasCoaching && (
         <div className="rounded-xl bg-surface p-4 text-center">
           <p className="text-xs text-text-tertiary">내용 분석 정보가 없습니다</p>
         </div>

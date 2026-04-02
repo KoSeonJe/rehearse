@@ -139,8 +139,6 @@ export interface CoachingResponse {
 
 export interface ContentFeedback {
   verbalComment: string | null
-  structureLevel: FeedbackLevel | null
-  structureComment: string | null
   accuracyIssues: AccuracyIssue[]
   coaching: CoachingResponse | null
 }

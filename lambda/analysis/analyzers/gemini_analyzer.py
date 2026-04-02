@@ -31,7 +31,6 @@ def _ensure_genai_configured():
 _FALLBACK_ANSWER = {
     "transcript": "",
     "verbal": {"comment": "✓ 분석을 시도했습니다.\n△ 음성 분석에 실패했습니다.\n→ 다시 시도해 주세요."},
-    "structure": {"level": "AVERAGE", "comment": ""},
     "technical": {
         "accuracyIssues": [],
         "coaching": {"structure": "", "improvement": ""},
@@ -84,13 +83,6 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 면접 음성 분석
 ### 2.5 기술 피드백 (technical)
 {feedback_perspective}
 
-### 2.6 답변 구조 (structure)
-- level: 답변이 논리적이고 알아듣기 쉬운 구조로 전달되었는지 평가
-  - GOOD: 서론-본론-결론, 개념→원리→실무적용 등 명확한 흐름. 듣는 사람이 따라가기 쉬움
-  - AVERAGE: 대체로 흐름은 있으나 일부 산만하거나 핵심이 늦게 나옴
-  - NEEDS_IMPROVEMENT: 주제가 뒤섞이거나 두서없이 나열. 듣는 사람이 따라가기 어려움
-- comment: 구조적 관점에서 1-2문장 피드백 (무엇이 좋았는지/어떻게 구조를 잡으면 좋을지)
-
 ### 3.5 태도 인상 (attitude)
 - comment: 면접관 관점에서 면접자의 태도·말투가 주는 전반적 인상을 평가합니다.
 - 음성 톤과 발화 내용(어휘 선택, 경어 사용, 자신감 표현)을 기반으로 판단합니다.
@@ -129,7 +121,7 @@ _ANSWER_USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 {model_answer_line}</user_data>
 ## 응답 형식
 반드시 아래 JSON 형식으로만 응답:
-{{"transcript":"","verbal":{{"comment":""}},"structure":{{"level":"","comment":""}},"technical":{{"accuracyIssues":[],"coaching":{{"structure":"","improvement":""}}}},"vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","comment":""}},"attitude":{{"comment":""}},"overallComment":""}}"""
+{{"transcript":"","verbal":{{"comment":""}},"technical":{{"accuracyIssues":[],"coaching":{{"structure":"","improvement":""}}}},"vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","comment":""}},"attitude":{{"comment":""}},"overallComment":""}}"""
 
 
 
