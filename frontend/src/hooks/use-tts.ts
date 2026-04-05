@@ -1,159 +1,170 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
+const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+
 interface UseTtsOptions {
-  lang?: string
-  rate?: number
   onStart?: () => void
   onEnd?: () => void
 }
 
-const IS_ANDROID = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
-
-export const useTts = ({
-  lang = 'ko-KR',
-  rate = 0.95,
-  onStart,
-  onEnd,
-}: UseTtsOptions = {}) => {
+export const useTts = ({ onStart, onEnd }: UseTtsOptions = {}) => {
   const [isSpeaking, setIsSpeaking] = useState(false)
-  const [isAvailable, setIsAvailable] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
+  const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const utteranceIdRef = useRef(0)
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
-  const isAvailableRef = useRef(false)
   const onStartRef = useRef(onStart)
   const onEndRef = useRef(onEnd)
-  const resumeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pendingVoicesListenerRef = useRef<(() => void) | null>(null)
-  const utteranceIdRef = useRef(0)
 
-  useEffect(() => {
-    onStartRef.current = onStart
-    onEndRef.current = onEnd
-  })
+  onStartRef.current = onStart
+  onEndRef.current = onEnd
 
+  // Web Speech API 음성 초기화 (폴백용)
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
-
-    const selectKoreanVoice = () => {
+    const selectVoice = () => {
       const voices = window.speechSynthesis.getVoices()
-      const koreanVoice = voices.find((v) => v.lang.startsWith('ko'))
-      voiceRef.current = koreanVoice ?? null
-      isAvailableRef.current = !!koreanVoice
-      setIsAvailable(!!koreanVoice)
+      voiceRef.current = voices.find((v) => v.lang.startsWith('ko')) ?? null
     }
-
-    selectKoreanVoice()
-
-    window.speechSynthesis.addEventListener('voiceschanged', selectKoreanVoice)
+    selectVoice()
+    window.speechSynthesis.addEventListener('voiceschanged', selectVoice)
     return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', selectKoreanVoice)
-      if (pendingVoicesListenerRef.current) {
-        window.speechSynthesis.removeEventListener('voiceschanged', pendingVoicesListenerRef.current)
-        pendingVoicesListenerRef.current = null
-      }
+      window.speechSynthesis.removeEventListener('voiceschanged', selectVoice)
       window.speechSynthesis.cancel()
     }
   }, [])
 
-  const speak = useCallback(
-    (text: string) => {
-      if (!isAvailableRef.current || !voiceRef.current) return
-
-      const id = ++utteranceIdRef.current
-      window.speechSynthesis.cancel()
-      setIsSpeaking(true)
-
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.voice = voiceRef.current
-      utterance.lang = lang
-      utterance.rate = rate
-
-      const clearResumeInterval = () => {
-        if (resumeIntervalRef.current) {
-          clearInterval(resumeIntervalRef.current)
-          resumeIntervalRef.current = null
-        }
-      }
-
-      utterance.onstart = () => {
-        onStartRef.current?.()
-
-        // Chrome 15초 자동 중단 버그 워크어라운드
-        // Android에서는 pause()가 완전 종료로 작동하므로 스킵
-        if (!IS_ANDROID) {
-          clearResumeInterval()
-          resumeIntervalRef.current = setInterval(() => {
-            if (window.speechSynthesis.speaking) {
-              window.speechSynthesis.pause()
-              window.speechSynthesis.resume()
-            } else {
-              clearResumeInterval()
-            }
-          }, 14000)
-        }
-      }
-
-      utterance.onend = () => {
-        if (utteranceIdRef.current !== id) return
-        clearResumeInterval()
-        setIsSpeaking(false)
-        onEndRef.current?.()
-      }
-
-      utterance.onerror = () => {
-        if (utteranceIdRef.current !== id) return
-        clearResumeInterval()
-        setIsSpeaking(false)
-        onEndRef.current?.()
-      }
-
-      window.speechSynthesis.speak(utterance)
-    },
-    [lang, rate],
-  )
-
   const stop = useCallback(() => {
-    ++utteranceIdRef.current
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
     if (resumeIntervalRef.current) {
       clearInterval(resumeIntervalRef.current)
       resumeIntervalRef.current = null
     }
-    window.speechSynthesis.cancel()
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
     setIsSpeaking(false)
   }, [])
 
-  // 음성 로드 완료 대기 후 speak (초기 로드 경쟁 조건 해결)
-  const speakWhenReady = useCallback(
-    (text: string) => {
-      // 이전 대기 리스너 정리
-      if (pendingVoicesListenerRef.current) {
-        window.speechSynthesis.removeEventListener('voiceschanged', pendingVoicesListenerRef.current)
-        pendingVoicesListenerRef.current = null
-      }
+  // Web Speech API 폴백
+  const speakWithBrowser = useCallback((text: string) => {
+    if (!window.speechSynthesis) {
+      onEndRef.current?.()
+      return
+    }
+    const id = ++utteranceIdRef.current
+    window.speechSynthesis.cancel()
+    setIsSpeaking(true)
+    onStartRef.current?.()
 
-      if (isAvailableRef.current && voiceRef.current) {
-        speak(text)
-        return
-      }
+    const utterance = new SpeechSynthesisUtterance(text)
+    if (voiceRef.current) utterance.voice = voiceRef.current
+    utterance.lang = 'ko-KR'
+    utterance.rate = 0.95
 
-      // 음성이 아직 로드되지 않았으면 voiceschanged 이벤트 대기
-      const onVoicesLoaded = () => {
-        const voices = window.speechSynthesis.getVoices()
-        const koreanVoice = voices.find((v) => v.lang.startsWith('ko'))
-        if (koreanVoice) {
-          voiceRef.current = koreanVoice
-          isAvailableRef.current = true
-          setIsAvailable(true)
-          speak(text)
+    utterance.onstart = () => {
+      if (!IS_ANDROID) {
+        resumeIntervalRef.current = setInterval(() => {
+          if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.pause()
+            window.speechSynthesis.resume()
+          } else {
+            clearInterval(resumeIntervalRef.current!)
+            resumeIntervalRef.current = null
+          }
+        }, 14000)
+      }
+    }
+
+    utterance.onend = () => {
+      if (utteranceIdRef.current !== id) return
+      if (resumeIntervalRef.current) {
+        clearInterval(resumeIntervalRef.current)
+        resumeIntervalRef.current = null
+      }
+      setIsSpeaking(false)
+      onEndRef.current?.()
+    }
+
+    utterance.onerror = () => {
+      if (utteranceIdRef.current !== id) return
+      if (resumeIntervalRef.current) {
+        clearInterval(resumeIntervalRef.current)
+        resumeIntervalRef.current = null
+      }
+      setIsSpeaking(false)
+      onEndRef.current?.()
+    }
+
+    window.speechSynthesis.speak(utterance)
+  }, [])
+
+  const speak = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return
+      stop()
+
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ text }),
+          signal: abortController.signal,
+        })
+
+        if (!response.ok) {
+          abortControllerRef.current = null
+          speakWithBrowser(text)
+          return
         }
-        window.speechSynthesis.removeEventListener('voiceschanged', onVoicesLoaded)
-        pendingVoicesListenerRef.current = null
-      }
 
-      pendingVoicesListenerRef.current = onVoicesLoaded
-      window.speechSynthesis.addEventListener('voiceschanged', onVoicesLoaded)
+        const arrayBuffer = await response.arrayBuffer()
+        if (abortController.signal.aborted) return
+
+        const blob = new Blob([arrayBuffer], { type: 'audio/mpeg' })
+        const url = URL.createObjectURL(blob)
+        const audio = new Audio(url)
+        audioRef.current = audio
+        abortControllerRef.current = null
+
+        setIsSpeaking(true)
+        onStartRef.current?.()
+
+        audio.onended = () => {
+          URL.revokeObjectURL(url)
+          audioRef.current = null
+          setIsSpeaking(false)
+          onEndRef.current?.()
+        }
+
+        audio.onerror = () => {
+          URL.revokeObjectURL(url)
+          audioRef.current = null
+          speakWithBrowser(text)
+        }
+
+        await audio.play()
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        speakWithBrowser(text)
+      }
     },
-    [speak],
+    [stop, speakWithBrowser],
   )
 
-  return { speak, speakWhenReady, stop, isSpeaking, isAvailable }
+  return { speak, speakWhenReady: speak, stop, isSpeaking, isAvailable: true }
 }
