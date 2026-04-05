@@ -5,7 +5,7 @@ import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
 import { useInterviewSession } from '@/hooks/use-interview-session'
-import { InterviewerAvatar } from '@/components/interview/interviewer-avatar'
+import { InterviewerVideo } from '@/components/interview/interviewer-video'
 import { VideoPreview } from '@/components/interview/video-preview'
 import { InterviewControls } from '@/components/interview/interview-controls'
 import { InterviewTimer } from '@/components/interview/interview-timer'
@@ -103,7 +103,7 @@ export const InterviewPage = () => {
             <div className={`absolute w-[320px] h-[320px] rounded-full blur-[120px] transition-all duration-1000 pointer-events-none ${
               phase === 'recording' ? 'bg-meet-red/10 scale-105' : isTtsSpeaking ? 'bg-blue-500/15 scale-110' : 'bg-blue-500/5 scale-100'
             }`} />
-            <InterviewerAvatar mood={avatarMood} size={200} />
+            <InterviewerVideo mood={avatarMood} />
           </div>
 
           {/* Name label — bottom-left */}
