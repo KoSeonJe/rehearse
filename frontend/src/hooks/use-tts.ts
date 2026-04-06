@@ -18,8 +18,10 @@ export const useTts = ({ onStart, onEnd }: UseTtsOptions = {}) => {
   const onStartRef = useRef(onStart)
   const onEndRef = useRef(onEnd)
 
-  onStartRef.current = onStart
-  onEndRef.current = onEnd
+  useEffect(() => {
+    onStartRef.current = onStart
+    onEndRef.current = onEnd
+  })
 
   // Web Speech API 음성 초기화 (폴백용)
   useEffect(() => {
