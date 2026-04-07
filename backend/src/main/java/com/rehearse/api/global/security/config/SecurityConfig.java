@@ -5,6 +5,7 @@ import com.rehearse.api.global.security.jwt.JwtTokenProvider;
 import com.rehearse.api.global.security.oauth2.CustomOAuth2UserService;
 import com.rehearse.api.global.security.oauth2.OAuth2FailureHandler;
 import com.rehearse.api.global.security.oauth2.OAuth2SuccessHandler;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,11 @@ public class SecurityConfig {
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Spring Security 6의 AuthorizationFilter는 기본적으로 모든 DispatcherType을
+                // 검사하므로, CompletableFuture 컨트롤러의 ASYNC dispatch back 단계에서
+                // SecurityContext가 비어 있으면 401이 발생한다. ASYNC/FORWARD/ERROR는
+                // 컨테이너 내부 dispatch라 외부에서 진입할 수 없으므로 인가 검사 대상에서 제외.
+                .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/internal/**").permitAll()
