@@ -1,35 +1,15 @@
-import type { FeedbackLevel } from '@/types/interview'
-
-const LEVEL_STYLES: Record<FeedbackLevel, string> = {
-  GOOD: 'bg-green-50 text-green-600',
-  AVERAGE: 'bg-yellow-50 text-yellow-600',
-  NEEDS_IMPROVEMENT: 'bg-red-50 text-red-600',
-}
-
-const LEVEL_LABELS: Record<FeedbackLevel, string> = {
-  GOOD: '좋음',
-  AVERAGE: '보통',
-  NEEDS_IMPROVEMENT: '개선 필요',
-}
-
 interface LevelBadgeProps {
   label: string
-  level: FeedbackLevel | null
-  subtitle?: string
+  value: string | null
+  bg?: 'white' | 'gray'
 }
 
-const LevelBadge = ({ label, level, subtitle }: LevelBadgeProps) => {
-  if (level === null) return null
-
+const LevelBadge = ({ label, value, bg = 'white' }: LevelBadgeProps) => {
+  const bgClass = bg === 'white' ? 'bg-white' : 'bg-gray-50'
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-xs font-semibold text-text-tertiary">{label}</span>
-      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${LEVEL_STYLES[level]}`}>
-        {LEVEL_LABELS[level]}
-      </span>
-      {subtitle && (
-        <span className="text-[10px] text-text-tertiary">({subtitle})</span>
-      )}
+    <div className={`${bgClass} rounded-xl p-3 text-center`}>
+      <p className="text-[12px] text-gray-400 mb-1">{label}</p>
+      <p className="text-[15px] font-bold text-gray-900">{value ?? '—'}</p>
     </div>
   )
 }

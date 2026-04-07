@@ -1,3 +1,4 @@
+import { Fragment, type ReactNode } from 'react'
 import type { ContentFeedback } from '@/types/interview'
 import StructuredComment from '@/components/feedback/structured-comment'
 import AccuracyIssues from '@/components/feedback/accuracy-issues'
@@ -10,51 +11,78 @@ interface ContentTabProps {
 const ContentTab = ({ content }: ContentTabProps) => {
   if (content === null) {
     return (
-      <div className="rounded-xl bg-surface p-4 text-center">
-        <p className="text-xs text-text-tertiary">분석 대기 중</p>
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] text-gray-300">AI가 분석하고 있어요</p>
       </div>
     )
   }
 
+  const hasVerbalComment = content.verbalComment !== null
   const hasAccuracyIssues = content.accuracyIssues.length > 0
-  const hasCoaching = content.coaching !== null
+  const hasCoaching =
+    content.coaching !== null &&
+    (content.coaching.structure !== null || content.coaching.improvement !== null)
+
+  if (!hasVerbalComment && !hasAccuracyIssues && !hasCoaching) {
+    return (
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] text-gray-300">내용 분석 정보가 없습니다</p>
+      </div>
+    )
+  }
+
+  const sections: ReactNode[] = []
+
+  if (hasVerbalComment && content.verbalComment !== null) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">답변 내용을 분석했어요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          기술적으로 맞게 답변했는지, 빠진 내용은 없는지 살펴봤어요.
+        </p>
+        <StructuredComment
+          comment={content.verbalComment}
+          positiveLabel="잘한 점"
+          negativeLabel="아쉬운 점"
+          suggestionLabel="이렇게 말하면 더 좋아요"
+        />
+      </div>,
+    )
+  }
+
+  if (hasAccuracyIssues) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">틀린 내용이 있었어요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          면접관이 바로 알아챌 수 있는 부분이에요. 꼭 정정해두세요.
+        </p>
+        <AccuracyIssues issues={content.accuracyIssues} />
+      </div>,
+    )
+  }
+
+  if (hasCoaching && content.coaching !== null) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">다음엔 이렇게 해보세요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          같은 내용이라도 전달 방식을 바꾸면 훨씬 좋은 답변이 됩니다.
+        </p>
+        <CoachingCard coaching={content.coaching} />
+      </div>,
+    )
+  }
 
   return (
-    <div className="space-y-3">
-      {content.verbalComment !== null && (
-        <div className="rounded-xl bg-surface p-3 space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600">
-              답변 평가
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-green-600 font-medium">✓ 잘한 점</span>
-              <span className="text-xs text-orange-500 font-medium">△ 개선점</span>
-              <span className="text-xs text-blue-600 font-medium">→ 제안</span>
-            </div>
-          </div>
-          <StructuredComment comment={content.verbalComment} />
-        </div>
-      )}
-
-      {hasAccuracyIssues && (
-        <div className="rounded-xl bg-surface p-3">
-          <AccuracyIssues issues={content.accuracyIssues} />
-        </div>
-      )}
-
-      {hasCoaching && content.coaching !== null && (
-        <div className="rounded-xl bg-surface p-3">
-          <CoachingCard coaching={content.coaching} />
-        </div>
-      )}
-
-      {content.verbalComment === null && !hasAccuracyIssues && !hasCoaching && (
-        <div className="rounded-xl bg-surface p-4 text-center">
-          <p className="text-xs text-text-tertiary">내용 분석 정보가 없습니다</p>
-        </div>
-      )}
-    </div>
+    <>
+      {sections.map((section, idx) => (
+        <Fragment key={idx}>
+          {idx > 0 && <div className="mx-6 border-t border-gray-100" />}
+          {section}
+        </Fragment>
+      ))}
+    </>
   )
 }
 

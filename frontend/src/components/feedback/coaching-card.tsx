@@ -8,24 +8,19 @@ const CoachingCard = ({ coaching }: CoachingCardProps) => {
   if (coaching.structure === null && coaching.improvement === null) return null
 
   return (
-    <div className="space-y-2">
-      <span className="text-xs font-bold uppercase tracking-widest text-accent">
-        💡 코칭
-      </span>
-      <div className="rounded-xl bg-accent/5 border border-accent/10 p-3 space-y-2">
-        {coaching.structure !== null && (
-          <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-accent uppercase tracking-wide">구조</p>
-            <p className="text-sm text-text-secondary leading-relaxed">{coaching.structure}</p>
-          </div>
-        )}
-        {coaching.improvement !== null && (
-          <div className="space-y-0.5">
-            <p className="text-xs font-semibold text-accent uppercase tracking-wide">개선 방향</p>
-            <p className="text-sm text-text-secondary leading-relaxed">{coaching.improvement}</p>
-          </div>
-        )}
-      </div>
+    <div className="space-y-4">
+      {coaching.structure !== null && (
+        <div className="rounded-xl bg-gray-50 p-4">
+          <p className="text-[13px] font-bold text-gray-500 mb-1.5">답변 구조</p>
+          <p className="text-[15px] leading-[1.7] text-gray-700">{coaching.structure}</p>
+        </div>
+      )}
+      {coaching.improvement !== null && (
+        <div className="rounded-xl bg-gray-50 p-4">
+          <p className="text-[13px] font-bold text-gray-500 mb-1.5">설득력 높이기</p>
+          <p className="text-[15px] leading-[1.7] text-gray-700">{coaching.improvement}</p>
+        </div>
+      )}
     </div>
   )
 }
