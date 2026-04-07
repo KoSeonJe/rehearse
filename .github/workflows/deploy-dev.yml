@@ -7,7 +7,10 @@ on:
 
 concurrency:
   group: deploy-dev
-  cancel-in-progress: true
+  # 큐잉 필수: BE/FE 푸시가 빠르게 연달아 들어올 때, 이전 run을 취소하면
+  # paths-filter가 직전 커밋과만 비교하기 때문에 취소된 쪽 영역(backend/frontend)
+  # 변경이 영구적으로 배포에서 누락된다. 반드시 순차 실행되어야 함.
+  cancel-in-progress: false
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
