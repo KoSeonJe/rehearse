@@ -103,7 +103,7 @@ class InternalQuestionSetControllerTest {
                             "questionId": 10,
                             "startMs": 0,
                             "endMs": 5000,
-                            "verbalComment": "명확한 설명",
+                            "verbalComment": {"positive": "명확한 설명", "negative": null, "suggestion": null},
                             "eyeContactLevel": "GOOD",
                             "postureLevel": "AVERAGE"
                         }

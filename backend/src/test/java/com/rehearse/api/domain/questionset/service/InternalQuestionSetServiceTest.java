@@ -3,6 +3,7 @@ package com.rehearse.api.domain.questionset.service;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
@@ -51,6 +52,9 @@ class InternalQuestionSetServiceTest {
 
     @Mock
     private S3Service s3Service;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     // ----------------------------------------------------------------
     // updateProgress
@@ -143,7 +147,7 @@ class InternalQuestionSetServiceTest {
 
     @Test
     @DisplayName("saveFeedback: 피드백과 타임스탬프 피드백이 저장되고 상태가 COMPLETED로 변경된다")
-    void saveFeedback_withTimestampFeedbacks_success() {
+    void saveFeedback_withTimestampFeedbacks_success() throws Exception {
         // given
         QuestionSet questionSet = createQuestionSet(1L);
         QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
@@ -154,14 +158,22 @@ class InternalQuestionSetServiceTest {
         given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
+        SaveFeedbackRequest.CommentBlock verbalBlock = new SaveFeedbackRequest.CommentBlock();
+        ReflectionTestUtils.setField(verbalBlock, "positive", "명확한 설명");
+        ReflectionTestUtils.setField(verbalBlock, "negative", null);
+        ReflectionTestUtils.setField(verbalBlock, "suggestion", null);
+
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
         ReflectionTestUtils.setField(item, "questionId", 10L);
         ReflectionTestUtils.setField(item, "startMs", 0L);
         ReflectionTestUtils.setField(item, "endMs", 5000L);
-        ReflectionTestUtils.setField(item, "verbalComment", "명확한 설명");
+        ReflectionTestUtils.setField(item, "verbalComment", verbalBlock);
         ReflectionTestUtils.setField(item, "eyeContactLevel", "GOOD");
         ReflectionTestUtils.setField(item, "postureLevel", "AVERAGE");
         ReflectionTestUtils.setField(item, "toneConfidenceLevel", "GOOD");
+
+        given(objectMapper.writeValueAsString(any(SaveFeedbackRequest.CommentBlock.class)))
+                .willReturn("{\"positive\":\"명확한 설명\",\"negative\":null,\"suggestion\":null}");
 
         SaveFeedbackRequest request = new SaveFeedbackRequest();
         ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");

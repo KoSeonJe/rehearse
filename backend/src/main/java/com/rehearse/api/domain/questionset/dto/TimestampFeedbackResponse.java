@@ -7,6 +7,7 @@ import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 import java.util.List;
 
@@ -26,13 +27,23 @@ public class TimestampFeedbackResponse {
     private final String transcript;
     private final ContentFeedback content;
     private final DeliveryFeedback delivery;
+    private final CommentBlock overallComment;
     @JsonProperty("isAnalyzed")
     private final boolean isAnalyzed;
 
     @Getter
     @Builder
+    @Jacksonized
+    public static class CommentBlock {
+        private final String positive;
+        private final String negative;
+        private final String suggestion;
+    }
+
+    @Getter
+    @Builder
     public static class ContentFeedback {
-        private final String verbalComment;
+        private final CommentBlock verbalComment;
         private final List<AccuracyIssue> accuracyIssues;
         private final CoachingResponse coaching;
     }
@@ -56,7 +67,7 @@ public class TimestampFeedbackResponse {
     public static class DeliveryFeedback {
         private final NonverbalFeedback nonverbal;
         private final VocalFeedback vocal;
-        private final String attitudeComment;
+        private final CommentBlock attitudeComment;
     }
 
     @Getter
@@ -65,7 +76,7 @@ public class TimestampFeedbackResponse {
         private final String eyeContactLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
         private final String postureLevel;
         private final String expressionLabel;
-        private final String nonverbalComment;
+        private final CommentBlock nonverbalComment;
     }
 
     @Getter
@@ -76,7 +87,7 @@ public class TimestampFeedbackResponse {
         private final String speechPace;
         private final String toneConfidenceLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
         private final String emotionLabel;
-        private final String vocalComment;
+        private final CommentBlock vocalComment;
     }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
@@ -90,7 +101,7 @@ public class TimestampFeedbackResponse {
                 .build();
 
         ContentFeedback content = ContentFeedback.builder()
-                .verbalComment(feedback.getVerbalComment())
+                .verbalComment(parseCommentBlock(feedback.getVerbalComment()))
                 .accuracyIssues(accuracyIssues)
                 .coaching(coaching)
                 .build();
@@ -99,7 +110,7 @@ public class TimestampFeedbackResponse {
                 .eyeContactLevel(feedback.getEyeContactLevel())
                 .postureLevel(feedback.getPostureLevel())
                 .expressionLabel(feedback.getExpressionLabel())
-                .nonverbalComment(feedback.getNonverbalComment())
+                .nonverbalComment(parseCommentBlock(feedback.getNonverbalComment()))
                 .build();
 
         VocalFeedback vocal = VocalFeedback.builder()
@@ -108,13 +119,13 @@ public class TimestampFeedbackResponse {
                 .speechPace(feedback.getSpeechPace())
                 .toneConfidenceLevel(feedback.getToneConfidenceLevel())
                 .emotionLabel(feedback.getEmotionLabel())
-                .vocalComment(feedback.getVocalComment())
+                .vocalComment(parseCommentBlock(feedback.getVocalComment()))
                 .build();
 
         DeliveryFeedback delivery = DeliveryFeedback.builder()
                 .nonverbal(nonverbal)
                 .vocal(vocal)
-                .attitudeComment(feedback.getAttitudeComment())
+                .attitudeComment(parseCommentBlock(feedback.getAttitudeComment()))
                 .build();
 
         return TimestampFeedbackResponse.builder()
@@ -128,8 +139,19 @@ public class TimestampFeedbackResponse {
                 .transcript(feedback.getTranscript())
                 .content(content)
                 .delivery(delivery)
+                .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
+    }
+
+    static CommentBlock parseCommentBlock(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return OBJECT_MAPPER.readValue(json, CommentBlock.class);
+        } catch (Exception e) {
+            // legacy ✓△→ 또는 손상된 문자열 → positive에만 raw 입력
+            return CommentBlock.builder().positive(json).build();
+        }
     }
 
     private static List<AccuracyIssue> parseAccuracyIssues(String json) {
