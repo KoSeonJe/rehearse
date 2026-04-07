@@ -1,5 +1,6 @@
 import type { DeliveryFeedback } from '@/types/interview'
-import LevelBadge, { formatFeedbackLevel } from '@/components/feedback/level-badge'
+import LevelBadge from '@/components/feedback/level-badge'
+import { formatFeedbackLevel } from '@/components/feedback/format-feedback-level'
 import StructuredComment from '@/components/feedback/structured-comment'
 
 interface DeliveryTabProps {
