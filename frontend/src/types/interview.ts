@@ -137,8 +137,20 @@ export interface CoachingResponse {
   improvement: string | null
 }
 
+export interface CommentBlock {
+  positive: string | null
+  negative: string | null
+  suggestion: string | null
+}
+
+export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boolean => {
+  if (block === null || block === undefined) return true
+  const fields = [block.positive, block.negative, block.suggestion]
+  return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
+}
+
 export interface ContentFeedback {
-  verbalComment: string | null
+  verbalComment: CommentBlock | null
   accuracyIssues: AccuracyIssue[]
   coaching: CoachingResponse | null
 }
@@ -147,7 +159,7 @@ export interface NonverbalFeedback {
   eyeContactLevel: FeedbackLevel | null
   postureLevel: FeedbackLevel | null
   expressionLabel: string | null
-  nonverbalComment: string | null
+  nonverbalComment: CommentBlock | null
 }
 
 export interface VocalFeedback {
@@ -156,13 +168,13 @@ export interface VocalFeedback {
   speechPace: string | null
   toneConfidenceLevel: FeedbackLevel | null
   emotionLabel: string | null
-  vocalComment: string | null
+  vocalComment: CommentBlock | null
 }
 
 export interface DeliveryFeedback {
   nonverbal: NonverbalFeedback | null
   vocal: VocalFeedback | null
-  attitudeComment: string | null
+  attitudeComment: CommentBlock | null
 }
 
 export interface TimestampFeedback {
@@ -176,6 +188,7 @@ export interface TimestampFeedback {
   transcript: string | null
   content: ContentFeedback | null
   delivery: DeliveryFeedback | null
+  overallComment: CommentBlock | null
   isAnalyzed: boolean
 }
 

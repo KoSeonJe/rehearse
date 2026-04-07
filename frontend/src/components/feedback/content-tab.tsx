@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from 'react'
-import type { ContentFeedback } from '@/types/interview'
+import { isCommentBlockEmpty, type ContentFeedback } from '@/types/interview'
 import StructuredComment from '@/components/feedback/structured-comment'
 import AccuracyIssues from '@/components/feedback/accuracy-issues'
 import CoachingCard from '@/components/feedback/coaching-card'
@@ -17,7 +17,7 @@ const ContentTab = ({ content }: ContentTabProps) => {
     )
   }
 
-  const hasVerbalComment = content.verbalComment !== null
+  const hasVerbalComment = !isCommentBlockEmpty(content.verbalComment)
   const hasAccuracyIssues = content.accuracyIssues.length > 0
   const hasCoaching =
     content.coaching !== null &&
@@ -41,7 +41,7 @@ const ContentTab = ({ content }: ContentTabProps) => {
           기술적으로 맞게 답변했는지, 빠진 내용은 없는지 살펴봤어요.
         </p>
         <StructuredComment
-          comment={content.verbalComment}
+          block={content.verbalComment}
           positiveLabel="잘한 점"
           negativeLabel="아쉬운 점"
           suggestionLabel="이렇게 말하면 더 좋아요"
