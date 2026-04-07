@@ -1,145 +1,151 @@
 import type { DeliveryFeedback } from '@/types/interview'
-import LevelBadge from '@/components/feedback/level-badge'
+import LevelBadge, { formatFeedbackLevel } from '@/components/feedback/level-badge'
 import StructuredComment from '@/components/feedback/structured-comment'
 
 interface DeliveryTabProps {
   delivery: DeliveryFeedback | null
 }
 
+const parseFillerWords = (raw: string | null): string[] => {
+  if (raw === null) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (Array.isArray(parsed)) {
+      return parsed.filter((w): w is string => typeof w === 'string')
+    }
+    return []
+  } catch {
+    return []
+  }
+}
+
 const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
   if (delivery === null) {
     return (
-      <div className="rounded-xl bg-surface p-4 text-center">
-        <p className="text-xs text-text-tertiary">분석 대기 중</p>
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] text-gray-300">AI가 분석하고 있어요</p>
       </div>
     )
   }
 
-  const { nonverbal, vocal } = delivery
+  const { nonverbal, vocal, attitudeComment } = delivery
+  const hasAttitude = attitudeComment !== null
+  const hasNonverbal = nonverbal !== null
+  const hasVocal = vocal !== null
 
-  const parseFillerWords = (raw: string | null): string[] => {
-    if (raw === null) return []
-    try {
-      const parsed: unknown = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        return parsed.filter((w): w is string => typeof w === 'string')
-      }
-      return []
-    } catch {
-      return []
-    }
+  if (!hasAttitude && !hasNonverbal && !hasVocal) {
+    return (
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] text-gray-300">자세·말투 분석 정보가 없습니다</p>
+      </div>
+    )
   }
 
+  const fillerWords = vocal !== null ? parseFillerWords(vocal.fillerWords) : []
+  const fillerCount = vocal?.fillerWordCount ?? 0
+
   return (
-    <div className="space-y-3">
-      {/* 태도 인상 섹션 */}
-      {delivery.attitudeComment !== null && (
-        <div className="rounded-xl bg-surface p-3 space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-1">
-            <span className="text-xs font-bold uppercase tracking-widest text-violet-500">
-              태도 인상
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-green-600 font-medium">✓ 긍정</span>
-              <span className="text-xs text-orange-500 font-medium">△ 부정</span>
-              <span className="text-xs text-blue-600 font-medium">→ 개선</span>
-            </div>
-          </div>
-          <StructuredComment comment={delivery.attitudeComment} />
+    <>
+      {/* 태도 인상 */}
+      {hasAttitude && attitudeComment !== null && (
+        <div className="px-6 py-5">
+          <p className="text-[15px] font-bold text-gray-900 mb-1">면접관에게 이런 인상을 줬어요</p>
+          <p className="text-[13px] text-gray-400 mb-4">
+            말투와 어휘 선택에서 느껴지는 전반적인 태도를 분석했어요.
+          </p>
+          <StructuredComment
+            comment={attitudeComment}
+            positiveLabel="좋은 인상"
+            negativeLabel="신경 쓰면 좋을 부분"
+            suggestionLabel="이렇게 바꿔보세요"
+          />
         </div>
       )}
 
-      {/* 비언어 섹션 */}
-      {nonverbal !== null && (
-        <div className="rounded-xl bg-surface p-3 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-blue-500">
-            비언어
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            <LevelBadge label="시선" level={nonverbal.eyeContactLevel} subtitle="온라인 면접 기준" />
-            <LevelBadge label="자세" level={nonverbal.postureLevel} />
-            {nonverbal.expressionLabel !== null && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-text-tertiary">표정</span>
-                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-bold text-blue-600">
-                  {nonverbal.expressionLabel}
-                </span>
-              </div>
-            )}
+      {/* 표정과 자세 */}
+      {hasNonverbal && nonverbal !== null && (
+        <div className="bg-gray-50 px-6 py-5">
+          <p className="text-[15px] font-bold text-gray-900 mb-1">표정과 자세를 살펴봤어요</p>
+          <p className="text-[13px] text-gray-400 mb-4">
+            영상에서 보이는 시선, 자세, 표정을 분석했어요.
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <LevelBadge
+              label="시선"
+              value={formatFeedbackLevel(nonverbal.eyeContactLevel)}
+              bg="white"
+            />
+            <LevelBadge
+              label="자세"
+              value={formatFeedbackLevel(nonverbal.postureLevel)}
+              bg="white"
+            />
+            <LevelBadge label="표정" value={nonverbal.expressionLabel} bg="white" />
           </div>
+
           {nonverbal.nonverbalComment !== null && (
-            <StructuredComment comment={nonverbal.nonverbalComment} />
+            <StructuredComment
+              comment={nonverbal.nonverbalComment}
+              positiveLabel="잘한 점"
+              negativeLabel="아쉬운 점"
+              suggestionLabel="이렇게 해보세요"
+            />
           )}
         </div>
       )}
 
-      {/* 음성 섹션 */}
-      {vocal !== null && (
-        <div className="rounded-xl bg-surface p-3 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-purple-500">
-            음성
-          </span>
-          <div className="flex items-center gap-2 flex-wrap">
-            {vocal.speechPace !== null && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-text-tertiary">속도</span>
-                <span className="rounded-full bg-surface border border-border px-2 py-0.5 text-xs font-bold text-text-secondary">
-                  {vocal.speechPace}
-                </span>
-              </div>
-            )}
-            <LevelBadge label="자신감" level={vocal.toneConfidenceLevel} />
-            {vocal.emotionLabel !== null && (
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-text-tertiary">감정</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                  vocal.emotionLabel === '자신감' ? 'bg-green-50 text-green-600' :
-                  vocal.emotionLabel === '긴장' ? 'bg-orange-50 text-orange-600' :
-                  vocal.emotionLabel === '불안' ? 'bg-red-50 text-red-600' :
-                  'bg-blue-50 text-blue-600'
-                }`}>
-                  {vocal.emotionLabel}
-                </span>
-              </div>
-            )}
+      {/* 목소리 */}
+      {hasVocal && vocal !== null && (
+        <div className="px-6 py-5">
+          <p className="text-[15px] font-bold text-gray-900 mb-1">목소리를 분석했어요</p>
+          <p className="text-[13px] text-gray-400 mb-4">
+            말하는 속도, 자신감, 불필요한 습관어를 체크했어요.
+          </p>
+
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <LevelBadge label="속도" value={vocal.speechPace} bg="gray" />
+            <LevelBadge
+              label="자신감"
+              value={formatFeedbackLevel(vocal.toneConfidenceLevel)}
+              bg="gray"
+            />
+            <LevelBadge label="감정" value={vocal.emotionLabel} bg="gray" />
           </div>
 
-          {/* 필러워드 태그 */}
-          {(() => {
-            const words = parseFillerWords(vocal.fillerWords)
-            if (words.length === 0) return null
-            return (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-semibold text-text-tertiary">필러워드</span>
-                {words.map((word, idx) => (
+          {/* 습관어 */}
+          {fillerCount > 0 && fillerWords.length > 0 && (
+            <div className="rounded-xl bg-gray-50 p-4 mb-4">
+              <p className="text-[13px] font-bold text-gray-900 mb-1">
+                습관어가 {fillerCount}회 감지됐어요
+              </p>
+              <p className="text-[13px] text-gray-400 mb-3">
+                자신도 모르게 반복하는 말이에요. 줄이면 훨씬 매끄럽게 들려요.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {fillerWords.map((word, idx) => (
                   <span
                     key={idx}
-                    className="rounded-md bg-accent/10 px-1.5 py-0.5 text-xs font-bold text-accent"
+                    className="rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-[13px] font-bold text-gray-700"
                   >
                     {word}
                   </span>
                 ))}
-                {vocal.fillerWordCount !== null && vocal.fillerWordCount > 0 && (
-                  <span className="text-xs font-semibold text-accent">
-                    ({vocal.fillerWordCount}회)
-                  </span>
-                )}
               </div>
-            )
-          })()}
+            </div>
+          )}
 
           {vocal.vocalComment !== null && (
-            <StructuredComment comment={vocal.vocalComment} />
+            <StructuredComment
+              comment={vocal.vocalComment}
+              positiveLabel="잘한 점"
+              negativeLabel="아쉬운 점"
+              suggestionLabel="이렇게 해보세요"
+            />
           )}
         </div>
       )}
-
-      {nonverbal === null && vocal === null && delivery.attitudeComment === null && (
-        <div className="rounded-xl bg-surface p-4 text-center">
-          <p className="text-xs text-text-tertiary">자세·말투 분석 정보가 없습니다</p>
-        </div>
-      )}
-    </div>
+    </>
   )
 }
 

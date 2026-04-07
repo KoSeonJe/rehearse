@@ -8,11 +8,6 @@ const ANSWER_TYPE_LABELS: Record<string, string> = {
   FOLLOWUP: '후속 질문',
 }
 
-const ANSWER_TYPE_BADGE_COLORS: Record<string, string> = {
-  MAIN: 'bg-accent/10 text-accent',
-  FOLLOWUP: 'bg-blue-50 text-blue-600',
-}
-
 const FILLER_WORDS = ['음', '어', '그', '아', '에', '그러니까', '뭐', '이제', '저기']
 
 const highlightFillers = (text: string): React.ReactNode[] => {
@@ -20,7 +15,7 @@ const highlightFillers = (text: string): React.ReactNode[] => {
   const parts = text.split(pattern)
   return parts.map((part, i) =>
     FILLER_WORDS.includes(part) ? (
-      <span key={i} className="font-extrabold text-accent">
+      <span key={i} className="font-bold text-gray-900 underline decoration-gray-300">
         {part}
       </span>
     ) : (
@@ -44,11 +39,11 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
   const [showTranscript, setShowTranscript] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
-  const isDeliveryAvailable = feedback.delivery !== null && (
-    feedback.delivery.nonverbal !== null ||
-    feedback.delivery.vocal !== null ||
-    feedback.delivery.attitudeComment !== null
-  )
+  const isDeliveryAvailable =
+    feedback.delivery !== null &&
+    (feedback.delivery.nonverbal !== null ||
+      feedback.delivery.vocal !== null ||
+      feedback.delivery.attitudeComment !== null)
 
   const effectiveTab: FeedbackTab =
     activeTab === 'delivery' && !isDeliveryAvailable ? 'content' : activeTab
@@ -65,129 +60,121 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
 
+  const answerTypeLabel = feedback.questionType
+    ? (ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType)
+    : null
+
   return (
     <div
       ref={cardRef}
       data-feedback-id={feedback.id}
-      className={`rounded-2xl border p-6 transition-all cursor-pointer ${
-        isActive
-          ? 'border-accent/40 bg-accent/5 shadow-sm'
-          : 'border-border bg-white hover:border-border/80'
+      className={`rounded-2xl bg-white overflow-hidden transition-all cursor-pointer ${
+        isActive ? 'ring-2 ring-accent/30' : ''
       }`}
+      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
       onClick={() => onSeek(feedback.startMs)}
     >
-      {/* 1. 시간 배지 + 유형 배지 */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold uppercase tracking-widest text-accent">
+      {/* 헤더 */}
+      <div className="px-6 pt-6 pb-5">
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-[13px] font-bold text-gray-900 tabular-nums">
             {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
           </span>
-          {feedback.questionType && (
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                ANSWER_TYPE_BADGE_COLORS[feedback.questionType] ?? 'bg-surface text-text-tertiary'
-              }`}
+          {answerTypeLabel !== null && (
+            <span className="text-[13px] text-gray-400">{answerTypeLabel}</span>
+          )}
+          {!feedback.isAnalyzed && (
+            <span className="ml-auto text-[13px] text-gray-300">미분석</span>
+          )}
+        </div>
+        {question && (
+          <p className="text-[17px] font-bold text-gray-900 leading-snug">
+            Q. {question.questionText}
+          </p>
+        )}
+      </div>
+
+      {/* 탭 */}
+      <div
+        className="px-6 flex gap-4 border-b border-gray-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={() => setActiveTab('content')}
+          className={`pb-3 border-b-2 text-[14px] transition-colors ${
+            effectiveTab === 'content'
+              ? 'font-bold text-gray-900 border-gray-900'
+              : 'font-medium text-gray-400 border-transparent hover:text-gray-600'
+          }`}
+        >
+          내 답변은 어땠을까
+        </button>
+        <button
+          onClick={() => setActiveTab('delivery')}
+          disabled={!isDeliveryAvailable}
+          className={`pb-3 border-b-2 text-[14px] transition-colors ${
+            effectiveTab === 'delivery'
+              ? 'font-bold text-gray-900 border-gray-900'
+              : isDeliveryAvailable
+                ? 'font-medium text-gray-400 border-transparent hover:text-gray-600'
+                : 'font-medium text-gray-300 border-transparent cursor-not-allowed'
+          }`}
+        >
+          어떤 인상을 줬을까
+        </button>
+      </div>
+
+      {/* 탭 컨텐츠 */}
+      <div onClick={(e) => e.stopPropagation()}>
+        {effectiveTab === 'content' && <ContentTab content={feedback.content} />}
+        {effectiveTab === 'delivery' && <DeliveryTab delivery={feedback.delivery} />}
+      </div>
+
+      {/* 푸터 버튼 */}
+      {(feedback.transcript !== null || question?.modelAnswer) && (
+        <div
+          className="border-t border-gray-100 px-6 py-4 flex gap-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {feedback.transcript !== null && (
+            <button
+              onClick={() => setShowTranscript(!showTranscript)}
+              className="text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-colors"
             >
-              {ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType}
-            </span>
+              답변 텍스트
+            </button>
+          )}
+          {question?.modelAnswer && (
+            <button
+              onClick={() => setShowModelAnswer(!showModelAnswer)}
+              className="text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              모범답변 비교
+            </button>
           )}
         </div>
-        {!feedback.isAnalyzed && (
-          <span className="text-xs font-medium text-text-tertiary">미분석</span>
-        )}
-      </div>
-
-      {/* 2. 질문 텍스트 */}
-      {question && (
-        <p className="text-base font-semibold text-text-secondary mb-3">
-          Q. {question.questionText}
-        </p>
       )}
 
-      {/* 3. 탭 영역 */}
-      <div className="mb-3" onClick={(e) => e.stopPropagation()}>
-        {/* 탭 헤더 */}
-        <div className="flex gap-1 mb-3 border-b border-border">
-          <button
-            onClick={() => setActiveTab('content')}
-            className={`pb-2 px-1 text-sm font-semibold transition-colors ${
-              effectiveTab === 'content'
-                ? 'text-accent border-b-2 border-accent -mb-px'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            기술 분석
-          </button>
-          <button
-            onClick={() => setActiveTab('delivery')}
-            disabled={!isDeliveryAvailable}
-            className={`pb-2 px-1 text-sm font-semibold transition-colors ${
-              effectiveTab === 'delivery'
-                ? 'text-accent border-b-2 border-accent -mb-px'
-                : isDeliveryAvailable
-                  ? 'text-text-tertiary hover:text-text-secondary'
-                  : 'text-text-tertiary/40 cursor-not-allowed'
-            }`}
-          >
-            자세·말투
-          </button>
-        </div>
-
-        {/* 탭 콘텐츠 */}
-        {effectiveTab === 'content' && (
-          <ContentTab content={feedback.content} />
-        )}
-        {effectiveTab === 'delivery' && (
-          <DeliveryTab delivery={feedback.delivery} />
-        )}
-      </div>
-
-      {/* 4. 답변 텍스트 토글 */}
-      {feedback.transcript && (
-        <div
-          className="border-t border-border/50 pt-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => setShowTranscript(!showTranscript)}
-            className="text-xs font-semibold text-accent hover:underline"
-          >
-            {showTranscript ? '답변 텍스트 접기' : '답변 텍스트 보기'}
-          </button>
-          {showTranscript && (
-            <div className="mt-2 rounded-xl bg-surface p-4">
-              <p className="text-sm leading-relaxed text-text-primary">
-                {highlightFillers(feedback.transcript)}
+      {/* 답변 텍스트 토글 */}
+      {showTranscript && feedback.transcript !== null && (
+        <div className="px-6 pb-5" onClick={(e) => e.stopPropagation()}>
+          <p className="text-[15px] leading-[1.8] text-gray-600">
+            {highlightFillers(feedback.transcript)}
+          </p>
+          {feedback.delivery?.vocal?.fillerWordCount !== null &&
+            feedback.delivery?.vocal?.fillerWordCount !== undefined &&
+            feedback.delivery.vocal.fillerWordCount > 0 && (
+              <p className="mt-2 text-[13px] text-gray-400">
+                습관어 {feedback.delivery.vocal.fillerWordCount}회 감지
               </p>
-              {feedback.delivery?.vocal?.fillerWordCount !== null &&
-                feedback.delivery?.vocal?.fillerWordCount !== undefined &&
-                feedback.delivery.vocal.fillerWordCount > 0 && (
-                  <p className="mt-2 text-xs font-semibold text-accent">
-                    필러워드 {feedback.delivery.vocal.fillerWordCount}회 감지
-                  </p>
-                )}
-            </div>
-          )}
+            )}
         </div>
       )}
 
-      {/* 5. 모범답변 토글 */}
-      {question?.modelAnswer && (
-        <div
-          className="mt-3 border-t border-border/50 pt-3"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={() => setShowModelAnswer(!showModelAnswer)}
-            className="text-xs font-semibold text-accent hover:underline"
-          >
-            {showModelAnswer ? '모범답변 접기' : '모범답변 비교'}
-          </button>
-          {showModelAnswer && (
-            <div className="mt-2 rounded-xl bg-success/5 border border-success/10 p-4">
-              <p className="text-xs text-text-secondary leading-relaxed">{question.modelAnswer}</p>
-            </div>
-          )}
+      {/* 모범답변 토글 */}
+      {showModelAnswer && question?.modelAnswer && (
+        <div className="px-6 pb-5" onClick={(e) => e.stopPropagation()}>
+          <p className="text-[15px] leading-[1.8] text-gray-500">{question.modelAnswer}</p>
         </div>
       )}
     </div>
@@ -219,10 +206,10 @@ export const FeedbackPanel = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="space-y-4 overflow-y-auto flex-1">
+      <div className="space-y-5 overflow-y-auto flex-1">
         {feedbacks.length === 0 ? (
-          <div className="rounded-2xl bg-surface p-8 text-center">
-            <p className="text-sm font-semibold text-text-tertiary">피드백이 없습니다</p>
+          <div className="rounded-2xl bg-white p-8 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <p className="text-[15px] text-gray-300">피드백이 없습니다</p>
           </div>
         ) : (
           feedbacks.map((fb) => (

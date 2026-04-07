@@ -8,20 +8,21 @@ const AccuracyIssues = ({ issues }: AccuracyIssuesProps) => {
   if (issues.length === 0) return null
 
   return (
-    <div className="space-y-2">
-      <span className="text-xs font-bold uppercase tracking-widest text-orange-500">
-        ⚠ 기술 오류
-      </span>
-      <div className="space-y-2">
-        {issues.map((issue, idx) => (
-          <div key={idx} className="rounded-xl bg-orange-50 border border-orange-100 p-3 space-y-1">
-            <p className="text-xs font-semibold text-orange-400 uppercase tracking-wide">발화 내용</p>
-            <p className="text-sm text-text-secondary leading-relaxed">{issue.claim}</p>
-            <p className="text-xs font-semibold text-green-600 uppercase tracking-wide mt-2">정확한 내용</p>
-            <p className="text-sm text-green-700 leading-relaxed">{issue.correction}</p>
+    <div className="space-y-3">
+      {issues.map((issue, idx) => (
+        <div key={idx} className="rounded-xl bg-white p-4 space-y-3">
+          <div>
+            <p className="text-[13px] font-bold text-gray-400 mb-1">내가 한 말</p>
+            <p className="text-[15px] text-gray-400 leading-[1.7] line-through decoration-gray-300">
+              {issue.claim}
+            </p>
           </div>
-        ))}
-      </div>
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-[13px] font-bold text-gray-900 mb-1">정확한 내용</p>
+            <p className="text-[15px] text-gray-700 leading-[1.7]">{issue.correction}</p>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
