@@ -44,6 +44,15 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
   const [showTranscript, setShowTranscript] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
+  const isDeliveryAvailable = feedback.delivery !== null && (
+    feedback.delivery.nonverbal !== null ||
+    feedback.delivery.vocal !== null ||
+    feedback.delivery.attitudeComment !== null
+  )
+
+  const effectiveTab: FeedbackTab =
+    activeTab === 'delivery' && !isDeliveryAvailable ? 'content' : activeTab
+
   useEffect(() => {
     if (isActive && cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -56,13 +65,11 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
 
-  const isDeliveryAvailable = feedback.delivery !== null
-
   return (
     <div
       ref={cardRef}
       data-feedback-id={feedback.id}
-      className={`rounded-2xl border p-5 transition-all cursor-pointer ${
+      className={`rounded-2xl border p-6 transition-all cursor-pointer ${
         isActive
           ? 'border-accent/40 bg-accent/5 shadow-sm'
           : 'border-border bg-white hover:border-border/80'
@@ -72,12 +79,12 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
       {/* 1. 시간 배지 + 유형 배지 */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-accent">
+          <span className="text-xs font-bold uppercase tracking-widest text-accent">
             {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
           </span>
           {feedback.questionType && (
             <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              className={`rounded-full px-2 py-0.5 text-xs font-bold ${
                 ANSWER_TYPE_BADGE_COLORS[feedback.questionType] ?? 'bg-surface text-text-tertiary'
               }`}
             >
@@ -86,13 +93,13 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
           )}
         </div>
         {!feedback.isAnalyzed && (
-          <span className="text-[10px] font-medium text-text-tertiary">미분석</span>
+          <span className="text-xs font-medium text-text-tertiary">미분석</span>
         )}
       </div>
 
       {/* 2. 질문 텍스트 */}
       {question && (
-        <p className="text-sm font-semibold text-text-secondary mb-3">
+        <p className="text-base font-semibold text-text-secondary mb-3">
           Q. {question.questionText}
         </p>
       )}
@@ -103,34 +110,34 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         <div className="flex gap-1 mb-3 border-b border-border">
           <button
             onClick={() => setActiveTab('content')}
-            className={`pb-2 px-1 text-xs font-semibold transition-colors ${
-              activeTab === 'content'
+            className={`pb-2 px-1 text-sm font-semibold transition-colors ${
+              effectiveTab === 'content'
                 ? 'text-accent border-b-2 border-accent -mb-px'
                 : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
-            답변 내용
+            기술 분석
           </button>
           <button
             onClick={() => setActiveTab('delivery')}
             disabled={!isDeliveryAvailable}
-            className={`pb-2 px-1 text-xs font-semibold transition-colors ${
-              activeTab === 'delivery'
+            className={`pb-2 px-1 text-sm font-semibold transition-colors ${
+              effectiveTab === 'delivery'
                 ? 'text-accent border-b-2 border-accent -mb-px'
                 : isDeliveryAvailable
                   ? 'text-text-tertiary hover:text-text-secondary'
                   : 'text-text-tertiary/40 cursor-not-allowed'
             }`}
           >
-            전달력
+            자세·말투
           </button>
         </div>
 
         {/* 탭 콘텐츠 */}
-        {activeTab === 'content' && (
+        {effectiveTab === 'content' && (
           <ContentTab content={feedback.content} />
         )}
-        {activeTab === 'delivery' && (
+        {effectiveTab === 'delivery' && (
           <DeliveryTab delivery={feedback.delivery} />
         )}
       </div>
@@ -155,7 +162,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
               {feedback.delivery?.vocal?.fillerWordCount !== null &&
                 feedback.delivery?.vocal?.fillerWordCount !== undefined &&
                 feedback.delivery.vocal.fillerWordCount > 0 && (
-                  <p className="mt-2 text-[10px] font-semibold text-accent">
+                  <p className="mt-2 text-xs font-semibold text-accent">
                     필러워드 {feedback.delivery.vocal.fillerWordCount}회 감지
                   </p>
                 )}
@@ -212,7 +219,7 @@ export const FeedbackPanel = ({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="space-y-3 overflow-y-auto flex-1">
+      <div className="space-y-4 overflow-y-auto flex-1">
         {feedbacks.length === 0 ? (
           <div className="rounded-2xl bg-surface p-8 text-center">
             <p className="text-sm font-semibold text-text-tertiary">피드백이 없습니다</p>

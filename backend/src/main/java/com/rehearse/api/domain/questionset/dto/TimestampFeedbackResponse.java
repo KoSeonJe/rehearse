@@ -56,6 +56,7 @@ public class TimestampFeedbackResponse {
     public static class DeliveryFeedback {
         private final NonverbalFeedback nonverbal;
         private final VocalFeedback vocal;
+        private final String attitudeComment;
     }
 
     @Getter
@@ -113,6 +114,7 @@ public class TimestampFeedbackResponse {
         DeliveryFeedback delivery = DeliveryFeedback.builder()
                 .nonverbal(nonverbal)
                 .vocal(vocal)
+                .attitudeComment(feedback.getAttitudeComment())
                 .build();
 
         return TimestampFeedbackResponse.builder()

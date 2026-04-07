@@ -124,6 +124,7 @@ public class InternalQuestionSetService {
                         .accuracyIssues(item.getAccuracyIssues())
                         .coachingStructure(item.getCoachingStructure())
                         .coachingImprovement(item.getCoachingImprovement())
+                        .attitudeComment(item.getAttitudeComment())
                         .build();
                 feedback.addTimestampFeedback(tf);
             }

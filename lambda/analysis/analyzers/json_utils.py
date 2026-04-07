@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 
 
 def parse_llm_json(text: str) -> dict:
@@ -15,8 +14,12 @@ def parse_llm_json(text: str) -> dict:
         text = "\n".join(lines[1:-1]) if len(lines) > 2 else text
         text = text.strip()
 
-    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
-    if match:
-        return json.loads(match.group())
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
 
     return json.loads(text)

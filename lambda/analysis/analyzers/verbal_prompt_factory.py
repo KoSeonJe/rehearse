@@ -117,10 +117,11 @@ SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """{minimal_persona}
 2. tone_label: PROFESSIONAL|CASUAL|HESITANT|CONFIDENT|VERBOSE
 3. tone_comment: 1-2문장의 말투 피드백
 4. comment: 3줄 형식으로 작성. ✓ 잘한 점 / △ 보완할 점 / → 개선 방법. 키워드 사전 기반으로 기술 용어 정확성/오용도 포함
+5. attitude_comment: 면접관 관점 태도/말투 인상. 3줄 형식: ✓ 긍정 / △ 부정 / → 개선. 구체적 근거(어떤 표현/어투) 제시 필수.
 
 ## 응답
 JSON만 응답:
-{{"filler_word_count":0,"tone_label":"","tone_comment":"","comment":""}}"""
+{{"filler_word_count":0,"tone_label":"","tone_comment":"","comment":"","attitude_comment":""}}"""
 
 USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 질문: {question}

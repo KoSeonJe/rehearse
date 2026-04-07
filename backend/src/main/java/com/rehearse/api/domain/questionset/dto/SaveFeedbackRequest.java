@@ -53,5 +53,8 @@ public class SaveFeedbackRequest {
         private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
         private String coachingStructure;
         private String coachingImprovement;
+
+        // feedback-v2: 태도 인상
+        private String attitudeComment;
     }
 }

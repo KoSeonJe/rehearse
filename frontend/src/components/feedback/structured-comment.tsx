@@ -19,14 +19,14 @@ const StructuredComment = ({ comment }: StructuredCommentProps) => {
 
         if (prefix !== undefined) {
           return (
-            <p key={idx} className={`text-xs leading-relaxed ${LINE_STYLES[prefix]}`}>
+            <p key={idx} className={`text-sm leading-relaxed ${LINE_STYLES[prefix]}`}>
               {trimmed}
             </p>
           )
         }
 
         return (
-          <p key={idx} className="text-xs leading-relaxed text-text-secondary">
+          <p key={idx} className="text-sm leading-relaxed text-text-secondary">
             {trimmed}
           </p>
         )
