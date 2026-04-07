@@ -28,13 +28,16 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
     Page<Interview> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
     @Query("""
-            SELECT qs.interview.id, COUNT(q)
-            FROM QuestionSet qs
-            JOIN qs.questions q
+            SELECT qs.interview.id, COUNT(qa)
+            FROM QuestionAnswer qa
+            JOIN qa.question q
+            JOIN q.questionSet qs
             WHERE qs.interview.id IN :interviewIds
+              AND (qs.fileMetadata IS NULL
+                   OR qs.fileMetadata.status <> com.rehearse.api.domain.file.entity.FileStatus.FAILED)
             GROUP BY qs.interview.id
             """)
-    List<Object[]> countQuestionsByInterviewIds(@Param("interviewIds") List<Long> interviewIds);
+    List<Object[]> countAnswersByInterviewIds(@Param("interviewIds") List<Long> interviewIds);
 
     @Query("SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId")
     long countByUserId(@Param("userId") Long userId);

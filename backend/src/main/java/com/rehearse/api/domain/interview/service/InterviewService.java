@@ -120,9 +120,9 @@ public class InterviewService {
                 .map(Interview::getId)
                 .toList();
 
-        Map<Long, Long> questionCountMap = buildQuestionCountMap(interviewIds);
+        Map<Long, Long> answerCountMap = buildAnswerCountMap(interviewIds);
 
-        return interviews.map(interview -> toListResponse(interview, questionCountMap));
+        return interviews.map(interview -> toListResponse(interview, answerCountMap));
     }
 
     public InterviewStatsResponse getStats(Long userId) {
@@ -160,11 +160,11 @@ public class InterviewService {
         log.info("면접 세션 삭제: id={}, userId={}", id, userId);
     }
 
-    private Map<Long, Long> buildQuestionCountMap(List<Long> interviewIds) {
+    private Map<Long, Long> buildAnswerCountMap(List<Long> interviewIds) {
         if (interviewIds.isEmpty()) {
             return Map.of();
         }
-        List<Object[]> rows = interviewRepository.countQuestionsByInterviewIds(interviewIds);
+        List<Object[]> rows = interviewRepository.countAnswersByInterviewIds(interviewIds);
         return rows.stream()
                 .collect(Collectors.toMap(
                         row -> (Long) row[0],
@@ -172,7 +172,7 @@ public class InterviewService {
                 ));
     }
 
-    private InterviewListResponse toListResponse(Interview interview, Map<Long, Long> questionCountMap) {
+    private InterviewListResponse toListResponse(Interview interview, Map<Long, Long> answerCountMap) {
         return InterviewListResponse.builder()
                 .id(interview.getId())
                 .publicId(interview.getPublicId())
@@ -182,7 +182,7 @@ public class InterviewService {
                 .csSubTopics(new ArrayList<>(interview.getCsSubTopics()))
                 .durationMinutes(interview.getDurationMinutes())
                 .status(interview.getStatus())
-                .questionCount(questionCountMap.getOrDefault(interview.getId(), 0L))
+                .answerCount(answerCountMap.getOrDefault(interview.getId(), 0L))
                 .createdAt(interview.getCreatedAt())
                 .build();
     }
