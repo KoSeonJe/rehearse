@@ -106,7 +106,7 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
             </span>
           ))}
           <span className="text-xs text-text-tertiary">{interview.durationMinutes}분</span>
-          <span className="text-xs text-text-tertiary">{interview.questionCount}문항</span>
+          <span className="text-xs text-text-tertiary">답변 {interview.answerCount}개</span>
         </div>
 
         {/* 3행: 날짜 + 상태 배지 + 삭제 */}

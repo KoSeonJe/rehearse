@@ -122,7 +122,7 @@ export const InterviewTable = ({
                 설정 시간
               </th>
               <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
-                질문 수
+                답변 수
               </th>
               <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 날짜
@@ -190,9 +190,9 @@ export const InterviewTable = ({
                     </span>
                   </td>
 
-                  {/* 질문 수 */}
+                  {/* 답변 수 */}
                   <td className="py-4 px-4 text-center">
-                    <span className="text-sm text-text-secondary">{interview.questionCount}</span>
+                    <span className="text-sm text-text-secondary">{interview.answerCount}</span>
                   </td>
 
                   {/* 날짜 */}

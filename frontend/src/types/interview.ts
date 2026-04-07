@@ -293,7 +293,7 @@ export interface InterviewListItem {
   interviewTypes: InterviewType[]
   csSubTopics: string[]
   durationMinutes: number
-  questionCount: number
+  answerCount: number
   status: InterviewStatus
   createdAt: string
 }
