@@ -32,11 +32,16 @@ public class SaveFeedbackRequest {
         @NotNull private Long startMs;
         @NotNull private Long endMs;
         private String transcript;
-        private String verbalComment;
+
+        // feedback-v3: ✓△→ 단일 String → 정형 객체
+        private CommentBlock verbalComment;
+        private CommentBlock nonverbalComment;
+        private CommentBlock overallComment;
+        private CommentBlock vocalComment;
+        private CommentBlock attitudeComment;
+
         private Integer fillerWordCount;
         private String expressionLabel;
-        private String nonverbalComment;
-        private String overallComment;
 
         // 3단계 라벨 (GOOD / AVERAGE / NEEDS_IMPROVEMENT)
         private String eyeContactLevel;
@@ -47,14 +52,18 @@ public class SaveFeedbackRequest {
         private List<String> fillerWords;
         private String speechPace;
         private String emotionLabel;
-        private String vocalComment;
 
         // 기술 피드백
         private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
         private String coachingStructure;
         private String coachingImprovement;
+    }
 
-        // feedback-v2: 태도 인상
-        private String attitudeComment;
+    @Getter
+    @NoArgsConstructor
+    public static class CommentBlock {
+        private String positive;
+        private String negative;
+        private String suggestion;
     }
 }

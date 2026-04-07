@@ -108,23 +108,23 @@ public class InternalQuestionSetService {
                         .startMs(item.getStartMs())
                         .endMs(item.getEndMs())
                         .transcript(item.getTranscript())
-                        .verbalComment(item.getVerbalComment())
+                        .verbalComment(serializeCommentBlock(item.getVerbalComment()))
                         .fillerWordCount(item.getFillerWordCount())
                         .eyeContactLevel(item.getEyeContactLevel())
                         .postureLevel(item.getPostureLevel())
                         .expressionLabel(item.getExpressionLabel())
-                        .nonverbalComment(item.getNonverbalComment())
-                        .overallComment(item.getOverallComment())
+                        .nonverbalComment(serializeCommentBlock(item.getNonverbalComment()))
+                        .overallComment(serializeCommentBlock(item.getOverallComment()))
                         .isAnalyzed(true)
                         .fillerWords(toJson(item.getFillerWords()))
                         .speechPace(item.getSpeechPace())
                         .toneConfidenceLevel(item.getToneConfidenceLevel())
                         .emotionLabel(item.getEmotionLabel())
-                        .vocalComment(item.getVocalComment())
+                        .vocalComment(serializeCommentBlock(item.getVocalComment()))
                         .accuracyIssues(item.getAccuracyIssues())
                         .coachingStructure(item.getCoachingStructure())
                         .coachingImprovement(item.getCoachingImprovement())
-                        .attitudeComment(item.getAttitudeComment())
+                        .attitudeComment(serializeCommentBlock(item.getAttitudeComment()))
                         .build();
                 feedback.addTimestampFeedback(tf);
             }
@@ -207,6 +207,15 @@ public class InternalQuestionSetService {
     private QuestionSetAnalysis findAnalysis(Long questionSetId) {
         return analysisRepository.findByQuestionSetId(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+    }
+
+    private String serializeCommentBlock(SaveFeedbackRequest.CommentBlock block) {
+        if (block == null) return null;
+        try {
+            return objectMapper.writeValueAsString(block);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("CommentBlock 직렬화 실패", e);
+        }
     }
 
     private String toJson(List<String> list) {
