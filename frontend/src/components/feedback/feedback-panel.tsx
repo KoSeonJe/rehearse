@@ -50,17 +50,14 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
     feedback.delivery.attitudeComment !== null
   )
 
+  const effectiveTab: FeedbackTab =
+    activeTab === 'delivery' && !isDeliveryAvailable ? 'content' : activeTab
+
   useEffect(() => {
     if (isActive && cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [isActive])
-
-  useEffect(() => {
-    if (activeTab === 'delivery' && !isDeliveryAvailable) {
-      setActiveTab('content')
-    }
-  }, [activeTab, isDeliveryAvailable])
 
   const formatTime = (ms: number): string => {
     const s = Math.floor(ms / 1000)
@@ -114,7 +111,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
           <button
             onClick={() => setActiveTab('content')}
             className={`pb-2 px-1 text-sm font-semibold transition-colors ${
-              activeTab === 'content'
+              effectiveTab === 'content'
                 ? 'text-accent border-b-2 border-accent -mb-px'
                 : 'text-text-tertiary hover:text-text-secondary'
             }`}
@@ -125,7 +122,7 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
             onClick={() => setActiveTab('delivery')}
             disabled={!isDeliveryAvailable}
             className={`pb-2 px-1 text-sm font-semibold transition-colors ${
-              activeTab === 'delivery'
+              effectiveTab === 'delivery'
                 ? 'text-accent border-b-2 border-accent -mb-px'
                 : isDeliveryAvailable
                   ? 'text-text-tertiary hover:text-text-secondary'
@@ -137,10 +134,10 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
         </div>
 
         {/* 탭 콘텐츠 */}
-        {activeTab === 'content' && (
+        {effectiveTab === 'content' && (
           <ContentTab content={feedback.content} />
         )}
-        {activeTab === 'delivery' && (
+        {effectiveTab === 'delivery' && (
           <DeliveryTab delivery={feedback.delivery} />
         )}
       </div>
