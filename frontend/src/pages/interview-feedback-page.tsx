@@ -6,6 +6,7 @@ import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-que
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video-player'
 import { TimelineBar } from '@/components/feedback/timeline-bar'
+import { QuestionList } from '@/components/feedback/question-list'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
@@ -261,6 +262,12 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             feedbacks={feedbacks}
             durationMs={durationMs}
             currentTimeMs={currentTimeMs}
+            activeFeedbackId={activeFeedbackId}
+            onSeek={seekTo}
+          />
+          <QuestionList
+            questions={questions}
+            feedbacks={feedbacks}
             activeFeedbackId={activeFeedbackId}
             onSeek={seekTo}
           />
