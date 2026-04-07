@@ -130,9 +130,6 @@ export const InterviewTable = ({
               <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 상태
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
-                액션
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -202,25 +199,19 @@ export const InterviewTable = ({
                     </span>
                   </td>
 
-                  {/* 상태 */}
-                  <td className="py-4 px-4 text-center">
+                  {/* 상태 (hover/focus 시 우측 끝에 삭제 버튼이 absolute로 떠서 표시됨) */}
+                  <td className="relative py-4 pl-4 pr-10 text-center">
                     <StatusBadge status={interview.status} />
-                  </td>
-
-                  {/* 액션 */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      {isDeletable && (
-                        <button
-                          onClick={(e) => handleDeleteClick(e, interview.id)}
-                          aria-label="면접 삭제"
-                          disabled={deletingId === interview.id}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </div>
+                    {isDeletable && (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, interview.id)}
+                        aria-label="면접 삭제"
+                        disabled={deletingId === interview.id}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               )
