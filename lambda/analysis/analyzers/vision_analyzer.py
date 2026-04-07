@@ -14,32 +14,38 @@ RETRY_DELAY = 2
 
 _SYSTEM_PROMPT = KOREAN_INSTRUCTION + """면접 영상 프레임의 비언어적 커뮤니케이션만 평가합니다. 답변 내용은 평가하지 않습니다.
 
-## 평가
-1. eyeContactLevel: GOOD(화면/카메라 방향 응시) | AVERAGE(간헐적으로 다른 곳 응시) | NEEDS_IMPROVEMENT(자주 고개를 돌리거나 전혀 다른 방향 응시)
-2. postureLevel: GOOD(바른 자세 유지) | AVERAGE(간헐적 구부정) | NEEDS_IMPROVEMENT(지속적 불안정/흔들림)
-3. expressionLabel: CONFIDENT(자신감) | ENGAGED(몰입) | NEUTRAL(무표정) | NERVOUS(긴장) | UNCERTAIN(혼란)
+## 평가 enum (모두 영어 코드값으로 응답)
+- eyeContactLevel: GOOD | AVERAGE | NEEDS_IMPROVEMENT
+- postureLevel: GOOD | AVERAGE | NEEDS_IMPROVEMENT
+- expressionLabel: CONFIDENT | ENGAGED | NEUTRAL | NERVOUS | UNCERTAIN
 
 ## 주의
 - 여러 프레임의 평균 경향 평가. 이상치에 과도한 가중치 금지.
-- 사람 미확인 시 AVERAGE, comment에 설명.
-- 한국 면접 문화 고려(차분함 긍정적).
-- 중요: 이것은 노트북/웹캠으로 진행하는 온라인 면접입니다. 면접자가 화면을 보느라 시선이 카메라 아래쪽을 향하는 것은 정상입니다. 시선이 아래로 향하는 것만으로는 부정적 평가를 하지 마세요. 고개를 완전히 돌리거나 완전히 다른 곳을 응시하는 경우에만 시선 문제로 판단하세요.
+- 사람 미확인 시 AVERAGE로 응답.
+- 노트북/웹캠으로 진행하는 온라인 면접입니다. 시선이 화면 아래쪽으로 향하는 것은 정상.
 
-## comment 작성 규칙
-반드시 아래 3줄 형식으로 작성:
-  ✓ {잘한 점 1문장}
-  △ {보완할 점 1문장}
-  → {구체적 개선 방법 1문장}
+## 응답 형식 (정확히 이 JSON 스키마, 다른 키 추가 금지)
+{
+  "eyeContactLevel": "GOOD|AVERAGE|NEEDS_IMPROVEMENT",
+  "postureLevel": "GOOD|AVERAGE|NEEDS_IMPROVEMENT",
+  "expressionLabel": "CONFIDENT|ENGAGED|NEUTRAL|NERVOUS|UNCERTAIN",
+  "positive": "잘한 점 1문장 (구체적 근거 포함)",
+  "negative": "보완할 점 1문장 (구체적 근거 포함)",
+  "suggestion": "개선 방법 1문장 (실행 가능한 형태)"
+}
 
-## 응답
-JSON만 응답:
-{"eyeContactLevel":"","postureLevel":"","expressionLabel":"","comment":"한국어 3줄"}"""
+## 작성 규칙
+- positive/negative/suggestion 각 1문장. 두 문장 이상 금지.
+- "전반적으로 잘했습니다" 같은 모호한 표현 금지. 반드시 구체적 행동/표정/자세를 인용.
+- 보완점이 거의 없어도 작은 점이라도 1문장 작성. null·빈 문자열 금지."""
 
 _FALLBACK = {
     "eyeContactLevel": "AVERAGE",
     "postureLevel": "AVERAGE",
     "expressionLabel": "NEUTRAL",
-    "comment": "✓ 분석 대상 확인됨\n△ 비언어 분석을 수행할 수 없어 기본값 설정\n→ 카메라가 얼굴을 잘 비추도록 조정해보세요",
+    "positive": "분석 대상이 확인됐습니다.",
+    "negative": "비언어 분석을 수행할 수 없어 기본값으로 설정했습니다.",
+    "suggestion": "카메라가 얼굴을 잘 비추도록 조정해보세요.",
 }
 
 
@@ -138,5 +144,6 @@ def _validate_result(result: dict) -> dict:
         if result.get("expressionLabel") in valid_labels
         else "NEUTRAL"
     )
-    validated["comment"] = result.get("comment") or _FALLBACK["comment"]
+    for key in ("positive", "negative", "suggestion"):
+        validated[key] = result.get(key) or _FALLBACK[key]
     return validated

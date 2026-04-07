@@ -249,28 +249,28 @@ def _run_gemini_pipeline(
             verbal = gemini.get("verbal", {})
             vocal = gemini.get("vocal", {})
             technical = gemini.get("technical", {})
-            fb["verbalComment"] = verbal.get("comment")
+            fb["verbalComment"] = _comment_block(verbal)
             filler_list = vocal.get("fillerWords", [])
             fb["fillerWords"] = filler_list
             fb["fillerWordCount"] = len(filler_list) if isinstance(filler_list, list) else 0
             fb["speechPace"] = vocal.get("speechPace")
             fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
             fb["emotionLabel"] = vocal.get("emotionLabel")
-            fb["vocalComment"] = vocal.get("comment")
+            fb["vocalComment"] = _comment_block(vocal)
             fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
             fb["coachingStructure"] = technical.get("coaching", {}).get("structure", "")
             fb["coachingImprovement"] = technical.get("coaching", {}).get("improvement", "")
 
             attitude = gemini.get("attitude", {})
-            fb["attitudeComment"] = attitude.get("comment")
+            fb["attitudeComment"] = _comment_block(attitude)
 
         if vision:
             fb["eyeContactLevel"] = vision.get("eyeContactLevel")
             fb["postureLevel"] = vision.get("postureLevel")
             fb["expressionLabel"] = vision.get("expressionLabel")
-            fb["nonverbalComment"] = vision.get("comment")
+            fb["nonverbalComment"] = _comment_block(vision)
 
-        fb["overallComment"] = gemini.get("overallComment", "") if gemini else ""
+        fb["overallComment"] = _comment_block(gemini.get("overall")) if gemini else None
         timestamp_feedbacks.append(fb)
 
     return timestamp_feedbacks, verbal_ok, nonverbal_ok
@@ -356,26 +356,28 @@ def _build_timestamp_feedbacks(
         }
 
         if verbal:
-            fb["verbalComment"] = verbal.get("comment")
+            # 레거시 verbal_analyzer는 ✓△→ string을 반환 → CommentBlock 객체로 래핑
+            # (BE는 CommentBlock POJO로 역직렬화하므로 string을 그대로 보내면 400)
+            fb["verbalComment"] = _legacy_string_to_block(verbal.get("comment"))
             fb["fillerWordCount"] = verbal.get("filler_word_count", 0)
             fb["fillerWords"] = []
             fb["speechPace"] = ""
             fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
             fb["emotionLabel"] = ""
-            fb["vocalComment"] = verbal.get("tone_comment", "")
+            fb["vocalComment"] = None
             fb["accuracyIssues"] = "[]"
             fb["coachingStructure"] = ""
             fb["coachingImprovement"] = ""
 
-            fb["attitudeComment"] = verbal.get("attitude_comment")
+            fb["attitudeComment"] = _legacy_string_to_block(verbal.get("attitude_comment"))
 
         if vision_result:
             fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
             fb["postureLevel"] = vision_result.get("postureLevel")
             fb["expressionLabel"] = vision_result.get("expressionLabel")
-            fb["nonverbalComment"] = vision_result.get("comment")
+            fb["nonverbalComment"] = _comment_block(vision_result)
 
-        fb["overallComment"] = _build_overall_comment(verbal, vision_result)
+        fb["overallComment"] = None
 
         feedbacks.append(fb)
 
@@ -424,15 +426,39 @@ def _tone_label_to_level(tone_label: str | None) -> str:
     return "AVERAGE"
 
 
-def _build_overall_comment(verbal: dict | None, vision: dict | None) -> str:
-    parts = []
-    if verbal and verbal.get("comment"):
-        parts.append(verbal["comment"])
-    if verbal and verbal.get("tone_comment"):
-        parts.append(f"[말투] {verbal['tone_comment']}")
-    if vision and vision.get("comment"):
-        parts.append(vision["comment"])
-    return " ".join(parts) if parts else "분석 결과를 확인해주세요."
+
+def _comment_block(src: dict | None) -> dict | None:
+    if not src:
+        return None
+
+    def _norm(v):
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s or None
+
+    block = {
+        "positive":   _norm(src.get("positive")),
+        "negative":   _norm(src.get("negative")),
+        "suggestion": _norm(src.get("suggestion")),
+    }
+    if all(v is None for v in block.values()):
+        return None
+    return block
+
+
+def _legacy_string_to_block(text) -> dict | None:
+    """레거시 verbal_analyzer ✓△→ string을 CommentBlock dict로 변환.
+
+    줄 단위 prefix 파싱이 아니라 raw 전체를 positive에 싣는다.
+    BE의 parseCommentBlock fallback과 동일한 패턴 (legacy raw → positive only).
+    """
+    if text is None:
+        return None
+    s = str(text).strip()
+    if not s:
+        return None
+    return {"positive": s, "negative": None, "suggestion": None}
 
 
 def _safe_stt(audio_path: str) -> dict | None:
