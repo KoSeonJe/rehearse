@@ -36,18 +36,35 @@ export const QuestionList = ({
     feedbacks.find((fb) => fb.startMs >= q.startMs && fb.startMs < q.endMs)
 
   // 메인 질문 번호 매기기 (Q1, Q2…), 후속질문은 가장 가까운 직전 메인의 자식
-  let mainCounter = 0
-  let followupCounter = 0
-  const labeled = sorted.map((q) => {
-    const isFollowup = q.questionType === 'FOLLOWUP'
-    if (!isFollowup) {
-      mainCounter += 1
-      followupCounter = 0
-      return { q, label: `Q${mainCounter}`, isFollowup: false }
-    }
-    followupCounter += 1
-    return { q, label: `Q${mainCounter || 1}-${followupCounter}`, isFollowup: true }
-  })
+  // ESLint react-hooks/immutability 규칙 때문에 reduce 패턴 사용
+  const labeled = sorted.reduce<{
+    items: Array<{ q: PlayableQuestion; label: string; isFollowup: boolean }>
+    mainCounter: number
+    followupCounter: number
+  }>(
+    (acc, q) => {
+      const isFollowup = q.questionType === 'FOLLOWUP'
+      if (!isFollowup) {
+        const nextMain = acc.mainCounter + 1
+        return {
+          items: [...acc.items, { q, label: `Q${nextMain}`, isFollowup: false }],
+          mainCounter: nextMain,
+          followupCounter: 0,
+        }
+      }
+      const nextFollowup = acc.followupCounter + 1
+      const parentMain = acc.mainCounter || 1
+      return {
+        items: [
+          ...acc.items,
+          { q, label: `Q${parentMain}-${nextFollowup}`, isFollowup: true },
+        ],
+        mainCounter: acc.mainCounter,
+        followupCounter: nextFollowup,
+      }
+    },
+    { items: [], mainCounter: 0, followupCounter: 0 },
+  ).items
 
   return (
     <div className="rounded-2xl bg-white border border-gray-100 p-5">
