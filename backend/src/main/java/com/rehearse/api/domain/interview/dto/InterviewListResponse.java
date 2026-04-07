@@ -21,6 +21,6 @@ public class InterviewListResponse {
     private final List<String> csSubTopics;
     private final Integer durationMinutes;
     private final InterviewStatus status;
-    private final long questionCount;
+    private final long answerCount;
     private final LocalDateTime createdAt;
 }
