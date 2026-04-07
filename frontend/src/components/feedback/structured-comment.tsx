@@ -1,50 +1,41 @@
+import type { CommentBlock } from '@/types/interview'
+
 interface StructuredCommentProps {
-  comment: string
+  block: CommentBlock | null | undefined
   positiveLabel?: string
   negativeLabel?: string
   suggestionLabel?: string
 }
 
-type Prefix = '✓' | '△' | '→'
-
-const PREFIXES: readonly Prefix[] = ['✓', '△', '→'] as const
-
 const StructuredComment = ({
-  comment,
+  block,
   positiveLabel = '잘한 점',
   negativeLabel = '아쉬운 점',
   suggestionLabel = '이렇게 말하면 더 좋아요',
 }: StructuredCommentProps) => {
-  const labelByPrefix: Record<Prefix, string> = {
-    '✓': positiveLabel,
-    '△': negativeLabel,
-    '→': suggestionLabel,
+  if (!block) return null
+
+  const items: Array<{ label: string; body: string }> = []
+  if (block.positive && block.positive.trim().length > 0) {
+    items.push({ label: positiveLabel, body: block.positive.trim() })
+  }
+  if (block.negative && block.negative.trim().length > 0) {
+    items.push({ label: negativeLabel, body: block.negative.trim() })
+  }
+  if (block.suggestion && block.suggestion.trim().length > 0) {
+    items.push({ label: suggestionLabel, body: block.suggestion.trim() })
   }
 
-  const lines = comment.split('\n').filter((line) => line.trim().length > 0)
+  if (items.length === 0) return null
 
   return (
     <div className="space-y-3">
-      {lines.map((line, idx) => {
-        const trimmed = line.trim()
-        const prefix = PREFIXES.find((p) => trimmed.startsWith(p))
-
-        if (prefix !== undefined) {
-          const body = trimmed.slice(prefix.length).trim()
-          return (
-            <div key={idx}>
-              <p className="text-[13px] font-bold text-gray-500 mb-1">{labelByPrefix[prefix]}</p>
-              <p className="text-[15px] leading-[1.7] text-gray-700">{body}</p>
-            </div>
-          )
-        }
-
-        return (
-          <p key={idx} className="text-[15px] leading-[1.7] text-gray-700">
-            {trimmed}
-          </p>
-        )
-      })}
+      {items.map((item, idx) => (
+        <div key={idx}>
+          <p className="text-[13px] font-bold text-gray-500 mb-1">{item.label}</p>
+          <p className="text-[15px] leading-[1.7] text-gray-700">{item.body}</p>
+        </div>
+      ))}
     </div>
   )
 }

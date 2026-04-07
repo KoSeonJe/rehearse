@@ -1,7 +1,10 @@
 import { Fragment, type ReactNode } from 'react'
-import type { DeliveryFeedback } from '@/types/interview'
+import { isCommentBlockEmpty, type DeliveryFeedback } from '@/types/interview'
 import LevelBadge from '@/components/feedback/level-badge'
-import { formatFeedbackLevel } from '@/components/feedback/format-feedback-level'
+import {
+  formatExpressionLabel,
+  formatFeedbackLevel,
+} from '@/components/feedback/format-feedback-level'
 import StructuredComment from '@/components/feedback/structured-comment'
 
 interface DeliveryTabProps {
@@ -31,7 +34,7 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
   }
 
   const { nonverbal, vocal, attitudeComment } = delivery
-  const hasAttitude = attitudeComment !== null
+  const hasAttitude = !isCommentBlockEmpty(attitudeComment)
   const hasNonverbal = nonverbal !== null
   const hasVocal = vocal !== null
 
@@ -56,7 +59,7 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
           말투와 어휘 선택에서 느껴지는 전반적인 태도를 분석했어요.
         </p>
         <StructuredComment
-          comment={attitudeComment}
+          block={attitudeComment}
           positiveLabel="좋은 인상"
           negativeLabel="신경 쓰면 좋을 부분"
           suggestionLabel="이렇게 바꿔보세요"
@@ -84,17 +87,19 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
             value={formatFeedbackLevel(nonverbal.postureLevel)}
             bg="gray"
           />
-          <LevelBadge label="표정" value={nonverbal.expressionLabel} bg="gray" />
+          <LevelBadge
+            label="표정"
+            value={formatExpressionLabel(nonverbal.expressionLabel)}
+            bg="gray"
+          />
         </div>
 
-        {nonverbal.nonverbalComment !== null && (
-          <StructuredComment
-            comment={nonverbal.nonverbalComment}
-            positiveLabel="잘한 점"
-            negativeLabel="아쉬운 점"
-            suggestionLabel="이렇게 해보세요"
-          />
-        )}
+        <StructuredComment
+          block={nonverbal.nonverbalComment}
+          positiveLabel="잘한 점"
+          negativeLabel="아쉬운 점"
+          suggestionLabel="이렇게 해보세요"
+        />
       </div>,
     )
   }
@@ -138,14 +143,12 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
           </div>
         )}
 
-        {vocal.vocalComment !== null && (
-          <StructuredComment
-            comment={vocal.vocalComment}
-            positiveLabel="잘한 점"
-            negativeLabel="아쉬운 점"
-            suggestionLabel="이렇게 해보세요"
-          />
-        )}
+        <StructuredComment
+          block={vocal.vocalComment}
+          positiveLabel="잘한 점"
+          negativeLabel="아쉬운 점"
+          suggestionLabel="이렇게 해보세요"
+        />
       </div>,
     )
   }
