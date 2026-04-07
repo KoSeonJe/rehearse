@@ -16,7 +16,6 @@ _SYSTEM_PROMPT = KOREAN_INSTRUCTION + """면접 영상 프레임의 비언어적
 
 ## 평가
 1. eyeContactLevel: GOOD(화면/카메라 방향 응시) | AVERAGE(간헐적으로 다른 곳 응시) | NEEDS_IMPROVEMENT(자주 고개를 돌리거나 전혀 다른 방향 응시)
-   ※ 노트북 화면을 보느라 시선이 약간 아래를 향하는 것은 GOOD으로 평가
 2. postureLevel: GOOD(바른 자세 유지) | AVERAGE(간헐적 구부정) | NEEDS_IMPROVEMENT(지속적 불안정/흔들림)
 3. expressionLabel: CONFIDENT(자신감) | ENGAGED(몰입) | NEUTRAL(무표정) | NERVOUS(긴장) | UNCERTAIN(혼란)
 

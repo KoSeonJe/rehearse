@@ -44,23 +44,29 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
   const [showTranscript, setShowTranscript] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
+  const isDeliveryAvailable = feedback.delivery !== null && (
+    feedback.delivery.nonverbal !== null ||
+    feedback.delivery.vocal !== null ||
+    feedback.delivery.attitudeComment !== null
+  )
+
   useEffect(() => {
     if (isActive && cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
     }
   }, [isActive])
 
+  useEffect(() => {
+    if (activeTab === 'delivery' && !isDeliveryAvailable) {
+      setActiveTab('content')
+    }
+  }, [activeTab, isDeliveryAvailable])
+
   const formatTime = (ms: number): string => {
     const s = Math.floor(ms / 1000)
     const m = Math.floor(s / 60)
     return `${m}:${(s % 60).toString().padStart(2, '0')}`
   }
-
-  const isDeliveryAvailable = feedback.delivery !== null && (
-    feedback.delivery.nonverbal !== null ||
-    feedback.delivery.vocal !== null ||
-    feedback.delivery.attitudeComment !== null
-  )
 
   return (
     <div

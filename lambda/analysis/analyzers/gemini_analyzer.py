@@ -42,7 +42,7 @@ _FALLBACK_ANSWER = {
         "emotionLabel": "평온",
         "comment": "",
     },
-    "attitude": {"comment": ""},
+    "attitude": {"comment": None},
     "overallComment": "음성 분석에 실패했습니다.",
 }
 
