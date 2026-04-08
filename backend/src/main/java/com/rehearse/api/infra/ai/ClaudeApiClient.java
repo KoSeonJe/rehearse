@@ -9,8 +9,8 @@ import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
@@ -51,13 +51,13 @@ public class ClaudeApiClient {
             @Value("${claude.api-key}") String apiKey,
             @Value("${claude.model:claude-sonnet-4-20250514}") String model,
             @Value("${claude.api.url:https://api.anthropic.com/v1/messages}") String apiUrl) {
-        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
                 .baseUrl(apiUrl)
-                .requestFactory(ClientHttpRequestFactories.get(settings))
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
         this.followUpPromptBuilder = followUpPromptBuilder;

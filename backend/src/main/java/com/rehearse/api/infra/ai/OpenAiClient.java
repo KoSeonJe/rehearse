@@ -10,8 +10,8 @@ import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.web.client.ClientHttpRequestFactories;
-import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
+import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
+import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -51,13 +51,13 @@ public class OpenAiClient {
             AiResponseParser responseParser,
             @Value("${openai.api-key}") String apiKey,
             @Value("${openai.model:gpt-4o-mini}") String model) {
-        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
                 .baseUrl("https://api.openai.com/v1/chat/completions")
-                .requestFactory(ClientHttpRequestFactories.get(settings))
+                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
         this.followUpPromptBuilder = followUpPromptBuilder;
