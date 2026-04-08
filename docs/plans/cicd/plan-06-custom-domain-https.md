@@ -1,7 +1,8 @@
 # Plan 06: 커스텀 도메인 + HTTPS 설정
 
-> 상태: In Progress (EC2 Nginx/HTTPS 코드 완료, EC2 수동 작업 필요)
+> 상태: Completed (2026-04-09)
 > 작성일: 2026-03-17
+> 완료: EC2 Nginx/HTTPS + 커스텀 도메인 전체 전환 완료. 후속 정리는 `docs/plans/dev-domain-restore/` 참조
 
 ## Why
 

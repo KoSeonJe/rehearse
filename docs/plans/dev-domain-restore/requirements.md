@@ -1,6 +1,6 @@
 # Dev 프론트 도메인 `dev.rehearse.co.kr` 재이전 + OAuth https 픽스 — 요구사항 정의
 
-> 상태: Draft (v3, 2026-04-08 개정)
+> 상태: Completed (2026-04-09)
 > 작성일: 2026-04-08
 > 선행 문서: `docs/plans/cicd/plan-06-custom-domain-https.md`
 
