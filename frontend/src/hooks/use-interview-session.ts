@@ -7,7 +7,7 @@ import { useInterviewEventRecorder } from '@/hooks/use-interview-event-recorder'
 import { useInterviewGreeting } from '@/hooks/use-interview-greeting'
 import { useAnswerFlow } from '@/hooks/use-answer-flow'
 import { useAudioCapture } from '@/hooks/use-audio-capture'
-import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
+import { saveVideoBlob, deleteVideoBlob, loadVideoBlob } from '@/lib/video-storage'
 import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
 import type { QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/interview'
@@ -43,6 +43,7 @@ export const useInterviewSession = ({
   const s3UploadForFinish = useS3Upload()
   const pendingTtsActionRef = useRef<(() => void) | null>(null)
   const greetingPhaseRef = useRef(false)
+  const isFinishingRef = useRef(false)
   const audioCapture = useAudioCapture()
   const {
     questions,
@@ -53,6 +54,7 @@ export const useInterviewSession = ({
     setInterview,
     setQuestionSets,
     setVideoBlob,
+    setUploadStatus,
     completeInterview,
     addInterviewEvent,
     reset,
@@ -180,16 +182,23 @@ export const useInterviewSession = ({
       }
       setVideoBlob(blob)
 
-      const hasQs = state.questionSets.length > 0
+      // recorder.stop 대기 사이 addAnswerTimestamp 가 추가됐을 수 있어 최신 상태 재조회
+      const freshState = useInterviewStore.getState()
+      const hasQs = freshState.questionSets.length > 0
       if (hasQs) {
-        const currentSet = state.questionSets[state.currentQuestionSetIndex]
+        const currentSet = freshState.questionSets[freshState.currentQuestionSetIndex]
         if (currentSet) {
-          const answers = state.questionSetAnswers.get(currentSet.id) ?? []
+          const answers = freshState.questionSetAnswers.get(currentSet.id) ?? []
           const hasAnswers = answers.length > 0
 
-          if (hasAnswers) {
+          // 이미 업로드 완료/진행 중인 경우 중복 업로드 방지
+          // (confirm 취소 후 재시도 케이스 + 답변 완료 직후 종료로 uploadAsync 가 먼저 선점한 케이스)
+          const currentStatus = freshState.uploadStatus.get(currentSet.id)
+          const alreadyUploaded = currentStatus === 'completed' || currentStatus === 'uploading'
+          if (hasAnswers && !alreadyUploaded) {
+            setUploadStatus(currentSet.id, 'uploading')
             await saveVideoBlob(interview.id, blob, currentSet.id).catch((err: unknown) => {
-              console.error('[S3 업로드] 실패:', err)
+              console.error('[S3 업로드] 로컬 저장 실패:', err)
             })
 
             try {
@@ -207,9 +216,11 @@ export const useInterviewSession = ({
                 { contentType: blob.type || 'video/webm' },
               )
               await s3UploadForFinish.upload(blob, urlRes.data.uploadUrl)
+              setUploadStatus(currentSet.id, 'completed')
               deleteVideoBlob(interview.id, currentSet.id).catch(() => {})
             } catch (err) {
               console.error('[면접종료] S3 업로드 실패:', err)
+              setUploadStatus(currentSet.id, 'failed')
             }
           }
         }
@@ -217,6 +228,98 @@ export const useInterviewSession = ({
         saveVideoBlob(interview.id, blob).catch((err: unknown) => {
           console.error('[S3 업로드] 실패:', err)
         })
+      }
+    }
+
+    // ── 이전 세트 업로드 복구 루프 ─────────────────────────────────
+    // 시나리오: qs 456 답변 완료 → 전환 TTS → handleQuestionSetComplete 의 fire-and-forget
+    // uploadAsync 가 시작되는 사이 사용자가 즉시 "면접 종료" 클릭 → 이전 세트의 업로드가
+    // 완료되지 못한 채 페이지 이동 → S3 파일 없음 → PENDING_UPLOAD 영구 고정.
+    // 이를 막기 위해 COMPLETED 전환 전에 모든 이전 세트의 uploadStatus 를 점검하고
+    // IndexedDB 의 blob 으로 재업로드를 시도한다.
+
+    // 1단계: 진행 중('uploading')인 이전 세트가 있으면 최대 10초간 대기 — 원본 fire-and-forget
+    //        업로드가 자연 종료될 수 있도록 한다 (중복 업로드 & /answers 중복 POST 회피).
+    //        10초는 일반적인 LTE/3G 에서 20MB 블롭 + 지수백오프 한 사이클을 수용하는 보수값.
+    const isPriorUploading = () => {
+      const s = useInterviewStore.getState()
+      return s.questionSets.some((qs, idx) => {
+        if (!isFromFinishing && idx === s.currentQuestionSetIndex) return false
+        return s.uploadStatus.get(qs.id) === 'uploading'
+      })
+    }
+    if (isPriorUploading()) {
+      for (let i = 0; i < 100; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        if (!isPriorUploading()) break
+      }
+    }
+
+    const afterCurrentState = useInterviewStore.getState()
+    if (afterCurrentState.questionSets.length > 0) {
+      const pendingPriorSets = afterCurrentState.questionSets.filter((qs, idx) => {
+        // 중도포기 경로에서 현재 세트는 위 블록에서 이미 처리됨 → 이중 업로드 방지
+        if (!isFromFinishing && idx === afterCurrentState.currentQuestionSetIndex) return false
+        const status = afterCurrentState.uploadStatus.get(qs.id)
+        // 'completed' 는 건너뛰고, 'uploading' 은 위 대기 루프 이후에도 여전하면 죽은 것으로 간주해 재시도
+        if (status === 'completed') return false
+        const answers = afterCurrentState.questionSetAnswers.get(qs.id) ?? []
+        return answers.length > 0
+      })
+
+      for (const qs of pendingPriorSets) {
+        try {
+          const recoveredBlob = await loadVideoBlob(interview.id, qs.id)
+          if (!recoveredBlob || recoveredBlob.size === 0) {
+            console.warn('[면접종료] IndexedDB blob 없음 — 재업로드 포기:', qs.id)
+            setUploadStatus(qs.id, 'failed')
+            continue
+          }
+          // loadVideoBlob 대기 중 원본 fire-and-forget 이 성공했을 수 있음 → 재확인
+          const recheckStatus = useInterviewStore.getState().uploadStatus.get(qs.id)
+          if (recheckStatus === 'completed') continue
+          setUploadStatus(qs.id, 'uploading')
+          const answers = afterCurrentState.questionSetAnswers.get(qs.id) ?? []
+          try {
+            await apiClient.post(
+              `/api/v1/interviews/${interview.id}/question-sets/${qs.id}/answers`,
+              { answers },
+            )
+          } catch (err) {
+            console.error('[면접종료] 재업로드 타임스탬프 저장 실패:', qs.id, err)
+          }
+          const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
+            `/api/v1/interviews/${interview.id}/question-sets/${qs.id}/upload-url`,
+            { contentType: recoveredBlob.type || 'video/webm' },
+          )
+          await s3UploadForFinish.upload(recoveredBlob, urlRes.data.uploadUrl)
+          setUploadStatus(qs.id, 'completed')
+          deleteVideoBlob(interview.id, qs.id).catch(() => {})
+        } catch (err) {
+          console.error('[면접종료] 이전 세트 재업로드 실패:', qs.id, err)
+          setUploadStatus(qs.id, 'failed')
+        }
+      }
+
+      // 재업로드 시도 후에도 실패한 세트가 있으면 사용자에게 경고
+      const finalState = useInterviewStore.getState()
+      const stillPending = finalState.questionSets.filter((qs) => {
+        const hasAnswers = (finalState.questionSetAnswers.get(qs.id) ?? []).length > 0
+        if (!hasAnswers) return false
+        const status = finalState.uploadStatus.get(qs.id)
+        return status !== 'completed'
+      })
+      if (stillPending.length > 0) {
+        const proceed = window.confirm(
+          `답변 영상 ${stillPending.length}개가 업로드되지 않았습니다.\n` +
+          `네트워크를 확인한 뒤 다시 시도하는 것을 권장합니다.\n\n` +
+          `그래도 면접을 종료하시겠습니까? (종료 후에는 해당 답변의 피드백이 생성되지 않을 수 있습니다)`,
+        )
+        if (!proceed) {
+          // 사용자 취소 — 상태 변경 없이 면접 화면 유지, 재시도 허용
+          isFinishingRef.current = false
+          return
+        }
       }
     }
 
@@ -255,7 +358,7 @@ export const useInterviewSession = ({
       },
     )
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recorder, setVideoBlob, completeInterview, updateStatus, interview?.publicId, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
+  }, [recorder, setVideoBlob, setUploadStatus, completeInterview, updateStatus, interview?.publicId, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish])
 
   // 시간 만료 → recorder/audioCapture 정지 + finishing phase 전환
   const handleTimeExpired = useCallback(() => {
@@ -275,7 +378,6 @@ export const useInterviewSession = ({
   //   1) finishing phase 에서 [면접 종료하기] 버튼 클릭 (정상 종료)
   //   2) recording/paused/ready/greeting 중 상시 노출된 [종료] 버튼 클릭 (중도 포기)
   //   3) 후속질문 생성/TTS 재생/질문 전환 중 에스케이프
-  const isFinishingRef = useRef(false)
   const handleFinishInterview = useCallback(async () => {
     if (isFinishingRef.current) return
     isFinishingRef.current = true

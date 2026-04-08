@@ -61,17 +61,6 @@ export const InterviewControls = memo(({
 
   const isWaiting = isTtsSpeaking || isFollowUpLoading
 
-  // 면접 종료 에스케이프 해치 — finishing 제외 모든 phase 에서 confirm
-  const handleAbortInterview = () => {
-    const state = useInterviewStore.getState()
-    // finishing 은 이미 정상 종료 흐름이므로 confirm 생략, 그 외 진행 중인 모든 phase 는 confirm
-    if (state.phase !== 'finishing') {
-      const ok = window.confirm('면접을 종료하시겠어요? 지금까지 진행한 내용으로 피드백이 생성됩니다.')
-      if (!ok) return
-    }
-    onFinishInterview()
-  }
-
   // Finishing phase
   if (phase === 'finishing') {
     return (
@@ -149,19 +138,6 @@ export const InterviewControls = memo(({
           {currentFollowUp ? '후속 답변' : '답변 시작'}
         </button>
       ) : null}
-
-      {/* 면접 종료 에스케이프 해치 — preparing 제외 모든 phase 에서 상시 노출.
-          후속질문 생성 중 / TTS 재생 중 / 질문 전환 중 어느 시점이든 사용자가 즉시 종료 가능 */}
-      {phase !== 'preparing' && (
-        <button
-          className="cursor-pointer h-9 px-4 rounded-full border border-studio-border bg-transparent text-xs font-medium text-studio-text-secondary transition-all hover:bg-studio-surface hover:text-studio-text active:scale-95"
-          onClick={handleAbortInterview}
-          aria-label="면접 종료"
-          title="면접 종료"
-        >
-          면접 종료
-        </button>
-      )}
     </div>
   )
 })
