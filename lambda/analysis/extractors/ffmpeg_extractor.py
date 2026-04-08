@@ -15,7 +15,7 @@ def extract_audio(video_path: str, output_dir: str) -> str:
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
-        raise RuntimeError(f"FFmpeg 오디오 추출 실패: {result.stderr[:500]}")
+        raise RuntimeError(f"FFmpeg 오디오 추출 실패: {result.stderr[-1500:]}")
     print(f"[FFmpeg] 오디오 추출 완료: {audio_path}")
     return audio_path
 
@@ -45,7 +45,7 @@ def extract_answer_audios(
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            raise RuntimeError(f"FFmpeg 답변 오디오 추출 실패 (answer {i}): {result.stderr[:500]}")
+            raise RuntimeError(f"FFmpeg 답변 오디오 추출 실패 (answer {i}): {result.stderr[-1500:]}")
         print(f"[FFmpeg] 답변 오디오 추출 완료: {output_path}")
         paths.append(output_path)
     return paths
@@ -64,7 +64,7 @@ def extract_frames(video_path: str, output_dir: str) -> list[str]:
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
-        raise RuntimeError(f"FFmpeg 프레임 추출 실패: {result.stderr[:500]}")
+        raise RuntimeError(f"FFmpeg 프레임 추출 실패: {result.stderr[-1500:]}")
 
     frame_files = sorted(Path(frames_dir).glob("frame_*.jpg"))
     print(f"[FFmpeg] 프레임 추출 완료: {len(frame_files)}장")
@@ -80,7 +80,7 @@ def get_video_duration_ms(video_path: str) -> int:
     ]
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     if result.returncode != 0:
-        raise RuntimeError(f"FFprobe 실패: {result.stderr[:500]}")
+        raise RuntimeError(f"FFprobe 실패: {result.stderr[-1500:]}")
 
     raw = result.stdout.strip()
     if not raw or raw == "N/A":
@@ -152,7 +152,7 @@ def split_audio_chunks(audio_path: str, output_dir: str) -> list[tuple[str, int]
         ]
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         if result.returncode != 0:
-            raise RuntimeError(f"FFmpeg 청크 분할 실패 (chunk {i}): {result.stderr[:500]}")
+            raise RuntimeError(f"FFmpeg 청크 분할 실패 (chunk {i}): {result.stderr[-1500:]}")
 
         offset_ms = i * stride * 1000
         chunks.append((chunk_path, offset_ms))

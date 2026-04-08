@@ -15,8 +15,9 @@ from analyzers.verbal_prompt_factory import (
     VERBAL_EXPERTISE,
 )
 
-MAX_RETRIES = 3
-RETRY_DELAYS = [1, 3, 9]
+MAX_RETRIES = 5
+RETRY_DELAYS = [2, 5, 15, 30, 60]
+MAX_SERVER_RETRY_DELAY = 90  # 서버가 요구해도 이 값 이상은 대기하지 않음
 
 _genai_configured = False
 
@@ -131,6 +132,31 @@ _ANSWER_USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 
 
 
+def _extract_server_retry_delay(exc: Exception) -> int:
+    """Gemini 429 ResourceExhausted 예외에서 서버 권고 retry delay(초)를 파싱.
+
+    반환값이 0이면 서버 힌트 없음. SDK/프로토콜 버전마다 표기가 다르므로
+    1) 구조화된 속성(retry_delay.seconds) 우선 → 2) 문자열 폴백 파싱.
+    """
+    try:
+        details = getattr(exc, "details", None)
+        if callable(details):
+            for d in details():
+                seconds = getattr(getattr(d, "retry_delay", None), "seconds", None)
+                if seconds:
+                    return int(seconds)
+    except Exception:
+        pass
+    import re
+    match = re.search(r"retry[_ ]delay\s*\{?\s*seconds:\s*(\d+)", str(exc))
+    if match:
+        return int(match.group(1))
+    match = re.search(r"Please retry in ([\d.]+)s", str(exc))
+    if match:
+        return int(float(match.group(1))) + 1
+    return 0
+
+
 def analyze_answer_audio(
     audio_path: str,
     question_text: str,
@@ -191,10 +217,12 @@ def analyze_answer_audio(
 
         except Exception as e:
             last_exception = e
-            delay = RETRY_DELAYS[attempt] if attempt < len(RETRY_DELAYS) else RETRY_DELAYS[-1]
+            local_delay = RETRY_DELAYS[attempt] if attempt < len(RETRY_DELAYS) else RETRY_DELAYS[-1]
+            server_delay = _extract_server_retry_delay(e)
+            delay = min(max(local_delay, server_delay), MAX_SERVER_RETRY_DELAY) if server_delay else local_delay
             print(f"[Gemini] 시도 {attempt + 1}/{MAX_RETRIES} 실패: {e}")
             if attempt < MAX_RETRIES - 1:
-                print(f"[Gemini] {delay}초 후 재시도")
+                print(f"[Gemini] {delay}초 후 재시도 (local={local_delay}, server_hint={server_delay})")
                 time.sleep(delay)
 
         finally:
