@@ -10,23 +10,38 @@ interface StatusBadgeProps {
   status: InterviewStatus
 }
 
-const StatusBadge = ({ status }: StatusBadgeProps) => {
-  const config: Record<InterviewStatus, { label: string; className: string }> = {
-    COMPLETED: {
-      label: '완료',
-      className: 'bg-accent text-white',
-    },
-    READY: {
-      label: '준비됨',
-      className: 'bg-blue-100 text-blue-700',
-    },
-    IN_PROGRESS: {
-      label: '진행 중',
-      className: 'bg-warning-light text-warning',
-    },
-  }
+const STATUS_BADGE_CONFIG: Record<InterviewStatus, { label: string; className: string }> = {
+  READY: {
+    label: '준비됨',
+    className: 'bg-blue-100 text-blue-700',
+  },
+  IN_PROGRESS: {
+    label: '진행 중',
+    className: 'bg-warning-light text-warning',
+  },
+  COMPLETED: {
+    label: '완료',
+    className: 'bg-success-light text-success',
+  },
+}
 
-  const { label, className } = config[status]
+const CATEGORY_BADGE_CLASS: Record<InterviewType, string> = {
+  CS_FUNDAMENTAL: 'bg-slate-100 text-slate-700',
+  BEHAVIORAL: 'bg-pink-100 text-pink-700',
+  RESUME_BASED: 'bg-rose-100 text-rose-700',
+  LANGUAGE_FRAMEWORK: 'bg-indigo-100 text-indigo-700',
+  SYSTEM_DESIGN: 'bg-violet-100 text-violet-700',
+  SQL_MODELING: 'bg-amber-100 text-amber-700',
+  DATA_PIPELINE: 'bg-orange-100 text-orange-700',
+  UI_FRAMEWORK: 'bg-sky-100 text-sky-700',
+  BROWSER_PERFORMANCE: 'bg-cyan-100 text-cyan-700',
+  FULLSTACK_STACK: 'bg-teal-100 text-teal-700',
+  INFRA_CICD: 'bg-emerald-100 text-emerald-700',
+  CLOUD: 'bg-lime-100 text-lime-700',
+}
+
+const StatusBadge = ({ status }: StatusBadgeProps) => {
+  const { label, className } = STATUS_BADGE_CONFIG[status]
 
   return (
     <span className={`rounded-badge px-2.5 py-0.5 text-xs font-bold ${className}`}>
@@ -130,9 +145,6 @@ export const InterviewTable = ({
               <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
                 상태
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
-                액션
-              </th>
             </tr>
           </thead>
           <tbody>
@@ -141,9 +153,12 @@ export const InterviewTable = ({
               const isDeletable = interview.status !== 'COMPLETED'
               const positionLabel =
                 POSITION_LABELS[interview.position]?.label ?? interview.position
-              const typeLabels = interview.interviewTypes
+              const typeBadges = interview.interviewTypes
                 .slice(0, 2)
-                .map((t: InterviewType) => INTERVIEW_TYPE_LABELS[t]?.label ?? t)
+                .map((t: InterviewType) => ({
+                  type: t,
+                  label: INTERVIEW_TYPE_LABELS[t]?.label ?? t,
+                }))
 
               return (
                 <tr
@@ -167,10 +182,10 @@ export const InterviewTable = ({
                   {/* 카테고리 */}
                   <td className="py-4 px-4">
                     <div className="flex flex-wrap justify-center gap-1">
-                      {typeLabels.map((label) => (
+                      {typeBadges.map(({ type, label }) => (
                         <span
-                          key={label}
-                          className="rounded-badge bg-accent-light px-2 py-0.5 text-xs font-semibold text-accent"
+                          key={type}
+                          className={`rounded-badge px-2 py-0.5 text-xs font-semibold ${CATEGORY_BADGE_CLASS[type] ?? 'bg-slate-100 text-slate-700'}`}
                         >
                           {label}
                         </span>
@@ -202,25 +217,19 @@ export const InterviewTable = ({
                     </span>
                   </td>
 
-                  {/* 상태 */}
-                  <td className="py-4 px-4 text-center">
+                  {/* 상태 (hover/focus 시 우측 끝에 삭제 버튼이 absolute로 떠서 표시됨) */}
+                  <td className="relative py-4 px-4 text-center">
                     <StatusBadge status={interview.status} />
-                  </td>
-
-                  {/* 액션 */}
-                  <td className="py-4 px-4">
-                    <div className="flex items-center justify-center gap-1">
-                      {isDeletable && (
-                        <button
-                          onClick={(e) => handleDeleteClick(e, interview.id)}
-                          aria-label="면접 삭제"
-                          disabled={deletingId === interview.id}
-                          className="opacity-0 group-hover:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      )}
-                    </div>
+                    {isDeletable && (
+                      <button
+                        onClick={(e) => handleDeleteClick(e, interview.id)}
+                        aria-label="면접 삭제"
+                        disabled={deletingId === interview.id}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               )
