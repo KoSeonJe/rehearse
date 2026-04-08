@@ -1,43 +1,79 @@
 # Dev 프론트 도메인 `dev.rehearse.co.kr` 재이전 + OAuth https 픽스 — 진행 상황
 
+> **상태: Completed (2026-04-09)**
+
 ## 태스크 상태
 
-| # | 태스크 | 상태 | 의존 | 비고 |
-|---|--------|------|------|------|
-| 1 | 현재 인프라/OAuth 상태 조사 + 스냅샷 (CustomErrorResponses/Logging 포함) | Draft | — | `plan-01-infra-survey.md` |
-| 2 | CloudFront + ACM + DNS가 이미 dev를 커버함을 공식 확인 + invalidation | Draft | 1 | `plan-02-cloudfront-verify.md` [parallel with 3,4] |
-| 3 | Google OAuth https callback 사전 등록 + JS origins 확인 + GitHub callback 사전 메모 | Draft | 1 | `plan-03-oauth-console.md` [parallel with 2,4] |
-| 4 | `application-dev.yml` fallback 정리 + `forward-headers-strategy` 추가 (PR) | Draft | 1, 3-Step1 | `plan-04-backend-config.md` [parallel with 2] |
-| 5 | EC2 `.env`에 `FRONTEND_URL` 추가 + 재기동 + GitHub callback 즉시 교체 + E2E 검증 | Draft | 2,3,4 | `plan-05-ec2-runtime-switch.md` [blocking] |
-| 6 | apex 분리 (CloudFront/DNS/CORS/Google JS origins) + Google http callback 제거 + 문서 완료 | Draft | 5 + 1h(하드) / 24h(권장) | `plan-06-apex-decommission.md` |
+| # | 태스크 | 상태 | 비고 |
+|---|--------|------|------|
+| 1 | 현재 인프라/OAuth 상태 조사 + 스냅샷 | ✅ Completed | `survey-snapshot.md` |
+| 2 | CloudFront + ACM + DNS 현 상태 공식 확인 + invalidation | ✅ Completed | Distribution `E2FQDE3SA90LO8` |
+| 3 | Google OAuth https callback 사전 등록 + JS origins 확인 | ✅ Completed | 사용자 수동 |
+| 4 | `application-dev.yml` fallback 정리 + `forward-headers-strategy` 추가 | ✅ Completed | PR #263 머지 |
+| 5 | EC2 `.env`에 `FRONTEND_URL` 추가 + 재기동 + OAuth https 검증 | ✅ Completed | |
+| 6 | apex 분리 (CloudFront/DNS/CORS/Google) + 문서 완료 처리 | ✅ Completed | |
+
+## 최종 상태 (2026-04-09 기준)
+
+### 인프라
+- CloudFront `E2FQDE3SA90LO8` Aliases: **`[dev.rehearse.co.kr]`** (apex 제거됨)
+- ACM `536869da...` (SAN: apex + dev) — InUse 유지, prod 구축 시 재활용 가능
+- 가비아 DNS: `dev` CNAME + `api-dev` A 유지, **apex A 레코드 제거됨**
+
+### 런타임
+- EC2 `~/rehearse/backend/.env`:
+  - `FRONTEND_URL=https://dev.rehearse.co.kr` (추가됨)
+  - `CORS_ALLOWED_ORIGINS=https://dev.rehearse.co.kr` (apex 제거됨)
+- Spring Boot: `server.forward-headers-strategy=framework` 활성 → OAuth `redirect_uri`가 `https://`로 생성
+- Nginx (`api-dev.rehearse.co.kr`): 변경 없음, Let's Encrypt SSL 유지
+
+### OAuth
+- **Google OAuth Client**
+  - Authorized JavaScript origins: `https://dev.rehearse.co.kr` (apex 제거)
+  - Authorized redirect URIs: `https://api-dev.rehearse.co.kr/login/oauth2/code/google` (http 버전 제거)
+- **GitHub OAuth App**
+  - Authorization callback URL: `https://api-dev.rehearse.co.kr/login/oauth2/code/github`
+
+### 최종 검증 (2026-04-09)
+- ✅ `curl https://rehearse.co.kr` → 연결 실패 (완전 분리)
+- ✅ `curl https://dev.rehearse.co.kr` → HTTP/2 200
+- ✅ SPA 404 fallback (`/nonexistent-route`) → HTTP 200 (CustomErrorResponses 보존)
+- ✅ `curl /oauth2/authorization/google` → `redirect_uri=https://api-dev.../login/oauth2/code/google`
+- ✅ CORS: dev Origin → Allow, apex Origin → 403 Block
 
 ## 진행 로그
 
-### 2026-04-08 (v3 개정)
-- **OAuth https 마이그레이션을 본 플랜에 통합** — 같은 파일(`application-dev.yml`) 수정이고 plan-05의 OAuth E2E 검증과 직결되어 별건 분리 비효율
-- 실측: EC2 SSH 결과 `~/rehearse/backend/.env`에 `FRONTEND_URL`이 없음 → `application-dev.yml:60` fallback이 사용 중 (apex)
-- 실측: `curl /oauth2/authorization/google` → `redirect_uri=http://api-dev.rehearse.co.kr/...` → `forward-headers-strategy` 미설정 원인
-- 사용자 확인: Google OAuth Client에 `http://` callback이 등록돼 있어 현재는 작동 중. https로 전환 결정
-- 변경된 작업 흐름:
-  1. plan-03 Step 1에서 Google에 `https://` callback **추가** (http는 유지) — 사전
-  2. plan-04 PR에 `forward-headers-strategy: framework` 포함
-  3. plan-05 배포 + 직후 GitHub OAuth callback 즉시 교체 (다운타임 ~10초)
-  4. plan-06에서 Google `http://` callback 제거
+### 2026-04-09 (plan-06 완료)
+- CloudFront alias에서 apex 제거 (`E3UN6WX5RRO2AG` → update-distribution) → `Deployed` → invalidation `/*` 완료
+- EC2 `.env` CORS에서 apex 제거 → 백엔드 force-recreate → 헬스 OK
+- 가비아 DNS apex A 레코드 제거 (사용자) → 즉시 전파
+- Google OAuth Client apex JS origin + http redirect URI 제거 (사용자)
+- 최종 검증 전체 통과
+- `docs/plans/cicd/plan-06-custom-domain-https.md` → Completed
+- `docs/plans/dev-domain-restore/requirements.md` → Completed
+
+### 2026-04-08 (plan-04, plan-05 실행)
+- PR #263 생성 → CI pass → develop 머지 (`782e225..52c7be2`)
+- `application-dev.yml` 3줄 변경: frontend-url fallback / cors fallback / forward-headers-strategy
+- `backend/.env.example`에 `FRONTEND_URL` 추가
+- deploy-dev 워크플로우 success → EC2 새 이미지 배포
+- EC2 `~/rehearse/backend/.env`에 `FRONTEND_URL=https://dev.rehearse.co.kr` 추가 + force-recreate
+- curl 검증: Google/GitHub redirect_uri 둘 다 https 확인
+- GitHub OAuth App callback https 작동 확인 (GitHub 로그인 페이지 정상 반환)
+
+### 2026-04-08 (plan 문서화, v3 개정)
+- **OAuth https 마이그레이션을 본 플랜에 통합** (별건 분리 비효율)
+- 실측: EC2 SSH 결과 `FRONTEND_URL` 없음 → fallback 사용 중
+- 실측: `redirect_uri=http://...` → `forward-headers-strategy` 미설정 원인
+- 사용자 확인: Google OAuth Client에 `http://` callback 등록 확인 → `https://` 전환 결정
 
 ### 2026-04-08 (v2 개정)
-- 요구사항 정의 작성 (`requirements.md`) — critic 리뷰 반영해 v2 개정
-- 태스크별 플랜 작성 (`plan-01` ~ `plan-06`) — v2 개정
-- **실측 발견**: `dig dev.rehearse.co.kr` → 이미 `d2n8xljv54hfw0.cloudfront.net`으로 CNAME 존재. apex와 dev가 같은 CloudFront 배포를 공유하며 alternate domain에 둘 다 등록된 상태
-  - → plan-02가 "신규 생성"에서 "현 상태 검증 + invalidation"으로 축소됨
-  - → plan-03의 Google OAuth origins에도 dev가 이미 있을 가능성 높음 (확인 필요)
-  - → 전체 작업은 본질적으로 `FRONTEND_URL` runtime 전환 + apex 분리 두 가지로 압축됨
-- **critic 리뷰 반영 사항**
-  - `frontend/src/components/interview/interviewer-video.tsx:8-11`에 `dev.rehearse.co.kr` mp4 URL 4개 하드코딩 — S3에 파일 부재로 404→SPA fallback (현재도 작동 안 하는 상태). 본 플랜 범위 밖, 별건 기록
-  - JWT 쿠키 host-only 확인 (`OAuth2SuccessHandler.java:38-43`) → 전환 후 기존 apex 로그인 세션 무효화, 재로그인 필요. requirements에 side-effect로 문서화
-  - CORS `setMaxAge(3600L)` 확인 → plan-06 안정화 게이트 최소 1시간 필수
-  - CustomErrorResponses(403/404→index.html) 보존이 plan-06 위험점 → plan-01/02 스냅샷으로 기준점 확보, plan-06은 콘솔 편집 권장
-  - CloudFront Logging 활성화 여부를 plan-01 점검 항목에 추가 (plan-06 게이트 전제)
-  - plan-06 apex 분리 후 `dig` 기대값을 "NXDOMAIN"이 아닌 "A/CNAME 레코드 없음"으로 정정
-- 별개 이슈 식별 (본 플랜 Out)
-  - `application-local.yml:7-12` OAuth client secret 하드코딩 → secret 로테이션 + env 분리 필요
-  - `interviewer-video.tsx` mp4 하드코딩 + S3 파일 부재 → 면접관 비디오 기능 복구 필요
+- 실측: `dev.rehearse.co.kr` 이미 CloudFront에서 응답, apex와 병행 상태
+- plan-02 역할 축소: "신규 생성" → "현 상태 검증 + invalidation"
+- critic 리뷰 반영: CustomErrorResponses 보존, CORS maxAge 1h, 쿠키 host-only, interviewer-video mp4 하드코딩
+
+## 별건 (본 플랜 Out, 후속 처리 필요)
+
+- `backend/docker-compose.yml` `environment:` 섹션에 `FRONTEND_URL` 누락 — 현재는 `application-dev.yml` fallback으로 우연히 동작 중. 한 줄 추가 권장
+- `backend/src/main/resources/application-local.yml:7-12` — GitHub/Google OAuth client secret 하드코딩 (커밋 히스토리 노출) → secret 로테이션 + env 분리 필요
+- `frontend/src/components/interview/interviewer-video.tsx:8-11` — `dev.rehearse.co.kr/assets/interviewer/*.mp4` 4개 하드코딩, S3에 실제 mp4 파일 부재 → 면접관 비디오 기능 복구 필요
