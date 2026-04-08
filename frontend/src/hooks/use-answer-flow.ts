@@ -366,6 +366,17 @@ export const useAnswerFlow = ({
 
         tts.speak(res.data.question)
       } catch (err) {
+        // 면접 종료 / 언마운트 / 시간 만료에 의한 abort 면 상위 흐름이 종료를
+        // 주도하므로 여기서 transitionToNext 를 호출하지 않는다. 그렇지 않으면
+        // "면접 종료" 클릭 후 전환 멘트(tts.speak)가 다시 재생되는 유령 발화 발생.
+        const isAbort =
+          (err instanceof DOMException && err.name === 'AbortError') ||
+          (err instanceof Error && err.name === 'AbortError')
+        if (isAbort) {
+          setFollowUpLoading(false)
+          return
+        }
+
         console.error('[후속질문] 생성 실패:', err)
         // 실패 시에도 히스토리 기록 (빈 텍스트라도)
         if (wasFollowUp) {
@@ -392,9 +403,16 @@ export const useAnswerFlow = ({
     addQuestionToSet, recorder, setQuestionSetRecordingStartTime,
   ])
 
+  // 외부(면접 종료/언마운트)에서 in-flight 후속질문 mutation 을 abort 하기 위한 헬퍼
+  const cancelFollowUp = useCallback(() => {
+    followUpMutation.cancelRequest()
+    setFollowUpLoading(false)
+  }, [followUpMutation, setFollowUpLoading])
+
   return {
     handleStartAnswer: doStartAnswer,
     handleStopAnswer,
+    cancelFollowUp,
     s3Upload,
   }
 }
