@@ -165,10 +165,14 @@ def _run_gemini_pipeline(
 ) -> tuple[list[dict], bool, bool]:
     """Gemini 음성 + Vision 비언어를 병렬 실행한다. 모델 단위 재시도 포함."""
 
-    with ThreadPoolExecutor(max_workers=6) as executor:
-        # Gemini 음성 분석 (답변별)
+    gemini_concurrency = int(os.environ.get("GEMINI_MAX_CONCURRENCY", "3"))
+    vision_concurrency = int(os.environ.get("VISION_MAX_CONCURRENCY", "4"))
+
+    # Gemini audio 와 Vision 을 분리된 executor 로 실행해 상호 RPM 간섭 제거
+    with ThreadPoolExecutor(max_workers=gemini_concurrency) as gemini_executor, \
+         ThreadPoolExecutor(max_workers=vision_concurrency) as vision_executor:
         gemini_futures = [
-            executor.submit(
+            gemini_executor.submit(
                 _safe_gemini_audio,
                 audio_paths[i],
                 answer.get("questionText", ""),
@@ -179,9 +183,8 @@ def _run_gemini_pipeline(
             for i, answer in enumerate(answers)
         ]
 
-        # Vision 비언어 분석 (답변별)
         vision_futures = [
-            executor.submit(
+            vision_executor.submit(
                 _safe_vision,
                 _filter_frames_for_range(frame_paths, answer["startMs"], answer["endMs"]),
             )
