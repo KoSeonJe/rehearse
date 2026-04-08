@@ -11,6 +11,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -58,7 +59,15 @@ public class FollowUpService {
                     .build();
         }
 
-        // Phase 3b: 결과 저장 (짧은 write 트랜잭션)
+        // Phase 3b: non-skip인데 필수 필드가 비어있으면 스키마 위반 — DB 저장 전에 빠르게 실패
+        // (AI가 드물게 프롬프트 스키마를 어기는 경우 NOT NULL 제약 위반으로 500이 뜨는 것을 방지)
+        if (followUp.getQuestion() == null || followUp.getQuestion().isBlank()) {
+            log.warn("AI 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
+
+        // Phase 3c: 결과 저장 (짧은 write 트랜잭션)
         Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
                 context.questionSetId(), followUp, context.nextOrderIndex());
 
