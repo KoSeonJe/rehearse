@@ -57,10 +57,10 @@ jwt:
   expiration-ms: 604800000
 
 app:
-  frontend-url: ${FRONTEND_URL:https://rehearse.co.kr}
+  frontend-url: ${FRONTEND_URL:https://dev.rehearse.co.kr}
 
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,https://dev.rehearse.co.kr}
 
 logging:
   level:
@@ -69,6 +69,7 @@ logging:
 
 server:
   port: 8080
+  forward-headers-strategy: framework
 
 spring.servlet.multipart:
   max-file-size: 10MB
