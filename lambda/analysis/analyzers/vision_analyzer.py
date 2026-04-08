@@ -15,19 +15,33 @@ RETRY_DELAY = 2
 
 # 텍스트 피드백(positive/negative/suggestion)에서 금지하는 시선 관련 어휘.
 # 프롬프트 가드(B) 실패 시 사후 필터(C)가 이 패턴으로 재검사/치환한다.
-_GAZE_KEYWORDS = (
+#
+# 두 범주로 나눈 이유:
+# - substring: 다중 어절·조사 붙는 한국어 표현은 그대로 부분 일치
+# - word-boundary: "eye", "eyes" 는 word boundary 없이 매칭하면
+#   "eye movement / close your eyes" 같은 합법 표정 서술까지 치환되는
+#   거짓양성이 발생하므로 \b 로 단어 경계를 강제한다.
+_GAZE_KEYWORDS_SUBSTRING = (
     # 한국어
     "시선", "눈맞춤", "눈 맞춤", "눈빛", "응시", "주시",
     "아이컨택", "아이 컨택", "아이콘택", "눈을 마주", "눈을 피",
     "화면 응시", "화면을 응시", "화면을 바라", "카메라 응시", "카메라를 응시",
     "카메라를 바라", "카메라에 시선", "정면 응시", "정면을 응시",
-    # 영어
+    # 영어 — 복합어는 substring 매치로 충분
     "eye contact", "eye-contact", "eyecontact", "eyecontactlevel",
     "eye contact level", "gaze", "looking at the camera", "look at the camera",
-    "eyes", "eye ",
 )
+_GAZE_KEYWORDS_WORD = (
+    # 영어 단일 단어 — word boundary 강제 (eye movement/close eyes 거짓양성 방지)
+    "eye", "eyes",
+)
+# 하위 호환을 위해 합쳐진 튜플 유지 (디버그/테스트용)
+_GAZE_KEYWORDS = _GAZE_KEYWORDS_SUBSTRING + _GAZE_KEYWORDS_WORD
 _GAZE_PATTERN = re.compile(
-    "|".join(re.escape(kw) for kw in _GAZE_KEYWORDS),
+    "|".join(
+        [re.escape(kw) for kw in _GAZE_KEYWORDS_SUBSTRING]
+        + [rf"\b{re.escape(kw)}\b" for kw in _GAZE_KEYWORDS_WORD]
+    ),
     flags=re.IGNORECASE,
 )
 
@@ -82,9 +96,10 @@ _FALLBACK = {
     "eyeContactLevel": "AVERAGE",
     "postureLevel": "AVERAGE",
     "expressionLabel": "NEUTRAL",
-    "positive": "상체 자세와 표정이 전반적으로 안정적으로 유지됐습니다.",
-    "negative": "비언어 분석을 충분히 수행하지 못해 자세·표정 세부 평가가 제한됐습니다.",
-    "suggestion": "어깨를 펴고 상체를 정면으로 유지한 채 연습 녹화를 다시 시도해보세요.",
+    # 중립 폴백: 분석 실패 경로이므로 긍정/부정 판정 없이 중립 서술만.
+    "positive": "자세와 표정 분석에 필요한 데이터가 일부 확인됐습니다.",
+    "negative": "프레임 품질 또는 분량 제약으로 자세·표정 세부 평가가 제한됐습니다.",
+    "suggestion": "조명과 카메라 각도를 확인한 뒤 연습 녹화를 다시 시도해보세요.",
 }
 
 
