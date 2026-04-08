@@ -13,7 +13,7 @@ const StatusBadge = ({ status }: StatusBadgeProps) => {
   const config: Record<InterviewStatus, { label: string; className: string }> = {
     COMPLETED: {
       label: '완료',
-      className: 'bg-accent text-white',
+      className: 'bg-success-light text-success',
     },
     READY: {
       label: '준비됨',
