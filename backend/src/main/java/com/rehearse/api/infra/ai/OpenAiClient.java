@@ -33,6 +33,7 @@ public class OpenAiClient {
 
     private static final int MAX_TOKENS_QUESTION = 8192;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
+    private static final double TEMPERATURE_FOLLOW_UP = 0.7;
 
     private static final int MAX_RETRY_ATTEMPTS = 2;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
@@ -86,7 +87,7 @@ public class OpenAiClient {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
 
-        String text = callOpenAiApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
+        String text = callOpenAiApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, TEMPERATURE_FOLLOW_UP);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 
@@ -155,7 +156,7 @@ public class OpenAiClient {
                         ))
                 ),
                 "max_tokens", MAX_TOKENS_FOLLOW_UP,
-                "temperature", 1.0
+                "temperature", TEMPERATURE_FOLLOW_UP
         );
 
         return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP);

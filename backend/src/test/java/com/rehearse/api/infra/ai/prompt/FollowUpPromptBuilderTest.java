@@ -68,6 +68,30 @@ class FollowUpPromptBuilderTest {
     }
 
     @Test
+    @DisplayName("system prompt에 답변 인용 강제 규칙과 skip 분기 규칙이 포함된다")
+    void buildSystemPrompt_containsQuoteAndSkipRules() {
+        FollowUpGenerationRequest req = new FollowUpGenerationRequest(
+                Position.BACKEND,
+                TechStack.JAVA_SPRING,
+                InterviewLevel.JUNIOR,
+                "JVM의 GC 방식에 대해 설명해주세요.",
+                "잘 모르겠습니다.",
+                null,
+                List.of()
+        );
+
+        String prompt = builder.buildSystemPrompt(req);
+
+        // 답변 속 키워드 인용 강제
+        assertThat(prompt).contains("답변 속 구체적인 단어");
+        // skip 분기 규칙
+        assertThat(prompt).contains("skip=true");
+        assertThat(prompt).contains("모르겠다");
+        // 응답 형식에 skip 필드 포함
+        assertThat(prompt).contains("\"skip\"");
+    }
+
+    @Test
     @DisplayName("previousExchanges가 빈 리스트일 때 user prompt에 이전 후속 섹션이 없다")
     void buildUserPrompt_emptyPreviousExchanges_doesNotContainPreviousExchangesSection() {
         FollowUpGenerationRequest req = new FollowUpGenerationRequest(

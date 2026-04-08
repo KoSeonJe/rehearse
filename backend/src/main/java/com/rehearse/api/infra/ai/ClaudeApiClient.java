@@ -31,6 +31,7 @@ public class ClaudeApiClient {
 
     private static final int MAX_TOKENS_QUESTION = 8192;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
+    private static final double TEMPERATURE_FOLLOW_UP = 0.7;
     private static final String FOLLOW_UP_MODEL = "claude-haiku-4-5-20251001";
 
     private static final int MAX_RETRY_ATTEMPTS = 3;
@@ -86,7 +87,7 @@ public class ClaudeApiClient {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
 
-        String text = callClaudeApiWithModel(FOLLOW_UP_MODEL, systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, 1.0);
+        String text = callClaudeApiWithModel(FOLLOW_UP_MODEL, systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, TEMPERATURE_FOLLOW_UP);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
     }
 

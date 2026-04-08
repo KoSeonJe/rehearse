@@ -47,7 +47,18 @@ public class FollowUpService {
         );
         GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
 
-        // Phase 3: 결과 저장 (짧은 write 트랜잭션)
+        // Phase 3a: AI가 답변 불충분으로 스킵 신호를 보낸 경우 저장하지 않고 skip 응답 반환
+        if (followUp.isSkipped()) {
+            log.info("후속 질문 스킵: interviewId={}, questionSetId={}, reason={}",
+                    id, request.getQuestionSetId(), followUp.getSkipReason());
+            return FollowUpResponse.builder()
+                    .answerText(followUp.getAnswerText())
+                    .skip(true)
+                    .skipReason(followUp.getSkipReason())
+                    .build();
+        }
+
+        // Phase 3b: 결과 저장 (짧은 write 트랜잭션)
         Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
                 context.questionSetId(), followUp, context.nextOrderIndex());
 
@@ -61,6 +72,7 @@ public class FollowUpService {
                 .type(followUp.getType())
                 .answerText(followUp.getAnswerText())
                 .modelAnswer(savedQuestion.getModelAnswer())
+                .skip(false)
                 .build();
     }
 }
