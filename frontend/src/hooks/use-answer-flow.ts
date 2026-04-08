@@ -128,6 +128,11 @@ export const useAnswerFlow = ({
       restartTimestamp = Date.now()
     }
 
+    // uploadStatus='uploading' 을 **동기적으로 선점**해서
+    // handleFinishInterviewInternal 의 복구 루프가 "아직 시작 안 한 상태"로 오인하여
+    // 중복 PUT/POST 를 발사하는 것을 막는다.
+    setUploadStatus(questionSetId, 'uploading')
+
     // 2. 이하 업로드 로직은 백그라운드 실행 (즉시 반환하여 세트 전환 블로킹 방지)
     const uploadAsync = async () => {
       await saveVideoBlob(interview.id, blob, questionSetId).catch(() => {})
@@ -144,7 +149,6 @@ export const useAnswerFlow = ({
         }
       }
 
-      setUploadStatus(questionSetId, 'uploading')
       try {
         const urlRes = await apiClient.post<ApiResponse<UploadUrlResponse>>(
           `/api/v1/interviews/${interview.id}/question-sets/${questionSetId}/upload-url`,
