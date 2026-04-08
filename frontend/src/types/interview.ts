@@ -277,6 +277,14 @@ export interface FollowUpResponse {
   type: FollowUpType
   answerText?: string
   modelAnswer?: string | null
+  /**
+   * AI가 답변 불충분("모르겠다", 공백 등)으로 꼬리질문 생성을 포기한 경우 true.
+   * skip=true일 때 BE는 questionId/question/reason/type/modelAnswer를 null로 내려보내지만,
+   * 이 경우 클라이언트는 해당 응답을 store에 저장하지 않고 즉시 다음 메인 질문으로 진행해야 한다.
+   * 따라서 위 필드들은 skip=false 케이스 기준으로 non-null로 선언되어 있으며, skip 분기 이후에는 접근하지 말 것.
+   */
+  skip: boolean
+  skipReason?: string | null
 }
 
 // 면접 진행 관련 타입
