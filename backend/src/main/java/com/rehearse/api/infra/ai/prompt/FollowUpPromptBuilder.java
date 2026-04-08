@@ -61,13 +61,13 @@ public class FollowUpPromptBuilder {
           .append(" (").append(effectiveStack.getDisplayName()).append(") | ")
           .append("레벨: ").append(levelKorean(req.level())).append("\n\n");
 
-        sb.append("질문: ").append(req.questionContent()).append("\n");
-        sb.append("답변: ").append(answerSection).append("\n");
+        sb.append("메인 질문: ").append(req.questionContent()).append("\n");
+        sb.append("현재 답변: ").append(answerSection).append("\n");
         sb.append("비언어: ").append(
             req.nonVerbalSummary() != null ? req.nonVerbalSummary() : "없음").append("\n");
 
         if (req.previousExchanges() != null && !req.previousExchanges().isEmpty()) {
-            sb.append("\n이전 후속:\n");
+            sb.append("\n이전 후속 대화 (참고용, 중복 회피 목적 — 인용 대상 아님):\n");
             for (int i = 0; i < req.previousExchanges().size(); i++) {
                 var ex = req.previousExchanges().get(i);
                 sb.append("[").append(i + 1).append("] Q: ").append(ex.getQuestion()).append("\n");

@@ -125,6 +125,78 @@ class FollowUpServiceTest {
     }
 
     @Test
+    @DisplayName("AI가 skip=true를 반환하면 DB 저장을 건너뛰고 skip 응답을 돌려준다")
+    void generateFollowUp_aiSkipped_doesNotSave() {
+        // given
+        FollowUpContext context = new FollowUpContext(
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
+
+        GeneratedFollowUp followUp = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(followUp, "skip", Boolean.TRUE);
+        ReflectionTestUtils.setField(followUp, "skipReason", "답변이 '잘 모르겠다'로 불충분함");
+        ReflectionTestUtils.setField(followUp, "answerText", "잘 모르겠습니다.");
+
+        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
+                .willReturn(followUp);
+
+        MockMultipartFile audioFile =
+                new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "JVM GC에 대해 설명해주세요.");
+
+        // when
+        FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request, audioFile);
+
+        // then
+        assertThat(response.isSkip()).isTrue();
+        assertThat(response.getSkipReason()).isEqualTo("답변이 '잘 모르겠다'로 불충분함");
+        assertThat(response.getQuestionId()).isNull();
+        assertThat(response.getQuestion()).isNull();
+        assertThat(response.getAnswerText()).isEqualTo("잘 모르겠습니다.");
+        then(followUpTransactionHandler).should(never())
+                .saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class), anyInt());
+    }
+
+    @Test
+    @DisplayName("AI 응답이 skip=false인데 question이 null이면 PARSE_FAILED로 빠르게 실패한다 (DB NOT NULL 제약 위반 방지)")
+    void generateFollowUp_nonSkipWithNullQuestion_throwsParseFailed() {
+        // given
+        FollowUpContext context = new FollowUpContext(
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+        given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
+
+        // AI가 스키마를 어긴 경우 — skip=false이지만 question이 null
+        GeneratedFollowUp followUp = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(followUp, "skip", Boolean.FALSE);
+        ReflectionTestUtils.setField(followUp, "answerText", "사용자 답변");
+        // question, reason, type, modelAnswer 모두 null로 방치
+
+        given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
+                .willReturn(followUp);
+
+        MockMultipartFile audioFile =
+                new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        FollowUpRequest request = new FollowUpRequest();
+        ReflectionTestUtils.setField(request, "questionSetId", 10L);
+        ReflectionTestUtils.setField(request, "questionContent", "질문");
+
+        // when & then
+        assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request, audioFile))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> {
+                    BusinessException be = (BusinessException) ex;
+                    assertThat(be.getCode()).isEqualTo("AI_005"); // PARSE_FAILED
+                });
+        // DB 저장은 절대 시도되지 않아야 함
+        then(followUpTransactionHandler).should(never())
+                .saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class), anyInt());
+    }
+
+    @Test
     @DisplayName("오디오 파일이 없으면 예외 발생")
     void generateFollowUp_noAudioFile() {
         // given

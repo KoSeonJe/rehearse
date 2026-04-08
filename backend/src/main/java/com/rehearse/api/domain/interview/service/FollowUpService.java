@@ -11,6 +11,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,26 @@ public class FollowUpService {
         );
         GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
 
-        // Phase 3: 결과 저장 (짧은 write 트랜잭션)
+        // Phase 3a: AI가 답변 불충분으로 스킵 신호를 보낸 경우 저장하지 않고 skip 응답 반환
+        if (followUp.isSkipped()) {
+            log.info("후속 질문 스킵: interviewId={}, questionSetId={}, reason={}",
+                    id, request.getQuestionSetId(), followUp.getSkipReason());
+            return FollowUpResponse.builder()
+                    .answerText(followUp.getAnswerText())
+                    .skip(true)
+                    .skipReason(followUp.getSkipReason())
+                    .build();
+        }
+
+        // Phase 3b: non-skip인데 필수 필드가 비어있으면 스키마 위반 — DB 저장 전에 빠르게 실패
+        // (AI가 드물게 프롬프트 스키마를 어기는 경우 NOT NULL 제약 위반으로 500이 뜨는 것을 방지)
+        if (followUp.getQuestion() == null || followUp.getQuestion().isBlank()) {
+            log.warn("AI 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
+
+        // Phase 3c: 결과 저장 (짧은 write 트랜잭션)
         Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
                 context.questionSetId(), followUp, context.nextOrderIndex());
 
@@ -61,6 +81,7 @@ public class FollowUpService {
                 .type(followUp.getType())
                 .answerText(followUp.getAnswerText())
                 .modelAnswer(savedQuestion.getModelAnswer())
+                .skip(false)
                 .build();
     }
 }
