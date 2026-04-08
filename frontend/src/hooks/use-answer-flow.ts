@@ -18,6 +18,14 @@ const TRANSITION_PHRASES = [
   '네, 감사합니다. 다음 질문입니다.',
 ]
 
+// AI가 답변 불충분으로 꼬리질문을 포기한 경우 — 압박감 없이 자연스럽게 넘어가는 멘트.
+// "답변이 부족하다"는 뉘앙스를 절대 주지 않도록 중립적으로 구성.
+const SKIP_TRANSITION_PHRASES = [
+  '네, 알겠습니다. 그럼 다음 질문으로 넘어가 볼게요.',
+  '네, 좋습니다. 다른 주제로 넘어가겠습니다.',
+  '네, 그럼 다음 질문 드리겠습니다.',
+]
+
 const SET_TRANSITION_PHRASES = [
   '네, 다음 주제로 넘어가겠습니다.',
   '좋습니다. 다음 질문 세트를 시작하겠습니다.',
@@ -171,7 +179,8 @@ export const useAnswerFlow = ({
   }, [hasQuestionSets])
 
   // 다음 질문 또는 다음 세트 또는 종료로 전환
-  const transitionToNext = useCallback((isLast: boolean) => {
+  // skipPhrase: AI가 꼬리질문을 포기한 경우 SKIP_TRANSITION_PHRASES 사용 (압박감 없는 자연스러운 멘트)
+  const transitionToNext = useCallback((isLast: boolean, useSkipPhrase: boolean = false) => {
     const state = useInterviewStore.getState()
     const isSetEnd = hasQuestionSets && isLastQuestionInSet()
     const isLastSet = state.currentQuestionSetIndex >= state.questionSets.length - 1
@@ -208,7 +217,8 @@ export const useAnswerFlow = ({
     } else {
       // 같은 세트 내 다음 질문
       pendingTtsActionRef.current = () => nextQuestion()
-      tts.speak(pickRandom(TRANSITION_PHRASES))
+      const phrases = useSkipPhrase ? SKIP_TRANSITION_PHRASES : TRANSITION_PHRASES
+      tts.speak(pickRandom(phrases))
     }
   }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime])
 
@@ -328,6 +338,16 @@ export const useAnswerFlow = ({
         // API 응답에서 Whisper STT 결과를 받아 히스토리에 저장
         if (wasFollowUp) {
           completeFollowUpRound(res.data.answerText || answerText)
+        }
+
+        // AI가 답변 불충분으로 꼬리질문 생성을 포기한 경우
+        // - store에 꼬리질문을 저장하지 않음 (questionId/question이 null일 수 있음)
+        // - 자연스러운 전환 멘트로 다음 메인 질문 진행
+        // - 같은 메인 질문에 대해 재요청하지 않음 (무한 루프 방지)
+        if (res.data.skip) {
+          resetFollowUpState()
+          transitionToNext(isLastQuestion, /* useSkipPhrase */ true)
+          return
         }
 
         setCurrentFollowUp(res.data)
