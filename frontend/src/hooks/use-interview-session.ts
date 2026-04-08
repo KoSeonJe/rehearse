@@ -97,7 +97,7 @@ export const useInterviewSession = ({
   })
 
   // 답변 시작/완료 + 전환 로직
-  const { handleStartAnswer, handleStopAnswer, s3Upload } = useAnswerFlow({
+  const { handleStartAnswer, handleStopAnswer, cancelFollowUp, s3Upload } = useAnswerFlow({
     interview,
     mediaStream,
     recorder,
@@ -261,27 +261,44 @@ export const useInterviewSession = ({
   const handleTimeExpired = useCallback(() => {
     const state = useInterviewStore.getState()
     if (state.phase === 'finishing' || state.phase === 'completed') return
-    tts.stop()
     pendingTtsActionRef.current = null
+    tts.stop()
+    // in-flight 후속질문 mutation 이 있다면 abort (응답 뒤늦게 와도 상태 오염 방지)
+    cancelFollowUp()
     // Always Recording: recorder는 finishing → stop()에서 정리됨
     audioCapture.stop()
     useInterviewStore.getState().setPhase('finishing')
-  }, [tts, audioCapture])
+  }, [tts, audioCapture, cancelFollowUp])
 
-  // 폴백: "면접 종료" 버튼 (중도 포기 또는 finishing phase에서 클릭)
+  // 면접 종료 에스케이프 해치 — 어떤 중간 상태에서도 매끄럽게 종료
+  // 호출 경로:
+  //   1) finishing phase 에서 [면접 종료하기] 버튼 클릭 (정상 종료)
+  //   2) recording/paused/ready/greeting 중 상시 노출된 [종료] 버튼 클릭 (중도 포기)
+  //   3) 후속질문 생성/TTS 재생/질문 전환 중 에스케이프
   const isFinishingRef = useRef(false)
   const handleFinishInterview = useCallback(async () => {
     if (isFinishingRef.current) return
     isFinishingRef.current = true
+
+    // 0. 예약된 TTS onEnd 액션 제거 (뒤늦게 와도 실행되지 않도록)
     pendingTtsActionRef.current = null
+
+    // 1. TTS 즉시 중단 (세대 가드에 의해 유령 발화 차단)
+    tts.stop()
+
+    // 2. in-flight 후속질문 mutation abort + 로딩 플래그 정리
+    cancelFollowUp()
+
+    // 3. 기존 정상 종료 흐름 (recorder stop, S3 업로드, status COMPLETED, navigate)
     await handleFinishInterviewInternal()
-  }, [handleFinishInterviewInternal])
+  }, [handleFinishInterviewInternal, tts, cancelFollowUp])
 
   // 클린업
   useEffect(() => {
     return () => {
       pendingTtsActionRef.current = null
       tts.stop()
+      cancelFollowUp()
       mediaStream.stop()
       reset()
     }

@@ -1,3 +1,4 @@
+import { useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, ApiError } from '@/lib/api-client'
 import { convertBlobToWav } from '@/utils/audio-converter'
@@ -151,7 +152,11 @@ export const useSkipRemainingQuestionSets = () => {
 }
 
 export const useFollowUpQuestion = () => {
-  return useMutation({
+  // 면접 종료/언마운트 등 외부 요청으로 in-flight 요청을 취소할 수 있도록
+  // 훅 레벨에서 AbortController 를 보관한다.
+  const abortRef = useRef<AbortController | null>(null)
+
+  const mutation = useMutation({
     mutationFn: async ({
       id,
       data,
@@ -161,6 +166,11 @@ export const useFollowUpQuestion = () => {
       data: FollowUpRequest
       audioBlob?: Blob
     }) => {
+      // 직전 요청이 살아있으면 먼저 abort (직렬 보장)
+      abortRef.current?.abort()
+      const ac = new AbortController()
+      abortRef.current = ac
+
       const formData = new FormData()
       const requestBlob = new Blob([JSON.stringify(data)], {
         type: 'application/json',
@@ -176,6 +186,7 @@ export const useFollowUpQuestion = () => {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        signal: ac.signal,
       })
 
       if (!response.ok) {
@@ -197,7 +208,21 @@ export const useFollowUpQuestion = () => {
 
       return response.json() as Promise<ApiResponse<FollowUpResponse>>
     },
+    onSettled: () => {
+      abortRef.current = null
+    },
   })
+
+  // 외부에서 호출 가능한 abort 함수 — 면접 종료/언마운트 시 사용.
+  // TanStack Query 가 미래에 `cancel` 을 추가할 가능성을 피해 cancelRequest 로 명명.
+  // useCallback 으로 감싸고 abortRef 는 호출 시점에만 read 하므로 렌더 중 ref 접근이 아님.
+  const cancelRequest = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+  }, [])
+
+  // eslint-disable-next-line react-hooks/refs -- cancelRequest 는 호출 시점에만 ref 를 read 하는 이벤트 핸들러
+  return Object.assign(mutation, { cancelRequest })
 }
 
 export const useInterviews = () => {
