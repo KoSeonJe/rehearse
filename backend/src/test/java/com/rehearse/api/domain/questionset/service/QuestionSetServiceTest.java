@@ -266,15 +266,16 @@ class QuestionSetServiceTest {
     }
 
     @Test
-    @DisplayName("getQuestionsWithAnswers: 미답변 FOLLOWUP 질문은 결과에서 제외된다")
-    void getQuestionsWithAnswers_filtersUnansweredFollowup() {
+    @DisplayName("getQuestionsWithAnswers: 답변 없는 질문(MAIN/FOLLOWUP 공통)은 결과에서 제외된다")
+    void getQuestionsWithAnswers_filtersUnanswered() {
         // given
-        Question mainQuestion = createQuestion(10L);
+        Question answeredMain = createQuestion(10L);
+        Question unansweredMain = createQuestion(11L);
         Question answeredFollowup = createFollowupQuestion(20L);
         Question unansweredFollowup = createFollowupQuestion(30L);
 
         QuestionAnswer mainAnswer = QuestionAnswer.builder()
-                .question(mainQuestion)
+                .question(answeredMain)
                 .startMs(0L)
                 .endMs(5000L)
                 .build();
@@ -285,14 +286,14 @@ class QuestionSetServiceTest {
                 .build();
 
         given(questionRepository.findByQuestionSetIdOrderByOrderIndex(1L))
-                .willReturn(List.of(mainQuestion, answeredFollowup, unansweredFollowup));
+                .willReturn(List.of(answeredMain, unansweredMain, answeredFollowup, unansweredFollowup));
         given(answerRepository.findByQuestionSetIdWithQuestion(1L))
                 .willReturn(List.of(mainAnswer, followupAnswer));
 
         // when
         QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(1L);
 
-        // then — unansweredFollowup(30L) 제외, mainQuestion(10L) + answeredFollowup(20L)만 포함
+        // then — 답변 있는 질문만 포함 (unansweredMain=11L, unansweredFollowup=30L 제외)
         assertThat(response.getQuestions()).hasSize(2);
         assertThat(response.getQuestions())
                 .extracting(QuestionsWithAnswersResponse.QuestionWithAnswer::getQuestionId)

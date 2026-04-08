@@ -2,7 +2,6 @@ package com.rehearse.api.domain.questionset.dto;
 
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionAnswer;
-import com.rehearse.api.domain.questionset.entity.QuestionType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -33,8 +32,7 @@ public class QuestionsWithAnswersResponse {
                 .collect(Collectors.toMap(a -> a.getQuestion().getId(), a -> a, (a, b) -> a));
 
         List<QuestionWithAnswer> items = questions.stream()
-                .filter(q -> !(q.getQuestionType() == QuestionType.FOLLOWUP
-                        && !answerByQuestionId.containsKey(q.getId())))
+                .filter(q -> answerByQuestionId.containsKey(q.getId()))
                 .map(q -> {
                     QuestionAnswer answer = answerByQuestionId.get(q.getId());
                     return QuestionWithAnswer.builder()
