@@ -1,6 +1,6 @@
 # Interviewer Video 전환 기능
 
-**Status**: In Progress
+**Status**: Reverted (2026-04-08) — mp4 영상이 입모양 불일치 + 표정/제스처 부자연스러움 피드백으로 `InterviewerAvatar`(정적 SVG 프로필) 복구. 상세: `docs/plans/interviewer-naturalness/`
 
 ## Why
 
