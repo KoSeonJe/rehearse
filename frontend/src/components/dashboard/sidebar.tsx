@@ -14,7 +14,6 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
 
   const isDashboardActive = location.pathname === '/' || location.pathname === '/dashboard'
 
-
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-60 bg-surface border-r border-border shadow-toss z-40">
       {/* 로고 영역 */}
