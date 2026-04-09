@@ -1,19 +1,20 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, User } from 'lucide-react'
+import { LayoutDashboard, User, MessageSquarePlus, ClipboardList } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface SidebarProps {
   user: AuthUser | null
   onLogout: () => void
+  onFeedbackClick: () => void
 }
 
-export const Sidebar = ({ user, onLogout }: SidebarProps) => {
+export const Sidebar = ({ user, onLogout, onFeedbackClick }: SidebarProps) => {
   const navigate = useNavigate()
   const location = useLocation()
 
   const isDashboardActive = location.pathname === '/' || location.pathname === '/dashboard'
-
+  const isAdminFeedbacksActive = location.pathname === '/admin/feedbacks'
 
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-60 bg-surface border-r border-border shadow-toss z-40">
@@ -35,6 +36,28 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
         >
           <LayoutDashboard size={18} />
           대시보드
+        </button>
+
+        {user?.role === 'ADMIN' && (
+          <button
+            onClick={() => navigate('/admin/feedbacks')}
+            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
+              isAdminFeedbacksActive
+                ? 'bg-accent-light text-accent font-bold'
+                : 'text-text-secondary hover:bg-border/40 hover:text-text-primary'
+            }`}
+          >
+            <ClipboardList size={18} />
+            피드백 관리
+          </button>
+        )}
+
+        <button
+          onClick={onFeedbackClick}
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer text-accent hover:bg-accent-light"
+        >
+          <MessageSquarePlus size={18} />
+          피드백 보내기
         </button>
 
       </nav>

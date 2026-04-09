@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { StatsCards } from '@/components/dashboard/stats-cards'
@@ -6,9 +6,11 @@ import { InterviewList } from '@/components/dashboard/interview-list'
 import { InterviewTable } from '@/components/dashboard/interview-table'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { ServiceFeedbackModal } from '@/components/dashboard/service-feedback-modal'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { useInterviews, useInterviewStats, useDeleteInterview } from '@/hooks/use-interviews'
+import { useFeedbackNeedCheck } from '@/hooks/use-service-feedback'
 import { apiClient } from '@/lib/api-client'
 
 export const DashboardPage = () => {
@@ -20,8 +22,32 @@ export const DashboardPage = () => {
   const { data: interviewsData, isLoading: isInterviewsLoading } = useInterviews()
   const { data: statsData, isLoading: isStatsLoading } = useInterviewStats()
   const { mutate: deleteInterview, isPending: isDeletePending } = useDeleteInterview()
+  const { data: needCheckData } = useFeedbackNeedCheck()
 
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [showAutoFeedback, setShowAutoFeedback] = useState(false)
+  const [autoFeedbackShown, setAutoFeedbackShown] = useState(false)
+  const [showVoluntaryFeedback, setShowVoluntaryFeedback] = useState(false)
+
+  const isDismissedRecently = () => {
+    const dismissed = localStorage.getItem('feedback-dismissed-at')
+    if (!dismissed) return false
+    return Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
+  }
+
+  useEffect(() => {
+    if (needCheckData?.data.needsFeedback && !autoFeedbackShown && !isDismissedRecently()) {
+      setShowAutoFeedback(true)
+      setAutoFeedbackShown(true)
+    }
+  }, [needCheckData?.data.needsFeedback])
+
+  const handleDismissFeedback = () => {
+    localStorage.setItem('feedback-dismissed-at', String(Date.now()))
+    setShowAutoFeedback(false)
+  }
+
+  const handleOpenVoluntaryFeedback = () => setShowVoluntaryFeedback(true)
 
   const handleLogout = async () => {
     try {
@@ -45,12 +71,12 @@ export const DashboardPage = () => {
   return (
     <div className="min-h-screen bg-background text-text-primary">
       {/* 사이드바 — 데스크탑 전용 */}
-      <Sidebar user={user} onLogout={handleLogout} />
+      <Sidebar user={user} onLogout={handleLogout} onFeedbackClick={handleOpenVoluntaryFeedback} />
 
       {/* 메인 콘텐츠 */}
       <div className="lg:ml-60">
         {/* 모바일/데스크탑 헤더 통합 */}
-        <DashboardHeader user={user} onLogout={handleLogout} />
+        <DashboardHeader user={user} onLogout={handleLogout} onFeedbackClick={handleOpenVoluntaryFeedback} />
 
         <main className="px-5 py-8 lg:px-10 lg:py-10">
           {/* 인사 섹션 — 데스크탑 */}
@@ -108,6 +134,17 @@ export const DashboardPage = () => {
           </div>
         </main>
       </div>
+
+      <ServiceFeedbackModal
+        isOpen={showAutoFeedback}
+        onClose={handleDismissFeedback}
+        source="AUTO_POPUP"
+      />
+      <ServiceFeedbackModal
+        isOpen={showVoluntaryFeedback}
+        onClose={() => setShowVoluntaryFeedback(false)}
+        source="VOLUNTARY"
+      />
     </div>
   )
 }
