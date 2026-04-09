@@ -1,10 +1,21 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
-import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
+import { useParams, useNavigate } from 'react-router-dom'
+import { useInterviewStore, MAX_FOLLOWUP_ROUNDS, type InterviewPhase } from '@/stores/interview-store'
 import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
 import { useInterviewSession } from '@/hooks/use-interview-session'
+import { useInterviewExitGuard } from '@/hooks/use-interview-exit-guard'
+import { ApiError } from '@/lib/api-client'
+
+// 이탈 가드가 활성화되는 phase (positive whitelist — preparing/completed는 제외)
+const GUARD_ACTIVE_PHASES: ReadonlySet<InterviewPhase> = new Set([
+  'greeting',
+  'ready',
+  'recording',
+  'paused',
+  'finishing',
+])
 import { InterviewerAvatar } from '@/components/interview/interviewer-avatar'
 import { VideoPreview } from '@/components/interview/video-preview'
 import { InterviewControls } from '@/components/interview/interview-controls'
@@ -21,10 +32,39 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
 
 export const InterviewPage = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const interviewId = id ?? ''
 
-  const { data: response } = useInterview(interviewId)
+  // 이전 세션의 store 잔상 제거: URL id가 store의 interviewId와 다르면 reset
+  // (동일 탭에서 두 번째 면접 진입 / 비정상 종료 후 재진입 시 stale phase 방지)
+  useEffect(() => {
+    const parsed = Number(interviewId)
+    if (!parsed) return
+    const storedId = useInterviewStore.getState().interviewId
+    if (storedId !== parsed) {
+      useInterviewStore.getState().reset()
+    }
+  }, [interviewId])
+
+  const { data: response, error } = useInterview(interviewId)
   const interview = response?.data
+
+  // 이미 종료된 면접 / 존재하지 않는 면접 → 안전 redirect.
+  // 일시적 네트워크 에러(TanStack 재시도 중)에는 이탈시키지 않음 — 404만 404로 대응.
+  useEffect(() => {
+    if (error instanceof ApiError && error.status === 404) {
+      navigate('/dashboard', { replace: true })
+      return
+    }
+    if (!interview) return
+    if (interview.status === 'COMPLETED') {
+      if (interview.publicId) {
+        navigate(`/interview/${interview.publicId}/feedback`, { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [interview, error, navigate])
 
   const questions = useInterviewStore((s) => s.questions)
   const currentQuestionIndex = useInterviewStore((s) => s.currentQuestionIndex)
@@ -55,6 +95,17 @@ export const InterviewPage = () => {
   })
   const [timeWarning, setTimeWarning] = useState(false)
   const [showFinishDialog, setShowFinishDialog] = useState(false)
+  // 사용자가 가드 모달의 "종료하기"를 누른 직후 → 종료 비동기 처리 동안 재-가드 방지
+  const [isExitConfirmed, setIsExitConfirmed] = useState(false)
+
+  // 면접 진행 중 이탈 가드
+  const { blocked: exitBlocked, dismiss: dismissExit } = useInterviewExitGuard({
+    active:
+      interview != null &&
+      interview.status === 'IN_PROGRESS' &&
+      GUARD_ACTIVE_PHASES.has(phase),
+    suppress: uploadFailureState !== null || isExitConfirmed,
+  })
 
   const handleEscKey = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape' && showFinishDialog) {
@@ -287,6 +338,58 @@ export const InterviewPage = () => {
         onConfirm={() => uploadFailureState?.resolve(true)}
         onCancel={() => uploadFailureState?.resolve(false)}
       />
+
+      {/* ── 뒤로가기 이탈 가드 다이얼로그 ── */}
+      {exitBlocked && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="exit-guard-title"
+          aria-describedby="exit-guard-desc"
+        >
+          <div className="w-full max-w-sm mx-4 rounded-2xl bg-[#2c2c2c] border border-[#3c4043] p-6 shadow-2xl animate-fade-in">
+            <h2 id="exit-guard-title" className="text-base font-medium text-white mb-2">
+              {phase === 'finishing' ? '면접 종료 처리 중입니다' : '면접을 나가시겠습니까?'}
+            </h2>
+            <p id="exit-guard-desc" className="text-sm text-studio-text-secondary leading-relaxed mb-6">
+              {phase === 'finishing'
+                ? '안전하게 저장 중이에요. 잠시만 기다려주세요.'
+                : '지금 나가면 녹화된 답변이 저장되지 않을 수 있어요. 정식으로 종료하시겠습니까?'}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={dismissExit}
+                className="cursor-pointer h-9 px-4 rounded-full text-sm font-medium text-blue-400 hover:bg-blue-400/10 transition-all"
+              >
+                계속 면접
+              </button>
+              {phase !== 'finishing' && (
+                <button
+                  onClick={() => {
+                    setIsExitConfirmed(true)
+                    dismissExit()
+                    // 업로드 실패 후 사용자가 취소를 선택하면 handleFinishInterview가
+                    // early-return하여 면접이 계속된다. 이 경우 isExitConfirmed를 복원해
+                    // 가드가 다시 활성화되도록 한다. (성공 시에는 컴포넌트가 언마운트되어
+                    // setState no-op.)
+                    void (async () => {
+                      try {
+                        await handleFinishInterview()
+                      } finally {
+                        setIsExitConfirmed(false)
+                      }
+                    })()
+                  }}
+                  className="cursor-pointer h-9 px-4 rounded-full bg-meet-red text-sm font-medium text-white transition-all hover:bg-red-600 active:scale-95"
+                >
+                  면접 종료하기
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

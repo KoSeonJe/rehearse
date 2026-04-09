@@ -173,6 +173,8 @@ export const useInterviewSession = ({
   })
 
   // 면접 데이터 로드 + 질문세트 설정 (questionSets에서 Question[] 도출)
+  // 이어하기: 이미 업로드/분석 진행된 세트(analysisStatus !== 'PENDING')는 건너뛰고
+  // 첫 번째 PENDING 세트부터 시작한다.
   useEffect(() => {
     if (interview && phase === 'preparing') {
       const qs = interview.questionSets ?? []
@@ -185,7 +187,9 @@ export const useInterviewSession = ({
           order: idx,
         }
       })
-      setInterview(interview.id, derivedQuestions)
+      const firstPendingIdx = qs.findIndex((qSet) => qSet.analysisStatus === 'PENDING')
+      const startIdx = firstPendingIdx >= 0 ? firstPendingIdx : 0
+      setInterview(interview.id, derivedQuestions, startIdx)
       if (qs.length) {
         setQuestionSets(qs)
       }
@@ -417,19 +421,19 @@ export const useInterviewSession = ({
           setFinishingProgress(null)
           if (!interview.publicId) {
             console.error('[면접종료] publicId가 없습니다')
-            navigate('/')
+            navigate('/', { replace: true })
             return
           }
-          navigate(`/interview/${interview.publicId}/analysis`)
+          navigate(`/interview/${interview.publicId}/analysis`, { replace: true })
         },
         onError: () => {
           setFinishingProgress(null)
           if (!interview.publicId) {
             console.error('[면접종료] publicId가 없습니다')
-            navigate('/')
+            navigate('/', { replace: true })
             return
           }
-          navigate(`/interview/${interview.publicId}/analysis`)
+          navigate(`/interview/${interview.publicId}/analysis`, { replace: true })
         },
       },
     )

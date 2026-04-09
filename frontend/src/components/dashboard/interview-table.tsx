@@ -99,10 +99,9 @@ export const InterviewTable = ({
   }
 
   const handleRowClick = (interview: InterviewListItem) => {
-    if (interview.status === 'IN_PROGRESS') return
     if (interview.status === 'COMPLETED') {
       navigate(`/interview/${interview.publicId}/feedback`)
-    } else if (interview.status === 'READY') {
+    } else if (interview.status === 'READY' || interview.status === 'IN_PROGRESS') {
       navigate(`/interview/${interview.id}/ready`)
     }
   }
@@ -164,12 +163,10 @@ export const InterviewTable = ({
                 <tr
                   key={interview.id}
                   onClick={() => handleRowClick(interview)}
-                  className={`group border-b border-border/50 last:border-0 transition-colors ${
-                    isInProgress
-                      ? 'opacity-60 cursor-default'
-                      : 'hover:bg-accent-light/50 cursor-pointer'
+                  className={`group border-b border-border/50 last:border-0 transition-colors hover:bg-accent-light/50 cursor-pointer ${
+                    isInProgress ? 'opacity-80' : ''
                   }`}
-                  title={isInProgress ? '면접이 진행 중입니다' : undefined}
+                  title={isInProgress ? '클릭하여 면접 이어하기' : undefined}
                 >
                   {/* 포지션 */}
                   <td className="py-4 px-4 text-center">
