@@ -91,7 +91,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
   const feedbacks = feedback?.timestampFeedbacks ?? []
   const questions = questionsRes?.data?.questions ?? []
 
-  const { activeFeedbackId, currentTimeMs, videoDurationMs, seekTo } = useFeedbackSync(videoRef, feedbacks)
+  const { activeFeedbackId, selectedFeedbackId, currentTimeMs, videoDurationMs, seekTo } =
+    useFeedbackSync(videoRef, feedbacks, questions)
 
   const handleUrlExpired = useCallback(() => {
     void queryClient.invalidateQueries({
@@ -268,7 +269,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           <QuestionList
             questions={questions}
             feedbacks={feedbacks}
-            activeFeedbackId={activeFeedbackId}
+            selectedFeedbackId={selectedFeedbackId}
             onSeek={seekTo}
           />
         </div>
@@ -278,7 +279,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           <FeedbackPanel
             feedbacks={feedbacks}
             questions={questions}
-            activeFeedbackId={activeFeedbackId}
+            selectedFeedbackId={selectedFeedbackId}
             onSeek={seekTo}
           />
         </div>

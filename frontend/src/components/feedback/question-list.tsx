@@ -3,7 +3,7 @@ import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
 interface QuestionListProps {
   questions: QuestionWithAnswer[]
   feedbacks: TimestampFeedback[]
-  activeFeedbackId: number | null
+  selectedFeedbackId: number | null
   onSeek: (ms: number) => void
 }
 
@@ -24,7 +24,7 @@ const isPlayable = (q: QuestionWithAnswer): q is PlayableQuestion =>
 export const QuestionList = ({
   questions,
   feedbacks,
-  activeFeedbackId,
+  selectedFeedbackId,
   onSeek,
 }: QuestionListProps) => {
   const playable = questions.filter(isPlayable)
@@ -72,7 +72,7 @@ export const QuestionList = ({
       <ol className="space-y-2">
         {labeled.map(({ q, label, isFollowup }, idx) => {
           const fb = findFeedback(q)
-          const isActive = fb !== undefined && fb.id === activeFeedbackId
+          const isActive = fb !== undefined && fb.id === selectedFeedbackId
 
           return (
             <li key={`${q.questionId}-${idx}`}>
