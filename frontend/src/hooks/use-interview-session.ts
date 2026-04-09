@@ -189,9 +189,14 @@ export const useInterviewSession = ({
       })
       const firstPendingIdx = qs.findIndex((qSet) => qSet.analysisStatus === 'PENDING')
       const startIdx = firstPendingIdx >= 0 ? firstPendingIdx : 0
+      const isResume = startIdx > 0
       setInterview(interview.id, derivedQuestions, startIdx)
       if (qs.length) {
         setQuestionSets(qs)
+      }
+      // 이어하기: 자기소개(greeting)는 이미 완료 → ready로 바로 전환
+      if (isResume) {
+        useInterviewStore.getState().setPhase('ready')
       }
     }
   }, [interview, phase, setInterview, setQuestionSets])

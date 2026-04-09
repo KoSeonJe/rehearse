@@ -228,7 +228,15 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
-  setQuestionSets: (sets) => set({ questionSets: sets, currentQuestionSetIndex: 0 }),
+  setQuestionSets: (sets) => {
+    // currentQuestionSetIndex가 이미 setInterview에서 설정되었을 수 있으므로 (이어하기)
+    // 현재 값을 유지한다. 범위 밖이면 0으로 보정.
+    const current = get().currentQuestionSetIndex
+    set({
+      questionSets: sets,
+      currentQuestionSetIndex: current < sets.length ? current : 0,
+    })
+  },
 
   nextQuestionSet: () => {
     const { currentQuestionSetIndex, questionSets } = get()
