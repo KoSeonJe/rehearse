@@ -294,6 +294,7 @@ export const InterviewAnalysisPage = () => {
   }
 
   const skippedCount = statuses.filter((s) => s?.analysisStatus === 'SKIPPED').length
+  const allSkipped = hasQuestionSets && statuses.length > 0 && statuses.every((s) => s?.analysisStatus === 'SKIPPED')
 
   return (
     <div className="min-h-screen bg-white">
@@ -310,24 +311,41 @@ export const InterviewAnalysisPage = () => {
       </header>
 
       <main className="mx-auto max-w-3xl px-5 pt-8 pb-32">
-        {/* 모범답변 — 항상 표시 */}
-        <section>
-          <h2 className="text-lg font-extrabold tracking-tight text-text-primary mb-6">모범답변</h2>
-          <div className="space-y-6">
-            {questionSets.map((qs, idx) => {
-              const status = statuses[idx]
-              if (status?.analysisStatus === 'SKIPPED') return null
-              return (
-                <ModelAnswerSection
-                  key={qs.id}
-                  interviewId={interview.id}
-                  questionSetId={qs.id}
-                  category={qs.category}
-                />
-              )
-            })}
-          </div>
-        </section>
+        {allSkipped ? (
+          <section className="flex flex-col items-center justify-center py-16 text-center">
+            <Character mood="confused" size={160} className="mb-8" />
+            <h2 className="text-2xl font-extrabold tracking-tight text-text-primary mb-2">
+              진행한 질문이 없습니다
+            </h2>
+            <p className="text-sm text-text-secondary mb-8">
+              면접이 일찍 종료되었습니다.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="h-14 w-full max-w-xs rounded-[24px] bg-accent font-bold text-white transition-all active:scale-95"
+            >
+              대시보드로 이동
+            </button>
+          </section>
+        ) : (
+          <section>
+            <h2 className="text-lg font-extrabold tracking-tight text-text-primary mb-6">모범답변</h2>
+            <div className="space-y-6">
+              {questionSets.map((qs, idx) => {
+                const status = statuses[idx]
+                if (status?.analysisStatus === 'SKIPPED') return null
+                return (
+                  <ModelAnswerSection
+                    key={qs.id}
+                    interviewId={interview.id}
+                    questionSetId={qs.id}
+                    category={qs.category}
+                  />
+                )
+              })}
+            </div>
+          </section>
+        )}
       </main>
 
       <AnalysisStatusFloat
