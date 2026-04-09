@@ -34,6 +34,19 @@ public class QuestionSetService {
     public void saveAnswers(Long questionSetId, SaveAnswersRequest request) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
 
+        // 빈 요청 가드 — 부분 POST 에 의해 기존 정상 데이터가 지워지는 것을 방지.
+        // 프론트엔드는 유효한 answer 목록이 있을 때만 POST 하므로, 빈 요청은 비정상 상태로 간주해 no-op.
+        if (request.getAnswers() == null || request.getAnswers().isEmpty()) {
+            log.warn("답변 저장 요청이 비어 있음 — 기존 데이터 보호를 위해 skip: questionSetId={}", questionSetId);
+            return;
+        }
+
+        // 멱등성 보장 — 같은 질문셋에 대해 재호출되어도 기존 answer 를 덮어쓴다.
+        // 프론트엔드의 면접 종료 복구 루프가 경합 시 중복 POST 를 일으킬 수 있으나
+        // 이 선행 삭제로 DB 에 중복 행이 쌓이지 않는다.
+        answerRepository.deleteByQuestionSetId(questionSetId);
+        answerRepository.flush();
+
         List<QuestionAnswer> answers = request.getAnswers().stream()
                 .map(a -> {
                     Question question = questionRepository.findById(a.getQuestionId())

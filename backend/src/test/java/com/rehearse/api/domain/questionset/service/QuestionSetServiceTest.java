@@ -24,6 +24,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetServiceTest {
@@ -81,8 +83,41 @@ class QuestionSetServiceTest {
         questionSetService.saveAnswers(1L, request);
 
         // then
-        then(answerRepository).should().saveAll(anyList());
+        // 멱등성 보장 — saveAll 이전에 deleteByQuestionSetId 가 먼저 호출되어야 한다
+        var inOrder = inOrder(answerRepository);
+        then(answerRepository).should(inOrder).deleteByQuestionSetId(1L);
+        then(answerRepository).should(inOrder).flush();
+        then(answerRepository).should(inOrder).saveAll(anyList());
         then(analysisRepository).should().save(any(QuestionSetAnalysis.class));
+    }
+
+    @Test
+    @DisplayName("saveAnswers: 동일 questionSetId 로 두 번 호출해도 멱등적으로 동작한다 (중복 행 누적 방지)")
+    void saveAnswers_idempotent() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.empty());
+        given(analysisRepository.save(any(QuestionSetAnalysis.class))).willAnswer(inv -> inv.getArgument(0));
+
+        Question question = createQuestion(10L);
+        given(questionRepository.findById(10L)).willReturn(Optional.of(question));
+        given(answerRepository.saveAll(anyList())).willAnswer(inv -> inv.getArgument(0));
+
+        SaveAnswersRequest request = new SaveAnswersRequest();
+        SaveAnswersRequest.AnswerTimestamp timestamp = new SaveAnswersRequest.AnswerTimestamp();
+        ReflectionTestUtils.setField(timestamp, "questionId", 10L);
+        ReflectionTestUtils.setField(timestamp, "startMs", 0L);
+        ReflectionTestUtils.setField(timestamp, "endMs", 5000L);
+        ReflectionTestUtils.setField(request, "answers", List.of(timestamp));
+
+        // when — 같은 questionSet 에 대해 2 번 호출 (프론트 복구 루프 경합 시나리오)
+        questionSetService.saveAnswers(1L, request);
+        questionSetService.saveAnswers(1L, request);
+
+        // then — 매 호출마다 delete 가 선행되므로 기존 행이 남지 않고 마지막 호출의 상태만 DB 에 반영된다
+        then(answerRepository).should(times(2)).deleteByQuestionSetId(1L);
+        then(answerRepository).should(times(2)).saveAll(anyList());
     }
 
     @Test
