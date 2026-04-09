@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 import { useSubmitServiceFeedback } from '@/hooks/use-service-feedback'
 import type { FeedbackSource } from '@/types/service-feedback'
@@ -22,23 +22,22 @@ export const ServiceFeedbackModal = ({
 
   const { mutate: submitFeedback, isPending } = useSubmitServiceFeedback()
 
+  const resetAndClose = useCallback(() => {
+    setRating(undefined)
+    setHoverRating(undefined)
+    setContent('')
+    onClose()
+  }, [onClose])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isPending) onClose()
+      if (e.key === 'Escape' && !isPending) resetAndClose()
     }
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown)
     }
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose, isPending])
-
-  useEffect(() => {
-    if (!isOpen) {
-      setRating(undefined)
-      setHoverRating(undefined)
-      setContent('')
-    }
-  }, [isOpen])
+  }, [isOpen, isPending, resetAndClose])
 
   if (!isOpen) return null
 
@@ -54,7 +53,7 @@ export const ServiceFeedbackModal = ({
     if (content.length < MIN_CONTENT_LENGTH || isPending) return
     submitFeedback(
       { content, rating, source },
-      { onSuccess: () => onClose() },
+      { onSuccess: () => resetAndClose() },
     )
   }
 
@@ -64,7 +63,7 @@ export const ServiceFeedbackModal = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onClick={isPending ? undefined : onClose}
+      onClick={isPending ? undefined : resetAndClose}
     >
       <div
         className="bg-white rounded-card p-6 shadow-toss-lg max-w-md w-full mx-4"
@@ -129,7 +128,7 @@ export const ServiceFeedbackModal = ({
           {source === 'AUTO_POPUP' && (
             <button
               type="button"
-              onClick={onClose}
+              onClick={resetAndClose}
               disabled={isPending}
               className="flex-1 h-11 rounded-button border border-border text-sm font-bold text-text-secondary hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
             >

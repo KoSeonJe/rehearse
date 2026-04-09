@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { StatsCards } from '@/components/dashboard/stats-cards'
@@ -27,7 +27,7 @@ export const DashboardPage = () => {
 
   const [deletingId, setDeletingId] = useState<number | null>(null)
   const [showAutoFeedback, setShowAutoFeedback] = useState(false)
-  const [autoFeedbackShown, setAutoFeedbackShown] = useState(false)
+  const autoFeedbackShownRef = useRef(false)
   const [showVoluntaryFeedback, setShowVoluntaryFeedback] = useState(false)
 
   const isDismissedRecently = () => {
@@ -37,9 +37,9 @@ export const DashboardPage = () => {
   }
 
   useEffect(() => {
-    if (needCheckData?.data.needsFeedback && !autoFeedbackShown && !isDismissedRecently()) {
+    if (needCheckData?.data.needsFeedback && !autoFeedbackShownRef.current && !isDismissedRecently()) {
       setShowAutoFeedback(true)
-      setAutoFeedbackShown(true)
+      autoFeedbackShownRef.current = true
     }
   }, [needCheckData?.data.needsFeedback])
 
