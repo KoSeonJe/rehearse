@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { TimestampFeedback, QuestionWithAnswer } from '@/types/interview'
 import ContentTab from '@/components/feedback/content-tab'
 import DeliveryTab from '@/components/feedback/delivery-tab'
@@ -28,13 +28,11 @@ type FeedbackTab = 'content' | 'delivery'
 
 interface FeedbackCardProps {
   feedback: TimestampFeedback
-  isActive: boolean
   question: QuestionWithAnswer | undefined
   onSeek: (ms: number) => void
 }
 
-const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProps) => {
-  const cardRef = useRef<HTMLDivElement>(null)
+const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
   const [showModelAnswer, setShowModelAnswer] = useState(false)
   const [showTranscript, setShowTranscript] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
@@ -48,12 +46,6 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
   const effectiveTab: FeedbackTab =
     activeTab === 'delivery' && !isDeliveryAvailable ? 'content' : activeTab
 
-  useEffect(() => {
-    if (isActive && cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
-    }
-  }, [isActive])
-
   const formatTime = (ms: number): string => {
     const s = Math.floor(ms / 1000)
     const m = Math.floor(s / 60)
@@ -66,11 +58,8 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
 
   return (
     <div
-      ref={cardRef}
       data-feedback-id={feedback.id}
-      className={`rounded-2xl bg-white overflow-hidden transition-all cursor-pointer ${
-        isActive ? 'ring-2 ring-accent/30' : ''
-      }`}
+      className="rounded-2xl bg-white overflow-hidden transition-all cursor-pointer"
       style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
       onClick={() => onSeek(feedback.startMs)}
     >
@@ -184,14 +173,14 @@ const FeedbackCard = ({ feedback, isActive, question, onSeek }: FeedbackCardProp
 interface FeedbackPanelProps {
   feedbacks: TimestampFeedback[]
   questions: QuestionWithAnswer[]
-  activeFeedbackId: number | null
+  selectedFeedbackId: number | null
   onSeek: (ms: number) => void
 }
 
 export const FeedbackPanel = ({
   feedbacks,
   questions,
-  activeFeedbackId,
+  selectedFeedbackId,
   onSeek,
 }: FeedbackPanelProps) => {
   const findQuestion = (fb: TimestampFeedback): QuestionWithAnswer | undefined => {
@@ -204,25 +193,30 @@ export const FeedbackPanel = ({
     )
   }
 
+  const selectedFeedback =
+    selectedFeedbackId !== null ? feedbacks.find((fb) => fb.id === selectedFeedbackId) : undefined
+
+  if (feedbacks.length === 0 || selectedFeedback === undefined) {
+    return (
+      <div className="flex flex-col h-full">
+        <div
+          className="rounded-2xl bg-white p-8 text-center"
+          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+        >
+          <p className="text-[15px] text-gray-300">피드백이 없습니다</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col h-full">
-      <div className="space-y-5 overflow-y-auto flex-1">
-        {feedbacks.length === 0 ? (
-          <div className="rounded-2xl bg-white p-8 text-center" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <p className="text-[15px] text-gray-300">피드백이 없습니다</p>
-          </div>
-        ) : (
-          feedbacks.map((fb) => (
-            <FeedbackCard
-              key={fb.id}
-              feedback={fb}
-              isActive={fb.id === activeFeedbackId}
-              question={findQuestion(fb)}
-              onSeek={onSeek}
-            />
-          ))
-        )}
-      </div>
+      <FeedbackCard
+        key={selectedFeedback.id}
+        feedback={selectedFeedback}
+        question={findQuestion(selectedFeedback)}
+        onSeek={onSeek}
+      />
     </div>
   )
 }
