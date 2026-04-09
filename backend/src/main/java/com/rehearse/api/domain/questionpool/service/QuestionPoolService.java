@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.questionpool.service;
 
-import com.rehearse.api.domain.questionpool.entity.FollowUpStrategy;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.repository.QuestionPoolRepository;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
@@ -108,11 +107,8 @@ public class QuestionPoolService {
                         cacheKey,
                         gq.getContent(),
                         gq.getCategory(),
-                        gq.getOrder(),
-                        gq.getEvaluationCriteria(),
                         gq.getModelAnswer(),
-                        gq.getReferenceType(),
-                        parseFollowUpStrategy(gq.getFollowUpStrategy())))
+                        gq.getReferenceType()))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {
@@ -123,15 +119,5 @@ public class QuestionPoolService {
         }
 
         return pools;
-    }
-
-    private FollowUpStrategy parseFollowUpStrategy(String strategy) {
-        if (strategy != null) {
-            try {
-                return FollowUpStrategy.valueOf(strategy.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return FollowUpStrategy.REALTIME;
     }
 }
