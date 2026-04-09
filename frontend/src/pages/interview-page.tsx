@@ -9,6 +9,8 @@ import { InterviewerAvatar } from '@/components/interview/interviewer-avatar'
 import { VideoPreview } from '@/components/interview/video-preview'
 import { InterviewControls } from '@/components/interview/interview-controls'
 import { InterviewTimer } from '@/components/interview/interview-timer'
+import { FinishingOverlay } from '@/components/interview/finishing-overlay'
+import { UploadRecoveryDialog } from '@/components/interview/upload-recovery-dialog'
 
 const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
   DEEP_DIVE: '심화',
@@ -43,6 +45,8 @@ export const InterviewPage = () => {
     handleFinishInterview,
     handleTimeExpired,
     isTtsSpeaking,
+    finishingProgress,
+    uploadFailureState,
   } = useInterviewSession({
     interviewId,
     interview,
@@ -267,6 +271,22 @@ export const InterviewPage = () => {
           </div>
         </div>
       )}
+
+      {/* ── 면접 안전하게 종료 중 오버레이 ── */}
+      <FinishingOverlay
+        open={finishingProgress !== null}
+        stage={finishingProgress?.stage ?? 'uploading'}
+        total={finishingProgress?.total ?? 0}
+        completed={finishingProgress?.completed ?? 0}
+      />
+
+      {/* ── 업로드 복구 실패 시 사용자 확인 다이얼로그 ── */}
+      <UploadRecoveryDialog
+        open={uploadFailureState !== null}
+        failedCount={uploadFailureState?.failedCount ?? 0}
+        onConfirm={() => uploadFailureState?.resolve(true)}
+        onCancel={() => uploadFailureState?.resolve(false)}
+      />
     </div>
   )
 }
