@@ -5,7 +5,7 @@ import type { AuthUser } from '@/stores/auth-store'
 interface DashboardHeaderProps {
   user: AuthUser | null
   onLogout: () => void
-  onFeedbackClick: () => void
+  onFeedbackClick?: () => void
 }
 
 export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHeaderProps) => {
@@ -22,13 +22,15 @@ export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHe
           <span className="hidden text-sm font-medium text-text-secondary sm:block">
             {user?.name}
           </span>
-          <button
-            onClick={onFeedbackClick}
-            className="rounded-xl border border-border p-2 text-text-secondary transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
-            aria-label="피드백 보내기"
-          >
-            <MessageSquarePlus size={18} />
-          </button>
+          {onFeedbackClick && (
+            <button
+              onClick={onFeedbackClick}
+              className="rounded-xl border border-border p-2 text-text-secondary transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
+              aria-label="피드백 보내기"
+            >
+              <MessageSquarePlus size={18} />
+            </button>
+          )}
           <button
             onClick={onLogout}
             className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"

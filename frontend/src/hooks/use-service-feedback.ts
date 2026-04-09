@@ -39,3 +39,10 @@ export const useAdminFeedbacks = (page: number, size: number) => {
       ),
   })
 }
+
+export const useVerifyAdminPassword = () => {
+  return useMutation({
+    mutationFn: (password: string) =>
+      apiClient.post<ApiResponse<void>>('/api/v1/admin/verify', { password }),
+  })
+}

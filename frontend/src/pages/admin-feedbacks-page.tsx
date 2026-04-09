@@ -73,10 +73,10 @@ export const AdminFeedbacksPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      <Sidebar user={user} onLogout={handleLogout} onFeedbackClick={() => {}} />
+      <Sidebar user={user} onLogout={handleLogout} />
 
       <div className="lg:ml-60">
-        <DashboardHeader user={user} onLogout={handleLogout} onFeedbackClick={() => {}} />
+        <DashboardHeader user={user} onLogout={handleLogout} />
 
         <main className="px-5 py-8 lg:px-10 lg:py-10">
           <div className="mb-6">
