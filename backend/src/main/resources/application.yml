@@ -37,6 +37,10 @@ resilience4j:
         limitRefreshPeriod: 1s
         timeoutDuration: 120s
 
+app:
+  admin:
+    password: ${ADMIN_PASSWORD}
+
 management:
   endpoints:
     web:
