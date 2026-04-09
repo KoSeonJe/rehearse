@@ -149,12 +149,22 @@ jobs:
         if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build and push backend image
+      - name: Set up QEMU for multi-platform builds
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push backend image (multi-arch)
         if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
         working-directory: backend
         run: |
-          docker build -t ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest .
-          docker push ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.ECR_REGISTRY }}/rehearse-backend:latest \
+            --push .
 
       - name: Copy docker-compose.yml and nginx config to EC2
         if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.infra == 'true'
