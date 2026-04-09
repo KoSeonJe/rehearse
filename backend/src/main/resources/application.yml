@@ -39,7 +39,7 @@ resilience4j:
 
 app:
   admin:
-    password: ${ADMIN_PASSWORD:default-admin-password}
+    password: ${ADMIN_PASSWORD}
 
 management:
   endpoints:

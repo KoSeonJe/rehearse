@@ -43,7 +43,7 @@ services:
       S3_BUCKET: rehearse-videos-dev
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-pNInz6obpgDQGcFmaJgB}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-default-admin-password}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
