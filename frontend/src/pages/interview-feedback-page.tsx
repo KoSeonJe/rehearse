@@ -331,13 +331,13 @@ export const InterviewFeedbackPage = () => {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <button className="flex items-center gap-2" onClick={() => navigate('/dashboard')}>
+          <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
             <Logo size={60} />
             <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
           </button>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/dashboard', { replace: true })}
               className="flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-text-primary"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

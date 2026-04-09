@@ -163,7 +163,7 @@ export const useInterviewSetup = () => {
       },
       {
         onSuccess: (response) => {
-          navigate(`/interview/${response.data.id}/ready`)
+          navigate(`/interview/${response.data.id}/ready`, { replace: true })
         },
         onError: (error) => {
           if (error instanceof ApiError) {

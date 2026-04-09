@@ -48,7 +48,7 @@ interface InterviewState {
 }
 
 interface InterviewActions {
-  setInterview: (id: number, questions: Question[]) => void
+  setInterview: (id: number, questions: Question[], startQuestionSetIndex?: number) => void
   setPhase: (phase: InterviewPhase) => void
   startRecording: (timestamp?: number) => void
   stopRecording: () => void
@@ -120,7 +120,7 @@ const initialState: InterviewState = {
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
   ...initialState,
 
-  setInterview: (id, questions) => {
+  setInterview: (id, questions, startQuestionSetIndex) => {
     const answers: QuestionAnswer[] = questions.map((_, index) => ({
       questionIndex: index,
       startTime: 0,
@@ -128,12 +128,15 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       transcripts: [],
     }))
 
+    const startIdx = startQuestionSetIndex ?? 0
+
     set({
       interviewId: id,
       questions,
       answers,
       phase: 'greeting',
-      currentQuestionIndex: 0,
+      currentQuestionIndex: startIdx,
+      currentQuestionSetIndex: startIdx,
     })
   },
 
@@ -225,7 +228,15 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
-  setQuestionSets: (sets) => set({ questionSets: sets, currentQuestionSetIndex: 0 }),
+  setQuestionSets: (sets) => {
+    // currentQuestionSetIndex가 이미 setInterview에서 설정되었을 수 있으므로 (이어하기)
+    // 현재 값을 유지한다. 범위 밖이면 0으로 보정.
+    const current = get().currentQuestionSetIndex
+    set({
+      questionSets: sets,
+      currentQuestionSetIndex: current < sets.length ? current : 0,
+    })
+  },
 
   nextQuestionSet: () => {
     const { currentQuestionSetIndex, questionSets } = get()

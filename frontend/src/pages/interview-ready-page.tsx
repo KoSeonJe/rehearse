@@ -40,11 +40,17 @@ export const InterviewReadyPage = () => {
   const isQuestionGenerating = questionGenStatus === 'PENDING' || questionGenStatus === 'GENERATING'
   const canStart = allPassed && isQuestionReady
 
+  const isResume = interview?.status === 'IN_PROGRESS'
+
   const handleStartInterview = () => {
     if (!interview) return
+    if (isResume) {
+      navigate(`/interview/${interview.id}/conduct`, { replace: true })
+      return
+    }
     updateStatus.mutate(
       { id: interview.id, data: { status: 'IN_PROGRESS' } },
-      { onSuccess: () => navigate(`/interview/${interview.id}/conduct`) },
+      { onSuccess: () => navigate(`/interview/${interview.id}/conduct`, { replace: true }) },
     )
   }
 
@@ -58,7 +64,7 @@ export const InterviewReadyPage = () => {
     return (
       <div className="min-h-screen bg-white">
         <header className="px-5 pt-8 md:px-8">
-          <BackLink to="/interview/setup" />
+          <BackLink to="/interview/setup" replace />
         </header>
         <main className="mx-auto max-w-2xl px-5 pt-24 text-center">
           <Character mood="confused" size={120} className="mx-auto mb-8" />
@@ -89,7 +95,7 @@ export const InterviewReadyPage = () => {
             리허설
           </span>
         </div>
-        <BackLink to="/interview/setup" />
+        <BackLink to="/interview/setup" replace />
       </header>
 
       <main className="mx-auto max-w-3xl px-5 pb-32 pt-16 md:px-8">
@@ -217,7 +223,7 @@ export const InterviewReadyPage = () => {
               disabled={!canStart || updateStatus.isPending}
               className="h-18 w-full rounded-[24px] bg-accent py-5 text-xl font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {updateStatus.isPending ? '시작하는 중...' : '면접 시작하기'}
+              {updateStatus.isPending ? '시작하는 중...' : isResume ? '면접 이어하기' : '면접 시작하기'}
             </button>
             {!canStart && (
               <p className="mt-3 text-center text-xs font-bold text-text-tertiary">

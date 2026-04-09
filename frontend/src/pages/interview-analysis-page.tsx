@@ -342,7 +342,7 @@ export const InterviewAnalysisPage = () => {
         onRetry={handleRetryAll}
         onNavigateFeedback={async () => {
           await queryClient.invalidateQueries({ queryKey: ['interviews'] })
-          navigate(`/interview/${interviewPublicId}/feedback`)
+          navigate(`/interview/${interviewPublicId}/feedback`, { replace: true })
         }}
         statuses={statuses}
         questionSets={questionSets}
