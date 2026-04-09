@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/internal/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/service-feedbacks/**").authenticated()
                 .requestMatchers("/api/v1/interviews/**").authenticated()
                 .anyRequest().authenticated()
             )
