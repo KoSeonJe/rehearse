@@ -1,9 +1,3 @@
-export const formatTimeMinSec = (seconds: number): string => {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
 export const formatTimeFull = (ms: number): string => {
   const totalSeconds = Math.floor(ms / 1000)
   const hours = Math.floor(totalSeconds / 3600)
