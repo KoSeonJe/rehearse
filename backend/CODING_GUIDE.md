@@ -460,7 +460,7 @@ public class MockAiClient implements AiClient { ... }
 
 ### Responsibility Separation
 
-`ClaudePromptBuilder` (prompt construction) + `ClaudeApiClient` (API call) + `ClaudeResponseParser` (response parsing) — each change independently.
+`QuestionGenerationPromptBuilder` / `FollowUpPromptBuilder` (prompt construction) + `ClaudeApiClient` (API call) + `ClaudeResponseParser` (response parsing) — each change independently.
 
 ---
 
