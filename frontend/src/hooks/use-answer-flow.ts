@@ -63,6 +63,8 @@ interface UseAnswerFlowParams {
   greetingPhaseRef: MutableRefObject<boolean>
   completeGreeting: () => void
   pendingTtsActionRef: MutableRefObject<(() => void) | null>
+  // 질문세트 백그라운드 업로드 Promise 를 세션 레벨에 등록 — 면접 종료 시 대기하기 위함.
+  registerUploadPromise: (questionSetId: number, promise: Promise<void>) => void
 }
 
 export const useAnswerFlow = ({
@@ -76,6 +78,7 @@ export const useAnswerFlow = ({
   greetingPhaseRef,
   completeGreeting,
   pendingTtsActionRef,
+  registerUploadPromise,
 }: UseAnswerFlowParams) => {
   const followUpMutation = useFollowUpQuestion()
   const s3Upload = useS3Upload()
@@ -112,6 +115,9 @@ export const useAnswerFlow = ({
 
   // 질문세트 완료 시 업로드 파이프라인 (백그라운드)
   // 반환값: recorder.restart() 직후 타임스탬프 (세트 전환 시 타임라인 기준점)
+  //
+  // 업로드 Promise 는 `registerUploadPromise` 로 세션 레벨에 등록되므로
+  // 면접 종료 시 `Promise.allSettled` 로 실제 완료를 기다릴 수 있다 (fire-and-forget 제거).
   const handleQuestionSetComplete = useCallback(async (questionSetId: number): Promise<number | undefined> => {
     if (!interview || !mediaStream.stream) return undefined
 
@@ -133,8 +139,8 @@ export const useAnswerFlow = ({
     // 중복 PUT/POST 를 발사하는 것을 막는다.
     setUploadStatus(questionSetId, 'uploading')
 
-    // 2. 이하 업로드 로직은 백그라운드 실행 (즉시 반환하여 세트 전환 블로킹 방지)
-    const uploadAsync = async () => {
+    // 2. 백그라운드 업로드 Promise — 세션에 등록해 종료 시 대기 가능.
+    const uploadPromise = (async () => {
       await saveVideoBlob(interview.id, blob, questionSetId).catch(() => {})
 
       const answers = state.questionSetAnswers.get(questionSetId) ?? []
@@ -157,14 +163,18 @@ export const useAnswerFlow = ({
         await s3Upload.upload(blob, urlRes.data.uploadUrl)
         setUploadStatus(questionSetId, 'completed')
         deleteVideoBlob(interview.id, questionSetId).catch(() => {})
-      } catch {
+      } catch (err) {
+        console.error('[S3 업로드] 업로드 실패:', err)
         setUploadStatus(questionSetId, 'failed')
       }
-    }
-    uploadAsync().catch((err) => console.error('[S3 업로드] 업로드 실패:', err))
+    })()
+
+    // 세션 레벨에 등록 — 면접 종료 시 `Promise.allSettled(inFlight)` 로 대기.
+    // 주의: Promise 자체는 항상 resolve (catch 내부 처리) 이므로 unhandled rejection 걱정 없음.
+    registerUploadPromise(questionSetId, uploadPromise)
 
     return restartTimestamp
-  }, [interview, mediaStream.stream, recorder, s3Upload, setUploadStatus])
+  }, [interview, mediaStream.stream, recorder, s3Upload, setUploadStatus, registerUploadPromise])
 
   // 질문세트 내 마지막 질문인지 확인
   const isLastQuestionInSet = useCallback(() => {
