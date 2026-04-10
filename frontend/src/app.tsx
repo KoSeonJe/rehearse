@@ -28,10 +28,10 @@ export const App = () => {
           <Route path="/interview/:publicId/analysis" element={<InterviewAnalysisPage />} />
           <Route path="/interview/:publicId/feedback" element={<InterviewFeedbackPage />} />
           <Route path="/interview/:publicId/review" element={<InterviewFeedbackPage />} />
+        </Route>
 
-          <Route element={<PasswordProtectedRoute />}>
-            <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
-          </Route>
+        <Route element={<PasswordProtectedRoute />}>
+          <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
