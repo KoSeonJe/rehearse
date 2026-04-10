@@ -46,7 +46,7 @@ public class QuestionGenerationService {
         virtualExecutor.close();
     }
 
-    public void generateQuestions(Long interviewId, Position position,
+    public void generateQuestions(Long interviewId, Long userId, Position position,
                                   InterviewLevel level, List<InterviewType> interviewTypes,
                                   List<String> csSubTopics, String resumeText,
                                   Integer durationMinutes, TechStack techStack) {
@@ -66,7 +66,7 @@ public class QuestionGenerationService {
 
         // Phase B: 병렬 질문 생성
         CompletableFuture<List<QuestionSet>> cacheableFuture = CompletableFuture.supplyAsync(() ->
-                provideCacheableQuestions(interviewId, position, level, effectiveTechStack,
+                provideCacheableQuestions(interviewId, userId, position, level, effectiveTechStack,
                         cacheableTypes, csSubTopics),
                 virtualExecutor
         ).orTimeout(60, TimeUnit.SECONDS);
@@ -98,7 +98,7 @@ public class QuestionGenerationService {
     }
 
     private List<QuestionSet> provideCacheableQuestions(
-            Long interviewId, Position position, InterviewLevel level,
+            Long interviewId, Long userId, Position position, InterviewLevel level,
             TechStack techStack, Map<InterviewType, Integer> typeDistribution,
             List<String> csSubTopics) {
 
@@ -108,7 +108,7 @@ public class QuestionGenerationService {
             int count = entry.getValue();
 
             List<QuestionPool> poolQuestions = cacheableProvider.provide(
-                    position, level, techStack, type, count, csSubTopics);
+                    userId, position, level, techStack, type, count, csSubTopics);
 
             for (QuestionPool qp : poolQuestions) {
                 QuestionSet qs = QuestionSet.builder()

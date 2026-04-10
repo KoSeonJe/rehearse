@@ -22,7 +22,7 @@ public class QuestionGenerationEventHandler {
     public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
         try {
             questionGenerationService.generateQuestions(
-                    event.getInterviewId(), event.getPosition(), event.getLevel(),
+                    event.getInterviewId(), event.getUserId(), event.getPosition(), event.getLevel(),
                     event.getInterviewTypes(), event.getCsSubTopics(),
                     event.getResumeText(), event.getDurationMinutes(), event.getTechStack());
         } catch (Exception e) {

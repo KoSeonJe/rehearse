@@ -7,6 +7,7 @@ import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.questionpool.entity.CsSubTopic;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.util.QuestionCacheKeyGenerator;
+import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
@@ -23,36 +24,46 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CacheableQuestionProvider {
 
     private final QuestionPoolService questionPoolService;
+    private final QuestionRepository questionRepository;
     private final AiClient aiClient;
     private final QuestionGenerationLock questionGenerationLock;
 
-    public List<QuestionPool> provide(Position position, InterviewLevel level,
+    public List<QuestionPool> provide(Long userId, Position position, InterviewLevel level,
                                       TechStack techStack, InterviewType type,
                                       int requiredCount, List<String> csSubTopics) {
 
         String cacheKey = QuestionCacheKeyGenerator.generate(position, level, techStack, type);
         List<String> categoryFilter = toCategoryFilter(csSubTopics);
+        Set<Long> usedPoolIds = findUsedPoolIds(userId, cacheKey);
 
-        if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter)) {
-            log.info("[CACHE] pool 히트: cacheKey={}, required={}, categoryFilter={}", cacheKey, requiredCount, categoryFilter);
-            return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
+        if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter, usedPoolIds)) {
+            log.info("[CACHE] pool 히트: cacheKey={}, required={}, usedByUser={}", cacheKey, requiredCount, usedPoolIds.size());
+            return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter, usedPoolIds);
         }
 
-        log.info("[CACHE] pool 부족, AI 호출: cacheKey={}", cacheKey);
+        log.info("[CACHE] pool 부족, AI 호출: cacheKey={}, usedByUser={}", cacheKey, usedPoolIds.size());
         return generateWithStampedeProtection(cacheKey, position, level, techStack, type,
-                requiredCount, csSubTopics, categoryFilter);
+                requiredCount, csSubTopics, categoryFilter, usedPoolIds);
+    }
+
+    private Set<Long> findUsedPoolIds(Long userId, String cacheKey) {
+        if (userId == null) {
+            return Set.of();
+        }
+        return questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(userId, cacheKey);
     }
 
     private List<QuestionPool> generateWithStampedeProtection(
             String cacheKey, Position position, InterviewLevel level,
             TechStack techStack, InterviewType type,
-            int requiredCount, List<String> csSubTopics, List<String> categoryFilter) {
+            int requiredCount, List<String> csSubTopics, List<String> categoryFilter,
+            Set<Long> usedPoolIds) {
 
         ReentrantLock lock = questionGenerationLock.acquire(cacheKey);
         try {
-            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter)) {
+            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter, usedPoolIds)) {
                 log.info("[CACHE] lock 후 pool 히트: cacheKey={}", cacheKey);
-                return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter);
+                return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter, usedPoolIds);
             }
 
             QuestionGenerationRequest request = new QuestionGenerationRequest(

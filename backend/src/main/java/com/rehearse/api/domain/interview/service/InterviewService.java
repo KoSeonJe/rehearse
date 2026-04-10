@@ -84,6 +84,7 @@ public class InterviewService {
 
         eventPublisher.publishEvent(new QuestionGenerationRequestedEvent(
                 interview.getId(),
+                userId,
                 interview.getPosition(),
                 interview.getPositionDetail(),
                 interview.getLevel(),
