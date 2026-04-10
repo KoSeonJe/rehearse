@@ -36,6 +36,7 @@ export const useAdminFeedbacks = (page: number, size: number) => {
     queryFn: () =>
       apiClient.get<ApiResponse<AdminFeedbackListResponse>>(
         `/api/v1/admin/feedbacks?page=${page}&size=${size}`,
+        { headers: { 'X-Admin-Password': sessionStorage.getItem('admin-password') ?? '' } },
       ),
   })
 }

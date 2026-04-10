@@ -1,14 +1,7 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { Sidebar } from '@/components/dashboard/sidebar'
-import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { Spinner } from '@/components/ui/spinner'
-import { useAuth } from '@/hooks/use-auth'
-import { useAuthStore } from '@/stores/auth-store'
 import { useAdminFeedbacks } from '@/hooks/use-service-feedback'
-import { apiClient } from '@/lib/api-client'
 import type { FeedbackSource } from '@/types/service-feedback'
 
 const PAGE_SIZE = 20
@@ -50,22 +43,8 @@ const SourceBadge = ({ source }: { source: FeedbackSource }) => {
 
 export const AdminFeedbacksPage = () => {
   const [page, setPage] = useState(0)
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const { user } = useAuth()
-  const { logout } = useAuthStore()
 
   const { data, isLoading } = useAdminFeedbacks(page, PAGE_SIZE)
-
-  const handleLogout = async () => {
-    try {
-      await apiClient.post('/api/v1/auth/logout')
-    } finally {
-      logout()
-      queryClient.removeQueries({ queryKey: ['auth', 'me'] })
-      navigate('/')
-    }
-  }
 
   const feedbackList = data?.data?.content ?? []
   const totalPages = data?.data?.totalPages ?? 0
@@ -73,11 +52,7 @@ export const AdminFeedbacksPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      <Sidebar user={user} onLogout={handleLogout} />
-
-      <div className="lg:ml-60">
-        <DashboardHeader user={user} onLogout={handleLogout} />
-
+      <div className="max-w-5xl mx-auto">
         <main className="px-5 py-8 lg:px-10 lg:py-10">
           <div className="mb-6">
             <h1 className="text-xl font-extrabold text-text-primary tracking-tight">피드백 관리</h1>

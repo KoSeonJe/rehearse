@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useVerifyAdminPassword } from '@/hooks/use-service-feedback'
 
-const SESSION_KEY = 'admin-authenticated'
+const SESSION_KEY = 'admin-password'
 
 export const PasswordProtectedRoute = () => {
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
   const [authenticated, setAuthenticated] = useState(
-    () => sessionStorage.getItem(SESSION_KEY) === 'true',
+    () => !!sessionStorage.getItem(SESSION_KEY),
   )
 
   const { mutate: verify, isPending } = useVerifyAdminPassword()
@@ -21,7 +21,7 @@ export const PasswordProtectedRoute = () => {
 
     verify(password, {
       onSuccess: () => {
-        sessionStorage.setItem(SESSION_KEY, 'true')
+        sessionStorage.setItem(SESSION_KEY, password)
         setAuthenticated(true)
       },
       onError: () => {
