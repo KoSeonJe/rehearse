@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class QuestionPoolService {
 
     private static final int POOL_SUFFICIENCY_MULTIPLIER = 3;
-    private static final double USER_SUFFICIENCY_MULTIPLIER = 1.5;
+    private static final double USER_SUFFICIENCY_MULTIPLIER = 2.0;
     private static final int POOL_SOFT_CAP = 200;
 
     private final QuestionPoolRepository questionPoolRepository;

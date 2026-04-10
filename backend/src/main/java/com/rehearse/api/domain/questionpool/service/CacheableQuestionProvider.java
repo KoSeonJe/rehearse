@@ -42,8 +42,8 @@ public class CacheableQuestionProvider {
         }
 
         log.info("[CACHE] pool 부족, AI 호출: cacheKey={}, usedByUser={}", cacheKey, usedPoolIds.size());
-        return generateWithStampedeProtection(cacheKey, position, level, techStack, type,
-                requiredCount, csSubTopics, categoryFilter, usedPoolIds);
+        return generateWithStampedeProtection(cacheKey, userId, position, level, techStack, type,
+                requiredCount, csSubTopics, categoryFilter);
     }
 
     private Set<Long> findUsedPoolIds(Long userId, String cacheKey) {
@@ -54,16 +54,18 @@ public class CacheableQuestionProvider {
     }
 
     private List<QuestionPool> generateWithStampedeProtection(
-            String cacheKey, Position position, InterviewLevel level,
+            String cacheKey, Long userId, Position position, InterviewLevel level,
             TechStack techStack, InterviewType type,
-            int requiredCount, List<String> csSubTopics, List<String> categoryFilter,
-            Set<Long> usedPoolIds) {
+            int requiredCount, List<String> csSubTopics, List<String> categoryFilter) {
 
         ReentrantLock lock = questionGenerationLock.acquire(cacheKey);
         try {
-            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter, usedPoolIds)) {
+            // lock 획득 후 usedPoolIds를 재조회하여 stale 데이터 방지
+            Set<Long> freshUsedPoolIds = findUsedPoolIds(userId, cacheKey);
+
+            if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter, freshUsedPoolIds)) {
                 log.info("[CACHE] lock 후 pool 히트: cacheKey={}", cacheKey);
-                return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter, usedPoolIds);
+                return questionPoolService.selectFromPool(cacheKey, requiredCount, categoryFilter, freshUsedPoolIds);
             }
 
             QuestionGenerationRequest request = new QuestionGenerationRequest(
@@ -95,7 +97,7 @@ public class CacheableQuestionProvider {
             log.error("[CACHE] AI 호출 실패: cacheKey={}", cacheKey, e);
             throw e;
         } finally {
-            questionGenerationLock.release(cacheKey, lock);
+            questionGenerationLock.release(lock);
         }
     }
 
