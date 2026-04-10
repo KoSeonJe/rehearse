@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "네트워크, 운영체제, 보안 기초. Azure 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"Azure Virtual Network의 NSG와 Azure Firewall의 차이가 OSI 계층 모델과 어떻게 대응되나요?\")"
   BEHAVIORAL: "장애 대응 포스트모템, Azure 마이그레이션 경험 (온프레미스→클라우드), 팀 내 DevOps 자동화 구축 등 Azure 기반 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 Azure 프로젝트를 기반으로 다양한 관점에서 질문: 아키텍처 설계 의사결정, AKS/Azure Functions 운영과 비용 최적화 수치, 온프레미스→클라우드 마이그레이션 경험, 장애 대응, 보안 설정, 팀 DevOps 자동화 구축 과정 등"
+  RESUME_BASED: "이력서의 Azure 프로젝트를 기반으로 다양한 관점에서 질문: 아키텍처 설계 의사결정, AKS/Azure Functions 운영과 비용 최적화 수치, 온프레미스→클라우드 마이그레이션 경험, 장애 대응, 팀 DevOps 자동화 구축 과정 등"
   INFRA_CICD: "Docker 이미지 최적화 (ACR Tasks, 취약점 스캔), AKS 핵심 개념 (노드 풀, VMSS, AAD Pod Identity/Workload Identity), Azure DevOps Pipelines (YAML 파이프라인, 환경, 승인 게이트), 블루-그린/카나리 배포 전략, GitHub Actions + Azure OIDC 통합"
   CLOUD: "Azure 핵심 서비스 아키텍처 (VNet, AKS, App Service, Azure Functions, Azure SQL, Cosmos DB, Azure Cache for Redis, Blob Storage, Azure CDN, Service Bus/Event Hubs, Event Grid), Azure AD/Entra ID RBAC, 멀티 리전 고가용성 설계, Azure Well-Architected Framework, 비용 최적화 (Reserved Instances, Spot Instances, Azure Savings Plans), Bicep/ARM 템플릿 IaC"
 
