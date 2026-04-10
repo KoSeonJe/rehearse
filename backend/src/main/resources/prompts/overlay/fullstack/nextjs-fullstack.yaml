@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, 네트워크, 브라우저 렌더링 원리. Next.js 관점에서 연결짓는 질문을 포함하세요. (예: \"HTTP 캐시 헤더(Cache-Control, ETag, stale-while-revalidate)가 Next.js의 fetch 캐시 및 ISR 동작과 어떻게 연관되나요?\")"
   BEHAVIORAL: "RSC 마이그레이션 경험, 캐싱 버그 디버깅, 팀 내 Server Actions 도입 결정 등 Next.js App Router 기반 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 Next.js 프로젝트, Core Web Vitals 개선 수치, 서버/클라이언트 컴포넌트 분리 설계 경험을 기반으로 질문"
+  RESUME_BASED: "이력서의 Next.js 프로젝트를 기반으로 다양한 관점에서 질문: 서버/클라이언트 컴포넌트 분리 의사결정, Core Web Vitals 개선 수치, 캐싱 버그 등 장애 대응 경험, RSC 마이그레이션 과정에서의 팀 합의, 테스트 전략, 사용자 경험 개선 사례 등"
   FULLSTACK_STACK: "React Server Components 동작 원리 (RSC 페이로드, 직렬화, 클라이언트 하이드레이션), 서버/클라이언트 컴포넌트 분리 기준과 경계 설계 ('use client', 'use server'), Server Actions 구현 (폼 처리, revalidatePath/revalidateTag, optimistic update), Next.js App Router 캐싱 계층 (Request Memoization, Data Cache, Full Route Cache, Router Cache), ISR/PPR(Partial Prerendering), 스트리밍 SSR과 Suspense 통합, 미들웨어 기반 인증/리다이렉트/A-B 테스트"
   SYSTEM_DESIGN: "Next.js 기반 풀스택 아키텍처 설계 (Route Handlers as API, BFF 패턴), Edge Runtime vs Node.js Runtime 선택 기준, Vercel 배포 최적화 (ISR 재검증 전략, Edge Config), 멀티 존(Multi-zone) 마이크로프론트엔드, Turborepo 기반 모노레포"
 

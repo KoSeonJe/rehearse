@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, SQL 실행 원리, 분산 시스템 기초. dbt/Snowflake 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"Snowflake의 Micro-Partition과 클러스터링 키가 쿼리 프루닝에 어떤 영향을 미치나요?\")"
   BEHAVIORAL: "데이터 모델 리팩토링, 파이프라인 성능 저하 원인 분석, 팀 내 dbt 표준화 도입 경험 등 dbt/Snowflake 기반 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 dbt 프로젝트 구조, Snowflake 웨어하우스 설계, 쿼리 성능 개선 수치, 데이터 마트 구축 경험을 기반으로 질문"
+  RESUME_BASED: "이력서의 dbt/Snowflake 프로젝트를 기반으로 다양한 관점에서 질문: 프로젝트 구조 설계 의사결정, 쿼리 성능 개선 수치, 데이터 모델 리팩토링 경험, 데이터 품질 검증 전략, 팀 내 dbt 표준화 도입 과정, 비즈니스 임팩트 등"
   DATA_PIPELINE: "dbt 프로젝트 구조 (models, seeds, snapshots, tests, macros, sources), ref()와 source() 의존성 그래프, 구체화(Materialization) 선택 (table, view, incremental, ephemeral), 증분 모델 전략 (unique_key, merge, delete+insert, insert_overwrite), dbt 테스트 (generic test: unique/not_null/accepted_values/relationships, singular test), dbt 매크로와 Jinja 템플릿, dbt Cloud Job 스케줄링"
   SQL_MODELING: "Snowflake 아키텍처 (가상 웨어하우스, 클라우드 서비스 레이어, 데이터베이스 스토리지 레이어), Micro-Partition과 자동 클러스터링, Time Travel과 Fail-safe, Zero-Copy Clone, 데이터 공유(Secure Data Sharing), 웨어하우스 크기 선택과 멀티 클러스터 설정, 스키마 온 리드 vs 온 라이트, SCD Type 1/2/3 dbt 구현"
 

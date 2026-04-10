@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "OS, 네트워크, 자료구조 기초. Go 백엔드 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"OS 스레드와 Go의 경량 스레드(고루틴) 차이가 고성능 HTTP 서버 설계에 어떤 의미를 가지나요?\")"
   BEHAVIORAL: "고루틴 릭 디버깅, 마이크로서비스 도입, 팀 내 에러 처리 전략 합의, 대용량 처리 파이프라인 설계 등 Go 기반 백엔드 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 Go 프로젝트, 동시성 처리 설계, 성능 개선 수치, gRPC/REST API 구현 경험을 기반으로 질문"
+  RESUME_BASED: "이력서의 Go 프로젝트를 기반으로 다양한 관점에서 질문: 동시성 처리 설계 의사결정, 성능 개선 수치, 고루틴 릭 등 장애 대응 경험, 에러 처리 전략에 대한 팀 합의 과정, 테스트 전략, gRPC/REST API 설계 근거 등"
   LANGUAGE_FRAMEWORK: "GMP 스케줄러 (G: 고루틴, M: OS 스레드, P: 논리 프로세서) 동작 원리와 GOMAXPROCS 튜닝, 채널(buffered/unbuffered) vs sync.Mutex/RWMutex 선택 기준, context.Context를 통한 취소·타임아웃·값 전파 패턴, defer/panic/recover 에러 처리 철학과 경계, Go 인터페이스 덕 타이핑과 의존성 역전, Go GC (삼색 마킹, GOGC 환경변수, 힙 목표), sync.Pool과 메모리 재사용, net/http 서버 내부 (goroutine-per-connection 모델)"
   SYSTEM_DESIGN: "대규모 시스템 설계 시 Go 에코시스템 기반의 기술 선택. gRPC + Protocol Buffers 서비스 정의, Gin/Echo/Fiber HTTP 프레임워크 선택, GORM vs sqlx vs database/sql 직접 사용, Kafka/NATS 기반 이벤트 드리븐 아키텍처"
 
