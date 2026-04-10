@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
@@ -38,6 +39,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         excludeFilters = @ComponentScan.Filter(type = FilterType.ASSIGNABLE_TYPE,
                 classes = {SecurityConfig.class, InternalApiKeyFilter.class}))
 @Import(TestSecurityConfig.class)
+@TestPropertySource(properties = "app.admin.password=test-admin-password")
 class ServiceFeedbackControllerTest {
 
     @Autowired
@@ -184,24 +186,23 @@ class ServiceFeedbackControllerTest {
     // ====== GET /api/v1/admin/feedbacks ======
 
     @Test
-    @DisplayName("GET /api/v1/admin/feedbacks - 인증 없이 호출하면 401")
-    void getAdminFeedbacks_withoutAuth_returns401() throws Exception {
+    @DisplayName("GET /api/v1/admin/feedbacks - 비밀번호 없이 호출하면 401")
+    void getAdminFeedbacks_withoutPassword_returns401() throws Exception {
         mockMvc.perform(get("/api/v1/admin/feedbacks"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @WithMockUserId(role = "USER")
-    @DisplayName("GET /api/v1/admin/feedbacks - 일반 유저로 호출하면 403")
-    void getAdminFeedbacks_withUserRole_returns403() throws Exception {
-        mockMvc.perform(get("/api/v1/admin/feedbacks"))
-                .andExpect(status().isForbidden());
+    @DisplayName("GET /api/v1/admin/feedbacks - 잘못된 비밀번호로 호출하면 401")
+    void getAdminFeedbacks_withWrongPassword_returns401() throws Exception {
+        mockMvc.perform(get("/api/v1/admin/feedbacks")
+                        .header("X-Admin-Password", "wrong-password"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @WithMockUserId(role = "ADMIN")
-    @DisplayName("GET /api/v1/admin/feedbacks - 관리자로 호출하면 200과 페이징 응답 반환")
-    void getAdminFeedbacks_withAdminRole_returns200() throws Exception {
+    @DisplayName("GET /api/v1/admin/feedbacks - 올바른 비밀번호로 호출하면 200과 페이징 응답 반환")
+    void getAdminFeedbacks_withValidPassword_returns200() throws Exception {
         AdminFeedbackResponse item = new AdminFeedbackResponse(
                 1L, 10L, "홍길동", "hong@test.com",
                 "좋은 서비스입니다. 많이 이용하겠습니다.", 5,
@@ -212,6 +213,7 @@ class ServiceFeedbackControllerTest {
                 .willReturn(new PageImpl<>(List.of(item), PageRequest.of(0, 20), 1));
 
         mockMvc.perform(get("/api/v1/admin/feedbacks")
+                        .header("X-Admin-Password", "test-admin-password")
                         .param("page", "0")
                         .param("size", "20"))
                 .andExpect(status().isOk())
