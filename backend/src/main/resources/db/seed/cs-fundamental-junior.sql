@@ -590,3 +590,20 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('JUNIOR:CS_FUNDAMENTAL', '샤딩(Sharding)이란 무엇인가요?', '데이터베이스',
  '샤딩은 대량의 데이터를 여러 데이터베이스에 수평으로 분할하여 저장하는 기법입니다. 해시 기반, 범위 기반, 디렉토리 기반 등의 전략이 있습니다. 단일 서버의 용량 한계를 넘어 확장할 수 있지만, 크로스 샤드 쿼리가 어렵고 데이터 재분배(리밸런싱)가 복잡합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 3문항 (120문항 달성)
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '그래프의 방향 그래프와 무방향 그래프의 차이를 설명해주세요.', '자료구조',
+ '무방향 그래프는 간선에 방향이 없어 양방향 이동이 가능하고, 방향 그래프는 간선에 방향이 있어 한 방향으로만 이동합니다. 무방향 그래프의 간선 수는 방향 그래프의 절반이며, 소셜 네트워크(무방향, 친구 관계)와 웹 링크(방향, 하이퍼링크)가 대표적 예시입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', 'Circular Queue(원형 큐)의 개념과 장점을 설명해주세요.', '자료구조',
+ '원형 큐는 배열의 끝과 시작을 연결하여 원형으로 동작하는 큐입니다. 일반 배열 큐에서 dequeue 시 발생하는 앞쪽 빈 공간 낭비를 해결합니다. front와 rear 포인터를 모듈러 연산으로 관리하며, 운영체제의 CPU 스케줄링 버퍼, 데이터 스트림 버퍼에 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('JUNIOR:CS_FUNDAMENTAL', '선형 자료구조와 비선형 자료구조의 차이를 설명해주세요.', '자료구조',
+ '선형 자료구조는 데이터가 순차적으로 나열되며 Array, LinkedList, Stack, Queue가 포함됩니다. 비선형 자료구조는 계층이나 그래프 형태로 Tree, Graph가 포함됩니다. 선형은 구현이 간단하고 순차 접근에 유리하며, 비선형은 복잡한 관계를 표현하고 탐색/검색에 강점이 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

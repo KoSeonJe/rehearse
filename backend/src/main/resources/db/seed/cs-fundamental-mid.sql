@@ -500,3 +500,124 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('MID:CS_FUNDAMENTAL', 'NoSQL 데이터베이스의 종류와 각각의 적합한 사용 사례를 설명해주세요.', '데이터베이스',
  'Key-Value(Redis, DynamoDB)는 세션, 캐시 등 단순 조회에 적합합니다. Document(MongoDB)는 유연한 스키마가 필요한 컨텐츠 관리에 적합합니다. Column-Family(Cassandra, HBase)는 대용량 시계열 데이터에 적합합니다. Graph(Neo4j)는 소셜 네트워크, 추천 시스템 등 관계 중심 데이터에 적합합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 23문항 (목표 120문항 달성)
+
+-- 자료구조 추가 (6문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '스택(Stack)과 큐(Queue)를 각각 두 개의 큐와 두 개의 스택으로 구현하는 방법을 설명해주세요.', '자료구조',
+ '큐 두 개로 스택을 구현할 때 push는 빈 큐에 넣고 다른 큐 원소를 모두 옮기면 최신 원소가 앞에 위치합니다. pop은 O(1)이지만 push가 O(n)입니다. 반대로 push O(1), pop O(n)으로도 구현할 수 있습니다. 스택 두 개로 큐를 구현할 때 inStack에 push하고 outStack이 비면 inStack을 뒤집어 옮기는 방식으로 amortized O(1)을 달성합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '슬라이딩 윈도우(Sliding Window) 알고리즘의 원리와 활용 예를 설명해주세요.', '자료구조',
+ '슬라이딩 윈도우는 배열이나 문자열에서 고정 또는 가변 크기의 구간을 이동하며 연산하는 기법으로, 중복 계산을 줄여 O(n²)을 O(n)으로 개선합니다. 최대 부분합, 최소 길이 부분 배열, 중복 없는 최장 부분 문자열 등의 문제에 활용됩니다. 투 포인터(Two Pointer)와 함께 사용하면 가변 윈도우 조건 처리가 용이합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '해시 테이블의 동적 리사이징(Dynamic Resizing) 과정을 설명해주세요.', '자료구조',
+ 'load factor가 임계값(보통 0.75)을 초과하면 테이블 크기를 2배로 늘리고 모든 원소를 재해싱합니다. 이 과정이 O(n)이지만, 분할 상환 분석으로 삽입 연산의 평균 비용은 O(1)입니다. 줄이기(shrink)는 load factor가 0.25 미만일 때 절반으로 줄여 메모리를 회수합니다. Java의 HashMap은 초기 용량(16)과 load factor(0.75)가 기본값입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '모노토닉 스택(Monotonic Stack)의 개념과 활용 문제를 설명해주세요.', '자료구조',
+ '모노토닉 스택은 원소가 단조 증가 또는 단조 감소 순서로 유지되는 스택입니다. 새 원소 삽입 시 조건을 위반하는 원소를 pop하면서 Next Greater Element, 히스토그램 최대 직사각형, 빗물 트래핑 문제 등을 O(n)에 해결합니다. 각 원소가 최대 한 번 push/pop 되어 전체 O(n)을 보장합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '동적 프로그래밍(DP)에서 메모이제이션과 타뷸레이션의 차이를 설명해주세요.', '자료구조',
+ '메모이제이션(Top-Down)은 재귀 호출 시 이미 계산된 결과를 해시맵/배열에 저장하고 재사용하는 방식으로, 필요한 하위 문제만 계산합니다. 타뷸레이션(Bottom-Up)은 작은 하위 문제부터 순서대로 테이블을 채우는 반복문 방식으로, 스택 오버플로우 위험이 없고 캐시 효율이 좋습니다. 공간 최적화는 타뷸레이션에서 이전 행만 유지하는 방식으로 쉽게 적용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '이진 트리의 직렬화(Serialization)와 역직렬화(Deserialization) 방법을 설명해주세요.', '자료구조',
+ '전위 순회(Pre-order)로 직렬화하면 null 노드를 특수 문자(#)로 표시하여 트리 구조를 완전히 복원할 수 있습니다. BFS 기반 레벨 순서 직렬화도 가능하며, LeetCode의 트리 표현 방식이 이를 사용합니다. 역직렬화 시 큐나 인덱스 포인터로 문자열을 순서대로 소비하며 트리를 재구성합니다. 후위 순회로도 가능하지만 중위 순회만으로는 고유한 트리를 복원할 수 없습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 운영체제 추가 (6문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '프로세스와 스레드의 메모리 구조 차이를 설명해주세요.', '운영체제',
+ '프로세스는 독립적인 메모리 공간(코드, 데이터, 힙, 스택)을 가지며 프로세스 간 메모리 격리가 됩니다. 같은 프로세스의 스레드들은 코드, 데이터, 힙 영역을 공유하고 각 스레드는 개별 스택과 레지스터를 가집니다. 공유 메모리 덕분에 스레드 간 통신이 빠르지만, 동기화 없이 접근하면 Race Condition이 발생합니다. 컨텍스트 스위칭은 스레드가 프로세스보다 빠릅니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '가상 메모리에서 페이지 폴트(Page Fault) 처리 과정을 설명해주세요.', '운영체제',
+ '페이지 폴트는 접근하려는 페이지가 물리 메모리에 없을 때 발생합니다. CPU가 페이지 폴트 인터럽트를 발생시키면 OS가 제어를 받아 디스크에서 해당 페이지를 빈 프레임에 로드합니다. 빈 프레임이 없으면 페이지 교체 알고리즘으로 희생 페이지를 선택하고, dirty 페이지면 스왑 영역에 기록 후 교체합니다. 페이지 테이블을 갱신하고 프로세스를 재시작합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '시스템 콜(System Call)의 동작 과정을 설명해주세요.', '운영체제',
+ '시스템 콜은 사용자 모드 프로세스가 커널 기능을 호출하는 인터페이스입니다. 사용자 프로그램이 시스템 콜을 호출하면 소프트웨어 인터럽트(x86에서 int 0x80 또는 syscall 명령어)가 발생합니다. CPU 모드가 사용자 모드에서 커널 모드로 전환되고 레지스터에 시스템 콜 번호와 인자를 전달합니다. 커널이 처리를 완료하면 결과를 레지스터에 저장하고 사용자 모드로 복귀합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '컨텍스트 스위칭(Context Switching)의 비용과 최소화 방법을 설명해주세요.', '운영체제',
+ '컨텍스트 스위칭 시 현재 프로세스/스레드의 레지스터, PC, 스택 포인터를 PCB/TCB에 저장하고 다음 실행 대상의 상태를 복원합니다. 비용 요소로는 CPU 시간(저장/복원), TLB 플러시(프로세스 스위칭 시), CPU 캐시 cold start 등이 있습니다. 최소화 방법으로는 스레드 수를 CPU 코어 수에 맞추기, CPU 어피니티 설정, 경량 코루틴/Green Thread 활용 등이 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '파이프(Pipe)와 소켓(Socket)의 차이를 설명해주세요.', '운영체제',
+ '파이프는 단방향(기명 파이프는 양방향 가능) IPC 메커니즘으로 부모-자식 프로세스 또는 같은 호스트 프로세스 간 통신에 사용됩니다. 소켓은 네트워크 스택을 통한 양방향 통신으로 다른 호스트 간에도 사용 가능하며 TCP/UDP 프로토콜을 선택할 수 있습니다. 로컬 통신에는 Unix Domain Socket이 TCP 소켓보다 빠르며 파일 시스템 경로를 주소로 사용합니다. 성능은 공유 메모리 > 파이프 > Unix 소켓 > TCP 소켓 순입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '인터럽트(Interrupt)의 종류와 처리 과정을 설명해주세요.', '운영체제',
+ '인터럽트는 하드웨어 인터럽트(외부 장치 신호), 소프트웨어 인터럽트(시스템 콜, int 명령어), 예외(Division by Zero, Page Fault 등)로 구분됩니다. 인터럽트 발생 시 현재 실행 정보를 스택에 저장하고, 인터럽트 벡터 테이블에서 해당 ISR(Interrupt Service Routine) 주소를 찾아 실행합니다. ISR 완료 후 저장된 실행 정보를 복원하고 원래 코드 실행을 재개합니다. 마스크 가능 인터럽트는 임시 비활성화가 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 네트워크 추가 (6문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'TCP 3-way handshake와 4-way handshake를 설명해주세요.', '네트워크',
+ '3-way handshake로 연결 수립: 클라이언트 SYN → 서버 SYN-ACK → 클라이언트 ACK. 이 과정에서 초기 시퀀스 번호(ISN)를 교환합니다. 4-way handshake로 연결 종료: 종료 요청자 FIN → 수신자 ACK → 수신자 FIN → 요청자 ACK. 요청자는 마지막 ACK 전송 후 TIME_WAIT 상태로 2MSL 대기하여 지연 패킷을 처리하고 상대방이 ACK를 받지 못한 경우 재전송에 대비합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'HTTP Keep-Alive와 커넥션 풀(Connection Pool)의 관계를 설명해주세요.', '네트워크',
+ 'HTTP Keep-Alive(Persistent Connection)는 하나의 TCP 연결로 여러 HTTP 요청/응답을 처리하여 3-way handshake 반복 비용을 줄입니다. HTTP/1.1에서 기본 활성화되며 Connection: close로 비활성화 가능합니다. 커넥션 풀은 미리 생성된 TCP 연결을 재사용하는 클라이언트 사이드 최적화로, Keep-Alive와 결합하면 응답 지연을 크게 줄입니다. 풀 크기는 서버 최대 동시 연결 수와 클라이언트 부하를 고려하여 설정해야 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'CDN(Content Delivery Network)의 동작 원리와 캐싱 전략을 설명해주세요.', '네트워크',
+ 'CDN은 전 세계 엣지 서버에 콘텐츠를 복제하여 사용자와 가까운 서버에서 콘텐츠를 제공함으로써 지연 시간을 줄입니다. DNS 기반 라우팅으로 사용자를 가장 가까운 엣지 서버로 연결합니다. 캐싱 전략으로 Cache-Control 헤더의 max-age로 TTL을 설정하고, 갱신 시 캐시 키(URL + 버전 파라미터)를 변경하거나 캐시 퍼지 API를 사용합니다. 정적 자산은 긴 TTL, API 응답은 짧은 TTL 또는 no-store를 적용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'DNS 조회 과정을 재귀적 질의와 반복적 질의로 설명해주세요.', '네트워크',
+ 'DNS 조회는 브라우저 캐시 → OS 캐시 → 로컬 DNS 서버(ISP 제공) 순으로 확인합니다. 재귀적 질의는 로컬 DNS 서버가 클라이언트를 대신하여 루트 → TLD → 권위 네임서버까지 대신 조회하고 최종 결과만 반환합니다. 반복적 질의는 각 서버가 다음 서버 주소만 알려주고 클라이언트가 직접 단계별 조회합니다. 실제로 클라이언트↔로컬DNS는 재귀적, 로컬DNS↔상위 서버는 반복적 방식을 혼용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'IP 서브넷팅(Subnetting)과 CIDR 표기법을 설명해주세요.', '네트워크',
+ 'CIDR(Classless Inter-Domain Routing)은 IP 주소 뒤에 /prefix-length로 네트워크 부분 비트 수를 표시합니다. 예를 들어 192.168.1.0/24는 네트워크 부분 24비트, 호스트 부분 8비트로 256개(사용 가능 254개) 주소입니다. 서브넷 마스크 255.255.255.0과 동일합니다. VLSM(Variable Length Subnet Mask)으로 필요에 따라 다른 크기의 서브넷을 할당하여 IP 낭비를 줄입니다. 라우팅 테이블에서 Longest Prefix Match 규칙으로 경로를 선택합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'Reverse Proxy와 Forward Proxy의 차이를 설명해주세요.', '네트워크',
+ 'Forward Proxy는 클라이언트 앞에 위치하여 클라이언트의 요청을 대신 외부 서버에 전달합니다. 클라이언트 익명성 확보, 접근 제어, 캐싱에 활용됩니다. Reverse Proxy는 서버 앞에 위치하여 클라이언트 요청을 내부 서버로 라우팅합니다. 로드 밸런싱, SSL 종료, 캐싱, 서버 IP 은폐에 활용됩니다. Nginx, HAProxy가 Reverse Proxy로 많이 사용됩니다. 클라이언트는 Reverse Proxy를 실제 서버로 인식합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 데이터베이스 추가 (5문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '복합 인덱스(Composite Index)의 설계 원칙과 컬럼 순서의 중요성을 설명해주세요.', '데이터베이스',
+ '복합 인덱스는 여러 컬럼을 결합한 인덱스로, 컬럼 순서가 성능에 결정적입니다. Leftmost Prefix 규칙에 따라 (A, B, C) 인덱스는 A, (A, B), (A, B, C) 조건에서만 활용되고 B만 조건으로 사용하면 인덱스가 비효율적입니다. 선택도(Cardinality)가 높은 컬럼을 앞에 배치하면 인덱스 필터링 효율이 높아집니다. 동등 조건 컬럼을 앞에, 범위 조건 컬럼을 뒤에 배치하는 것이 기본 원칙입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '데이터베이스 뷰(View)의 개념과 사용 목적, 한계를 설명해주세요.', '데이터베이스',
+ '뷰는 하나 이상의 테이블을 기반으로 한 가상 테이블로, 복잡한 쿼리를 단순화하고 특정 컬럼만 노출하여 보안을 강화합니다. 데이터는 실제로 저장되지 않으며 조회 시마다 기반 쿼리가 실행됩니다. 단순 뷰는 INSERT/UPDATE/DELETE가 가능하지만 GROUP BY, 집계 함수, DISTINCT, JOIN이 포함된 복잡한 뷰는 수정 불가입니다. Materialized View는 결과를 실제 저장하여 조회 성능을 높이지만 데이터 동기화 관리가 필요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', 'INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL OUTER JOIN의 차이를 설명해주세요.', '데이터베이스',
+ 'INNER JOIN은 두 테이블 모두에 매칭되는 행만 반환합니다. LEFT JOIN은 왼쪽 테이블 전체와 오른쪽에서 매칭되는 행을, 매칭 없으면 NULL을 반환합니다. RIGHT JOIN은 그 반대입니다. FULL OUTER JOIN은 양쪽 테이블 모두를 포함하고 매칭 없는 쪽은 NULL로 채웁니다. MySQL은 FULL OUTER JOIN을 직접 지원하지 않아 LEFT JOIN UNION RIGHT JOIN으로 구현합니다. CROSS JOIN은 카르테시안 곱으로 두 테이블의 모든 조합을 반환합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '스토어드 프로시저(Stored Procedure)의 장단점을 설명해주세요.', '데이터베이스',
+ '스토어드 프로시저는 DB 서버에 미리 컴파일된 SQL 집합으로, 네트워크 왕복 횟수 감소, 실행 계획 재사용으로 성능이 유리합니다. 비즈니스 로직의 DB 집중화로 보안을 강화하고 권한 제어가 용이합니다. 단점으로는 버전 관리 어려움, 특정 DB 종속성, 복잡한 로직에서 디버깅이 어렵습니다. 애플리케이션 레이어에서 로직을 관리하는 현대 아키텍처(ORM 기반)에서는 사용이 줄어드는 추세입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('MID:CS_FUNDAMENTAL', '데이터베이스 트랜잭션의 ACID 속성을 각각 구체적인 예시로 설명해주세요.', '데이터베이스',
+ 'Atomicity(원자성)는 계좌 이체 시 출금과 입금이 모두 성공하거나 둘 다 롤백됩니다. Consistency(일관성)는 트랜잭션 전후로 DB가 정의된 무결성 제약(외래키, NOT NULL)을 유지합니다. Isolation(격리성)은 동시 실행 트랜잭션이 서로의 중간 상태를 볼 수 없어 직렬 실행과 동일한 결과를 보장합니다. Durability(지속성)는 커밋된 트랜잭션은 시스템 장애 후에도 WAL을 통해 복구 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

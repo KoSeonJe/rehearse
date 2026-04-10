@@ -304,3 +304,171 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 Event Sourcing과 CQRS를 결합한 아키텍처를 설계하는 방법은?', 'NESTJS',
  'Aggregate는 이벤트를 apply() 메서드로 처리하여 상태를 재구성하며, 새 이벤트를 uncommittedEvents 목록에 추가합니다. EventStore(PostgreSQL의 events 테이블)에 이벤트를 추가 전용으로 저장하고, Aggregate ID로 이벤트를 재생하여 현재 상태를 복원합니다. 쓰기 후 EventBus로 이벤트를 발행하면 Projection Handler가 읽기 모델(ElasticSearch, Redis)을 비동기로 업데이트합니다. 성능 최적화를 위해 N개 이벤트마다 Snapshot을 저장하여 재생 시간을 단축합니다. 이 구조는 감사 로그, 시계열 분석, 시스템 상태 복원에 강점을 가집니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 32문항 (JUNIOR +1, MID +12, SENIOR +19)
+
+-- JUNIOR 추가 1문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:JUNIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS의 Exception Filter는 무엇이며 어떻게 사용하나요?', 'NESTJS',
+ 'Exception Filter는 컨트롤러나 서비스에서 발생한 예외를 캐치하여 클라이언트에게 일관된 에러 응답을 반환하는 레이어입니다. @Catch(HttpException) 데코레이터와 ExceptionFilter 인터페이스를 구현하여 특정 예외 타입을 처리합니다. @UseFilters(new HttpExceptionFilter())로 특정 컨트롤러나 라우터에 적용하거나, app.useGlobalFilters()로 전역 적용합니다. 기본 제공되는 HttpException은 status와 message를 인자로 받으며, NotFoundException, BadRequestException 등의 서브클래스가 제공됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- MID 추가 12문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js의 Streams API와 파이프라이닝(pipeline)을 활용한 대용량 데이터 처리 방법은?', 'NODEJS_CORE',
+ 'Node.js Streams는 Readable, Writable, Duplex, Transform 네 가지 타입으로 데이터를 청크 단위로 처리하여 전체 데이터를 메모리에 올리지 않고 대용량 파일을 처리합니다. stream.pipeline(src, transform, dest, callback)은 파이프라인의 에러와 정리를 자동으로 처리하며, pipe()보다 안전합니다. Transform 스트림을 구현하여 CSV 파싱, 압축, 암호화를 파이프라인에 삽입합니다. stream/promises의 pipeline()은 Promise를 반환하여 async/await와 함께 사용할 수 있습니다. backpressure를 존중하지 않으면 메모리 사용량이 무제한으로 증가하므로 Writable의 write() 반환값을 확인하고 drain 이벤트를 처리해야 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 커스텀 데코레이터를 만들고 메타데이터를 활용하는 방법은?', 'NESTJS',
+ 'createParamDecorator()로 요청 객체에서 특정 데이터를 추출하는 파라미터 데코레이터를 만들고, @CurrentUser()처럼 컨트롤러 파라미터에 적용합니다. SetMetadata()로 라우터나 클래스에 메타데이터를 부착하고, Reflector를 Guard나 Interceptor에서 주입받아 메타데이터를 읽습니다. @Roles(''admin'')처럼 선언하고 Guard에서 reflector.getAllAndOverride(ROLES_KEY, [context.getHandler(), context.getClass()])로 역할을 확인합니다. applyDecorators()로 여러 데코레이터를 합성하여 재사용 가능한 복합 데코레이터를 만들 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript의 Mapped Types와 Conditional Types를 활용한 유틸리티 타입 설계 방법은?', 'NODEJS_CORE',
+ 'Mapped Types는 기존 타입의 각 프로퍼티를 변환하는 타입으로, { [K in keyof T]: ... } 문법을 사용합니다. Partial<T>, Required<T>, Readonly<T>, Record<K, V>가 내장 Mapped Types입니다. Conditional Types는 T extends U ? X : Y 형태로 조건에 따라 타입을 분기합니다. infer 키워드로 조건부 타입 내에서 타입을 추론합니다. 예를 들어 type UnwrapPromise<T> = T extends Promise<infer U> ? U : T로 Promise의 내부 타입을 추출합니다. NestJS에서 DTO 변환 타입(CreateDto에서 UpdateDto)을 자동 생성하는 데 활용할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 WebSocket Gateway를 구현하는 방법과 주의사항은?', 'NESTJS',
+ '@WebSocketGateway() 데코레이터로 WebSocket 서버를 선언하고, @SubscribeMessage(''message'') 핸들러로 클라이언트 메시지를 처리합니다. @WebSocketServer()로 socket.io 서버 인스턴스를 주입받아 broadcast나 특정 룸에 메시지를 보낼 수 있습니다. Guard, Interceptor, Pipe를 HTTP와 동일하게 WebSocket에 적용할 수 있습니다. 수평 확장 환경에서 여러 서버 인스턴스 간 메시지 전달을 위해 @nestjs/platform-socket.io의 Redis Adapter를 설정합니다. 연결 수가 많은 경우 핑/퐁 타임아웃과 최대 연결 수를 설정하여 좀비 연결을 정리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 Buffer와 ArrayBuffer의 차이점과 바이너리 데이터 처리 방법은?', 'NODEJS_CORE',
+ 'Buffer는 Node.js에서 고정 크기 바이너리 데이터를 다루는 클래스로 Uint8Array를 확장합니다. ArrayBuffer는 WebAPI 표준으로 브라우저와 Node.js 모두에서 사용되며, Buffer는 ArrayBuffer의 Node.js 전용 구현입니다. Buffer.alloc(size)로 제로 초기화된 버퍼를 생성하고, Buffer.from(array/string/arrayBuffer)으로 기존 데이터로부터 생성합니다. readUInt32LE, writeInt16BE 등의 메서드로 다양한 바이트 순서(Endianness)로 숫자를 읽고 씁니다. 바이너리 프로토콜(MessagePack, Protocol Buffers) 파싱이나 파일 I/O에서 Buffer를 직접 다루는 경우가 많습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 동적 모듈(Dynamic Module)을 만드는 방법과 사용 사례는?', 'NESTJS',
+ 'Dynamic Module은 register(), forRoot(), forFeature(), forRootAsync() 같은 정적 메서드로 설정을 받아 모듈을 동적으로 구성합니다. ModuleMetadata를 반환하는 정적 메서드에서 providers, exports를 동적으로 결정합니다. forRootAsync()는 useFactory 패턴으로 비동기 설정(환경 변수 검증, 외부 설정 서버)을 지원합니다. ConfigModule, TypeOrmModule, CacheModule이 Dynamic Module의 대표 예시입니다. 라이브러리를 제작할 때 Dynamic Module 패턴으로 설정 가능한 재사용 모듈을 설계하면 각 프로젝트에서 필요에 맞게 커스터마이즈할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript의 Generics를 활용한 NestJS 공통 서비스 레이어 설계 방법은?', 'NODEJS_CORE',
+ '제네릭 Repository 패턴을 구현하여 공통 CRUD 로직을 abstract class BaseRepository<T, ID>로 추출합니다. 이를 확장한 UserRepository는 도메인 특화 메서드만 추가하면 됩니다. 공통 응답 타입 PageResult<T>를 제네릭으로 선언하면 모든 페이지네이션 엔드포인트에서 재사용합니다. class-transformer의 plainToInstance<T>(cls, plain)으로 타입 안전한 객체 변환 유틸을 작성합니다. 제네릭 제약(T extends Entity)으로 Repository에 전달 가능한 타입을 제한하여 런타임 오류를 컴파일 타임에 차단합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 마이크로서비스 패턴(Message Pattern, Event Pattern)의 차이점은?', 'NESTJS',
+ 'Message Pattern(@MessagePattern)은 요청-응답(Request-Response) 방식으로 클라이언트가 응답을 기다립니다. ClientProxy.send()로 메시지를 보내고 Observable 또는 Promise로 응답을 받습니다. Event Pattern(@EventPattern)은 단방향 발행-구독(Publish-Subscribe) 방식으로 응답을 기다리지 않습니다. ClientProxy.emit()으로 이벤트를 발행하고 처리가 완료되지 않아도 계속 진행합니다. 명령(도메인 작업 실행, 데이터 조회)에는 Message Pattern, 알림(이벤트 발생 통보)에는 Event Pattern을 사용하는 것이 CQRS 원칙에 부합합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 메모리 누수를 탐지하고 해결하는 방법은?', 'NODEJS_CORE',
+ '메모리 누수의 주요 원인은 클로저로 유지되는 대형 객체, 해제되지 않는 이벤트 리스너, 커지는 캐시, 전역 배열/맵에 쌓이는 데이터입니다. --inspect 플래그로 Chrome DevTools를 연결하여 힙 스냅샷을 찍고 비교하면 누수 객체를 특정할 수 있습니다. clinic.js heap으로 시간에 따른 힙 증가 패턴을 시각화합니다. EventEmitter의 리스너는 더 이상 필요 없을 때 removeListener()나 once()로 등록하여 누수를 방지합니다. WeakMap과 WeakRef를 활용하면 참조 유지 없이 객체와 연관 데이터를 저장하여 GC가 회수할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 OpenAPI(Swagger) 문서를 자동 생성하는 방법과 best practice는?', 'NESTJS',
+ '@nestjs/swagger의 DocumentBuilder로 API 제목, 버전, 인증 스키마를 설정하고 SwaggerModule.createDocument()로 OpenAPI 스펙을 생성합니다. @ApiTags, @ApiOperation, @ApiResponse로 엔드포인트를 문서화합니다. DTO에 @ApiProperty({ description, example, required })를 추가하면 요청/응답 스키마가 자동 생성됩니다. @ApiExtraModels()로 직접 참조되지 않는 타입을 문서에 포함시키고, $ref로 참조합니다. CLI Plugin(nest-cli.json의 plugins)을 활성화하면 @ApiProperty를 명시하지 않아도 TypeScript 타입에서 스키마를 자동 추론합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript의 strict 모드와 주요 컴파일러 옵션들을 설명해주세요.', 'NODEJS_CORE',
+ 'strict: true는 strictNullChecks, strictFunctionTypes, strictBindCallApply, noImplicitAny, strictPropertyInitialization을 한 번에 활성화합니다. strictNullChecks는 null/undefined를 별개의 타입으로 취급하여 NPE 유사 오류를 컴파일 타임에 차단합니다. noImplicitAny는 타입을 추론하지 못한 곳에 자동으로 any를 허용하지 않습니다. exactOptionalPropertyTypes는 optional 프로퍼티에 undefined 명시 할당을 구분합니다. noUncheckedIndexedAccess는 배열/인덱스 접근의 결과 타입에 undefined를 추가하여 범위 초과 접근을 강제로 체크하게 합니다. NestJS 프로젝트에서 strict 모드를 활성화하면 런타임 오류를 크게 줄일 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 Health Check와 Readiness/Liveness Probe를 구현하는 방법은?', 'NESTJS',
+ '@nestjs/terminus 패키지로 /health 엔드포인트를 구성하고 DB, Redis, 외부 API 상태를 포함한 헬스 체크를 구현합니다. HealthIndicator를 구현하여 커스텀 헬스 체크 로직을 추가합니다. Kubernetes에서 Liveness Probe는 애플리케이션 재시작 여부를 판단하고, Readiness Probe는 트래픽 수신 준비 상태를 판단합니다. 시작 초기화 중에는 readiness를 false로, DB 연결 확인 후 true로 변경합니다. 헬스 체크 엔드포인트는 인증을 제외하고 Rate Limiting을 적용하여 외부 접근은 허용하되 DDoS를 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- SENIOR 추가 19문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js 애플리케이션의 Zero-Downtime 배포 전략을 설명해주세요.', 'PERFORMANCE',
+ 'PM2의 cluster 모드에서 --wait-ready와 --listen-timeout 옵션으로 프로세스 교체 시 새 프로세스가 준비된 후 구 프로세스를 종료하여 무중단 배포를 구현합니다. Kubernetes Rolling Update와 Readiness Probe를 조합하면 새 Pod가 준비되기 전까지 트래픽을 보내지 않습니다. SIGTERM 수신 시 process.on(''SIGTERM'')에서 새 요청 수신을 중단하고 처리 중인 요청이 완료될 때까지 대기하는 Graceful Shutdown을 구현합니다. HTTP Keep-Alive 연결을 서버 종료 전에 server.closeIdleConnections()로 닫아 연결 유지 클라이언트의 갑작스러운 연결 끊김을 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 테넌트별 DB 격리를 구현하는 멀티 테넌시 아키텍처를 설명해주세요.', 'NESTJS',
+ '요청 헤더(X-Tenant-Id) 또는 서브도메인에서 테넌트를 식별하는 미들웨어를 구성하고, AsyncLocalStorage로 요청 컨텍스트에 테넌트 정보를 전파합니다. 스키마 기반 격리는 테넌트별 PostgreSQL 스키마를 동적으로 전환하는 TypeORM 커스텀 Repository로 구현합니다. 별도 DB 인스턴스 방식은 DataSource 풀을 테넌트 ID로 인덱싱하고, 요청마다 해당 DataSource를 선택합니다. 마이그레이션은 모든 테넌트 스키마에 순차 또는 병렬로 적용하는 스크립트를 관리합니다. 새 테넌트 온보딩 시 스키마 생성과 초기 마이그레이션을 트랜잭션으로 처리하여 부분 실패를 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 CPU 바운드 작업을 Worker Thread로 오프로딩하는 패턴을 설명해주세요.', 'NODEJS_CORE',
+ 'Worker Thread는 isMainThread로 메인/워커를 구분하고, parentPort.on(''message'')로 데이터를 받아 처리 후 parentPort.postMessage()로 결과를 반환합니다. Worker 생성 비용을 줄이기 위해 Worker Thread Pool(piscina 라이브러리)을 사용하여 미리 생성된 워커에 작업을 분배합니다. SharedArrayBuffer와 Atomics로 메인 스레드와 워커 간에 복사 없이 대용량 데이터를 공유합니다. workerData로 초기 데이터를 전달하고, transferList로 ArrayBuffer 소유권을 이전하여 데이터 복사 없이 워커로 전달합니다. Worker 내부에서 예외 발생 시 worker.on(''error'') 핸들러로 메인 스레드에서 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS 기반 서비스의 부하 테스트와 성능 벤치마킹 방법을 설명해주세요.', 'PERFORMANCE',
+ 'k6와 autocannon으로 HTTP 부하 테스트를 수행하고 RPS, 지연 시간 p50/p95/p99, 에러율을 측정합니다. k6 스크립트에서 가상 사용자(VU) 수를 단계적으로 증가시켜 스케일링 한계를 찾습니다. clinic.js flame으로 CPU 핫스팟을 시각화하고, doctor로 이벤트 루프 지연과 비효율적인 I/O 패턴을 진단합니다. 부하 테스트 중 --inspect로 연결한 Chrome DevTools에서 실시간 힙 사용량과 CPU 프로파일을 수집합니다. 테스트 환경에서 Prometheus 메트릭을 수집하고 Grafana 대시보드로 시각화하여 배포 전후 성능 회귀를 탐지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript의 타입 시스템을 활용한 도메인 모델링과 타입 안전성 확보 전략은?', 'NODEJS_CORE',
+ 'Branded/Nominal Types로 string/number 기반 도메인 식별자(UserId, OrderId)를 컴파일 타임에 구분합니다. type UserId = string & { readonly __brand: unique symbol }처럼 선언하여 일반 string 할당을 차단합니다. Discriminated Union으로 상태 머신을 표현하면 특정 상태에서만 존재하는 필드를 타입 안전하게 접근합니다. Template Literal Types로 이벤트 이름, API 경로 패턴을 타입으로 제약합니다. const assertion(as const)으로 배열이나 객체를 리터럴 타입으로 좁혀 런타임 값을 타입으로 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 플러그인 아키텍처와 동적 기능 확장 패턴을 설명해주세요.', 'NESTJS',
+ 'Dynamic Module의 forFeature() 패턴으로 각 기능 모듈이 필요한 서브 기능(레포지토리, 설정 네임스페이스)을 동적으로 등록합니다. ModuleRef를 사용하면 DI 컨테이너에서 임의의 Provider를 동적으로 조회하여 플러그인 형태로 기능을 주입합니다. Strategy 패턴 + 팩토리를 결합하여 런타임에 알고리즘 구현체를 교체합니다. APP_INTERCEPTOR, APP_GUARD, APP_PIPE 토큰으로 전역 Provider를 동적으로 등록합니다. 마이크로서비스 Transport(TCP, Redis, NATS)를 런타임 환경 변수로 결정하는 Dynamic Module 패턴으로 배포 환경에 따라 메시지 브로커를 교체합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 암호화와 보안 관련 모범 사례를 설명해주세요.', 'NODEJS_CORE',
+ 'node:crypto 모듈의 scrypt 또는 bcrypt로 비밀번호를 해싱하고, crypto.timingSafeEqual()로 타이밍 어택을 방지하며 문자열을 비교합니다. AES-256-GCM으로 데이터를 대칭 암호화하고, 인증 태그(auth tag)로 무결성을 검증합니다. HTTPS 강제를 위해 helmet의 HSTS를 설정하고, 민감 데이터를 환경 변수나 AWS Secrets Manager로 관리합니다. crypto.randomBytes()로 예측 불가능한 토큰을 생성하고, Math.random()은 보안 목적에 절대 사용하지 않습니다. npm audit과 Snyk으로 의존성 취약점을 정기 점검하고, package-lock.json을 커밋하여 의존성을 고정합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 GraphQL Federation 아키텍처를 구현하는 방법은?', 'NESTJS',
+ '@nestjs/graphql과 @apollo/subgraph로 각 서비스를 GraphQL 서브그래프(Subgraph)로 구성하고, Apollo Gateway가 여러 서브그래프를 하나의 통합 스키마로 합칩니다. @Directive(''@key(fields: "id")'')로 엔티티의 기본 키를 선언하고, resolveReference() 메서드로 다른 서비스에서 해당 엔티티를 조회하는 방법을 구현합니다. @ResolveField로 다른 서브그래프의 타입을 확장하여 서비스 간 데이터를 연결합니다. Subscription은 서브그래프별로 구현하고 Gateway에서 합산합니다. 각 서브그래프는 독립 배포 가능하며 스키마 변경 시 Gateway에 자동으로 반영됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js의 AsyncLocalStorage를 활용한 요청 컨텍스트 전파 패턴은?', 'NODEJS_CORE',
+ 'AsyncLocalStorage는 비동기 작업 체인 전체에 데이터를 전파하는 API로, ThreadLocal의 Node.js 동등 개념입니다. 미들웨어에서 asyncLocalStorage.run(store, callback)으로 요청 컨텍스트(요청 ID, 사용자 정보, 트레이스 ID)를 설정합니다. 이후 같은 요청 체인의 어디서든 asyncLocalStorage.getStore()로 접근 가능합니다. NestJS에서 클로저 모듈(cls-hooked 또는 직접 AsyncLocalStorage 래퍼)로 @Injectable() 서비스처럼 컨텍스트를 주입받을 수 있습니다. 로그에 요청 ID를 자동으로 포함시켜 분산 트레이싱의 correlation ID를 전파하는 데 가장 일반적으로 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS 기반 서비스의 Circuit Breaker 패턴 구현과 Resilience 전략은?', 'NESTJS',
+ 'Circuit Breaker는 외부 서비스 장애 시 요청을 차단하여 연쇄 장애(Cascade Failure)를 방지하는 패턴입니다. opossum 라이브러리로 CircuitBreaker를 생성하고 실패 임계값, 타임아웃, 반열림(half-open) 요청 수를 설정합니다. NestJS Interceptor로 Circuit Breaker를 래핑하면 서비스 레이어 변경 없이 적용 가능합니다. Fallback 함수를 등록하여 회로 열림 상태에서 캐시된 응답이나 기본값을 반환합니다. Prometheus에 circuitBreaker.fallbackCount, circuitBreaker.rejectCount 메트릭을 수집하고 알림을 설정하여 외부 의존성 장애를 조기에 감지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript와 NestJS에서 Domain-Driven Design(DDD)을 구현하는 방법은?', 'NESTJS',
+ '도메인 레이어를 프레임워크 의존성 없이 순수 TypeScript 클래스(Entity, ValueObject, AggregateRoot, DomainService)로 구성합니다. ValueObject는 생성자를 private으로 막고 정적 팩토리 메서드(Email.from(value))로만 생성하여 불변성을 보장합니다. AggregateRoot는 도메인 이벤트를 내부 배열에 쌓고, Infrastructure 레이어에서 저장 후 이벤트를 발행합니다. Repository 인터페이스를 도메인에 정의하고 구현은 Infrastructure(TypeORM Repository)에서 담당합니다. NestJS 모듈 구조를 Bounded Context와 일치시켜 각 컨텍스트가 독립적인 모듈로 관리되도록 설계합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js 런타임의 진단 채널(Diagnostics Channel)과 계측(Instrumentation) 기법은?', 'NODEJS_CORE',
+ 'Node.js 16+의 diagnostics_channel 모듈은 라이브러리 내부 이벤트를 low-overhead로 구독하는 메커니즘입니다. channel.publish(data)로 이벤트를 발행하고, channel.subscribe(onMessage)로 구독합니다. OpenTelemetry의 Auto-Instrumentation이 http, net, dns 등의 핵심 모듈을 diagnostics_channel로 계측합니다. 커스텀 계측이 필요한 경우 diagnostics_channel로 비즈니스 이벤트를 발행하고, APM 에이전트가 구독하여 트레이스를 수집합니다. PerformanceObserver로 GC 이벤트, HTTP 요청 타이밍, 이벤트 루프 지연을 고해상도로 측정합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 이벤트 기반 아키텍처와 Outbox 패턴을 구현하는 방법은?', 'NESTJS',
+ 'Outbox 패턴은 DB 트랜잭션 내에서 도메인 이벤트를 outbox 테이블에 함께 저장하여, 커밋 성공 시에만 이벤트가 발행됨을 보장합니다. @TransactionalEventListener(phase: TransactionPhase.AFTER_COMMIT)와 함께 outbox 테이블 조회 + 메시지 브로커 발행을 구현합니다. 메시지 브로커 발행 실패 시 outbox 레코드를 published=false로 유지하고, 스케줄러가 미발행 이벤트를 재시도합니다. Debezium CDC(Change Data Capture)를 사용하면 outbox 테이블 변경을 자동으로 Kafka로 스트리밍하여 폴링 없이 구현합니다. 이벤트 발행에 멱등성 키를 포함시켜 중복 발행 시 소비자가 중복 처리를 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 스트리밍 JSON 파싱과 대용량 데이터 직렬화 최적화 방법은?', 'NODEJS_CORE',
+ 'JSON.parse()는 전체 문자열을 메모리에 올려야 하므로 대용량 JSON에 부적합합니다. stream-json 라이브러리는 JSON을 스트리밍으로 파싱하여 대용량 JSON 배열에서 개별 객체만 추출할 수 있습니다. fast-json-stringify는 JSON 스키마로 직렬화 함수를 사전 컴파일하여 JSON.stringify()보다 2~5배 빠르게 동작합니다. Fastify의 응답 직렬화는 fast-json-stringify를 활용하여 고성능 HTTP 응답을 생성합니다. NDJSON(Newline-Delimited JSON)은 각 줄이 독립 JSON 객체인 형식으로 readline 인터페이스로 라인별 파싱이 가능하여 스트리밍 데이터 교환에 적합합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS와 Prisma ORM을 결합한 타입 안전한 데이터 접근 레이어 설계는?', 'NESTJS',
+ 'Prisma는 schema.prisma에서 모델을 정의하면 타입 안전한 PrismaClient를 자동 생성하며, NestJS에서 PrismaService로 래핑하여 @Injectable()로 제공합니다. Prisma Client의 $transaction([])으로 여러 쿼리를 배치 트랜잭션으로 실행하고, $transaction(async (prisma) => {})으로 인터랙티브 트랜잭션을 구현합니다. Prisma의 select와 include로 필요한 필드만 조회하여 over-fetching을 방지합니다. Prisma Middleware로 soft delete, 감사 로그, 테넌트 필터링을 AOP 방식으로 구현합니다. DB 스키마 변경은 prisma migrate dev로 마이그레이션 파일을 생성하고, CI에서 prisma migrate deploy로 자동 적용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js 기반 서비스의 카오스 엔지니어링(Chaos Engineering) 적용 방법은?', 'PERFORMANCE',
+ '카오스 엔지니어링은 의도적으로 장애를 주입하여 시스템의 회복 탄력성을 검증합니다. chaos-utils 또는 직접 구현한 미들웨어로 임의 지연, 네트워크 오류, 서비스 오류를 주입합니다. toxiproxy로 네트워크 레벨에서 지연, 패킷 손실, 대역폭 제한을 시뮬레이션합니다. Steady State를 정의(정상 RPS, 에러율)하고 카오스 실험 전후로 측정하여 회복 여부를 검증합니다. Circuit Breaker, Retry with Backoff, Timeout, Bulkhead 패턴이 카오스 주입 상황에서 예상대로 동작하는지 확인합니다. Kubernetes 환경에서 Chaos Mesh로 Pod 종료, CPU/메모리 부하 주입을 자동화합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'NestJS에서 플러그인 기반 인증/인가 시스템을 설계하는 방법은?', 'NESTJS',
+ 'Passport.js를 @nestjs/passport로 통합하여 여러 인증 전략(JWT, OAuth2, SAML, LDAP)을 Strategy 패턴으로 교체 가능하게 구성합니다. CASL(casl.js)이나 커스텀 RBAC으로 세밀한 권한 제어(Can User do Action on Resource)를 구현합니다. @CheckPolicies() 데코레이터와 PolicyGuard를 조합하여 라우터별 접근 정책을 선언적으로 정의합니다. 권한 데이터를 DB에서 관리하여 재배포 없이 권한을 변경하고, Redis에 캐싱하여 매 요청마다 DB를 조회하는 오버헤드를 줄입니다. 감사 로그(Audit Log) Interceptor로 모든 권한 결정과 중요 액션을 기록하여 보안 감사에 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'TypeScript 모노레포에서 NestJS 백엔드와 공유 패키지를 관리하는 전략은?', 'NODEJS_CORE',
+ 'Turborepo 또는 Nx로 모노레포를 관리하고, 백엔드 앱과 공유 라이브러리(dto, constants, utils)를 별도 패키지로 분리합니다. 공유 DTO 패키지를 class-validator 데코레이터로 구성하면 프론트엔드와 백엔드가 동일한 유효성 검사 규칙을 공유합니다. tsconfig의 paths 매핑으로 패키지를 로컬에서 직접 참조하고, 빌드 시에만 npm 패키지로 해석합니다. Turborepo의 빌드 캐시로 변경된 패키지에 의존하는 것만 재빌드하여 CI 시간을 단축합니다. 버전 관리는 Changesets로 패키지별 변경 이력을 추적하고 배포 시 자동 버전 범프를 수행합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:NODE_NESTJS:LANGUAGE_FRAMEWORK', 'Node.js에서 Custom Protocol과 바이너리 직렬화(Protocol Buffers, MessagePack) 활용 방법은?', 'NODEJS_CORE',
+ 'Protocol Buffers(protobuf)는 구조화된 데이터를 JSON 대비 3~10배 작은 바이너리로 직렬화합니다. @grpc/proto-loader와 @grpc/grpc-js로 NestJS에서 gRPC 서버를 구성하고 .proto 파일로 서비스 계약을 정의합니다. MessagePack은 JSON과 호환되는 바이너리 포맷으로 @msgpack/msgpack 라이브러리를 사용합니다. NestJS 마이크로서비스의 Custom Serializer로 msgpack을 구현하면 메시지 페이로드 크기를 줄여 네트워크 비용을 절감합니다. 내부 서비스 간 고빈도 통신에는 gRPC, 외부 공개 API에는 REST/JSON을 병용하는 것이 일반적입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

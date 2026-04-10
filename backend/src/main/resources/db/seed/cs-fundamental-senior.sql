@@ -450,3 +450,174 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('SENIOR:CS_FUNDAMENTAL', 'Columnar Storage와 Row Storage의 차이와 OLAP에서의 장점을 설명해주세요.', '데이터베이스',
  'Row Storage는 행 단위로 저장하여 OLTP(삽입/조회)에 적합합니다. Columnar Storage는 열 단위로 저장하여 집계 쿼리(SUM, AVG) 시 필요한 열만 읽어 I/O를 줄입니다. 같은 타입 데이터가 연속되어 압축률이 높습니다(Parquet, ORC). ClickHouse, Redshift, BigQuery가 컬럼 스토어를 사용합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 33문항 (목표 120문항 달성)
+
+-- 자료구조 추가 (8문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Van Emde Boas Tree의 구조와 시간 복잡도를 설명해주세요.', '자료구조',
+ 'Van Emde Boas Tree(vEB)는 정수 집합에서 successor, predecessor, insert, delete를 O(log log U)에 처리합니다(U는 전체 값 범위). 재귀적 구조로 √U 크기의 클러스터와 summary 구조를 사용합니다. 범위가 제한된 정수 키에서 힙이나 BST보다 우월한 성능을 보이며, 라우터의 IP 주소 룩업, 우선순위 큐 최적화 등에 활용됩니다. 공간은 O(U)로 범위가 크면 비효율적입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Fibonacci Heap의 구조와 Decrease-Key 연산의 amortized 복잡도를 설명해주세요.', '자료구조',
+ 'Fibonacci Heap은 트리들의 컬렉션으로, insert/find-min이 O(1), decrease-key가 amortized O(1), delete-min이 amortized O(log n)입니다. decrease-key는 노드를 부모에서 잘라내고(cascading cut으로 트리 형태 유지) 루트 리스트에 추가합니다. 다익스트라 알고리즘에서 decrease-key가 빈번할 때 O((V+E) log V) 대신 O(V log V + E)를 달성합니다. 구현 복잡도로 실무에서는 잘 사용되지 않습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Treap(Tree + Heap)의 구조와 무작위화 BST로서의 특성을 설명해주세요.', '자료구조',
+ 'Treap은 BST 속성(키 기준)과 최대 힙 속성(우선순위 기준)을 동시에 만족하는 자료구조입니다. 각 노드에 무작위 우선순위를 부여하여 삽입 순서와 무관하게 기대 높이 O(log n)을 유지합니다. 분할(Split)과 병합(Merge) 연산으로 O(log n)에 구현 가능하며, 암묵적 Treap으로 배열처럼 인덱스 접근이 필요한 동적 순서 통계 문제에도 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '링크드 해시맵(LinkedHashMap)의 내부 구현과 LFU 캐시 설계에 활용하는 방법을 설명해주세요.', '자료구조',
+ 'LinkedHashMap은 HashMap에 이중 연결 리스트를 추가하여 삽입 순서 또는 접근 순서(accessOrder=true)를 유지합니다. accessOrder=true와 removeEldestEntry 오버라이드로 O(1) LRU 캐시를 간단히 구현할 수 있습니다. LFU 캐시는 빈도별 LinkedHashMap 맵(frequencyMap)과 키-빈도 맵을 조합하여 최소 빈도를 추적하고, get/put 모두 O(1)에 구현합니다. 빈도가 같으면 LRU 순서로 제거합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Disjoint Set(Union-Find)을 활용한 온라인 연결성 쿼리(Dynamic Connectivity)를 설명해주세요.', '자료구조',
+ '동적 연결성 문제는 간선 추가/삭제와 두 노드의 연결 여부 쿼리를 처리합니다. Union-Find는 추가만 가능하고 삭제는 지원하지 않아 Link-Cut Tree나 오프라인 알고리즘(세그먼트 트리 + Union-Find)을 사용합니다. 오프라인 방법은 간선의 존재 구간을 세그먼트 트리에 매핑하고 DFS로 Union을 적용/롤백하여 O(q log² n)에 처리합니다. 네트워크 토폴로지 변경 감지에 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Weight-Balanced Tree의 리밸런싱 전략과 함수형 자료구조에서의 활용을 설명해주세요.', '자료구조',
+ 'Weight-Balanced Tree(BB-α Tree)는 좌우 서브트리 노드 수 비율이 α를 초과하면 회전합니다. 크기(size)를 각 노드에 저장하여 rank, select 연산을 O(log n)에 지원합니다. Haskell의 Data.Map, Data.Set이 이 구조를 사용합니다. 함수형 언어에서 영속성(Persistence)을 위해 경로 복사(Path Copying)와 결합하면 O(log n) 시간/공간으로 이전 버전을 유지하는 영속 맵/셋을 구현할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '이분 매칭(Bipartite Matching)과 최대 유량(Max Flow) 알고리즘의 관계를 설명해주세요.', '자료구조',
+ '이분 그래프의 최대 매칭은 소스→왼쪽 노드→오른쪽 노드→싱크의 유량 네트워크로 변환하면 최대 유량과 동치입니다(König''s theorem). 헝가리안 알고리즘은 O(VE), Hopcroft-Karp는 BFS로 증가 경로를 일괄 탐색하여 O(√V × E)입니다. Ford-Fulkerson(BFS 기반 Edmonds-Karp)은 O(VE²)입니다. 작업 배정, 추천 시스템, 안정 결혼 문제 등 실무 최적화 문제에 적용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '확률적 자료구조(Probabilistic Data Structure)의 공간-정확도 트레이드오프를 설명해주세요.', '자료구조',
+ '확률적 자료구조는 메모리를 대폭 줄이는 대신 일정 오차를 허용합니다. Bloom Filter는 멤버십 조회에서 FP 허용 시 O(n) → O(n/k) 메모리 절감, Count-Min Sketch는 빈도 추정에서 O(nm) → O(ε⁻¹ log δ⁻¹) 절감, HyperLogLog는 카디널리티 추정에서 O(n) → O(log log n) 절감합니다. 오차 범위와 신뢰도를 파라미터로 설정 가능하며 대규모 실시간 스트리밍 분석 시스템(Flink, Spark Streaming)에서 핵심적으로 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 운영체제 추가 (9문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Linux 커널의 메모리 존(Memory Zone) 구조와 슬랩 할당자(Slab Allocator)를 설명해주세요.', '운영체제',
+ 'Linux 메모리는 ZONE_DMA(16MB 이하), ZONE_DMA32, ZONE_NORMAL, ZONE_HIGHMEM으로 구분됩니다. 슬랩 할당자는 자주 사용하는 커널 객체(inode, task_struct 등) 크기별로 캐시를 미리 할당하여 단편화를 줄이고 할당/해제 속도를 높입니다. SLUB는 SLAB의 개선판으로 per-CPU 캐시와 단순화된 메타데이터로 성능을 높입니다. kmalloc은 내부적으로 슬랩 캐시를 사용하며 vmalloc은 물리적으로 비연속적인 가상 메모리를 제공합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'CPU 분기 예측(Branch Prediction)의 원리와 최신 CPU에서의 구현을 설명해주세요.', '운영체제',
+ 'CPU 분기 예측기는 조건 분기 명령의 결과를 미리 예측하여 파이프라인 스톨을 줄입니다. 2비트 포화 카운터, 지역/전역 이력 레지스터, Tournament 예측기를 거쳐 최신 CPU는 신경망 기반(Perceptron) 예측기를 사용합니다. 예측 실패 시 잘못된 명령을 플러시하고 올바른 경로를 다시 실행하는 데 15~20 사이클이 소요됩니다. 코드에서 정렬된 데이터 처리, CMOV(분기 없는 조건 이동) 활용으로 예측 실패를 줄일 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Linux cgroups v2의 계층 구조와 리소스 제한 메커니즘을 설명해주세요.', '운영체제',
+ 'cgroups v2는 단일 계층 구조로 모든 컨트롤러가 통합되어 v1의 복잡한 다계층 문제를 해소합니다. cpu.weight으로 CPU 공유 비율, memory.max로 메모리 하드 리밋, io.max로 블록 I/O 대역폭을 제한합니다. Pressure Stall Information(PSI)으로 리소스 압박 정도를 측정하고 이를 기반으로 OOM 이전에 선제적 조절이 가능합니다. Kubernetes는 파드/컨테이너의 resource requests/limits를 cgroups v2로 구현합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'CPU 파이프라인 해저드(Hazard)의 종류와 하드웨어/소프트웨어 해결 방법을 설명해주세요.', '운영체제',
+ '구조적 해저드(Structural Hazard)는 동일 하드웨어 자원 충돌로 파이프라인 스톨이 발생합니다. 데이터 해저드(Data Hazard)는 이전 명령 결과에 의존하며 포워딩(Forwarding)으로 대부분 해결하고, 로드-유즈 해저드는 NOP 삽입이 필요합니다. 제어 해저드(Control Hazard)는 분기 명령으로 발생하며 분기 예측과 투기적 실행으로 처리합니다. 컴파일러는 명령 재배치(Instruction Scheduling)로 데이터 의존성을 줄여 해저드를 소프트웨어적으로 최소화합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Linux 신호(Signal)의 전달 메커니즘과 비동기 안전(Async-Signal-Safe) 함수를 설명해주세요.', '운영체제',
+ '신호는 프로세스에 비동기적으로 전달되는 소프트웨어 인터럽트로, 커널이 프로세스의 pending 비트맵에 설정합니다. 프로세스가 사용자 모드로 전환될 때 pending 신호를 확인하고 핸들러를 실행합니다. 신호 핸들러 실행 중에는 재진입(Reentrant) 가능한 async-signal-safe 함수만 호출해야 합니다. printf, malloc 등은 내부 락을 사용하므로 안전하지 않고, write, send, sigaction 등이 안전합니다. self-pipe trick이나 signalfd로 신호를 이벤트 루프에 통합합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Non-Uniform Memory Access(NUMA)와 NUMA-aware 소프트웨어 설계를 설명해주세요.', '운영체제',
+ 'NUMA는 멀티소켓 서버에서 각 CPU가 로컬 메모리에는 빠르게, 원격 메모리에는 느리게 접근하는 아키텍처입니다. numactl 도구로 프로세스를 특정 NUMA 노드에 바인딩하고, numa_alloc_local()로 로컬 메모리 우선 할당합니다. JVM에서는 -XX:+UseNUMA 플래그로 GC가 NUMA를 인식하여 객체를 로컬 노드에 할당합니다. Kafka, Cassandra 등 고성능 시스템은 스레드와 메모리를 동일 NUMA 노드에 배치하여 크로스-노드 접근을 최소화합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '커널 바이패스(Kernel Bypass) 기술과 RDMA의 원리를 설명해주세요.', '운영체제',
+ '커널 바이패스는 네트워크/스토리지 I/O에서 커널 경로를 우회하여 사용자 공간에서 직접 하드웨어와 통신합니다. DPDK는 NIC 드라이버를 사용자 공간으로 이동시켜 패킷 처리에서 시스템 콜과 컨텍스트 스위칭을 제거합니다. RDMA(Remote Direct Memory Access)는 원격 호스트 메모리를 CPU 개입 없이 직접 읽고 쓰며 마이크로초 지연과 제로 카피를 달성합니다. InfiniBand, RoCE(RDMA over Converged Ethernet)가 구현 기술이며 HPC, ML 클러스터의 노드 간 통신에 사용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Linux perf와 flame graph를 활용한 CPU 프로파일링 방법을 설명해주세요.', '운영체제',
+ 'perf는 CPU 성능 카운터와 트레이싱 기반 리눅스 프로파일러입니다. perf record -g로 콜 그래프를 포함한 샘플을 수집하고 perf report로 핫스팟을 분석합니다. Brendan Gregg의 flame graph는 샘플 스택을 시각화하여 CPU 시간 분포를 한눈에 파악합니다. 너비는 총 CPU 시간, 높이는 스택 깊이를 나타냅니다. async-profiler(JVM)는 safepoint bias 없이 샘플링하여 JVM 기반 서버의 정확한 CPU/메모리 프로파일을 제공합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'POSIX 스레드(pthread)와 Go Goroutine의 스케줄링 모델 차이를 설명해주세요.', '운영체제',
+ 'pthread는 OS 커널 스레드와 1:1 매핑으로 스케줄링을 OS가 담당하며 생성 비용이 크고(수 MB 스택) 컨텍스트 스위칭이 비쌉니다. Go Goroutine은 M:N 스케줄링으로 런타임이 관리하는 경량 스레드(초기 스택 2KB)이며 수십만 개 동시 실행이 가능합니다. Go 스케줄러(GMP 모델)는 G(Goroutine), M(OS Thread), P(Processor) 세 요소로 구성되며 Work Stealing으로 부하를 균등 분산합니다. Java 21 Virtual Thread도 유사한 M:N 모델을 JVM 수준에서 구현합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 네트워크 추가 (8문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'TCP 혼잡 제어 알고리즘의 진화(CUBIC, BBR, QUIC)를 설명해주세요.', '네트워크',
+ 'TCP CUBIC은 손실 기반 알고리즘으로 RTT에 독립적인 3차 함수로 윈도우를 증가시켜 고대역폭-장거리 링크에서 Reno보다 효율적입니다. BBR(Bottleneck Bandwidth and RTT)은 손실이 아닌 대역폭과 RTT 측정 기반으로 동작하여 버퍼 팽창(Bufferbloat)을 줄이고 실제 병목 대역폭을 활용합니다. QUIC의 혼잡 제어는 UDP 기반이지만 ACK 번호로 정확한 RTT를 측정하고 패킷 번호 단조 증가로 재전송 모호성(Retransmission Ambiguity)을 제거하여 더 정확한 제어가 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'HTTP/2 서버 푸시(Server Push)의 동작 원리와 실제 활용 한계를 설명해주세요.', '네트워크',
+ 'HTTP/2 서버 푸시는 클라이언트 요청 없이 서버가 관련 리소스(CSS, JS)를 PUSH_PROMISE 프레임으로 미리 전송합니다. 브라우저 캐시에 이미 있어도 푸시되어 대역폭을 낭비할 수 있고, 클라이언트가 RST_STREAM으로 취소해야 합니다. 실제로 캐시 상태를 서버가 알 수 없어 효율이 떨어지며, Chrome이 2022년 서버 푸시 지원을 제거했습니다. HTTP/2의 멀티플렉싱과 헤더 압축(HPACK)이 실질적인 성능 이점이며, 103 Early Hints가 서버 푸시의 현실적 대안입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'NAT(Network Address Translation)의 동작 방식과 P2P 연결에서의 NAT 트래버설을 설명해주세요.', '네트워크',
+ 'NAT는 사설 IP를 공인 IP로 변환하여 IPv4 주소 부족을 해결합니다. Connection Tracking 테이블로 (내부 IP:Port ↔ 공인 IP:Port) 매핑을 유지합니다. P2P에서 두 피어가 모두 NAT 뒤에 있으면 직접 연결이 불가하여 NAT 트래버설 기법을 사용합니다. STUN은 공인 IP:Port를 발견하고, UDP Hole Punching으로 동시에 패킷을 교환하여 NAT 매핑을 형성합니다. TURN은 릴레이 서버를 통한 폴백 방법이며, ICE 프로토콜(WebRTC)이 STUN/TURN을 조합하여 최적 경로를 선택합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Rate Limiting 알고리즘(Token Bucket, Leaky Bucket, Sliding Window)을 비교해주세요.', '네트워크',
+ 'Token Bucket은 버킷에 초당 r개 토큰을 추가하고 요청 시 토큰을 소비하며 최대 용량 b까지 버스트를 허용합니다. Leaky Bucket은 일정 속도로 요청을 처리하여 출력 속도를 평활화하지만 버스트를 허용하지 않습니다. Sliding Window는 현재 시간 기준 N초 내 요청 수를 정확히 계산하지만 메모리 사용이 많습니다. Sliding Window Counter는 현재/이전 윈도우 카운터를 선형 보간하여 근사값으로 메모리를 절약합니다. 분산 Rate Limiting은 Redis를 활용하여 여러 서버 인스턴스 간 카운터를 공유합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'TLS 1.3의 핸드셰이크 개선 사항과 0-RTT의 보안 트레이드오프를 설명해주세요.', '네트워크',
+ 'TLS 1.3은 핸드셰이크를 1-RTT로 단축하고 취약한 암호 스위트(RSA 키 교환, RC4, MD5/SHA-1)를 제거했습니다. ECDHE만 지원하여 Forward Secrecy를 기본 보장합니다. 0-RTT(Early Data)는 이전 세션의 PSK로 첫 번째 요청을 즉시 암호화하여 전송하지만, Replay Attack에 취약합니다. 공격자가 0-RTT 데이터를 캡처하여 재전송할 수 있으므로 멱등성이 보장되는 GET 요청에만 제한적으로 사용하고, 서버 측 replay 방어(nonce 저장)를 구현해야 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '마이크로서비스 환경에서 서비스 디스커버리(Service Discovery) 패턴을 설명해주세요.', '네트워크',
+ '클라이언트 사이드 디스커버리는 서비스 레지스트리(Eureka, Consul)에서 직접 인스턴스 목록을 가져와 클라이언트가 로드 밸런싱합니다(Ribbon/Spring Cloud LoadBalancer). 서버 사이드 디스커버리는 로드 밸런서(AWS ALB, Kubernetes Service)가 레지스트리를 조회하고 라우팅하여 클라이언트는 단일 엔드포인트만 알면 됩니다. Kubernetes에서는 CoreDNS와 kube-proxy가 Service DNS 이름을 ClusterIP로 해석하고 iptables/IPVS로 파드로 라우팅합니다. 헬스 체크와 레지스트리 TTL로 장애 인스턴스를 자동 제거합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '네트워크 패킷 캡처와 분석(Wireshark/tcpdump)을 통한 트러블슈팅 방법을 설명해주세요.', '네트워크',
+ 'tcpdump -i eth0 -w capture.pcap으로 패킷을 캡처하고 Wireshark로 분석합니다. TCP 재전송(tcp.analysis.retransmission), 제로 윈도우(tcp.analysis.zero_window), 연결 리셋(RST 플래그) 필터로 연결 문제를 진단합니다. 타임스탬프 분석으로 네트워크 레이턴시와 서버 처리 시간을 분리하여 병목을 식별합니다. SSL/TLS 트래픽은 SSLKEYLOGFILE 환경변수로 세션 키를 저장하여 Wireshark에서 복호화할 수 있습니다. 고성능 환경에서는 AF_PACKET, eBPF 기반 캡처로 패킷 손실을 줄입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'WebRTC의 아키텍처와 미디어 전송 최적화 방법을 설명해주세요.', '네트워크',
+ 'WebRTC는 P2P 실시간 미디어 전송을 위해 ICE(연결 수립), DTLS(암호화), SRTP(미디어 보호), SCTP(데이터 채널)를 사용합니다. SDP Offer/Answer로 코덱, 대역폭, 미디어 형식을 협상합니다. 네트워크 상태에 따라 비트레이트를 동적 조절하는 GCC(Google Congestion Control) 알고리즘을 사용합니다. SFU(Selective Forwarding Unit) 아키텍처는 각 참여자의 스트림을 서버에서 선택적으로 포워딩하여 다자간 통화에서 클라이언트 업로드 부담을 줄입니다. Simulcast와 SVC로 수신자 대역폭에 맞는 화질을 선택합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 데이터베이스 추가 (8문항)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'PostgreSQL의 MVCC 구현과 Vacuum의 역할을 MySQL InnoDB와 비교하여 설명해주세요.', '데이터베이스',
+ 'PostgreSQL MVCC는 각 행의 xmin/xmax로 가시성을 판단하며 이전 버전을 같은 테이블에 보관합니다. Vacuum이 주기적으로 만료된 버전을 제거하지 않으면 테이블이 비대해지는 테이블 팽창(Bloat)이 발생합니다. InnoDB는 Undo Log에 이전 버전을 저장하고 Purge Thread가 정리하므로 테이블 팽창이 없습니다. PostgreSQL의 HOT(Heap-Only Tuple) 업데이트는 같은 블록 내에서 업데이트 시 인덱스 갱신 없이 체인으로 연결하여 인덱스 팽창을 줄입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '데이터베이스 인덱스의 내부 구조(InnoDB B+Tree 페이지 구조)를 상세히 설명해주세요.', '데이터베이스',
+ 'InnoDB의 B+Tree 인덱스 페이지는 16KB 고정 크기로, Page Header, Infimum/Supremum(경계 레코드), User Records, Free Space, Page Directory, File Trailer로 구성됩니다. Page Directory는 슬롯 배열로 이진 탐색을 지원합니다. 클러스터드 인덱스(Primary Key)의 리프 노드는 실제 행 데이터를 포함하며, 세컨더리 인덱스 리프 노드는 PK 값을 포함하여 클러스터드 인덱스로 재탐색(Key Lookup)합니다. 페이지 분할(Page Split)은 삽입 시 페이지가 꽉 차면 발생하며 성능 저하의 원인이 됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '분산 데이터베이스에서 Lamport Clock과 Vector Clock의 인과성 추적을 설명해주세요.', '데이터베이스',
+ 'Lamport Clock은 각 이벤트에 단조 증가 논리 타임스탬프를 부여하여 이벤트 순서를 나타내지만, A→B이면 ts(A)<ts(B)이지만 역은 성립하지 않습니다. Vector Clock은 노드 수만큼의 벡터로 각 노드의 로컬 시계를 추적하여 두 이벤트의 인과 관계(선행, 동시, 후행)를 정확히 판별합니다. Amazon DynamoDB는 Vector Clock(Dotted Version Vector)으로 충돌을 감지하고 클라이언트에 충돌 해결을 위임합니다. Conflict-free 병합이 필요한 경우 CRDT를 사용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'NewSQL 데이터베이스(CockroachDB, TiDB)의 아키텍처와 전통적 RDBMS 대비 장단점을 설명해주세요.', '데이터베이스',
+ 'NewSQL은 ACID 트랜잭션을 유지하면서 수평 확장을 지원합니다. CockroachDB는 데이터를 Raft 그룹으로 복제하고 MVCC로 격리성을 구현하며, 분산 SQL 쿼리를 실행합니다. TiDB는 TiKV(분산 KV, Raft 기반)와 TiFlash(컬럼형, OLAP)를 분리하여 HTAP를 지원합니다. 장점은 자동 샤딩, 지역 분산, 고가용성이며, 단점은 네트워크 레이턴시로 인한 단일 노드 대비 높은 트랜잭션 지연입니다. MySQL 호환 SQL로 마이그레이션 비용이 낮습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '데이터베이스 커넥션 풀 튜닝과 HikariCP 설정 전략을 설명해주세요.', '데이터베이스',
+ 'HikariCP는 maximumPoolSize를 코어 수 × 2 + 디스크 수를 기준으로 설정하며, 과도한 커넥션은 DB 서버 스레드 경합을 악화시킵니다. connectionTimeout(30초)은 풀 획득 대기 최대 시간, idleTimeout(10분)은 유휴 커넥션 제거 시간, maxLifetime(30분)은 커넥션 최대 수명으로 DB 서버의 wait_timeout보다 짧게 설정해야 합니다. keepaliveTime으로 방화벽 세션 타임아웃을 방지합니다. Prometheus로 HikariCP 메트릭(pool.pending, pool.active)을 모니터링하여 동적 튜닝합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', '대규모 트래픽 환경에서 데이터베이스 읽기 확장(Read Scaling) 전략을 설명해주세요.', '데이터베이스',
+ '읽기 복제본(Read Replica)으로 읽기 트래픽을 분산하고 마스터는 쓰기 전용으로 사용합니다. 비동기 복제 지연(Replication Lag)으로 인해 복제본에서 stale read가 발생할 수 있으므로 일관성이 중요한 조회는 마스터로 라우팅합니다. Redis 캐싱으로 DB 조회 자체를 줄이고, CQRS(Command Query Responsibility Segregation) 패턴으로 읽기 모델을 별도 최적화합니다. ProxySQL이나 MaxScale로 쿼리 유형에 따라 자동 라우팅하고, 읽기 가중치를 복제본 성능에 맞게 배분합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'MySQL InnoDB의 버퍼 풀(Buffer Pool) 아키텍처와 튜닝 전략을 설명해주세요.', '데이터베이스',
+ 'InnoDB Buffer Pool은 디스크 페이지를 캐싱하는 가장 중요한 메모리 영역으로, 통상 서버 RAM의 70~80%를 할당합니다. LRU 리스트를 Young(5/8)과 Old(3/8)으로 분리하여 Full Table Scan이 캐시를 오염시키는 것을 방지합니다. innodb_buffer_pool_instances로 샤딩하여 멀티코어 경합을 줄이고, innodb_buffer_pool_dump/load로 재시작 후 워밍업 시간을 단축합니다. Buffer Pool Hit Rate(hit_rate = 1 - innodb_buffer_pool_reads/innodb_buffer_pool_read_requests)가 99% 이상이어야 최적 상태입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('SENIOR:CS_FUNDAMENTAL', 'Event Sourcing과 CQRS 패턴을 데이터베이스 설계 관점에서 설명해주세요.', '데이터베이스',
+ 'Event Sourcing은 현재 상태 대신 상태 변경 이벤트를 이벤트 스토어에 순서대로 저장합니다. 현재 상태는 이벤트를 재생(Replay)하여 계산하고 Snapshot으로 재생 비용을 줄입니다. CQRS는 쓰기(Command)와 읽기(Query) 모델을 분리하여, 이벤트를 소비하여 읽기에 최적화된 프로젝션(Projection)을 별도 저장소에 유지합니다. 완전한 감사 추적(Audit Trail), 이벤트 재생을 통한 시점 복원, 리드 모델의 자유로운 재구성이 장점이며, 최종 일관성과 이벤트 스키마 진화 관리가 핵심 과제입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

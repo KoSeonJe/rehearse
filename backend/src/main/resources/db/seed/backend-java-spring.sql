@@ -439,3 +439,30 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('BACKEND:SENIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring 애플리케이션에서 분산 캐싱(Redis Cluster)과 Cache Aside 패턴 구현 방법은?', 'SPRING_CORE',
  'Cache Aside 패턴은 애플리케이션이 캐시 읽기 실패(Cache Miss) 시 DB에서 조회하고 캐시에 저장한 후 반환하는 방식으로, 캐시와 DB 사이의 결합을 최소화합니다. Spring의 @Cacheable은 Cache Aside를 자동으로 구현하며, Redis CacheManager와 spring-boot-starter-data-redis로 연결합니다. Cache Stampede(대규모 Cache Miss 동시 발생) 방어로 Redis Lock이나 Probabilistic Early Expiration 기법을 적용합니다. Redis Cluster 환경에서 @Cacheable의 key 설계 시 해시 슬롯 분산을 고려하고, 직렬화 포맷으로 JSON(GenericJackson2JsonRedisSerializer)을 사용하여 가독성과 버전 호환성을 확보합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 5문항 (목표 90문항 달성)
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring Security에서 Method Security(@PreAuthorize, @PostAuthorize)의 동작 원리와 SpEL 활용을 설명해주세요.', 'SPRING_SECURITY',
+ '@PreAuthorize는 메서드 실행 전, @PostAuthorize는 실행 후 권한을 검사합니다. @EnableMethodSecurity(prePostEnabled=true)로 활성화하며, AOP 프록시가 메서드 호출을 가로챕니다. SpEL로 hasRole(''ADMIN''), hasAuthority(''READ''), #userId == authentication.principal.id처럼 메서드 파라미터와 인증 객체를 결합한 세밀한 권한 제어가 가능합니다. @PostFilter와 @PreFilter로 컬렉션 단위의 필터링도 지원합니다. Self-invocation 시 프록시를 거치지 않아 Method Security가 동작하지 않으므로 주의합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'JPA의 @EntityGraph를 활용한 N+1 문제 해결 방법과 JPQL fetch join의 차이를 설명해주세요.', 'JPA',
+ '@EntityGraph는 지연 로딩으로 설정된 연관관계를 특정 쿼리에서만 즉시 로딩으로 오버라이드합니다. @NamedEntityGraph로 엔티티에 그래프를 정의하거나 @EntityGraph(attributePaths={"orders"})로 리포지토리 메서드에 직접 선언합니다. JPQL fetch join은 쿼리를 직접 작성하여 유연하지만 페이지네이션과 함께 사용하면 HibernateJpaDialect 경고(firstResult/maxResults specified with collection fetch)가 발생합니다. 컬렉션 fetch join 시 DISTINCT가 필요하고, 둘 이상의 컬렉션에는 MultipleBagFetchException이 발생하므로 Set 사용이나 별도 쿼리 분리가 필요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot에서 Redis를 활용한 분산 락(Distributed Lock) 구현 방법을 설명해주세요.', 'SPRING_CORE',
+ '분산 환경에서 여러 인스턴스가 동일 자원에 접근할 때 DB 락이나 synchronized만으로는 부족하여 분산 락이 필요합니다. Redis의 SET key value NX PX timeout 명령으로 원자적으로 락을 획득하고 expire로 데드락을 방지합니다. Redisson 라이브러리는 RLock 인터페이스로 재진입 락, Fair Lock, Read-Write Lock을 제공하고 watchdog으로 락 만료를 자동 연장합니다. Lettuce로 직접 구현 시 스핀 락은 Redis에 부하를 주므로 Redisson의 pub/sub 기반 락 해제 알림을 활용하는 것이 권장됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot에서 예외 처리 전략과 커스텀 예외 클래스 설계 방법을 설명해주세요.', 'SPRING_MVC',
+ '커스텀 예외는 RuntimeException을 상속하고 에러 코드와 메시지를 포함하는 기반 클래스(BusinessException)를 만들고, 도메인별로 세분화(UserNotFoundException, InsufficientBalanceException)합니다. @RestControllerAdvice에서 @ExceptionHandler(BusinessException.class)로 잡아 에러 코드와 메시지를 포함한 일관된 응답 DTO를 반환합니다. @ResponseStatus 대신 ResponseEntity로 HTTP 상태 코드를 명시적으로 제어합니다. 예측하지 못한 Exception은 별도 핸들러에서 500을 반환하고 내부 정보가 노출되지 않도록 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring의 @Transactional 격리 수준 설정과 각 수준에서 발생하는 문제를 설명해주세요.', 'SPRING_DATA',
+ '@Transactional(isolation=Isolation.READ_COMMITTED)처럼 격리 수준을 설정하며 기본값은 DEFAULT(DB 기본값 사용)입니다. READ_UNCOMMITTED는 Dirty Read가 발생하여 실무에서 사용하지 않습니다. READ_COMMITTED는 Dirty Read 방지, Non-Repeatable Read 발생 가능합니다. REPEATABLE_READ(InnoDB 기본값)는 Non-Repeatable Read 방지, Phantom Read 가능합니다. SERIALIZABLE은 모든 이상 현상을 방지하지만 동시성이 크게 저하됩니다. InnoDB는 REPEATABLE_READ에서 Gap Lock으로 Phantom Read도 부분적으로 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

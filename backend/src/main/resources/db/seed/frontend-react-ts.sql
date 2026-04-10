@@ -589,3 +589,353 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React 앱의 에러 모니터링과 로깅 전략을 설명해주세요.', 'ARCHITECTURE',
  'Sentry로 프로덕션 에러를 자동 수집하고, Source Map으로 원본 코드 위치를 추적합니다. Error Boundary에서 에러를 Sentry에 보고하고 사용자에게 폴백 UI를 제공합니다. 커스텀 로깅(console 래퍼)으로 개발/프로덕션 로그를 분리하고, 성능 메트릭(Web Vitals)도 함께 수집합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- ============================================================
+-- 추가 68문항 (LANGUAGE_FRAMEWORK 및 UI_FRAMEWORK 보충)
+-- ============================================================
+
+-- 추가 2문항 (LANGUAGE_FRAMEWORK JUNIOR)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 Portal을 사용하는 이유와 사용법을 설명해주세요.', 'REACT_CORE',
+ 'Portal은 부모 컴포넌트 DOM 계층 외부에 자식을 렌더링합니다. ReactDOM.createPortal(child, container)로 생성하며, 모달, 툴팁, 드롭다운처럼 z-index나 overflow:hidden에 영향을 받는 경우에 사용합니다. Portal 내부 이벤트는 React 트리를 따라 버블링되어 부모 컴포넌트에서 처리할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 lazy loading과 Suspense를 사용하는 방법을 설명해주세요.', 'REACT_CORE',
+ 'React.lazy()로 컴포넌트를 동적 임포트하면 해당 번들을 필요할 때만 로드합니다. Suspense로 감싸면 로딩 중 fallback UI를 표시합니다. 라우트 레벨에서 적용하면 페이지별 코드 스플리팅이 가능하고 초기 번들 크기를 줄입니다. React 18의 Suspense는 데이터 페칭에도 활용됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 10문항 (LANGUAGE_FRAMEWORK MID)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'TypeScript의 Mapped Type과 Conditional Type을 React에서 활용하는 방법을 설명해주세요.', 'TYPESCRIPT',
+ 'Mapped Type은 기존 타입의 속성을 변환합니다(Readonly<T>, Partial<T> 등). Conditional Type은 조건에 따라 타입을 분기합니다(T extends U ? X : Y). React에서 Props의 특정 속성 유무에 따라 타입을 달리하거나(discriminated union), 컴포넌트 변형(variant)에 따른 Props 타입 추론에 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'React 18의 Concurrent Features(useTransition, useDeferredValue)를 설명해주세요.', 'REACT_CORE',
+ 'useTransition은 상태 업데이트를 낮은 우선순위로 표시하여 UI가 즉각 반응하도록 합니다. isPending으로 전환 중 로딩 상태를 표시합니다. useDeferredValue는 값의 업데이트를 지연시켜 검색 입력처럼 타이핑 중 무거운 렌더링을 뒤로 미룹니다. 두 기능 모두 입력 응답성을 유지하면서 무거운 작업을 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'Zustand의 구조와 Context API 대비 장점을 설명해주세요.', 'STATE_MANAGEMENT',
+ 'Zustand는 create()로 스토어를 정의하고, Hook으로 필요한 상태만 구독합니다. Context API와 달리 리렌더링을 구독한 상태만 트리거하므로 성능이 좋습니다. 미들웨어(devtools, persist, immer)로 기능을 확장하고, 스토어를 여러 개 만들어 도메인별로 분리할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'react-hook-form의 동작 원리와 장점을 설명해주세요.', 'HOOKS',
+ 'react-hook-form은 비제어 컴포넌트(ref 기반)로 입력값을 관리하여 리렌더링을 최소화합니다. register로 필드를 등록하고, handleSubmit으로 유효성 검사 후 제출을 처리합니다. watch는 필요한 필드만 구독합니다. Zod, Yup과 연동하면 스키마 기반 유효성 검사가 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'TypeScript 타입 가드(Type Guard)의 종류와 사용법을 설명해주세요.', 'TYPESCRIPT',
+ 'typeof(원시 타입), instanceof(클래스), in 연산자(속성 유무), 사용자 정의 타입 가드(is 키워드: x is T)로 타입을 좁힙니다. Discriminated Union은 공통 리터럴 속성(type: ''success'' | ''error'')으로 분기합니다. React에서 API 응답 검증이나 컴포넌트 Props 분기에 자주 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 낙관적 업데이트(Optimistic Update)를 구현하는 방법을 설명해주세요.', 'STATE_MANAGEMENT',
+ '낙관적 업데이트는 서버 응답 전에 UI를 먼저 변경하여 즉각적인 피드백을 제공합니다. TanStack Query의 useMutation에서 onMutate에 임시 상태를 적용하고, onError에서 이전 상태로 롤백합니다. onSettled에서 서버 데이터로 최종 동기화합니다. 좋아요, 삭제 등 빠른 반응이 중요한 UI에 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 WebSocket을 사용한 실시간 통신을 구현하는 방법을 설명해주세요.', 'REACT_CORE',
+ 'useEffect에서 WebSocket 연결을 생성하고, 메시지 수신 시 상태를 업데이트합니다. cleanup 함수에서 ws.close()로 연결을 해제합니다. 커스텀 Hook(useWebSocket)으로 연결 로직을 캡슐화하고, 재연결 로직과 heartbeat를 구현합니다. Socket.IO 라이브러리는 폴백과 재연결을 자동 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 Intersection Observer를 활용하는 패턴을 설명해주세요.', 'HOOKS',
+ 'Intersection Observer는 요소가 뷰포트에 진입/이탈하는 시점을 비동기로 감지합니다. useRef로 대상 요소를 참조하고, useEffect에서 observer를 생성하여 관찰합니다. 무한 스크롤(sentinel 요소 감지), 지연 로딩(이미지/컴포넌트), 스크롤 애니메이션 트리거에 활용합니다. 커스텀 Hook으로 재사용성을 높입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'TypeScript utility types(Partial, Required, Pick, Omit, Record)을 설명해주세요.', 'TYPESCRIPT',
+ 'Partial<T>는 모든 속성을 선택적으로, Required<T>는 모두 필수로 만듭니다. Pick<T,K>는 특정 속성만, Omit<T,K>는 특정 속성을 제외한 타입을 만듭니다. Record<K,V>는 key-value 맵 타입입니다. React에서 Props의 일부만 받는 컴포넌트(Partial), 업데이트 페이로드(Pick) 등에 자주 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:LANGUAGE_FRAMEWORK', 'React의 Render Props 패턴과 커스텀 Hook의 차이를 설명해주세요.', 'REACT_CORE',
+ 'Render Props는 함수를 prop으로 전달하여 렌더링 로직을 주입하는 패턴입니다. 동작 로직과 UI를 분리하지만 중첩이 깊어지는 단점이 있습니다. 커스텀 Hook은 로직만 분리하고 JSX는 컴포넌트가 담당하여 더 간결합니다. 대부분의 Render Props 사례는 커스텀 Hook으로 대체 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 11문항 (LANGUAGE_FRAMEWORK SENIOR)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React Server Components(RSC)와 Client Components의 차이를 설명해주세요.', 'REACT_CORE',
+ 'RSC는 서버에서만 실행되어 번들에 포함되지 않으며, 데이터베이스/파일시스템에 직접 접근할 수 있습니다. useState, useEffect, 브라우저 API를 사용할 수 없습니다. Client Components(''use client'')는 기존 React 컴포넌트입니다. RSC로 데이터 페칭을 서버로 이동시켜 초기 로딩을 최적화하고 번들 크기를 줄입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React 컴파일러(React Forget)의 목적과 영향을 설명해주세요.', 'REACT_CORE',
+ 'React Compiler는 useMemo, useCallback, React.memo를 자동으로 삽입하여 수동 메모이제이션 없이 성능을 최적화합니다. JavaScript 의미론 규칙을 지키는 코드에서 자동으로 동작합니다. 개발자는 메모이제이션 보일러플레이트 없이 순수한 로직에 집중할 수 있고, 코드가 간결해집니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', '마이크로 프론트엔드 아키텍처에서 상태 공유 전략을 설명해주세요.', 'ARCHITECTURE',
+ '마이크로 프론트엔드 간 상태 공유는 URL/쿼리스트링(가장 단순), Custom Events/BroadcastChannel(브라우저 API), 공유 스토어 패키지(별도 npm 패키지로 상태 공유), 백엔드 동기화(각 앱이 서버에서 최신 상태 조회)로 구현합니다. 결합도를 최소화하는 이벤트 기반 방식이 마이크로 프론트엔드 철학에 부합합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React의 Fiber 아키텍처와 기존 Stack Reconciler의 차이를 설명해주세요.', 'REACT_CORE',
+ '기존 Stack Reconciler는 동기적으로 Virtual DOM 트리를 순회하여 중단이 불가했습니다. Fiber는 작업을 작은 단위(fiber 노드)로 분할하고 우선순위를 부여하여 중단/재개가 가능합니다. 이를 통해 Concurrent Mode(useTransition, Suspense), Time Slicing(장시간 작업 분할)이 가능해졌습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'TypeScript의 infer 키워드와 고급 타입 추론을 설명해주세요.', 'TYPESCRIPT',
+ 'infer는 Conditional Type 내에서 타입을 캡처합니다. ReturnType<T>는 infer R로 반환 타입을 추론합니다. React에서 컴포넌트 Props 타입 추출(ComponentProps<typeof MyComp>), HOC의 반환 타입 추론, 제네릭 유틸리티 타입 작성에 활용합니다. 타입 안전성을 유지하면서 코드 중복을 줄입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', '대규모 React 애플리케이션의 폴더 구조 설계 전략을 설명해주세요.', 'ARCHITECTURE',
+ 'Feature-based(기능별: /features/auth, /features/dashboard)로 응집도를 높이고, 공통 요소는 /shared, /components에 분리합니다. 도메인 레이어(entities, use-cases)와 UI 레이어를 분리하는 FSD(Feature-Sliced Design) 아키텍처도 대안입니다. 명확한 경계와 순환 의존성 방지가 핵심입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 메모리 누수를 방지하는 방법을 설명해주세요.', 'PERFORMANCE',
+ 'useEffect cleanup으로 구독, 타이머, 이벤트 리스너를 해제합니다. 언마운트 후 setState 호출을 isMounted 플래그나 AbortController로 방지합니다. 클로저가 큰 객체를 캡처하지 않도록 주의하고, WeakRef/WeakMap으로 약한 참조를 사용합니다. Chrome DevTools Memory 탭으로 누수를 감지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 Server-Side Rendering(SSR)의 hydration 과정을 설명해주세요.', 'REACT_CORE',
+ 'SSR은 서버에서 HTML을 생성하여 초기 로딩을 빠르게 합니다. Hydration은 서버에서 렌더링된 HTML에 React가 이벤트 핸들러를 연결하는 과정입니다. React 18의 Selective Hydration은 스트리밍 SSR로 Suspense 경계별로 점진적으로 hydrate합니다. Hydration mismatch는 서버/클라이언트 렌더링 결과 불일치 시 발생합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'Module Federation을 활용한 마이크로 프론트엔드 구현을 설명해주세요.', 'ARCHITECTURE',
+ 'Webpack Module Federation은 런타임에 원격 앱의 모듈을 동적으로 로드합니다. Host 앱이 Remote 앱의 컴포넌트를 지연 로드하며, 공유 의존성(react, react-dom)을 중복 없이 사용합니다. 빌드 시간 독립성을 유지하면서 컴포넌트를 공유할 수 있어 팀 단위 독립 배포가 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 테스트 전략(단위/통합/E2E)을 설계하는 방법을 설명해주세요.', 'ARCHITECTURE',
+ '단위 테스트(Jest + Testing Library): 개별 컴포넌트와 커스텀 Hook의 동작 검증. 통합 테스트(MSW + Testing Library): API 모킹 후 여러 컴포넌트의 상호작용 검증. E2E 테스트(Playwright/Cypress): 실제 브라우저에서 사용자 시나리오 검증. Testing Library는 구현이 아닌 사용자 관점에서 테스트를 권장합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 상태 머신(XState)을 활용한 복잡한 UI 관리를 설명해주세요.', 'STATE_MANAGEMENT',
+ '상태 머신은 유한한 상태와 전이를 명시적으로 정의하여 불가능한 상태를 방지합니다. XState는 시각화 도구와 타입 안전성을 제공합니다. 인증 흐름(idle→loading→authenticated→error), 멀티스텝 폼, 복잡한 UI 워크플로에 적합합니다. useState의 boolean 플래그 조합보다 상태 폭발을 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 15문항 (UI_FRAMEWORK JUNIOR)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'Tailwind CSS의 특징과 장단점을 설명해주세요.', 'CSS',
+ 'Tailwind CSS는 유틸리티 클래스 기반으로 HTML에 직접 스타일을 적용합니다. 커스텀 CSS 작성이 줄고, 디자인 시스템이 내장되어 일관성을 유지합니다. PurgeCSS로 사용하는 클래스만 빌드에 포함되어 번들이 작습니다. 단점으로는 클래스가 많아 HTML이 장황해지고, 팀 내 클래스명 암기가 필요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'CSS-in-JS(styled-components, Emotion)의 개념과 장점을 설명해주세요.', 'CSS',
+ 'CSS-in-JS는 JavaScript 파일 안에서 CSS를 작성하여 컴포넌트와 스타일을 함께 관리합니다. 동적 스타일(props 기반), 자동 스코핑(클래스명 충돌 없음), 타입 안전성, 코드 분리(사용 안 된 스타일 자동 제거)가 장점입니다. 런타임 오버헤드가 있으며 SSR 설정이 복잡할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'Flexbox와 CSS Grid의 차이와 사용 시점을 설명해주세요.', 'CSS',
+ 'Flexbox는 1차원 레이아웃(행 또는 열)에 적합하며, 내비게이션 바, 카드 정렬에 사용합니다. CSS Grid는 2차원 레이아웃(행과 열 동시)에 적합하며, 전체 페이지 레이아웃, 갤러리에 사용합니다. 대부분의 현대 UI는 Grid로 큰 구조를 잡고 Flexbox로 세부 요소를 배치합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'CSS 모듈(CSS Modules)의 동작 원리와 장점을 설명해주세요.', 'CSS',
+ 'CSS Modules는 빌드 시 클래스명을 고유하게 변환(Button_btn__xK2jL)하여 전역 충돌을 방지합니다. 컴포넌트와 같은 폴더에 .module.css로 작성하고, import styles from ''./Button.module.css''로 가져옵니다. 추가 런타임 없이 순수 CSS를 사용할 수 있어 성능 오버헤드가 없습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 반응형 디자인을 구현하는 방법을 설명해주세요.', 'RESPONSIVE',
+ 'CSS 미디어 쿼리(@media)로 화면 크기별 스타일을 정의하거나, Tailwind의 반응형 접두사(sm:, md:, lg:)를 사용합니다. useMediaQuery 커스텀 Hook이나 ResizeObserver로 JavaScript에서 브레이크포인트를 처리합니다. 모바일 퍼스트로 기본 스타일을 모바일로 작성하고 큰 화면에서 오버라이드합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'WAI-ARIA의 개념과 React에서 기본 접근성을 지키는 방법을 설명해주세요.', 'ACCESSIBILITY',
+ 'WAI-ARIA는 스크린리더 등 보조기술이 이해할 수 있도록 역할(role), 상태(aria-*), 속성을 추가하는 명세입니다. 시맨틱 HTML(button, nav, main)을 우선 사용하고, 비시맨틱 요소에만 ARIA를 추가합니다. 이미지는 alt, 폼은 label, 버튼은 의미있는 텍스트를 제공하고, 키보드만으로 모든 기능에 접근 가능해야 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 다크 모드를 구현하는 방법을 설명해주세요.', 'CSS',
+ 'CSS 변수로 색상 토큰을 정의하고, [data-theme="dark"] 셀렉터로 오버라이드합니다. Tailwind의 dark: 접두사와 darkMode: ''class'' 설정을 사용할 수 있습니다. 시스템 설정은 prefers-color-scheme 미디어 쿼리로 감지하고, localStorage에 사용자 선택을 저장합니다. Context API나 Zustand로 테마 상태를 관리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 로딩 상태를 처리하는 패턴을 설명해주세요.', 'COMPONENT',
+ '스피너/스켈레톤 UI로 로딩을 시각화합니다. 스켈레톤은 실제 레이아웃과 비슷한 플레이스홀더로 체감 성능을 높입니다. Suspense의 fallback prop, TanStack Query의 isLoading 상태, 또는 커스텀 useAsync Hook으로 처리합니다. 에러 상태(isError)와 빈 상태(isEmpty)도 함께 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'CSS transition과 animation의 차이를 설명해주세요.', 'ANIMATION',
+ 'transition은 특정 CSS 속성이 변경될 때 시작과 끝 상태 사이를 부드럽게 보간합니다. JavaScript나 CSS 클래스 변경으로 트리거됩니다. animation(@keyframes)은 여러 단계를 정의하고 자동으로 재생되며, 반복, 방향 제어가 가능합니다. 단순한 상태 전환은 transition, 복잡한 시퀀스는 animation이 적합합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 폼 유효성 검사를 구현하는 기본 방법을 설명해주세요.', 'COMPONENT',
+ 'HTML5 기본 유효성 검사(required, minLength, pattern)를 활용하거나, JavaScript에서 submit 시 검증합니다. 실시간 검증은 onChange나 onBlur 이벤트에서 처리합니다. 에러 메시지는 aria-describedby로 인풋과 연결하여 접근성을 지킵니다. react-hook-form + Zod 조합이 실무 표준입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 모달 컴포넌트를 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'Portal로 body에 렌더링하여 z-index 문제를 해결합니다. 배경 스크롤을 막고(overflow:hidden), 포커스 트랩으로 모달 안에서만 탭 이동이 되도록 합니다. ESC 키와 배경 클릭으로 닫을 수 있어야 합니다. aria-modal, role="dialog", aria-labelledby로 접근성을 지원하고, 오픈/클로즈 애니메이션도 추가합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 Toast/Notification 시스템을 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'Portal로 body 최상단에 렌더링하고, Context API나 Zustand로 토스트 목록을 전역 관리합니다. 토스트는 고유 ID와 자동 사라짐(setTimeout), 수동 닫기를 지원합니다. 여러 토스트의 스택 표시와 애니메이션을 처리합니다. react-hot-toast, sonner 같은 라이브러리를 활용하면 빠르게 구현할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', '이미지 최적화 기법을 설명해주세요.', 'PERFORMANCE',
+ 'WebP/AVIF 포맷으로 파일 크기를 줄이고, srcset으로 화면 크기별 적절한 해상도를 제공합니다. loading="lazy"로 뷰포트에 진입할 때만 로드하고, width/height 속성으로 CLS를 방지합니다. Next.js의 next/image는 자동 최적화, lazy loading, blur placeholder를 제공합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 테이블 컴포넌트를 만들 때 고려해야 할 사항을 설명해주세요.', 'COMPONENT',
+ '시맨틱 HTML(table, thead, tbody, th, td)로 스크린리더 접근성을 지원하고, th에 scope 속성을 추가합니다. 대용량 데이터는 가상화(TanStack Table + react-virtual)로 성능을 확보합니다. 정렬, 필터, 페이지네이션, 컬럼 리사이징, 고정 컬럼 기능을 요구사항에 맞게 구현합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:JUNIOR:REACT_TS:UI_FRAMEWORK', 'React에서 드래그 앤 드롭을 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'HTML5 Drag and Drop API(draggable, onDragStart, onDrop)로 기본 기능을 구현하거나, react-beautiful-dnd, dnd-kit 같은 라이브러리를 사용합니다. dnd-kit은 접근성(키보드 드래그), 터치 지원, 커스터마이징이 우수합니다. 드래그 중 시각적 피드백(ghost 이미지, 드롭 위치 표시)도 중요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 15문항 (UI_FRAMEWORK MID)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'Compound Component 패턴을 설명하고 예시를 들어주세요.', 'COMPONENT',
+ 'Compound Component는 여러 컴포넌트가 Context를 통해 상태를 공유하면서 관련 UI를 구성하는 패턴입니다. Select.Root, Select.Trigger, Select.Content처럼 부모-자식이 암묵적으로 통신합니다. API 사용자는 내부 구조를 자유롭게 조합할 수 있습니다. Radix UI가 이 패턴의 대표적인 구현체입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'Storybook의 역할과 컴포넌트 개발 프로세스에서의 활용을 설명해주세요.', 'DESIGN_SYSTEM',
+ 'Storybook은 컴포넌트를 독립적으로 개발하고 문서화하는 도구입니다. 각 컴포넌트의 스토리(상태/변형)를 정의하여 시각적으로 검토합니다. 디자이너와 개발자의 소통 창구가 되고, 컴포넌트 라이브러리 문서로 활용합니다. Interaction Tests로 컴포넌트 단위 테스트도 수행할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'Headless UI 컴포넌트 라이브러리의 개념과 장점을 설명해주세요.', 'DESIGN_SYSTEM',
+ 'Headless UI는 스타일 없이 동작(접근성, 키보드 탐색, ARIA)만 제공하는 컴포넌트 라이브러리입니다. Radix UI, Headless UI(Tailwind Labs), Ark UI가 대표적입니다. 디자인 시스템을 자유롭게 커스터마이징할 수 있으면서 접근성 로직을 재구현하지 않아도 됩니다. shadcn/ui는 Radix UI 기반 headless 컴포넌트입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'CSS Container Queries의 개념과 미디어 쿼리 대비 장점을 설명해주세요.', 'RESPONSIVE',
+ 'Container Queries는 뷰포트 크기 대신 부모 컨테이너 크기를 기준으로 스타일을 변경합니다. 재사용 가능한 컴포넌트가 배치되는 컨텍스트에 따라 적응적으로 동작합니다. @container 규칙으로 정의하고, contain: inline-size로 컨테이너를 지정합니다. 현재 모든 주요 브라우저에서 지원됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 복잡한 데이터 테이블(TanStack Table)을 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'TanStack Table은 헤드리스 테이블 라이브러리로 정렬, 필터, 페이지네이션, 그룹핑, 가상화를 지원합니다. useReactTable Hook으로 테이블 인스턴스를 생성하고, column definitions로 컬럼 설정을 정의합니다. 서버 사이드 처리(manualSorting, manualFiltering)로 대용량 데이터도 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'Framer Motion의 레이아웃 애니메이션(Layout Animation)을 설명해주세요.', 'ANIMATION',
+ 'layout prop을 추가하면 컴포넌트 크기/위치 변경 시 자동으로 애니메이션됩니다. FLIP 기법을 내부적으로 사용하여 performant합니다. LayoutGroup으로 서로 다른 컴포넌트 간 레이아웃 애니메이션을 연결합니다. 탭 인디케이터, 리스트 재정렬, 카드 확장/축소에 효과적입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', '색상 대비, 포커스 표시, 스크린리더 지원을 포함한 접근성 체크리스트를 설명해주세요.', 'ACCESSIBILITY',
+ 'WCAG 2.1 AA 기준: 색상 대비 4.5:1(일반 텍스트), 3:1(큰 텍스트). 포커스 스타일을 outline: none으로 제거하면 안 됩니다. 스크린리더 테스트(NVDA, VoiceOver), 키보드만으로 전체 기능 접근 가능 여부를 확인합니다. axe DevTools나 Lighthouse로 자동 검사하고, 수동 테스트로 보완합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'CSS 변수(Custom Properties)를 활용한 테마 시스템을 설계하는 방법을 설명해주세요.', 'DESIGN_SYSTEM',
+ ':root에 기본 토큰을 정의하고, [data-theme="dark"]에서 오버라이드합니다. 시맨틱 토큰(--color-primary, --spacing-md)은 원시 토큰(--blue-500, --16px)을 참조합니다. JavaScript에서 getComputedStyle과 setProperty로 동적 변경이 가능합니다. CSS 변수는 상속되며 ShadowDOM도 관통합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 차트/시각화 라이브러리(Recharts, D3)를 사용하는 방법을 설명해주세요.', 'COMPONENT',
+ 'Recharts는 React 컴포넌트 기반으로 선언적이고 반응형을 지원하여 빠른 구현에 적합합니다. D3는 강력하지만 직접 DOM을 조작하므로 React와 통합 시 ref를 사용하거나, D3의 계산 기능만 사용하고 렌더링은 React SVG로 처리합니다. 대화형 차트는 이벤트 핸들러와 툴팁 구현이 중요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 드래그로 크기 조절 가능한 컴포넌트(Resizable Panel)를 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'PointerEvents API로 드래그를 감지하고, 마우스/터치 통합 이벤트를 처리합니다. 패널 크기를 상태로 관리하고, 최소/최대 크기 제한을 적용합니다. CSS로 cursor를 변경하여 시각적 피드백을 제공합니다. react-resizable-panels 같은 라이브러리는 접근성과 키보드 지원을 내장합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'CSS Grid를 활용한 복잡한 레이아웃 구현 방법을 설명해주세요.', 'CSS',
+ 'grid-template-areas로 레이아웃을 시각적으로 정의하고, 미디어 쿼리로 그리드 구조를 변경합니다. minmax(), auto-fill/auto-fit로 반응형 그리드를 구현합니다. subgrid로 중첩 그리드의 정렬을 부모 그리드에 맞출 수 있습니다. Dense packing(grid-auto-flow: dense)으로 빈 공간을 채웁니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 virtualization(가상화)을 구현하는 방법을 설명해주세요.', 'PERFORMANCE',
+ '가상화는 화면에 보이는 항목만 DOM에 렌더링하여 대용량 리스트 성능을 최적화합니다. TanStack Virtual(react-virtual), react-window, react-virtuoso가 주요 라이브러리입니다. 고정 크기(FixedSizeList)와 가변 크기(VariableSizeList)를 지원합니다. 그리드, 트리뷰에도 적용 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 국제화(i18n)를 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'react-i18next로 번역 파일을 언어별로 관리하고, useTranslation Hook으로 컴포넌트에서 사용합니다. 날짜/숫자/통화는 Intl API로 로케일에 맞게 포맷합니다. RTL(우->좌) 언어는 dir="rtl"과 CSS logical properties로 지원합니다. 동적 번역 로드로 초기 번들을 최소화합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React Testing Library를 활용한 컴포넌트 테스트 전략을 설명해주세요.', 'COMPONENT',
+ 'Testing Library는 사용자 관점(screen.getByRole, getByText)에서 쿼리하도록 권장합니다. 구현 세부사항(클래스명, 내부 상태)이 아닌 사용자 행동(클릭, 입력)을 테스트합니다. userEvent로 실제 사용자 이벤트를 시뮬레이션합니다. MSW로 API를 모킹하면 통합 테스트가 더 신뢰할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:MID:REACT_TS:UI_FRAMEWORK', 'React에서 파일 업로드 컴포넌트를 구현할 때 고려해야 할 사항을 설명해주세요.', 'COMPONENT',
+ '드래그 앤 드롭과 클릭 업로드 모두 지원하고, 파일 타입/크기 유효성 검사를 클라이언트에서 먼저 수행합니다. 대용량 파일은 청크 업로드(multipart)와 재개 가능한 업로드를 고려합니다. 업로드 진행률(XMLHttpRequest 또는 fetch)과 취소 기능을 제공합니다. 접근성을 위해 input[type=file]을 기반으로 구현합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 15문항 (UI_FRAMEWORK SENIOR)
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', '엔터프라이즈 디자인 시스템을 구축하고 유지보수하는 전략을 설명해주세요.', 'DESIGN_SYSTEM',
+ '디자인 토큰(Style Dictionary), 컴포넌트 라이브러리(Storybook), 문서화(Storybook Docs), 버전 관리(npm, Changesets), 테스트(Chromatic 시각 회귀 테스트)를 갖춥니다. 모노레포(Turborepo, Nx)로 패키지를 관리하고, 자동화된 릴리스 파이프라인을 구성합니다. 채택률 모니터링과 사용성 피드백 루프도 중요합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', '시각 회귀 테스트(Visual Regression Testing)를 설계하는 방법을 설명해주세요.', 'DESIGN_SYSTEM',
+ 'Chromatic(Storybook 연동), Playwright/Cypress의 screenshot 비교로 UI 변경을 자동 감지합니다. PR마다 스크린샷을 캡처하고 기준 이미지와 diff를 비교합니다. 동적 콘텐츠(날짜, 랜덤값)를 마스킹하여 false positive를 줄입니다. CI 파이프라인에 통합하여 의도치 않은 UI 변경을 방지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'CSS Houdini와 Paint API를 활용한 고급 커스텀 CSS 구현을 설명해주세요.', 'CSS',
+ 'CSS Houdini는 CSS 엔진의 내부에 접근하는 API 집합입니다. Paint API(CSS.paintWorklet)로 canvas 기반 커스텀 배경/이미지를 CSS에서 사용합니다. Layout API로 커스텀 레이아웃 알고리즘을 정의합니다. Properties and Values API(@property)로 애니메이션 가능한 커스텀 속성을 정의하고 타입을 지정합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React 앱의 접근성 자동화 테스트와 수동 감사 프로세스를 설명해주세요.', 'ACCESSIBILITY',
+ '자동화: axe-core + jest-axe로 단위 테스트에 접근성 검사 통합, Lighthouse CI로 빌드마다 점수 측정, Playwright/Cypress에 axe 플러그인 통합. 수동 감사: NVDA/VoiceOver 스크린리더로 전체 사용자 흐름 테스트, 키보드 탐색 확인, 색상 대비 분석기 사용. WCAG 2.1 AA 준수를 목표로 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React에서 canvas 기반 고성능 그래픽(WebGL, Three.js)을 통합하는 방법을 설명해주세요.', 'PERFORMANCE',
+ 'useRef로 canvas 요소를 참조하고 useEffect에서 WebGL 컨텍스트를 초기화합니다. React Three Fiber는 Three.js를 React 컴포넌트로 추상화합니다. requestAnimationFrame으로 렌더 루프를 관리하고, cleanup에서 해제합니다. React와 GL 렌더러 간의 상태 동기화를 최소화하여 성능을 유지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'Tailwind CSS의 성능 최적화와 커스터마이징 전략을 설명해주세요.', 'CSS',
+ 'content 설정으로 PurgeCSS가 사용되지 않는 클래스를 제거합니다. theme.extend로 기존 스케일을 유지하면서 커스텀 토큰을 추가합니다. plugin API로 컴포넌트 클래스와 유틸리티를 추가합니다. clsx/tailwind-merge로 조건부 클래스 병합 시 중복/충돌을 해결합니다. tailwindcss-animate로 애니메이션을 추가합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React 앱에서 국제화 접근성(i18n + a11y)을 동시에 지원하는 방법을 설명해주세요.', 'ACCESSIBILITY',
+ 'lang 속성을 현재 언어로 설정하여 스크린리더가 올바른 발음 엔진을 사용하도록 합니다. RTL 언어는 dir="rtl"과 CSS logical properties(margin-inline-start vs margin-left)로 지원합니다. aria-label은 번역된 텍스트를 사용하고, 날짜/시간 포맷은 Intl API로 로케일에 맞게 처리합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React에서 고급 애니메이션 성능 프로파일링과 최적화를 설명해주세요.', 'ANIMATION',
+ 'Chrome DevTools Performance 탭에서 Paint, Composite 레이어를 분석합니다. Rendering 패널에서 "Paint flashing", "Layer borders"로 불필요한 레이어를 발견합니다. will-change 남용 시 메모리를 과도하게 사용합니다. Compositor Thread에서만 실행되는 transform/opacity 애니메이션을 우선하고, GSAP는 자체 최적화를 제공합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'Next.js App Router의 Streaming과 Partial Prerendering(PPR)을 설명해주세요.', 'ARCHITECTURE',
+ 'Streaming은 서버에서 HTML을 청크별로 점진적으로 전송합니다. Suspense 경계 단위로 스트리밍하여 느린 데이터가 다른 빠른 컨텐츠를 블록하지 않습니다. PPR은 정적(prerendered)과 동적(streamed) 부분을 같은 페이지에 혼합합니다. 셸(shell)은 즉시 제공되고, 동적 데이터는 스트리밍됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', '마이크로 프론트엔드에서 공유 UI 컴포넌트 라이브러리를 관리하는 전략을 설명해주세요.', 'ARCHITECTURE',
+ '공유 컴포넌트를 별도 npm 패키지로 배포하거나, Module Federation으로 런타임 공유합니다. 버저닝을 엄격히 관리하고, 하위 호환성을 위해 deprecation 기간을 둡니다. Changesets으로 변경 내역을 관리하고, Chromatic으로 시각 회귀를 방지합니다. 각 마이크로 앱 팀이 업그레이드 시점을 자율적으로 결정합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React에서 PDF 생성 및 인쇄 기능을 구현하는 방법을 설명해주세요.', 'COMPONENT',
+ 'react-pdf/renderer는 React 컴포넌트로 PDF를 선언적으로 생성합니다. 브라우저 인쇄는 @media print CSS로 인쇄 레이아웃을 별도 정의하고 불필요한 요소를 숨깁니다. html2canvas + jsPDF로 DOM을 이미지로 캡처하여 PDF로 변환합니다. 서버에서 Puppeteer로 헤드리스 Chrome을 사용하면 더 안정적입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React 앱의 Critical CSS 최적화 전략을 설명해주세요.', 'PERFORMANCE',
+ 'Critical CSS는 Above-the-fold 렌더링에 필요한 CSS만 인라인으로 삽입하여 초기 렌더링을 빠르게 합니다. critters(webpack 플러그인)가 자동으로 추출합니다. Next.js는 CSS-in-JS(styled-jsx)를 서버에서 인라인합니다. 나머지 CSS는 비동기로 로드하고, 미사용 CSS는 PurgeCSS로 제거합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'Signals 기반 상태 관리(Preact Signals, Solid.js)와 React의 차이를 설명해주세요.', 'ARCHITECTURE',
+ 'Signals는 세밀한 반응성으로 구독하는 컴포넌트만 리렌더링합니다. React의 Virtual DOM diffing 없이 직접 DOM을 업데이트합니다. @preact/signals-react를 사용하면 React에서도 Signal을 사용할 수 있습니다. 고빈도 업데이트(실시간 대시보드)에서 React보다 성능이 우수할 수 있지만, 생태계와 DevTools가 부족합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', '대규모 React 앱에서 런타임 성능 문제를 체계적으로 진단하는 방법을 설명해주세요.', 'PERFORMANCE',
+ '1단계: Chrome DevTools Performance 탭으로 긴 프레임을 찾습니다. 2단계: React Profiler로 리렌더링 빈도와 시간을 측정합니다. 3단계: why-did-you-render 라이브러리로 불필요한 리렌더링 원인을 파악합니다. 4단계: 메모이제이션 적용 후 효과를 측정합니다. 증거 없이 최적화하지 않는 것이 원칙입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'React에서 E2E 테스트(Playwright)를 CI/CD에 통합하는 전략을 설명해주세요.', 'ARCHITECTURE',
+ 'Playwright는 멀티 브라우저(Chromium, Firefox, WebKit) 테스트를 지원하고 네트워크 모킹이 가능합니다. CI에서 docker로 브라우저 환경을 표준화합니다. 테스트를 스모크(핵심 플로우), 전체(회귀) 두 단계로 나눠 PR은 스모크, 병합 후 전체를 실행합니다. sharding으로 병렬 실행하여 속도를 높입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());

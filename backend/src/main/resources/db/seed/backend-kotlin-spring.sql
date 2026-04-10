@@ -279,3 +279,198 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 ('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 대규모 팀 개발 시 코드 품질 관리 전략은?', 'KOTLIN_CORE',
  'ktlint와 detekt를 CI 파이프라인에 통합하여 코드 스타일 일관성과 코드 품질을 자동 검증합니다. detekt의 커스텀 룰로 프로젝트 아키텍처 규칙(Service가 Repository만 사용하는지 등)을 정적 분석으로 강제합니다. 팀 코딩 컨벤션을 .editorconfig와 intellij formatter 설정으로 공유합니다. API 안정성을 위해 Binary Compatibility Validator를 사용하여 공개 API 변경을 추적합니다. Kotlin API 가이드라인(함수형 스타일 선호, 불변성 우선, null 처리 일관성)을 팀 공유 문서로 관리하고 코드 리뷰에서 지속적으로 피드백합니다.',
  'MODEL_ANSWER', TRUE, NOW());
+
+-- 추가 37문항 (JUNIOR +2, MID +16, SENIOR +19)
+
+-- JUNIOR 추가 2문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:JUNIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin의 lazy 프로퍼티 위임이란 무엇이며 어떻게 동작하나요?', 'KOTLIN_CORE',
+ 'by lazy { }는 프로퍼티 초기화를 처음 접근 시까지 지연시키는 위임 패턴입니다. 기본적으로 LazyThreadSafetyMode.SYNCHRONIZED로 동작하여 멀티스레드 환경에서도 초기화가 한 번만 실행됩니다. 성능이 중요한 단일 스레드 환경에서는 LazyThreadSafetyMode.NONE을 사용하여 동기화 오버헤드를 제거할 수 있습니다. 무거운 객체 초기화(DB 연결, 파일 파싱)를 필요한 시점까지 미루어 애플리케이션 시작 시간을 단축하는 데 유용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:JUNIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 String Template과 multiline 문자열 사용법을 설명해주세요.', 'KOTLIN_CORE',
+ 'Kotlin String Template은 $ 기호로 변수나 ${표현식}을 문자열에 직접 삽입하는 기능입니다. Java의 문자열 연결(+)보다 가독성이 높고, 내부적으로 StringBuilder로 최적화됩니다. 삼중 따옴표(""" """)로 선언한 Raw String은 이스케이프 없이 줄바꿈과 특수문자를 포함할 수 있어 JSON, SQL, HTML 템플릿 작성에 편리합니다. trimIndent()를 사용하면 들여쓰기를 제거하여 코드 정렬을 유지하면서 깔끔한 문자열을 만들 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- MID 추가 16문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin의 inline class(value class)가 무엇이며 어떤 이점이 있나요?', 'KOTLIN_CORE',
+ 'value class는 래퍼 클래스의 타입 안전성을 유지하면서 런타임에 래핑 비용이 없는 경량 클래스입니다. @JvmInline @value class UserId(val id: Long)처럼 단일 프로퍼티를 가진 클래스를 선언하면 컴파일러가 대부분의 사용 위치에서 내부 타입으로 인라인 처리합니다. String이나 Long으로 혼용될 수 있는 도메인 식별자(UserId, OrderId)를 별도 타입으로 구분하여 파라미터 순서 실수를 컴파일 타임에 차단합니다. JPA Entity의 ID 타입이나 도메인 원시 타입(이메일, 전화번호)에 활용하면 타입 안전성과 성능을 동시에 얻을 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 reified 타입 파라미터란 무엇이며 언제 사용하나요?', 'KOTLIN_CORE',
+ 'Kotlin은 JVM의 타입 소거로 인해 일반적으로 제네릭 타입 파라미터에 런타임에 접근할 수 없습니다. inline 함수에서 reified 키워드를 타입 파라미터에 붙이면 컴파일러가 호출 지점에 코드를 인라인 삽입하여 런타임에 실제 타입 정보를 유지합니다. inline fun <reified T> parseJson(json: String): T = objectMapper.readValue(json, T::class.java)처럼 T::class에 접근할 수 있습니다. Spring의 RestTemplate.getForObject<MyDto>() 같은 확장 함수가 reified를 활용한 대표적 예입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 코루틴의 Dispatcher 종류와 각각의 사용 시나리오를 설명해주세요.', 'COROUTINE',
+ 'Dispatchers.Default는 CPU 바운드 작업(정렬, 파싱, 계산)을 위한 디스패처로 CPU 코어 수에 비례한 스레드 풀을 사용합니다. Dispatchers.IO는 블로킹 I/O(파일 읽기, JDBC, 외부 API)를 위한 디스패처로 최대 64개의 스레드로 확장됩니다. Dispatchers.Main은 UI 프레임워크의 메인 스레드에서 실행되며 Android와 JavaFX에서 사용합니다. Dispatchers.Unconfined는 특정 스레드에 묶이지 않아 테스트나 특수 목적에만 사용합니다. Spring WebFlux + 코루틴 환경에서는 withContext(Dispatchers.IO) { }로 블로킹 코드를 감싸야 반응형 스레드 풀을 블로킹하지 않습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 구조화된 동시성(Structured Concurrency)의 개념과 이점을 설명해주세요.', 'COROUTINE',
+ '구조화된 동시성은 코루틴의 생명주기가 반드시 정의한 스코프 내에 포함되어야 한다는 원칙입니다. 부모 코루틴이 취소되면 자식 코루틴도 자동으로 취소되어 리소스 누수를 방지합니다. coroutineScope { }는 모든 자식 코루틴이 완료될 때까지 반환하지 않으며, 자식 중 하나가 실패하면 나머지 자식도 취소됩니다. GlobalScope는 구조화된 동시성을 벗어나 애플리케이션 생명주기 전체에서 실행되므로 사용을 피해야 합니다. Spring의 @Bean으로 등록한 CoroutineScope를 사용하면 애플리케이션 종료 시 스코프가 취소되어 정상적으로 정리됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 Flow의 중간 연산자와 종단 연산자의 차이를 설명해주세요.', 'COROUTINE',
+ '중간 연산자(intermediate operators)는 Flow를 반환하여 파이프라인을 구성하며, 새로운 collector가 구독하기 전까지 실행되지 않습니다. map, filter, flatMapConcat, transform, onEach, buffer, conflate, flowOn이 대표적 중간 연산자입니다. 종단 연산자(terminal operators)는 Flow 수집을 시작하는 suspend 함수로 collect, toList, first, single, fold, reduce가 있습니다. flowOn()은 업스트림의 실행 컨텍스트를 변경하는 중간 연산자로, 데이터 생성과 처리를 다른 Dispatcher에서 실행할 때 사용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot에서 Kotlin @ConfigurationProperties를 사용하는 방법은?', 'SPRING_KOTLIN',
+ '@ConfigurationProperties(prefix = "app")와 data class를 함께 사용하면 application.yml의 설정 값을 타입 안전하게 바인딩할 수 있습니다. Spring Boot 2.2+ 이상에서는 @ConstructorBinding과 함께 사용하면 불변(val) 프로퍼티에도 바인딩이 가능합니다. @EnableConfigurationProperties(AppProperties::class) 또는 @ConfigurationPropertiesScan으로 빈을 등록합니다. 중첩 data class로 계층적 설정 구조를 자연스럽게 표현할 수 있으며, kotlin-spring 플러그인이 있으면 별도 open 선언 없이 프록시가 동작합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Spring Data JPA에서 Kotlin과 함께 사용할 때 자주 발생하는 문제와 해결 방법은?', 'SPRING_KOTLIN',
+ 'JPA 엔티티는 파라미터 없는 기본 생성자가 필요한데, Kotlin 클래스는 기본 생성자가 없으므로 kotlin-jpa 플러그인이 이를 자동 생성합니다. JPA 엔티티에 data class를 사용하면 equals/hashCode가 id 포함 모든 필드를 비교하여 프록시 객체와 동등성 비교가 깨질 수 있습니다. 지연 로딩(Lazy Loading)을 위해 CGLIB 프록시가 필요한 연관 엔티티 필드는 var로 선언해야 하며 kotlin-allopen 플러그인이 필요합니다. @ManyToOne(fetch = LAZY) 관계 필드는 nullable 타입으로 선언하거나 lateinit var를 사용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin의 타입 별칭(typealias)과 인라인 클래스의 차이점은?', 'KOTLIN_CORE',
+ 'typealias는 기존 타입에 다른 이름을 부여하는 컴파일 타임 기능으로, 런타임에는 완전히 동일한 타입입니다. typealias UserId = Long으로 선언해도 UserId와 Long은 런타임에 구분되지 않아 혼용이 가능합니다. value class는 런타임에도 별개의 타입(JVM 바이트코드에서 별도 처리)으로 관리되어 타입 안전성을 보장합니다. typealias는 복잡한 함수 타입(typealias Predicate<T> = (T) -> Boolean)이나 제네릭 타입을 단순화하는 목적으로 주로 사용하고, 실질적인 타입 구분이 필요하면 value class를 사용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 연산자 오버로딩(Operator Overloading)을 어떻게 활용하나요?', 'KOTLIN_CORE',
+ 'Kotlin은 operator fun으로 +, -, *, /, %, ==, compareTo, get, set, invoke 등 미리 정해진 연산자를 오버로딩합니다. operator fun plus(other: Money): Money처럼 선언하면 money1 + money2 문법이 동작합니다. 도메인 모델(Money, Duration, Coordinate)에서 수학적 연산이 자연스러울 때 사용하면 가독성이 높아집니다. compareTo를 구현하면 < > <= >= 비교와 정렬이 가능하고, Comparable<T>를 함께 구현하는 것이 권장됩니다. 남용하면 코드 가독성이 저하되므로 직관적인 의미가 없는 타입에는 사용을 자제합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Spring WebFlux와 Kotlin 코루틴을 함께 사용할 때의 패턴을 설명해주세요.', 'SPRING_KOTLIN',
+ 'Spring WebFlux는 반응형(Reactive) 프로그래밍 모델이지만 Kotlin 코루틴 통합을 통해 suspend fun으로 컨트롤러 메서드를 작성할 수 있습니다. @GetMapping suspend fun handler(): ResponseEntity<Dto>처럼 선언하면 Spring이 코루틴을 Mono/Flux로 자동 변환합니다. Mono<T>.awaitSingle(), Flux<T>.asFlow()로 반응형 타입과 코루틴 타입을 상호 변환합니다. R2DBC(반응형 DB 드라이버)와 코루틴을 결합하면 완전한 논블로킹 DB 접근이 가능합니다. 기존 블로킹 코드는 withContext(Dispatchers.IO) { }로 감싸서 반응형 스레드 풀을 보호해야 합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 DSL(Domain-Specific Language)을 어떻게 설계하나요?', 'KOTLIN_CORE',
+ 'Kotlin DSL은 확장 함수, 람다 with receiver, 연산자 오버로딩을 결합하여 특정 도메인에 최적화된 선언적 API를 구축합니다. fun buildHtml(block: HtmlBuilder.() -> Unit): Html처럼 람다 with receiver를 사용하면 블록 내부에서 수신자의 멤버에 직접 접근할 수 있습니다. @DslMarker 어노테이션으로 DSL 스코프를 표시하면 중첩 DSL에서 외부 스코프 멤버의 암묵적 접근을 방지합니다. Gradle Kotlin DSL, kotlinx.html, Ktor 라우팅이 대표적인 Kotlin DSL 활용 예시입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin과 Spring Security를 결합한 JWT 인증 구현 방법은?', 'SPRING_KOTLIN',
+ 'Spring Security 설정을 Kotlin DSL(@Configuration class와 SecurityFilterChain)로 작성하면 Java보다 간결합니다. JwtAuthenticationFilter를 OncePerRequestFilter로 구현하고, 요청 헤더에서 토큰을 추출하여 검증합니다. io.jsonwebtoken(JJWT) 라이브러리를 사용하여 토큰 생성(sign, compact)과 파싱(parseClaimsJws)을 처리합니다. 코루틴 기반 WebFlux 환경에서는 ServerSecurityContextRepository를 구현하여 비동기 인증 컨텍스트를 관리합니다. Kotlin의 확장 함수로 UserDetails에서 커스텀 Claims를 추출하는 유틸을 정의하면 코드 중복을 줄일 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 coroutineScope와 withContext의 차이점은 무엇인가요?', 'COROUTINE',
+ 'coroutineScope { }는 새로운 코루틴 스코프를 생성하고 내부에서 여러 자식 코루틴을 병렬로 실행할 수 있으며, 모든 자식이 완료될 때까지 현재 코루틴을 일시 중단합니다. withContext(Dispatcher) { }는 현재 코루틴의 실행 컨텍스트(주로 Dispatcher)를 전환하며 단일 블록을 다른 Dispatcher에서 실행합니다. coroutineScope는 병렬 분해(parallel decomposition)에, withContext는 컨텍스트 전환(IO 작업 분리)에 사용합니다. 두 함수 모두 suspend 함수이며 구조화된 동시성을 유지하지만, withContext는 launch처럼 새 코루틴을 생성하지 않고 현재 코루틴의 컨텍스트만 교체합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 Nothing 타입은 어떤 경우에 사용되나요?', 'KOTLIN_CORE',
+ 'Nothing은 값이 존재하지 않음을 나타내는 타입으로, 함수가 정상적으로 반환되지 않는다는 것을 컴파일러에 알립니다. throw 표현식의 반환 타입이 Nothing이므로, 엘비스 연산자 오른쪽에서 throw를 사용하면 타입 시스템이 null이 아님을 추론합니다. fun fail(message: String): Nothing = throw IllegalStateException(message)처럼 항상 예외를 던지는 함수의 반환 타입으로 선언합니다. Nothing?은 null만 가능한 타입으로 nullable 타입의 결론 없는 분기에서 나타납니다. when 표현식에서 모든 브랜치가 Nothing을 반환하면 when이 표현식으로 사용되어도 컴파일러가 unreachable 코드를 감지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot에서 Kotlin으로 이벤트 기반 아키텍처를 구현하는 방법은?', 'SPRING_KOTLIN',
+ 'Spring의 ApplicationEvent와 ApplicationEventPublisher를 사용하여 도메인 이벤트를 발행하고 처리합니다. data class로 이벤트 클래스를 정의하면 불변 이벤트를 간결하게 표현할 수 있습니다. @TransactionalEventListener로 트랜잭션 커밋 후 이벤트를 처리하여 데이터 일관성을 보장합니다. 코루틴 환경에서는 coroutineScope가 포함된 @Async 리스너 대신 ApplicationEventPublisher를 suspend fun 내에서 호출하거나 Channel/Flow로 이벤트를 전파합니다. 서비스 간 느슨한 결합을 위해 도메인 이벤트 발행 패턴을 적용하면 서비스 레이어가 단순해집니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- SENIOR 추가 19문항
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 타입 안전한 Builder 패턴을 설계하는 방법을 설명해주세요.', 'KOTLIN_CORE',
+ 'Kotlin DSL 스타일의 Builder는 람다 with receiver와 apply/also 패턴으로 구현합니다. data class를 직접 수정하는 대신 별도의 Builder 클래스에서 mutable 필드를 수집하고, build() 메서드에서 불변 객체를 반환합니다. @DslMarker로 스코프 마커를 정의하면 중첩 빌더에서 외부 빌더 함수가 암묵적으로 호출되는 것을 컴파일 타임에 방지합니다. 필수 파라미터는 빌더 생성자에서 받아 누락 시 컴파일 오류가 발생하도록 하고, 선택 파라미터만 DSL 블록으로 구성합니다. Kotlin의 named argument와 default parameter로 간단한 경우에는 별도 Builder 없이도 동일한 효과를 낼 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 코루틴에서 예외 처리 전략과 CoroutineExceptionHandler 동작 원리를 설명해주세요.', 'COROUTINE',
+ '코루틴 예외는 두 가지 경로로 전파됩니다. launch로 시작된 코루틴의 예외는 부모 스코프로 전파되며 CoroutineExceptionHandler가 처리합니다. async 코루틴의 예외는 Deferred에 저장되고 await() 호출 시점에 발생합니다. CoroutineExceptionHandler는 SupervisorJob 또는 최상위 코루틴 스코프에만 효과가 있으며, 자식 스코프에서는 예외가 부모로 전파되기 때문에 효과가 없습니다. try-catch로 suspend 함수의 예외를 직접 처리하는 것이 가장 명확한 방법이며, runCatching { }은 Result<T>로 예외를 감싸 함수형 스타일로 처리할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 불변 도메인 모델 설계 시 deep copy 전략을 어떻게 적용하나요?', 'KOTLIN_CORE',
+ 'data class의 copy()는 얕은 복사(shallow copy)만 제공하므로, 중첩 객체가 있는 경우 내부 컬렉션까지 재귀적으로 복사해야 진정한 불변 복사본이 됩니다. 중첩된 불변 컬렉션(listOf, mapOf)을 사용하면 내부 요소 변경이 불가능하므로 shallow copy만으로도 안전합니다. 복잡한 도메인 모델에서는 copy() 체이닝(order.copy(items = order.items + newItem))으로 함수형 업데이트를 표현합니다. Arrow 라이브러리의 optics(Lens, Prism)를 사용하면 깊이 중첩된 불변 구조체의 특정 필드를 타입 안전하게 업데이트할 수 있습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin과 Spring을 사용한 이벤트 소싱(Event Sourcing) 구현 패턴을 설명해주세요.', 'SPRING_KOTLIN',
+ 'Kotlin sealed class로 도메인 이벤트 계층을 선언하면 when 표현식으로 모든 이벤트 타입을 망라적으로 처리할 수 있습니다. Aggregate Root는 apply(event: DomainEvent) 메서드로 상태를 갱신하고, 미커밋 이벤트를 내부 목록에 쌓습니다. Spring Data JPA의 @DomainEvents와 @AfterDomainEventPublication으로 저장 후 이벤트를 자동 발행합니다. 이벤트는 append-only 테이블에 JSON으로 저장하고, aggregate_id + sequence_number로 이벤트를 재생하여 현재 상태를 복원합니다. Snapshot 전략으로 N개 이벤트마다 상태를 저장하여 재생 비용을 O(1)에 가깝게 유지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 기반 서비스의 그레이스풀 셧다운(Graceful Shutdown)을 구현하는 방법은?', 'SPRING_KOTLIN',
+ 'Spring Boot 2.3+의 server.shutdown=graceful 설정으로 HTTP 요청 처리 중인 요청이 완료될 때까지 종료를 지연합니다. 코루틴 기반 애플리케이션에서는 @PreDestroy 또는 SmartLifecycle에서 CoroutineScope를 cancel하여 실행 중인 코루틴이 취소 신호를 받도록 합니다. Kafka Consumer는 pause() → drain → close() 순서로 정상 종료하여 메시지 손실을 방지합니다. Job.cancelAndJoin()으로 모든 활성 코루틴이 완료될 때까지 대기합니다. Kubernetes의 terminationGracePeriodSeconds와 스프링의 spring.lifecycle.timeout-per-shutdown-phase를 동기화하여 Pod 종료 타임아웃 내에 셧다운이 완료되도록 설계합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 타입 클래스(Typeclass) 패턴을 모방하는 방법과 실용적 활용 사례는?', 'FUNCTIONAL',
+ '타입 클래스는 Haskell에서 유래한 패턴으로, Kotlin에서는 인터페이스와 Companion Object, 확장 함수를 조합하여 ad-hoc 다형성을 구현합니다. interface Eq<A> { fun A.eq(other: A): Boolean }처럼 인터페이스를 정의하고, 특정 타입에 대한 구현을 object로 제공합니다. Arrow kt의 typeclasses(Functor, Monad, Semigroup)가 대표적 구현체입니다. 실용적 활용으로 직렬화 전략(Serializable<T>), 동등성 정의(Eq<T>), 정렬 기준(Ord<T>)을 타입에 따라 별도로 제공하여 확장에 열려있는 설계를 구현합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot + Kotlin 애플리케이션의 메모리 최적화 전략을 설명해주세요.', 'SPRING_KOTLIN',
+ 'JVM 시작 시 -XX:+UseG1GC 또는 -XX:+UseZGC를 선택하고, -Xms와 -Xmx를 동일하게 설정하여 힙 리사이징 오버헤드를 제거합니다. Spring Bean의 초기화를 lazy로 변경(spring.main.lazy-initialization=true)하면 사용하지 않는 Bean이 메모리를 차지하지 않습니다. 코루틴은 스레드 대비 매우 적은 메모리를 사용하지만, 대용량 데이터를 코루틴 컨텍스트에 보관하면 누수가 발생할 수 있습니다. Spring Data의 Pageable로 대용량 쿼리를 페이지로 처리하고, Sequence를 활용한 지연 평가로 컬렉션 중간 객체 생성을 최소화합니다. Kotlin의 object 싱글톤과 companion object는 클래스 로더 생명주기 동안 메모리를 점유하므로 상태를 최소화합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 코루틴 기반의 분산 락(Distributed Lock) 구현 방법은?', 'COROUTINE',
+ 'Redis의 SET NX PX 명령(Redlock 알고리즘)으로 분산 락을 구현하고, Spring Data Redis의 Lettuce 클라이언트를 코루틴 어댑터로 래핑하여 suspend 함수로 락 획득/해제를 처리합니다. 락 획득 함수를 withLock(key, ttl) { } DSL로 추상화하면 락 해제 누락을 방지합니다. 코루틴 취소 시에도 락이 해제되도록 try-finally 블록으로 해제 로직을 보호합니다. 락 갱신(refresh) 로직을 백그라운드 코루틴으로 구현하여 작업 시간이 TTL을 초과할 때 락이 만료되지 않도록 합니다. 단일 Redis 노드 장애에 대비하여 RedLock(3~5개 Redis 인스턴스)을 사용하는 것이 프로덕션 권장 사항입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 함수형 도메인 모델링의 장점과 구현 패턴은?', 'FUNCTIONAL',
+ '함수형 도메인 모델링은 도메인 상태를 불변 value object로 표현하고, 상태 전이를 순수 함수로 정의하여 부작용을 격리합니다. Kotlin sealed class로 도메인 상태 머신(OrderStatus.Pending, OrderStatus.Confirmed)을 표현하면 유효하지 않은 상태 전이를 컴파일 타임에 차단합니다. Result<T, E>나 Either<Error, Value>로 도메인 규칙 위반을 예외 없이 반환 타입으로 명시합니다. 도메인 로직을 프레임워크 의존성 없는 순수 함수로 작성하면 Spring 없이도 빠른 단위 테스트가 가능합니다. 부작용(DB 저장, 이벤트 발행)을 함수 외부로 밀어내는 Ports & Adapters 패턴과 자연스럽게 결합됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin과 Spring을 사용한 멀티모듈 프로젝트 구조 설계 원칙은?', 'SPRING_KOTLIN',
+ 'Gradle 멀티모듈로 domain, application, infrastructure, api 레이어를 독립 모듈로 분리합니다. domain 모듈은 순수 Kotlin 코드만 포함하고 Spring 의존성을 가지지 않아 빠른 단위 테스트가 가능합니다. infrastructure 모듈이 domain 인터페이스(Port)를 구현하고, api 모듈이 application 레이어를 통해 유스케이스를 호출합니다. 모듈 간 의존성 방향을 단방향으로 강제하고, buildSrc나 convention plugin으로 각 모듈의 공통 Gradle 설정을 중앙화합니다. 빌드 캐시와 병렬 빌드를 활성화하여 대규모 멀티모듈에서도 빌드 시간을 단축합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 코루틴과 Spring Batch를 결합한 대용량 데이터 처리 전략은?', 'SPRING_KOTLIN',
+ 'Spring Batch의 ItemReader/ItemProcessor/ItemWriter를 코루틴과 결합하여 I/O 대기 시간을 최소화합니다. 여러 파티션을 coroutineScope 내 async로 병렬 처리하면 파티션 수만큼 처리량이 향상됩니다. Flow.chunked(chunkSize)로 대용량 스트림을 청크 단위로 처리하고, buffer() 연산자로 생산/소비 속도 차이를 완충합니다. 코루틴의 취소 메커니즘을 활용하여 Job 중단 요청 시 현재 청크를 완료한 후 안전하게 종료합니다. 처리 결과를 Channel로 집계하고 Dispatchers.Default와 Dispatchers.IO를 분리하여 CPU 처리와 DB 쓰기를 파이프라인으로 구성합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 Continuation Passing Style(CPS)과 suspend 함수의 내부 구현 원리는?', 'COROUTINE',
+ 'Kotlin 컴파일러는 suspend 함수를 CPS(Continuation Passing Style)로 변환하여 JVM 바이트코드로 컴파일합니다. suspend fun foo(): T는 컴파일 시 fun foo(continuation: Continuation<T>): Any?로 변환되며, Continuation은 코루틴의 나머지 실행 흐름과 현재 상태를 담은 스택 프레임입니다. 함수가 일시 중단될 때 COROUTINE_SUSPENDED 특수 값을 반환하고, 재개 시 continuation.resumeWith(result)를 호출하여 중단 지점부터 실행을 재개합니다. 이 State Machine 기반 변환이 코루틴이 스레드를 점유하지 않고도 중단/재개가 가능한 핵심 원리입니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 기반 서비스에서 Saga 패턴과 보상 트랜잭션을 구현하는 방법은?', 'SPRING_KOTLIN',
+ 'Orchestration Saga에서 Saga Orchestrator는 각 단계의 성공/실패에 따라 다음 커맨드 또는 보상 커맨드를 발행합니다. Kotlin sealed class로 SagaStep(Pending, Succeeded, Compensating, Failed)을 표현하면 단계 상태 전이를 타입 안전하게 관리합니다. 각 단계의 실행과 보상 함수를 쌍으로 정의하고 Stack에 쌓아, 실패 시 역순으로 보상을 실행합니다. Kafka 또는 Spring ApplicationEvent로 단계 이벤트를 발행하고, @TransactionalEventListener로 트랜잭션 커밋 후 이벤트를 전파합니다. Saga 상태를 DB에 영속화하여 서비스 재시작 후에도 중단된 Saga를 재개합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 컴파일 타임 의존성 검증을 위한 코드 설계 패턴은?', 'KOTLIN_CORE',
+ '타입 시스템을 활용하여 잘못된 상태가 생성되지 못하게 하는 "Make Illegal States Unrepresentable" 원칙을 Kotlin sealed class로 구현합니다. 인터페이스와 제네릭으로 상태 전이를 타입 레벨에서 강제합니다(예: fun confirm(order: Order.Draft): Order.Confirmed). 빌더 패턴의 필수 파라미터를 타입으로 인코딩(Step1, Step2 인터페이스 체인)하면 불완전한 빌더 사용을 컴파일 타임에 차단합니다. detekt 커스텀 룰과 KSP 프로세서로 아키텍처 규칙(Service가 다른 Service를 직접 호출하지 않음, Repository를 Controller에서 직접 사용하지 않음)을 정적 분석으로 강제합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 캐싱 전략과 Spring Cache 추상화를 코루틴 환경에서 적용하는 방법은?', 'SPRING_KOTLIN',
+ 'Spring의 @Cacheable은 기본적으로 코루틴을 지원하지 않으므로, suspend fun에 직접 적용 시 Proxy 처리가 어렵습니다. CacheManager를 직접 주입하여 캐시 조회/저장 로직을 suspend 함수 내에서 명시적으로 구현하는 방법이 안정적입니다. Redis 기반 캐시는 Spring Data Redis의 코루틴 어댑터(ReactiveRedisTemplate.awaitFirstOrNull())를 사용합니다. Cache-Aside 패턴을 코루틴 확장 함수로 추상화하면 getOrPut(key) { expensiveQuery() } 형태의 DSL을 구성할 수 있습니다. 분산 캐시 환경에서 Cache Stampede를 방지하기 위해 Mutex나 원자적 조건부 SET NX를 활용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin의 인라인 함수(inline function)가 성능에 미치는 영향과 주의사항을 설명해주세요.', 'KOTLIN_CORE',
+ 'inline 함수는 호출 지점에 함수 본문이 복사 삽입되어 함수 호출 오버헤드와 람다 객체 생성 비용이 제거됩니다. 특히 고차 함수에서 람다를 매번 익명 클래스로 박싱하는 JVM 비용을 없애므로 반복 호출 코드 경로에서 효과적입니다. reified 타입 파라미터는 inline 함수에서만 사용 가능합니다. 단점으로 인라인 함수의 본문이 모든 호출 지점에 복사되므로 큰 함수를 inline으로 선언하면 바이트코드 크기가 증가합니다. noinline 파라미터는 인라인 처리를 특정 람다에서 제외하고, crossinline은 non-local return을 허용하지 않는 람다에 적용합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin 코루틴으로 대용량 실시간 스트리밍 API를 구현하는 방법은?', 'COROUTINE',
+ 'Spring WebFlux + Kotlin 코루틴에서 Flux<ServerSentEvent<T>>를 Flow<T>로 반환하면 SSE(Server-Sent Events) 스트리밍 API를 구현할 수 있습니다. callbackFlow { }로 외부 이벤트 소스(WebSocket, Redis Pub/Sub, Kafka)를 Flow로 변환합니다. buffer(Channel.BUFFERED)로 생산 속도와 소비 속도 차이를 완충하고, conflate()로 느린 소비자에게 최신 값만 전달하는 backpressure 전략을 적용합니다. 클라이언트 연결 해제 시 Flow가 취소되어 업스트림 구독도 자동으로 해제됩니다. 대규모 팬아웃은 SharedFlow를 허브로 활용하여 단일 소스 스트림을 다수 클라이언트에 효율적으로 분배합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 결과 타입(Result<T>)을 활용한 에러 처리 아키텍처를 설명해주세요.', 'KOTLIN_CORE',
+ 'Kotlin 표준 라이브러리의 Result<T>는 성공값 또는 예외를 감싸는 컨테이너로, runCatching { }으로 예외를 Result로 변환합니다. map, flatMap, recover, onFailure 등의 변환 함수로 예외 전파 없이 파이프라인을 구성합니다. 도메인 에러를 표현하기 위해 sealed class DomainError + Either<DomainError, T>를 사용하면 예외 없이 실패 사유를 타입으로 전달합니다. 서비스 레이어에서 Either를 반환하고, 컨트롤러에서 fold { left -> errorResponse } { right -> successResponse }로 HTTP 응답을 결정합니다. 이 패턴은 예외 계층을 명시적으로 드러내어 호출자가 반드시 에러를 처리하도록 강제합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:SENIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 Zero-Cost Abstraction을 달성하기 위한 기법과 사례를 설명해주세요.', 'KOTLIN_CORE',
+ 'Zero-Cost Abstraction은 추상화 비용이 직접 구현과 동일한 수준임을 의미합니다. Kotlin에서 inline 함수로 고차 함수 비용을 제거하고, value class로 래퍼 클래스 박싱 비용을 제거합니다. const val은 컴파일 타임에 인라인되어 런타임 프로퍼티 접근 비용이 없습니다. Sequence와 Flow의 지연 평가는 중간 컬렉션 생성 없이 파이프라인을 처리하여 메모리 효율을 높입니다. 코루틴의 CPS 변환은 State Machine으로 컴파일되어 별도 스레드 없이 동시성을 구현하는 Zero-Cost Abstraction의 대표 예입니다. detekt의 성능 관련 룰셋으로 런타임 비용이 높은 패턴을 정적 분석으로 감지합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
+
+-- MID 보완 1문항 (총 30문항 달성)
+
+INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
+('BACKEND:MID:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 Sequence와 List의 차이점과 Sequence를 사용해야 하는 경우는?', 'KOTLIN_CORE',
+ 'List는 즉시 평가(eager evaluation)로 각 중간 연산마다 새로운 컬렉션을 생성합니다. Sequence는 지연 평가(lazy evaluation)로 종단 연산이 호출될 때 각 요소를 파이프라인을 통해 하나씩 처리하며 중간 컬렉션을 생성하지 않습니다. 요소 수가 많거나 중간 연산이 많을 때 Sequence가 메모리와 성능에 유리합니다. asSequence()로 기존 컬렉션을 Sequence로 변환하고, generateSequence()로 무한 Sequence를 만들 수 있습니다. 단, 요소 수가 적거나 연산이 단순할 때는 Sequence의 래핑 오버헤드가 오히려 느릴 수 있으므로 벤치마크로 확인하는 것이 좋습니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
