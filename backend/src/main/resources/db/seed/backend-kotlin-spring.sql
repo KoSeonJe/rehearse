@@ -54,7 +54,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('BACKEND:JUNIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin과 Spring Boot를 함께 사용할 때 설정에서 주의할 점은?', 'SPRING_KOTLIN',
- 'Kotlin 클래스는 기본적으로 final이므로 Spring AOP(@Transactional, @Cacheable 등)에서 CGLIB 프록시 생성이 실패합니다. kotlin-spring 컴파일러 플러그인을 적용하면 @Component, @Transactional 등 Spring 어노테이션이 붙은 클래스를 자동으로 open으로 처리합니다. kotlin-jpa 플러그인은 JPA 엔티티를 위한 파라미터 없는 기본 생성자를 자동 생성합니다. @ConfigurationProperties 클래스에는 @ConstructorBinding으로 불변 설정 바인딩을 사용할 수 있습니다.',
+ 'Kotlin 클래스는 기본적으로 final이므로 Spring AOP(@Transactional, @Cacheable 등)에서 CGLIB 프록시 생성이 실패합니다. kotlin-spring 컴파일러 플러그인을 적용하면 @Component, @Transactional 등 Spring 어노테이션이 붙은 클래스를 자동으로 open으로 처리합니다. kotlin-jpa 플러그인은 JPA 엔티티를 위한 파라미터 없는 기본 생성자를 자동 생성합니다. Spring Boot 3.x에서는 생성자가 하나인 경우 @ConstructorBinding이 불필요하며, 주 생성자 기반으로 불변 설정 바인딩이 자동 적용됩니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -79,7 +79,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('BACKEND:JUNIOR:KOTLIN_SPRING:LANGUAGE_FRAMEWORK', 'Kotlin에서 인터페이스와 추상 클래스의 차이점은?', 'KOTLIN_CORE',
- 'Kotlin 인터페이스는 상태(필드)를 가질 수 없지만 메서드의 기본 구현을 제공할 수 있습니다. 클래스는 여러 인터페이스를 구현할 수 있지만, 추상 클래스는 하나만 상속할 수 있습니다. 추상 클래스는 상태(프로퍼티)를 가지고, 생성자를 선언할 수 있으며, abstract 키워드로 구현을 강제합니다. 공통 상태나 생성자 로직이 필요하면 추상 클래스를, 타입 계층이나 다형성 계약 정의에는 인터페이스를 우선 고려합니다.',
+ 'Kotlin 인터페이스는 backing field가 있는 상태를 가질 수 없지만, 추상 프로퍼티나 커스텀 getter를 가진 프로퍼티 및 메서드의 기본 구현을 제공할 수 있습니다. 클래스는 여러 인터페이스를 구현할 수 있지만, 추상 클래스는 하나만 상속할 수 있습니다. 추상 클래스는 상태(프로퍼티)를 가지고, 생성자를 선언할 수 있으며, abstract 키워드로 구현을 강제합니다. 공통 상태나 생성자 로직이 필요하면 추상 클래스를, 타입 계층이나 다형성 계약 정의에는 인터페이스를 우선 고려합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES

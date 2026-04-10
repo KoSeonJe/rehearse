@@ -168,7 +168,8 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FULLSTACK:MID:REACT_SPRING:FULLSTACK_STACK', 'REST API 버저닝 전략을 설명하고 각 방식의 장단점을 비교해주세요.', 'ARCHITECTURE',
- 'URL 경로 버저닝(/api/v1/users)은 직관적이고 캐싱 친화적이지만 URL이 길어집니다. 헤더 버저닝(Accept: application/vnd.api+json;
+ 'URL 경로 버저닝(/api/v1/users)은 직관적이고 캐싱 친화적이지만 URL이 길어집니다. 헤더 버저닝(Accept: application/vnd.api.v2+json)은 URL이 깔끔하지만 브라우저 테스트가 어렵습니다. 쿼리 파라미터 버저닝(/api/users?version=2)은 선택적으로 사용할 수 있지만 캐싱 키가 복잡해집니다. 실무에서는 URL 경로 방식이 가장 널리 사용되며, Breaking Change가 있을 때만 버전을 올리고 Non-Breaking Change는 기존 버전에서 처리하는 것이 권장됩니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FULLSTACK:MID:REACT_SPRING:FULLSTACK_STACK', 'Spring Boot에서 WebSocket을 구현하는 방법을 설명해주세요.', 'REALTIME',

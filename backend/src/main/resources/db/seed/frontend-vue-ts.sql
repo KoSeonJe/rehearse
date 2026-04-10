@@ -213,7 +213,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:MID:VUE_TS:LANGUAGE_FRAMEWORK', 'Vue Router에서 Lazy Loading을 구현하는 방법과 장점을 설명해주세요.', 'ROUTING',
- '라우트 컴포넌트를 () => import(''./views/UserView.vue'') 형태의 동적 import로 정의하면 해당 라우트 방문 시 청크가 로드됩니다. 이를 통해 초기 번들 크기를 줄여 첫 로딩 속도를 개선합니다. /* webpackChunkName: "user" */ 주석으로 청크 이름을 지정하면 번들 분석 시 추적이 용이합니다.',
+ '라우트 컴포넌트를 () => import(''./views/UserView.vue'') 형태의 동적 import로 정의하면 해당 라우트 방문 시 청크가 로드됩니다. 이를 통해 초기 번들 크기를 줄여 첫 로딩 속도를 개선합니다. Vite에서는 파일 경로 기반으로 자동 청크명이 지정되며, rollupOptions.output.manualChunks로 직접 제어할 수도 있습니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -278,7 +278,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:MID:VUE_TS:LANGUAGE_FRAMEWORK', 'Vue에서 반응형 데이터를 다룰 때 흔한 실수와 해결 방법을 설명해주세요.', 'COMPOSITION_API',
- '가장 흔한 실수는 reactive() 객체를 구조 분해해 반응성을 잃는 것으로, toRefs()로 해결합니다. ref() 값에 .value 없이 접근하거나 reactive 내부 속성에 직접 재할당하는 것도 주의해야 합니다. 또한 배열의 인덱스로 직접 값을 교체하거나(arr[0] = newVal) 컴포넌트 외부에서 reactive 객체를 생성하면 반응성이 깨질 수 있습니다.',
+ '가장 흔한 실수는 reactive() 객체를 구조 분해해 반응성을 잃는 것으로, toRefs()로 해결합니다. ref() 값에 .value 없이 접근하거나 reactive의 속성을 새 변수에 할당하면 Proxy 연결이 끊어집니다. 또한 reactive() 객체 자체를 다른 값으로 재할당하면 원래 Proxy 참조가 사라져 반응성이 소실되므로, 속성 단위로 수정하거나 Object.assign을 사용해야 합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -328,7 +328,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:SENIOR:VUE_TS:LANGUAGE_FRAMEWORK', 'Vue 프로젝트의 Tree-shaking과 번들 최적화 전략을 설명해주세요.', 'PERFORMANCE',
- 'Vue 3는 명명된 export를 사용해 사용하지 않는 기능이 번들에서 제거됩니다. Side effects가 없는 모듈에 /*#__PURE__*/ 주석을 추가하면 번들러가 안전하게 제거할 수 있습니다. 런타임 컴파일러를 사용하지 않으면 vue/dist/vue.esm-bundler.js 대신 vue.runtime.esm-bundler.js를 지정해 14KB를 절약할 수 있습니다. Rollup/Vite의 visualizer 플러그인으로 번들 구성을 분석하고 heavty dependency를 확인합니다.',
+ 'Vue 3는 명명된 export를 사용해 사용하지 않는 기능이 번들에서 제거됩니다. Side effects가 없는 모듈에 /*#__PURE__*/ 주석을 추가하면 번들러가 안전하게 제거할 수 있습니다. 런타임 컴파일러를 사용하지 않으면 vue/dist/vue.esm-bundler.js 대신 vue.runtime.esm-bundler.js를 지정해 14KB를 절약할 수 있습니다. Rollup/Vite의 visualizer 플러그인으로 번들 구성을 분석하고 heavy dependency를 확인합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES

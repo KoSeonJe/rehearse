@@ -7,7 +7,7 @@
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:JUNIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'Virtual DOM이란 무엇이고 왜 사용하나요?', 'REACT_CORE',
- 'Virtual DOM은 실제 DOM의 경량 사본으로, 상태 변경 시 새로운 Virtual DOM을 생성하여 이전 것과 비교(Diffing)합니다. 변경된 부분만 실제 DOM에 반영(Reconciliation)하여 불필요한 DOM 조작을 최소화합니다. 직접 DOM을 조작하는 것보다 효율적인 배치 업데이트가 가능합니다.',
+ 'Virtual DOM은 실제 DOM의 경량 사본으로, 상태 변경 시 새로운 Virtual DOM을 생성하여 이전 것과 비교(Diffing)합니다. 변경된 부분만 실제 DOM에 반영(Reconciliation)하여 불필요한 DOM 조작을 최소화합니다. 선언적 UI 프로그래밍을 가능하게 하면서도 충분히 좋은 성능을 제공하는 것이 핵심 가치입니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -37,7 +37,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:JUNIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'useEffect와 useLayoutEffect의 차이를 설명해주세요.', 'HOOKS',
- 'useEffect는 브라우저 페인팅 후 비동기적으로 실행되어 화면 깜빡임이 없습니다. useLayoutEffect는 DOM 변경 후 페인팅 전에 동기적으로 실행됩니다. DOM 측정이나 스크롤 위치 조정처럼 레이아웃에 영향을 주는 작업에 useLayoutEffect를 사용합니다. 대부분의 경우 useEffect로 충분합니다.',
+ 'useEffect는 브라우저 페인팅 후 비동기적으로 실행되므로 DOM을 변경하면 깜빡임이 발생할 수 있습니다. useLayoutEffect는 DOM 변경 후 페인팅 전에 동기적으로 실행됩니다. DOM 측정이나 스크롤 위치 조정처럼 레이아웃에 영향을 주는 작업에 useLayoutEffect를 사용하여 깜빡임을 방지합니다. 대부분의 경우 useEffect로 충분합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -257,7 +257,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React Fiber 아키텍처의 핵심 개념을 설명해주세요.', 'ARCHITECTURE',
- 'Fiber는 React 16에서 도입된 재조정(Reconciliation) 엔진으로, 작업을 작은 단위(Fiber 노드)로 나누어 중단/재개가 가능합니다. requestIdleCallback 기반으로 우선순위 스케줄링을 수행하며, 긴급한 업데이트(입력)가 비긴급 업데이트(리스트 렌더링)를 선점합니다. 이를 통해 Concurrent Rendering이 가능해졌습니다.',
+ 'Fiber는 React 16에서 도입된 재조정(Reconciliation) 엔진으로, 작업을 작은 단위(Fiber 노드)로 나누어 중단/재개가 가능합니다. 자체 스케줄러(MessageChannel 기반)로 우선순위 스케줄링을 수행하며, 긴급한 업데이트(입력)가 비긴급 업데이트(리스트 렌더링)를 선점합니다. 이를 통해 Concurrent Rendering이 가능해졌습니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -277,7 +277,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'TypeScript strict mode의 각 옵션과 효과를 설명해주세요.', 'TYPESCRIPT',
- 'strictNullChecks(null/undefined 엄격 검사), noImplicitAny(암시적 any 금지), strictFunctionTypes(함수 타입 공변성), strictPropertyInitialization(클래스 속성 초기화 강제) 등이 포함됩니다. strict: true로 모두 활성화하면 런타임 에러를 컴파일 타임에 잡아 코드 안전성이 크게 향상됩니다.',
+ 'strictNullChecks(null/undefined 엄격 검사), noImplicitAny(암시적 any 금지), strictFunctionTypes(함수 매개변수 타입의 반공변성 검사), strictPropertyInitialization(클래스 속성 초기화 강제) 등이 포함됩니다. strict: true로 모두 활성화하면 런타임 에러를 컴파일 타임에 잡아 코드 안전성이 크게 향상됩니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -527,7 +527,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:SENIOR:REACT_TS:UI_FRAMEWORK', 'Core Web Vitals(LCP, FID, CLS)를 최적화하는 방법을 설명해주세요.', 'PERFORMANCE',
- 'LCP(Largest Contentful Paint): 히어로 이미지를 preload, CDN, 적절한 포맷(WebP/AVIF)으로 최적화합니다. FID→INP(Interaction to Next Paint): 메인 스레드 블록을 줄이고, 이벤트 핸들러를 경량화합니다. CLS(Cumulative Layout Shift): 이미지/광고에 크기를 명시하고, 동적 콘텐츠 삽입을 최소화합니다.',
+ 'LCP(Largest Contentful Paint): 히어로 이미지를 preload, CDN, 적절한 포맷(WebP/AVIF)으로 최적화합니다. INP(Interaction to Next Paint, FID를 대체): 메인 스레드 블록을 줄이고, 이벤트 핸들러를 경량화합니다. CLS(Cumulative Layout Shift): 이미지/광고에 크기를 명시하고, 동적 콘텐츠 삽입을 최소화합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -689,7 +689,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:SENIOR:REACT_TS:LANGUAGE_FRAMEWORK', 'React에서 메모리 누수를 방지하는 방법을 설명해주세요.', 'PERFORMANCE',
- 'useEffect cleanup으로 구독, 타이머, 이벤트 리스너를 해제합니다. 언마운트 후 setState 호출을 isMounted 플래그나 AbortController로 방지합니다. 클로저가 큰 객체를 캡처하지 않도록 주의하고, WeakRef/WeakMap으로 약한 참조를 사용합니다. Chrome DevTools Memory 탭으로 누수를 감지합니다.',
+ 'useEffect cleanup으로 구독, 타이머, 이벤트 리스너를 해제합니다. fetch 요청은 AbortController로 언마운트 시 취소합니다. React 18부터 언마운트 후 setState 경고가 제거되었지만, 불필요한 네트워크 요청 방지를 위해 cleanup은 여전히 중요합니다. 클로저가 큰 객체를 캡처하지 않도록 주의하고, Chrome DevTools Memory 탭으로 누수를 감지합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES

@@ -39,7 +39,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'application.yml과 application.properties의 차이는 무엇인가요?', 'SPRING_BOOT',
- '두 파일 모두 Spring Boot 애플리케이션 설정을 위한 파일이지만, application.yml은 YAML 형식으로 계층 구조를 들여쓰기로 표현하여 가독성이 높고 중복을 줄일 수 있습니다. application.properties는 key=value 형식의 단순 구조로 익숙하고 배우기 쉽습니다. 실무에서는 복잡한 설정이 많아질수록 yml이 선호되며, 두 파일을 혼용할 경우 properties 파일이 우선순위를 가집니다.',
+ '두 파일 모두 Spring Boot 애플리케이션 설정을 위한 파일이지만, application.yml은 YAML 형식으로 계층 구조를 들여쓰기로 표현하여 가독성이 높고 중복을 줄일 수 있습니다. application.properties는 key=value 형식의 단순 구조로 익숙하고 배우기 쉽습니다. 실무에서는 복잡한 설정이 많아질수록 yml이 선호되며, 두 파일을 혼용할 경우 Spring Boot 버전에 따라 우선순위가 다를 수 있으므로, 프로젝트에서 하나의 형식만 사용하는 것이 혼란을 방지합니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -159,7 +159,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK', 'Spring Boot에서 H2 인메모리 데이터베이스를 사용하는 이유와 설정 방법은?', 'SPRING_BOOT',
- 'H2 인메모리 DB는 별도 설치 없이 애플리케이션 내부에서 동작하는 경량 데이터베이스로, 개발/테스트 환경에서 MySQL 없이 빠르게 애플리케이션을 구동할 수 있습니다. spring-boot-starter-test에 H2가 포함되어 있으며, spring.datasource.url: jdbc:h2:mem:testdb 설정으로 활성화됩니다. spring.h2.console.enabled: true를 설정하면 브라우저에서 SQL 실행 콘솔에 접근할 수 있어 개발 편의성이 높습니다.',
+ 'H2 인메모리 DB는 별도 설치 없이 애플리케이션 내부에서 동작하는 경량 데이터베이스로, 개발/테스트 환경에서 MySQL 없이 빠르게 애플리케이션을 구동할 수 있습니다. build.gradle에 runtimeOnly ''com.h2database:h2'' 의존성을 추가하고, spring.datasource.url: jdbc:h2:mem:testdb 설정으로 활성화됩니다. spring.h2.console.enabled: true를 설정하면 브라우저에서 SQL 실행 콘솔에 접근할 수 있어 개발 편의성이 높습니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES

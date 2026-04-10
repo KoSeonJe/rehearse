@@ -106,7 +106,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('SENIOR:CS_FUNDAMENTAL', 'X-fast Trie와 Y-fast Trie의 원리를 설명해주세요.', '자료구조',
- 'X-fast Trie는 Trie에 해시 테이블을 결합하여 정수 키에 대해 predecessor/successor를 O(log log U)에 찾습니다(U는 키 범위). 하지만 O(U) 공간이 필요합니다. Y-fast Trie는 X-fast Trie를 기반으로 BST를 결합하여 O(n) 공간, O(log log U) 연산을 달성합니다. IP 라우팅, 우선순위 큐에 활용됩니다.',
+ 'X-fast Trie는 Trie에 해시 테이블을 결합하여 정수 키에 대해 predecessor/successor를 O(log log U)에 찾습니다(U는 키 범위). 해시 테이블을 사용하므로 공간은 O(n log U)입니다. Y-fast Trie는 X-fast Trie를 기반으로 BST를 결합하여 O(n) 공간, O(log log U) 연산을 달성합니다. IP 라우팅, 우선순위 큐에 활용됩니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
@@ -486,7 +486,7 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('SENIOR:CS_FUNDAMENTAL', '이분 매칭(Bipartite Matching)과 최대 유량(Max Flow) 알고리즘의 관계를 설명해주세요.', '자료구조',
- '이분 그래프의 최대 매칭은 소스→왼쪽 노드→오른쪽 노드→싱크의 유량 네트워크로 변환하면 최대 유량과 동치입니다(König''s theorem). 헝가리안 알고리즘은 O(VE), Hopcroft-Karp는 BFS로 증가 경로를 일괄 탐색하여 O(√V × E)입니다. Ford-Fulkerson(BFS 기반 Edmonds-Karp)은 O(VE²)입니다. 작업 배정, 추천 시스템, 안정 결혼 문제 등 실무 최적화 문제에 적용됩니다.',
+ '이분 그래프의 최대 매칭은 소스→왼쪽 노드→오른쪽 노드→싱크의 유량 네트워크로 변환하면 최대 유량과 동치입니다(정수 유량 정리). König의 정리는 이분 그래프에서 최대 매칭 크기가 최소 정점 커버 크기와 같음을 보장합니다. 헝가리안 알고리즘은 O(VE), Hopcroft-Karp는 BFS로 증가 경로를 일괄 탐색하여 O(√V × E)입니다. Ford-Fulkerson(BFS 기반 Edmonds-Karp)은 O(VE²)입니다. 작업 배정, 추천 시스템 등 실무 최적화 문제에 적용됩니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
