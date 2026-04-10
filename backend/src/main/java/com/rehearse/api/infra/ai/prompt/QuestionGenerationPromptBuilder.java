@@ -59,7 +59,7 @@ public class QuestionGenerationPromptBuilder {
         String levelGuide = LevelGuideProvider.get(req.level());
 
         String resumeBlock = (req.resumeText() != null && !req.resumeText().isBlank())
-            ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성."
+            ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성하되, 성능 수치 외에도 의사결정 과정·장애 대응·팀 협업·테스트 전략·유지보수성 등 다양한 관점에서 질문하세요."
             : "";
 
         return template

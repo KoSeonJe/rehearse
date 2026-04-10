@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "자료구조, 알고리즘, 분산 시스템 기초. Flink 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"분산 스냅샷 알고리즘(Chandy-Lamport)이 Flink의 체크포인트 메커니즘에 어떻게 적용되나요?\")"
   BEHAVIORAL: "스트리밍 파이프라인 장애 대응, Late Data 처리 전략 변경, Flink 버전 마이그레이션 경험 등 Flink 기반 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 Flink 스트리밍 파이프라인, 처리 지연(latency)/처리량(throughput) 개선 수치, Kafka 통합 사례를 기반으로 질문"
+  RESUME_BASED: "이력서의 Flink 프로젝트를 기반으로 다양한 관점에서 질문: 스트리밍 파이프라인 설계 의사결정, 처리 지연/처리량 개선 수치, 장애 대응과 Late Data 처리 전략, Kafka 통합 경험, 데이터 정합성 보장 방법, 팀 협업과 운영 프로세스 등"
   DATA_PIPELINE: "Flink 실행 모델 (JobManager/TaskManager/Task Slot), DataStream API 핵심 연산 (map, flatMap, keyBy, window, process), 윈도우 유형 (Tumbling, Sliding, Session, Global), ProcessFunction과 타이머, Flink Table API와 SQL, Flink Connector (Kafka Source/Sink, JDBC, Filesystem), Exactly-once 시맨틱 구현 (2PC, 체크포인트 + Kafka 트랜잭션)"
   SQL_MODELING: "Flink SQL DDL/DML (CREATE TABLE, INSERT INTO SELECT), 동적 테이블과 연속 쿼리(Continuous Query), 윈도우 집계 (TUMBLE, HOP, SESSION), 조인 유형 (Regular Join, Interval Join, Temporal Join), Catalog 관리, Flink SQL Gateway"
 

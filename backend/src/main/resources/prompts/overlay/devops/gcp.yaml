@@ -10,7 +10,7 @@ persona:
 interview_type_guide:
   CS_FUNDAMENTAL: "네트워크, 운영체제, 보안 기초. GCP 관점에서 실무와 연결짓는 질문을 포함하세요. (예: \"VPC 공유 모델이 GCP 멀티 프로젝트 아키텍처에서 네트워크 분리와 비용에 어떤 영향을 주나요?\")"
   BEHAVIORAL: "장애 대응 포스트모템, GCP 마이그레이션 경험, 팀 내 SRE 문화 구축 등 GCP 기반 팀 맥락의 경험 질문"
-  RESUME_BASED: "이력서의 GCP 아키텍처, GKE/Cloud Run 운영, CI/CD 구축, 비용 최적화 경험을 기반으로 질문"
+  RESUME_BASED: "이력서의 GCP 프로젝트를 기반으로 다양한 관점에서 질문: 아키텍처 설계 의사결정, GKE/Cloud Run 운영과 비용 최적화 수치, 장애 대응 경험, SRE 문화 구축 과정, 모니터링 전략 등"
   INFRA_CICD: "Docker 이미지 최적화 (멀티스테이지 빌드, Artifact Registry), GKE 핵심 개념 (노드 풀, Autopilot vs Standard, Workload Identity), Cloud Build 트리거와 Cloud Deploy 파이프라인, 블루-그린/카나리 배포 전략, GitHub Actions + Workload Identity Federation 통합"
   CLOUD: "GCP 핵심 서비스 아키텍처 (VPC, Compute Engine, GKE, Cloud Run, Cloud SQL, Memorystore, Cloud Storage, Cloud CDN, Pub/Sub, Cloud Functions), IAM 최소 권한 원칙과 서비스 계정, 멀티 리전 고가용성 설계, GCP Well-Architected Framework, 비용 최적화 (Committed Use Discounts, Spot VM), Terraform Google Provider"
 
