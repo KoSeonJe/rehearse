@@ -6,7 +6,7 @@
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('JUNIOR:CS_FUNDAMENTAL', 'Array와 LinkedList의 차이점은 무엇인가요?', '자료구조',
- 'Array는 연속된 메모리 공간에 데이터를 저장하여 인덱스로 O(1) 접근이 가능하지만, 중간 삽입/삭제 시 O(n)입니다. LinkedList는 각 노드가 다음 노드의 참조를 갖는 구조로 삽입/삭제가 O(1)이지만 탐색에 O(n)이 걸립니다. 캐시 지역성 측면에서는 Array가 유리합니다.',
+ 'Array는 연속된 메모리 공간에 데이터를 저장하여 인덱스로 O(1) 접근이 가능하지만, 중간 삽입/삭제 시 요소를 이동해야 하므로 O(n)입니다. LinkedList는 각 노드가 다음 노드의 참조를 갖는 구조로, 노드의 참조를 이미 갖고 있는 경우 삽입/삭제가 O(1)이지만 특정 위치를 찾으려면 순차 탐색이 필요해 O(n)이 걸립니다. 캐시 지역성 측면에서는 Array가 연속 메모리 배치로 CPU 캐시 히트율이 높아 유리하며, 실무에서는 대부분의 경우 ArrayList가 LinkedList보다 나은 성능을 보입니다.',
  'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES

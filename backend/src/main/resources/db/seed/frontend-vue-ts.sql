@@ -93,7 +93,8 @@ INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, re
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:JUNIOR:VUE_TS:LANGUAGE_FRAMEWORK', 'defineProps()에서 TypeScript 타입을 정의하는 방법을 설명해주세요.', 'COMPOSITION_API',
- 'Vue 3에서는 defineProps<{ title: string;
+ 'Vue 3에서는 defineProps<{ title: string; count: number }>() 형태로 제네릭에 타입을 직접 전달하는 타입 기반 선언 방식을 사용합니다. 이 방식은 런타임 선언(객체 문법)과 동시에 사용할 수 없으며, 컴파일 시점에 런타임 props 옵션으로 변환됩니다. 기본값이 필요하면 withDefaults(defineProps<Props>(), { count: 0 })를 사용합니다. interface나 type alias로 Props 타입을 별도 정의할 수도 있으며, 같은 파일 내에 선언된 타입만 참조 가능합니다.',
+ 'MODEL_ANSWER', TRUE, NOW());
 
 INSERT IGNORE INTO question_pool (cache_key, content, category, model_answer, reference_type, is_active, created_at) VALUES
 ('FRONTEND:JUNIOR:VUE_TS:LANGUAGE_FRAMEWORK', 'Vue에서 이벤트 수식어(Event Modifier)를 설명해주세요.', 'VUE_CORE',
