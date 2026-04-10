@@ -53,6 +53,7 @@ public class InterviewCreationService {
 
         eventPublisher.publishEvent(new QuestionGenerationRequestedEvent(
                 saved.getId(),
+                userId,
                 request.getPosition(),
                 request.getPositionDetail(),
                 request.getLevel(),

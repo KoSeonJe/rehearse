@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.questionpool.service;
 
-import com.rehearse.api.domain.questionpool.entity.FollowUpStrategy;
 import com.rehearse.api.domain.questionpool.entity.QuestionPool;
 import com.rehearse.api.domain.questionpool.repository.QuestionPoolRepository;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
@@ -20,6 +19,7 @@ import java.util.stream.Collectors;
 public class QuestionPoolService {
 
     private static final int POOL_SUFFICIENCY_MULTIPLIER = 3;
+    private static final double USER_SUFFICIENCY_MULTIPLIER = 2.0;
     private static final int POOL_SOFT_CAP = 200;
 
     private final QuestionPoolRepository questionPoolRepository;
@@ -36,6 +36,18 @@ public class QuestionPoolService {
         long filteredCount = questionPoolRepository
                 .countByCacheKeyAndIsActiveTrueAndCategoryIn(cacheKey, categoryFilter);
         return filteredCount >= (long) requiredCount * POOL_SUFFICIENCY_MULTIPLIER;
+    }
+
+    public boolean isPoolSufficient(String cacheKey, int requiredCount, List<String> categoryFilter,
+                                    Set<Long> usedPoolIds) {
+        if (usedPoolIds == null || usedPoolIds.isEmpty()) {
+            return isPoolSufficient(cacheKey, requiredCount, categoryFilter);
+        }
+        List<QuestionPool> candidates = getCandidates(cacheKey, categoryFilter);
+        long availableCount = candidates.stream()
+                .filter(qp -> !usedPoolIds.contains(qp.getId()))
+                .count();
+        return availableCount >= (long) Math.ceil(requiredCount * USER_SUFFICIENCY_MULTIPLIER);
     }
 
     public boolean shouldSaveToPool(String cacheKey) {
@@ -55,6 +67,24 @@ public class QuestionPoolService {
         List<QuestionPool> candidates = questionPoolRepository
                 .findByCacheKeyAndIsActiveTrueAndCategoryIn(cacheKey, categoryFilter);
         return selectWithCategoryDistribution(candidates, requiredCount);
+    }
+
+    public List<QuestionPool> selectFromPool(String cacheKey, int requiredCount, List<String> categoryFilter,
+                                            Set<Long> usedPoolIds) {
+        if (usedPoolIds == null || usedPoolIds.isEmpty()) {
+            return selectFromPool(cacheKey, requiredCount, categoryFilter);
+        }
+        List<QuestionPool> candidates = getCandidates(cacheKey, categoryFilter).stream()
+                .filter(qp -> !usedPoolIds.contains(qp.getId()))
+                .toList();
+        return selectWithCategoryDistribution(candidates, requiredCount);
+    }
+
+    private List<QuestionPool> getCandidates(String cacheKey, List<String> categoryFilter) {
+        if (categoryFilter == null || categoryFilter.isEmpty()) {
+            return questionPoolRepository.findByCacheKeyAndIsActiveTrue(cacheKey);
+        }
+        return questionPoolRepository.findByCacheKeyAndIsActiveTrueAndCategoryIn(cacheKey, categoryFilter);
     }
 
     public List<QuestionPool> selectWithCategoryDistribution(
@@ -108,11 +138,8 @@ public class QuestionPoolService {
                         cacheKey,
                         gq.getContent(),
                         gq.getCategory(),
-                        gq.getOrder(),
-                        gq.getEvaluationCriteria(),
                         gq.getModelAnswer(),
-                        gq.getReferenceType(),
-                        parseFollowUpStrategy(gq.getFollowUpStrategy())))
+                        gq.getReferenceType()))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {
@@ -123,15 +150,5 @@ public class QuestionPoolService {
         }
 
         return pools;
-    }
-
-    private FollowUpStrategy parseFollowUpStrategy(String strategy) {
-        if (strategy != null) {
-            try {
-                return FollowUpStrategy.valueOf(strategy.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return FollowUpStrategy.REALTIME;
     }
 }

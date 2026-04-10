@@ -14,6 +14,7 @@ import java.util.List;
 public class QuestionGenerationRequestedEvent {
 
     private final Long interviewId;
+    private final Long userId;
     private final Position position;
     private final String positionDetail;
     private final InterviewLevel level;
