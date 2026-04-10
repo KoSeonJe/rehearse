@@ -43,11 +43,11 @@
 | # | Phase | 플랜 | 대상 | 상태 | 세션 수 |
 |---|-------|------|------|------|---------|
 | 7 | Phase 0: P0 Hotfix | plan-07-quality-hotfix.md | 오류/오타/잘린 답변 3건 수정 | **Done** | 1 |
-| 8 | Phase 1: CS Fundamental | plan-08-quality-cs.md | cs-fundamental-junior/mid/senior.sql (358문항) | Pending | 3 |
-| 9 | Phase 2: Frontend | plan-09-quality-frontend.md | frontend-react-ts/vue-ts.sql (270문항) | Pending | 2 |
-| 10 | Phase 3: DevOps | plan-10-quality-devops.md | devops-aws-k8s.sql (180문항) | Pending | 2 |
-| 11 | Phase 4: Backend | plan-11-quality-backend.md | backend-java/kotlin/node/python.sql (360문항) | Pending | 2 |
-| 12 | Phase 5: 기타 | plan-12-quality-others.md | fullstack/behavioral/system-design (270문항) | Pending | 2 |
+| 8 | Phase 1: CS Fundamental | plan-08-quality-cs.md | cs-fundamental-junior/mid/senior.sql (358문항) | **Done** | 1 |
+| 9 | Phase 2: Frontend | plan-09-quality-frontend.md | frontend-react-ts/vue-ts.sql (270문항) | **Done** | 1 |
+| 10 | Phase 3: DevOps | plan-10-quality-devops.md | devops-aws-k8s.sql (180문항) | **Done** | 1 |
+| 11 | Phase 4: Backend | plan-11-quality-backend.md | backend-java/kotlin/node/python.sql (360문항) | **Done** | 1 |
+| 12 | Phase 5: 기타 | plan-12-quality-others.md | fullstack/behavioral/system-design (270문항) | **Done** | 1 |
 
 ### 실행 순서
 
