@@ -8,18 +8,18 @@ const ANSWER_TYPE_LABELS: Record<string, string> = {
   FOLLOWUP: '후속 질문',
 }
 
-const FILLER_WORDS = ['음', '어', '그', '아', '에', '그러니까', '뭐', '이제', '저기']
+const FILLER_WORDS = ['음', '어', '그', '아', '그러니까', '뭐', '이제', '약간', '좀']
 
 const highlightFillers = (text: string): React.ReactNode[] => {
-  const pattern = new RegExp(`(${FILLER_WORDS.join('|')})`, 'g')
-  const parts = text.split(pattern)
-  return parts.map((part, i) =>
-    FILLER_WORDS.includes(part) ? (
+  const fillerSet = new Set(FILLER_WORDS)
+  const tokens = text.split(/(\s+)/)
+  return tokens.map((token, i) =>
+    fillerSet.has(token) ? (
       <span key={i} className="font-bold text-gray-900 underline decoration-gray-300">
-        {part}
+        {token}
       </span>
     ) : (
-      <span key={i}>{part}</span>
+      <span key={i}>{token}</span>
     ),
   )
 }
@@ -34,7 +34,6 @@ interface FeedbackCardProps {
 
 const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
   const [showModelAnswer, setShowModelAnswer] = useState(false)
-  const [showTranscript, setShowTranscript] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
   const isDeliveryAvailable =
@@ -83,6 +82,51 @@ const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
         )}
       </div>
 
+      {/* 답변 텍스트 + 모범답변 */}
+      {(feedback.transcript !== null || question?.modelAnswer) && (
+        <div className="mx-6 mb-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+          {feedback.transcript !== null && (
+            <div className="rounded-xl bg-gray-50 p-5">
+              <p className="text-[13px] font-bold text-gray-500 mb-2">내 답변</p>
+              <div className="max-h-48 overflow-y-auto">
+                <p className="text-[15px] leading-[1.8] text-gray-600">
+                  {highlightFillers(feedback.transcript)}
+                </p>
+              </div>
+              {feedback.delivery?.vocal?.fillerWordCount !== null &&
+                feedback.delivery?.vocal?.fillerWordCount !== undefined &&
+                feedback.delivery.vocal.fillerWordCount > 0 && (
+                  <p className="mt-2 text-[13px] text-gray-400">
+                    습관어 {feedback.delivery.vocal.fillerWordCount}회 감지
+                  </p>
+                )}
+            </div>
+          )}
+          {question?.modelAnswer && (
+            <div className="rounded-xl bg-blue-50 overflow-hidden">
+              <button
+                onClick={() => setShowModelAnswer(!showModelAnswer)}
+                className="w-full px-5 py-3 flex items-center justify-between"
+              >
+                <span className="text-[13px] font-bold text-blue-500">모범 답변</span>
+                <span className="text-[13px] text-blue-400">
+                  {showModelAnswer ? '접기' : '펼치기'}
+                </span>
+              </button>
+              {showModelAnswer && (
+                <div className="px-5 pb-5">
+                  <div className="max-h-48 overflow-y-auto">
+                    <p className="text-[15px] leading-[1.8] text-blue-700/70">
+                      {question.modelAnswer}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* 탭 */}
       <div
         className="px-6 flex gap-4 border-b border-gray-100"
@@ -119,53 +163,6 @@ const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
         {effectiveTab === 'delivery' && <DeliveryTab delivery={feedback.delivery} />}
       </div>
 
-      {/* 푸터 버튼 */}
-      {(feedback.transcript !== null || question?.modelAnswer) && (
-        <div
-          className="border-t border-gray-100 px-6 py-4 flex gap-4"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {feedback.transcript !== null && (
-            <button
-              onClick={() => setShowTranscript(!showTranscript)}
-              className="text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-colors"
-            >
-              답변 텍스트
-            </button>
-          )}
-          {question?.modelAnswer && (
-            <button
-              onClick={() => setShowModelAnswer(!showModelAnswer)}
-              className="text-[13px] font-bold text-gray-400 hover:text-gray-900 transition-colors"
-            >
-              모범답변 비교
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* 답변 텍스트 토글 */}
-      {showTranscript && feedback.transcript !== null && (
-        <div className="px-6 pb-5" onClick={(e) => e.stopPropagation()}>
-          <p className="text-[15px] leading-[1.8] text-gray-600">
-            {highlightFillers(feedback.transcript)}
-          </p>
-          {feedback.delivery?.vocal?.fillerWordCount !== null &&
-            feedback.delivery?.vocal?.fillerWordCount !== undefined &&
-            feedback.delivery.vocal.fillerWordCount > 0 && (
-              <p className="mt-2 text-[13px] text-gray-400">
-                습관어 {feedback.delivery.vocal.fillerWordCount}회 감지
-              </p>
-            )}
-        </div>
-      )}
-
-      {/* 모범답변 토글 */}
-      {showModelAnswer && question?.modelAnswer && (
-        <div className="px-6 pb-5" onClick={(e) => e.stopPropagation()}>
-          <p className="text-[15px] leading-[1.8] text-gray-500">{question.modelAnswer}</p>
-        </div>
-      )}
     </div>
   )
 }

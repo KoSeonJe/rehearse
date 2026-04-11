@@ -1,5 +1,13 @@
 import type { CommentBlock } from '@/types/interview'
 
+const COMMENT_STYLES = {
+  positive: { bg: 'bg-emerald-50/60', label: 'text-emerald-600' },
+  negative: { bg: 'bg-amber-50/60', label: 'text-amber-600' },
+  suggestion: { bg: 'bg-slate-50', label: 'text-slate-500' },
+} as const
+
+type CommentType = keyof typeof COMMENT_STYLES
+
 interface StructuredCommentProps {
   block: CommentBlock | null | undefined
   positiveLabel?: string
@@ -15,15 +23,15 @@ const StructuredComment = ({
 }: StructuredCommentProps) => {
   if (!block) return null
 
-  const items: Array<{ label: string; body: string }> = []
+  const items: Array<{ type: CommentType; label: string; body: string }> = []
   if (block.positive && block.positive.trim().length > 0) {
-    items.push({ label: positiveLabel, body: block.positive.trim() })
+    items.push({ type: 'positive', label: positiveLabel, body: block.positive.trim() })
   }
   if (block.negative && block.negative.trim().length > 0) {
-    items.push({ label: negativeLabel, body: block.negative.trim() })
+    items.push({ type: 'negative', label: negativeLabel, body: block.negative.trim() })
   }
   if (block.suggestion && block.suggestion.trim().length > 0) {
-    items.push({ label: suggestionLabel, body: block.suggestion.trim() })
+    items.push({ type: 'suggestion', label: suggestionLabel, body: block.suggestion.trim() })
   }
 
   if (items.length === 0) return null
@@ -31,9 +39,11 @@ const StructuredComment = ({
   return (
     <div className="space-y-3">
       {items.map((item, idx) => (
-        <div key={idx}>
-          <p className="text-[13px] font-bold text-gray-500 mb-1">{item.label}</p>
-          <p className="text-[15px] leading-[1.7] text-gray-700">{item.body}</p>
+        <div key={idx} className={`rounded-xl px-4 py-3 ${COMMENT_STYLES[item.type].bg}`}>
+          <p className={`text-[13px] font-bold mb-1 ${COMMENT_STYLES[item.type].label}`}>
+            {item.label}
+          </p>
+          <p className="text-[14px] leading-[1.7] text-gray-600">{item.body}</p>
         </div>
       ))}
     </div>
