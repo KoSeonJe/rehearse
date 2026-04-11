@@ -33,6 +33,10 @@ claude:
 aws:
   enabled: false
 
+google:
+  tts:
+    enabled: false
+
 jwt:
   secret: dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW4tcHJvdmlkZXItdGVzdC1tdXN0LWJlLTI1Ni1iaXRzIQ==
   expiration-ms: 3600000

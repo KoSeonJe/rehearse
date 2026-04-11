@@ -24,6 +24,12 @@ claude:
   api-key: ${CLAUDE_API_KEY}
   model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
 
+google:
+  tts:
+    enabled: ${GOOGLE_TTS_ENABLED:true}
+    voice-name: ${GOOGLE_TTS_VOICE_NAME:ko-KR-Chirp3-HD-Schedar}
+    language-code: ${GOOGLE_TTS_LANGUAGE_CODE:ko-KR}
+
 aws:
   enabled: true
   region: ${AWS_REGION:ap-northeast-2}
