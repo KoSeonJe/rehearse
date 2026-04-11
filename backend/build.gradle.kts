@@ -60,6 +60,10 @@ dependencies {
     implementation(platform("software.amazon.awssdk:bom:2.29.51"))
     implementation("software.amazon.awssdk:s3")
 
+    // Google Cloud TTS
+    implementation(platform("com.google.cloud:libraries-bom:26.47.0"))
+    implementation("com.google.cloud:google-cloud-texttospeech")
+
     // PDF
     implementation("org.apache.pdfbox:pdfbox:3.0.4")
 

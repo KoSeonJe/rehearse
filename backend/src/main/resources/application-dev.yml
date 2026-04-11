@@ -28,11 +28,6 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
-elevenlabs:
-  api-key: ${ELEVENLABS_API_KEY:}
-  voice-id: ${ELEVENLABS_VOICE_ID:YBRudLRm83BV5Mazcr42}
-  model-id: ${ELEVENLABS_MODEL_ID:eleven_multilingual_v2}
-
 claude:
   api-key: ${CLAUDE_API_KEY}
   model: ${CLAUDE_MODEL:claude-sonnet-4-20250514}
@@ -40,6 +35,12 @@ claude:
 openai:
   api-key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-4o-mini}
+
+google:
+  tts:
+    enabled: ${GOOGLE_TTS_ENABLED:true}
+    voice-name: ${GOOGLE_TTS_VOICE_NAME:ko-KR-Chirp3-HD-Schedar}
+    language-code: ${GOOGLE_TTS_LANGUAGE_CODE:ko-KR}
 
 aws:
   enabled: true
