@@ -7,6 +7,7 @@ import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionType;
+import com.rehearse.api.domain.questionset.entity.ReferenceType;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -39,14 +40,32 @@ public class FollowUpTransactionHandler {
 
         validateFollowUpRoundLimit(questionSet);
         int nextOrderIndex = questionSet.getQuestions().size();
+        ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
 
         return new FollowUpContext(
                 interview.getPosition(),
                 interview.getEffectiveTechStack(),
                 interview.getLevel(),
                 questionSetId,
-                nextOrderIndex
+                nextOrderIndex,
+                mainReferenceType
         );
+    }
+
+    /**
+     * 메인 질문의 referenceType을 추출해 후속질문 프롬프트 모드 분기에 사용한다.
+     * MODEL_ANSWER → CS 개념 설명형 메인 질문 → CONCEPT 모드
+     * GUIDE        → 이력서·경험 기반 메인 질문 → EXPERIENCE 모드
+     * 메인 질문이 없거나 referenceType이 null인 엣지 케이스는 안전한 기본값(MODEL_ANSWER)으로 폴백한다.
+     * 경험 전제 프레이밍이 안 나가는 쪽이 어색함보다 덜 위험하기 때문.
+     */
+    private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
+        return questionSet.getQuestions().stream()
+                .filter(q -> q.getQuestionType() == QuestionType.MAIN)
+                .findFirst()
+                .map(Question::getReferenceType)
+                .filter(rt -> rt != null)
+                .orElse(ReferenceType.MODEL_ANSWER);
     }
 
     @Transactional

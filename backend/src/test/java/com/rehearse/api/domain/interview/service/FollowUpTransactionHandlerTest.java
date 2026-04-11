@@ -45,7 +45,7 @@ class FollowUpTransactionHandlerTest {
         Interview interview = createInProgressInterview();
         given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
+        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
         given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
         // when
@@ -56,6 +56,41 @@ class FollowUpTransactionHandlerTest {
         assertThat(context.level()).isEqualTo(InterviewLevel.JUNIOR);
         assertThat(context.questionSetId()).isEqualTo(10L);
         assertThat(context.nextOrderIndex()).isEqualTo(1);
+        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+    }
+
+    @Test
+    @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 GUIDE면 context에 GUIDE가 실린다 (EXPERIENCE 모드)")
+    void loadFollowUpContext_resumeQuestion_carriesGuideReferenceType() {
+        // given
+        Interview interview = createInProgressInterview();
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.GUIDE);
+        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+        // when
+        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+
+        // then
+        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.GUIDE);
+    }
+
+    @Test
+    @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 null이면 안전 기본값 MODEL_ANSWER로 폴백")
+    void loadFollowUpContext_nullReferenceType_fallsBackToModelAnswer() {
+        // given
+        Interview interview = createInProgressInterview();
+        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, null);
+        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+        // when
+        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+
+        // then
+        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
     }
 
     @Test
@@ -115,7 +150,7 @@ class FollowUpTransactionHandlerTest {
     void saveFollowUpResult_success() {
         // given
         Interview interview = createInProgressInterview();
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
+        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
         given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -157,7 +192,7 @@ class FollowUpTransactionHandlerTest {
         return interview;
     }
 
-    private QuestionSet createQuestionSetWithMainQuestion(Interview interview) {
+    private QuestionSet createQuestionSetWithMainQuestion(Interview interview, ReferenceType mainReferenceType) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
                 .category(QuestionCategory.CS)
@@ -168,6 +203,7 @@ class FollowUpTransactionHandlerTest {
         Question mainQuestion = Question.builder()
                 .questionType(QuestionType.MAIN)
                 .questionText("HashMap과 TreeMap의 차이점은?")
+                .referenceType(mainReferenceType)
                 .orderIndex(0)
                 .build();
         qs.addQuestion(mainQuestion);
@@ -175,7 +211,7 @@ class FollowUpTransactionHandlerTest {
     }
 
     private QuestionSet createQuestionSetWithFollowUps(Interview interview, int followUpCount) {
-        QuestionSet qs = createQuestionSetWithMainQuestion(interview);
+        QuestionSet qs = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
         for (int i = 0; i < followUpCount; i++) {
             Question followUp = Question.builder()
                     .questionType(QuestionType.FOLLOWUP)

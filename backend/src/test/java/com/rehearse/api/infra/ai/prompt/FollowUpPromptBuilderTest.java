@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.questionset.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.persona.PersonaResolver;
 import com.rehearse.api.infra.ai.persona.ProfileYamlLoader;
@@ -38,7 +39,8 @@ class FollowUpPromptBuilderTest {
                 "JVM의 GC 방식에 대해 설명해주세요.",
                 "GC는 힙 메모리를 관리합니다.",
                 null,
-                List.of()
+                List.of(),
+                ReferenceType.MODEL_ANSWER
         );
 
         String prompt = builder.buildSystemPrompt(req);
@@ -59,7 +61,8 @@ class FollowUpPromptBuilderTest {
                 "JPA의 fetch join에 대해 설명해주세요.",
                 "N+1 문제를 해결하는 방법입니다.",
                 null,
-                exchanges
+                exchanges,
+                ReferenceType.MODEL_ANSWER
         );
 
         String prompt = builder.buildUserPrompt(req);
@@ -70,8 +73,108 @@ class FollowUpPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("system prompt에 질문 생성 절차·답변 인용 강화·few-shot 예시·skip 분기·answerText 필수 규칙이 포함된다")
-    void buildSystemPrompt_containsStrengthenedRules() {
+    @DisplayName("CONCEPT 모드(MODEL_ANSWER) system prompt는 경험 전제 프레이밍을 절대 금지하고 DEEP_DIVE/CLARIFICATION만 허용한다")
+    void buildSystemPrompt_conceptMode_forbidsExperienceFraming() {
+        FollowUpGenerationRequest req = new FollowUpGenerationRequest(
+                Position.BACKEND,
+                TechStack.JAVA_SPRING,
+                InterviewLevel.JUNIOR,
+                "G1 Garbage Collector의 작동 원리를 설명해주세요.",
+                "힙을 여러 리전으로 나누고 가비지가 많은 리전부터 수집합니다.",
+                null,
+                List.of(),
+                ReferenceType.MODEL_ANSWER
+        );
+
+        String prompt = builder.buildSystemPrompt(req);
+
+        // CONCEPT 모드 핵심 지시
+        assertThat(prompt).contains("CS 개념 설명형");
+        assertThat(prompt).contains("경험 전제 프레이밍 절대 금지");
+        assertThat(prompt).contains("DEEP_DIVE, CLARIFICATION 둘뿐");
+
+        // 인용 규칙 & skip 규칙
+        assertThat(prompt).contains("짧은 키워드");
+        assertThat(prompt).contains("긴 문장을 따옴표로 감싸지 마세요");
+        assertThat(prompt).contains("skip=true");
+
+        // CONCEPT few-shot 예시가 포함됨
+        assertThat(prompt).contains("G1 Garbage Collector");
+        assertThat(prompt).contains("Mixed GC");
+
+        // EXPERIENCE 모드의 Perspective 7종이 포함되어서는 안 됨
+        assertThat(prompt).doesNotContain("MAINTAINABILITY: 유지보수성");
+        assertThat(prompt).doesNotContain("COLLABORATION: 팀 의사결정");
+    }
+
+    @Test
+    @DisplayName("EXPERIENCE 모드(GUIDE) system prompt는 기존 Perspective 7종과 CHALLENGE/APPLICATION 유형을 포함한다")
+    void buildSystemPrompt_experienceMode_containsPerspectives() {
+        FollowUpGenerationRequest req = new FollowUpGenerationRequest(
+                Position.BACKEND,
+                TechStack.JAVA_SPRING,
+                InterviewLevel.MID,
+                "이전 프로젝트에서 N+1 문제를 해결한 경험을 말씀해주세요.",
+                "@BatchSize로 전환했습니다.",
+                null,
+                List.of(),
+                ReferenceType.GUIDE
+        );
+
+        String prompt = builder.buildSystemPrompt(req);
+
+        // EXPERIENCE 모드 핵심 지시
+        assertThat(prompt).contains("이력서/프로젝트/경험 기반");
+
+        // Perspective 7종
+        assertThat(prompt).contains("TRADEOFF");
+        assertThat(prompt).contains("MAINTAINABILITY");
+        assertThat(prompt).contains("RELIABILITY");
+        assertThat(prompt).contains("SCALABILITY");
+        assertThat(prompt).contains("TESTING");
+        assertThat(prompt).contains("COLLABORATION");
+        assertThat(prompt).contains("USER_IMPACT");
+
+        // 후속 질문 유형 4종 전부
+        assertThat(prompt).contains("DEEP_DIVE");
+        assertThat(prompt).contains("CLARIFICATION");
+        assertThat(prompt).contains("CHALLENGE");
+        assertThat(prompt).contains("APPLICATION");
+
+        // EXPERIENCE few-shot 예시
+        assertThat(prompt).contains("@BatchSize");
+
+        // 인용 규칙 강화
+        assertThat(prompt).contains("짧은 키워드");
+        assertThat(prompt).contains("긴 문장을 따옴표로 감싸지 마세요");
+    }
+
+    @Test
+    @DisplayName("mainReferenceType이 null인 경우 안전한 기본값인 CONCEPT 모드로 폴백한다")
+    void buildSystemPrompt_nullReferenceType_fallsBackToConceptMode() {
+        FollowUpGenerationRequest req = new FollowUpGenerationRequest(
+                Position.BACKEND,
+                TechStack.JAVA_SPRING,
+                InterviewLevel.JUNIOR,
+                "HashMap과 TreeMap의 차이점은?",
+                "HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.",
+                null,
+                List.of(),
+                null
+        );
+
+        String prompt = builder.buildSystemPrompt(req);
+
+        // CONCEPT 모드로 폴백됐는지 확인
+        assertThat(prompt).contains("CS 개념 설명형");
+        assertThat(prompt).contains("경험 전제 프레이밍 절대 금지");
+        // EXPERIENCE 전용 섹션이 없어야 함
+        assertThat(prompt).doesNotContain("이력서/프로젝트/경험 기반");
+    }
+
+    @Test
+    @DisplayName("system prompt에 답변 인용 강화·skip 분기·answerText 필수 규칙이 포함된다 (양 모드 공통)")
+    void buildSystemPrompt_containsCommonRules() {
         FollowUpGenerationRequest req = new FollowUpGenerationRequest(
                 Position.BACKEND,
                 TechStack.JAVA_SPRING,
@@ -79,18 +182,11 @@ class FollowUpPromptBuilderTest {
                 "JVM의 GC 방식에 대해 설명해주세요.",
                 "잘 모르겠습니다.",
                 null,
-                List.of()
+                List.of(),
+                ReferenceType.MODEL_ANSWER
         );
 
         String prompt = builder.buildSystemPrompt(req);
-
-        // 질문 생성 3단계 절차
-        assertThat(prompt).contains("핵심 개념 추출");
-        assertThat(prompt).contains("인용 구문 작성");
-        assertThat(prompt).contains("심화 질문 작성");
-
-        // 가장 최근 답변 인용 강조 (multi-round 대응)
-        assertThat(prompt).contains("가장 최근 답변");
 
         // few-shot 예시
         assertThat(prompt).contains("좋은 예");
@@ -100,10 +196,10 @@ class FollowUpPromptBuilderTest {
         assertThat(prompt).contains("skip=true");
         assertThat(prompt).contains("모르겠다");
 
-        // 응답 형식에 skip/answerText 필드 모두 포함 + skip 시에도 answerText 필수
+        // 응답 형식에 skip/answerText 필드 모두 포함
         assertThat(prompt).contains("\"skip\"");
         assertThat(prompt).contains("\"answerText\"");
-        assertThat(prompt).contains("skip 여부와 무관하게 항상 포함");
+        assertThat(prompt).contains("JSON 형식으로만 응답");
     }
 
     @Test
@@ -116,7 +212,8 @@ class FollowUpPromptBuilderTest {
                 "Spring의 IoC에 대해 설명해주세요.",
                 "의존성을 외부에서 주입받는 방식입니다.",
                 null,
-                List.of()
+                List.of(),
+                ReferenceType.MODEL_ANSWER
         );
 
         String prompt = builder.buildUserPrompt(req);
@@ -135,7 +232,8 @@ class FollowUpPromptBuilderTest {
                 "Spring의 IoC에 대해 설명해주세요.",
                 "의존성을 외부에서 주입받는 방식입니다.",
                 null,
-                List.of()
+                List.of(),
+                ReferenceType.MODEL_ANSWER
         );
 
         String prompt = builder.buildUserPrompt(req);

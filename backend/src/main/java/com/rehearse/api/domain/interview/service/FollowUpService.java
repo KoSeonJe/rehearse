@@ -44,7 +44,8 @@ public class FollowUpService {
                 request.getQuestionContent(),
                 null,
                 request.getNonVerbalSummary(),
-                request.getPreviousExchanges()
+                request.getPreviousExchanges(),
+                context.mainReferenceType()
         );
         GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
 

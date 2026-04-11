@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.questionset.entity.ReferenceType;
 
 import java.util.List;
 
@@ -14,5 +15,6 @@ public record FollowUpGenerationRequest(
     String questionContent,
     String answerText,
     String nonVerbalSummary,
-    List<FollowUpRequest.FollowUpExchange> previousExchanges
+    List<FollowUpRequest.FollowUpExchange> previousExchanges,
+    ReferenceType mainReferenceType
 ) {}
