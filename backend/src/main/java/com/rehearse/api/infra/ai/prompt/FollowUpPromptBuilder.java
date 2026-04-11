@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.prompt;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.questionset.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.persona.PersonaResolver;
 import com.rehearse.api.infra.ai.persona.ResolvedProfile;
@@ -12,35 +13,63 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class FollowUpPromptBuilder {
 
+    private static final String CONCEPT_TEMPLATE_PATH = "/prompts/template/follow-up-concept.txt";
+    private static final String EXPERIENCE_TEMPLATE_PATH = "/prompts/template/follow-up-experience.txt";
+
     private final PersonaResolver personaResolver;
-    private String template;
+    private String conceptTemplate;
+    private String experienceTemplate;
 
     @PostConstruct
     void init() {
-        try (var stream = getClass().getResourceAsStream("/prompts/template/follow-up.txt")) {
+        conceptTemplate = loadTemplate(CONCEPT_TEMPLATE_PATH);
+        experienceTemplate = loadTemplate(EXPERIENCE_TEMPLATE_PATH);
+        log.info("후속 질문 프롬프트 템플릿 로드 완료 (concept + experience)");
+    }
+
+    private String loadTemplate(String path) {
+        try (InputStream stream = getClass().getResourceAsStream(path)) {
             if (stream == null) {
-                throw new IllegalStateException("follow-up.txt 템플릿 파일을 찾을 수 없습니다.");
+                throw new IllegalStateException(path + " 템플릿 파일을 찾을 수 없습니다.");
             }
-            template = new String(stream.readAllBytes());
-            log.info("후속 질문 프롬프트 템플릿 로드 완료");
+            return new String(stream.readAllBytes());
         } catch (IOException e) {
-            throw new IllegalStateException("follow-up.txt 템플릿 로드 실패", e);
+            throw new IllegalStateException(path + " 템플릿 로드 실패", e);
         }
     }
 
     public String buildSystemPrompt(FollowUpGenerationRequest req) {
         TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
+        String template = resolveTemplate(req.mainReferenceType());
 
         return template
             .replace("{MEDIUM_PERSONA}", profile.mediumPersona())
             .replace("{FOLLOWUP_DEPTH}", profile.followUpDepth());
+    }
+
+    /**
+     * 메인 질문의 referenceType에 따라 후속질문 템플릿을 분기한다.
+     * - GUIDE       → 이력서·경험 기반 질문 → EXPERIENCE 모드
+     * - MODEL_ANSWER or null → CS 개념 설명형 또는 안전 기본값 → CONCEPT 모드
+     * 기본값을 CONCEPT로 잡는 이유: 경험 전제 프레이밍이 잘못 나가는 어색함이
+     * 개념 질문 누락보다 사용자에게 더 부정적이기 때문.
+     */
+    private String resolveTemplate(ReferenceType mainReferenceType) {
+        if (mainReferenceType == null) {
+            return conceptTemplate;
+        }
+        return switch (mainReferenceType) {
+            case GUIDE -> experienceTemplate;
+            case MODEL_ANSWER -> conceptTemplate;
+        };
     }
 
     public String buildUserPromptForAudio(FollowUpGenerationRequest req) {

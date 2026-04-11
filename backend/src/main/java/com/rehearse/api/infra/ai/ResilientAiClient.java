@@ -136,7 +136,8 @@ public class ResilientAiClient implements AiClient {
             FollowUpGenerationRequest updatedReq = new FollowUpGenerationRequest(
                     request.position(), request.techStack(), request.level(),
                     request.questionContent(), answerText,
-                    request.nonVerbalSummary(), request.previousExchanges()
+                    request.nonVerbalSummary(), request.previousExchanges(),
+                    request.mainReferenceType()
             );
             return claudeApiClient.generateFollowUpQuestion(updatedReq).withAnswerText(answerText);
         } catch (Exception fallbackEx) {

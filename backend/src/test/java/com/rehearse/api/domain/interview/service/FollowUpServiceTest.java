@@ -42,7 +42,8 @@ class FollowUpServiceTest {
     void generateFollowUp_success() {
         // given
         FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
+                com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
         given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -88,7 +89,8 @@ class FollowUpServiceTest {
     void generateFollowUp_withAudioFile() {
         // given
         FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
+                com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
         given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         MockMultipartFile audioFile =
@@ -129,7 +131,8 @@ class FollowUpServiceTest {
     void generateFollowUp_aiSkipped_doesNotSave() {
         // given
         FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
+                com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
         given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -165,7 +168,8 @@ class FollowUpServiceTest {
     void generateFollowUp_nonSkipWithNullQuestion_throwsParseFailed() {
         // given
         FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
+                com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
         given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         // AI가 스키마를 어긴 경우 — skip=false이지만 question이 null
@@ -218,7 +222,8 @@ class FollowUpServiceTest {
     void generateFollowUp_audioApiThrowsException_propagates() {
         // given
         FollowUpContext context = new FollowUpContext(
-                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1);
+                Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
+                com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
         given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
         MockMultipartFile audioFile =
