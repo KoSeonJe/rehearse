@@ -61,7 +61,11 @@ dependencies {
     implementation("software.amazon.awssdk:s3")
 
     // Google Cloud TTS
-    implementation(platform("com.google.cloud:libraries-bom:26.47.0"))
+    // libraries-bom 26.59.0은 protobuf-bom:4.29.4를 명시적으로 override하여
+    // protobuf 4.x 생태계(mysql-connector-j 9.1.0 등)와의 충돌을 해결한다.
+    // 26.47.0 사용 시 protobuf-java 4.26.1(GeneratedMessageV3 부재)이 충돌 해결로
+    // 선택되어 GrpcTextToSpeechStub.<clinit>에서 NoClassDefFoundError 발생.
+    implementation(platform("com.google.cloud:libraries-bom:26.59.0"))
     implementation("com.google.cloud:google-cloud-texttospeech")
 
     // PDF
