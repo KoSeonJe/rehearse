@@ -66,7 +66,7 @@ export interface QuestionDetail {
   id: number
   questionType: QuestionType
   questionText: string
-  ttsText: string | null
+  ttsText?: string | null
   modelAnswer: string | null
   referenceType: ReferenceType
   orderIndex: number
