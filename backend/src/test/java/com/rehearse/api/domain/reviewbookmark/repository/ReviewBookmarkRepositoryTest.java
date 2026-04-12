@@ -113,23 +113,48 @@ class ReviewBookmarkRepositoryTest {
 
     @Test
     @DisplayName("사용자의 북마크를 최신순으로 조회한다")
-    void findByUserIdOrderByCreatedAtDesc_returnsOrderedList() {
+    void findByUserIdOrderByCreatedAtDesc_returnsOrderedList() throws InterruptedException {
         User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
 
-        ReviewBookmark bookmark = ReviewBookmark.builder()
+        // 두 번째 TimestampFeedback 생성
+        QuestionSetFeedback qsf = entityManager.createQuery(
+                "SELECT qsf FROM QuestionSetFeedback qsf", QuestionSetFeedback.class)
+                .getResultList()
+                .get(0);
+        TimestampFeedback tsf2 = TimestampFeedback.builder()
+                .startMs(5000L)
+                .endMs(10000L)
+                .isAnalyzed(false)
+                .build();
+        qsf.addTimestampFeedback(tsf2);
+        entityManager.persist(tsf2);
+        entityManager.flush();
+
+        ReviewBookmark older = ReviewBookmark.builder()
                 .user(foundUser)
                 .timestampFeedback(foundTsf)
                 .build();
-        entityManager.persist(bookmark);
+        entityManager.persist(older);
+        entityManager.flush();
+
+        // 시간 차이를 두어 createdAt 순서 보장
+        Thread.sleep(10);
+
+        TimestampFeedback foundTsf2 = entityManager.find(TimestampFeedback.class, tsf2.getId());
+        ReviewBookmark newer = ReviewBookmark.builder()
+                .user(foundUser)
+                .timestampFeedback(foundTsf2)
+                .build();
+        entityManager.persist(newer);
         entityManager.flush();
         entityManager.clear();
 
         List<ReviewBookmark> result = reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUser().getId()).isEqualTo(user.getId());
-        assertThat(result.get(0).getTimestampFeedback().getId()).isEqualTo(timestampFeedback.getId());
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).getTimestampFeedback().getId()).isEqualTo(tsf2.getId());
+        assertThat(result.get(1).getTimestampFeedback().getId()).isEqualTo(timestampFeedback.getId());
     }
 
     @Test
@@ -164,7 +189,7 @@ class ReviewBookmarkRepositoryTest {
     }
 
     @Test
-    @DisplayName("TimestampFeedback를 네이티브 쿼리로 삭제하면 연관된 ReviewBookmark도 삭제된다 (ON DELETE CASCADE)")
+    @DisplayName("ReviewBookmark를 먼저 삭제한 뒤 TimestampFeedback을 삭제하면 두 엔티티 모두 제거된다 (참조 무결성 순서 보장)")
     void cascadeDelete_whenTimestampFeedbackDeleted_reviewBookmarkIsAlsoDeleted() {
         User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());

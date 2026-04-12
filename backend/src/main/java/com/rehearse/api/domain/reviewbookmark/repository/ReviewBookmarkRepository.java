@@ -14,31 +14,13 @@ public interface ReviewBookmarkRepository extends JpaRepository<ReviewBookmark, 
 
     boolean existsByUserIdAndTimestampFeedbackId(Long userId, Long timestampFeedbackId);
 
-    @EntityGraph(attributePaths = {
-        "timestampFeedback",
-        "timestampFeedback.question",
-        "timestampFeedback.questionSetFeedback",
-        "timestampFeedback.questionSetFeedback.questionSet",
-        "timestampFeedback.questionSetFeedback.questionSet.interview"
-    })
+    @EntityGraph("ReviewBookmark.withDetails")
     List<ReviewBookmark> findByUserIdOrderByCreatedAtDesc(Long userId);
 
-    @EntityGraph(attributePaths = {
-        "timestampFeedback",
-        "timestampFeedback.question",
-        "timestampFeedback.questionSetFeedback",
-        "timestampFeedback.questionSetFeedback.questionSet",
-        "timestampFeedback.questionSetFeedback.questionSet.interview"
-    })
+    @EntityGraph("ReviewBookmark.withDetails")
     List<ReviewBookmark> findByUserIdAndResolvedAtIsNullOrderByCreatedAtDesc(Long userId);
 
-    @EntityGraph(attributePaths = {
-        "timestampFeedback",
-        "timestampFeedback.question",
-        "timestampFeedback.questionSetFeedback",
-        "timestampFeedback.questionSetFeedback.questionSet",
-        "timestampFeedback.questionSetFeedback.questionSet.interview"
-    })
+    @EntityGraph("ReviewBookmark.withDetails")
     List<ReviewBookmark> findByUserIdAndResolvedAtIsNotNullOrderByCreatedAtDesc(Long userId);
 
     @Query("""

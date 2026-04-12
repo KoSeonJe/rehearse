@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
@@ -39,6 +40,9 @@ class ReviewBookmarkServiceTest {
 
     @Mock
     private ReviewBookmarkRepository reviewBookmarkRepository;
+
+    @Mock
+    private ReviewBookmarkFinder reviewBookmarkFinder;
 
     @Mock
     private TimestampFeedbackRepository timestampFeedbackRepository;
@@ -107,7 +111,7 @@ class ReviewBookmarkServiceTest {
         given(timestampFeedbackRepository.findById(tsfId)).willReturn(Optional.of(tsf));
         given(userRepository.getReferenceById(userId)).willReturn(user);
         given(reviewBookmarkRepository.save(any(ReviewBookmark.class)))
-                .willThrow(new DataIntegrityViolationException("uk_rb_user_tsf"));
+                .willThrow(new DataIntegrityViolationException("duplicate"));
 
         assertThatThrownBy(() -> reviewBookmarkService.create(userId, request))
                 .isInstanceOf(ReviewBookmarkException.class)
@@ -144,12 +148,18 @@ class ReviewBookmarkServiceTest {
         Long userId = 1L;
         Long bookmarkId = 100L;
 
-        given(reviewBookmarkRepository.findOwnerIdById(bookmarkId)).willReturn(Optional.of(userId));
-        willDoNothing().given(reviewBookmarkRepository).deleteById(bookmarkId);
+        TimestampFeedback tsf = createMockTimestampFeedback(10L);
+        User user = createMockUser(userId);
+        ReviewBookmark mockBookmark = ReviewBookmark.builder().user(user).timestampFeedback(tsf).build();
+        ReflectionTestUtils.setField(mockBookmark, "id", bookmarkId);
+        ReflectionTestUtils.setField(mockBookmark, "createdAt", LocalDateTime.now());
+
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId)).willReturn(mockBookmark);
+        willDoNothing().given(reviewBookmarkRepository).delete(mockBookmark);
 
         reviewBookmarkService.delete(userId, bookmarkId);
 
-        then(reviewBookmarkRepository).should().deleteById(bookmarkId);
+        then(reviewBookmarkRepository).should().delete(mockBookmark);
     }
 
     @Test
@@ -158,7 +168,8 @@ class ReviewBookmarkServiceTest {
         Long userId = 1L;
         Long bookmarkId = 999L;
 
-        given(reviewBookmarkRepository.findOwnerIdById(bookmarkId)).willReturn(Optional.empty());
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId))
+                .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.BOOKMARK_NOT_FOUND));
 
         assertThatThrownBy(() -> reviewBookmarkService.delete(userId, bookmarkId))
                 .isInstanceOf(ReviewBookmarkException.class)
@@ -172,11 +183,10 @@ class ReviewBookmarkServiceTest {
     @DisplayName("delete - 타인 소유 북마크 삭제 시 403 FORBIDDEN_ACCESS")
     void delete_forbidden_throws403() {
         Long userId = 1L;
-        Long anotherUserId = 2L;
         Long bookmarkId = 100L;
 
-        given(reviewBookmarkRepository.findOwnerIdById(bookmarkId))
-                .willReturn(Optional.of(anotherUserId));
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId))
+                .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.FORBIDDEN_ACCESS));
 
         assertThatThrownBy(() -> reviewBookmarkService.delete(userId, bookmarkId))
                 .isInstanceOf(ReviewBookmarkException.class)
@@ -201,7 +211,7 @@ class ReviewBookmarkServiceTest {
         ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
         ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
 
-        given(reviewBookmarkRepository.findById(bookmarkId)).willReturn(Optional.of(bookmark));
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId)).willReturn(bookmark);
 
         ReviewBookmarkResponse response = reviewBookmarkService.updateStatus(userId, bookmarkId, request);
 
@@ -222,7 +232,7 @@ class ReviewBookmarkServiceTest {
         ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
         bookmark.markResolved();
 
-        given(reviewBookmarkRepository.findById(bookmarkId)).willReturn(Optional.of(bookmark));
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId)).willReturn(bookmark);
 
         ReviewBookmarkResponse response = reviewBookmarkService.updateStatus(userId, bookmarkId, request);
 
@@ -236,7 +246,8 @@ class ReviewBookmarkServiceTest {
         Long bookmarkId = 999L;
         UpdateBookmarkStatusRequest request = new UpdateBookmarkStatusRequest(true);
 
-        given(reviewBookmarkRepository.findById(bookmarkId)).willReturn(Optional.empty());
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId))
+                .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.BOOKMARK_NOT_FOUND));
 
         assertThatThrownBy(() -> reviewBookmarkService.updateStatus(userId, bookmarkId, request))
                 .isInstanceOf(ReviewBookmarkException.class)
@@ -250,17 +261,11 @@ class ReviewBookmarkServiceTest {
     @DisplayName("updateStatus - 타인 소유 북마크 수정 시 403 FORBIDDEN_ACCESS")
     void updateStatus_forbidden_throws403() {
         Long userId = 1L;
-        Long anotherUserId = 2L;
         Long bookmarkId = 100L;
         UpdateBookmarkStatusRequest request = new UpdateBookmarkStatusRequest(true);
 
-        TimestampFeedback tsf = createMockTimestampFeedback(10L);
-        User owner = createMockUser(anotherUserId);
-        ReviewBookmark bookmark = ReviewBookmark.builder().user(owner).timestampFeedback(tsf).build();
-        ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
-        ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
-
-        given(reviewBookmarkRepository.findById(bookmarkId)).willReturn(Optional.of(bookmark));
+        given(reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId))
+                .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.FORBIDDEN_ACCESS));
 
         assertThatThrownBy(() -> reviewBookmarkService.updateStatus(userId, bookmarkId, request))
                 .isInstanceOf(ReviewBookmarkException.class)

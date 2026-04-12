@@ -32,9 +32,11 @@ public record ReviewBookmarkListItem(
 
     public static ReviewBookmarkListItem from(ReviewBookmark bookmark) {
         var tsf = bookmark.getTimestampFeedback();
+        if (tsf == null) return null;
+
         var qsf = tsf.getQuestionSetFeedback();
-        var questionSet = qsf.getQuestionSet();
-        var interview = questionSet.getInterview();
+        var questionSet = qsf != null ? qsf.getQuestionSet() : null;
+        var interview = questionSet != null ? questionSet.getInterview() : null;
         Question question = tsf.getQuestion();
 
         return new ReviewBookmarkListItem(
@@ -44,10 +46,10 @@ public record ReviewBookmarkListItem(
                 question != null ? question.getModelAnswer() : null,
                 tsf.getTranscript(),
                 tsf.getCoachingImprovement(),
-                questionSet.getCategory(),
-                interview.getPosition().name(),
-                interview.getPositionDetail(),
-                interview.getCreatedAt(),
+                questionSet != null ? questionSet.getCategory() : null,
+                interview != null ? interview.getPosition().name() : null,
+                interview != null ? interview.getPositionDetail() : null,
+                interview != null ? interview.getCreatedAt() : null,
                 bookmark.getCreatedAt(),
                 bookmark.getResolvedAt()
         );

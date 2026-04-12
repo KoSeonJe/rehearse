@@ -161,6 +161,31 @@ class ReviewBookmarkEntityTest {
     }
 
     @Test
+    @DisplayName("verifyOwnedBy - userId가 null이면 ReviewBookmarkException 발생")
+    void verifyOwnedBy_nullUserId_throwsException() {
+        ReviewBookmark bookmark = ReviewBookmark.builder()
+                .user(user)
+                .timestampFeedback(timestampFeedback)
+                .build();
+
+        assertThatThrownBy(() -> bookmark.verifyOwnedBy(null))
+                .isInstanceOf(com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException.class);
+    }
+
+    @Test
+    @DisplayName("reopen - 이미 미해결 상태에서 호출해도 resolvedAt이 null로 유지된다")
+    void reopen_whenAlreadyOpen_remainsNull() {
+        ReviewBookmark bookmark = ReviewBookmark.builder()
+                .user(user)
+                .timestampFeedback(timestampFeedback)
+                .build();
+
+        bookmark.reopen();
+
+        assertThat(bookmark.getResolvedAt()).isNull();
+    }
+
+    @Test
     @DisplayName("markResolved → reopen → markResolved 왕복 시 상태가 올바르게 전환된다")
     void markResolved_reopen_markResolved_stateTransitionsCorrectly() {
         ReviewBookmark bookmark = ReviewBookmark.builder()

@@ -58,11 +58,11 @@ class ReviewBookmarkControllerTest {
     @MockitoBean
     private ReviewBookmarkQueryService reviewBookmarkQueryService;
 
-    // ====== POST /api/review-bookmarks ======
+    // ====== POST /api/v1/review-bookmarks ======
 
     @Test
     @WithMockUserId
-    @DisplayName("POST /api/review-bookmarks - 정상 생성 시 201 반환")
+    @DisplayName("POST /api/v1/review-bookmarks - 정상 생성 시 201 반환")
     void create_success_returns201() throws Exception {
         ReviewBookmarkResponse response = new ReviewBookmarkResponse(100L, 10L, null, LocalDateTime.now());
         given(reviewBookmarkService.create(eq(1L), any())).willReturn(response);
@@ -71,7 +71,7 @@ class ReviewBookmarkControllerTest {
                 { "timestampFeedbackId": 10 }
                 """;
 
-        mockMvc.perform(post("/api/review-bookmarks")
+        mockMvc.perform(post("/api/v1/review-bookmarks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -81,7 +81,7 @@ class ReviewBookmarkControllerTest {
 
     @Test
     @WithMockUserId
-    @DisplayName("POST /api/review-bookmarks - 이미 존재하면 409 반환")
+    @DisplayName("POST /api/v1/review-bookmarks - 이미 존재하면 409 반환")
     void create_alreadyExists_returns409() throws Exception {
         given(reviewBookmarkService.create(eq(1L), any()))
                 .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.BOOKMARK_ALREADY_EXISTS));
@@ -90,7 +90,7 @@ class ReviewBookmarkControllerTest {
                 { "timestampFeedbackId": 10 }
                 """;
 
-        mockMvc.perform(post("/api/review-bookmarks")
+        mockMvc.perform(post("/api/v1/review-bookmarks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isConflict());
@@ -98,7 +98,7 @@ class ReviewBookmarkControllerTest {
 
     @Test
     @WithMockUserId
-    @DisplayName("POST /api/review-bookmarks - 피드백 미존재 시 404 반환")
+    @DisplayName("POST /api/v1/review-bookmarks - 피드백 미존재 시 404 반환")
     void create_tsfNotFound_returns404() throws Exception {
         given(reviewBookmarkService.create(eq(1L), any()))
                 .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.TIMESTAMP_FEEDBACK_NOT_FOUND));
@@ -107,64 +107,71 @@ class ReviewBookmarkControllerTest {
                 { "timestampFeedbackId": 999 }
                 """;
 
-        mockMvc.perform(post("/api/review-bookmarks")
+        mockMvc.perform(post("/api/v1/review-bookmarks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("POST /api/review-bookmarks - 인증 없이 호출하면 401")
+    @DisplayName("POST /api/v1/review-bookmarks - 인증 없이 호출하면 401")
     void create_withoutAuth_returns401() throws Exception {
         String body = """
                 { "timestampFeedbackId": 10 }
                 """;
 
-        mockMvc.perform(post("/api/review-bookmarks")
+        mockMvc.perform(post("/api/v1/review-bookmarks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isUnauthorized());
     }
 
-    // ====== DELETE /api/review-bookmarks/{id} ======
+    // ====== DELETE /api/v1/review-bookmarks/{id} ======
 
     @Test
     @WithMockUserId
-    @DisplayName("DELETE /api/review-bookmarks/{id} - 정상 삭제 시 204 반환")
+    @DisplayName("DELETE /api/v1/review-bookmarks/{id} - 정상 삭제 시 204 반환")
     void delete_success_returns204() throws Exception {
         willDoNothing().given(reviewBookmarkService).delete(1L, 100L);
 
-        mockMvc.perform(delete("/api/review-bookmarks/100"))
+        mockMvc.perform(delete("/api/v1/review-bookmarks/100"))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     @WithMockUserId
-    @DisplayName("DELETE /api/review-bookmarks/{id} - 타인 소유 시 403 반환")
+    @DisplayName("DELETE /api/v1/review-bookmarks/{id} - 타인 소유 시 403 반환")
     void delete_forbidden_returns403() throws Exception {
         willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.FORBIDDEN_ACCESS))
                 .given(reviewBookmarkService).delete(1L, 100L);
 
-        mockMvc.perform(delete("/api/review-bookmarks/100"))
+        mockMvc.perform(delete("/api/v1/review-bookmarks/100"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @WithMockUserId
-    @DisplayName("DELETE /api/review-bookmarks/{id} - 미존재 시 404 반환")
+    @DisplayName("DELETE /api/v1/review-bookmarks/{id} - 미존재 시 404 반환")
     void delete_notFound_returns404() throws Exception {
         willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.BOOKMARK_NOT_FOUND))
                 .given(reviewBookmarkService).delete(1L, 999L);
 
-        mockMvc.perform(delete("/api/review-bookmarks/999"))
+        mockMvc.perform(delete("/api/v1/review-bookmarks/999"))
                 .andExpect(status().isNotFound());
     }
 
-    // ====== GET /api/review-bookmarks ======
+    @Test
+    @DisplayName("DELETE /api/v1/review-bookmarks/{id} - 인증 없이 호출하면 401")
+    void delete_withoutAuth_returns401() throws Exception {
+        mockMvc.perform(delete("/api/v1/review-bookmarks/100"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ====== GET /api/v1/review-bookmarks ======
 
     @Test
     @WithMockUserId
-    @DisplayName("GET /api/review-bookmarks - 목록 조회 시 200과 items/total 반환")
+    @DisplayName("GET /api/v1/review-bookmarks - 목록 조회 시 200과 items/total 반환")
     void list_success_returns200() throws Exception {
         ReviewBookmarkListItem item = new ReviewBookmarkListItem(
                 1L, 10L, "자기소개를 해주세요.", "모범 답변", "안녕하세요.",
@@ -172,7 +179,7 @@ class ReviewBookmarkControllerTest {
                 LocalDateTime.now(), LocalDateTime.now(), null);
         given(reviewBookmarkQueryService.listByUser(1L, BookmarkStatusFilter.ALL)).willReturn(List.of(item));
 
-        mockMvc.perform(get("/api/review-bookmarks")
+        mockMvc.perform(get("/api/v1/review-bookmarks")
                         .param("status", "all"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -182,20 +189,32 @@ class ReviewBookmarkControllerTest {
 
     @Test
     @WithMockUserId
-    @DisplayName("GET /api/review-bookmarks - status 미입력 시 기본값 all 적용")
+    @DisplayName("GET /api/v1/review-bookmarks - status 미입력 시 기본값 all 적용")
     void list_defaultStatus_all() throws Exception {
         given(reviewBookmarkQueryService.listByUser(1L, BookmarkStatusFilter.ALL)).willReturn(List.of());
 
-        mockMvc.perform(get("/api/review-bookmarks"))
+        mockMvc.perform(get("/api/v1/review-bookmarks"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.total").value(0));
     }
 
-    // ====== PATCH /api/review-bookmarks/{id}/status ======
+    @Test
+    @WithMockUserId
+    @DisplayName("GET /api/v1/review-bookmarks - 유효하지 않은 status 값이면 400 반환")
+    void list_invalidStatus_returns400() throws Exception {
+        given(reviewBookmarkQueryService.listByUser(eq(1L), any()))
+                .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.INVALID_STATUS_FILTER));
+
+        mockMvc.perform(get("/api/v1/review-bookmarks")
+                        .param("status", "invalid_value"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // ====== PATCH /api/v1/review-bookmarks/{id}/status ======
 
     @Test
     @WithMockUserId
-    @DisplayName("PATCH /api/review-bookmarks/{id}/status - 정상 수정 시 200 반환")
+    @DisplayName("PATCH /api/v1/review-bookmarks/{id}/status - 정상 수정 시 200 반환")
     void updateStatus_success_returns200() throws Exception {
         ReviewBookmarkResponse response = new ReviewBookmarkResponse(100L, 10L, LocalDateTime.now(), LocalDateTime.now());
         given(reviewBookmarkService.updateStatus(eq(1L), eq(100L), any())).willReturn(response);
@@ -204,7 +223,7 @@ class ReviewBookmarkControllerTest {
                 { "resolved": true }
                 """;
 
-        mockMvc.perform(patch("/api/review-bookmarks/100/status")
+        mockMvc.perform(patch("/api/v1/review-bookmarks/100/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isOk())
@@ -215,7 +234,27 @@ class ReviewBookmarkControllerTest {
 
     @Test
     @WithMockUserId
-    @DisplayName("PATCH /api/review-bookmarks/{id}/status - 타인 소유 시 403 반환")
+    @DisplayName("PATCH /api/v1/review-bookmarks/{id}/status - resolved=false 시 resolvedAt null 반환")
+    void updateStatus_resolvedFalse_returnsResolvedAtNull() throws Exception {
+        ReviewBookmarkResponse response = new ReviewBookmarkResponse(100L, 10L, null, LocalDateTime.now());
+        given(reviewBookmarkService.updateStatus(eq(1L), eq(100L), any())).willReturn(response);
+
+        String body = """
+                { "resolved": false }
+                """;
+
+        mockMvc.perform(patch("/api/v1/review-bookmarks/100/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.id").value(100))
+                .andExpect(jsonPath("$.data.resolvedAt").doesNotExist());
+    }
+
+    @Test
+    @WithMockUserId
+    @DisplayName("PATCH /api/v1/review-bookmarks/{id}/status - 타인 소유 시 403 반환")
     void updateStatus_forbidden_returns403() throws Exception {
         given(reviewBookmarkService.updateStatus(eq(1L), eq(100L), any()))
                 .willThrow(new ReviewBookmarkException(ReviewBookmarkErrorCode.FORBIDDEN_ACCESS));
@@ -224,23 +263,36 @@ class ReviewBookmarkControllerTest {
                 { "resolved": true }
                 """;
 
-        mockMvc.perform(patch("/api/review-bookmarks/100/status")
+        mockMvc.perform(patch("/api/v1/review-bookmarks/100/status")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isForbidden());
     }
 
-    // ====== GET /api/review-bookmarks/exists ======
+    @Test
+    @DisplayName("PATCH /api/v1/review-bookmarks/{id}/status - 인증 없이 호출하면 401")
+    void updateStatus_withoutAuth_returns401() throws Exception {
+        String body = """
+                { "resolved": true }
+                """;
+
+        mockMvc.perform(patch("/api/v1/review-bookmarks/100/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized());
+    }
+
+    // ====== GET /api/v1/review-bookmarks/exists ======
 
     @Test
     @WithMockUserId
-    @DisplayName("GET /api/review-bookmarks/exists - 정상 조회 시 200과 items 반환")
+    @DisplayName("GET /api/v1/review-bookmarks/exists - 정상 조회 시 200과 items 반환")
     void exists_success_returns200() throws Exception {
         BookmarkExistsResponse response = new BookmarkExistsResponse(
                 List.of(new BookmarkIdPair(10L, 100L)));
         given(reviewBookmarkQueryService.findBookmarkPairs(eq(1L), any())).willReturn(response);
 
-        mockMvc.perform(get("/api/review-bookmarks/exists")
+        mockMvc.perform(get("/api/v1/review-bookmarks/exists")
                         .param("timestampFeedbackIds", "10", "20"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
@@ -250,12 +302,12 @@ class ReviewBookmarkControllerTest {
 
     @Test
     @WithMockUserId
-    @DisplayName("GET /api/review-bookmarks/exists - 빈 ID 목록 조회 시 빈 items 반환")
+    @DisplayName("GET /api/v1/review-bookmarks/exists - 빈 ID 목록 조회 시 빈 items 반환")
     void exists_emptyIds_returnsEmptyItems() throws Exception {
         BookmarkExistsResponse response = new BookmarkExistsResponse(List.of());
         given(reviewBookmarkQueryService.findBookmarkPairs(eq(1L), any())).willReturn(response);
 
-        mockMvc.perform(get("/api/review-bookmarks/exists")
+        mockMvc.perform(get("/api/v1/review-bookmarks/exists")
                         .param("timestampFeedbackIds", ""))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items").isEmpty());

@@ -51,6 +51,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1/admin/**").permitAll()
                 .requestMatchers("/api/v1/service-feedbacks/**").authenticated()
                 .requestMatchers("/api/v1/interviews/**").authenticated()
+                .requestMatchers("/api/v1/review-bookmarks/**").authenticated()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

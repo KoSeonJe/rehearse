@@ -30,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/review-bookmarks")
+@RequestMapping("/api/v1/review-bookmarks")
 @RequiredArgsConstructor
 public class ReviewBookmarkController {
 

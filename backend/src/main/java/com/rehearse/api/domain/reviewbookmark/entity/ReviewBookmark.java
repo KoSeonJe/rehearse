@@ -14,6 +14,24 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+@NamedEntityGraph(
+        name = "ReviewBookmark.withDetails",
+        attributeNodes = {
+                @NamedAttributeNode(value = "timestampFeedback", subgraph = "tsf")
+        },
+        subgraphs = {
+                @NamedSubgraph(name = "tsf", attributeNodes = {
+                        @NamedAttributeNode("question"),
+                        @NamedAttributeNode(value = "questionSetFeedback", subgraph = "qsf")
+                }),
+                @NamedSubgraph(name = "qsf", attributeNodes = {
+                        @NamedAttributeNode(value = "questionSet", subgraph = "qs")
+                }),
+                @NamedSubgraph(name = "qs", attributeNodes = {
+                        @NamedAttributeNode("interview")
+                })
+        }
+)
 @Entity
 @Table(name = "review_bookmark",
        uniqueConstraints = @UniqueConstraint(name = "uk_rb_user_tsf",
