@@ -112,7 +112,7 @@ public class QuestionGenerationService {
 
             for (QuestionPool qp : poolQuestions) {
                 QuestionSet qs = QuestionSet.builder()
-                        .category(parseQuestionCategory(qp.getCategory()))
+                        .category(type.name())
                         .orderIndex(0)
                         .build();
 
@@ -154,7 +154,7 @@ public class QuestionGenerationService {
         List<QuestionSet> result = new ArrayList<>();
         for (GeneratedQuestion gq : generated) {
             QuestionSet qs = QuestionSet.builder()
-                    .category(parseQuestionCategory(gq.getQuestionCategory()))
+                    .category(resolveInterviewType(gq.getQuestionCategory()))
                     .orderIndex(0)
                     .build();
 
@@ -176,14 +176,13 @@ public class QuestionGenerationService {
         return result;
     }
 
-    private QuestionCategory parseQuestionCategory(String categoryStr) {
-        if (categoryStr != null) {
-            try {
-                return QuestionCategory.valueOf(categoryStr.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return QuestionCategory.CS;
+    private String resolveInterviewType(String questionCategory) {
+        if (questionCategory == null) return InterviewType.CS_FUNDAMENTAL.name();
+        try {
+            return InterviewType.valueOf(questionCategory.toUpperCase()).name();
+        } catch (IllegalArgumentException ignored) {}
+        if ("RESUME".equalsIgnoreCase(questionCategory)) return InterviewType.RESUME_BASED.name();
+        return InterviewType.CS_FUNDAMENTAL.name();
     }
 
     private ReferenceType parseReferenceType(String refTypeStr) {

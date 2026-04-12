@@ -195,7 +195,7 @@ class FollowUpTransactionHandlerTest {
     private QuestionSet createQuestionSetWithMainQuestion(Interview interview, ReferenceType mainReferenceType) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionCategory.CS)
+                .category("CS_FUNDAMENTAL")
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 10L);

@@ -31,9 +31,8 @@ public class QuestionSet {
     @JoinColumn(name = "interview_id", nullable = false)
     private Interview interview;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private QuestionCategory category;
+    @Column(nullable = false, length = 50)
+    private String category;
 
     @Column(nullable = false)
     private int orderIndex;
@@ -58,7 +57,7 @@ public class QuestionSet {
     private List<Question> questions = new ArrayList<>();
 
     @Builder
-    public QuestionSet(Interview interview, QuestionCategory category, int orderIndex) {
+    public QuestionSet(Interview interview, String category, int orderIndex) {
         this.interview = interview;
         this.category = category;
         this.orderIndex = orderIndex;

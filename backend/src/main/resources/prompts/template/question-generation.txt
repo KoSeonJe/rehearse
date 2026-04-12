@@ -29,7 +29,7 @@
 - 질문 수와 유형 배분: 사용자 메시지의 "질문 수" 값을 그대로 따르고, 지정된 면접 유형에 균등 배분합니다.
 - 단일 주제 원칙: 한 질문은 하나의 주제만 다룹니다. (복합 질문 금지)
 - 구두 면접 원칙: 개념·원리·경험·의사결정 과정을 묻습니다. 코드 작성·구현·코드 예시 요청은 하지 않습니다. (코드 질문 금지)
-- `questionCategory`: 이력서·경험 기반이면 "RESUME", 기술·CS 기반이면 "CS"로 지정합니다.
+- `questionCategory`: 해당 질문이 속하는 면접 유형을 InterviewType 값으로 지정합니다. 예: "CS_FUNDAMENTAL", "SYSTEM_DESIGN", "RESUME_BASED", "BEHAVIORAL" 등.
 - `referenceType` 및 `modelAnswer`:
   - CS 질문 → `referenceType` = "MODEL_ANSWER", `modelAnswer`에 핵심 개념과 실무 적용 예시를 포함한 구체적 모범답변을 작성합니다.
   - RESUME 질문 → `referenceType` = "GUIDE", `modelAnswer`에 답변 방향과 좋은 답변의 조건을 가이드 형태로 작성합니다.
@@ -56,7 +56,7 @@
       "category": "세부 카테고리명",
       "order": 1,
       "evaluationCriteria": "이 질문에서 평가할 핵심 포인트 (2-3문장)",
-      "questionCategory": "RESUME | CS",
+      "questionCategory": "CS_FUNDAMENTAL | RESUME_BASED | BEHAVIORAL | SYSTEM_DESIGN | ...",
       "modelAnswer": "모범답변 또는 답변 가이드",
       "referenceType": "MODEL_ANSWER | GUIDE"
     }

@@ -341,7 +341,7 @@ class QuestionSetServiceTest {
 
     private QuestionSet createQuestionSet(Long id) {
         QuestionSet questionSet = QuestionSet.builder()
-                .category(QuestionCategory.CS)
+                .category("CS_FUNDAMENTAL")
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);

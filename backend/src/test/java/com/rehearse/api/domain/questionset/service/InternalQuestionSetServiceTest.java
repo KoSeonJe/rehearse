@@ -421,7 +421,7 @@ class InternalQuestionSetServiceTest {
 
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionCategory.CS)
+                .category("CS_FUNDAMENTAL")
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);

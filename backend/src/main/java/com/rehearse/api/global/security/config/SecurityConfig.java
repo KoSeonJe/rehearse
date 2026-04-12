@@ -44,6 +44,7 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/dev/**").permitAll()
                 .requestMatchers("/api/internal/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
