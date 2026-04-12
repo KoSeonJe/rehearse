@@ -5,6 +5,8 @@ import sys
 import boto3
 import httpx
 
+from s3_keys import ParsedKey, derive_feedback_key
+
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'common'))
 
 from config import Config
@@ -75,9 +77,9 @@ def save_feedback(
     resp.raise_for_status()
 
 
-def backup_to_s3(interview_id: int, question_set_id: int, data: dict) -> None:
+def backup_to_s3(parsed: ParsedKey, data: dict) -> None:
     s3 = boto3.client("s3")
-    key = f"analysis-backup/{interview_id}/qs_{question_set_id}.json"
+    key = derive_feedback_key(parsed)
     s3.put_object(
         Bucket=Config.S3_BUCKET,
         Key=key,

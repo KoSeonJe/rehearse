@@ -14,6 +14,7 @@ import boto3
 
 import api_client
 from api_client import get_answers, update_progress, save_feedback, backup_to_s3
+from s3_keys import parse_raw_key
 from config import Config
 from extractors.ffmpeg_extractor import extract_audio, extract_answer_audios, extract_frames, get_video_duration_ms
 from analyzers.gemini_analyzer import analyze_answer_audio
@@ -32,17 +33,16 @@ def lambda_handler(event, context):
 
     print(f"[Analysis] Triggered: bucket={bucket}, key={key}")
 
-    if not key.startswith("videos/") or not key.endswith(".webm"):
-        print(f"[Analysis] Skipping non-video key: {key}")
-        return {"statusCode": 200, "body": "Skipped"}
+    parsed = parse_raw_key(key)
+    if parsed is None:
+        print(f"[Analysis][Skipped] Non-matching key (not interviews/raw/ format): {key}")
+        return {"statusCode": 200, "body": "Skipped: not a v1 raw key"}
 
-    interview_id, question_set_id = _parse_ids_from_key(key)
-    if not interview_id or not question_set_id:
-        print(f"[Analysis] ID 파싱 실패: {key}")
-        return {"statusCode": 400, "body": "Invalid key format"}
+    interview_id = parsed.interview_id
+    question_set_id = parsed.question_set_id
 
     try:
-        return _run_pipeline(interview_id, question_set_id, bucket, key)
+        return _run_pipeline(parsed, bucket, key)
     except Exception as e:
         error_msg = str(e)
         error_detail = traceback.format_exc()
@@ -58,7 +58,9 @@ def lambda_handler(event, context):
         _cleanup()
 
 
-def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str) -> dict:
+def _run_pipeline(parsed, bucket: str, key: str) -> dict:
+    interview_id = parsed.interview_id
+    question_set_id = parsed.question_set_id
     correlation_id = f"{interview_id}-{question_set_id}-{uuid4().hex[:8]}"
     api_client.set_correlation_id(correlation_id)
     print(f"[Analysis] 파이프라인 시작: interview={interview_id}, qs={question_set_id}, correlation_id={correlation_id}")
@@ -152,7 +154,7 @@ def _run_pipeline(interview_id: int, question_set_id: int, bucket: str, key: str
         save_feedback(interview_id, question_set_id, feedback_payload)
     except Exception as e:
         print(f"[Analysis] 피드백 저장 API 실패, S3 백업 시도: {e}")
-        backup_to_s3(interview_id, question_set_id, feedback_payload)
+        backup_to_s3(parsed, feedback_payload)
         raise
 
     print(f"[Analysis] 파이프라인 완료: interview={interview_id}, qs={question_set_id}, verbal={verbal_ok}, nonverbal={nonverbal_ok}")
@@ -506,21 +508,6 @@ def _safe_update_progress(interview_id, question_set_id, status, **kwargs):
         update_progress(interview_id, question_set_id, status, **kwargs)
     except Exception as e:
         print(f"[Analysis] 진행 상태 업데이트 실패: {e}")
-
-
-def _parse_ids_from_key(key: str) -> tuple[int | None, int | None]:
-    """S3 key에서 interviewId, questionSetId 파싱.
-
-    Expected format: videos/{interviewId}/qs_{questionSetId}.webm
-    """
-    try:
-        parts = key.split("/")
-        interview_id = int(parts[1])
-        filename = parts[2]  # qs_{id}.webm
-        qs_id = int(filename.split("_")[1].split(".")[0])
-        return interview_id, qs_id
-    except (IndexError, ValueError):
-        return None, None
 
 
 def _get_frame_time_ms(frame_path: str) -> int:

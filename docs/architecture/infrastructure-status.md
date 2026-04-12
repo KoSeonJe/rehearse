@@ -156,14 +156,18 @@ sequenceDiagram
 |------|-----|
 | Bucket | `rehearse-videos-dev` |
 | Region | ap-northeast-2 |
+| Key Schema | **[S3 Key Schema v1.0](./s3-key-schema.md)** (SSOT) |
 
-**디렉토리 구조:**
+**디렉토리 구조 (v1.0 신규 스키마)**:
 ```
 rehearse-videos-dev/
-├── videos/{interviewId}/qs_{questionSetId}.webm   ← 원본 녹화
-├── videos/{interviewId}/qs_{questionSetId}.mp4    ← MediaConvert 변환
-├── analysis-backup/{id}/qs_{qsId}.json            ← 분석 실패 시 백업
-└── layers/ffmpeg-layer.zip                         ← Lambda Layer 소스
+├── interviews/raw/YYYY/MM/DD/{iid}/{qsid}/{uuid}.webm       ← 원본 녹화
+├── interviews/mp4/YYYY/MM/DD/{iid}/{qsid}/{uuid}.mp4        ← MediaConvert 변환
+├── interviews/feedback/YYYY/MM/DD/{iid}/{qsid}/{uuid}.json   ← 피드백 백업
+├── interviews/frames/YYYY/MM/DD/{iid}/{qsid}/{uuid}/*.jpg    ← 디버깅용 (7d TTL)
+├── interviews/audio/YYYY/MM/DD/{iid}/{qsid}/{uuid}/*.mp3     ← 디버깅용 (7d TTL)
+├── db-backups/YYYY/MM/DD/rehearse-<env>-<timestamp>.sql.gz   ← DB 백업
+└── layers/ffmpeg-layer.zip                                    ← Lambda Layer 소스
 ```
 
 ### 3.3 EventBridge
