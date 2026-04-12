@@ -112,7 +112,7 @@ public class QuestionGenerationService {
 
             for (QuestionPool qp : poolQuestions) {
                 QuestionSet qs = QuestionSet.builder()
-                        .category(type.name())
+                        .category(QuestionSetCategory.valueOf(type.name()))
                         .orderIndex(0)
                         .build();
 
@@ -153,18 +153,18 @@ public class QuestionGenerationService {
 
         List<QuestionSet> result = new ArrayList<>();
         for (GeneratedQuestion gq : generated) {
+            QuestionSetCategory category = resolveCategory(gq.getQuestionCategory());
             QuestionSet qs = QuestionSet.builder()
-                    .category(resolveInterviewType(gq.getQuestionCategory()))
+                    .category(category)
                     .orderIndex(0)
                     .build();
 
-            FeedbackPerspective perspective = parseFeedbackPerspective(gq.getQuestionCategory());
             Question question = Question.builder()
                     .questionType(QuestionType.MAIN)
                     .questionText(gq.getContent())
                     .modelAnswer(gq.getModelAnswer())
                     .referenceType(parseReferenceType(gq.getReferenceType()))
-                    .feedbackPerspective(perspective)
+                    .feedbackPerspective(determinePerspective(category))
                     .orderIndex(0)
                     .build();
 
@@ -176,13 +176,18 @@ public class QuestionGenerationService {
         return result;
     }
 
-    private String resolveInterviewType(String questionCategory) {
-        if (questionCategory == null) return InterviewType.CS_FUNDAMENTAL.name();
+    private QuestionSetCategory resolveCategory(String questionCategory) {
+        if (questionCategory == null) {
+            throw new IllegalArgumentException("questionCategory must not be null");
+        }
+        if ("RESUME".equalsIgnoreCase(questionCategory)) {
+            return QuestionSetCategory.RESUME_BASED;
+        }
         try {
-            return InterviewType.valueOf(questionCategory.toUpperCase()).name();
-        } catch (IllegalArgumentException ignored) {}
-        if ("RESUME".equalsIgnoreCase(questionCategory)) return InterviewType.RESUME_BASED.name();
-        return InterviewType.CS_FUNDAMENTAL.name();
+            return QuestionSetCategory.valueOf(questionCategory.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown questionCategory: " + questionCategory, e);
+        }
     }
 
     private ReferenceType parseReferenceType(String refTypeStr) {
@@ -203,10 +208,11 @@ public class QuestionGenerationService {
         };
     }
 
-    private FeedbackPerspective parseFeedbackPerspective(String questionCategory) {
-        if ("RESUME".equalsIgnoreCase(questionCategory)) {
-            return FeedbackPerspective.EXPERIENCE;
-        }
-        return FeedbackPerspective.TECHNICAL;
+    private FeedbackPerspective determinePerspective(QuestionSetCategory category) {
+        return switch (category) {
+            case BEHAVIORAL -> FeedbackPerspective.BEHAVIORAL;
+            case RESUME_BASED -> FeedbackPerspective.EXPERIENCE;
+            default -> FeedbackPerspective.TECHNICAL;
+        };
     }
 }

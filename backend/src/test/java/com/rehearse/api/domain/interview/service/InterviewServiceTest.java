@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionType;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -160,7 +161,7 @@ class InterviewServiceTest {
     private QuestionSet createMockQuestionSet(Interview interview) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category("CS_FUNDAMENTAL")
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 10L);

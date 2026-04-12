@@ -26,6 +26,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetServiceTest {
@@ -341,7 +342,7 @@ class QuestionSetServiceTest {
 
     private QuestionSet createQuestionSet(Long id) {
         QuestionSet questionSet = QuestionSet.builder()
-                .category("CS_FUNDAMENTAL")
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);

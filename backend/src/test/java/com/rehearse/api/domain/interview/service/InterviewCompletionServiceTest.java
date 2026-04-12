@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -155,7 +156,7 @@ class InterviewCompletionServiceTest {
     private QuestionSet createQuestionSetWithAnalysis(Long id, Interview interview, AnalysisStatus status) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category("CS_FUNDAMENTAL")
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(id.intValue())
                 .build();
         ReflectionTestUtils.setField(qs, "id", id);

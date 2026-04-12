@@ -7,8 +7,6 @@ import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkListItem;
 import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkListResponse;
 import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkResponse;
 import com.rehearse.api.domain.reviewbookmark.dto.UpdateBookmarkStatusRequest;
-import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkErrorCode;
-import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException;
 import com.rehearse.api.domain.reviewbookmark.service.ReviewBookmarkQueryService;
 import com.rehearse.api.domain.reviewbookmark.service.ReviewBookmarkService;
 import com.rehearse.api.global.common.ApiResponse;
@@ -33,8 +31,6 @@ import java.util.List;
 @RequestMapping("/api/v1/review-bookmarks")
 @RequiredArgsConstructor
 public class ReviewBookmarkController {
-
-    private static final int MAX_EXISTS_IDS = 200;
 
     private final ReviewBookmarkService reviewBookmarkService;
     private final ReviewBookmarkQueryService reviewBookmarkQueryService;
@@ -79,9 +75,6 @@ public class ReviewBookmarkController {
             @RequestParam(required = false) List<Long> timestampFeedbackIds) {
         if (timestampFeedbackIds == null || timestampFeedbackIds.isEmpty()) {
             return ResponseEntity.ok(ApiResponse.ok(new BookmarkExistsResponse(List.of())));
-        }
-        if (timestampFeedbackIds.size() > MAX_EXISTS_IDS) {
-            throw new ReviewBookmarkException(ReviewBookmarkErrorCode.TOO_MANY_IDS);
         }
         BookmarkExistsResponse response =
                 reviewBookmarkQueryService.findBookmarkPairs(userId, timestampFeedbackIds);

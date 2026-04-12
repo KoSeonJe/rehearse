@@ -25,6 +25,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @DataJpaTest
 @ActiveProfiles("test")
@@ -62,7 +63,7 @@ class ReviewBookmarkRepositoryTest {
 
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category("CS_FUNDAMENTAL")
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         entityManager.persist(questionSet);

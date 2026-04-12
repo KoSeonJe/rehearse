@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.questionset.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.questionset.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
@@ -145,7 +146,7 @@ class ReviewBookmarkQueryServiceTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category("EXPERIENCE")
+                .category(QuestionSetCategory.RESUME_BASED)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 1L);
@@ -202,7 +203,7 @@ class ReviewBookmarkQueryServiceTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category("CONCEPT")
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 1L);

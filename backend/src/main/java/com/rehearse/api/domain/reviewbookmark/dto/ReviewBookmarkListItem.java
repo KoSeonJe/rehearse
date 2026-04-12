@@ -5,13 +5,6 @@ import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 
 import java.time.LocalDateTime;
 
-/**
- * 복습 북마크 목록 항목의 DTO.
- *
- * <p>BE는 도메인 원시값만 전달한다. 포지션 라벨링, 제목 조합 등
- * 프레젠테이션 로직은 FE가 담당한다 — BE DTO에 사용자용 표시 문자열을
- * 미리 조합해 두면 FE 라벨 매핑을 우회하게 되어 관심사가 섞인다.
- */
 public record ReviewBookmarkListItem(
         Long id,
         Long timestampFeedbackId,
@@ -46,7 +39,7 @@ public record ReviewBookmarkListItem(
                 question != null ? question.getModelAnswer() : null,
                 tsf.getTranscript(),
                 tsf.getCoachingImprovement(),
-                questionSet != null ? questionSet.getCategory() : null,
+                questionSet != null ? questionSet.getCategory().name() : null,
                 interview != null ? interview.getPosition().name() : null,
                 interview != null ? interview.getPositionDetail() : null,
                 interview != null ? interview.getCreatedAt() : null,

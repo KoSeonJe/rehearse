@@ -28,7 +28,7 @@ public class QuestionSetResponse {
 
         return QuestionSetResponse.builder()
                 .id(questionSet.getId())
-                .category(questionSet.getCategory())
+                .category(questionSet.getCategory().name())
                 .orderIndex(questionSet.getOrderIndex())
                 .analysisStatus(status)
                 .failureReason(failureReason)
