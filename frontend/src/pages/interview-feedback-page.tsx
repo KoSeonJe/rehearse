@@ -13,8 +13,7 @@ import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
-import { getInterviewTypeLabel } from '@/constants/interview-type-labels'
-import type { AnalysisStatus, ApiResponse, InterviewSession, QuestionSetFeedbackResponse } from '@/types/interview'
+import type { AnalysisStatus, ApiResponse, InterviewSession, InterviewType, QuestionSetFeedbackResponse } from '@/types/interview'
 
 interface InterviewInfoBarProps {
   interview: InterviewSession
@@ -121,7 +120,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{getInterviewTypeLabel(category)}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
             <p className="text-xs text-error font-semibold">분석 실패</p>
           </div>
         </div>
@@ -207,7 +206,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{getInterviewTypeLabel(category)}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
             <p className="text-xs text-text-tertiary font-medium">{config.subtitle}</p>
           </div>
         </div>
@@ -241,7 +240,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           {index + 1}
         </div>
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-text-primary">{getInterviewTypeLabel(category)}</h2>
+          <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
           <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
         </div>
       </div>

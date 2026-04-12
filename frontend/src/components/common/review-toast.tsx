@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { TOAST_SEEN_PREFIX } from '@/constants/review-bookmark'
 
-const TOAST_SEEN_PREFIX = 'rehearse:review-toast-seen:'
 const AUTO_DISMISS_MS = 3000
 
 interface ReviewToastProps {
@@ -12,6 +12,8 @@ interface ReviewToastProps {
 const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
   const navigate = useNavigate()
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const onDismissRef = useRef(onDismiss)
+  onDismissRef.current = onDismiss
 
   useEffect(() => {
     try {
@@ -21,7 +23,7 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
     }
 
     timerRef.current = setTimeout(() => {
-      onDismiss()
+      onDismissRef.current()
     }, AUTO_DISMISS_MS)
 
     return () => {
@@ -29,13 +31,13 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
         clearTimeout(timerRef.current)
       }
     }
-  }, [onDismiss])
+  }, [timestampFeedbackId])
 
   const handleNavigate = () => {
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current)
     }
-    onDismiss()
+    onDismissRef.current()
     navigate('/review-list')
   }
 
@@ -44,15 +46,10 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
       role="status"
       aria-live="polite"
       aria-atomic="true"
-      className="fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl bg-[#0F172A] px-5 py-3.5 text-white"
-      style={{
-        boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
-        animation: 'review-toast-in 0.25s ease-out forwards',
-      }}
+      className="fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-lg animate-toast-slide-in motion-reduce:animate-none"
     >
       <div
-        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full"
-        style={{ backgroundColor: '#6366F1' }}
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-accent"
         aria-hidden="true"
       >
         <svg
@@ -80,24 +77,10 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
       <button
         type="button"
         onClick={handleNavigate}
-        className="flex-shrink-0 text-[13px] font-bold underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
-        style={{ color: '#6366F1' }}
+        className="flex-shrink-0 text-[13px] font-bold text-accent underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
       >
         보러가기
       </button>
-
-      <style>{`
-        @keyframes review-toast-in {
-          from { transform: translateY(12px); opacity: 0; }
-          to   { transform: translateY(0);    opacity: 1; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          @keyframes review-toast-in {
-            from { opacity: 0; }
-            to   { opacity: 1; }
-          }
-        }
-      `}</style>
     </div>
   )
 }

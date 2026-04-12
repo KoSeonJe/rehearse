@@ -11,21 +11,21 @@ export const createBookmark = async (
   timestampFeedbackId: number,
 ): Promise<ReviewBookmarkResponse> => {
   const res = await apiClient.post<ApiResponse<ReviewBookmarkResponse>>(
-    '/api/review-bookmarks',
+    '/api/v1/review-bookmarks',
     { timestampFeedbackId },
   )
   return res.data
 }
 
 export const deleteBookmark = async (bookmarkId: number): Promise<void> => {
-  await apiClient.delete<void>(`/api/review-bookmarks/${bookmarkId}`)
+  await apiClient.delete<void>(`/api/v1/review-bookmarks/${bookmarkId}`)
 }
 
 export const listBookmarks = async (
   status: BookmarkStatus,
 ): Promise<ReviewBookmarkListResponse> => {
   const res = await apiClient.get<ApiResponse<ReviewBookmarkListResponse>>(
-    `/api/review-bookmarks?status=${status}`,
+    `/api/v1/review-bookmarks?status=${status}`,
   )
   return res.data
 }
@@ -35,7 +35,7 @@ export const updateBookmarkStatus = async (
   resolved: boolean,
 ): Promise<ReviewBookmarkResponse> => {
   const res = await apiClient.patch<ApiResponse<ReviewBookmarkResponse>>(
-    `/api/review-bookmarks/${id}/status`,
+    `/api/v1/review-bookmarks/${id}/status`,
     { resolved },
   )
   return res.data
@@ -46,7 +46,7 @@ export const findBookmarkExists = async (
 ): Promise<BookmarkExistsResponse> => {
   const params = tsfIds.map((id) => `timestampFeedbackIds=${id}`).join('&')
   const res = await apiClient.get<ApiResponse<BookmarkExistsResponse>>(
-    `/api/review-bookmarks/exists?${params}`,
+    `/api/v1/review-bookmarks/exists?${params}`,
   )
   return res.data
 }

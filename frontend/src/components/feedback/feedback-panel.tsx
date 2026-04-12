@@ -61,8 +61,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
   return (
     <div
       data-feedback-id={feedback.id}
-      className="rounded-2xl bg-white overflow-hidden transition-all cursor-pointer"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+      className="rounded-2xl bg-white overflow-hidden transition-all cursor-pointer shadow-sm"
       onClick={() => onSeek(feedback.startMs)}
     >
       {/* 헤더 */}
@@ -211,8 +210,7 @@ export const FeedbackPanel = ({
     return (
       <div className="flex flex-col h-full">
         <div
-          className="rounded-2xl bg-white p-8 text-center"
-          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+          className="rounded-2xl bg-white p-8 text-center shadow-sm"
         >
           <p className="text-[15px] text-gray-300">피드백이 없습니다</p>
         </div>

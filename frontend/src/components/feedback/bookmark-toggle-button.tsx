@@ -4,8 +4,7 @@ import { useCreateBookmark, useDeleteBookmark } from '@/hooks/use-review-bookmar
 import { ApiError } from '@/lib/api-client'
 import ReviewCoachMark from '@/components/feedback/review-coach-mark'
 import ReviewToast from '@/components/common/review-toast'
-
-const TOAST_SEEN_PREFIX = 'rehearse:review-toast-seen:'
+import { TOAST_SEEN_PREFIX } from '@/constants/review-bookmark'
 
 interface BookmarkToggleButtonProps {
   timestampFeedbackId: number
@@ -96,18 +95,13 @@ const BookmarkToggleButton = ({
           'flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-60',
-          isAnimating ? 'bookmark-pop' : '',
+          isAnimating ? 'animate-bookmark-pop motion-reduce:animate-none' : '',
           isBookmarked
-            ? 'border border-[#C7D2FE] font-bold'
+            ? 'border border-[#C7D2FE] font-bold bg-accent-light text-accent-hover'
             : 'border border-[#E2E8F0] bg-white font-medium text-[#64748B] hover:border-[#6366F1] hover:bg-[#EEF2FF] hover:text-[#6366F1]',
         ]
           .filter(Boolean)
           .join(' ')}
-        style={
-          isBookmarked
-            ? { backgroundColor: '#EEF2FF', color: '#4F46E5' }
-            : undefined
-        }
       >
         {isBookmarked ? (
           <ListChecks size={15} aria-hidden="true" />
@@ -119,7 +113,7 @@ const BookmarkToggleButton = ({
         </span>
       </button>
 
-      <ReviewCoachMark anchorRef={buttonRef} onButtonClick={handleClick} />
+      <ReviewCoachMark anchorRef={buttonRef} />
 
       {showToast && (
         <ReviewToast
@@ -128,21 +122,7 @@ const BookmarkToggleButton = ({
         />
       )}
 
-      <style>{`
-        @keyframes bookmark-pop {
-          0%   { transform: scale(1); }
-          40%  { transform: scale(1.15); }
-          100% { transform: scale(1); }
-        }
-        .bookmark-pop {
-          animation: bookmark-pop 0.18s ease-out forwards;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .bookmark-pop {
-            animation: none;
-          }
-        }
-      `}</style>
+
     </div>
   )
 }

@@ -9,7 +9,6 @@ const GAP = 10
 
 interface ReviewCoachMarkProps {
   anchorRef: React.RefObject<HTMLButtonElement | null>
-  onButtonClick?: (e: React.MouseEvent) => void
 }
 
 interface PopoverPosition {
@@ -18,7 +17,7 @@ interface PopoverPosition {
   arrowLeft: number
 }
 
-const ReviewCoachMark = ({ anchorRef, onButtonClick }: ReviewCoachMarkProps) => {
+const ReviewCoachMark = ({ anchorRef }: ReviewCoachMarkProps) => {
   const [isVisible, setIsVisible] = useState(false)
   const [position, setPosition] = useState<PopoverPosition | null>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -121,13 +120,6 @@ const ReviewCoachMark = ({ anchorRef, onButtonClick }: ReviewCoachMarkProps) => 
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [isVisible, dismiss, anchorRef])
 
-  const handleAnchorClick = (e: React.MouseEvent) => {
-    if (isVisible) {
-      dismiss()
-    }
-    onButtonClick?.(e)
-  }
-
   if (!isVisible || !position) return null
 
   return createPortal(
@@ -136,12 +128,10 @@ const ReviewCoachMark = ({ anchorRef, onButtonClick }: ReviewCoachMarkProps) => 
       role="dialog"
       aria-label="복습 목록 안내"
       aria-modal="false"
-      className="fixed z-50 w-64 rounded-2xl bg-white p-4"
+      className="fixed z-50 w-64 min-w-[240px] rounded-2xl bg-white p-4 shadow-lg"
       style={{
         top: position.top,
         left: position.left,
-        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-        minWidth: '240px',
       }}
     >
       <div
@@ -159,7 +149,7 @@ const ReviewCoachMark = ({ anchorRef, onButtonClick }: ReviewCoachMarkProps) => 
         }}
       />
 
-      <p className="mb-3 text-[14px] font-medium leading-[1.6] text-[#334155]">
+      <p className="mb-3 text-[14px] font-medium leading-[1.6] text-text-secondary">
         답변을 다시 꺼내 보고 싶을 때,
         <br />
         여기를 눌러 담아두세요.
@@ -169,14 +159,11 @@ const ReviewCoachMark = ({ anchorRef, onButtonClick }: ReviewCoachMarkProps) => 
         <button
           type="button"
           onClick={() => dismiss()}
-          className="rounded-full px-4 py-1.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2"
-          style={{ backgroundColor: '#6366F1' }}
+          className="rounded-full bg-accent px-4 py-1.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2"
         >
           알겠어요
         </button>
       </div>
-
-      <span className="hidden" aria-hidden="true" onClick={handleAnchorClick} />
     </div>,
     document.body,
   )

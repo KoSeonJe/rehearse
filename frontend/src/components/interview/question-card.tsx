@@ -1,5 +1,5 @@
-import type { Question } from '@/types/interview'
-import { getInterviewTypeLabel } from '@/constants/interview-type-labels'
+import type { Question, InterviewType } from '@/types/interview'
+import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 
 interface QuestionCardProps {
   question: Question
@@ -14,7 +14,7 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
         </span>
         {question.category && (
           <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
-            {getInterviewTypeLabel(question.category)}
+            {INTERVIEW_TYPE_LABELS[question.category as InterviewType]?.label ?? question.category}
           </span>
         )}
       </div>

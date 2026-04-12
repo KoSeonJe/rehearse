@@ -74,6 +74,15 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '0.6' },
           '100%': { transform: 'scale(1.8)', opacity: '0' },
         },
+        'bookmark-pop': {
+          '0%': { transform: 'scale(1)' },
+          '40%': { transform: 'scale(1.15)' },
+          '100%': { transform: 'scale(1)' },
+        },
+        'toast-slide-in': {
+          from: { transform: 'translateY(12px)', opacity: '0' },
+          to: { transform: 'translateY(0)', opacity: '1' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
@@ -81,6 +90,8 @@ export default {
         'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
         'rec-pulse': 'rec-pulse 2s ease-in-out infinite',
         'ripple': 'ripple 2s ease-out infinite',
+        'bookmark-pop': 'bookmark-pop 0.18s ease-out',
+        'toast-slide-in': 'toast-slide-in 0.2s ease-out',
       },
     },
   },

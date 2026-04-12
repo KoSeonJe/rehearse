@@ -101,8 +101,11 @@ export const useCreateBookmark = () => {
     },
 
     onError: (error, { interviewId }, context) => {
-      // 409 Conflict → server says already bookmarked, sync silently (no rollback, no toast)
+      // 409 Conflict → server says already bookmarked, invalidate cache to sync real state
       if (error instanceof ApiError && error.status === 409) {
+        void queryClient.invalidateQueries({
+          queryKey: reviewBookmarkKeys.existsForInterview(interviewId),
+        })
         return
       }
 
@@ -232,13 +235,9 @@ export const useUpdateBookmarkStatus = () => {
   return useMutation<ReviewBookmarkResponse, Error, UpdateBookmarkStatusVariables>({
     mutationFn: ({ id, resolved }) => updateBookmarkStatus(id, resolved),
 
-    onSuccess: (_data, { status }) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({
-        queryKey: reviewBookmarkKeys.list(status),
-      })
-      // Invalidate all list queries since status change affects all filter views
-      void queryClient.invalidateQueries({
-        queryKey: reviewBookmarkKeys.list('all'),
+        queryKey: reviewBookmarkKeys.all,
       })
     },
   })
