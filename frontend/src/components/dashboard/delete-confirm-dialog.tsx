@@ -5,6 +5,7 @@ interface DeleteConfirmDialogProps {
   onConfirm: () => void
   onCancel: () => void
   isPending: boolean
+  itemLabel?: string
 }
 
 export const DeleteConfirmDialog = ({
@@ -12,6 +13,7 @@ export const DeleteConfirmDialog = ({
   onConfirm,
   onCancel,
   isPending,
+  itemLabel = '면접',
 }: DeleteConfirmDialogProps) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,10 +43,10 @@ export const DeleteConfirmDialog = ({
           id="delete-dialog-title"
           className="text-base font-extrabold text-text-primary"
         >
-          면접을 삭제하시겠습니까?
+          {`${itemLabel}을 삭제하시겠습니까?`}
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
-          삭제된 면접은 복구할 수 없습니다.
+          {`삭제된 ${itemLabel}은 복구할 수 없습니다.`}
         </p>
         <div className="mt-6 flex gap-3">
           <button

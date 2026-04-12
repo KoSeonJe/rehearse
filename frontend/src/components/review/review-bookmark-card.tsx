@@ -157,6 +157,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
         isPending={deleteBookmark.isPending}
+        itemLabel="복습"
       />
     </>
   )

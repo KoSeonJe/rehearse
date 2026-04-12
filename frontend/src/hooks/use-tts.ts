@@ -157,6 +157,11 @@ export const useTts = ({ onStart, onEnd }: UseTtsOptions = {}) => {
     async (text: string) => {
       if (!text.trim()) return
       stop()
+      // stop() 직후 즉시 isSpeaking을 true로 설정하여
+      // fetch 응답 대기 동안 UI가 "AI 발언 중"으로 표시되도록 한다.
+      // React 18 배칭으로 stop() 내 setIsSpeaking(false)와 합쳐져 최종 true가 된다.
+      setIsSpeaking(true)
+      onStartRef.current?.()
       // stop() 이 이미 세대를 +1 했으므로 그 값이 곧 새 speak 의 id.
       // 여기서 또 증가시키면 stop 호출 직전에 큐잉된 onended 가 가드에
       // 의해 무효화되어 pendingTtsActionRef 예약 액션이 누락될 수 있다.
@@ -191,9 +196,6 @@ export const useTts = ({ onStart, onEnd }: UseTtsOptions = {}) => {
         const audio = new Audio(url)
         audioRef.current = audio
         abortControllerRef.current = null
-
-        setIsSpeaking(true)
-        onStartRef.current?.()
 
         audio.onended = () => {
           if (utteranceIdRef.current !== id) return

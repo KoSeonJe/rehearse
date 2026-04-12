@@ -378,7 +378,7 @@ export const useAnswerFlow = ({
           })
         }
 
-        tts.speak(res.data.question)
+        tts.speak(res.data.ttsQuestion || res.data.question)
       } catch (err) {
         // 면접 종료 / 언마운트 / 시간 만료에 의한 abort 면 상위 흐름이 종료를
         // 주도하므로 여기서 transitionToNext 를 호출하지 않는다. 그렇지 않으면
