@@ -1,4 +1,5 @@
 import type { Question } from '@/types/interview'
+import { getInterviewTypeLabel } from '@/constants/interview-type-labels'
 
 interface QuestionCardProps {
   question: Question
@@ -11,9 +12,11 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-medium text-white">
           {question.order}
         </span>
-        <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
-          {question.category}
-        </span>
+        {question.category && (
+          <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
+            {getInterviewTypeLabel(question.category)}
+          </span>
+        )}
       </div>
       <p className="mt-3 text-base leading-relaxed text-text-primary">
         {question.content}

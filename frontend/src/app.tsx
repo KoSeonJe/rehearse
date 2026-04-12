@@ -7,6 +7,7 @@ import { InterviewReadyPage } from '@/pages/interview-ready-page'
 import { InterviewPage } from '@/pages/interview-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
+import { ReviewListPage } from '@/pages/review-list-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
@@ -28,6 +29,7 @@ export const App = () => {
           <Route path="/interview/:publicId/analysis" element={<InterviewAnalysisPage />} />
           <Route path="/interview/:publicId/feedback" element={<InterviewFeedbackPage />} />
           <Route path="/interview/:publicId/review" element={<InterviewFeedbackPage />} />
+          <Route path="/review-list" element={<ReviewListPage />} />
         </Route>
 
         <Route element={<PasswordProtectedRoute />}>

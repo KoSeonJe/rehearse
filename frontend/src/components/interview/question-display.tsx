@@ -1,4 +1,5 @@
 import type { Question, FollowUpResponse } from '@/types/interview'
+import { getInterviewTypeLabel } from '@/constants/interview-type-labels'
 
 interface QuestionDisplayProps {
   question: Question
@@ -28,7 +29,7 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
           </span>
           {question.category && (
             <span className="rounded-badge bg-background px-3 py-1 text-xs font-medium text-text-secondary">
-              {question.category}
+              {getInterviewTypeLabel(question.category)}
             </span>
           )}
         </div>
