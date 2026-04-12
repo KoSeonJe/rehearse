@@ -164,7 +164,7 @@ public class DevController {
         return objectMapper.convertValue(
                 Map.of(
                         "status", ConvertStatus.COMPLETED.name(),
-                        "streamingS3Key", String.format("videos/%d/qs_%d.mp4", interviewId, questionSetId)
+                        "streamingS3Key", String.format("interviews/mp4/2026/01/01/%d/%d/000000000000.mp4", interviewId, questionSetId)
                 ),
                 com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest.class
         );

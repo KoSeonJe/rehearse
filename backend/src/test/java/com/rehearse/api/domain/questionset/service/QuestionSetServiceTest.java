@@ -8,6 +8,7 @@ import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3KeyGenerator;
 import com.rehearse.api.infra.aws.S3Service;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,6 +55,9 @@ class QuestionSetServiceTest {
 
     @Mock
     private S3Service s3Service;
+
+    @Mock
+    private S3KeyGenerator s3KeyGenerator;
 
     // ----------------------------------------------------------------
     // saveAnswers
@@ -151,6 +155,8 @@ class QuestionSetServiceTest {
         QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.PENDING_UPLOAD);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(s3Service.getBucket()).willReturn("test-bucket");
+        given(s3KeyGenerator.generateRawVideoKey(5L, 1L))
+                .willReturn("interviews/raw/2026/04/12/5/1/abcdef012345.webm");
         given(s3Service.generatePutPresignedUrl(anyString(), anyString()))
                 .willReturn("https://s3.example.com/presigned-put");
 
@@ -169,7 +175,7 @@ class QuestionSetServiceTest {
 
         // then
         assertThat(response.getUploadUrl()).isEqualTo("https://s3.example.com/presigned-put");
-        assertThat(response.getS3Key()).isEqualTo("videos/5/qs_1.webm");
+        assertThat(response.getS3Key()).isEqualTo("interviews/raw/2026/04/12/5/1/abcdef012345.webm");
         assertThat(response.getFileMetadataId()).isEqualTo(100L);
         then(fileMetadataRepository).should().save(any(FileMetadata.class));
     }

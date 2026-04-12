@@ -8,6 +8,7 @@ import com.rehearse.api.domain.questionset.entity.*;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.*;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3KeyGenerator;
 import com.rehearse.api.infra.aws.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class QuestionSetService {
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
+    private final S3KeyGenerator s3KeyGenerator;
 
     @Transactional
     public void saveAnswers(Long questionSetId, SaveAnswersRequest request) {
@@ -71,7 +73,7 @@ public class QuestionSetService {
     public UploadUrlResponse generateUploadUrl(Long interviewId, Long questionSetId, UploadUrlRequest request) {
         QuestionSet questionSet = findQuestionSet(questionSetId);
 
-        String s3Key = String.format("videos/%d/qs_%d.webm", interviewId, questionSetId);
+        String s3Key = s3KeyGenerator.generateRawVideoKey(interviewId, questionSetId);
 
         FileMetadata fileMetadata = FileMetadata.builder()
                 .fileType(FileType.VIDEO)

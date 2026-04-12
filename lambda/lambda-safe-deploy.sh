@@ -22,11 +22,11 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-log_info()  { echo -e "${BLUE}[INFO]${NC} $1"; }
-log_ok()    { echo -e "${GREEN}[  ✓ ]${NC} $1"; }
-log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
-log_fail()  { echo -e "${RED}[FAIL]${NC} $1"; }
-log_step()  { echo -e "\n${BLUE}━━━ Step $1: $2 ━━━${NC}"; }
+log_info()  { echo -e "${BLUE}[INFO]${NC} $1" >&2; }
+log_ok()    { echo -e "${GREEN}[  ✓ ]${NC} $1" >&2; }
+log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
+log_fail()  { echo -e "${RED}[FAIL]${NC} $1" >&2; }
+log_step()  { echo -e "\n${BLUE}━━━ Step $1: $2 ━━━${NC}" >&2; }
 
 # ─── Step 1: 코드 검증 ────────────────────────────────────────────
 
