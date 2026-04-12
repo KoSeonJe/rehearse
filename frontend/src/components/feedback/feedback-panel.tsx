@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { TimestampFeedback, QuestionWithAnswer } from '@/types/interview'
 import ContentTab from '@/components/feedback/content-tab'
 import DeliveryTab from '@/components/feedback/delivery-tab'
+import BookmarkToggleButton from '@/components/feedback/bookmark-toggle-button'
 
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   MAIN: '원본 답변',
@@ -30,9 +31,11 @@ interface FeedbackCardProps {
   feedback: TimestampFeedback
   question: QuestionWithAnswer | undefined
   onSeek: (ms: number) => void
+  interviewId: number
+  bookmarkIdsByTsfId: Map<number, number>
 }
 
-const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
+const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTsfId }: FeedbackCardProps) => {
   const [showModelAnswer, setShowModelAnswer] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
@@ -58,8 +61,7 @@ const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
   return (
     <div
       data-feedback-id={feedback.id}
-      className="rounded-2xl bg-white overflow-hidden transition-all cursor-pointer"
-      style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+      className="rounded-2xl bg-white overflow-hidden transition-all cursor-pointer shadow-sm"
       onClick={() => onSeek(feedback.startMs)}
     >
       {/* 헤더 */}
@@ -71,9 +73,16 @@ const FeedbackCard = ({ feedback, question, onSeek }: FeedbackCardProps) => {
           {answerTypeLabel !== null && (
             <span className="text-[13px] text-gray-400">{answerTypeLabel}</span>
           )}
-          {!feedback.isAnalyzed && (
-            <span className="ml-auto text-[13px] text-gray-300">미분석</span>
-          )}
+          <div className="ml-auto flex items-center gap-2">
+            <BookmarkToggleButton
+              timestampFeedbackId={feedback.id}
+              interviewId={interviewId}
+              bookmarkId={bookmarkIdsByTsfId.get(feedback.id)}
+            />
+            {!feedback.isAnalyzed && (
+              <span className="text-[13px] text-gray-300">미분석</span>
+            )}
+          </div>
         </div>
         {question && (
           <p className="text-[17px] font-bold text-gray-900 leading-snug">
@@ -172,6 +181,8 @@ interface FeedbackPanelProps {
   questions: QuestionWithAnswer[]
   selectedFeedbackId: number | null
   onSeek: (ms: number) => void
+  interviewId: number
+  bookmarkIdsByTsfId: Map<number, number>
 }
 
 export const FeedbackPanel = ({
@@ -179,6 +190,8 @@ export const FeedbackPanel = ({
   questions,
   selectedFeedbackId,
   onSeek,
+  interviewId,
+  bookmarkIdsByTsfId,
 }: FeedbackPanelProps) => {
   const findQuestion = (fb: TimestampFeedback): QuestionWithAnswer | undefined => {
     return questions.find(
@@ -197,8 +210,7 @@ export const FeedbackPanel = ({
     return (
       <div className="flex flex-col h-full">
         <div
-          className="rounded-2xl bg-white p-8 text-center"
-          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}
+          className="rounded-2xl bg-white p-8 text-center shadow-sm"
         >
           <p className="text-[15px] text-gray-300">피드백이 없습니다</p>
         </div>
@@ -213,6 +225,8 @@ export const FeedbackPanel = ({
         feedback={selectedFeedback}
         question={findQuestion(selectedFeedback)}
         onSeek={onSeek}
+        interviewId={interviewId}
+        bookmarkIdsByTsfId={bookmarkIdsByTsfId}
       />
     </div>
   )

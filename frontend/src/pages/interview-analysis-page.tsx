@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { InterviewType } from '@/types/interview'
+import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
@@ -20,7 +22,7 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-black uppercase tracking-widest text-text-tertiary">{category}</h4>
+      <h4 className="text-xs font-black uppercase tracking-widest text-text-tertiary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
       {questions.map((q) => (
         <div key={q.questionId} className="rounded-2xl bg-white border border-border p-5">
           <p className="text-sm font-bold text-text-primary mb-2">{q.questionText}</p>
@@ -102,7 +104,7 @@ const AnalysisStatusFloat = ({
             <div className="mt-2 space-y-3">
               {statuses.map((status, idx) => {
                 if (!status || status.analysisStatus === 'COMPLETED' || status.analysisStatus === 'SKIPPED') return null
-                const label = questionSets[idx]?.category ?? `세트 ${idx + 1}`
+                const label = questionSets[idx]?.category ? INTERVIEW_TYPE_LABELS[questionSets[idx].category as InterviewType]?.label ?? questionSets[idx].category : `세트 ${idx + 1}`
                 const currentStep = getProgressIndex(status.analysisStatus)
                 const progressLabel = getProgressLabel(status.analysisStatus)
 

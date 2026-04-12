@@ -86,14 +86,14 @@ export const QuestionList = ({
                 {isFollowup && (
                   <span
                     className={`absolute left-5 top-3 bottom-3 w-px ${
-                      isActive ? 'bg-[#FF6B5B]' : 'bg-gray-200'
+                      isActive ? 'bg-[#6366F1]' : 'bg-gray-200'
                     }`}
                     aria-hidden
                   />
                 )}
                 <span
                   className={`text-[13px] font-bold mt-0.5 flex-shrink-0 tabular-nums ${
-                    isActive ? 'text-[#FF6B5B]' : 'text-gray-400'
+                    isActive ? 'text-[#6366F1]' : 'text-gray-400'
                   }`}
                 >
                   {label}
@@ -113,7 +113,7 @@ export const QuestionList = ({
                   </p>
                 </div>
                 {isActive && (
-                  <span className="text-[11px] font-bold text-[#FF6B5B] bg-[#FFF1EE] px-2 py-1 rounded-md flex-shrink-0">
+                  <span className="text-[11px] font-bold text-[#6366F1] bg-[#EEF2FF] px-2 py-1 rounded-md flex-shrink-0">
                     선택
                   </span>
                 )}

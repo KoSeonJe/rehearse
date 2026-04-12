@@ -1,9 +1,11 @@
-import { useCallback, useRef, type ReactNode } from 'react'
+import { useCallback, useMemo, useRef, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueries, useQueryClient } from '@tanstack/react-query'
+import { apiClient } from '@/lib/api-client'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
+import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video-player'
 import { TimelineBar } from '@/components/feedback/timeline-bar'
 import { QuestionList } from '@/components/feedback/question-list'
@@ -11,7 +13,7 @@ import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
-import type { AnalysisStatus, InterviewSession } from '@/types/interview'
+import type { AnalysisStatus, ApiResponse, InterviewSession, InterviewType, QuestionSetFeedbackResponse } from '@/types/interview'
 
 interface InterviewInfoBarProps {
   interview: InterviewSession
@@ -75,9 +77,10 @@ interface QuestionSetSectionProps {
   index: number
   analysisStatus: AnalysisStatus
   failureReason?: string | null
+  bookmarkIdsByTsfId: Map<number, number>
 }
 
-const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason }: QuestionSetSectionProps) => {
+const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason, bookmarkIdsByTsfId }: QuestionSetSectionProps) => {
   const videoRef = useRef<VideoPlayerHandle>(null)
   const queryClient = useQueryClient()
 
@@ -117,7 +120,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
             <p className="text-xs text-error font-semibold">분석 실패</p>
           </div>
         </div>
@@ -203,7 +206,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             {index + 1}
           </div>
           <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
             <p className="text-xs text-text-tertiary font-medium">{config.subtitle}</p>
           </div>
         </div>
@@ -237,7 +240,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           {index + 1}
         </div>
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-text-primary">{category}</h2>
+          <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
           <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
         </div>
       </div>
@@ -281,6 +284,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
             questions={questions}
             selectedFeedbackId={selectedFeedbackId}
             onSeek={seekTo}
+            interviewId={interviewId}
+            bookmarkIdsByTsfId={bookmarkIdsByTsfId}
           />
         </div>
       </div>
@@ -294,6 +299,34 @@ export const InterviewFeedbackPage = () => {
   const { data: response, isLoading } = useInterviewByPublicId(publicId ?? '')
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
+
+  // Batch-fetch all feedback to collect tsfIds for the bookmark exists query.
+  // Uses the same query keys as QuestionSetSection → TanStack Query deduplicates
+  // network calls; sections that have already loaded hit the cache immediately.
+  const completedQs = questionSets.filter(
+    (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
+  )
+  const feedbackResults = useQueries({
+    queries: completedQs.map((qs) => ({
+      queryKey: ['questionSetFeedback', interview?.id ?? 0, qs.id],
+      queryFn: () =>
+        apiClient.get<ApiResponse<QuestionSetFeedbackResponse>>(
+          `/api/v1/interviews/${interview?.id ?? 0}/question-sets/${qs.id}/feedback`,
+        ),
+      enabled: !!interview && (qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL'),
+      staleTime: Infinity,
+    })),
+  })
+
+  const allTsfIds = useMemo<number[]>(() => {
+    return feedbackResults.flatMap((r) => {
+      const tsfs = r.data?.data?.timestampFeedbacks
+      if (!tsfs) return []
+      return tsfs.map((tsf) => tsf.id)
+    })
+  }, [feedbackResults])
+
+  const { bookmarkIdMap } = useBookmarkExistsForInterview(interview?.id ?? 0, allTsfIds)
 
   if (isLoading) {
     return (
@@ -377,6 +410,7 @@ export const InterviewFeedbackPage = () => {
               index={idx}
               analysisStatus={qs.analysisStatus}
               failureReason={qs.failureReason}
+              bookmarkIdsByTsfId={bookmarkIdMap}
             />
           ))}
         </div>
