@@ -1,5 +1,6 @@
 import { Sidebar } from '@/components/dashboard/sidebar'
-import { useAuthStore } from '@/stores/auth-store'
+import { useAuth } from '@/hooks/use-auth'
+import { useLogout } from '@/hooks/use-logout'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -7,8 +8,8 @@ interface AppShellProps {
 }
 
 export const AppShell = ({ children, header }: AppShellProps) => {
-  const user = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
+  const { user } = useAuth()
+  const logout = useLogout()
 
   return (
     <div className="min-h-screen bg-background text-text-primary">

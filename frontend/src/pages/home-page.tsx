@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works-section'
@@ -10,13 +9,13 @@ import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
-import { apiClient } from '@/lib/api-client'
+import { useLogout } from '@/hooks/use-logout'
 
 export const HomePage = () => {
-  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { user, isAuthenticated, isLoading } = useAuth()
-  const { logout, openLoginModal } = useAuthStore()
+  const { openLoginModal } = useAuthStore()
+  const logout = useLogout()
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -26,15 +25,6 @@ export const HomePage = () => {
 
   const handleOpenLogin = () => openLoginModal()
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
-
-  const handleLogout = async () => {
-    try {
-      await apiClient.post('/api/v1/auth/logout')
-    } finally {
-      logout()
-      queryClient.removeQueries({ queryKey: ['auth', 'me'] })
-    }
-  }
 
   return (
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
@@ -54,7 +44,7 @@ export const HomePage = () => {
                   {user?.name}
                 </span>
                 <button
-                  onClick={handleLogout}
+                  onClick={logout}
                   className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
                 >
                   로그아웃
