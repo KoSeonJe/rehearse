@@ -66,3 +66,6 @@ resilience4j:
 logging:
   level:
     com.rehearse.api: INFO
+
+server:
+  forward-headers-strategy: framework

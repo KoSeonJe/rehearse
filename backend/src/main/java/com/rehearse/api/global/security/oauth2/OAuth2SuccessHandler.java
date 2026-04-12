@@ -1,12 +1,13 @@
 package com.rehearse.api.global.security.oauth2;
 
 import com.rehearse.api.global.security.jwt.JwtTokenProvider;
-import jakarta.servlet.http.Cookie;
+import com.rehearse.api.global.util.CookieUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -35,13 +36,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 user.getRole().name()
         );
 
-        Cookie cookie = new Cookie("rehearse_token", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(request.isSecure()); // HTTP 환경에서도 작동하도록 동적 설정
-        cookie.setPath("/");
-        cookie.setMaxAge(7 * 24 * 60 * 60);
-        cookie.setAttribute("SameSite", "Lax");
-        response.addCookie(cookie);
+        response.addHeader(HttpHeaders.SET_COOKIE, CookieUtils.createTokenCookie(token).toString());
 
         String redirectUrl = resolveRedirectUrl(request);
         log.info("OAuth2 인증 성공, 리다이렉트: {}", redirectUrl);
