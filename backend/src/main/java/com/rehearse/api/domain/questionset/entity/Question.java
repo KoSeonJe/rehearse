@@ -29,6 +29,9 @@ public class Question {
     private String questionText;
 
     @Column(columnDefinition = "TEXT")
+    private String ttsText;
+
+    @Column(columnDefinition = "TEXT")
     private String modelAnswer;
 
     @Enumerated(EnumType.STRING)
@@ -48,11 +51,12 @@ public class Question {
 
     @Builder
     public Question(QuestionType questionType, String questionText,
-                    String modelAnswer, ReferenceType referenceType,
+                    String ttsText, String modelAnswer, ReferenceType referenceType,
                     FeedbackPerspective feedbackPerspective,
                     int orderIndex, QuestionPool questionPool) {
         this.questionType = questionType;
         this.questionText = questionText;
+        this.ttsText = ttsText;
         this.modelAnswer = modelAnswer;
         this.referenceType = referenceType;
         this.feedbackPerspective = feedbackPerspective;

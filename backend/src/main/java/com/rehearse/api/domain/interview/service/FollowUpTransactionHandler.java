@@ -76,6 +76,7 @@ public class FollowUpTransactionHandler {
         Question followUpQuestion = Question.builder()
                 .questionType(QuestionType.FOLLOWUP)
                 .questionText(followUp.getQuestion())
+                .ttsText(followUp.getTtsQuestion())
                 .modelAnswer(followUp.getModelAnswer())
                 .orderIndex(orderIndex)
                 .build();
