@@ -33,7 +33,9 @@ public class CacheableQuestionProvider {
                                       int requiredCount, List<String> csSubTopics) {
 
         String cacheKey = QuestionCacheKeyGenerator.generate(position, level, techStack, type);
-        List<String> categoryFilter = toCategoryFilter(csSubTopics);
+        List<String> categoryFilter = (type == InterviewType.CS_FUNDAMENTAL)
+                ? toCategoryFilter(csSubTopics)
+                : List.of();
         Set<Long> usedPoolIds = findUsedPoolIds(userId, cacheKey);
 
         if (questionPoolService.isPoolSufficient(cacheKey, requiredCount, categoryFilter, usedPoolIds)) {
