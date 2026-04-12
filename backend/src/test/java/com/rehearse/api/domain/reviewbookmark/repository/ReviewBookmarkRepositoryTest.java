@@ -90,7 +90,7 @@ class ReviewBookmarkRepositoryTest {
     @DisplayName("사용자와 피드백 ID로 북마크 존재 여부를 확인한다")
     void existsByUserIdAndTimestampFeedbackId_returnsTrue() {
         ReviewBookmark bookmark = ReviewBookmark.builder()
-                .user(entityManager.find(User.class, user.getId()))
+                .userId(user.getId())
                 .timestampFeedback(entityManager.find(TimestampFeedback.class, timestampFeedback.getId()))
                 .build();
         entityManager.persist(bookmark);
@@ -115,7 +115,6 @@ class ReviewBookmarkRepositoryTest {
     @Test
     @DisplayName("사용자의 북마크를 최신순으로 조회한다")
     void findByUserIdOrderByCreatedAtDesc_returnsOrderedList() throws InterruptedException {
-        User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
 
         // 두 번째 TimestampFeedback 생성
@@ -133,7 +132,7 @@ class ReviewBookmarkRepositoryTest {
         entityManager.flush();
 
         ReviewBookmark older = ReviewBookmark.builder()
-                .user(foundUser)
+                .userId(user.getId())
                 .timestampFeedback(foundTsf)
                 .build();
         entityManager.persist(older);
@@ -144,7 +143,7 @@ class ReviewBookmarkRepositoryTest {
 
         TimestampFeedback foundTsf2 = entityManager.find(TimestampFeedback.class, tsf2.getId());
         ReviewBookmark newer = ReviewBookmark.builder()
-                .user(foundUser)
+                .userId(user.getId())
                 .timestampFeedback(foundTsf2)
                 .build();
         entityManager.persist(newer);
@@ -169,11 +168,10 @@ class ReviewBookmarkRepositoryTest {
     @Test
     @DisplayName("동일 사용자가 같은 피드백을 중복 북마크하면 DataIntegrityViolationException이 발생한다")
     void duplicateBookmark_throwsDataIntegrityViolationException() {
-        User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
 
         ReviewBookmark bookmark1 = ReviewBookmark.builder()
-                .user(foundUser)
+                .userId(user.getId())
                 .timestampFeedback(foundTsf)
                 .build();
         entityManager.persist(bookmark1);
@@ -181,7 +179,7 @@ class ReviewBookmarkRepositoryTest {
 
         assertThatThrownBy(() -> {
             ReviewBookmark bookmark2 = ReviewBookmark.builder()
-                    .user(foundUser)
+                    .userId(user.getId())
                     .timestampFeedback(foundTsf)
                     .build();
             entityManager.persist(bookmark2);
@@ -192,11 +190,10 @@ class ReviewBookmarkRepositoryTest {
     @Test
     @DisplayName("ReviewBookmark를 먼저 삭제한 뒤 TimestampFeedback을 삭제하면 두 엔티티 모두 제거된다 (참조 무결성 순서 보장)")
     void cascadeDelete_whenTimestampFeedbackDeleted_reviewBookmarkIsAlsoDeleted() {
-        User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
 
         ReviewBookmark bookmark = ReviewBookmark.builder()
-                .user(foundUser)
+                .userId(user.getId())
                 .timestampFeedback(foundTsf)
                 .build();
         entityManager.persist(bookmark);
@@ -240,12 +237,11 @@ class ReviewBookmarkRepositoryTest {
         entityManager.persist(tsf2);
         entityManager.flush();
 
-        User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf1 = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
         TimestampFeedback foundTsf2 = entityManager.find(TimestampFeedback.class, tsf2.getId());
 
-        ReviewBookmark bm1 = ReviewBookmark.builder().user(foundUser).timestampFeedback(foundTsf1).build();
-        ReviewBookmark bm2 = ReviewBookmark.builder().user(foundUser).timestampFeedback(foundTsf2).build();
+        ReviewBookmark bm1 = ReviewBookmark.builder().userId(user.getId()).timestampFeedback(foundTsf1).build();
+        ReviewBookmark bm2 = ReviewBookmark.builder().userId(user.getId()).timestampFeedback(foundTsf2).build();
         entityManager.persist(bm1);
         entityManager.persist(bm2);
         entityManager.flush();
@@ -266,11 +262,10 @@ class ReviewBookmarkRepositoryTest {
     @Test
     @DisplayName("findOwnerIdById는 북마크가 존재하면 소유자 userId를 반환하고 없으면 empty를 반환한다")
     void findOwnerIdById_returnsOwnerIdWhenExistsAndEmptyWhenNot() {
-        User foundUser = entityManager.find(User.class, user.getId());
         TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
 
         ReviewBookmark bookmark = ReviewBookmark.builder()
-                .user(foundUser)
+                .userId(user.getId())
                 .timestampFeedback(foundTsf)
                 .build();
         entityManager.persist(bookmark);

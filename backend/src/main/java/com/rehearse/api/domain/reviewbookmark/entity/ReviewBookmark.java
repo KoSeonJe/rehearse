@@ -3,7 +3,6 @@ package com.rehearse.api.domain.reviewbookmark.entity;
 import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkErrorCode;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException;
-import com.rehearse.api.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -45,9 +44,8 @@ public class ReviewBookmark {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "timestamp_feedback_id", nullable = false)
@@ -60,8 +58,8 @@ public class ReviewBookmark {
     private LocalDateTime createdAt;
 
     @Builder
-    public ReviewBookmark(User user, TimestampFeedback timestampFeedback) {
-        this.user = user;
+    public ReviewBookmark(Long userId, TimestampFeedback timestampFeedback) {
+        this.userId = userId;
         this.timestampFeedback = timestampFeedback;
     }
 
@@ -89,7 +87,7 @@ public class ReviewBookmark {
     }
 
     public void verifyOwnedBy(Long userId) {
-        if (userId == null || user == null || !userId.equals(user.getId())) {
+        if (userId == null || this.userId == null || !this.userId.equals(userId)) {
             throw new ReviewBookmarkException(ReviewBookmarkErrorCode.FORBIDDEN_ACCESS);
         }
     }

@@ -193,13 +193,14 @@ public class QuestionGenerationService {
     }
 
     private ReferenceType parseReferenceType(String refTypeStr) {
-        if (refTypeStr != null) {
-            try {
-                return ReferenceType.valueOf(refTypeStr.toUpperCase());
-            } catch (IllegalArgumentException ignored) {
-            }
+        if (refTypeStr == null) {
+            throw new IllegalArgumentException("referenceType은 null일 수 없습니다");
         }
-        return ReferenceType.GUIDE;
+        try {
+            return ReferenceType.valueOf(refTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown referenceType: " + refTypeStr, e);
+        }
     }
 
     private FeedbackPerspective determinePerspective(InterviewType type) {

@@ -15,7 +15,7 @@ import com.rehearse.api.domain.reviewbookmark.dto.BookmarkStatusFilter;
 import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkListItem;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.reviewbookmark.repository.ReviewBookmarkRepository;
-import com.rehearse.api.domain.user.entity.User;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -176,9 +176,8 @@ class ReviewBookmarkQueryServiceTest {
         ReflectionTestUtils.setField(tsf, "id", bookmarkId * 10);
         ReflectionTestUtils.setField(tsf, "questionSetFeedback", qsf);
 
-        User user = org.mockito.Mockito.mock(User.class);
         ReviewBookmark bookmark = ReviewBookmark.builder()
-                .user(user)
+                .userId(1L)
                 .timestampFeedback(tsf)
                 .build();
         ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
@@ -222,9 +221,8 @@ class ReviewBookmarkQueryServiceTest {
         ReflectionTestUtils.setField(tsf, "id", bookmarkId * 10);
         ReflectionTestUtils.setField(tsf, "questionSetFeedback", qsf);
 
-        User user = org.mockito.Mockito.mock(User.class);
         ReviewBookmark bookmark = ReviewBookmark.builder()
-                .user(user)
+                .userId(1L)
                 .timestampFeedback(tsf)
                 .build();
         ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
