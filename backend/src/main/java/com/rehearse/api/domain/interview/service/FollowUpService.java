@@ -78,6 +78,7 @@ public class FollowUpService {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
                 .question(followUp.getQuestion())
+                .ttsQuestion(followUp.getTtsQuestion())
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .answerText(followUp.getAnswerText())

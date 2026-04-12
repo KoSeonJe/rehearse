@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 public class GeneratedQuestion {
 
     private String content;
+    private String ttsContent;
     private String category;
     private int order;
     private String evaluationCriteria;

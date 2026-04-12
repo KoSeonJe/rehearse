@@ -27,6 +27,9 @@ public class QuestionPool {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(columnDefinition = "TEXT")
+    private String ttsContent;
+
     @Column(length = 100)
     private String category;
 
@@ -44,18 +47,19 @@ public class QuestionPool {
     private LocalDateTime createdAt;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private QuestionPool(String cacheKey, String content, String category,
-                         String modelAnswer, String referenceType) {
+    private QuestionPool(String cacheKey, String content, String ttsContent,
+                         String category, String modelAnswer, String referenceType) {
         this.cacheKey = cacheKey;
         this.content = content;
+        this.ttsContent = ttsContent;
         this.category = category;
         this.modelAnswer = modelAnswer;
         this.referenceType = referenceType;
         this.isActive = true;
     }
 
-    public static QuestionPool create(String cacheKey, String content, String category,
-            String modelAnswer, String referenceType) {
+    public static QuestionPool create(String cacheKey, String content, String ttsContent,
+            String category, String modelAnswer, String referenceType) {
         if (cacheKey == null || cacheKey.isBlank()) {
             throw new IllegalArgumentException("cacheKey는 필수입니다");
         }
@@ -65,6 +69,7 @@ public class QuestionPool {
         return QuestionPool.builder()
                 .cacheKey(cacheKey)
                 .content(content)
+                .ttsContent(ttsContent)
                 .category(category)
                 .modelAnswer(modelAnswer)
                 .referenceType(referenceType)

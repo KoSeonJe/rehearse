@@ -12,6 +12,7 @@ public class GeneratedFollowUp {
     private Boolean skip;
     private String skipReason;
     private String question;
+    private String ttsQuestion;
     private String reason;
     private String type;
     private String modelAnswer;
@@ -28,6 +29,7 @@ public class GeneratedFollowUp {
         copy.skip = this.skip;
         copy.skipReason = this.skipReason;
         copy.question = this.question;
+        copy.ttsQuestion = this.ttsQuestion;
         copy.reason = this.reason;
         copy.type = this.type;
         copy.modelAnswer = this.modelAnswer;

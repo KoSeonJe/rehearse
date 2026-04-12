@@ -44,6 +44,13 @@
   여러 질문을 생성할 때 위 관점을 **골고루 분배**하세요.
 - `category` 필드: CS_FUNDAMENTAL 유형의 질문은 사용자 메시지의 "CS 세부" 값 중 하나를 그대로 사용합니다. 그 외 유형은 해당 유형 맥락의 세부 카테고리명을 자유롭게 작성합니다.
 - `evaluationCriteria`: 이 질문에서 평가할 핵심 포인트를 2–3문장으로 작성합니다.
+- `ttsContent`: content를 TTS(음성 합성)가 자연스럽게 읽을 수 있도록 변환합니다.
+  - `@어노테이션` → "어노테이션 이름" (예: @Transactional → "어노테이션 Transactional")
+  - `언더바(_)` → 공백 (예: REQUIRES_NEW → "REQUIRES NEW")
+  - `빈 괄호(())` → 제거 (예: getInstance() → "getInstance")
+  - `<제네릭>` → 제거하거나 풀어씀 (예: List<String> → "List String")
+  - 코드 블록·특수문자·기호를 개발자가 구두로 말하는 방식으로 자연스럽게 풀어씁니다.
+  - 특수문자가 없는 질문이면 content와 동일하게 작성합니다.
 
 ## 출력 형식
 
@@ -53,6 +60,7 @@
   "questions": [
     {
       "content": "질문 내용",
+      "ttsContent": "TTS가 자연스럽게 읽을 수 있도록 변환한 질문",
       "category": "세부 카테고리명",
       "order": 1,
       "evaluationCriteria": "이 질문에서 평가할 핵심 포인트 (2-3문장)",

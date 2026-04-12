@@ -137,6 +137,7 @@ public class QuestionPoolService {
                 .map(gq -> QuestionPool.create(
                         cacheKey,
                         gq.getContent(),
+                        gq.getTtsContent(),
                         gq.getCategory(),
                         gq.getModelAnswer(),
                         gq.getReferenceType()))

@@ -13,6 +13,7 @@ public class QuestionDetailResponse {
     private final Long id;
     private final QuestionType questionType;
     private final String questionText;
+    private final String ttsText;
     private final String modelAnswer;
     private final ReferenceType referenceType;
     private final int orderIndex;
@@ -22,6 +23,7 @@ public class QuestionDetailResponse {
                 .id(question.getId())
                 .questionType(question.getQuestionType())
                 .questionText(question.getQuestionText())
+                .ttsText(question.getTtsText())
                 .modelAnswer(question.getModelAnswer())
                 .referenceType(question.getReferenceType())
                 .orderIndex(question.getOrderIndex())
