@@ -8,7 +8,7 @@ const REDIRECT_TO_HOME_PATHS = ['/dashboard']
 
 export const ProtectedRoute = () => {
   const { isAuthenticated, isLoading } = useAuth()
-  const { openLoginModal } = useAuthStore()
+  const { openLoginModal, showLoginModal } = useAuthStore()
   const location = useLocation()
 
   const shouldRedirectToHome = REDIRECT_TO_HOME_PATHS.includes(location.pathname)
@@ -28,7 +28,7 @@ export const ProtectedRoute = () => {
   }
 
   if (!isAuthenticated) {
-    if (shouldRedirectToHome) {
+    if (shouldRedirectToHome || !showLoginModal) {
       return <Navigate to="/" replace />
     }
     return <div className="min-h-screen bg-surface" />

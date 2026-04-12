@@ -47,6 +47,10 @@ class ApiClient {
       ...rest,
     })
 
+    if (response.status === 401) {
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'))
+    }
+
     if (!response.ok) {
       let errorBody: ApiErrorBody
       try {

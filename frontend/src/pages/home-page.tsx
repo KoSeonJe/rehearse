@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
 import { HowItWorksSection } from '@/components/home/how-it-works-section'
@@ -13,9 +13,11 @@ import { useLogout } from '@/hooks/use-logout'
 
 export const HomePage = () => {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user, isAuthenticated, isLoading } = useAuth()
   const { openLoginModal } = useAuthStore()
   const logout = useLogout()
+  const [oauthError, setOauthError] = useState(false)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -23,11 +25,26 @@ export const HomePage = () => {
     }
   }, [isLoading, isAuthenticated, navigate])
 
+  useEffect(() => {
+    if (searchParams.get('error') === 'auth_failed') {
+      setOauthError(true)
+      localStorage.removeItem('oauth_redirect')
+      window.history.replaceState({}, '', '/')
+      const timer = setTimeout(() => setOauthError(false), 4000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams])
+
   const handleOpenLogin = () => openLoginModal()
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+      {oauthError && (
+        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
+          로그인에 실패했습니다. 다시 시도해주세요.
+        </div>
+      )}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
           <div className="flex items-center gap-2">
