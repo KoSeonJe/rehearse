@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
+import { useAuthInterceptor } from '@/hooks/use-auth-interceptor'
+import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
 import { HomePage } from '@/pages/home-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
@@ -15,6 +17,8 @@ import { LoginModal } from '@/components/ui/login-modal'
 
 export const App = () => {
   usePostLoginRedirect()
+  useAuthInterceptor()
+  useCrossTabSync()
 
   return (
     <>
