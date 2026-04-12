@@ -5,13 +5,16 @@
 ## 적용 방법
 
 ```bash
-# 전체 적용
+# 전체 적용 (--default-character-set=utf8mb4 필수 — 누락 시 한글 이중 인코딩 발생)
 for f in backend/src/main/resources/db/seed/*.sql; do
-  mysql -u root -p rehearse_dev < "$f"
+  mysql --default-character-set=utf8mb4 -u root -p rehearse_dev < "$f"
 done
 
 # 개별 적용
-mysql -u root -p rehearse_dev < backend/src/main/resources/db/seed/cs-fundamental-junior.sql
+mysql --default-character-set=utf8mb4 -u root -p rehearse_dev < backend/src/main/resources/db/seed/cs-fundamental-junior.sql
+
+# Docker 환경 (EC2 등)
+docker exec -i rehearse-db mysql -u rehearse -p'<password>' --default-character-set=utf8mb4 rehearse < seed-file.sql
 ```
 
 > `INSERT IGNORE`를 사용하므로 중복 실행 시 에러 없이 스킵됩니다.
