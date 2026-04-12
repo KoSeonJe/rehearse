@@ -60,6 +60,10 @@ public class InternalQuestionSetService {
         return findQuestionSet(questionSetId);
     }
 
+    public List<QuestionSet> getQuestionSetsByInterview(Long interviewId) {
+        return questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+    }
+
     public List<QuestionAnswer> getAnswers(Long questionSetId) {
         return answerRepository.findByQuestionSetIdWithQuestion(questionSetId);
     }

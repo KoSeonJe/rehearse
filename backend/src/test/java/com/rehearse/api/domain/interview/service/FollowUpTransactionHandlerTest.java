@@ -22,6 +22,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 class FollowUpTransactionHandlerTest {
@@ -195,7 +196,7 @@ class FollowUpTransactionHandlerTest {
     private QuestionSet createQuestionSetWithMainQuestion(Interview interview, ReferenceType mainReferenceType) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionCategory.CS)
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 10L);

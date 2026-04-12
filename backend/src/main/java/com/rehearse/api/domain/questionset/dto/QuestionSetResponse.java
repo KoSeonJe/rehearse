@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.QuestionCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,7 +12,7 @@ import java.util.List;
 public class QuestionSetResponse {
 
     private final Long id;
-    private final QuestionCategory category;
+    private final String category;
     private final int orderIndex;
     private final AnalysisStatus analysisStatus;
     private final String failureReason;
@@ -29,7 +28,7 @@ public class QuestionSetResponse {
 
         return QuestionSetResponse.builder()
                 .id(questionSet.getId())
-                .category(questionSet.getCategory())
+                .category(questionSet.getCategory().name())
                 .orderIndex(questionSet.getOrderIndex())
                 .analysisStatus(status)
                 .failureReason(failureReason)

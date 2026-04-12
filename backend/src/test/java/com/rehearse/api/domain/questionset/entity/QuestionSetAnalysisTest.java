@@ -9,6 +9,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 class QuestionSetAnalysisTest {
 
@@ -248,7 +249,7 @@ class QuestionSetAnalysisTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionCategory.CS)
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
 

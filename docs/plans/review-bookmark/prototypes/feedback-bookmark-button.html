@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prototype 1 — 피드백 북마크 버튼 4가지 상태</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    /* ── 디자인 토큰 (Tailwind config 동기화) ─────────────────────── */
+    :root {
+      --color-background: #F1F5F9;
+      --color-surface: #FFFFFF;
+      --color-border: #E2E8F0;
+      --color-text-primary: #0F172A;
+      --color-text-secondary: #334155;
+      --color-text-tertiary: #64748B;
+      --color-accent: #6366F1;
+      --color-accent-hover: #4F46E5;
+      --color-accent-light: #EEF2FF;
+      /* 복습 북마크 전용 토큰 */
+      --color-bookmark-bg: #FFF1EE;
+      --color-bookmark-text: #D94A3A;
+      --color-bookmark-accent: #FF6B5B;
+    }
+
+    body {
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      background-color: var(--color-background);
+      color: var(--color-text-primary);
+    }
+
+    /* ── 접근성: focus-visible ring ─────────────────────────────── */
+    .bookmark-btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 2px #FF6B5B, 0 0 0 4px #fff;
+    }
+
+    /* ── 코치마크 말풍선 화살표 ──────────────────────────────────── */
+    .coach-arrow {
+      position: absolute;
+      top: -8px;
+      left: 28px;
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid #fff;
+      filter: drop-shadow(0 -1px 1px rgba(0,0,0,0.06));
+    }
+
+    /* ── 토스트 슬라이드인 ───────────────────────────────────────── */
+    @keyframes toast-in {
+      from { transform: translateY(12px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .toast-animate {
+      animation: toast-in 0.25s ease-out forwards;
+    }
+
+    /* ── 버튼 scale 피드백 ──────────────────────────────────────── */
+    @keyframes bookmark-pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    .bookmark-pop {
+      animation: bookmark-pop 0.18s ease-out forwards;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen p-8">
+
+  <!-- ── 페이지 헤더 ────────────────────────────────────────────── -->
+  <header class="max-w-5xl mx-auto mb-10">
+    <p class="text-xs font-bold uppercase tracking-widest text-[#6366F1] mb-1">Prototype 1</p>
+    <h1 class="text-2xl font-extrabold text-[#0F172A] mb-1">피드백 북마크 버튼 — 4가지 상태</h1>
+    <p class="text-sm text-[#64748B]">
+      이 페이지는 시각적 확정을 위한 정적 HTML 프로토타입입니다.
+      이후 React 구현의 소스 오브 트루스로 사용됩니다.
+    </p>
+  </header>
+
+  <main class="max-w-5xl mx-auto space-y-16">
+
+    <!-- ════════════════════════════════════════════════════════════
+         State 1 — 미북마크 기본 상태
+    ═════════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="state1-heading">
+      <div class="mb-4">
+        <span class="inline-block text-xs font-bold bg-[#E2E8F0] text-[#334155] rounded-full px-3 py-1 mb-2">State 1</span>
+        <h2 id="state1-heading" class="text-lg font-bold text-[#0F172A]">미북마크 기본 상태</h2>
+        <p class="text-sm text-[#64748B] mt-0.5">
+          ListPlus 아이콘 + "복습 목록에 담기" pill 버튼.
+          배경 투명, 테두리 <code class="bg-[#E2E8F0] px-1 rounded text-xs">#E2E8F0</code>.
+        </p>
+      </div>
+
+      <!-- 피드백 카드 컨텍스트 내 버튼 -->
+      <div
+        class="rounded-2xl bg-white overflow-hidden"
+        style="box-shadow: 0 1px 3px rgba(0,0,0,0.06);"
+      >
+        <!-- 카드 헤더 -->
+        <div class="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[13px] font-bold text-[#0F172A] tabular-nums">1:24 — 2:07</span>
+              <span class="text-[13px] text-[#64748B]">원본 답변</span>
+            </div>
+            <p class="text-[17px] font-bold text-[#0F172A] leading-snug">
+              Q. HashMap과 LinkedHashMap의 차이점을 설명해 주세요.
+            </p>
+          </div>
+
+          <!-- 북마크 버튼 (State 1: 기본) -->
+          <button
+            class="bookmark-btn flex-shrink-0 flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-3.5 py-2 text-[13px] font-medium text-[#64748B] transition-colors hover:border-[#FF6B5B] hover:text-[#FF6B5B] hover:bg-[#FFF1EE]"
+            aria-pressed="false"
+            aria-label="복습 목록에 담기"
+            type="button"
+          >
+            <!-- ListPlus SVG (Lucide) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 12H3"/>
+              <path d="M16 6H3"/>
+              <path d="M16 18H3"/>
+              <path d="M18 9v6"/>
+              <path d="M21 12h-6"/>
+            </svg>
+            복습 목록에 담기
+          </button>
+        </div>
+
+        <!-- 카드 바디 (축약) -->
+        <div class="mx-6 mb-5">
+          <div class="rounded-xl bg-[#F1F5F9] p-4">
+            <p class="text-[13px] font-bold text-[#64748B] mb-2">내 답변</p>
+            <p class="text-[15px] leading-[1.8] text-[#334155]">
+              HashMap은 순서를 보장하지 않고, LinkedHashMap은 삽입 순서를 유지합니다.
+              둘 다 key-value 쌍을 저장하며 null 키를 허용합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 스펙 노트 -->
+      <div class="mt-3 rounded-xl bg-white border border-[#E2E8F0] px-5 py-3.5 text-[13px] text-[#64748B]">
+        <strong class="text-[#334155]">스펙:</strong>
+        border <code class="bg-[#F1F5F9] px-1 rounded">#E2E8F0</code>,
+        icon <code class="bg-[#F1F5F9] px-1 rounded">ListPlus</code> 15px,
+        hover bg <code class="bg-[#F1F5F9] px-1 rounded">#FFF1EE</code>,
+        focus ring <code class="bg-[#F1F5F9] px-1 rounded">ring-2 ring-[#FF6B5B] ring-offset-2</code>,
+        aria-pressed="false"
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════════════
+         State 2 — 북마크 완료 상태
+    ═════════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="state2-heading">
+      <div class="mb-4">
+        <span class="inline-block text-xs font-bold bg-[#FFF1EE] text-[#D94A3A] rounded-full px-3 py-1 mb-2">State 2</span>
+        <h2 id="state2-heading" class="text-lg font-bold text-[#0F172A]">북마크 완료 상태</h2>
+        <p class="text-sm text-[#64748B] mt-0.5">
+          ListChecks 아이콘 + "복습 목록에 담김".
+          배경 <code class="bg-[#E2E8F0] px-1 rounded text-xs">#FFF1EE</code>,
+          텍스트 <code class="bg-[#E2E8F0] px-1 rounded text-xs">#D94A3A</code>.
+          WCAG AA 대비: 4.6:1 확보.
+        </p>
+      </div>
+
+      <div
+        class="rounded-2xl bg-white overflow-hidden"
+        style="box-shadow: 0 1px 3px rgba(0,0,0,0.06);"
+      >
+        <div class="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[13px] font-bold text-[#0F172A] tabular-nums">1:24 — 2:07</span>
+              <span class="text-[13px] text-[#64748B]">원본 답변</span>
+            </div>
+            <p class="text-[17px] font-bold text-[#0F172A] leading-snug">
+              Q. HashMap과 LinkedHashMap의 차이점을 설명해 주세요.
+            </p>
+          </div>
+
+          <!-- 북마크 버튼 (State 2: 완료) -->
+          <button
+            class="bookmark-btn flex-shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-bold transition-colors hover:opacity-80"
+            style="background-color: #FFF1EE; color: #D94A3A; border: 1.5px solid #F5C0B8;"
+            aria-pressed="true"
+            aria-label="복습 목록에서 제거"
+            type="button"
+          >
+            <!-- ListChecks SVG (Lucide) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 12H3"/>
+              <path d="M16 6H3"/>
+              <path d="M16 18H3"/>
+              <polyline points="21 6 16 11 14 9"/>
+            </svg>
+            복습 목록에 담김
+          </button>
+        </div>
+
+        <div class="mx-6 mb-5">
+          <div class="rounded-xl bg-[#F1F5F9] p-4">
+            <p class="text-[13px] font-bold text-[#64748B] mb-2">내 답변</p>
+            <p class="text-[15px] leading-[1.8] text-[#334155]">
+              HashMap은 순서를 보장하지 않고, LinkedHashMap은 삽입 순서를 유지합니다.
+              둘 다 key-value 쌍을 저장하며 null 키를 허용합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 rounded-xl bg-white border border-[#E2E8F0] px-5 py-3.5 text-[13px] text-[#64748B]">
+        <strong class="text-[#334155]">스펙:</strong>
+        bg <code class="bg-[#F1F5F9] px-1 rounded">#FFF1EE</code>,
+        text <code class="bg-[#D94A3A]/10 px-1 rounded" style="color:#D94A3A;">#D94A3A</code>,
+        border <code class="bg-[#F1F5F9] px-1 rounded">#F5C0B8</code>,
+        icon <code class="bg-[#F1F5F9] px-1 rounded">ListChecks</code>,
+        aria-pressed="true",
+        aria-label="복습 목록에서 제거"
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════════════
+         State 3 — 코치마크 Popover
+    ═════════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="state3-heading">
+      <div class="mb-4">
+        <span class="inline-block text-xs font-bold bg-[#EEF2FF] text-[#4F46E5] rounded-full px-3 py-1 mb-2">State 3</span>
+        <h2 id="state3-heading" class="text-lg font-bold text-[#0F172A]">코치마크 Popover</h2>
+        <p class="text-sm text-[#64748B] mt-0.5">
+          최초 1회. 피드백 카드 렌더 후 600ms 지연, localStorage <code class="bg-[#E2E8F0] px-1 rounded text-xs">rehearse:review-coach-seen-v1</code> 미설정 시 노출.
+          ESC / 외부 클릭 / 버튼 클릭 / 8초 후 자동 닫힘.
+        </p>
+      </div>
+
+      <div
+        class="rounded-2xl bg-white overflow-hidden"
+        style="box-shadow: 0 1px 3px rgba(0,0,0,0.06);"
+      >
+        <div class="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[13px] font-bold text-[#0F172A] tabular-nums">0:45 — 1:23</span>
+              <span class="text-[13px] text-[#64748B]">원본 답변</span>
+            </div>
+            <p class="text-[17px] font-bold text-[#0F172A] leading-snug">
+              Q. REST API와 GraphQL의 차이점을 설명해 주세요.
+            </p>
+          </div>
+
+          <!-- 버튼 + 코치마크 컨테이너 -->
+          <div class="flex-shrink-0 relative">
+            <button
+              class="bookmark-btn flex items-center gap-1.5 rounded-full border border-[#E2E8F0] bg-white px-3.5 py-2 text-[13px] font-medium text-[#64748B]"
+              aria-pressed="false"
+              aria-label="복습 목록에 담기"
+              aria-describedby="coach-mark-desc"
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/>
+                <path d="M18 9v6"/><path d="M21 12h-6"/>
+              </svg>
+              복습 목록에 담기
+            </button>
+
+            <!-- 코치마크 Popover -->
+            <div
+              id="coach-mark-desc"
+              role="tooltip"
+              class="absolute top-[calc(100%+10px)] left-0 w-64 bg-white rounded-2xl z-50 p-4"
+              style="box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 240px;"
+            >
+              <!-- 화살표 -->
+              <div class="coach-arrow"></div>
+
+              <p class="text-[14px] font-medium text-[#334155] leading-[1.6] mb-3">
+                답변을 다시 꺼내 보고 싶을 때,<br>
+                여기를 눌러 담아두세요.
+              </p>
+              <div class="flex justify-end">
+                <button
+                  class="rounded-full px-4 py-1.5 text-[13px] font-bold text-white transition-colors hover:opacity-90"
+                  style="background-color: #FF6B5B;"
+                  type="button"
+                >
+                  알겠어요
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mx-6 mb-5">
+          <div class="rounded-xl bg-[#F1F5F9] p-4">
+            <p class="text-[13px] font-bold text-[#64748B] mb-2">내 답변</p>
+            <p class="text-[15px] leading-[1.8] text-[#334155]">
+              REST는 HTTP 메서드 기반의 엔드포인트 방식이고, GraphQL은 단일 엔드포인트에서
+              클라이언트가 필요한 데이터를 쿼리로 요청합니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 rounded-xl bg-white border border-[#E2E8F0] px-5 py-3.5 text-[13px] text-[#64748B]">
+        <strong class="text-[#334155]">스펙:</strong>
+        popover <code class="bg-[#F1F5F9] px-1 rounded">rounded-2xl</code> + drop shadow 12%,
+        화살표 CSS border trick (top: -8px),
+        role="tooltip" + aria-describedby 연결,
+        CTA bg <code class="bg-[#F1F5F9] px-1 rounded">#FF6B5B</code>,
+        ESC 닫힘 + 8초 자동 dismiss
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════════════
+         State 4 — 토스트 알림
+    ═════════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="state4-heading" class="pb-48">
+      <div class="mb-4">
+        <span class="inline-block text-xs font-bold bg-[#ECFDF5] text-[#10B981] rounded-full px-3 py-1 mb-2">State 4</span>
+        <h2 id="state4-heading" class="text-lg font-bold text-[#0F172A]">토스트 알림</h2>
+        <p class="text-sm text-[#64748B] mt-0.5">
+          최초 1회. bottom-right 고정. 3초 자동 dismiss.
+          "되돌리기" 링크 클릭 시 즉시 DELETE.
+          <code class="bg-[#E2E8F0] px-1 rounded text-xs">role="status"</code> + <code class="bg-[#E2E8F0] px-1 rounded text-xs">aria-live="polite"</code>.
+        </p>
+      </div>
+
+      <!-- 피드백 카드 (북마크됨 상태로) -->
+      <div
+        class="rounded-2xl bg-white overflow-hidden"
+        style="box-shadow: 0 1px 3px rgba(0,0,0,0.06);"
+      >
+        <div class="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-[13px] font-bold text-[#0F172A] tabular-nums">3:10 — 4:02</span>
+              <span class="text-[13px] text-[#64748B]">원본 답변</span>
+            </div>
+            <p class="text-[17px] font-bold text-[#0F172A] leading-snug">
+              Q. Spring Bean의 생명주기에 대해 설명해 주세요.
+            </p>
+          </div>
+          <button
+            class="bookmark-btn flex-shrink-0 flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-bold"
+            style="background-color: #FFF1EE; color: #D94A3A; border: 1.5px solid #F5C0B8;"
+            aria-pressed="true"
+            aria-label="복습 목록에서 제거"
+            type="button"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/>
+              <polyline points="21 6 16 11 14 9"/>
+            </svg>
+            복습 목록에 담김
+          </button>
+        </div>
+        <div class="mx-6 mb-5">
+          <div class="rounded-xl bg-[#F1F5F9] p-4">
+            <p class="text-[13px] font-bold text-[#64748B] mb-2">내 답변</p>
+            <p class="text-[15px] leading-[1.8] text-[#334155]">
+              Spring Bean은 컨테이너가 시작될 때 생성되고, 의존성 주입이 완료된 뒤
+              @PostConstruct가 실행됩니다. 컨테이너 종료 시 @PreDestroy가 호출됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 토스트 (절대 고정 포지션 시뮬레이션) -->
+      <div class="mt-6 flex justify-end">
+        <p class="text-xs text-[#64748B] mb-2 mr-1 self-end">실제 위치: bottom-6 right-6 (viewport 고정)</p>
+      </div>
+      <div class="flex justify-end">
+        <div
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          class="toast-animate flex items-center gap-3 bg-[#0F172A] text-white rounded-2xl px-5 py-3.5 max-w-sm"
+          style="box-shadow: 0 8px 24px rgba(0,0,0,0.18);"
+        >
+          <!-- 체크 아이콘 -->
+          <div class="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center" style="background-color: #FF6B5B;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-[13px] font-medium leading-snug">
+              복습 목록에 담겼어요.<br>
+              <span class="text-white/70">사이드바에서 언제든 꺼내 볼 수 있어요.</span>
+            </p>
+          </div>
+          <button
+            class="flex-shrink-0 text-[13px] font-bold underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
+            style="color: #FF6B5B;"
+            type="button"
+          >
+            되돌리기
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-xl bg-white border border-[#E2E8F0] px-5 py-3.5 text-[13px] text-[#64748B]">
+        <strong class="text-[#334155]">스펙:</strong>
+        bg <code class="bg-[#F1F5F9] px-1 rounded">#0F172A</code>,
+        "되돌리기" color <code class="bg-[#F1F5F9] px-1 rounded">#FF6B5B</code>,
+        role="status" + aria-live="polite" + aria-atomic="true",
+        3초 auto-dismiss (React 구현),
+        border-radius <code class="bg-[#F1F5F9] px-1 rounded">rounded-2xl</code>
+      </div>
+    </section>
+
+
+    <!-- ════════════════════════════════════════════════════════════
+         반응형 스케일 레퍼런스
+    ═════════════════════════════════════════════════════════════ -->
+    <section aria-labelledby="responsive-heading">
+      <h2 id="responsive-heading" class="text-lg font-bold text-[#0F172A] mb-4">반응형 동작 정의</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="rounded-xl bg-white border border-[#E2E8F0] p-5">
+          <p class="text-[13px] font-bold text-[#334155] mb-2">모바일 (360px–767px)</p>
+          <ul class="text-[13px] text-[#64748B] space-y-1.5">
+            <li>• 버튼 레이블 숨김 → 아이콘 전용 (32×32 터치 타겟)</li>
+            <li>• 코치마크 popover: 좌측 정렬, 화면 폭 calc(100vw - 32px)</li>
+            <li>• 토스트: bottom-4 right-4, max-w-[calc(100vw-32px)]</li>
+          </ul>
+        </div>
+        <div class="rounded-xl bg-white border border-[#E2E8F0] p-5">
+          <p class="text-[13px] font-bold text-[#334155] mb-2">태블릿 (768px–1279px)</p>
+          <ul class="text-[13px] text-[#64748B] space-y-1.5">
+            <li>• 버튼 레이블 표시</li>
+            <li>• 코치마크 최대 너비 280px</li>
+            <li>• 토스트 max-w-sm</li>
+          </ul>
+        </div>
+        <div class="rounded-xl bg-white border border-[#E2E8F0] p-5">
+          <p class="text-[13px] font-bold text-[#334155] mb-2">데스크톱 (1280px+)</p>
+          <ul class="text-[13px] text-[#64748B] space-y-1.5">
+            <li>• 전체 레이아웃 (레이블 + 아이콘)</li>
+            <li>• 코치마크 left 정렬 유지</li>
+            <li>• 토스트 fixed bottom-6 right-6</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── 인터랙티브 데모 스크립트 (상태 전환 시연용) ─────────────── -->
+  <script>
+    // 코치마크 "알겠어요" 버튼
+    document.querySelectorAll('[type="button"]').forEach(btn => {
+      if (btn.textContent.trim() === '알겠어요') {
+        btn.addEventListener('click', () => {
+          const popover = btn.closest('[role="tooltip"]');
+          if (popover) {
+            popover.style.display = 'none';
+          }
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>

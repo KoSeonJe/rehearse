@@ -28,6 +28,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 class InternalQuestionSetServiceTest {
@@ -421,7 +422,7 @@ class InternalQuestionSetServiceTest {
 
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionCategory.CS)
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);
