@@ -183,6 +183,7 @@ export const useInterviewSession = ({
         return {
           id: mainQ?.id ?? qSet.id,
           content: mainQ?.questionText ?? '',
+          ttsContent: mainQ?.ttsText ?? mainQ?.questionText ?? '',
           category: qSet.category,
           order: idx,
         }
@@ -209,7 +210,7 @@ export const useInterviewSession = ({
 
       const question = questions[currentQuestionIndex]
       if (question) {
-        tts.speak(question.content)
+        tts.speak(question.ttsContent || question.content)
         recordEvent('question_read_tts', currentQuestionIndex)
       }
     }

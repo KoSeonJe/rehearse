@@ -40,7 +40,7 @@ export const useInterviewGreeting = ({
     const firstQuestion = state.questions[0]
     if (firstQuestion) {
       tts.speak(
-        `네, 감사합니다. 그럼 본격적으로 면접을 시작하겠습니다. 첫 번째 질문입니다. ${firstQuestion.content}`,
+        `네, 감사합니다. 그럼 본격적으로 면접을 시작하겠습니다. 첫 번째 질문입니다. ${firstQuestion.ttsContent || firstQuestion.content}`,
       )
       recordEvent('question_read_tts', 0)
     }

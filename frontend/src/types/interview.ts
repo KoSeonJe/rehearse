@@ -45,6 +45,7 @@ export type QuestionGenerationStatus = 'PENDING' | 'GENERATING' | 'COMPLETED' | 
 export interface Question {
   id: number
   content: string
+  ttsContent: string | null
   category: string
   order: number
 }
@@ -65,6 +66,7 @@ export interface QuestionDetail {
   id: number
   questionType: QuestionType
   questionText: string
+  ttsText: string | null
   modelAnswer: string | null
   referenceType: ReferenceType
   orderIndex: number
@@ -273,6 +275,7 @@ export interface FollowUpRequest {
 export interface FollowUpResponse {
   questionId: number
   question: string
+  ttsQuestion: string | null
   reason: string
   type: FollowUpType
   answerText?: string
