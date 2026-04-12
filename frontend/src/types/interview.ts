@@ -275,7 +275,7 @@ export interface FollowUpRequest {
 export interface FollowUpResponse {
   questionId: number
   question: string
-  ttsQuestion: string | null
+  ttsQuestion?: string | null
   reason: string
   type: FollowUpType
   answerText?: string
