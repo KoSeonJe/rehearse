@@ -93,12 +93,13 @@
 
 ## TTS 변환 규칙
 
-`ttsQuestion`: question을 TTS(음성 합성)가 자연스럽게 읽을 ��� 있도록 ��환합니다.
+`ttsQuestion`: question을 TTS(음성 합성)가 자연스럽게 읽을 수 있도록 변환합니다.
 - `@어노테이션` → "어노테이션 이름" (예: @Transactional → "어노테이션 Transactional")
-- `언더바(_)` → 공백 (예: REQUIRES_NEW �� "REQUIRES NEW")
-- `빈 괄호(())` �� 제거 (예: getInstance() → "getInstance")
-- 코드 블록·특수문자·기호를 개발자가 구두로 말하는 ��식으로 자연스럽게 풀어씁니다.
-- 특���문자가 없는 질문이면 question과 동일하게 작성합니다.
+- `언더바(_)` → 공백 (예: REQUIRES_NEW → "REQUIRES NEW")
+- `빈 괄호(())` → 제거 (예: getInstance() → "getInstance")
+- `<제네릭>` → 제거하거나 풀어씀 (예: List<String> → "List String")
+- 코드 블록·특수문자·기호를 개발자가 구두로 말하는 방식으로 자연스럽게 풀어씁니다.
+- 특수문자가 없는 질문이면 question과 동일하게 작성합니다.
 
 ## 응답 형식
 
