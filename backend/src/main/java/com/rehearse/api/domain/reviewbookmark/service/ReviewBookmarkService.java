@@ -9,8 +9,6 @@ import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkErrorCode;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException;
 import com.rehearse.api.domain.reviewbookmark.repository.ReviewBookmarkRepository;
-import com.rehearse.api.domain.user.entity.User;
-import com.rehearse.api.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -26,7 +24,6 @@ public class ReviewBookmarkService {
     private final ReviewBookmarkRepository reviewBookmarkRepository;
     private final ReviewBookmarkFinder reviewBookmarkFinder;
     private final TimestampFeedbackRepository timestampFeedbackRepository;
-    private final UserRepository userRepository;
 
     public ReviewBookmarkResponse create(Long userId, CreateReviewBookmarkRequest request) {
         Long tsfId = request.timestampFeedbackId();
@@ -39,12 +36,10 @@ public class ReviewBookmarkService {
                 .orElseThrow(() -> new ReviewBookmarkException(
                         ReviewBookmarkErrorCode.TIMESTAMP_FEEDBACK_NOT_FOUND));
 
-        User user = userRepository.getReferenceById(userId);
-
         try {
             ReviewBookmark saved = reviewBookmarkRepository.save(
                     ReviewBookmark.builder()
-                            .user(user)
+                            .userId(userId)
                             .timestampFeedback(tsf)
                             .build());
             return ReviewBookmarkResponse.from(saved);

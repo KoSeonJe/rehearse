@@ -9,8 +9,6 @@ import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkErrorCode;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException;
 import com.rehearse.api.domain.reviewbookmark.repository.ReviewBookmarkRepository;
-import com.rehearse.api.domain.user.entity.User;
-import com.rehearse.api.domain.user.repository.UserRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,9 +45,6 @@ class ReviewBookmarkServiceTest {
     @Mock
     private TimestampFeedbackRepository timestampFeedbackRepository;
 
-    @Mock
-    private UserRepository userRepository;
-
     // ====== create ======
 
     @Test
@@ -60,15 +55,13 @@ class ReviewBookmarkServiceTest {
         CreateReviewBookmarkRequest request = new CreateReviewBookmarkRequest(tsfId);
 
         TimestampFeedback tsf = createMockTimestampFeedback(tsfId);
-        User user = createMockUser(userId);
-        ReviewBookmark bookmark = ReviewBookmark.builder().user(user).timestampFeedback(tsf).build();
+        ReviewBookmark bookmark = ReviewBookmark.builder().userId(userId).timestampFeedback(tsf).build();
         ReflectionTestUtils.setField(bookmark, "id", 100L);
         ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
 
         given(reviewBookmarkRepository.existsByUserIdAndTimestampFeedbackId(userId, tsfId))
                 .willReturn(false);
         given(timestampFeedbackRepository.findById(tsfId)).willReturn(Optional.of(tsf));
-        given(userRepository.getReferenceById(userId)).willReturn(user);
         given(reviewBookmarkRepository.save(any(ReviewBookmark.class))).willReturn(bookmark);
 
         ReviewBookmarkResponse response = reviewBookmarkService.create(userId, request);
@@ -104,12 +97,10 @@ class ReviewBookmarkServiceTest {
         CreateReviewBookmarkRequest request = new CreateReviewBookmarkRequest(tsfId);
 
         TimestampFeedback tsf = createMockTimestampFeedback(tsfId);
-        User user = createMockUser(userId);
 
         given(reviewBookmarkRepository.existsByUserIdAndTimestampFeedbackId(userId, tsfId))
                 .willReturn(false);
         given(timestampFeedbackRepository.findById(tsfId)).willReturn(Optional.of(tsf));
-        given(userRepository.getReferenceById(userId)).willReturn(user);
         given(reviewBookmarkRepository.save(any(ReviewBookmark.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate"));
 
@@ -149,8 +140,7 @@ class ReviewBookmarkServiceTest {
         Long bookmarkId = 100L;
 
         TimestampFeedback tsf = createMockTimestampFeedback(10L);
-        User user = createMockUser(userId);
-        ReviewBookmark mockBookmark = ReviewBookmark.builder().user(user).timestampFeedback(tsf).build();
+        ReviewBookmark mockBookmark = ReviewBookmark.builder().userId(userId).timestampFeedback(tsf).build();
         ReflectionTestUtils.setField(mockBookmark, "id", bookmarkId);
         ReflectionTestUtils.setField(mockBookmark, "createdAt", LocalDateTime.now());
 
@@ -206,8 +196,7 @@ class ReviewBookmarkServiceTest {
         UpdateBookmarkStatusRequest request = new UpdateBookmarkStatusRequest(true);
 
         TimestampFeedback tsf = createMockTimestampFeedback(10L);
-        User user = createMockUser(userId);
-        ReviewBookmark bookmark = ReviewBookmark.builder().user(user).timestampFeedback(tsf).build();
+        ReviewBookmark bookmark = ReviewBookmark.builder().userId(userId).timestampFeedback(tsf).build();
         ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
         ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
 
@@ -226,8 +215,7 @@ class ReviewBookmarkServiceTest {
         UpdateBookmarkStatusRequest request = new UpdateBookmarkStatusRequest(false);
 
         TimestampFeedback tsf = createMockTimestampFeedback(10L);
-        User user = createMockUser(userId);
-        ReviewBookmark bookmark = ReviewBookmark.builder().user(user).timestampFeedback(tsf).build();
+        ReviewBookmark bookmark = ReviewBookmark.builder().userId(userId).timestampFeedback(tsf).build();
         ReflectionTestUtils.setField(bookmark, "id", bookmarkId);
         ReflectionTestUtils.setField(bookmark, "createdAt", LocalDateTime.now());
         bookmark.markResolved();
@@ -287,9 +275,4 @@ class ReviewBookmarkServiceTest {
         return tsf;
     }
 
-    private User createMockUser(Long id) {
-        User user = org.mockito.Mockito.mock(User.class);
-        org.mockito.Mockito.lenient().when(user.getId()).thenReturn(id);
-        return user;
-    }
 }

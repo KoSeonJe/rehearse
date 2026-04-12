@@ -27,11 +27,11 @@ public interface ReviewBookmarkRepository extends JpaRepository<ReviewBookmark, 
         SELECT new com.rehearse.api.domain.reviewbookmark.dto.BookmarkIdPair(
             rb.timestampFeedback.id, rb.id)
         FROM ReviewBookmark rb
-        WHERE rb.user.id = :userId
+        WHERE rb.userId = :userId
           AND rb.timestampFeedback.id IN :tsfIds
     """)
     List<BookmarkIdPair> findBookmarkPairs(Long userId, Collection<Long> tsfIds);
 
-    @Query("SELECT rb.user.id FROM ReviewBookmark rb WHERE rb.id = :bookmarkId")
+    @Query("SELECT rb.userId FROM ReviewBookmark rb WHERE rb.id = :bookmarkId")
     Optional<Long> findOwnerIdById(Long bookmarkId);
 }
