@@ -19,7 +19,7 @@ def lambda_handler(event, context):
 
     parsed = parse_raw_key(key)
     if parsed is None:
-        print(f"[Convert][Skipped] Non-matching key (not interviews/raw/v1): {key}")
+        print(f"[Convert][Skipped] Non-matching key (not interviews/raw/ format): {key}")
         return {"statusCode": 200, "body": "Skipped: not a v1 raw key"}
 
     interview_id = parsed.interview_id

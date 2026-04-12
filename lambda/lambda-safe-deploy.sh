@@ -80,7 +80,7 @@ package_function() {
   cp "$COMMON_DIR/retry.py" "$tmp_dir/retry.py"
 
   # ZIP 생성
-  (cd "$tmp_dir" && zip -qr "$src_dir/source.zip" . -x "*.pyc" "__pycache__/*" "requirements.txt")
+  (cd "$tmp_dir" && zip -qr "$src_dir/source.zip" . -x "*.pyc" "__pycache__/*" "requirements.txt" "tests/*")
 
   log_ok "패키징 완료: $src_dir/source.zip"
   echo "$tmp_dir"
