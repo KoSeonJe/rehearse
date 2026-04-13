@@ -118,10 +118,12 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andReturn();
 
-        var cookie = result.getResponse().getCookie("rehearse_token");
-        org.assertj.core.api.Assertions.assertThat(cookie).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(cookie.getMaxAge()).isZero();
-        org.assertj.core.api.Assertions.assertThat(cookie.isHttpOnly()).isTrue();
-        org.assertj.core.api.Assertions.assertThat(cookie.getSecure()).isTrue();
+        var setCookieHeader = result.getResponse().getHeader("Set-Cookie");
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).contains("rehearse_token=");
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).contains("Max-Age=0");
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).contains("HttpOnly");
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).contains("Secure");
+        org.assertj.core.api.Assertions.assertThat(setCookieHeader).contains("SameSite=Lax");
     }
 }
