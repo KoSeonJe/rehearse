@@ -1,4 +1,4 @@
-package com.rehearse.api.infra.ai.dto;
+package com.rehearse.api.infra.ai.dto.claude;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
