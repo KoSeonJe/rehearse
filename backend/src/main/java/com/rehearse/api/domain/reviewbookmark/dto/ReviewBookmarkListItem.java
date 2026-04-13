@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.reviewbookmark.dto;
 
-import com.rehearse.api.domain.questionset.entity.Question;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 
 import java.time.LocalDateTime;

@@ -2,8 +2,12 @@ package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.questionset.dto.*;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
+import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.question.dto.QuestionsWithAnswersResponse;
+import com.rehearse.api.domain.questionset.dto.QuestionSetStatusResponse;
+import com.rehearse.api.domain.questionset.dto.UploadUrlResponse;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
@@ -202,7 +206,7 @@ class QuestionSetControllerTest {
         void getFeedback_feedbackNotFound_returns404() throws Exception {
             // given
             given(questionSetService.getFeedback(1L))
-                    .willThrow(new BusinessException(QuestionSetErrorCode.FEEDBACK_NOT_FOUND));
+                    .willThrow(new BusinessException(FeedbackErrorCode.FEEDBACK_NOT_FOUND));
 
             // when & then
             mockMvc.perform(get(BASE_URL + "/feedback", 5L, 1L))

@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.controller;
 
-import com.rehearse.api.domain.questionset.dto.AnswersResponse;
+import com.rehearse.api.domain.question.dto.AnswersResponse;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;

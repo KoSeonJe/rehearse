@@ -2,9 +2,13 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.entity.ReferenceType;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -23,7 +27,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.*;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FollowUpTransactionHandler - 꼬리질문 트랜잭션 처리")

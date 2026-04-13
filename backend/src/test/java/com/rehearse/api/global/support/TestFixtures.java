@@ -5,11 +5,11 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.questionpool.entity.QuestionPool;
+import com.rehearse.api.domain.interview.generation.pool.entity.QuestionPool;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
-import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 
 import java.util.List;
 

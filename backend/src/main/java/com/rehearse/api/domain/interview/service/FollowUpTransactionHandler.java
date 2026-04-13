@@ -4,12 +4,13 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.questionset.entity.Question;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionType;
-import com.rehearse.api.domain.questionset.entity.ReferenceType;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.entity.ReferenceType;
+import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.QuestionRepository;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -91,7 +92,7 @@ public class FollowUpTransactionHandler {
                 .count();
 
         if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
-            throw new BusinessException(QuestionSetErrorCode.MAX_FOLLOWUP_EXCEEDED);
+            throw new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED);
         }
     }
 }

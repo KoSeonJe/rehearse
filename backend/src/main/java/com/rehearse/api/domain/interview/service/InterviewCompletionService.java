@@ -3,7 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;

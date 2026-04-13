@@ -1,9 +1,9 @@
 package com.rehearse.api.global.config;
 
-import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.ConvertStatus;
-import com.rehearse.api.domain.questionset.entity.QuestionAnswer;
+import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.ConvertStatus;
+import com.rehearse.api.domain.question.entity.QuestionAnswer;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
 import com.rehearse.api.domain.user.entity.User;
@@ -159,14 +159,14 @@ public class DevController {
         internalQuestionSetService.updateProgress(questionSetId, request);
     }
 
-    private com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest buildConvertCompleted(
+    private com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest buildConvertCompleted(
             Long interviewId, Long questionSetId) {
         return objectMapper.convertValue(
                 Map.of(
                         "status", ConvertStatus.COMPLETED.name(),
                         "streamingS3Key", String.format("interviews/mp4/2026/01/01/%d/%d/000000000000.mp4", interviewId, questionSetId)
                 ),
-                com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest.class
+                com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest.class
         );
     }
 
