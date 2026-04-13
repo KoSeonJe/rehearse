@@ -117,6 +117,7 @@ export const ReviewListPage = () => {
 
   const totalCount = data?.total ?? 0
   const hasData = totalCount > 0
+  const isStatusFiltered = status !== 'all'
   const hasFilteredResults = groupedSections.length > 0 && groupedSections.some((s) => s.items.length > 0)
   const isFiltered = positionFilter !== 'ALL' || interviewTypeFilter !== 'ALL'
 
@@ -140,7 +141,7 @@ export const ReviewListPage = () => {
 
       {!isLoading && !isError && (
         <>
-          {hasData && (
+          {(hasData || isStatusFiltered) && (
             <ReviewListFilterBar
               status={status}
               onStatusChange={handleStatusChange}
@@ -151,10 +152,10 @@ export const ReviewListPage = () => {
             />
           )}
 
-          {!hasData ? (
+          {!hasData && !isStatusFiltered ? (
             <ReviewEmptyState isFiltered={false} />
           ) : !hasFilteredResults ? (
-            <ReviewEmptyState isFiltered={isFiltered || status !== 'all'} />
+            <ReviewEmptyState isFiltered={isFiltered || isStatusFiltered} />
           ) : (
             <div className="space-y-10">
               {groupedSections.map((section) => (
