@@ -1,14 +1,12 @@
-import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient, ApiError } from '@/lib/api-client'
-import { useAuthStore, type AuthUser } from '@/stores/auth-store'
+import type { AuthUser } from '@/stores/auth-store'
 import type { ApiResponse } from '@/types/interview'
+import { AUTH_QUERY_KEY } from '@/constants/auth'
 
 export const useAuth = () => {
-  const { user, setUser, setLoading } = useAuthStore()
-
   const { data, isPending } = useQuery({
-    queryKey: ['auth', 'me'],
+    queryKey: AUTH_QUERY_KEY,
     queryFn: async () => {
       try {
         const res = await apiClient.get<ApiResponse<AuthUser>>('/api/v1/auth/me')
@@ -24,15 +22,8 @@ export const useAuth = () => {
     retry: false,
   })
 
-  useEffect(() => {
-    if (!isPending) {
-      setUser(data ?? null)
-      setLoading(false)
-    }
-  }, [data, isPending, setUser, setLoading])
-
   return {
-    user,
+    user: data ?? null,
     isLoading: isPending,
     isAuthenticated: data != null,
   }

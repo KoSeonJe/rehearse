@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueryClient } from '@tanstack/react-query'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { InterviewList } from '@/components/dashboard/interview-list'
 import { InterviewTable } from '@/components/dashboard/interview-table'
@@ -8,17 +7,15 @@ import { AppShell } from '@/components/layout/app-shell'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { ServiceFeedbackModal } from '@/components/dashboard/service-feedback-modal'
 import { useAuth } from '@/hooks/use-auth'
-import { useAuthStore } from '@/stores/auth-store'
+import { useLogout } from '@/hooks/use-logout'
 import { MessageSquarePlus } from 'lucide-react'
 import { useInterviews, useInterviewStats, useDeleteInterview } from '@/hooks/use-interviews'
 import { useFeedbackNeedCheck } from '@/hooks/use-service-feedback'
-import { apiClient } from '@/lib/api-client'
 
 export const DashboardPage = () => {
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const { user } = useAuth()
-  const logout = useAuthStore((s) => s.logout)
+  const logout = useLogout()
 
   const { data: interviewsData, isLoading: isInterviewsLoading } = useInterviews()
   const { data: statsData, isLoading: isStatsLoading } = useInterviewStats()
@@ -38,6 +35,7 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     if (needCheckData?.data.needsFeedback && !autoFeedbackShownRef.current && !isDismissedRecently()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowAutoFeedback(true)
       autoFeedbackShownRef.current = true
     }
@@ -50,15 +48,6 @@ export const DashboardPage = () => {
 
   const handleOpenVoluntaryFeedback = () => setShowVoluntaryFeedback(true)
 
-  const handleLogout = async () => {
-    try {
-      await apiClient.post('/api/v1/auth/logout')
-    } finally {
-      logout()
-      queryClient.removeQueries({ queryKey: ['auth', 'me'] })
-    }
-  }
-
   const handleDelete = (id: number) => {
     setDeletingId(id)
     deleteInterview(id, {
@@ -70,7 +59,7 @@ export const DashboardPage = () => {
   const stats = statsData?.data
 
   return (
-    <AppShell header={<DashboardHeader user={user} onLogout={handleLogout} onFeedbackClick={handleOpenVoluntaryFeedback} />}>
+    <AppShell header={<DashboardHeader user={user} onLogout={logout} onFeedbackClick={handleOpenVoluntaryFeedback} />}>
       {/* 인사 섹션 — 데스크탑 */}
       <div className="hidden lg:flex items-center justify-between mb-8">
         <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
