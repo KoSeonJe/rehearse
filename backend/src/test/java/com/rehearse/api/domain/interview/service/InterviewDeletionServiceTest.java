@@ -7,12 +7,10 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
-import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -106,23 +104,22 @@ class InterviewDeletionServiceTest {
         }
 
         @Test
-        @DisplayName("삭제 불가능한 상태(COMPLETED)의 면접 세션 삭제 시 BusinessException이 발생한다")
-        void deleteInterview_completedStatus_throwsException() {
+        @DisplayName("COMPLETED 상태의 면접 세션도 정상적으로 삭제한다")
+        void deleteInterview_completedStatus_success() {
             // given
             Interview interview = createMockInterview();
             ReflectionTestUtils.setField(interview, "status",
                     com.rehearse.api.domain.interview.entity.InterviewStatus.COMPLETED);
             given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                    .willReturn(Collections.emptyList());
 
-            // when & then
-            assertThatThrownBy(() -> interviewDeletionService.deleteInterview(1L, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException be = (BusinessException) ex;
-                        assertThat(be.getCode()).isEqualTo(InterviewErrorCode.CANNOT_DELETE_COMPLETED.getCode());
-                    });
+            // when
+            interviewDeletionService.deleteInterview(1L, 1L);
 
-            then(interviewRepository).should(never()).delete(any());
+            // then
+            then(questionAnswerRepository).should().deleteAllByInterviewId(1L);
+            then(interviewRepository).should().delete(interview);
         }
     }
 
