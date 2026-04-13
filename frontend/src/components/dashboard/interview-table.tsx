@@ -149,7 +149,6 @@ export const InterviewTable = ({
           <tbody>
             {interviews.map((interview) => {
               const isInProgress = interview.status === 'IN_PROGRESS'
-              const isDeletable = interview.status !== 'COMPLETED'
               const positionLabel =
                 POSITION_LABELS[interview.position]?.label ?? interview.position
               const typeBadges = interview.interviewTypes
@@ -217,16 +216,14 @@ export const InterviewTable = ({
                   {/* 상태 (hover/focus 시 우측 끝에 삭제 버튼이 absolute로 떠서 표시됨) */}
                   <td className="relative py-4 px-4 text-center">
                     <StatusBadge status={interview.status} />
-                    {isDeletable && (
-                      <button
-                        onClick={(e) => handleDeleteClick(e, interview.id)}
-                        aria-label="면접 삭제"
-                        disabled={deletingId === interview.id}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    )}
+                    <button
+                      onClick={(e) => handleDeleteClick(e, interview.id)}
+                      aria-label="면접 삭제"
+                      disabled={deletingId === interview.id}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    >
+                      <Trash2 size={15} />
+                    </button>
                   </td>
                 </tr>
               )

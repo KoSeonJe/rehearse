@@ -51,7 +51,6 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
   const navigate = useNavigate()
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  const isDeletable = interview.status !== 'COMPLETED'
   const isInProgress = interview.status === 'IN_PROGRESS'
 
   const handleCardClick = () => {
@@ -114,15 +113,13 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
           <span className="text-xs text-text-tertiary">{formatDate(interview.createdAt)}</span>
           <div className="flex items-center gap-2">
             <StatusBadge status={interview.status} />
-            {isDeletable && (
-              <button
-                onClick={handleDeleteClick}
-                aria-label="면접 삭제"
-                className="p-2 text-text-tertiary hover:text-error transition-colors duration-200 cursor-pointer rounded-lg"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
+            <button
+              onClick={handleDeleteClick}
+              aria-label="면접 삭제"
+              className="p-2 text-text-tertiary hover:text-error transition-colors duration-200 cursor-pointer rounded-lg"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
         </div>
       </div>
