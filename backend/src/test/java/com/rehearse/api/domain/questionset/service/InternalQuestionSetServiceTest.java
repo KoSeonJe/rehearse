@@ -1,15 +1,27 @@
 package com.rehearse.api.domain.questionset.service;
 
 import com.rehearse.api.domain.file.entity.FileMetadata;
-import com.rehearse.api.domain.file.entity.FileStatus;
 import com.rehearse.api.domain.interview.entity.Interview;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.questionset.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.service.TimestampFeedbackMapper;
+import com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.ConvertStatus;
+import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.analysis.exception.AnalysisErrorCode;
+import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionAnswer;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
-import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.aws.S3Service;
 import org.junit.jupiter.api.DisplayName;
@@ -26,10 +38,11 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.List;
 import java.util.Optional;
 
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 class InternalQuestionSetServiceTest {
@@ -56,7 +69,7 @@ class InternalQuestionSetServiceTest {
     private S3Service s3Service;
 
     @Mock
-    private ObjectMapper objectMapper;
+    private TimestampFeedbackMapper timestampFeedbackMapper;
 
     @Nested
     @DisplayName("updateProgress 메서드")
@@ -151,7 +164,7 @@ class InternalQuestionSetServiceTest {
 
         @Test
         @DisplayName("saveFeedback: 피드백과 타임스탬프 피드백이 저장되고 상태가 COMPLETED로 변경된다")
-        void saveFeedback_withTimestampFeedbacks_success() throws Exception {
+        void saveFeedback_withTimestampFeedbacks_success() {
             // given
             QuestionSet questionSet = createQuestionSet(1L);
             QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
@@ -162,22 +175,20 @@ class InternalQuestionSetServiceTest {
             given(feedbackRepository.save(any(QuestionSetFeedback.class)))
                     .willAnswer(inv -> inv.getArgument(0));
 
-            SaveFeedbackRequest.CommentBlock verbalBlock = new SaveFeedbackRequest.CommentBlock();
-            ReflectionTestUtils.setField(verbalBlock, "positive", "명확한 설명");
-            ReflectionTestUtils.setField(verbalBlock, "negative", null);
-            ReflectionTestUtils.setField(verbalBlock, "suggestion", null);
-
             SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
             ReflectionTestUtils.setField(item, "questionId", 10L);
             ReflectionTestUtils.setField(item, "startMs", 0L);
             ReflectionTestUtils.setField(item, "endMs", 5000L);
-            ReflectionTestUtils.setField(item, "verbalComment", verbalBlock);
             ReflectionTestUtils.setField(item, "eyeContactLevel", "GOOD");
             ReflectionTestUtils.setField(item, "postureLevel", "AVERAGE");
             ReflectionTestUtils.setField(item, "toneConfidenceLevel", "GOOD");
 
-            given(objectMapper.writeValueAsString(any(SaveFeedbackRequest.CommentBlock.class)))
-                    .willReturn("{\"positive\":\"명확한 설명\",\"negative\":null,\"suggestion\":null}");
+            TimestampFeedback stubTf = TimestampFeedback.builder()
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .isAnalyzed(true)
+                    .build();
+            given(timestampFeedbackMapper.toEntity(eq(item), any())).willReturn(stubTf);
 
             SaveFeedbackRequest request = new SaveFeedbackRequest();
             ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");
@@ -376,7 +387,7 @@ class InternalQuestionSetServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> {
                         BusinessException be = (BusinessException) ex;
-                        assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION.getCode());
+                        assertThat(be.getCode()).isEqualTo(AnalysisErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION.getCode());
                     });
         }
 

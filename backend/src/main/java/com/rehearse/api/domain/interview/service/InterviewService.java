@@ -12,11 +12,7 @@ import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.repository.QuestionAnswerRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
-import com.rehearse.api.domain.questionset.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +42,6 @@ public class InterviewService {
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionSetService questionSetService;
-    private final QuestionAnswerRepository questionAnswerRepository;
-    private final TimestampFeedbackRepository timestampFeedbackRepository;
-    private final QuestionSetFeedbackRepository questionSetFeedbackRepository;
-    private final QuestionSetAnalysisRepository questionSetAnalysisRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -140,25 +132,6 @@ public class InterviewService {
                 .completedCount(completedCount)
                 .thisWeekCount(thisWeekCount)
                 .build();
-    }
-
-    @Transactional
-    public void deleteInterview(Long id, Long userId) {
-        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
-
-        if (!interview.getStatus().isDeletable()) {
-            throw new BusinessException(InterviewErrorCode.CANNOT_DELETE_COMPLETED);
-        }
-
-        // 하위 엔티티부터 명시적 삭제 (FK 제약조건 위반 방지)
-        questionAnswerRepository.deleteAllByInterviewId(id);
-        timestampFeedbackRepository.deleteAllByInterviewId(id);
-        questionSetFeedbackRepository.deleteAllByInterviewId(id);
-        questionSetAnalysisRepository.deleteAllByInterviewId(id);
-        questionSetRepository.deleteAll(questionSetRepository.findByInterviewIdOrderByOrderIndex(id));
-        interviewRepository.delete(interview);
-
-        log.info("면접 세션 삭제: id={}, userId={}", id, userId);
     }
 
     private Map<Long, Long> buildAnswerCountMap(List<Long> interviewIds) {
