@@ -66,13 +66,13 @@ class OAuth2SuccessHandlerTest {
         handler.onAuthenticationSuccess(request, response, authentication);
 
         // then
-        var cookie = response.getCookie("rehearse_token");
-        assertThat(cookie).isNotNull();
-        assertThat(cookie.isHttpOnly()).isTrue();
-        assertThat(cookie.getSecure()).isTrue();
-        assertThat(cookie.getPath()).isEqualTo("/");
-        assertThat(cookie.getMaxAge()).isEqualTo(7 * 24 * 60 * 60);
-        assertThat(cookie.getAttribute("SameSite")).isEqualTo("Lax");
+        var setCookieHeader = response.getHeader("Set-Cookie");
+        assertThat(setCookieHeader).isNotNull();
+        assertThat(setCookieHeader).contains("rehearse_token=test-jwt-token");
+        assertThat(setCookieHeader).contains("Max-Age=604800");
+        assertThat(setCookieHeader).contains("HttpOnly");
+        assertThat(setCookieHeader).contains("Secure");
+        assertThat(setCookieHeader).contains("SameSite=Lax");
     }
 
     @Test
