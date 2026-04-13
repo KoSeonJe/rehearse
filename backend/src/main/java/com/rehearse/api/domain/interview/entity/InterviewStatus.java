@@ -14,6 +14,6 @@ public enum InterviewStatus {
     }
 
     public boolean isDeletable() {
-        return this == READY || this == IN_PROGRESS;
+        return true;
     }
 }
