@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.reviewbookmark.service;
 
-import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
-import com.rehearse.api.domain.questionset.repository.TimestampFeedbackRepository;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.reviewbookmark.dto.CreateReviewBookmarkRequest;
 import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkResponse;
 import com.rehearse.api.domain.reviewbookmark.dto.UpdateBookmarkStatusRequest;
@@ -18,13 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class ReviewBookmarkService {
 
     private final ReviewBookmarkRepository reviewBookmarkRepository;
     private final ReviewBookmarkFinder reviewBookmarkFinder;
     private final TimestampFeedbackRepository timestampFeedbackRepository;
 
+    @Transactional
     public ReviewBookmarkResponse create(Long userId, CreateReviewBookmarkRequest request) {
         Long tsfId = request.timestampFeedbackId();
 
@@ -48,11 +49,13 @@ public class ReviewBookmarkService {
         }
     }
 
+    @Transactional
     public void delete(Long userId, Long bookmarkId) {
         ReviewBookmark bookmark = reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId);
         reviewBookmarkRepository.delete(bookmark);
     }
 
+    @Transactional
     public ReviewBookmarkResponse updateStatus(Long userId, Long bookmarkId,
                                                UpdateBookmarkStatusRequest request) {
         ReviewBookmark bookmark = reviewBookmarkFinder.findByIdAndValidateOwner(bookmarkId, userId);

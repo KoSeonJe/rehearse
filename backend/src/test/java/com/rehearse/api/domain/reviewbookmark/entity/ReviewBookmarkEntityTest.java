@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.reviewbookmark.entity;
 
-import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

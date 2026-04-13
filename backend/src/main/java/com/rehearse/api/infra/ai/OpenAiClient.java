@@ -2,6 +2,8 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
+import com.rehearse.api.infra.ai.dto.openai.OpenAiRequest;
+import com.rehearse.api.infra.ai.dto.openai.OpenAiResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;

@@ -3,7 +3,7 @@ package com.rehearse.api.infra.ai.prompt;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.questionset.entity.ReferenceType;
+import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.persona.PersonaResolver;
 import com.rehearse.api.infra.ai.persona.ResolvedProfile;

@@ -1,13 +1,28 @@
 package com.rehearse.api.domain.questionset.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.ConvertStatus;
+import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.analysis.exception.AnalysisErrorCode;
+import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.feedback.service.TimestampFeedbackMapper;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.questionset.dto.*;
-import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.question.dto.AnswerResponse;
+import com.rehearse.api.domain.question.dto.AnswersResponse;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionAnswer;
+import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.aws.S3Service;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +50,7 @@ public class InternalQuestionSetService {
     private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
     private final S3Service s3Service;
-    private final ObjectMapper objectMapper;
+    private final TimestampFeedbackMapper timestampFeedbackMapper;
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
@@ -51,7 +66,7 @@ public class InternalQuestionSetService {
         try {
             analysis.updateAnalysisStatus(request.getStatus());
         } catch (IllegalStateException e) {
-            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
+            throw new BusinessException(AnalysisErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
         }
         log.info("분석 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
     }
@@ -107,29 +122,7 @@ public class InternalQuestionSetService {
                             });
                 }
 
-                TimestampFeedback tf = TimestampFeedback.builder()
-                        .question(question)
-                        .startMs(item.getStartMs())
-                        .endMs(item.getEndMs())
-                        .transcript(item.getTranscript())
-                        .verbalComment(serializeCommentBlock(item.getVerbalComment()))
-                        .fillerWordCount(item.getFillerWordCount())
-                        .eyeContactLevel(item.getEyeContactLevel())
-                        .postureLevel(item.getPostureLevel())
-                        .expressionLabel(item.getExpressionLabel())
-                        .nonverbalComment(serializeCommentBlock(item.getNonverbalComment()))
-                        .overallComment(serializeCommentBlock(item.getOverallComment()))
-                        .isAnalyzed(true)
-                        .fillerWords(toJson(item.getFillerWords()))
-                        .speechPace(item.getSpeechPace())
-                        .toneConfidenceLevel(item.getToneConfidenceLevel())
-                        .emotionLabel(item.getEmotionLabel())
-                        .vocalComment(serializeCommentBlock(item.getVocalComment()))
-                        .accuracyIssues(item.getAccuracyIssues())
-                        .coachingStructure(item.getCoachingStructure())
-                        .coachingImprovement(item.getCoachingImprovement())
-                        .attitudeComment(serializeCommentBlock(item.getAttitudeComment()))
-                        .build();
+                TimestampFeedback tf = timestampFeedbackMapper.toEntity(item, question);
                 feedback.addTimestampFeedback(tf);
             }
         }
@@ -154,16 +147,12 @@ public class InternalQuestionSetService {
             try {
                 analysis.updateConvertStatus(request.getStatus());
             } catch (IllegalStateException e) {
-                throw new BusinessException(QuestionSetErrorCode.INVALID_CONVERT_STATUS_TRANSITION);
+                throw new BusinessException(AnalysisErrorCode.INVALID_CONVERT_STATUS_TRANSITION);
             }
         }
 
         if (request.getStreamingS3Key() != null) {
-            QuestionSet qs = analysis.getQuestionSet();
-            var file = qs.getFileMetadata();
-            if (file != null) {
-                file.updateStreamingS3Key(request.getStreamingS3Key());
-            }
+            analysis.getQuestionSet().updateStreamingS3Key(request.getStreamingS3Key());
         }
 
         log.info("변환 상태 업데이트: questionSetId={}, status={}", questionSetId, request.getStatus());
@@ -175,19 +164,17 @@ public class InternalQuestionSetService {
         QuestionSetAnalysis analysis = findAnalysis(questionSetId);
 
         if (!analysis.getAnalysisStatus().isRetryable()) {
-            throw new BusinessException(QuestionSetErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
+            throw new BusinessException(AnalysisErrorCode.INVALID_ANALYSIS_STATUS_TRANSITION);
         }
 
         AnalysisStatus previousStatus = analysis.getAnalysisStatus();
         analysis.retry();
 
         QuestionSet questionSet = analysis.getQuestionSet();
-        var file = questionSet.getFileMetadata();
-        if (file == null) {
+        String s3Key = questionSet.getFileS3Key();
+        if (s3Key == null) {
             throw new BusinessException(QuestionSetErrorCode.FILE_NOT_FOUND);
         }
-
-        String s3Key = file.getS3Key();
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
@@ -213,22 +200,4 @@ public class InternalQuestionSetService {
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
     }
 
-    private String serializeCommentBlock(SaveFeedbackRequest.CommentBlock block) {
-        if (block == null) return null;
-        try {
-            return objectMapper.writeValueAsString(block);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("CommentBlock 직렬화 실패", e);
-        }
-    }
-
-    private String toJson(List<String> list) {
-        if (list == null) return null;
-        try {
-            return objectMapper.writeValueAsString(list);
-        } catch (JsonProcessingException e) {
-            log.warn("List<String> JSON 직렬화 실패: {}", list, e);
-            return null;
-        }
-    }
 }

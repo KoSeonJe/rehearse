@@ -5,8 +5,8 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.questionset.entity.Question;
-import com.rehearse.api.domain.questionset.entity.QuestionType;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
@@ -49,7 +49,7 @@ class FollowUpServiceTest {
             // given
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -96,7 +96,7 @@ class FollowUpServiceTest {
             // given
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             MockMultipartFile audioFile =
@@ -138,7 +138,7 @@ class FollowUpServiceTest {
             // given
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -175,7 +175,7 @@ class FollowUpServiceTest {
             // given
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             // AI가 스키마를 어긴 경우 — skip=false이지만 question이 null
@@ -229,7 +229,7 @@ class FollowUpServiceTest {
             // given
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.questionset.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             MockMultipartFile audioFile =

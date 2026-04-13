@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.controller;
 import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
+import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.global.common.ApiResponse;
@@ -28,6 +29,7 @@ public class InterviewController {
     private final InterviewCreationService interviewCreationService;
     private final InterviewQueryService interviewQueryService;
     private final InterviewService interviewService;
+    private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
     private final Executor vtExecutor;
 
@@ -35,11 +37,13 @@ public class InterviewController {
             InterviewCreationService interviewCreationService,
             InterviewQueryService interviewQueryService,
             InterviewService interviewService,
+            InterviewDeletionService interviewDeletionService,
             FollowUpService followUpService,
             @Qualifier(AsyncConfig.VT_EXECUTOR) Executor vtExecutor) {
         this.interviewCreationService = interviewCreationService;
         this.interviewQueryService = interviewQueryService;
         this.interviewService = interviewService;
+        this.interviewDeletionService = interviewDeletionService;
         this.followUpService = followUpService;
         this.vtExecutor = vtExecutor;
     }
@@ -125,7 +129,7 @@ public class InterviewController {
     public ResponseEntity<ApiResponse<Void>> deleteInterview(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
-        interviewService.deleteInterview(id, userId);
+        interviewDeletionService.deleteInterview(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }
 }

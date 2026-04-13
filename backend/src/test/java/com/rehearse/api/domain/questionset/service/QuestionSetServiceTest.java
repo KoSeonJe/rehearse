@@ -1,12 +1,28 @@
 package com.rehearse.api.domain.questionset.service;
 
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
+import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
-import com.rehearse.api.domain.questionset.dto.*;
-import com.rehearse.api.domain.questionset.entity.*;
+import com.rehearse.api.domain.question.dto.QuestionsWithAnswersResponse;
+import com.rehearse.api.domain.question.dto.SaveAnswersRequest;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionAnswer;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.questionset.dto.QuestionSetStatusResponse;
+import com.rehearse.api.domain.questionset.dto.UploadUrlRequest;
+import com.rehearse.api.domain.questionset.dto.UploadUrlResponse;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.*;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.aws.S3KeyGenerator;
 import com.rehearse.api.infra.aws.S3Service;
@@ -277,7 +293,7 @@ class QuestionSetServiceTest {
                     .satisfies(ex -> {
                         BusinessException be = (BusinessException) ex;
                         assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-                        assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.FEEDBACK_NOT_FOUND.getCode());
+                        assertThat(be.getCode()).isEqualTo(FeedbackErrorCode.FEEDBACK_NOT_FOUND.getCode());
                     });
         }
     }

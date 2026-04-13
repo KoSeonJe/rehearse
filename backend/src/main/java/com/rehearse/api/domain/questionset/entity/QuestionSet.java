@@ -1,7 +1,10 @@
 package com.rehearse.api.domain.questionset.entity;
 
+import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.question.entity.Question;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -91,6 +94,16 @@ public class QuestionSet {
 
     public void assignFileMetadata(FileMetadata fileMetadata) {
         this.fileMetadata = fileMetadata;
+    }
+
+    public void updateStreamingS3Key(String key) {
+        if (this.fileMetadata != null) {
+            this.fileMetadata.updateStreamingS3Key(key);
+        }
+    }
+
+    public String getFileS3Key() {
+        return this.fileMetadata != null ? this.fileMetadata.getS3Key() : null;
     }
 
 }

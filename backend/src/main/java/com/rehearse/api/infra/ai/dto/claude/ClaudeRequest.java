@@ -1,0 +1,32 @@
+package com.rehearse.api.infra.ai.dto.claude;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.List;
+
+@Getter
+@Builder
+public class ClaudeRequest {
+
+    private final String model;
+
+    @JsonProperty("max_tokens")
+    private final int maxTokens;
+
+    private final List<SystemContent> system;
+
+    private final List<Message> messages;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private final Double temperature;
+
+    @Getter
+    @Builder
+    public static class Message {
+        private final String role;
+        private final String content;
+    }
+}

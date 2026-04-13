@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.reviewbookmark.entity;
 
-import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkErrorCode;
 import com.rehearse.api.domain.reviewbookmark.exception.ReviewBookmarkException;
 import jakarta.persistence.*;

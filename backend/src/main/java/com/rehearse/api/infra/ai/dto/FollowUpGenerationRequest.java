@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.questionset.entity.ReferenceType;
+import com.rehearse.api.domain.question.entity.ReferenceType;
 
 import java.util.List;
 

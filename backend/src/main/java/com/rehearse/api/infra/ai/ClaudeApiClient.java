@@ -2,6 +2,10 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
+import com.rehearse.api.infra.ai.dto.claude.CacheControl;
+import com.rehearse.api.infra.ai.dto.claude.ClaudeRequest;
+import com.rehearse.api.infra.ai.dto.claude.ClaudeResponse;
+import com.rehearse.api.infra.ai.dto.claude.SystemContent;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;

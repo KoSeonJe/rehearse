@@ -6,7 +6,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.questionset.entity.Question;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;

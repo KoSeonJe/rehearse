@@ -5,6 +5,8 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
+import com.rehearse.api.infra.ai.dto.claude.ClaudeRequest;
+import com.rehearse.api.infra.ai.dto.claude.ClaudeResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;

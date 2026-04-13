@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.reviewbookmark.service;
 
-import com.rehearse.api.domain.questionset.entity.TimestampFeedback;
-import com.rehearse.api.domain.questionset.repository.TimestampFeedbackRepository;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.reviewbookmark.dto.CreateReviewBookmarkRequest;
 import com.rehearse.api.domain.reviewbookmark.dto.ReviewBookmarkResponse;
 import com.rehearse.api.domain.reviewbookmark.dto.UpdateBookmarkStatusRequest;

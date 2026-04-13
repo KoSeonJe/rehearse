@@ -6,6 +6,7 @@ import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
+import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
 import com.rehearse.api.global.config.TestSecurityConfig;
@@ -59,6 +60,9 @@ class InterviewControllerTest {
 
     @MockitoBean
     private InterviewService interviewService;
+
+    @MockitoBean
+    private InterviewDeletionService interviewDeletionService;
 
     @MockitoBean
     private FollowUpService followUpService;
