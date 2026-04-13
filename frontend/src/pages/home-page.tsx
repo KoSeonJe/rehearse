@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
@@ -17,7 +17,8 @@ export const HomePage = () => {
   const { user, isAuthenticated, isLoading } = useAuth()
   const { openLoginModal } = useAuthStore()
   const logout = useLogout()
-  const [oauthError, setOauthError] = useState(false)
+  const hasOauthError = useMemo(() => searchParams.get('error') === 'auth_failed', [searchParams])
+  const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -26,21 +27,19 @@ export const HomePage = () => {
   }, [isLoading, isAuthenticated, navigate])
 
   useEffect(() => {
-    if (searchParams.get('error') === 'auth_failed') {
-      setOauthError(true)
-      localStorage.removeItem('oauth_redirect')
-      window.history.replaceState({}, '', '/')
-      const timer = setTimeout(() => setOauthError(false), 4000)
-      return () => clearTimeout(timer)
-    }
-  }, [searchParams])
+    if (!hasOauthError) return
+    localStorage.removeItem('oauth_redirect')
+    navigate('/', { replace: true })
+    const timer = setTimeout(() => setDismissed(true), 4000)
+    return () => clearTimeout(timer)
+  }, [hasOauthError, navigate])
 
   const handleOpenLogin = () => openLoginModal()
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
-      {oauthError && (
+      {hasOauthError && !dismissed && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
