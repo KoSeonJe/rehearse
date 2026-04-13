@@ -12,6 +12,7 @@ export const useCrossTabSync = () => {
       if (e.key === LOGOUT_SIGNAL_KEY && e.newValue) {
         queryClient.setQueryData(AUTH_QUERY_KEY, null)
         navigate('/', { replace: true })
+        localStorage.removeItem(LOGOUT_SIGNAL_KEY)
       }
     }
     window.addEventListener('storage', handler)

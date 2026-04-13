@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { apiClient } from '@/lib/api-client'
@@ -7,7 +8,7 @@ export const useLogout = () => {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  return async () => {
+  return useCallback(async () => {
     // 1. 클라이언트 상태 먼저 정리 (API 실패해도 로그아웃 유지)
     queryClient.setQueryData(AUTH_QUERY_KEY, null)
 
@@ -23,5 +24,5 @@ export const useLogout = () => {
 
     // 4. 홈으로 이동
     navigate('/', { replace: true })
-  }
+  }, [queryClient, navigate])
 }

@@ -47,7 +47,7 @@ class ApiClient {
       ...rest,
     })
 
-    if (response.status === 401) {
+    if (response.status === 401 && !endpoint.includes('/auth/me')) {
       window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     }
 
