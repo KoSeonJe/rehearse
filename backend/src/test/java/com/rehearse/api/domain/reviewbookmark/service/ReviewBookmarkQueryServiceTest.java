@@ -17,6 +17,7 @@ import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.reviewbookmark.repository.ReviewBookmarkRepository;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -39,97 +40,125 @@ class ReviewBookmarkQueryServiceTest {
     @Mock
     private ReviewBookmarkRepository reviewBookmarkRepository;
 
-    @Test
-    @DisplayName("listByUser - status=all 이면 전체 반환")
-    void listByUser_all() {
-        Long userId = 1L;
-        ReviewBookmark b1 = createBookmark(1L, false);
-        ReviewBookmark b2 = createBookmark(2L, true);
+    @Nested
+    @DisplayName("listByUser 메서드")
+    class ListByUser {
 
-        given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
-                .willReturn(List.of(b1, b2));
+        @Test
+        @DisplayName("listByUser - status=all 이면 전체 반환")
+        void listByUser_all() {
+            // given
+            Long userId = 1L;
+            ReviewBookmark b1 = createBookmark(1L, false);
+            ReviewBookmark b2 = createBookmark(2L, true);
 
-        List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
+            given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
+                    .willReturn(List.of(b1, b2));
 
-        assertThat(result).hasSize(2);
+            // when
+            List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
+
+            // then
+            assertThat(result).hasSize(2);
+        }
+
+        @Test
+        @DisplayName("listByUser - status=in_progress 이면 DB-레벨로 미해결만 조회")
+        void listByUser_inProgress() {
+            // given
+            Long userId = 1L;
+            ReviewBookmark inProgress = createBookmark(1L, false);
+
+            given(reviewBookmarkRepository.findByUserIdAndResolvedAtIsNullOrderByCreatedAtDesc(userId))
+                    .willReturn(List.of(inProgress));
+
+            // when
+            List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.IN_PROGRESS);
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("listByUser - status=resolved 이면 DB-레벨로 해결된 것만 조회")
+        void listByUser_resolved() {
+            // given
+            Long userId = 1L;
+            ReviewBookmark resolved = createBookmark(2L, true);
+
+            given(reviewBookmarkRepository.findByUserIdAndResolvedAtIsNotNullOrderByCreatedAtDesc(userId))
+                    .willReturn(List.of(resolved));
+
+            // when
+            List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.RESOLVED);
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).id()).isEqualTo(2L);
+        }
+
+        @Test
+        @DisplayName("listByUser - 북마크가 없으면 빈 목록 반환")
+        void listByUser_empty() {
+            // given
+            Long userId = 1L;
+
+            given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
+                    .willReturn(List.of());
+
+            // when
+            List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
+
+            // then
+            assertThat(result).isEmpty();
+        }
+
+        @Test
+        @DisplayName("listByUser - question이 null이어도 NPE 없이 매핑됨")
+        void listByUser_nullableQuestion() {
+            // given
+            Long userId = 1L;
+            ReviewBookmark bookmark = createBookmarkWithNullQuestion(10L);
+
+            given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
+                    .willReturn(List.of(bookmark));
+
+            // when
+            List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
+
+            // then
+            assertThat(result).hasSize(1);
+            assertThat(result.get(0).questionText()).isNull();
+            assertThat(result.get(0).modelAnswer()).isNull();
+        }
     }
 
-    @Test
-    @DisplayName("listByUser - status=in_progress 이면 DB-레벨로 미해결만 조회")
-    void listByUser_inProgress() {
-        Long userId = 1L;
-        ReviewBookmark inProgress = createBookmark(1L, false);
+    @Nested
+    @DisplayName("findBookmarkPairs 메서드")
+    class FindBookmarkPairs {
 
-        given(reviewBookmarkRepository.findByUserIdAndResolvedAtIsNullOrderByCreatedAtDesc(userId))
-                .willReturn(List.of(inProgress));
+        @Test
+        @DisplayName("findBookmarkPairs - userId와 tsfIds로 BookmarkIdPair 목록 반환")
+        void findBookmarkPairs_returnsPairs() {
+            // given
+            Long userId = 1L;
+            List<Long> tsfIds = List.of(10L, 20L);
+            List<BookmarkIdPair> pairs = List.of(
+                    new BookmarkIdPair(10L, 100L),
+                    new BookmarkIdPair(20L, 200L)
+            );
 
-        List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.IN_PROGRESS);
+            given(reviewBookmarkRepository.findBookmarkPairs(userId, tsfIds)).willReturn(pairs);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).id()).isEqualTo(1L);
-    }
+            // when
+            BookmarkExistsResponse response = reviewBookmarkQueryService.findBookmarkPairs(userId, tsfIds);
 
-    @Test
-    @DisplayName("listByUser - status=resolved 이면 DB-레벨로 해결된 것만 조회")
-    void listByUser_resolved() {
-        Long userId = 1L;
-        ReviewBookmark resolved = createBookmark(2L, true);
-
-        given(reviewBookmarkRepository.findByUserIdAndResolvedAtIsNotNullOrderByCreatedAtDesc(userId))
-                .willReturn(List.of(resolved));
-
-        List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.RESOLVED);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).id()).isEqualTo(2L);
-    }
-
-    @Test
-    @DisplayName("listByUser - 북마크가 없으면 빈 목록 반환")
-    void listByUser_empty() {
-        Long userId = 1L;
-
-        given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
-                .willReturn(List.of());
-
-        List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("listByUser - question이 null이어도 NPE 없이 매핑됨")
-    void listByUser_nullableQuestion() {
-        Long userId = 1L;
-        ReviewBookmark bookmark = createBookmarkWithNullQuestion(10L);
-
-        given(reviewBookmarkRepository.findByUserIdOrderByCreatedAtDesc(userId))
-                .willReturn(List.of(bookmark));
-
-        List<ReviewBookmarkListItem> result = reviewBookmarkQueryService.listByUser(userId, BookmarkStatusFilter.ALL);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).questionText()).isNull();
-        assertThat(result.get(0).modelAnswer()).isNull();
-    }
-
-    @Test
-    @DisplayName("findBookmarkPairs - userId와 tsfIds로 BookmarkIdPair 목록 반환")
-    void findBookmarkPairs_returnsPairs() {
-        Long userId = 1L;
-        List<Long> tsfIds = List.of(10L, 20L);
-        List<BookmarkIdPair> pairs = List.of(
-                new BookmarkIdPair(10L, 100L),
-                new BookmarkIdPair(20L, 200L)
-        );
-
-        given(reviewBookmarkRepository.findBookmarkPairs(userId, tsfIds)).willReturn(pairs);
-
-        BookmarkExistsResponse response = reviewBookmarkQueryService.findBookmarkPairs(userId, tsfIds);
-
-        assertThat(response.items()).hasSize(2);
-        assertThat(response.items().get(0).timestampFeedbackId()).isEqualTo(10L);
-        assertThat(response.items().get(0).bookmarkId()).isEqualTo(100L);
+            // then
+            assertThat(response.items()).hasSize(2);
+            assertThat(response.items().get(0).timestampFeedbackId()).isEqualTo(10L);
+            assertThat(response.items().get(0).bookmarkId()).isEqualTo(100L);
+        }
     }
 
     // ====== helpers ======

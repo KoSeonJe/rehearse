@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.google;
 
 import com.google.cloud.texttospeech.v1.stub.GrpcTextToSpeechStub;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -15,10 +16,13 @@ import static org.assertj.core.api.Assertions.assertThatCode;
  *
  * 2026-04-11 #293 이후 배포 실패 회귀 방지.
  */
+@DisplayName("GoogleTTS - protobuf 클래스 로딩 smoke test")
 class GoogleTtsClassLoadingTest {
 
     @Test
-    void grpcTextToSpeechStub_클래스_초기화가_실패하지_않아야_한다() {
+    @DisplayName("GrpcTextToSpeechStub 클래스 초기화 시 protobuf 버전 충돌이 발생하지 않는다")
+    void classForName_grpcStubInit_doesNotThrow() {
+        // when & then
         assertThatCode(() ->
                 Class.forName(
                         GrpcTextToSpeechStub.class.getName(),

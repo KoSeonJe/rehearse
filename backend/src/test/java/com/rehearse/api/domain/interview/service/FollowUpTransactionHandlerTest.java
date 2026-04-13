@@ -9,6 +9,7 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,6 +26,7 @@ import static org.mockito.BDDMockito.*;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("FollowUpTransactionHandler - 꼬리질문 트랜잭션 처리")
 class FollowUpTransactionHandlerTest {
 
     @InjectMocks
@@ -39,140 +41,150 @@ class FollowUpTransactionHandlerTest {
     @Mock
     private QuestionRepository questionRepository;
 
-    @Test
-    @DisplayName("loadFollowUpContext - 정상: IN_PROGRESS 면접에서 컨텍스트 로드")
-    void loadFollowUpContext_success() {
-        // given
-        Interview interview = createInProgressInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+    @Nested
+    @DisplayName("loadFollowUpContext 메서드")
+    class LoadFollowUpContext {
 
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
-        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+        @Test
+        @DisplayName("loadFollowUpContext - 정상: IN_PROGRESS 면접에서 컨텍스트 로드")
+        void loadFollowUpContext_success() {
+            // given
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
-        // when
-        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-        // then
-        assertThat(context.position()).isEqualTo(Position.BACKEND);
-        assertThat(context.level()).isEqualTo(InterviewLevel.JUNIOR);
-        assertThat(context.questionSetId()).isEqualTo(10L);
-        assertThat(context.nextOrderIndex()).isEqualTo(1);
-        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+            // when
+            FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+
+            // then
+            assertThat(context.position()).isEqualTo(Position.BACKEND);
+            assertThat(context.level()).isEqualTo(InterviewLevel.JUNIOR);
+            assertThat(context.questionSetId()).isEqualTo(10L);
+            assertThat(context.nextOrderIndex()).isEqualTo(1);
+            assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+        }
+
+        @Test
+        @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 GUIDE면 context에 GUIDE가 실린다 (EXPERIENCE 모드)")
+        void loadFollowUpContext_resumeQuestion_carriesGuideReferenceType() {
+            // given
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.GUIDE);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+            // when
+            FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+
+            // then
+            assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.GUIDE);
+        }
+
+        @Test
+        @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 null이면 안전 기본값 MODEL_ANSWER로 폴백")
+        void loadFollowUpContext_nullReferenceType_fallsBackToModelAnswer() {
+            // given
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, null);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+            // when
+            FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+
+            // then
+            assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+        }
+
+        @Test
+        @DisplayName("loadFollowUpContext - 예외: 면접이 IN_PROGRESS가 아닌 경우")
+        void loadFollowUpContext_notInProgress() {
+            // given
+            Interview interview = createMockInterview(); // READY 상태
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+            // when & then
+            assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_003");
+                    });
+        }
+
+        @Test
+        @DisplayName("loadFollowUpContext - 예외: QuestionSet 미존재")
+        void loadFollowUpContext_questionSetNotFound() {
+            // given
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 999L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getCode()).isEqualTo("QUESTION_SET_001");
+                    });
+        }
+
+        @Test
+        @DisplayName("loadFollowUpContext - 예외: 후속질문 라운드 초과")
+        void loadFollowUpContext_maxFollowUpExceeded() {
+            // given
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+
+            QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 2);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+            // when & then
+            assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getCode()).isEqualTo("QUESTION_SET_004");
+                    });
+        }
     }
 
-    @Test
-    @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 GUIDE면 context에 GUIDE가 실린다 (EXPERIENCE 모드)")
-    void loadFollowUpContext_resumeQuestion_carriesGuideReferenceType() {
-        // given
-        Interview interview = createInProgressInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+    @Nested
+    @DisplayName("saveFollowUpResult 메서드")
+    class SaveFollowUpResult {
 
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.GUIDE);
-        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+        @Test
+        @DisplayName("saveFollowUpResult - 정상: 후속질문 저장")
+        void saveFollowUpResult_success() {
+            // given
+            Interview interview = createInProgressInterview();
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-        // when
-        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
+            GeneratedFollowUp followUp = new GeneratedFollowUp();
+            ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
+            ReflectionTestUtils.setField(followUp, "modelAnswer", "체이닝과 오픈 어드레싱");
 
-        // then
-        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.GUIDE);
-    }
+            Question savedQuestion = Question.builder()
+                    .questionType(QuestionType.FOLLOWUP)
+                    .questionText("해시 충돌 해결 방법은?")
+                    .orderIndex(1)
+                    .build();
+            ReflectionTestUtils.setField(savedQuestion, "id", 100L);
+            given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
 
-    @Test
-    @DisplayName("loadFollowUpContext - 메인 질문의 referenceType이 null이면 안전 기본값 MODEL_ANSWER로 폴백")
-    void loadFollowUpContext_nullReferenceType_fallsBackToModelAnswer() {
-        // given
-        Interview interview = createInProgressInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            // when
+            Question result = handler.saveFollowUpResult(10L, followUp, 1);
 
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, null);
-        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
-
-        // when
-        FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
-
-        // then
-        assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-    }
-
-    @Test
-    @DisplayName("loadFollowUpContext - 예외: 면접이 IN_PROGRESS가 아닌 경우")
-    void loadFollowUpContext_notInProgress() {
-        // given
-        Interview interview = createMockInterview(); // READY 상태
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
-
-        // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_003");
-                });
-    }
-
-    @Test
-    @DisplayName("loadFollowUpContext - 예외: QuestionSet 미존재")
-    void loadFollowUpContext_questionSetNotFound() {
-        // given
-        Interview interview = createInProgressInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
-        given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 999L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("QUESTION_SET_001");
-                });
-    }
-
-    @Test
-    @DisplayName("loadFollowUpContext - 예외: 후속질문 라운드 초과")
-    void loadFollowUpContext_maxFollowUpExceeded() {
-        // given
-        Interview interview = createInProgressInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
-
-        QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 2);
-        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
-
-        // when & then
-        assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getCode()).isEqualTo("QUESTION_SET_004");
-                });
-    }
-
-    @Test
-    @DisplayName("saveFollowUpResult - 정상: 후속질문 저장")
-    void saveFollowUpResult_success() {
-        // given
-        Interview interview = createInProgressInterview();
-        QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
-        given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
-
-        GeneratedFollowUp followUp = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
-        ReflectionTestUtils.setField(followUp, "modelAnswer", "체이닝과 오픈 어드레싱");
-
-        Question savedQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
-                .questionText("해시 충돌 해결 방법은?")
-                .orderIndex(1)
-                .build();
-        ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-        given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
-
-        // when
-        Question result = handler.saveFollowUpResult(10L, followUp, 1);
-
-        // then
-        assertThat(result.getId()).isEqualTo(100L);
-        assertThat(result.getQuestionText()).isEqualTo("해시 충돌 해결 방법은?");
-        then(questionRepository).should().save(any(Question.class));
+            // then
+            assertThat(result.getId()).isEqualTo(100L);
+            assertThat(result.getQuestionText()).isEqualTo("해시 충돌 해결 방법은?");
+            then(questionRepository).should().save(any(Question.class));
+        }
     }
 
     private Interview createMockInterview() {
