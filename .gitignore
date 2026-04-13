@@ -61,6 +61,7 @@ lambda/**/*.zip
 
 # === Claude Code 설정 ===
 .claude/
+.claude.local.md
 
 # === 부하테스트 ===
 docs/plans/virtual-thread-migration/k6-reports/
