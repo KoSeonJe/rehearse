@@ -1,12 +1,15 @@
 package com.rehearse.api.domain.interview.entity;
 
+import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("Interview - 면접 엔티티")
 class InterviewTest {
@@ -60,5 +63,344 @@ class InterviewTest {
             // when & then
             assertThat(interview.getEffectiveTechStack()).isEqualTo(TechStack.REACT_TS);
         }
+    }
+
+    @Nested
+    @DisplayName("startQuestionGeneration 메서드")
+    class StartQuestionGeneration {
+
+        @Test
+        @DisplayName("PENDING 상태에서 GENERATING으로 전이된다")
+        void startQuestionGeneration_pendingStatus_changestoGenerating() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when
+            interview.startQuestionGeneration();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.GENERATING);
+        }
+
+        @Test
+        @DisplayName("기존 failureReason이 null로 초기화된다")
+        void startQuestionGeneration_withFailureReason_clearsFailureReason() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.FAILED);
+            ReflectionTestUtils.setField(interview, "failureReason", "이전 실패 사유");
+
+            // when
+            interview.startQuestionGeneration();
+
+            // then
+            assertThat(interview.getFailureReason()).isNull();
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.GENERATING);
+        }
+
+        @Test
+        @DisplayName("COMPLETED 상태에서도 GENERATING으로 전이된다")
+        void startQuestionGeneration_completedStatus_changesToGenerating() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.COMPLETED);
+
+            // when
+            interview.startQuestionGeneration();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.GENERATING);
+        }
+    }
+
+    @Nested
+    @DisplayName("completeQuestionGeneration 메서드")
+    class CompleteQuestionGeneration {
+
+        @Test
+        @DisplayName("GENERATING 상태에서 COMPLETED로 전이된다")
+        void completeQuestionGeneration_generatingStatus_changesToCompleted() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.GENERATING);
+
+            // when
+            interview.completeQuestionGeneration();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.COMPLETED);
+        }
+
+        @Test
+        @DisplayName("PENDING 상태에서도 COMPLETED로 전이된다")
+        void completeQuestionGeneration_pendingStatus_changesToCompleted() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when
+            interview.completeQuestionGeneration();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.COMPLETED);
+        }
+    }
+
+    @Nested
+    @DisplayName("failQuestionGeneration 메서드")
+    class FailQuestionGeneration {
+
+        @Test
+        @DisplayName("GENERATING 상태에서 FAILED로 전이되고 실패 사유가 저장된다")
+        void failQuestionGeneration_generatingStatus_changesToFailedWithReason() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.GENERATING);
+            String reason = "AI 서비스 타임아웃";
+
+            // when
+            interview.failQuestionGeneration(reason);
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.FAILED);
+            assertThat(interview.getFailureReason()).isEqualTo(reason);
+        }
+
+        @Test
+        @DisplayName("실패 사유가 null이어도 FAILED로 전이된다")
+        void failQuestionGeneration_nullReason_changesToFailedWithNullReason() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.GENERATING);
+
+            // when
+            interview.failQuestionGeneration(null);
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.FAILED);
+            assertThat(interview.getFailureReason()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("resetForRetry 메서드")
+    class ResetForRetry {
+
+        @Test
+        @DisplayName("FAILED 상태에서 PENDING으로 전이되고 failureReason이 초기화된다")
+        void resetForRetry_failedStatus_changesToPendingAndClearsReason() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.FAILED);
+            ReflectionTestUtils.setField(interview, "failureReason", "이전 실패 사유");
+
+            // when
+            interview.resetForRetry();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.PENDING);
+            assertThat(interview.getFailureReason()).isNull();
+        }
+
+        @Test
+        @DisplayName("GENERATING 상태에서도 PENDING으로 전이된다")
+        void resetForRetry_generatingStatus_changesToPending() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "questionGenerationStatus", QuestionGenerationStatus.GENERATING);
+
+            // when
+            interview.resetForRetry();
+
+            // then
+            assertThat(interview.getQuestionGenerationStatus())
+                    .isEqualTo(QuestionGenerationStatus.PENDING);
+        }
+    }
+
+    @Nested
+    @DisplayName("updateStatus 메서드")
+    class UpdateStatus {
+
+        @Test
+        @DisplayName("READY에서 IN_PROGRESS로 전이에 성공한다")
+        void updateStatus_readyToInProgress_succeeds() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when
+            interview.updateStatus(InterviewStatus.IN_PROGRESS);
+
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
+        }
+
+        @Test
+        @DisplayName("IN_PROGRESS에서 COMPLETED로 전이에 성공한다")
+        void updateStatus_inProgressToCompleted_succeeds() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "status", InterviewStatus.IN_PROGRESS);
+
+            // when
+            interview.updateStatus(InterviewStatus.COMPLETED);
+
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
+        }
+
+        @Test
+        @DisplayName("READY에서 COMPLETED로 전이하면 IllegalStateException이 발생한다")
+        void updateStatus_readyToCompleted_throwsException() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when & then
+            assertThatThrownBy(() -> interview.updateStatus(InterviewStatus.COMPLETED))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("READY")
+                    .hasMessageContaining("COMPLETED");
+        }
+
+        @Test
+        @DisplayName("COMPLETED에서 IN_PROGRESS로 전이하면 IllegalStateException이 발생한다")
+        void updateStatus_completedToInProgress_throwsException() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "status", InterviewStatus.COMPLETED);
+
+            // when & then
+            assertThatThrownBy(() -> interview.updateStatus(InterviewStatus.IN_PROGRESS))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("COMPLETED")
+                    .hasMessageContaining("IN_PROGRESS");
+        }
+
+        @Test
+        @DisplayName("COMPLETED에서 READY로 전이하면 IllegalStateException이 발생한다")
+        void updateStatus_completedToReady_throwsException() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "status", InterviewStatus.COMPLETED);
+
+            // when & then
+            assertThatThrownBy(() -> interview.updateStatus(InterviewStatus.READY))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+
+        @Test
+        @DisplayName("IN_PROGRESS에서 READY로 전이하면 IllegalStateException이 발생한다")
+        void updateStatus_inProgressToReady_throwsException() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "status", InterviewStatus.IN_PROGRESS);
+
+            // when & then
+            assertThatThrownBy(() -> interview.updateStatus(InterviewStatus.READY))
+                    .isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("validateOwner 메서드")
+    class ValidateOwner {
+
+        @Test
+        @DisplayName("소유자 ID가 일치하면 예외가 발생하지 않는다")
+        void validateOwner_matchingUserId_doesNotThrow() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "userId", 1L);
+
+            // when & then
+            interview.validateOwner(1L);
+        }
+
+        @Test
+        @DisplayName("소유자 ID가 불일치하면 BusinessException이 발생한다")
+        void validateOwner_differentUserId_throwsBusinessException() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "userId", 1L);
+
+            // when & then
+            assertThatThrownBy(() -> interview.validateOwner(999L))
+                    .isInstanceOf(BusinessException.class);
+        }
+
+        @Test
+        @DisplayName("userId가 null이면 어떤 사용자도 예외가 발생하지 않는다")
+        void validateOwner_nullUserId_doesNotThrow() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "userId", null);
+
+            // when & then
+            interview.validateOwner(999L);
+        }
+    }
+
+    @Nested
+    @DisplayName("completeWithComment 메서드")
+    class CompleteWithComment {
+
+        @Test
+        @DisplayName("코멘트가 정상적으로 저장된다")
+        void completeWithComment_validComment_savesComment() {
+            // given
+            Interview interview = createDefaultInterview();
+            String comment = "전반적으로 잘 답변하셨습니다.";
+
+            // when
+            interview.completeWithComment(comment);
+
+            // then
+            assertThat(interview.getOverallComment()).isEqualTo(comment);
+        }
+
+        @Test
+        @DisplayName("null 코멘트도 저장된다")
+        void completeWithComment_nullComment_savesNull() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when
+            interview.completeWithComment(null);
+
+            // then
+            assertThat(interview.getOverallComment()).isNull();
+        }
+
+        @Test
+        @DisplayName("기존 코멘트가 새 코멘트로 덮어씌워진다")
+        void completeWithComment_existingComment_overwritesWithNewComment() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "overallComment", "이전 코멘트");
+
+            // when
+            interview.completeWithComment("새 코멘트");
+
+            // then
+            assertThat(interview.getOverallComment()).isEqualTo("새 코멘트");
+        }
+    }
+
+    private Interview createDefaultInterview() {
+        return Interview.builder()
+                .userId(1L)
+                .position(Position.BACKEND)
+                .level(InterviewLevel.JUNIOR)
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                .durationMinutes(30)
+                .techStack(TechStack.JAVA_SPRING)
+                .build();
     }
 }
