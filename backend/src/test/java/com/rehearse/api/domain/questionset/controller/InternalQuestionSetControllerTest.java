@@ -8,6 +8,7 @@ import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.global.security.config.SecurityConfig;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -40,166 +41,211 @@ class InternalQuestionSetControllerTest {
     @MockitoBean
     private InternalQuestionSetService internalQuestionSetService;
 
-    @Test
-    @DisplayName("PUT /progress - 분석 진행 상태 업데이트 성공 시 200을 반환한다")
-    void updateProgress_success() throws Exception {
-        willDoNothing().given(internalQuestionSetService).updateProgress(eq(1L), any());
+    @Nested
+    @DisplayName("PUT /progress 엔드포인트")
+    class UpdateProgress {
 
-        String requestBody = """
-                {
-                    "status": "EXTRACTING"
-                }
-                """;
+        @Test
+        @DisplayName("분석 진행 상태 업데이트 성공 시 200을 반환한다")
+        void updateProgress_success() throws Exception {
+            // given
+            willDoNothing().given(internalQuestionSetService).updateProgress(eq(1L), any());
 
-        mockMvc.perform(put(BASE_URL + "/progress", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+            String requestBody = """
+                    {
+                        "status": "EXTRACTING"
+                    }
+                    """;
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/progress", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("status 누락 시 400을 반환한다")
+        void updateProgress_missingProgress_returns400() throws Exception {
+            // given
+            String requestBody = "{}";
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/progress", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 질문세트 ID로 요청 시 404를 반환한다")
+        void updateProgress_notFound_returns404() throws Exception {
+            // given
+            willThrow(new BusinessException(QuestionSetErrorCode.NOT_FOUND))
+                    .given(internalQuestionSetService).updateProgress(eq(999L), any());
+
+            String requestBody = """
+                    {
+                        "status": "EXTRACTING"
+                    }
+                    """;
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/progress", 5L, 999L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("QUESTION_SET_001"));
+        }
     }
 
-    @Test
-    @DisplayName("PUT /progress - status 누락 시 400을 반환한다")
-    void updateProgress_missingProgress_returns400() throws Exception {
-        String requestBody = "{}";
+    @Nested
+    @DisplayName("GET /answers 엔드포인트")
+    class GetAnswers {
 
-        mockMvc.perform(put(BASE_URL + "/progress", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        @Test
+        @DisplayName("답변 목록 조회 성공 시 200과 analysisStatus + 답변 리스트를 반환한다")
+        void getAnswers_success() throws Exception {
+            // given
+            AnswersResponse answersResponse = AnswersResponse.builder()
+                    .analysisStatus("PENDING")
+                    .position("BACKEND")
+                    .level("JUNIOR")
+                    .answers(List.of())
+                    .build();
+            given(internalQuestionSetService.getAnswersResponse(5L, 1L)).willReturn(answersResponse);
+
+            // when & then
+            mockMvc.perform(get(BASE_URL + "/answers", 5L, 1L))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.analysisStatus").value("PENDING"))
+                    .andExpect(jsonPath("$.data.position").value("BACKEND"))
+                    .andExpect(jsonPath("$.data.level").value("JUNIOR"))
+                    .andExpect(jsonPath("$.data.answers").isArray());
+        }
     }
 
-    @Test
-    @DisplayName("GET /answers - 답변 목록 조회 성공 시 200과 analysisStatus + 답변 리스트를 반환한다")
-    void getAnswers_success() throws Exception {
-        AnswersResponse answersResponse = AnswersResponse.builder()
-                .analysisStatus("PENDING")
-                .position("BACKEND")
-                .level("JUNIOR")
-                .answers(List.of())
-                .build();
-        given(internalQuestionSetService.getAnswersResponse(5L, 1L)).willReturn(answersResponse);
+    @Nested
+    @DisplayName("POST /feedback 엔드포인트")
+    class SaveFeedback {
 
-        mockMvc.perform(get(BASE_URL + "/answers", 5L, 1L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.analysisStatus").value("PENDING"))
-                .andExpect(jsonPath("$.data.position").value("BACKEND"))
-                .andExpect(jsonPath("$.data.level").value("JUNIOR"))
-                .andExpect(jsonPath("$.data.answers").isArray());
+        @Test
+        @DisplayName("피드백 저장 성공 시 200을 반환한다")
+        void saveFeedback_success() throws Exception {
+            // given
+            willDoNothing().given(internalQuestionSetService).saveFeedback(eq(1L), any());
+
+            String requestBody = """
+                    {
+                        "questionSetComment": "전반적으로 좋은 답변입니다.",
+                        "timestampFeedbacks": [
+                            {
+                                "questionId": 10,
+                                "startMs": 0,
+                                "endMs": 5000,
+                                "verbalComment": {"positive": "명확한 설명", "negative": null, "suggestion": null},
+                                "eyeContactLevel": "GOOD",
+                                "postureLevel": "AVERAGE"
+                            }
+                        ]
+                    }
+                    """;
+
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("questionSetComment 누락 시 400을 반환한다")
+        void saveFeedback_missingComment_returns400() throws Exception {
+            // given
+            String requestBody = """
+                    {
+                    }
+                    """;
+
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        }
     }
 
-    @Test
-    @DisplayName("POST /feedback - 피드백 저장 성공 시 200을 반환한다")
-    void saveFeedback_success() throws Exception {
-        willDoNothing().given(internalQuestionSetService).saveFeedback(eq(1L), any());
+    @Nested
+    @DisplayName("PUT /convert-status 엔드포인트")
+    class UpdateConvertStatus {
 
-        String requestBody = """
-                {
-                    "questionSetComment": "전반적으로 좋은 답변입니다.",
-                    "timestampFeedbacks": [
-                        {
-                            "questionId": 10,
-                            "startMs": 0,
-                            "endMs": 5000,
-                            "verbalComment": {"positive": "명확한 설명", "negative": null, "suggestion": null},
-                            "eyeContactLevel": "GOOD",
-                            "postureLevel": "AVERAGE"
-                        }
-                    ]
-                }
-                """;
+        @Test
+        @DisplayName("정상 요청 시 200 OK를 반환한다")
+        void updateConvertStatus_success() throws Exception {
+            // given
+            willDoNothing().given(internalQuestionSetService).updateConvertStatus(eq(1L), any());
 
-        mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+            String requestBody = """
+                    {
+                        "status": "PROCESSING"
+                    }
+                    """;
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
+
+        @Test
+        @DisplayName("status 누락 시 400을 반환한다")
+        void updateConvertStatus_missingStatus_returns400() throws Exception {
+            // given
+            String requestBody = "{}";
+
+            // when & then
+            mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+        }
     }
 
-    @Test
-    @DisplayName("POST /feedback - questionSetComment 누락 시 400을 반환한다")
-    void saveFeedback_missingComment_returns400() throws Exception {
-        String requestBody = """
-                {
-                }
-                """;
+    @Nested
+    @DisplayName("POST /retry-analysis 엔드포인트")
+    class RetryAnalysis {
 
-        mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
-    }
+        @Test
+        @DisplayName("분석 재시도 성공 시 200을 반환한다")
+        void retryAnalysis_success() throws Exception {
+            // given
+            willDoNothing().given(internalQuestionSetService).retryAnalysis(1L);
 
-    @Test
-    @DisplayName("POST /retry-analysis - 분석 재시도 성공 시 200을 반환한다")
-    void retryAnalysis_success() throws Exception {
-        willDoNothing().given(internalQuestionSetService).retryAnalysis(1L);
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/retry-analysis", 5L, 1L))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true));
+        }
 
-        mockMvc.perform(post(BASE_URL + "/retry-analysis", 5L, 1L))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
+        @Test
+        @DisplayName("존재하지 않는 질문세트 ID로 요청 시 404를 반환한다")
+        void retryAnalysis_notFound_returns404() throws Exception {
+            // given
+            willThrow(new BusinessException(QuestionSetErrorCode.NOT_FOUND))
+                    .given(internalQuestionSetService).retryAnalysis(999L);
 
-    @Test
-    @DisplayName("PUT /progress - 존재하지 않는 질문세트 ID로 요청 시 404를 반환한다")
-    void updateProgress_notFound_returns404() throws Exception {
-        willThrow(new BusinessException(QuestionSetErrorCode.NOT_FOUND))
-                .given(internalQuestionSetService).updateProgress(eq(999L), any());
-
-        String requestBody = """
-                {
-                    "status": "EXTRACTING"
-                }
-                """;
-
-        mockMvc.perform(put(BASE_URL + "/progress", 5L, 999L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("QUESTION_SET_001"));
-    }
-
-    @Test
-    @DisplayName("PUT /convert-status - 정상 요청 시 200 OK를 반환한다")
-    void updateConvertStatus_success() throws Exception {
-        willDoNothing().given(internalQuestionSetService).updateConvertStatus(eq(1L), any());
-
-        String requestBody = """
-                {
-                    "status": "PROCESSING"
-                }
-                """;
-
-        mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
-    }
-
-    @Test
-    @DisplayName("PUT /convert-status - status 누락 시 400을 반환한다")
-    void updateConvertStatus_missingStatus_returns400() throws Exception {
-        String requestBody = "{}";
-
-        mockMvc.perform(put(BASE_URL + "/convert-status", 5L, 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(requestBody))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
-    }
-
-    @Test
-    @DisplayName("POST /retry-analysis - 존재하지 않는 질문세트 ID로 요청 시 404를 반환한다")
-    void retryAnalysis_notFound_returns404() throws Exception {
-        willThrow(new BusinessException(QuestionSetErrorCode.NOT_FOUND))
-                .given(internalQuestionSetService).retryAnalysis(999L);
-
-        mockMvc.perform(post(BASE_URL + "/retry-analysis", 5L, 999L))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.code").value("QUESTION_SET_001"));
+            // when & then
+            mockMvc.perform(post(BASE_URL + "/retry-analysis", 5L, 999L))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("QUESTION_SET_001"));
+        }
     }
 }

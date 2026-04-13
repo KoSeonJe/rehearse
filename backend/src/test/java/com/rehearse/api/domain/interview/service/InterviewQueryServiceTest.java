@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,6 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("InterviewQueryService - 면접 세션 조회")
 class InterviewQueryServiceTest {
 
     @InjectMocks
@@ -30,34 +32,44 @@ class InterviewQueryServiceTest {
     @Mock
     private QuestionSetRepository questionSetRepository;
 
-    @Test
-    @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
-    void getInterview_notFound() {
-        given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
-                .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
+    @Nested
+    @DisplayName("getInterview 메서드")
+    class GetInterview {
 
-        assertThatThrownBy(() -> interviewQueryService.getInterview(999L, 1L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(ex -> {
-                    BusinessException be = (BusinessException) ex;
-                    assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
-                    assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
-                });
-    }
+        @Test
+        @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
+        void getInterview_notFound() {
+            // given
+            given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
+                    .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
-    @Test
-    @DisplayName("면접 세션 조회 성공")
-    void getInterview_success() {
-        Interview interview = createMockInterview();
-        given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
-        given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+            // when & then
+            assertThatThrownBy(() -> interviewQueryService.getInterview(999L, 1L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
+                    });
+        }
 
-        InterviewResponse response = interviewQueryService.getInterview(1L, 1L);
+        @Test
+        @DisplayName("면접 세션 조회 성공")
+        void getInterview_success() {
+            // given
+            Interview interview = createMockInterview();
+            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
-        assertThat(response.getId()).isEqualTo(1L);
-        assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
-        assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
-        assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
+            // when
+            InterviewResponse response = interviewQueryService.getInterview(1L, 1L);
+
+            // then
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
+            assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
+            assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
+        }
     }
 
     private Interview createMockInterview() {

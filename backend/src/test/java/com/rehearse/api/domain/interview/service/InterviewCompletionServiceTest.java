@@ -8,6 +8,7 @@ import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,6 +25,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("InterviewCompletionService - 면접 완료 처리")
 class InterviewCompletionServiceTest {
 
     @InjectMocks
@@ -35,107 +37,108 @@ class InterviewCompletionServiceTest {
     @Mock
     private QuestionSetRepository questionSetRepository;
 
-    // ─────────────────────────────────────────────────────────────
-    // checkAndCompleteInterviews
-    // ─────────────────────────────────────────────────────────────
+    @Nested
+    @DisplayName("checkAndCompleteInterviews 메서드")
+    class CheckAndCompleteInterviews {
 
-    @Test
-    @DisplayName("checkAndCompleteInterviews: 모든 질문세트가 COMPLETED이면 면접을 COMPLETED로 전이한다")
-    void checkAndCompleteInterviews_모든질문세트완료시_면접COMPLETED() {
-        // given
-        Interview interview = createInProgressInterview(1L);
-        QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.COMPLETED);
+        @Test
+        @DisplayName("checkAndCompleteInterviews: 모든 질문세트가 COMPLETED이면 면접을 COMPLETED로 전이한다")
+        void checkAndCompleteInterviews_모든질문세트완료시_면접COMPLETED() {
+            // given
+            Interview interview = createInProgressInterview(1L);
+            QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
+            QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.COMPLETED);
 
-        given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
-                .willReturn(List.of(interview));
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
-                .willReturn(List.of(qs1, qs2));
-        given(interviewRepository.findById(1L))
-                .willReturn(java.util.Optional.of(interview));
+            given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
+                    .willReturn(List.of(interview));
+            given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                    .willReturn(List.of(qs1, qs2));
+            given(interviewRepository.findById(1L))
+                    .willReturn(java.util.Optional.of(interview));
 
-        // when
-        interviewCompletionService.checkAndCompleteInterviews();
+            // when
+            interviewCompletionService.checkAndCompleteInterviews();
 
-        // then
-        assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-        assertThat(interview.getOverallComment()).contains("완료");
-    }
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
+            assertThat(interview.getOverallComment()).contains("완료");
+        }
 
-    @Test
-    @DisplayName("checkAndCompleteInterviews: 일부 질문세트만 완료됐을 때 면접 상태를 유지한다")
-    void checkAndCompleteInterviews_일부만완료시_상태유지() {
-        // given
-        Interview interview = createInProgressInterview(1L);
-        QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.ANALYZING);
+        @Test
+        @DisplayName("checkAndCompleteInterviews: 일부 질문세트만 완료됐을 때 면접 상태를 유지한다")
+        void checkAndCompleteInterviews_일부만완료시_상태유지() {
+            // given
+            Interview interview = createInProgressInterview(1L);
+            QuestionSet qs1 = createQuestionSetWithAnalysis(10L, interview, AnalysisStatus.COMPLETED);
+            QuestionSet qs2 = createQuestionSetWithAnalysis(11L, interview, AnalysisStatus.ANALYZING);
 
-        given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
-                .willReturn(List.of(interview));
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
-                .willReturn(List.of(qs1, qs2));
+            given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
+                    .willReturn(List.of(interview));
+            given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                    .willReturn(List.of(qs1, qs2));
 
-        // when
-        interviewCompletionService.checkAndCompleteInterviews();
+            // when
+            interviewCompletionService.checkAndCompleteInterviews();
 
-        // then
-        assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
-    }
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
+        }
 
-    @Test
-    @DisplayName("checkAndCompleteInterviews: 질문세트가 0개이면 면접 완료 처리를 건너뛴다")
-    void checkAndCompleteInterviews_질문세트0개시_건너뜀() {
-        // given
-        Interview interview = createInProgressInterview(1L);
+        @Test
+        @DisplayName("checkAndCompleteInterviews: 질문세트가 0개이면 면접 완료 처리를 건너뛴다")
+        void checkAndCompleteInterviews_질문세트0개시_건너뜀() {
+            // given
+            Interview interview = createInProgressInterview(1L);
 
-        given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
-                .willReturn(List.of(interview));
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
-                .willReturn(List.of());
+            given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
+                    .willReturn(List.of(interview));
+            given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
+                    .willReturn(List.of());
 
-        // when
-        interviewCompletionService.checkAndCompleteInterviews();
+            // when
+            interviewCompletionService.checkAndCompleteInterviews();
 
-        // then
-        assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
-    }
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.IN_PROGRESS);
+        }
 
-    @Test
-    @DisplayName("checkAndCompleteInterviews: IN_PROGRESS 면접이 없으면 아무 동작도 하지 않는다")
-    void checkAndCompleteInterviews_진행중면접없을때_아무동작없음() {
-        // given
-        given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
-                .willReturn(List.of());
+        @Test
+        @DisplayName("checkAndCompleteInterviews: IN_PROGRESS 면접이 없으면 아무 동작도 하지 않는다")
+        void checkAndCompleteInterviews_진행중면접없을때_아무동작없음() {
+            // given
+            given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
+                    .willReturn(List.of());
 
-        // when
-        interviewCompletionService.checkAndCompleteInterviews();
+            // when
+            interviewCompletionService.checkAndCompleteInterviews();
 
-        // then
-        then(questionSetRepository).should(never()).findByInterviewIdOrderByOrderIndex(anyLong());
-    }
+            // then
+            then(questionSetRepository).should(never()).findByInterviewIdOrderByOrderIndex(anyLong());
+        }
 
-    @Test
-    @DisplayName("checkAndCompleteInterviews: COMPLETED + PARTIAL 조합이면 면접을 완료 처리한다")
-    void checkAndCompleteInterviews_완료및부분완료시_면접COMPLETED() {
-        // given
-        Interview interview = createInProgressInterview(2L);
-        QuestionSet qs1 = createQuestionSetWithAnalysis(20L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs2 = createQuestionSetWithAnalysis(21L, interview, AnalysisStatus.COMPLETED);
-        QuestionSet qs3 = createQuestionSetWithAnalysis(22L, interview, AnalysisStatus.COMPLETED);
+        @Test
+        @DisplayName("checkAndCompleteInterviews: COMPLETED + PARTIAL 조합이면 면접을 완료 처리한다")
+        void checkAndCompleteInterviews_완료및부분완료시_면접COMPLETED() {
+            // given
+            Interview interview = createInProgressInterview(2L);
+            QuestionSet qs1 = createQuestionSetWithAnalysis(20L, interview, AnalysisStatus.COMPLETED);
+            QuestionSet qs2 = createQuestionSetWithAnalysis(21L, interview, AnalysisStatus.COMPLETED);
+            QuestionSet qs3 = createQuestionSetWithAnalysis(22L, interview, AnalysisStatus.COMPLETED);
 
-        given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
-                .willReturn(List.of(interview));
-        given(questionSetRepository.findByInterviewIdOrderByOrderIndex(2L))
-                .willReturn(List.of(qs1, qs2, qs3));
-        given(interviewRepository.findById(2L))
-                .willReturn(java.util.Optional.of(interview));
+            given(interviewRepository.findByStatus(InterviewStatus.IN_PROGRESS))
+                    .willReturn(List.of(interview));
+            given(questionSetRepository.findByInterviewIdOrderByOrderIndex(2L))
+                    .willReturn(List.of(qs1, qs2, qs3));
+            given(interviewRepository.findById(2L))
+                    .willReturn(java.util.Optional.of(interview));
 
-        // when
-        interviewCompletionService.checkAndCompleteInterviews();
+            // when
+            interviewCompletionService.checkAndCompleteInterviews();
 
-        // then
-        assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-        assertThat(interview.getOverallComment()).contains("완료");
+            // then
+            assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
+            assertThat(interview.getOverallComment()).contains("완료");
+        }
     }
 
     // ─────────────────────────────────────────────────────────────

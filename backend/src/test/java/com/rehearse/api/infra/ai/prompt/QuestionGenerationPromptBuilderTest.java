@@ -9,6 +9,7 @@ import com.rehearse.api.infra.ai.persona.PersonaResolver;
 import com.rehearse.api.infra.ai.persona.ProfileYamlLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -28,122 +29,145 @@ class QuestionGenerationPromptBuilderTest {
         ReflectionTestUtils.invokeMethod(builder, "init");
     }
 
-    @Test
-    @DisplayName("CS_FUNDAMENTAL 포함 + csSubTopics 있을 때 system prompt에 CS 세부 주제 블록이 포함된다")
-    void buildSystemPrompt_csSubTopicsPresent_containsCsSubtopicBlock() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.JUNIOR,
-                Set.of(InterviewType.CS_FUNDAMENTAL),
-                Set.of("OS", "NETWORK"),
-                null,
-                30,
-                TechStack.JAVA_SPRING
-        );
+    @Nested
+    @DisplayName("buildSystemPrompt 메서드")
+    class BuildSystemPrompt {
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("CS_FUNDAMENTAL 포함 + csSubTopics 있을 때 system prompt에 CS 세부 주제 블록이 포함된다")
+        void buildSystemPrompt_csSubTopicsPresent_containsCsSubtopicBlock() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.JUNIOR,
+                    Set.of(InterviewType.CS_FUNDAMENTAL),
+                    Set.of("OS", "NETWORK"),
+                    null,
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).contains("CS 세부 주제");
-    }
+            // when
+            String prompt = builder.buildSystemPrompt(req);
 
-    @Test
-    @DisplayName("CS_FUNDAMENTAL 미포함 시 system prompt에 CS 세부 주제 내용(OS, NETWORK)이 없다")
-    void buildSystemPrompt_noCsFundamental_doesNotContainCsSubtopicContent() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.JUNIOR,
-                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
-                Set.of("OS", "NETWORK"),
-                null,
-                30,
-                TechStack.JAVA_SPRING
-        );
+            // then
+            assertThat(prompt).contains("CS 세부 주제");
+        }
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("CS_FUNDAMENTAL 미포함 시 system prompt에 CS 세부 주제 내용(OS, NETWORK)이 없다")
+        void buildSystemPrompt_noCsFundamental_doesNotContainCsSubtopicContent() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.JUNIOR,
+                    Set.of(InterviewType.LANGUAGE_FRAMEWORK),
+                    Set.of("OS", "NETWORK"),
+                    null,
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).doesNotContain("에서만 출제");
-    }
+            // when
+            String prompt = builder.buildSystemPrompt(req);
 
-    @Test
-    @DisplayName("resumeText가 있을 때 system prompt에 이력서 활용 블록이 포함된다")
-    void buildSystemPrompt_resumeTextPresent_containsResumeBlock() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.JUNIOR,
-                Set.of(InterviewType.RESUME_BASED),
-                null,
-                "Spring Boot 프로젝트 경험 2년",
-                30,
-                TechStack.JAVA_SPRING
-        );
+            // then
+            assertThat(prompt).doesNotContain("에서만 출제");
+        }
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("resumeText가 있을 때 system prompt에 이력서 활용 블록이 포함된다")
+        void buildSystemPrompt_resumeTextPresent_containsResumeBlock() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.JUNIOR,
+                    Set.of(InterviewType.RESUME_BASED),
+                    null,
+                    "Spring Boot 프로젝트 경험 2년",
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).contains("이력서 활용");
-    }
+            // when
+            String prompt = builder.buildSystemPrompt(req);
 
-    @Test
-    @DisplayName("resumeText가 null이면 system prompt에 이력서 활용 내용(RESUME_BASED 지침)이 없다")
-    void buildSystemPrompt_resumeTextNull_doesNotContainResumeContent() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.JUNIOR,
-                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
-                null,
-                null,
-                30,
-                TechStack.JAVA_SPRING
-        );
+            // then
+            assertThat(prompt).contains("이력서 활용");
+        }
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("resumeText가 null이면 system prompt에 이력서 활용 내용(RESUME_BASED 지침)이 없다")
+        void buildSystemPrompt_resumeTextNull_doesNotContainResumeContent() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.JUNIOR,
+                    Set.of(InterviewType.LANGUAGE_FRAMEWORK),
+                    null,
+                    null,
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).doesNotContain("RESUME_BASED 질문은 이력서의");
-    }
+            // when
+            String prompt = builder.buildSystemPrompt(req);
 
-    @Test
-    @DisplayName("interviewTypes=[LANGUAGE_FRAMEWORK, SYSTEM_DESIGN] 시 해당 2개 가이드만 포함된다")
-    void buildSystemPrompt_specificInterviewTypes_containsOnlyMatchingGuides() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.MID,
-                Set.of(InterviewType.LANGUAGE_FRAMEWORK, InterviewType.SYSTEM_DESIGN),
-                null,
-                null,
-                30,
-                TechStack.JAVA_SPRING
-        );
+            // then
+            assertThat(prompt).doesNotContain("RESUME_BASED 질문은 이력서의");
+        }
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("interviewTypes=[LANGUAGE_FRAMEWORK, SYSTEM_DESIGN] 시 해당 2개 가이드만 포함된다")
+        void buildSystemPrompt_specificInterviewTypes_containsOnlyMatchingGuides() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.MID,
+                    Set.of(InterviewType.LANGUAGE_FRAMEWORK, InterviewType.SYSTEM_DESIGN),
+                    null,
+                    null,
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).contains("LANGUAGE_FRAMEWORK");
-        assertThat(prompt).contains("SYSTEM_DESIGN");
-        assertThat(prompt).doesNotContain("CS_FUNDAMENTAL:");
-        assertThat(prompt).doesNotContain("BEHAVIORAL:");
-    }
+            // when
+            String prompt = builder.buildSystemPrompt(req);
 
-    @Test
-    @DisplayName("level=JUNIOR 시 system prompt에 JUNIOR 가이드만 포함되고 MID/SENIOR 가이드는 없다")
-    void buildSystemPrompt_juniorLevel_containsOnlyJuniorGuide() {
-        QuestionGenerationRequest req = new QuestionGenerationRequest(
-                Position.BACKEND,
-                null,
-                InterviewLevel.JUNIOR,
-                Set.of(InterviewType.LANGUAGE_FRAMEWORK),
-                null,
-                null,
-                30,
-                TechStack.JAVA_SPRING
-        );
+            // then
+            assertThat(prompt).contains("LANGUAGE_FRAMEWORK");
+            assertThat(prompt).contains("SYSTEM_DESIGN");
+            assertThat(prompt).doesNotContain("CS_FUNDAMENTAL:");
+            assertThat(prompt).doesNotContain("BEHAVIORAL:");
+        }
 
-        String prompt = builder.buildSystemPrompt(req);
+        @Test
+        @DisplayName("level=JUNIOR 시 system prompt에 JUNIOR 가이드만 포함되고 MID/SENIOR 가이드는 없다")
+        void buildSystemPrompt_juniorLevel_containsOnlyJuniorGuide() {
+            // given
+            QuestionGenerationRequest req = new QuestionGenerationRequest(
+                    Position.BACKEND,
+                    null,
+                    InterviewLevel.JUNIOR,
+                    Set.of(InterviewType.LANGUAGE_FRAMEWORK),
+                    null,
+                    null,
+                    30,
+                    TechStack.JAVA_SPRING
+            );
 
-        assertThat(prompt).contains("JUNIOR:");
-        assertThat(prompt).doesNotContain("MID:");
-        assertThat(prompt).doesNotContain("SENIOR:");
+            // when
+            String prompt = builder.buildSystemPrompt(req);
+
+            // then
+            assertThat(prompt).contains("JUNIOR:");
+            assertThat(prompt).doesNotContain("MID:");
+            assertThat(prompt).doesNotContain("SENIOR:");
+        }
     }
 }
