@@ -65,23 +65,10 @@ class ServiceFeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("완료된 면접이 2개이면 피드백 불필요")
-        void checkNeedsFeedback_completedCount2_returnsFalse() {
+        @DisplayName("완료된 면접이 1개이고 이전 피드백 없으면 피드백 필요")
+        void checkNeedsFeedback_completedCount1_noLastFeedback_returnsTrue() {
             // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(2L);
-
-            // when
-            FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
-
-            // then
-            assertThat(response.needsFeedback()).isFalse();
-        }
-
-        @Test
-        @DisplayName("완료된 면접이 3개이고 이전 피드백 없으면 피드백 필요")
-        void checkNeedsFeedback_completedCount3_noLastFeedback_returnsTrue() {
-            // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(3L);
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(1L);
             given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L)).willReturn(Optional.empty());
 
             // when
@@ -92,12 +79,27 @@ class ServiceFeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("완료된 면접이 3개이고 마지막 피드백 snapshot이 3이면 피드백 불필요")
-        void checkNeedsFeedback_completedCount3_lastSnapshotAt3_returnsFalse() {
+        @DisplayName("완료된 면접이 1개이고 마지막 피드백 snapshot이 1이면 피드백 불필요")
+        void checkNeedsFeedback_completedCount1_lastSnapshotAt1_returnsFalse() {
+            // given
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(1L);
+            given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(1)));
+
+            // when
+            FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
+
+            // then
+            assertThat(response.needsFeedback()).isFalse();
+        }
+
+        @Test
+        @DisplayName("완료된 면접이 3개이고 마지막 피드백 snapshot이 1이면 피드백 불필요")
+        void checkNeedsFeedback_completedCount3_lastSnapshotAt1_returnsFalse() {
             // given
             given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(3L);
             given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
-                    .willReturn(Optional.of(createFeedbackWithSnapshot(3)));
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(1)));
 
             // when
             FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
@@ -107,27 +109,12 @@ class ServiceFeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("완료된 면접이 5개이고 마지막 피드백 snapshot이 3이면 피드백 불필요")
-        void checkNeedsFeedback_completedCount5_lastSnapshotAt3_returnsFalse() {
+        @DisplayName("완료된 면접이 4개이고 마지막 피드백 snapshot이 1이면 피드백 필요")
+        void checkNeedsFeedback_completedCount4_lastSnapshotAt1_returnsTrue() {
             // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(5L);
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(4L);
             given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
-                    .willReturn(Optional.of(createFeedbackWithSnapshot(3)));
-
-            // when
-            FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
-
-            // then
-            assertThat(response.needsFeedback()).isFalse();
-        }
-
-        @Test
-        @DisplayName("완료된 면접이 6개이고 마지막 피드백 snapshot이 3이면 피드백 필요")
-        void checkNeedsFeedback_completedCount6_lastSnapshotAt3_returnsTrue() {
-            // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(6L);
-            given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
-                    .willReturn(Optional.of(createFeedbackWithSnapshot(3)));
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(1)));
 
             // when
             FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
@@ -137,12 +124,12 @@ class ServiceFeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("완료된 면접이 9개이고 마지막 피드백 snapshot이 6이면 피드백 필요")
-        void checkNeedsFeedback_completedCount9_lastSnapshotAt6_returnsTrue() {
+        @DisplayName("완료된 면접이 7개이고 마지막 피드백 snapshot이 4이면 피드백 필요")
+        void checkNeedsFeedback_completedCount7_lastSnapshotAt4_returnsTrue() {
             // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(9L);
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(7L);
             given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
-                    .willReturn(Optional.of(createFeedbackWithSnapshot(6)));
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(4)));
 
             // when
             FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
@@ -152,12 +139,27 @@ class ServiceFeedbackServiceTest {
         }
 
         @Test
-        @DisplayName("완료된 면접이 9개이고 마지막 피드백 snapshot이 9이면 피드백 불필요")
-        void checkNeedsFeedback_completedCount9_lastSnapshotAt9_returnsFalse() {
+        @DisplayName("완료된 면접이 10개이고 마지막 피드백 snapshot이 7이면 피드백 필요")
+        void checkNeedsFeedback_completedCount10_lastSnapshotAt7_returnsTrue() {
             // given
-            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(9L);
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(10L);
             given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
-                    .willReturn(Optional.of(createFeedbackWithSnapshot(9)));
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(7)));
+
+            // when
+            FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
+
+            // then
+            assertThat(response.needsFeedback()).isTrue();
+        }
+
+        @Test
+        @DisplayName("완료된 면접이 10개이고 마지막 피드백 snapshot이 10이면 피드백 불필요")
+        void checkNeedsFeedback_completedCount10_lastSnapshotAt10_returnsFalse() {
+            // given
+            given(interviewRepository.countByUserIdAndStatus(1L, InterviewStatus.COMPLETED)).willReturn(10L);
+            given(serviceFeedbackRepository.findTopByUserIdOrderByCreatedAtDesc(1L))
+                    .willReturn(Optional.of(createFeedbackWithSnapshot(10)));
 
             // when
             FeedbackNeedCheckResponse response = serviceFeedbackService.checkNeedsFeedback(1L);
