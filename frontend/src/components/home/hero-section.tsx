@@ -23,14 +23,18 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
     <section
       ref={ref}
       style={style}
-      className="py-20 md:py-28"
+      aria-labelledby="hero-heading"
+      className="py-20 md:py-28 bg-white"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="flex flex-col items-center gap-12 md:flex-row md:items-center md:gap-16">
 
           {/* Left: 텍스트 */}
           <div className="flex-1 text-center md:text-left">
-            <h1 className="text-4xl font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-5xl">
+            <h1
+              id="hero-heading"
+              className="text-4xl font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-5xl"
+            >
               면접, 연습하면<br />
               <span className="text-accent">달라집니다.</span>
             </h1>
@@ -42,17 +46,18 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               <button
                 className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
                 onClick={handleStart}
-                aria-label="무료로 시작하기"
+                aria-label="무료로 리허설 시작하기"
               >
                 무료로 시작하기
               </button>
               <p className="mt-4 text-sm text-text-tertiary">
-                GitHub 또는 Google 계정으로 30초 만에 시작
+                <span aria-hidden="true">무료 · 30초 가입 · Chrome 브라우저만 필요</span>
+                <span className="sr-only">무료, 30초 가입, Chrome 브라우저만 필요</span>
               </p>
             </div>
           </div>
 
-          {/* Right: 면접 화면 목업 카드 */}
+          {/* Right: 캐릭터 목업 */}
           <div className="flex-1 flex justify-center w-full md:justify-end">
             <div
               className="w-full max-w-[420px] rounded-[32px] bg-surface border border-border shadow-toss-lg rotate-2"
