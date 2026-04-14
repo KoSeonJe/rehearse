@@ -1,5 +1,6 @@
 import { MessageSquarePlus } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
+import { BetaBadge } from '@/components/ui/beta-badge'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface DashboardHeaderProps {
@@ -17,6 +18,7 @@ export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHe
           <span className="text-xl font-extrabold tracking-tight text-text-primary">
             리허설
           </span>
+          <BetaBadge size="md" />
         </div>
         <div className="flex items-center gap-3">
           <span className="hidden text-sm font-medium text-text-secondary sm:block">

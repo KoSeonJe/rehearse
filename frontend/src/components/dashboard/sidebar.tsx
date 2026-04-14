@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, ListChecks, User } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
+import { BetaBadge } from '@/components/ui/beta-badge'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface SidebarProps {
@@ -21,6 +22,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border/50">
         <Logo size={36} />
         <span className="text-lg font-extrabold tracking-tight text-text-primary">리허설</span>
+        <BetaBadge size="sm" />
       </div>
 
       {/* 네비게이션 */}

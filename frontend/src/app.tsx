@@ -11,6 +11,7 @@ import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
+import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
@@ -39,6 +40,7 @@ export const App = () => {
         <Route element={<PasswordProtectedRoute />}>
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
         </Route>
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <LoginModal />
