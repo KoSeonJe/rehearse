@@ -10,6 +10,10 @@ import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video
 import { TimelineBar } from '@/components/feedback/timeline-bar'
 import { QuestionList } from '@/components/feedback/question-list'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
+import {
+  ReviewTutorialProvider,
+  ReviewTutorialStack,
+} from '@/components/feedback/review-coach-mark'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
@@ -78,9 +82,10 @@ interface QuestionSetSectionProps {
   analysisStatus: AnalysisStatus
   failureReason?: string | null
   bookmarkIdsByTsfId: Map<number, number>
+  isFirstSection: boolean
 }
 
-const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason, bookmarkIdsByTsfId }: QuestionSetSectionProps) => {
+const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason, bookmarkIdsByTsfId, isFirstSection }: QuestionSetSectionProps) => {
   const videoRef = useRef<VideoPlayerHandle>(null)
   const queryClient = useQueryClient()
 
@@ -232,64 +237,73 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
     )
   }
 
+  const shouldTriggerTutorial =
+    isFirstSection && feedbacks.length > 0 && selectedFeedbackId === feedbacks[0].id
+
   return (
-    <section className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
-          {index + 1}
-        </div>
-        <div>
-          <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
-          <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
-        </div>
-      </div>
-
-      {/* Comment */}
-      {feedback.questionSetComment && (
-        <div className="rounded-2xl bg-surface p-5">
-          <p className="text-sm font-medium text-text-secondary leading-relaxed">{feedback.questionSetComment}</p>
-        </div>
-      )}
-
-      {/* Content: Video (left) + Feedback (right) */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* 좌측: Video + Timeline */}
-        <div className="lg:w-[60%] space-y-4 lg:sticky lg:top-20 lg:self-start">
-          <VideoPlayer
-            ref={videoRef}
-            streamingUrl={feedback.streamingUrl}
-            fallbackUrl={feedback.fallbackUrl}
-            onUrlExpired={handleUrlExpired}
-          />
-          <TimelineBar
-            feedbacks={feedbacks}
-            durationMs={durationMs}
-            currentTimeMs={currentTimeMs}
-            activeFeedbackId={activeFeedbackId}
-            onSeek={seekTo}
-          />
-          <QuestionList
-            questions={questions}
-            feedbacks={feedbacks}
-            selectedFeedbackId={selectedFeedbackId}
-            onSeek={seekTo}
-          />
+    <ReviewTutorialProvider shouldTrigger={shouldTriggerTutorial}>
+      <section className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+            {index + 1}
+          </div>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
+            <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
+          </div>
         </div>
 
-        {/* 우측: Feedback Panel */}
-        <div className="lg:w-[40%]">
-          <FeedbackPanel
-            feedbacks={feedbacks}
-            questions={questions}
-            selectedFeedbackId={selectedFeedbackId}
-            onSeek={seekTo}
-            interviewId={interviewId}
-            bookmarkIdsByTsfId={bookmarkIdsByTsfId}
-          />
+        {/* Comment */}
+        {feedback.questionSetComment && (
+          <div className="rounded-2xl bg-surface p-5">
+            <p className="text-sm font-medium text-text-secondary leading-relaxed">{feedback.questionSetComment}</p>
+          </div>
+        )}
+
+        {/* Content: Video (left) + Feedback (right) */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* 좌측: Video + Timeline */}
+          <div className="lg:w-[60%] space-y-4 lg:sticky lg:top-20 lg:self-start">
+            <VideoPlayer
+              ref={videoRef}
+              streamingUrl={feedback.streamingUrl}
+              fallbackUrl={feedback.fallbackUrl}
+              onUrlExpired={handleUrlExpired}
+            />
+            <TimelineBar
+              feedbacks={feedbacks}
+              durationMs={durationMs}
+              currentTimeMs={currentTimeMs}
+              activeFeedbackId={activeFeedbackId}
+              onSeek={seekTo}
+            />
+            <div data-tutorial-anchor="question-list">
+              <QuestionList
+                questions={questions}
+                feedbacks={feedbacks}
+                selectedFeedbackId={selectedFeedbackId}
+                onSeek={seekTo}
+              />
+            </div>
+          </div>
+
+          {/* 우측: Feedback Panel */}
+          <div className="lg:w-[40%]">
+            <FeedbackPanel
+              feedbacks={feedbacks}
+              questions={questions}
+              selectedFeedbackId={selectedFeedbackId}
+              onSeek={seekTo}
+              interviewId={interviewId}
+              bookmarkIdsByTsfId={bookmarkIdsByTsfId}
+            />
+          </div>
         </div>
-      </div>
-    </section>
+
+        <ReviewTutorialStack />
+      </section>
+    </ReviewTutorialProvider>
   )
 }
 
@@ -362,7 +376,7 @@ export const InterviewFeedbackPage = () => {
   return (
     <div className="min-h-screen bg-white pb-32">
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
             <Logo size={60} />
@@ -411,6 +425,7 @@ export const InterviewFeedbackPage = () => {
               analysisStatus={qs.analysisStatus}
               failureReason={qs.failureReason}
               bookmarkIdsByTsfId={bookmarkIdMap}
+              isFirstSection={idx === 0}
             />
           ))}
         </div>

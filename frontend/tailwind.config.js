@@ -83,6 +83,14 @@ export default {
           from: { transform: 'translateY(12px)', opacity: '0' },
           to: { transform: 'translateY(0)', opacity: '1' },
         },
+        'tutorial-ring': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.22)' },
+          '50%': { boxShadow: '0 0 0 5px rgba(99, 102, 241, 0)' },
+        },
+        'tutorial-nudge': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(3px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.3s ease-out',
@@ -92,6 +100,8 @@ export default {
         'ripple': 'ripple 2s ease-out infinite',
         'bookmark-pop': 'bookmark-pop 0.18s ease-out',
         'toast-slide-in': 'toast-slide-in 0.2s ease-out',
+        'tutorial-ring': 'tutorial-ring 3s ease-in-out infinite',
+        'tutorial-nudge': 'tutorial-nudge 2s ease-in-out infinite',
       },
     },
   },

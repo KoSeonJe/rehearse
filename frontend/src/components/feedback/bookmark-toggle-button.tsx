@@ -1,8 +1,7 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { ListChecks, ListPlus } from 'lucide-react'
 import { useCreateBookmark, useDeleteBookmark } from '@/hooks/use-review-bookmarks'
 import { ApiError } from '@/lib/api-client'
-import ReviewCoachMark from '@/components/feedback/review-coach-mark'
 import ReviewToast from '@/components/common/review-toast'
 import { TOAST_SEEN_PREFIX } from '@/constants/review-bookmark'
 
@@ -18,7 +17,6 @@ const BookmarkToggleButton = ({
   bookmarkId,
 }: BookmarkToggleButtonProps) => {
   const isBookmarked = bookmarkId !== undefined
-  const buttonRef = useRef<HTMLButtonElement>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [showToast, setShowToast] = useState(false)
 
@@ -83,9 +81,8 @@ const BookmarkToggleButton = ({
   }
 
   return (
-    <div className="relative flex-shrink-0">
+    <div data-tutorial-anchor="bookmark-button" className="relative flex-shrink-0">
       <button
-        ref={buttonRef}
         type="button"
         aria-pressed={isBookmarked}
         aria-label={isBookmarked ? '복습 목록에서 제거' : '복습 목록에 담기'}
@@ -113,16 +110,12 @@ const BookmarkToggleButton = ({
         </span>
       </button>
 
-      <ReviewCoachMark anchorRef={buttonRef} />
-
       {showToast && (
         <ReviewToast
           timestampFeedbackId={timestampFeedbackId}
           onDismiss={() => setShowToast(false)}
         />
       )}
-
-
     </div>
   )
 }
