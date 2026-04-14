@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { HeroSection } from '@/components/home/hero-section'
-import { HowItWorksSection } from '@/components/home/how-it-works-section'
-import { KeyFeaturesSection } from '@/components/home/key-features-section'
-import { BeforeYouStartSection } from '@/components/home/before-you-start-section'
+import { PainPointsSection } from '@/components/home/pain-points-section'
+import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
+import { MetricsSection } from '@/components/home/metrics-section'
+import { DevTailoredSection } from '@/components/home/dev-tailored-section'
+import { JourneySection } from '@/components/home/journey-section'
 import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
 import { useAuth } from '@/hooks/use-auth'
@@ -80,17 +82,32 @@ export const HomePage = () => {
 
       <main>
         <HeroSection onNavigate={handleStartLogin} isAuthenticated={isAuthenticated} />
-        <HowItWorksSection />
-        <KeyFeaturesSection />
-        <BeforeYouStartSection />
+        <PainPointsSection />
+        <VideoFeedbackSection />
+        <MetricsSection />
+        <DevTailoredSection />
+        <JourneySection />
         <FaqSection />
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
-      <footer className="border-t border-border py-12 text-center">
-        <p className="text-xs font-bold text-text-tertiary">
-          &copy; 2026 리허설. 당신의 합격을 위해 만들었습니다.
-        </p>
+      <footer className="border-t border-border bg-white">
+        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
+          <p className="text-xs font-medium text-text-tertiary">
+            &copy; 2026 KoSeonJe. All rights reserved.
+          </p>
+          <a
+            href="https://github.com/KoSeonJe/rehearse"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+            aria-label="GitHub 저장소 열기"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 .5C5.73.5.5 5.73.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.28-.01-1.02-.02-2-3.2.69-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.56-.29-5.25-1.28-5.25-5.71 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18A11.07 11.07 0 0 1 12 6.8c.98.01 1.97.13 2.89.39 2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.77.11 3.06.74.81 1.19 1.84 1.19 3.1 0 4.44-2.69 5.42-5.26 5.71.41.35.78 1.05.78 2.11 0 1.52-.01 2.75-.01 3.12 0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.73 18.27.5 12 .5z" />
+            </svg>
+          </a>
+        </div>
       </footer>
     </div>
   )
