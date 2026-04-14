@@ -96,7 +96,7 @@ export const HomePage = () => {
       <footer className="border-t border-border bg-white">
         <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
           <p className="text-xs font-medium text-text-tertiary">
-            &copy; 2026 KoSeonJe. All rights reserved.
+            &copy; 2026 Rehearse. All rights reserved.
           </p>
           <a
             href="https://github.com/KoSeonJe/rehearse"
