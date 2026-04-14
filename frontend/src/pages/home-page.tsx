@@ -7,6 +7,7 @@ import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
 import { MetricsSection } from '@/components/home/metrics-section'
 import { DevTailoredSection } from '@/components/home/dev-tailored-section'
 import { JourneySection } from '@/components/home/journey-section'
+import { BeforeYouStartSection } from '@/components/home/before-you-start-section'
 import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
 import { useAuth } from '@/hooks/use-auth'
@@ -87,6 +88,7 @@ export const HomePage = () => {
         <MetricsSection />
         <DevTailoredSection />
         <JourneySection />
+        <BeforeYouStartSection />
         <FaqSection />
         <CtaSection onNavigate={handleStartLogin} />
       </main>
