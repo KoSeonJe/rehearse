@@ -49,7 +49,7 @@ export const ResumeUpload = ({
           className={`flex cursor-pointer items-center gap-3 rounded-[16px] border-2 border-dashed p-4 transition-all ${
             dragOver
               ? 'border-accent bg-accent/5'
-              : 'border-border bg-surface hover:border-accent/50 hover:bg-slate-50'
+              : 'border-red-300 bg-red-50/40 hover:border-accent/60 hover:bg-slate-50'
           }`}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-tertiary shrink-0">
@@ -61,8 +61,8 @@ export const ResumeUpload = ({
             <p className="text-xs font-bold text-text-primary">
               PDF 파일을 드래그하거나 클릭하여 업로드
             </p>
-            <p className="text-[11px] font-medium text-text-tertiary">
-              선택사항 · 최대 10MB
+            <p className="text-[11px] font-bold text-red-600">
+              필수 · PDF 업로드 후 시작할 수 있습니다 (최대 10MB)
             </p>
           </div>
         </div>

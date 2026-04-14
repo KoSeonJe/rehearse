@@ -47,9 +47,11 @@ export const useInterviewSetup = () => {
       case 4:
         return durationMinutes >= 5 && durationMinutes <= 120
       case 5:
-        return interviewTypes.length > 0
+        if (interviewTypes.length === 0) return false
+        if (interviewTypes.includes('RESUME_BASED') && !resumeFile) return false
+        return true
     }
-  }, [position, level, durationMinutes, interviewTypes.length])
+  }, [position, level, durationMinutes, interviewTypes, resumeFile])
 
   const isSubmitStep = currentStep === TOTAL_STEPS
 
@@ -145,6 +147,7 @@ export const useInterviewSetup = () => {
 
   const handleSubmit = useCallback(() => {
     if (!position || !level || interviewTypes.length === 0 || isLoading) return
+    if (interviewTypes.includes('RESUME_BASED') && !resumeFile) return
     setServerError(null)
 
     createInterview.mutate(
