@@ -17,10 +17,13 @@ Thumbs.db
 
 # Environment
 .env
+.env.*
 *.env.local
+!.env.example
 
 # Google Cloud 서비스 계정 JSON (절대 커밋 금지)
 gcp-credentials.json
+gcp-credentials-prod.json
 
 # Logs
 *.log

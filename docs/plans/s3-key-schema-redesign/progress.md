@@ -11,7 +11,7 @@
 | 1 | 키 스키마·Lifecycle·EventBridge 규격 확정 (SSOT `docs/architecture/s3-key-schema.md`) | [plan-01](./plan-01-key-schema-definition.md) | `[blocking]` | — | **Completed** | documentation-expert / architect-reviewer |
 | 2 | 백엔드 `S3KeyGenerator` 유틸 + `QuestionSetService` 수정 + 단위 테스트 | [plan-02](./plan-02-backend-key-generator.md) | `[parallel]` | 1 | **Completed** | backend / code-reviewer + architect-reviewer |
 | 3 | Lambda convert/analysis 신규 전용 파서 + `backup_to_s3` 경로 + Skipped 처리 | [plan-03](./plan-03-lambda-handlers-update.md) | `[parallel]` | 1 | **Completed** | devops-engineer / code-reviewer |
-| 4 | dev freeze·drain·레거시 삭제·원샷 컷오버·E2E·24h 모니터링 + prod 문서 업데이트 | [plan-04](./plan-04-dev-rollout-validation.md) | `[blocking]` | 2, 3 | Draft | devops-engineer + qa / architect-reviewer + code-reviewer |
+| 4 | dev freeze·drain·레거시 삭제·원샷 컷오버·E2E·24h 모니터링 + prod 문서 업데이트 | [plan-04](./plan-04-dev-rollout-validation.md) | `[blocking]` | 2, 3 | **Completed** (2026-04-14) | devops-engineer + qa / architect-reviewer + code-reviewer |
 
 ### 의존 관계
 
