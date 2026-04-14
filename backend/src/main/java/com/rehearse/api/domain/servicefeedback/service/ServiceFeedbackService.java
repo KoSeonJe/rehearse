@@ -32,7 +32,7 @@ public class ServiceFeedbackService {
 
     public FeedbackNeedCheckResponse checkNeedsFeedback(Long userId) {
         long completedCount = interviewRepository.countByUserIdAndStatus(userId, InterviewStatus.COMPLETED);
-        if (completedCount < 3) {
+        if (completedCount < 1) {
             return new FeedbackNeedCheckResponse(false);
         }
 
@@ -42,7 +42,7 @@ public class ServiceFeedbackService {
         }
 
         long lastSnapshot = lastFeedback.get().getCompletedCountSnapshot();
-        boolean needs = (completedCount / 3) > (lastSnapshot / 3);
+        boolean needs = ((completedCount - 1) / 3) > ((lastSnapshot - 1) / 3);
         return new FeedbackNeedCheckResponse(needs);
     }
 
