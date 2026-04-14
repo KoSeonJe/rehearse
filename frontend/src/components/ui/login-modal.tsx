@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
+import { BetaBadge } from '@/components/ui/beta-badge'
 import { useAuthStore } from '@/stores/auth-store'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
@@ -63,7 +64,10 @@ export const LoginModal = () => {
         {/* 로고 */}
         <div className="mb-8 flex flex-col items-center gap-1.5">
           <Logo size={56} />
-          <span className="text-base font-extrabold tracking-tight text-text-primary">리허설</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-extrabold tracking-tight text-text-primary">리허설</span>
+            <BetaBadge size="sm" />
+          </div>
         </div>
 
         {/* 제목 */}
