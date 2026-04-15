@@ -64,7 +64,10 @@ devlens/
 
 ## Branch Strategy
 
-- **Default branch**: `develop` (PR 타겟)
+- **GitHub default branch**: `main` (프로덕션 배포 브랜치, v0.1.0 부트스트랩 시 전환됨)
+- **개발 통합 브랜치**: `develop` (모든 feature PR의 기본 타겟)
+- **feature PR 생성 시**: 반드시 `--base develop` 명시 (`gh pr create --base develop`)
+- **프로덕션 릴리즈 PR**: `develop → main` (스킬: `/prod-release`)
 - Branch naming: `feat/{name}`, `fix/{name}`, `refactor/{name}`
 - **BE/FE PR 분리 필수**: BE PR 먼저 머지 → FE PR 생성
 - **CI 통과 필수**: `Frontend CI` (lint + build), `Backend CI` (test)
