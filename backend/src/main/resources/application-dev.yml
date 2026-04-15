@@ -45,8 +45,8 @@ google:
 aws:
   enabled: true
   region: ${AWS_REGION:ap-northeast-2}
-  access-key-id: ${AWS_ACCESS_KEY_ID}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+  # 자격증명은 DefaultCredentialsProvider 체인에 위임
+  # (로컬 dev: ~/.aws/credentials 또는 환경변수 / dev EC2: Instance Profile)
   s3:
     bucket: ${AWS_S3_BUCKET:rehearse-videos-dev}
 

@@ -59,8 +59,7 @@ google:
 aws:
   enabled: true
   region: ${AWS_REGION:ap-northeast-2}
-  access-key-id: ${AWS_ACCESS_KEY_ID}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+  # 자격증명은 DefaultCredentialsProvider 체인에 위임 (prod: EC2 Instance Profile/IMDS)
   s3:
     bucket: ${AWS_S3_BUCKET:rehearse-videos-prod}
 
