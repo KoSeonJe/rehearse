@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { InterviewType } from '@/types/interview'
 import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
@@ -300,6 +301,10 @@ export const InterviewAnalysisPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>면접 분석 중 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
