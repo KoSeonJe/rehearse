@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate } from 'react-router-dom'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { InterviewList } from '@/components/dashboard/interview-list'
@@ -60,6 +61,10 @@ export const DashboardPage = () => {
 
   return (
     <AppShell header={<DashboardHeader user={user} onLogout={logout} onFeedbackClick={handleOpenVoluntaryFeedback} />}>
+      <Helmet>
+        <title>대시보드 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* 인사 섹션 — 데스크탑 */}
       <div className="hidden lg:flex items-center justify-between mb-8">
         <h1 className="text-xl font-extrabold text-text-primary tracking-tight">

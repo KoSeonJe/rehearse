@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useInterviewStore, MAX_FOLLOWUP_ROUNDS, type InterviewPhase } from '@/stores/interview-store'
 import { useInterview } from '@/hooks/use-interviews'
@@ -145,6 +146,10 @@ export const InterviewPage = () => {
 
   return (
     <div className="flex h-screen flex-col bg-studio-bg text-studio-text overflow-hidden">
+      <Helmet>
+        <title>면접 진행 중 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
 
       {/* ── Video Area (Google Meet PIP 레이아웃) ── */}
       <main className="flex-1 relative p-2 overflow-hidden">

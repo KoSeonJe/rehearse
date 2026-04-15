@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackLink } from '@/components/ui/back-link'
 import { Logo } from '@/components/ui/logo'
@@ -87,6 +88,10 @@ export const InterviewReadyPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>면접 준비 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* Header */}
       <header className="flex items-center justify-between px-5 pt-8 md:px-8">
         <div className="flex items-center gap-2">

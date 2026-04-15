@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
@@ -43,6 +44,14 @@ export const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+      <Helmet>
+        <title>리허설 - AI 개발자 모의면접 플랫폼</title>
+        <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
+        <link rel="canonical" href="https://rehearse.co.kr/" />
+        <meta property="og:url" content="https://rehearse.co.kr/" />
+        <meta property="og:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
+        <meta property="og:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지." />
+      </Helmet>
       {hasOauthError && !dismissed && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
           로그인에 실패했습니다. 다시 시도해주세요.

@@ -112,6 +112,7 @@ jobs:
 
   deploy:
     name: Deploy
+    environment: development
     needs: [changes, backend-test, frontend-build]
     if: always() && !failure() && !cancelled()
     runs-on: ubuntu-24.04-arm
