@@ -6,6 +6,8 @@ const DESCRIPTION =
   '개발자 면접 단계별 구조, 준비 체크리스트, 자주 묻는 기술 질문 카테고리, AI 모의면접 활용까지 — 신입·주니어 개발자를 위한 면접 준비 완전 가이드.'
 const PATH = '/guide/developer-interview-prep'
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
+
 const articleJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -14,7 +16,7 @@ const articleJsonLd = {
   inLanguage: 'ko-KR',
   author: { '@type': 'Organization', name: '리허설' },
   publisher: { '@type': 'Organization', name: '리허설' },
-  mainEntityOfPage: `https://rehearse.co.kr${PATH}`,
+  mainEntityOfPage: `${SITE_URL}${PATH}`,
 }
 
 export const DeveloperInterviewPrepGuidePage = () => (

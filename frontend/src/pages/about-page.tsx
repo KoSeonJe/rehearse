@@ -6,8 +6,26 @@ const DESCRIPTION =
   '리허설은 개발자 면접 준비를 위한 AI 모의면접 플랫폼입니다. 우리가 만든 이유, 차별점, 앞으로의 방향을 소개합니다.'
 const PATH = '/about'
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
+
+const aboutJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: TITLE,
+  description: DESCRIPTION,
+  inLanguage: 'ko-KR',
+  url: `${SITE_URL}${PATH}`,
+  mainEntity: {
+    '@type': 'Organization',
+    name: '리허설',
+    alternateName: 'Rehearse',
+    url: `${SITE_URL}/`,
+    description: 'AI 면접관과 진행하는 개발자 모의면접 플랫폼',
+  },
+}
+
 export const AboutPage = () => (
-  <ContentPageShell title={TITLE} description={DESCRIPTION} canonicalPath={PATH}>
+  <ContentPageShell title={TITLE} description={DESCRIPTION} canonicalPath={PATH} jsonLd={aboutJsonLd}>
     <h1 className="text-3xl font-extrabold tracking-tight text-text-primary mb-6">
       리허설 — AI 모의면접으로 개발자 합격을 돕습니다
     </h1>

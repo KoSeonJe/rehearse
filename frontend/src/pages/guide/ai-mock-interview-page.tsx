@@ -6,6 +6,8 @@ const DESCRIPTION =
   'AI 모의면접의 정의, 사람 모의면접과의 차이, 5가지 장점과 효과적인 활용법까지 — 개발자 면접 준비를 위한 AI 모의면접 완전 가이드.'
 const PATH = '/guide/ai-mock-interview'
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
+
 const articleJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -14,7 +16,7 @@ const articleJsonLd = {
   inLanguage: 'ko-KR',
   author: { '@type': 'Organization', name: '리허설' },
   publisher: { '@type': 'Organization', name: '리허설' },
-  mainEntityOfPage: `https://rehearse.co.kr${PATH}`,
+  mainEntityOfPage: `${SITE_URL}${PATH}`,
 }
 
 export const AiMockInterviewGuidePage = () => (

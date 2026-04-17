@@ -6,6 +6,8 @@ const DESCRIPTION =
   '이력서 기반 맞춤 면접이 무엇이고, 어떤 항목이 자주 파고들어지는지, AI 모의면접에 좋은 입력을 주는 방법까지 — 이력서를 면접 준비의 무기로 만드는 실용 가이드.'
 const PATH = '/guide/resume-based-interview'
 
+const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
+
 const articleJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -14,7 +16,7 @@ const articleJsonLd = {
   inLanguage: 'ko-KR',
   author: { '@type': 'Organization', name: '리허설' },
   publisher: { '@type': 'Organization', name: '리허설' },
-  mainEntityOfPage: `https://rehearse.co.kr${PATH}`,
+  mainEntityOfPage: `${SITE_URL}${PATH}`,
 }
 
 export const ResumeBasedInterviewGuidePage = () => (
