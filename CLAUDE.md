@@ -116,6 +116,7 @@ devlens/
   - e.g. `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
 - PR scope: per feature or per issue
 - **BE/FE PR 분리**: backend → frontend 순서로 별도 PR
+- **PR 생성은 반드시 `/create-pr` 스킬 사용** — 직접 `gh pr create` 호출 금지. 스킬이 BE/FE 분리·base 브랜치(`develop`)·한국어 컨벤션·브랜치 네이밍을 강제함
 
 ---
 
