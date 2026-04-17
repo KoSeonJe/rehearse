@@ -1,4 +1,7 @@
 import type { InputHTMLAttributes } from 'react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { cn } from '@/lib/utils'
 
 interface TextInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label?: string
@@ -19,30 +22,30 @@ export const TextInput = ({
   return (
     <div className={className}>
       {label && (
-        <label
+        <Label
           htmlFor={inputId}
           className="mb-1.5 block text-sm font-medium text-text-primary"
         >
           {label}
-        </label>
+        </Label>
       )}
-      <input
+      <Input
         type="text"
         id={inputId}
         disabled={disabled}
         aria-required={rest.required || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error && errorId ? errorId : undefined}
-        className={[
-          'w-full rounded-button border bg-white px-4 py-3 text-base text-text-primary',
+        className={cn(
+          'w-full rounded-button border bg-white px-4 py-3 text-base text-text-primary h-auto',
           'placeholder:text-text-tertiary',
-          'focus:outline-none focus:ring-1',
+          'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-offset-0',
           'disabled:cursor-not-allowed disabled:bg-background disabled:text-text-tertiary',
           'transition-colors duration-150',
           error
-            ? 'border-error focus:border-error focus:ring-error'
-            : 'border-border focus:border-text-primary focus:ring-text-primary',
-        ].join(' ')}
+            ? 'border-error focus-visible:border-error focus-visible:ring-error'
+            : 'border-border focus-visible:border-text-primary focus-visible:ring-text-primary',
+        )}
         {...rest}
       />
       {error && (
