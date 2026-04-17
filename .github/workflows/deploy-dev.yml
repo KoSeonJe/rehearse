@@ -99,7 +99,7 @@ jobs:
         run: npm run lint
 
       - name: Build
-        run: npm run build
+        run: npm run build -- --mode development
         env:
           VITE_API_URL: https://api-dev.rehearse.co.kr
 
