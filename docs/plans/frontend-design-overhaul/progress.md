@@ -14,7 +14,7 @@
 | 3c | Dialog 교체 | Completed | shadcn Dialog/AlertDialog 교체 완료 (커밋 4건, 판단 보류 3건) |
 | 3d | Card 교체 | Completed | shadcn Card 설치 + 7개 영역 교체 (커밋 7건, 이관 5건) |
 | 3e | Form 표준화 | Skipped | 폼 2개(password-protected-route, interview-setup-page) < 3 기준, 유효성 로직 단순 — react-hook-form 도입 이득 미미 |
-| 3f | 랜딩 페이지 레이아웃 | Draft | home |
+| 3f | 랜딩 페이지 레이아웃 | Completed | home (보수 범위) |
 | 3g | 대시보드/리뷰 리스트 레이아웃 | Draft | dashboard, review-list |
 | 3h | 인터뷰 진행 레이아웃 | Draft | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Draft | feedback, analysis |
@@ -46,7 +46,7 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 
 | Phase | 페이지 | 상태 |
 |-------|--------|------|
-| 3f | home | Draft |
+| 3f | home | Completed |
 | 3g | dashboard | Draft |
 | 3g | review-list | Draft |
 | 3h | interview-setup | Draft |
@@ -89,3 +89,10 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - Phase 3f/3i 이관(TODO 마킹): hero-section rounded-[32px], journey-section rounded-[32px], dev-tailored-section rounded-[32px], login-modal DialogContent rounded-[28px], sidebar shadow-toss
 - Plan 03e Skip: 프로젝트 내 폼 2개(password-protected-route, interview-setup-page) 모두 단순 제어형 + 로컬 상태 기반. react-hook-form + zod 도입은 ROI 부족 — Phase 5 재평가
   - Plan 03c 이관: delete-confirm-dialog/service-feedback-modal의 rounded-card/shadow-toss-lg (Dialog 스타일)
+- Plan 03f 완료 (보수 범위): 홈 퍼플 제거 + 3-col 그리드 해체 + 레이블 모노크롬화 (커밋 5건)
+  - 커밋 1 (7dba625): 홈 랜딩 퍼플 하드코딩 제거 — SVG stroke/fill #6366F1 → currentColor, violet-legacy → 모노크롬 토큰 (9파일)
+  - 커밋 2 (239e539): pain-points-section 3-column 그리드 → 세로 stack (번호+아이콘 좌측 / 콘텐츠 우측)
+  - 커밋 3 (95d63a9): 홈 font-mono 레이블 → text-xs font-semibold uppercase tracking-wider text-muted-foreground (6파일)
+  - 커밋 4 (66c0d4e): Hero Aceternity 삽입 위치 TODO 주석 + h1 violet-legacy 잔여 제거
+  - 커밋 5 (e5578a4): home-page.tsx violet-legacy 잔여 4곳 제거
+  - 이관 항목: Hero typography 재구성(64px Cal Sans 등) → Phase 4/5, Aceternity 인터랙션 → Plan 04
