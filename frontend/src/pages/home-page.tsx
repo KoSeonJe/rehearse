@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
+import { Button } from '@/components/ui/button'
 import { HeroSection } from '@/components/home/hero-section'
 import { PainPointsSection } from '@/components/home/pain-points-section'
 import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
@@ -75,20 +76,24 @@ export const HomePage = () => {
                 <span className="hidden text-sm font-medium text-text-secondary sm:block">
                   {user?.name}
                 </span>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={logout}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                  className="rounded-xl"
                 >
                   로그아웃
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleOpenLogin}
-                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                className="rounded-xl"
               >
                 로그인
-              </button>
+              </Button>
             )}
           </div>
         </div>
