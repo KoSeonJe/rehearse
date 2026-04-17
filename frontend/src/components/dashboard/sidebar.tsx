@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, ListChecks, User } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
+import { Button } from '@/components/ui/button'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
 
       {/* 네비게이션 */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
+        {/* TODO(design): variant 판단 보류 — active/inactive 조건부 스타일, 사용자 확인 필요 */}
         <button
           onClick={() => navigate('/')}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
@@ -63,12 +65,14 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
           <span className="flex-1 text-sm font-medium text-text-primary truncate">
             {user?.name ?? ''}
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onLogout}
-            className="text-xs text-text-tertiary hover:text-text-secondary transition-colors cursor-pointer"
+            className="text-xs text-text-tertiary hover:text-text-secondary px-2 py-1 h-auto"
           >
             로그아웃
-          </button>
+          </Button>
         </div>
       </div>
     </aside>

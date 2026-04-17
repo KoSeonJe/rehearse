@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Star } from 'lucide-react'
 import { useSubmitServiceFeedback } from '@/hooks/use-service-feedback'
+import { Button } from '@/components/ui/button'
 import type { FeedbackSource } from '@/types/service-feedback'
 
 interface ServiceFeedbackModalProps {
@@ -126,23 +127,28 @@ export const ServiceFeedbackModal = ({
         {/* 버튼 */}
         <div className="mt-4 flex gap-3">
           {source === 'AUTO_POPUP' && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={resetAndClose}
               disabled={isPending}
-              className="flex-1 h-11 rounded-button border border-border text-sm font-bold text-text-secondary hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
+              className="flex-1 h-11"
             >
               나중에
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={handleSubmit}
             disabled={!isContentValid || isPending}
-            className="flex-1 h-11 rounded-button bg-violet-legacy text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            loading={isPending}
+            className="flex-1 h-11"
           >
             {isPending ? '보내는 중...' : '보내기'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

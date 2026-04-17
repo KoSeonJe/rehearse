@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { Button } from '@/components/ui/button'
 
 interface DeleteConfirmDialogProps {
   isOpen: boolean
@@ -49,20 +50,24 @@ export const DeleteConfirmDialog = ({
           {`삭제된 ${itemLabel}은 복구할 수 없습니다.`}
         </p>
         <div className="mt-6 flex gap-3">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onCancel}
             disabled={isPending}
-            className="flex-1 h-11 rounded-button border border-border text-sm font-bold text-text-secondary hover:bg-surface transition-all cursor-pointer disabled:opacity-50"
+            className="flex-1 h-11"
           >
             취소
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={onConfirm}
             disabled={isPending}
-            className="flex-1 h-11 rounded-button bg-error text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+            className="flex-1 h-11"
           >
             {isPending ? '삭제 중...' : '삭제'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
