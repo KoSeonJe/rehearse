@@ -43,7 +43,8 @@
     /* Radius */
     --radius: 0.5rem;
 
-    /* Legacy — Phase 3~5에서 사용처 제거 후 삭제 */
+    /* Legacy — Phase 3~5에서 사용처 제거 후 삭제.
+       dark 블록에도 동일 값을 명시해 상속에 의한 의도치 않은 대비 이슈를 차단 */
     --violet-legacy: 239 84% 67%;          /* #6366F1 */
   }
 
@@ -67,7 +68,10 @@
     --destructive-foreground: 0 0% 96%;
     --border: 0 0% 16%;
     --input: 0 0% 16%;
-    --ring: 217 91% 60%;
+    --ring: 217 91% 60%;                   /* focus ring: light와 동일 — dark 배경(#0a0a0a) 대비 AA 충족, 일관된 브랜드 포커스 신호 유지 */
+
+    /* Legacy violet — light와 동일 값으로 명시 선언 (상속 의존 금지) */
+    --violet-legacy: 239 84% 67%;          /* #6366F1 */
   }
 }
 
