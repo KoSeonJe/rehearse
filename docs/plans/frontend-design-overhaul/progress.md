@@ -19,8 +19,8 @@
 | 3h | 인터뷰 진행 레이아웃 | Completed | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Completed | feedback, analysis |
 | 3j | 정보/정적 페이지 | Completed | about, faq, guide, privacy, admin, 404 |
-| 4 | Aceternity hero | Draft | [optional] 랜딩 hero 1곳 |
-| 5 | 일관성 감사 | Draft | `docs/consistency-issues.md` |
+| 4 | Aceternity hero | Deferred | [optional] Phase 5 감사 후 사용자 스크린샷 피드백과 함께 재평가 |
+| 5 | 일관성 감사 | Completed | `docs/consistency-issues.md` 생성, 코드 수정 0건 |
 
 ## 체크포인트 원칙
 
@@ -115,6 +115,7 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 커밋 4 (b0bdc79): 페이지 하드코딩 색상 토큰화 — interview-feedback-page bg-white→bg-background(4건+헤더backdrop), interview-analysis-page bg-white→bg-background(전체) + 카드/패널 bg-card 재정정(2건)
   - video-player.tsx / timeline-bar.tsx / question-list.tsx 기능 로직 diff 0 확인
   - lint green, test 24/24 passed
+- Plan 05 완료: docs/consistency-issues.md 생성 — 자동 grep 7종 + 9질문×14페이지 매트릭스(평균 70.7% 통과) + 이슈 15건(H4/M7/L4) 목록화. violet-legacy 93건/40파일 + #6366F1 리터럴 3건/1파일 전수 기록. axe-core 미실행(환경 미구축, 후속 이관). 코드 수정 0건 — git status frontend/ clean. 수정은 사용자 결정 후 별도 스펙으로.
 - Plan 03j 완료 (보수 범위): 정보/정적 페이지 하드코딩 색상 토큰화 및 hover 정리 (커밋 1건)
   - 커밋 1 (32fcd91): bg-white → bg-background (content-page-shell, privacy-policy, not-found), CTA 블록 bg-gray-50 → bg-muted (about, faq, guide 3개), hover:opacity-90 → hover:bg-violet-legacy-hover (CTA 버튼 6개)
   - admin-feedbacks: text-amber-400 별점, bg-blue-100/text-blue-700, bg-green-100/text-green-700 SourceBadge — 시맨틱 의미 있음, 유지
