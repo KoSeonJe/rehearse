@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface MetricItem {
@@ -141,15 +142,16 @@ const NONVERBAL_METRICS: MetricItem[] = [
 
 // ── Card ───────────────────────────────────────────────────────────────
 const MetricCard = ({ label, question, icon }: MetricItem) => (
-  <article
-    className="group rounded-[20px] border border-border bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:border-violet-legacy/40 hover:shadow-md"
+  <Card
+    className="group border border-border bg-white p-5 transition-colors duration-200 hover:-translate-y-1 hover:border-violet-legacy/40 hover:shadow-md"
+    role="article"
   >
     <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3 bg-violet-legacy/10 text-violet-legacy transition-colors duration-200 group-hover:bg-violet-legacy group-hover:text-white">
       {icon}
     </div>
     <h3 className="text-sm font-extrabold text-text-primary mb-1">{label}</h3>
     <p className="text-xs font-medium text-text-secondary leading-relaxed">{question}</p>
-  </article>
+  </Card>
 )
 
 export const MetricsSection = () => {

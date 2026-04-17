@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface CheckItem {
@@ -72,14 +73,16 @@ export const BeforeYouStartSection = () => {
           </p>
         </div>
 
-        <ul
+        <div
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          role="list"
           aria-label="면접 준비 체크리스트"
         >
           {CHECK_ITEMS.map((item) => (
-            <li
+            <Card
               key={item.title}
-              className="bg-surface rounded-card border border-border p-6"
+              className="bg-surface border border-border p-6 shadow-sm"
+              role="listitem"
             >
               <div className="flex items-start gap-4">
                 <div
@@ -93,9 +96,9 @@ export const BeforeYouStartSection = () => {
                   <p className="text-sm text-text-secondary mt-1">{item.description}</p>
                 </div>
               </div>
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   )

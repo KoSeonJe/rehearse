@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface PainPoint {
@@ -58,7 +59,7 @@ const PAIN_POINTS: PainPoint[] = [
 ]
 
 const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
-  <article className="rounded-[20px] bg-white border border-border p-6 shadow-sm">
+  <Card className="bg-white border border-border p-6 shadow-sm" role="article">
     <div className="h-10 w-10 rounded-2xl bg-violet-legacy/10 flex items-center justify-center mb-4">
       {icon}
     </div>
@@ -68,7 +69,7 @@ const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
     </blockquote>
     <div className="border-t border-border my-4" />
     <p className="text-sm font-bold text-violet-legacy leading-relaxed">{solution}</p>
-  </article>
+  </Card>
 )
 
 export const PainPointsSection = () => {
