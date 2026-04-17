@@ -11,9 +11,9 @@ const Section = ({ id, title, children }: { id: string; title: string; children:
 
 export const PrivacyPolicyPage = () => {
   return (
-    <div className="min-h-screen bg-white text-text-primary">
+    <div className="min-h-screen bg-background text-text-primary">
       {/* 헤더 */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
           <Link to="/" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm">
             <Logo size={80} />

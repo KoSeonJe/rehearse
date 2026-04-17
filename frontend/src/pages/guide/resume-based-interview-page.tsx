@@ -104,14 +104,14 @@ const List = ({ items }: { items: [string, string][] }) => (
 )
 
 const Cta = () => (
-  <div className="mt-12 p-6 rounded-xl bg-gray-50 border border-border/50">
+  <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
     <h3 className="text-lg font-bold mb-2">이력서를 업로드하고 맞춤 면접 받아보기</h3>
     <p className="text-sm text-text-secondary mb-4">
       이력서를 한 번 업로드하면 AI가 본인 경험에 맞춘 질문을 즉시 만들어 줍니다.
     </p>
     <Link
       to="/"
-      className="inline-block px-4 py-2 bg-violet-legacy text-white rounded-md text-sm font-medium hover:opacity-90"
+      className="inline-block px-4 py-2 bg-violet-legacy text-white rounded-md text-sm font-medium hover:bg-violet-legacy-hover"
     >
       바로 시작하기
     </Link>
