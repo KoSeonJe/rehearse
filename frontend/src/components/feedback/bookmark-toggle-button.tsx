@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ListChecks, ListPlus } from 'lucide-react'
 import { useCreateBookmark, useDeleteBookmark } from '@/hooks/use-review-bookmarks'
 import { ApiError } from '@/lib/api-client'
-import ReviewToast from '@/components/common/review-toast'
+import { showReviewToast } from '@/components/common/review-toast'
 import { TOAST_SEEN_PREFIX } from '@/constants/review-bookmark'
 
 interface BookmarkToggleButtonProps {
@@ -18,7 +19,7 @@ const BookmarkToggleButton = ({
 }: BookmarkToggleButtonProps) => {
   const isBookmarked = bookmarkId !== undefined
   const [isAnimating, setIsAnimating] = useState(false)
-  const [showToast, setShowToast] = useState(false)
+  const navigate = useNavigate()
 
   const createBookmark = useCreateBookmark()
   const deleteBookmark = useDeleteBookmark()
@@ -65,7 +66,7 @@ const BookmarkToggleButton = ({
         {
           onSuccess: () => {
             if (localStorage.getItem(`${TOAST_SEEN_PREFIX}${timestampFeedbackId}`) !== '1') {
-              setShowToast(true)
+              showReviewToast(timestampFeedbackId, navigate)
             }
           },
           onError: (error) => {
@@ -110,12 +111,6 @@ const BookmarkToggleButton = ({
         </span>
       </button>
 
-      {showToast && (
-        <ReviewToast
-          timestampFeedbackId={timestampFeedbackId}
-          onDismiss={() => setShowToast(false)}
-        />
-      )}
     </div>
   )
 }

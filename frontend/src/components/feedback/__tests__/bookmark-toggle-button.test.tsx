@@ -11,6 +11,11 @@ const mockState = {
 
 const mockCreateMutate = vi.fn()
 const mockDeleteMutate = vi.fn()
+const mockNavigate = vi.fn()
+
+vi.mock('react-router-dom', () => ({
+  useNavigate: () => mockNavigate,
+}))
 
 vi.mock('@/hooks/use-review-bookmarks', () => ({
   useCreateBookmark: () => ({
@@ -27,8 +32,8 @@ vi.mock('@/components/feedback/review-coach-mark', () => ({
   default: () => null,
 }))
 
-vi.mock('@/components/common/review-toast', () => ({
-  default: () => null,
+vi.mock('sonner', () => ({
+  toast: vi.fn(),
 }))
 
 const BASE_PROPS = {
@@ -41,6 +46,7 @@ describe('BookmarkToggleButton', () => {
   beforeEach(() => {
     mockCreateMutate.mockReset()
     mockDeleteMutate.mockReset()
+    mockNavigate.mockReset()
     mockState.createPending = false
     mockState.deletePending = false
 
