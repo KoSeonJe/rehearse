@@ -27,7 +27,7 @@ const STATUS_BADGE_CONFIG: Record<InterviewStatus, { label: string; className: s
 }
 
 const CATEGORY_BADGE_CLASS: Record<InterviewType, string> = {
-  CS_FUNDAMENTAL: 'bg-slate-100 text-slate-700',
+  CS_FUNDAMENTAL: 'bg-muted text-muted-foreground',
   BEHAVIORAL: 'bg-pink-100 text-pink-700',
   RESUME_BASED: 'bg-rose-100 text-rose-700',
   LANGUAGE_FRAMEWORK: 'bg-secondary text-secondary-foreground',
@@ -182,7 +182,7 @@ export const InterviewTable = ({
                       {typeBadges.map(({ type, label }) => (
                         <span
                           key={type}
-                          className={`rounded-badge px-2 py-0.5 text-xs font-semibold ${CATEGORY_BADGE_CLASS[type] ?? 'bg-slate-100 text-slate-700'}`}
+                          className={`rounded-badge px-2 py-0.5 text-xs font-semibold ${CATEGORY_BADGE_CLASS[type] ?? 'bg-muted text-muted-foreground'}`}
                         >
                           {label}
                         </span>
