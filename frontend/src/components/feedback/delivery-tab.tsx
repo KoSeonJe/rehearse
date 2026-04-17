@@ -134,7 +134,7 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
               {fillerWords.map((word, idx) => (
                 <span
                   key={idx}
-                  className="rounded-lg bg-white border border-gray-200 px-3 py-1.5 text-[13px] font-bold text-gray-700"
+                  className="rounded-lg bg-card border border-border px-3 py-1.5 text-[13px] font-bold text-text-primary"
                 >
                   {word}
                 </span>

@@ -271,7 +271,7 @@ const AnchorHighlight = ({ rect }: AnchorHighlightProps) => {
       <div
         aria-hidden="true"
         style={baseStyle}
-        className="ring-2 ring-[#6366F1]/70 animate-tutorial-ring motion-reduce:animate-none"
+        className="ring-2 ring-violet-legacy/70 animate-tutorial-ring motion-reduce:animate-none"
       />
     </>
   )
@@ -313,7 +313,7 @@ const TutorialDock = ({
         width: 320,
         maxWidth: 'calc(100vw - 2rem)',
       }}
-      className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-xl ring-1 ring-black/5 animate-fade-in [animation-fill-mode:backwards] motion-reduce:animate-none"
+      className="relative overflow-hidden rounded-2xl bg-card p-4 shadow-xl ring-1 ring-black/5 animate-fade-in [animation-fill-mode:backwards] motion-reduce:animate-none"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
         <StepDots current={stepNumber} total={totalSteps} />
@@ -321,7 +321,7 @@ const TutorialDock = ({
           <button
             type="button"
             onClick={onSkip}
-            className="rounded text-[11px] font-semibold text-text-tertiary underline-offset-2 transition-colors hover:text-text-secondary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-1"
+            className="rounded text-[11px] font-semibold text-text-tertiary underline-offset-2 transition-colors hover:text-text-secondary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
           >
             모두 건너뛰기
           </button>
@@ -336,7 +336,7 @@ const TutorialDock = ({
         {showBounce && (
           <div
             aria-hidden="true"
-            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#6366F1] to-[#8B5CF6] text-white shadow animate-tutorial-nudge motion-reduce:animate-none"
+            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-violet-legacy text-white shadow animate-tutorial-nudge motion-reduce:animate-none"
           >
             <ChevronDown size={18} aria-hidden="true" />
           </div>
@@ -344,11 +344,10 @@ const TutorialDock = ({
       </div>
 
       <div className="mt-3 flex items-center justify-end">
-        {/* TODO(design): variant 판단 보류 — 금지된 퍼플 그라디언트(from-[#6366F1] to-[#8B5CF6]) 사용 중, 교체 필요 */}
         <button
           type="button"
           onClick={onAdvance}
-          className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] px-4 py-1.5 text-[12px] font-bold text-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-1 rounded-full bg-violet-legacy px-4 py-1.5 text-[12px] font-bold text-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {isLast ? '완료' : '다음'}
         </button>
@@ -376,12 +375,12 @@ const StepDots = ({ current, total }: StepDotsProps) => (
         <span
           key={i}
           aria-hidden="true"
-          className={`h-1.5 rounded-full transition-all duration-300 ${
+          className={`h-1.5 rounded-full transition-width duration-300 ${
             isActive
-              ? 'w-5 bg-gradient-to-r from-[#6366F1] to-[#8B5CF6]'
+              ? 'w-5 bg-violet-legacy'
               : isPast
-                ? 'w-1.5 bg-[#6366F1]/50'
-                : 'w-1.5 bg-gray-200'
+                ? 'w-1.5 bg-violet-legacy/50'
+                : 'w-1.5 bg-border'
           }`}
         />
       )

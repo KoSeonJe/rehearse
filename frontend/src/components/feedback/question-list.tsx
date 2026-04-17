@@ -67,7 +67,7 @@ export const QuestionList = ({
   ).items
 
   return (
-    <div className="rounded-2xl bg-white border border-gray-100 p-5">
+    <div className="rounded-2xl bg-card border border-border p-5">
       <p className="text-[13px] font-bold text-gray-400 mb-3">질문 목록</p>
       <ol className="space-y-2">
         {labeled.map(({ q, label, isFollowup }, idx) => {
@@ -86,14 +86,14 @@ export const QuestionList = ({
                 {isFollowup && (
                   <span
                     className={`absolute left-5 top-3 bottom-3 w-px ${
-                      isActive ? 'bg-[#6366F1]' : 'bg-gray-200'
+                      isActive ? 'bg-violet-legacy' : 'bg-border'
                     }`}
                     aria-hidden
                   />
                 )}
                 <span
                   className={`text-[13px] font-bold mt-0.5 flex-shrink-0 tabular-nums ${
-                    isActive ? 'text-[#6366F1]' : 'text-gray-400'
+                    isActive ? 'text-violet-legacy' : 'text-muted-foreground'
                   }`}
                 >
                   {label}
@@ -113,7 +113,7 @@ export const QuestionList = ({
                   </p>
                 </div>
                 {isActive && (
-                  <span className="text-[11px] font-bold text-[#6366F1] bg-[#EEF2FF] px-2 py-1 rounded-md flex-shrink-0">
+                  <span className="text-[11px] font-bold text-violet-legacy bg-violet-legacy-light px-2 py-1 rounded-md flex-shrink-0">
                     선택
                   </span>
                 )}
