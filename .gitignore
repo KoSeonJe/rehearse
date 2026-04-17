@@ -33,6 +33,7 @@ Thumbs.db
 
 # === Claude Code (로컬 전용) ===
 **/.claude/skills/
+skills-lock.json
 **/.claude/agents/
 **/.claude/worktrees/
 **/.claude/settings.local.json
@@ -65,7 +66,13 @@ lambda/**/package/
 lambda/**/*.zip
 
 # === Claude Code 설정 ===
-.claude/
+.claude/*
+!.claude/rules/
+!.claude/rules/**
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/shadcn/
+!.claude/skills/shadcn/**
 .claude.local.md
 
 # === 부하테스트 ===
