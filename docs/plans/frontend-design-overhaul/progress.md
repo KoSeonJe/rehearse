@@ -22,6 +22,9 @@
 | 4 | Aceternity hero | Skipped | 모노크롬 완전 전환(Option A)으로 충분, Phase 6 클린업 범위 밖. 향후 별도 spec에서 재평가 |
 | 5 | 일관성 감사 | Completed | `docs/consistency-issues.md` 생성, 코드 수정 0건 |
 | 6 | 최종 클린업 (H1~H4) | Completed | violet-legacy 0건, #6366F1 0건, bg-white→bg-background, radius 토큰 정리. 커밋 8건 (7163eb4~55226cb) |
+| 7 | 토큰 정리 최종 마무리 (Group A) | Completed | `plan-07-tokens-final.md` — radius 스케일 정의 + arbitrary 치환, bg-white 잔여, character.tsx transition 정리 |
+| 8 | shadcn 대량 전환 (Group C) | Draft | `plan-08-shadcn-migration.md` — Tabs/Badge/Sonner/Progress/Tooltip/Separator 도입, P0 3건 + P1 3건 |
+| 9 | 검증 보강 — a11y/smoke/build (Group B) | Draft | `plan-09-verification.md` — vitest-axe 14 페이지, 풀 빌드 로그, 라이트/다크 28컷 캡처 |
 
 ## 체크포인트 원칙
 
@@ -122,3 +125,22 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - admin-feedbacks: text-amber-400 별점, bg-blue-100/text-blue-700, bg-green-100/text-green-700 SourceBadge — 시맨틱 의미 있음, 유지
   - not-found: bg-white → bg-background 1건, 나머지 이미 토큰화 완료
   - lint green, build green
+
+### 2026-04-18
+- 리뷰 세션: Phase 1~6 실측 검증 완료
+  - ✅ `violet-legacy`/`#6366F1` grep **0건**, shadcn primitive 7종(`button/input/label/dialog/alert-dialog/card/skeleton`) 도입 확인, `components.json` OK
+  - ⚠️ 잔여: arbitrary radius 20+건(`rounded-[20/24/28/32px]`), `bg-white` 10+건, `character.tsx` transition-all 1건, `login-modal.tsx:40` TODO(plan-05) 미해결
+  - ❌ 미검증: axe-core(Plan 05에서 이관), 시각 회귀, 풀 smoke 증거
+- Phase 7~9 스펙 신규 작성 (Draft):
+  - `plan-07-tokens-final.md` — Group A 토큰 정리 마무리
+  - `plan-08-shadcn-migration.md` — Group C shadcn 대량 전환(Tabs/Badge/Sonner/Progress/Tooltip/Separator)
+  - `plan-09-verification.md` — Group B a11y/smoke/build 검증 보강
+- 보존 결정: 스튜디오 다크 UI(interview-page 계열), OAuth 브랜드 컬러, character mood 색(#F59E0B/#EF4444) — 수정 제외
+- Plan 07 완료: Group A 토큰 정리 최종 마무리
+  - `tailwind.config.js`: `borderRadius` 스케일 추가(`2xl: 20px, 3xl: 24px, 4xl: 32px`)
+  - arbitrary radius 치환: `rounded-[20/24/28/32px]` → `rounded-2xl/3xl/4xl` (home/setup/interview/dashboard/ui 하위 20+파일)
+  - `bg-white` 잔여 토큰화: home-page/hero/journey/resume-upload/dialog 2건/login-modal/button-variants
+  - `character.tsx:54` `transition-all duration-500` → `transition-[transform,opacity] duration-500`
+  - `login-modal.tsx` `TODO(plan-05)` 주석 제거
+  - 검증: lint green, test 24/24 passed, build `✓ built in 4.19s` (prerender puppeteer 이슈는 로컬 Chrome 미설치로 기존부터 동일, 본 변경 무관)
+  - grep 검증: `rounded-[20/24/28/32px]` 0건, `TODO(plan-05)` 0건, `character.tsx transition-all` 0건
