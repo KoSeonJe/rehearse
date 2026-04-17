@@ -69,6 +69,10 @@ lambda/**/*.zip
 .claude/*
 !.claude/rules/
 !.claude/rules/**
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/shadcn/
+!.claude/skills/shadcn/**
 .claude.local.md
 
 # === 부하테스트 ===
