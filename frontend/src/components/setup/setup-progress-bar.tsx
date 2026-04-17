@@ -14,9 +14,9 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-colors ${
                 step < currentStep
-                  ? 'bg-violet-legacy text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : step === currentStep
-                    ? 'bg-violet-legacy text-white shadow-lg shadow-violet-legacy/20'
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                     : 'bg-surface text-text-tertiary'
               }`}
             >
@@ -36,7 +36,7 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
           <div
             key={step}
             className={`h-1 flex-1 rounded-full transition-colors ${
-              step <= currentStep ? 'bg-violet-legacy' : 'bg-surface'
+              step <= currentStep ? 'bg-primary' : 'bg-surface'
             }`}
           />
         ))}

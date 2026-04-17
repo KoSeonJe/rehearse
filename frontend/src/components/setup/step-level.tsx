@@ -30,7 +30,7 @@ export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
             disabled={isLoading}
             className={`flex w-full items-center justify-between rounded-[20px] p-6 text-left transition-colors active:scale-[0.98] ${
               level === l
-                ? 'bg-violet-legacy text-white shadow-lg shadow-violet-legacy/20'
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                 : 'bg-surface text-text-primary hover:bg-slate-200'
             }`}
           >

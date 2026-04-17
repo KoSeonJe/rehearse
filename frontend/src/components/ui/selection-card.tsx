@@ -37,9 +37,9 @@ export const SelectionCard = ({
       onKeyDown={handleKeyDown}
       className={cn(
         'cursor-pointer rounded-lg border p-4 text-left transition-colors duration-200 shadow-sm w-full',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         selected
-          ? 'border-violet-legacy bg-violet-legacy-light'
+          ? 'border-primary bg-muted'
           : 'border-border bg-surface hover:border-text-tertiary hover:shadow-md hover:-translate-y-0.5',
         disabled
           ? 'cursor-not-allowed border-border bg-background text-text-tertiary'

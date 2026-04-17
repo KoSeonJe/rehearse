@@ -55,7 +55,7 @@ export const PasswordProtectedRoute = () => {
           placeholder="비밀번호"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? 'admin-password-error' : undefined}
-          className="mt-4 w-full rounded-button border border-border px-3 py-2 text-sm text-text-primary h-auto placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy/50 focus-visible:border-violet-legacy transition-colors"
+          className="mt-4 w-full rounded-button border border-border px-3 py-2 text-sm text-text-primary h-auto placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:border-ring transition-colors"
           autoFocus
         />
         {error && (
@@ -66,7 +66,7 @@ export const PasswordProtectedRoute = () => {
         <button
           type="submit"
           disabled={isPending || !password}
-          className="mt-4 w-full h-11 rounded-button bg-violet-legacy text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="mt-4 w-full h-11 rounded-button bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 active:scale-95 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isPending ? '확인 중...' : '확인'}
         </button>
