@@ -25,7 +25,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
       ref={ref}
       style={style}
       aria-labelledby="hero-heading"
-      className="py-20 md:py-28 bg-white"
+      className="py-20 md:py-28 bg-background"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="flex flex-col items-center gap-12 md:flex-row md:items-center md:gap-16">
@@ -72,7 +72,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
                 <div className="relative z-10 drop-shadow-2xl">
                   <Character mood="happy" size={120} />
                 </div>
-                <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200">
+                <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-white/80 backdrop-blur-md rounded-xl border border-border">
                   <div className="flex items-end gap-0.5 h-3">
                     {[1, 2, 3, 4].map((i) => (
                       <div
