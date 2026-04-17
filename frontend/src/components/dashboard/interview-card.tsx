@@ -100,7 +100,7 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
           {typeLabels.map((label) => (
             <span
               key={label}
-              className="rounded-badge bg-violet-legacy-light px-2.5 py-0.5 text-xs font-semibold text-violet-legacy"
+              className="rounded-badge bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground"
             >
               {label}
             </span>

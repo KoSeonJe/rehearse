@@ -105,7 +105,7 @@ export const ServiceFeedbackModal = ({
             onChange={(e) => setContent(e.target.value)}
             placeholder="서비스에 대한 의견을 자유롭게 남겨주세요 (최소 10자)"
             rows={4}
-            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-violet-legacy/50 focus:border-violet-legacy"
+            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-ring/50 focus:border-ring"
           />
           <p
             className={`mt-1 text-xs text-right ${isContentValid ? 'text-text-secondary' : 'text-red-500'}`}

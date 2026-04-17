@@ -10,7 +10,7 @@ interface StatCardProps {
 
 const StatCard = ({ label, value, icon }: StatCardProps) => (
   <Card className="bg-surface p-5 flex items-center gap-4 border border-border shadow-sm">
-    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-violet-legacy-light flex items-center justify-center text-violet-legacy">
+    <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
       {icon}
     </div>
     <div>

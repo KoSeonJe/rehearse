@@ -29,7 +29,7 @@ export const EmptyState = () => {
           {SUGGESTED_TOPICS.map((topic) => (
             <span
               key={topic}
-              className="rounded-badge bg-violet-legacy-light px-3 py-1.5 text-sm font-semibold text-violet-legacy"
+              className="rounded-badge bg-muted px-3 py-1.5 text-sm font-semibold text-muted-foreground"
             >
               {topic}
             </span>

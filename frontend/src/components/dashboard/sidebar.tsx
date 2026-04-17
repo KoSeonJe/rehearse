@@ -33,7 +33,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
           onClick={() => navigate('/')}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
             isDashboardActive
-              ? 'bg-violet-legacy-light text-violet-legacy font-bold'
+              ? 'bg-muted text-primary font-bold'
               : 'text-text-secondary hover:bg-border/40 hover:text-text-primary'
           }`}
         >
@@ -45,7 +45,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
           onClick={() => navigate('/review-list')}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
             isReviewListActive
-              ? 'bg-violet-legacy-light text-violet-legacy font-bold'
+              ? 'bg-muted text-primary font-bold'
               : 'text-text-secondary hover:bg-border/40 hover:text-text-primary'
           }`}
           aria-current={isReviewListActive ? 'page' : undefined}
