@@ -15,7 +15,7 @@
 | 3d | Card 교체 | Completed | shadcn Card 설치 + 7개 영역 교체 (커밋 7건, 이관 5건) |
 | 3e | Form 표준화 | Skipped | 폼 2개(password-protected-route, interview-setup-page) < 3 기준, 유효성 로직 단순 — react-hook-form 도입 이득 미미 |
 | 3f | 랜딩 페이지 레이아웃 | Completed | home (보수 범위) |
-| 3g | 대시보드/리뷰 리스트 레이아웃 | Draft | dashboard, review-list |
+| 3g | 대시보드/리뷰 리스트 레이아웃 | Completed | dashboard, review-list |
 | 3h | 인터뷰 진행 레이아웃 | Draft | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Draft | feedback, analysis |
 | 3j | 정보/정적 페이지 | Draft | about, faq, guide, privacy, admin, 404 |
@@ -47,8 +47,8 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 | Phase | 페이지 | 상태 |
 |-------|--------|------|
 | 3f | home | Completed |
-| 3g | dashboard | Draft |
-| 3g | review-list | Draft |
+| 3g | dashboard | Completed |
+| 3g | review-list | Completed |
 | 3h | interview-setup | Draft |
 | 3h | interview-ready | Draft |
 | 3h | interview-page | Draft |
@@ -96,3 +96,8 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 커밋 4 (66c0d4e): Hero Aceternity 삽입 위치 TODO 주석 + h1 violet-legacy 잔여 제거
   - 커밋 5 (e5578a4): home-page.tsx violet-legacy 잔여 4곳 제거
   - 이관 항목: Hero typography 재구성(64px Cal Sans 등) → Phase 4/5, Aceternity 인터랙션 → Plan 04
+- Plan 03g 완료 (보수 범위): 대시보드/리뷰 퍼플 제거 + shadow/색상 토큰 정합 (커밋 3건)
+  - 커밋 1 (e7d882a): 대시보드/리뷰 퍼플 하드코딩 제거 — interview-table indigo/violet 배지 → bg-secondary, sidebar #EEF2FF/#4F46E5 → violet-legacy 토큰, filter-bar #6366F1 focus-ring ×3 → ring-ring, #334155/#E2E8F0/bg-white → 토큰
+  - 커밋 2 (d428ac8): sidebar shadow-toss → shadow-sm (TODO(plan-03g) 해소)
+  - 커밋 3 (06be281): dashboard-header bg-white/95 → bg-background/95, review-empty-state bg-white → bg-card, answer-comparison-view border-slate-100/bg-slate-50/text-slate-400 → 토큰
+  - 이관 항목: delete-confirm-dialog/service-feedback-modal bg-white/shadow-toss-lg → TODO(plan-05) 마킹 유지
