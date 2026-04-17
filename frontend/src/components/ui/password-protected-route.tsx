@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useVerifyAdminPassword } from '@/hooks/use-service-feedback'
+import { Input } from '@/components/ui/input'
 
 const SESSION_KEY = 'admin-password'
 
@@ -42,7 +43,7 @@ export const PasswordProtectedRoute = () => {
         <p className="mt-1 text-sm text-text-secondary">
           비밀번호를 입력해주세요
         </p>
-        <input
+        <Input
           type="password"
           value={password}
           onChange={(e) => {
@@ -50,11 +51,13 @@ export const PasswordProtectedRoute = () => {
             setError(false)
           }}
           placeholder="비밀번호"
-          className="mt-4 w-full rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-violet-legacy/50 focus:border-violet-legacy transition-all"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? 'admin-password-error' : undefined}
+          className="mt-4 w-full rounded-button border border-border px-3 py-2 text-sm text-text-primary h-auto placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy/50 focus-visible:border-violet-legacy transition-colors"
           autoFocus
         />
         {error && (
-          <p className="mt-1 text-xs text-red-500">
+          <p id="admin-password-error" className="mt-1 text-xs text-red-500" role="alert">
             비밀번호가 올바르지 않습니다
           </p>
         )}
