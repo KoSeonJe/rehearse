@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { Button } from '@/components/ui/button'
 import { useAdminFeedbacks } from '@/hooks/use-service-feedback'
 import type { FeedbackSource } from '@/types/service-feedback'
 
@@ -135,25 +136,29 @@ export const AdminFeedbacksPage = () => {
           {/* 페이지네이션 */}
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-6">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-text-secondary border border-border hover:bg-border/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl"
               >
                 <ChevronLeft size={16} />
                 이전
-              </button>
+              </Button>
               <span className="text-sm font-medium text-text-primary">
                 {page + 1} / {totalPages}
               </span>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-text-secondary border border-border hover:bg-border/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl"
               >
                 다음
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
           )}
         </main>

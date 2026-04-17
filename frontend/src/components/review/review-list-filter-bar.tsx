@@ -62,6 +62,7 @@ export const ReviewListFilterBar = ({
   return (
     <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
       {/* 상태 필터 칩 */}
+      {/* TODO(design): variant 판단 보류 — 필터 칩 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div role="group" aria-label="상태 필터" className="flex items-center gap-1.5">
         {STATUS_OPTIONS.map((option) => {
           const isActive = status === option.value

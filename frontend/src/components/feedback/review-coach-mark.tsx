@@ -344,6 +344,7 @@ const TutorialDock = ({
       </div>
 
       <div className="mt-3 flex items-center justify-end">
+        {/* TODO(design): variant 판단 보류 — 금지된 퍼플 그라디언트(from-[#6366F1] to-[#8B5CF6]) 사용 중, 교체 필요 */}
         <button
           type="button"
           onClick={onAdvance}
