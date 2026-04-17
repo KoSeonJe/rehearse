@@ -1,3 +1,4 @@
+import { Helmet } from 'react-helmet-async'
 import { Logo } from '@/components/ui/logo'
 import { BackLink } from '@/components/ui/back-link'
 import { useInterviewSetup } from '@/hooks/use-interview-setup'
@@ -14,6 +15,10 @@ export const InterviewSetupPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <title>면접 설정 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <header className="flex items-center justify-between px-5 pt-8 md:px-8">
         <div className="flex items-center gap-2">
           <Logo size={80} />

@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /interview/
+
+Sitemap: https://rehearse.co.kr/sitemap.xml
