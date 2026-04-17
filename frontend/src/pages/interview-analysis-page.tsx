@@ -26,7 +26,7 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
     <div className="space-y-3">
       <h4 className="text-xs font-black uppercase tracking-widest text-text-tertiary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
       {questions.map((q) => (
-        <div key={q.questionId} className="rounded-2xl bg-white border border-border p-5">
+        <div key={q.questionId} className="rounded-2xl bg-card border border-border p-5">
           <p className="text-sm font-bold text-text-primary mb-2">{q.questionText}</p>
           {q.modelAnswer ? (
             <p className="text-sm text-text-secondary leading-relaxed">{q.modelAnswer}</p>
@@ -92,7 +92,7 @@ const AnalysisStatusFloat = ({
 
   return (
     <div className="fixed bottom-4 right-4 z-40 w-72 animate-fade-in" role="status" aria-live="polite">
-      <div className="rounded-2xl bg-white border border-border shadow-xl p-5">
+      <div className="rounded-2xl bg-card border border-border shadow-xl p-5">
         {isAnalyzing && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -271,7 +271,7 @@ export const InterviewAnalysisPage = () => {
 
   if (!interview) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-violet-legacy animate-progress-loading" />
@@ -285,7 +285,7 @@ export const InterviewAnalysisPage = () => {
   // 질문세트가 없는 레거시 면접 → 기존 완료 페이지 동작
   if (!hasQuestionSets) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white px-4 text-text-primary">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 text-text-primary">
         <div className="w-full max-w-md space-y-8 text-center">
           <Character mood="happy" size={200} className="mx-auto" />
           <div className="space-y-2">
@@ -312,13 +312,13 @@ export const InterviewAnalysisPage = () => {
   const allSkipped = hasQuestionSets && statuses.length > 0 && statuses.every((s) => s?.analysisStatus === 'SKIPPED')
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>면접 분석 중 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2" onClick={() => navigate('/')} role="button">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-legacy shadow-lg shadow-violet-legacy/20">

@@ -346,7 +346,7 @@ export const InterviewFeedbackPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
           <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
@@ -360,7 +360,7 @@ export const InterviewFeedbackPage = () => {
 
   if (!interview || questionSets.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5">
         <Character mood="confused" size={140} className="mb-8" />
         <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary text-center">
           피드백을 불러올 수 없습니다
@@ -378,13 +378,13 @@ export const InterviewFeedbackPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-background pb-32">
       <Helmet>
         <title>면접 피드백 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       {/* Header */}
-      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-[60] bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           {/* TODO(design): variant 판단 보류 — 로고+텍스트 조합 헤더 버튼, 레이아웃 영향 검토 필요 */}
           <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
