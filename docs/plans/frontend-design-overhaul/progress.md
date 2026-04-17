@@ -17,7 +17,7 @@
 | 3f | 랜딩 페이지 레이아웃 | Completed | home (보수 범위) |
 | 3g | 대시보드/리뷰 리스트 레이아웃 | Completed | dashboard, review-list |
 | 3h | 인터뷰 진행 레이아웃 | Completed | setup, ready, interview-page |
-| 3i | 피드백/분석 레이아웃 | Draft | feedback, analysis |
+| 3i | 피드백/분석 레이아웃 | Completed | feedback, analysis |
 | 3j | 정보/정적 페이지 | Draft | about, faq, guide, privacy, admin, 404 |
 | 4 | Aceternity hero | Draft | [optional] 랜딩 hero 1곳 |
 | 5 | 일관성 감사 | Draft | `docs/consistency-issues.md` |
@@ -52,8 +52,8 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 | 3h | interview-setup | Completed |
 | 3h | interview-ready | Completed |
 | 3h | interview-page | Completed |
-| 3i | interview-feedback | Draft |
-| 3i | interview-analysis | Draft |
+| 3i | interview-feedback | Completed |
+| 3i | interview-analysis | Completed |
 | 3j | about | Draft |
 | 3j | faq | Draft |
 | 3j | guide | Draft |
@@ -108,3 +108,10 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 커밋 4 (1b7c1a5): bg-white → bg-background/bg-card 토큰 정합 — setup-page/ready-page + 3개 test-row (5파일)
   - interview-page.tsx 변경 라인: 0 (스튜디오 다크 UI 완전 보존)
   - 의도 잔존(Phase 5): setup step active bg-violet-legacy, setup-progress-bar bg-violet-legacy
+- Plan 03i 완료 (보수 범위): 피드백/분석 퍼플 제거(review-coach-mark gradient 포함), 레이블 모노크롬화, transition-all 정리, 하드코딩 색상 토큰화 (커밋 4건)
+  - 커밋 1 (d8312bb): review-coach-mark gradient/ring 제거 + 컴포넌트 퍼플 토큰화 — review-coach-mark(gradient→bg-violet-legacy, ring→violet-legacy, bg-white→bg-card), question-list(#6366F1→violet-legacy, bg-white→bg-card), bookmark-toggle-button(퍼플→토큰), feedback-panel(bg-white→bg-card, transition-all→transition-colors), delivery-tab(bg-white→bg-card)
+  - 커밋 2 (b054b45): font-mono 레이블 모노크롬화 — interview-feedback-page(2건), interview-analysis-page(1건) → text-xs/font-semibold/tracking-wider/text-muted-foreground
+  - 커밋 3 (44cbddb): transition-all → 구체 속성 — timeline-bar(transition-[box-shadow,filter]), video-player(transition-[background-color,transform]), interview-analysis-page 프로그레스 바(transition-colors), 이동 버튼(transition-transform)
+  - 커밋 4 (b0bdc79): 페이지 하드코딩 색상 토큰화 — interview-feedback-page bg-white→bg-background(4건+헤더backdrop), interview-analysis-page bg-white→bg-background(전체) + 카드/패널 bg-card 재정정(2건)
+  - video-player.tsx / timeline-bar.tsx / question-list.tsx 기능 로직 diff 0 확인
+  - lint green, test 24/24 passed
