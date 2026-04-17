@@ -37,10 +37,7 @@ export const LoginModal = () => {
 
   return (
     <Dialog open={showLoginModal} onOpenChange={handleOpenChange}>
-      <DialogContent
-        className="w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg border-none"
-        aria-label="로그인"
-      >
+      <DialogContent className="w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg border-none">
         {/* 로고 */}
         <div className="mb-8 flex flex-col items-center gap-1.5">
           <Logo size={56} />

@@ -6,6 +6,8 @@ import {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
 } from '@/components/ui/alert-dialog'
 
 interface DeleteConfirmDialogProps {
@@ -39,24 +41,28 @@ export const DeleteConfirmDialog = ({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex gap-3 sm:space-x-0">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onCancel}
-            disabled={isPending}
-            className="flex-1 h-11"
-          >
-            취소
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={onConfirm}
-            disabled={isPending}
-            className="flex-1 h-11"
-          >
-            {isPending ? '삭제 중...' : '삭제'}
-          </Button>
+          <AlertDialogCancel asChild>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={onCancel}
+              disabled={isPending}
+              className="flex-1 h-11 mt-0"
+            >
+              취소
+            </Button>
+          </AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onConfirm}
+              disabled={isPending}
+              className="flex-1 h-11"
+            >
+              {isPending ? '삭제 중...' : '삭제'}
+            </Button>
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
