@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { useVerifyAdminPassword } from '@/hooks/use-service-feedback'
 import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
 
 const SESSION_KEY = 'admin-password'
 
@@ -33,10 +34,11 @@ export const PasswordProtectedRoute = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-surface rounded-card p-6 shadow-toss-lg max-w-sm w-full mx-4"
+      <Card
+        className="bg-surface p-6 shadow-md max-w-sm w-full mx-4 border border-border"
+        // TODO(design): form을 Card로 감싸는 패턴 — Phase 3f 레이아웃 정리 시 재검토
       >
+        <form onSubmit={handleSubmit}>
         <h2 className="text-base font-extrabold text-text-primary">
           관리자 인증
         </h2>
@@ -68,7 +70,8 @@ export const PasswordProtectedRoute = () => {
         >
           {isPending ? '확인 중...' : '확인'}
         </button>
-      </form>
+        </form>
+      </Card>
     </div>
   )
 }
