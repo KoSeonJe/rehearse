@@ -73,6 +73,6 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 패키지: npm 유지
 - Plan 01 Audit 완료: docs/design-audit.md 생성
 - Plan 02 완료: CSS 변수 + shadcn init + Cal Sans 도입
-- Plan 03a 완료: Button shadcn 교체 (커밋 7건, 판단 보류 14건)
+- Plan 03a 완료: Button shadcn 교체 (커밋 8건, 판단 보류 12건 — 실측 `grep -rn "TODO(design)" frontend/src` 기준)
   - 교체 완료: home CTA/header, login-modal 닫기, dashboard 전반, setup-navigation, interview-ready, interview-analysis, admin-feedbacks 페이지네이션
   - 판단 보류: login OAuth 브랜드 버튼, sidebar nav active 스타일, step 선택 카드, feedback 탭/타임라인/플레이어, interview-page 스튜디오 UI, review-coach-mark 퍼플 그라디언트, review-list-filter-bar 칩
