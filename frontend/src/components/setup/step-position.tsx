@@ -21,6 +21,7 @@ export const StepPosition = ({ position, isLoading, onSelect }: StepPositionProp
         직무에 맞는 면접 유형을 추천해드립니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
         {POSITIONS.map((p) => (
           <button

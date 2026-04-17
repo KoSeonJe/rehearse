@@ -27,6 +27,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
       </p>
 
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
         {availableStacks.map((stack) => {
           const { label, description } = TECH_STACK_LABELS[stack]
           const isSelected = techStack === stack

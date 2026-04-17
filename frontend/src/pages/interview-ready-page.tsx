@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { useParams, useNavigate } from 'react-router-dom'
 import { BackLink } from '@/components/ui/back-link'
+import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { DeviceTestSection } from '@/components/interview/device-test-section'
 import { Character } from '@/components/ui/character'
@@ -74,12 +75,15 @@ export const InterviewReadyPage = () => {
             {is404 ? '세션을 찾을 수 없습니다.' : '일시적인 오류가 발생했습니다.'}
           </p>
           <div className="mt-12 flex flex-col gap-3">
-            <button
+            <Button
+              variant="default"
+              size="lg"
+              fullWidth
               onClick={() => navigate(is404 ? '/' : 0 as never)}
-              className="h-16 rounded-[24px] bg-violet-legacy font-black text-white transition-all active:scale-95"
+              className="rounded-[24px] font-black"
             >
               {is404 ? '홈으로 돌아가기' : '다시 시도하기'}
-            </button>
+            </Button>
           </div>
         </main>
       </div>
@@ -181,13 +185,16 @@ export const InterviewReadyPage = () => {
                   {interview.failureReason && (
                     <p className="ml-8 text-xs text-text-tertiary">{interview.failureReason}</p>
                   )}
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={handleRetryQuestions}
                     disabled={retryQuestions.isPending}
-                    className="ml-8 w-fit rounded-xl bg-violet-legacy/10 px-4 py-2 text-xs font-bold text-violet-legacy transition-all hover:bg-violet-legacy/20 active:scale-95 disabled:opacity-50"
+                    loading={retryQuestions.isPending}
+                    className="ml-8 w-fit rounded-xl text-violet-legacy hover:bg-violet-legacy/10 hover:text-violet-legacy"
                   >
                     {retryQuestions.isPending ? '재시도 중...' : '다시 시도하기'}
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -223,13 +230,17 @@ export const InterviewReadyPage = () => {
         {/* Start Button */}
         {!isLoading && (
           <div className="mt-16">
-            <button
+            <Button
+              variant="default"
+              size="lg"
+              fullWidth
               onClick={handleStartInterview}
               disabled={!canStart || updateStatus.isPending}
-              className="h-18 w-full rounded-[24px] bg-violet-legacy py-5 text-xl font-black text-white shadow-lg shadow-violet-legacy/20 transition-all active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+              loading={updateStatus.isPending}
+              className="rounded-[24px] py-5 text-xl font-black"
             >
               {updateStatus.isPending ? '시작하는 중...' : isResume ? '면접 이어하기' : '면접 시작하기'}
-            </button>
+            </Button>
             {!canStart && (
               <p className="mt-3 text-center text-xs font-bold text-text-tertiary">
                 {!isQuestionReady && !isQuestionFailed

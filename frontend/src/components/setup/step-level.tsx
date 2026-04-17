@@ -21,6 +21,7 @@ export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
         레벨에 따라 질문 난이도가 달라집니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 space-y-3">
         {LEVELS.map((l) => (
           <button

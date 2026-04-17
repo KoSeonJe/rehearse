@@ -55,6 +55,7 @@ export const StepInterviewType = ({
         여러 개를 선택할 수 있습니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 space-y-3">
         {POSITION_INTERVIEW_TYPES[position].map((type) => (
           <div key={type}>

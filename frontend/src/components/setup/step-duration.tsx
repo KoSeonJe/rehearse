@@ -19,6 +19,7 @@ export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurat
         시간에 맞춰 질문 수가 자동으로 조정됩니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 grid grid-cols-2 gap-3">
         {DURATION_PRESETS.map((preset) => (
           <button

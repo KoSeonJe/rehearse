@@ -82,6 +82,7 @@ export const ResumeUpload = ({
               </p>
             </div>
           </div>
+          {/* TODO(design): variant 판단 보류 — 파일 제거 아이콘, hover 빨간색 의도적 스타일, 사용자 확인 필요 */}
           <button
             onClick={onFileRemove}
             disabled={isLoading}
