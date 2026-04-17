@@ -1,8 +1,9 @@
 # Consistency Audit Issues (Plan 05)
 
 > 작성일: 2026-04-17
-> 상태: Completed
-> 담당: general-purpose agent
+> 최종 클린업: 2026-04-17
+> 상태: H1~H4 Resolved (Phase 6 최종 클린업)
+> 담당: general-purpose agent → frontend agent (Phase 6)
 > 스펙: `docs/plans/frontend-design-overhaul/plan-05-consistency-audit.md`
 > 브랜치: `refactor/frontend-design-overhaul`
 
@@ -154,27 +155,27 @@
 
 ## 3. 이슈 목록 (심각도순)
 
-### H1. violet-legacy 토큰 사용처 대량 잔존 — 최종 제거 결정 필요
+### H1. ~~violet-legacy 토큰 사용처 대량 잔존~~ — **Resolved in 7163eb4, 8cdb5f8, be4f8a5, e4a0b65**
 - 위치: 40 files × 93 occurrences + 정의 `frontend/src/index.css:48,74` + `frontend/tailwind.config.js:63-64`
 - 현재: `bg-violet-legacy`, `text-violet-legacy`, `ring-violet-legacy`, `border-violet-legacy` 다수. CTA primary 전반 + Setup step active + Feedback/Analysis progress + focus ring 패턴.
 - 목표: (옵션 A) `hsl(var(--primary))` 기반 모노크롬 primary로 전면 교체 → violet-legacy 정의 제거. (옵션 B) `--primary` 자체를 violet으로 선언하고 "모노크롬 기조 + violet accent 1개"로 재정의.
 - 제약: `button-variants.ts cta/primary`가 violet-legacy에 하드 의존 → 버튼 variant 재설계 선결.
 - 예상 수정 범위: **L** (40파일 전면 치환 + variant 재설계 + 토큰 정의 제거 + visual regression)
 
-### H2. `#6366F1` 하드코딩 리터럴 잔존 — violet-legacy 토큰 전환 누락
+### H2. ~~`#6366F1` 하드코딩 리터럴 잔존~~ — **Resolved in 21116f8** (character.tsx → currentColor)
 - 위치: `frontend/src/components/ui/character.tsx:18,25,46`
 - 현재: `color: '#6366F1'` (mood=thinking/idle/happy의 body prop)
 - 목표: `color: 'hsl(var(--violet-legacy))'` 또는 Phase 5 결정에 따라 `hsl(var(--primary))`
 - 예상 수정 범위: **S** (3라인)
 
-### H3. `bg-white` / `bg-white/80` → `bg-background` 토큰 미정합 (home 중심)
+### H3. ~~`bg-white` / `bg-white/80` → `bg-background` 토큰 미정합~~ — **Resolved in 5796c21** (홈/공통 ~14파일. OAuth버튼·video PIP는 의도적 유지)
 - 위치: `home-page.tsx:49,63,114`, `journey-section.tsx:57,98`, `before-you-start-section.tsx:61`, `metrics-section.tsx:146,149,165`, `dev-tailored-section.tsx:79`, `video-feedback-section.tsx:47,61,83,93,158`, `pain-points-section.tsx:66`, `hero-section.tsx:75`, `protected-route.tsx:24`, `setup/resume-upload.tsx:89`, `login-modal.tsx:41,75`, `delete-confirm-dialog.tsx:35`, `service-feedback-modal.tsx:66`
 - 현재: `bg-white` 하드코딩 (dark 모드에서 색 반전 불가)
 - 목표: `bg-background` (페이지 shell) / `bg-card` (내부 카드) 토큰화
 - 제약: delete-confirm-dialog / service-feedback-modal / login-modal은 Plan 03c/03d 이관 항목으로 TODO 마킹 상태.
 - 예상 수정 범위: **M** (~18파일)
 
-### H4. `rounded-[32px|28px|24px|20px]` 임의 스케일 남용 — radius 토큰 미정의
+### H4. ~~`rounded-[32px|28px|24px|20px]` 임의 스케일 남용~~ — **Partially Resolved in db9076d** (card 12px 재정의, button 토큰 제거. 홈 히어로/CTA rounded-[32px/24px]는 의도적 유지. Phase 4 Aceternity 재개 시 재평가)
 - 위치: 31건 / 22파일
 - 현재: Cal.com 스타일 대형 카드 라운드(`32px`), CTA(`24px`), 선택 카드(`20px`)가 임의값으로 뿌려짐
 - 목표: `DESIGN.md`에 `--radius-card: 32px`, `--radius-cta: 24px`, `--radius-select: 20px` 등 스케일 명시 후 Tailwind config에 등록 → `rounded-card` 등으로 통일

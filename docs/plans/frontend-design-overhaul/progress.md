@@ -19,8 +19,9 @@
 | 3h | 인터뷰 진행 레이아웃 | Completed | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Completed | feedback, analysis |
 | 3j | 정보/정적 페이지 | Completed | about, faq, guide, privacy, admin, 404 |
-| 4 | Aceternity hero | Deferred | [optional] Phase 5 감사 후 사용자 스크린샷 피드백과 함께 재평가 |
+| 4 | Aceternity hero | Skipped | 모노크롬 완전 전환(Option A)으로 충분, Phase 6 클린업 범위 밖. 향후 별도 spec에서 재평가 |
 | 5 | 일관성 감사 | Completed | `docs/consistency-issues.md` 생성, 코드 수정 0건 |
+| 6 | 최종 클린업 (H1~H4) | Completed | violet-legacy 0건, #6366F1 0건, bg-white→bg-background, radius 토큰 정리. 커밋 8건 (7163eb4~55226cb) |
 
 ## 체크포인트 원칙
 
