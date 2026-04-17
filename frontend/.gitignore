@@ -28,6 +28,10 @@ dist-ssr
 .env.*
 .env.local
 .env.*.local
+# 공개 SEO/빌드용 환경 파일은 커밋 (시크릿 없음)
+!.env.development
+!.env.production
+!.env.example
 
 # Test coverage
 coverage
