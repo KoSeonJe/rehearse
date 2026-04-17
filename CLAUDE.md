@@ -108,6 +108,20 @@ devlens/
 
 ---
 
+## 디자인 기준 (Frontend)
+
+프론트엔드 UI/디자인 작업 시 아래 지침을 **반드시 먼저 로드**하고 따를 것.
+
+- **비주얼 방향**: `DESIGN.md` — Cal.com 기반 모노크롬 디자인 시스템 (색상/타이포/섀도/스페이싱 토큰)
+- **AI 티 방지 규칙**: `.claude/rules/frontend-design-rules.md` — 금지 색상/폰트/레이아웃 및 self-check 체크리스트
+- **베이스 컴포넌트**: shadcn/ui (ui.shadcn.com) — 모든 기본 UI primitive는 shadcn 우선 사용. `/shadcn` 스킬로 추가·검색
+- **장식 컴포넌트**: Aceternity UI — **레퍼런스 용도**, 페이지당 **최대 1-2개**까지만 사용 (남용 금지)
+
+작업 순서:
+1. `DESIGN.md` 토큰/원칙 확인 → 2. shadcn primitive로 구성 → 3. 필요 시 Aceternity 1-2개로 포인트 → 4. `frontend-design-rules.md` self-check 통과 후 완료
+
+---
+
 ## Commit / PR Rules
 
 - Commit messages: Korean, conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
