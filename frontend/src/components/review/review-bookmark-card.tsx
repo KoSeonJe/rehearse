@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, Circle, CircleCheck, Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import { useUpdateBookmarkStatus, useDeleteBookmark } from '@/hooks/use-review-bookmarks'
 import { DeleteConfirmDialog } from '@/components/dashboard/delete-confirm-dialog'
 import { AnswerComparisonView } from '@/components/review/answer-comparison-view'
@@ -68,12 +69,13 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
 
   return (
     <>
-      <article
-        className={`rounded-card overflow-hidden transition-shadow duration-200 ${
+      <Card
+        className={`overflow-hidden transition-shadow duration-200 ${
           isResolved
-            ? 'bg-success-light border border-success/20'
-            : 'bg-surface border border-border shadow-toss hover:shadow-toss-lg'
+            ? 'bg-success-light border border-success/20 shadow-none'
+            : 'bg-surface border border-border shadow-sm hover:shadow-md'
         }`}
+        role="article"
       >
         <button
           type="button"
@@ -150,7 +152,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             />
           </div>
         )}
-      </article>
+      </Card>
 
       <DeleteConfirmDialog
         isOpen={isDeleteDialogOpen}
