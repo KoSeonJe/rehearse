@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { DeleteConfirmDialog } from './delete-confirm-dialog'
@@ -88,9 +89,9 @@ export const InterviewTable = ({
 
   if (isLoading) {
     return (
-      <div className="rounded-card bg-surface overflow-hidden border border-border shadow-toss">
+      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
         <InterviewTableSkeleton />
-      </div>
+      </Card>
     )
   }
 
@@ -122,7 +123,7 @@ export const InterviewTable = ({
 
   return (
     <>
-      <div className="rounded-card bg-surface overflow-hidden border border-border shadow-toss">
+      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-violet-legacy-light">
@@ -230,7 +231,7 @@ export const InterviewTable = ({
             })}
           </tbody>
         </table>
-      </div>
+      </Card>
 
       <DeleteConfirmDialog
         isOpen={dialogId !== null}

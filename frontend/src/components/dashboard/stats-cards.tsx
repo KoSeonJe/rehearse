@@ -1,4 +1,5 @@
 import { FileText, CheckCircle, Calendar } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import type { InterviewStats } from '@/types/interview'
 
 interface StatCardProps {
@@ -8,7 +9,7 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value, icon }: StatCardProps) => (
-  <div className="rounded-card bg-surface p-5 flex items-center gap-4 border border-border shadow-toss">
+  <Card className="bg-surface p-5 flex items-center gap-4 border border-border shadow-sm">
     <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-violet-legacy-light flex items-center justify-center text-violet-legacy">
       {icon}
     </div>
@@ -16,17 +17,17 @@ const StatCard = ({ label, value, icon }: StatCardProps) => (
       <p className="text-xs font-semibold text-text-tertiary tracking-wide uppercase">{label}</p>
       <p className="mt-1 font-mono text-3xl font-extrabold text-text-primary">{value}</p>
     </div>
-  </div>
+  </Card>
 )
 
 const StatCardSkeleton = () => (
-  <div className="rounded-card bg-surface p-5 animate-pulse flex items-center gap-4 border border-border shadow-toss">
+  <Card className="bg-surface p-5 animate-pulse flex items-center gap-4 border border-border shadow-sm">
     <div className="flex-shrink-0 w-10 h-10 bg-border/50 rounded-xl" />
     <div>
       <div className="h-3 w-16 bg-border/50 rounded-lg" />
       <div className="mt-2 h-10 w-20 bg-border/50 rounded-lg" />
     </div>
-  </div>
+  </Card>
 )
 
 interface StatsCardsProps {

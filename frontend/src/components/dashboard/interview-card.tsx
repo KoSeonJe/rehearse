@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { DeleteConfirmDialog } from './delete-confirm-dialog'
@@ -79,12 +80,12 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
 
   return (
     <>
-      <div
+      <Card
         onClick={handleCardClick}
-        className={`rounded-card bg-surface p-5 border border-border shadow-toss transition-all duration-200 ${
+        className={`bg-surface p-5 border border-border transition-colors duration-200 ${
           isInProgress
-            ? 'opacity-60 cursor-default'
-            : 'cursor-pointer hover:shadow-toss-lg'
+            ? 'opacity-60 cursor-default shadow-sm'
+            : 'cursor-pointer shadow-sm hover:shadow-md'
         }`}
         title={isInProgress ? '면접이 진행 중입니다' : undefined}
       >
@@ -122,7 +123,7 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
             </button>
           </div>
         </div>
-      </div>
+      </Card>
 
       <DeleteConfirmDialog
         isOpen={showDeleteDialog}
