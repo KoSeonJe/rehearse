@@ -110,7 +110,7 @@ export const InterviewReadyPage = () => {
       <main className="mx-auto max-w-3xl px-5 pb-32 pt-16 md:px-8">
         {/* Intro + Tags */}
         <section className="mb-12">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Device Check
           </p>
           <h1 className="text-4xl font-extrabold tracking-tighter text-text-primary sm:text-5xl">

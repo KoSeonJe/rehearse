@@ -9,7 +9,7 @@ interface StepDurationProps {
 export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurationProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
         Step 3 — Duration
       </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
