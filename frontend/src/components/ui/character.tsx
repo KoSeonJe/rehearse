@@ -51,7 +51,7 @@ export const Character = ({ mood = 'default', size = 120, className = '' }: Char
 
   return (
     <div 
-      className={`relative inline-flex items-center justify-center transition-all duration-500 ${className} ${moodStyles.animation}`}
+      className={`relative inline-flex items-center justify-center transition-[transform,opacity] duration-500 ${className} ${moodStyles.animation}`}
       style={{ width: size, height: size }}
     >
       {/* Soft Glow based on Brand Color */}

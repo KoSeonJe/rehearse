@@ -28,7 +28,7 @@ export const StepPosition = ({ position, isLoading, onSelect }: StepPositionProp
             key={p}
             onClick={() => onSelect(p)}
             disabled={isLoading}
-            className={`flex flex-col items-center gap-2 rounded-[20px] p-5 transition-colors active:scale-95 ${
+            className={`flex flex-col items-center gap-2 rounded-2xl p-5 transition-colors active:scale-95 ${
               position === p
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                 : 'bg-surface text-text-primary hover:bg-slate-200'

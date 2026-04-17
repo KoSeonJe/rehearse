@@ -10,7 +10,7 @@ interface CameraTestRowProps {
 
 export const CameraTestRow = ({ status, videoRef, onCameraTest }: CameraTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-card p-5 transition-colors ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-2xl border bg-card p-5 transition-colors ${statusBorder(status)}`}>
       <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-2xl bg-slate-950">
         <video
           ref={videoRef as React.RefObject<HTMLVideoElement>}

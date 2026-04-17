@@ -62,7 +62,7 @@ export const StepInterviewType = ({
             <button
               onClick={() => onTypeToggle(type)}
               disabled={isLoading}
-              className={`flex w-full items-center justify-between rounded-[20px] p-5 text-left transition-colors active:scale-[0.98] ${
+              className={`flex w-full items-center justify-between rounded-2xl p-5 text-left transition-colors active:scale-[0.98] ${
                 interviewTypes.includes(type)
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'

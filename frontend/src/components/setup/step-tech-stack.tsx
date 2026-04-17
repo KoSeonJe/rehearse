@@ -39,7 +39,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
               onClick={() => onSelect(isSelected ? null : stack)}
               disabled={isLoading}
               aria-pressed={isSelected}
-              className={`flex flex-col items-start gap-1.5 rounded-[20px] p-5 transition-colors active:scale-95 ${
+              className={`flex flex-col items-start gap-1.5 rounded-2xl p-5 transition-colors active:scale-95 ${
                 isSelected
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'

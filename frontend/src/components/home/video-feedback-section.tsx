@@ -43,7 +43,7 @@ export const VideoFeedbackSection = () => {
           {/* 좌측: 영상 + 타임라인 + 질문 목록 (flex col, 질문 목록이 bottom 까지 채움) */}
           <div className="md:col-span-3 flex flex-col gap-4 h-full">
             {/* 영상 영역 — 가상 인물(Character) */}
-            <div className="relative aspect-video rounded-[20px] overflow-hidden border border-border bg-surface">
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-border bg-surface">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03),transparent_70%)]" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Character mood="happy" size={160} />

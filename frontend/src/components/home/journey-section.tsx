@@ -51,10 +51,10 @@ interface StepImageProps {
 
 const StepImage = ({ step, isReversed }: StepImageProps) => (
   <div
-    className={`flex-1 w-full max-w-[440px] rounded-[32px] bg-surface border border-border shadow-toss p-4 ${step.rotate} ${isReversed ? 'md:mr-auto' : 'md:ml-auto'}`}
+    className={`flex-1 w-full max-w-[440px] rounded-4xl bg-surface border border-border shadow-toss p-4 ${step.rotate} ${isReversed ? 'md:mr-auto' : 'md:ml-auto'}`}
     aria-hidden="true"
   >
-    <div className="relative rounded-[24px] overflow-hidden bg-white border border-slate-100">
+    <div className="relative rounded-3xl overflow-hidden bg-card border border-slate-100">
       <img
         src={step.imageSrc}
         alt={step.imageAlt}

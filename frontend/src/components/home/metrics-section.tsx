@@ -180,7 +180,7 @@ export const MetricsSection = () => {
         </div>
 
         {/* 지표 컨테이너 — 언어/비언어를 한 배경 안에 함께 감쌈 */}
-        <div className="rounded-[24px] bg-secondary p-6 md:p-8">
+        <div className="rounded-3xl bg-secondary p-6 md:p-8">
           {/* 언어 피드백 그룹 */}
           <div className="mb-8" role="group" aria-label="언어 피드백 지표">
             <div className="flex items-center gap-3 mb-6">

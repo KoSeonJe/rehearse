@@ -32,7 +32,7 @@ export const SetupNavigation = ({
           onClick={onSubmit}
           disabled={!canNext || isLoading}
           loading={isLoading}
-          className="rounded-[24px] font-black"
+          className="rounded-3xl font-black"
         >
           {isLoading ? '면접관이 질문을 생성 중입니다...' : '면접 시작하기'}
         </Button>
@@ -43,7 +43,7 @@ export const SetupNavigation = ({
           fullWidth
           onClick={onNext}
           disabled={!canNext || isLoading}
-          className="rounded-[24px] font-black"
+          className="rounded-3xl font-black"
         >
           다음
         </Button>
@@ -56,7 +56,7 @@ export const SetupNavigation = ({
           fullWidth
           onClick={onPrev}
           disabled={isLoading}
-          className="rounded-[24px] h-14 text-base bg-surface hover:bg-slate-200 border-none shadow-none"
+          className="rounded-3xl h-14 text-base bg-surface hover:bg-slate-200 border-none shadow-none"
         >
           이전
         </Button>

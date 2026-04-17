@@ -299,7 +299,7 @@ export const InterviewAnalysisPage = () => {
             size="lg"
             fullWidth
             onClick={() => navigate('/')}
-            className="rounded-[24px] font-black text-lg"
+            className="rounded-3xl font-black text-lg"
           >
             홈으로 돌아가기
           </Button>
@@ -341,7 +341,7 @@ export const InterviewAnalysisPage = () => {
             </p>
             <button
               onClick={() => navigate('/')}
-              className="h-14 w-full max-w-xs rounded-[24px] bg-primary font-bold text-primary-foreground transition-transform active:scale-95"
+              className="h-14 w-full max-w-xs rounded-3xl bg-primary font-bold text-primary-foreground transition-transform active:scale-95"
             >
               대시보드로 이동
             </button>

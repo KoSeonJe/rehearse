@@ -62,8 +62,7 @@ export const ServiceFeedbackModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      {/* TODO(plan-05): rounded-card/shadow-toss-lg → 일관성 감사 단계에서 rounded-lg/shadow-md 토큰으로 정리 */}
-      <DialogContent className="bg-white rounded-card shadow-toss-lg border-none max-w-md mx-4">
+      <DialogContent className="bg-card rounded-lg shadow-md border-none max-w-md mx-4">
         <DialogHeader>
           <DialogTitle className="text-base font-extrabold text-text-primary">
             서비스 피드백

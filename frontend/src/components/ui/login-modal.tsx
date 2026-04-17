@@ -37,8 +37,7 @@ export const LoginModal = () => {
 
   return (
     <Dialog open={showLoginModal} onOpenChange={handleOpenChange}>
-      {/* TODO(plan-05): rounded-[28px]/shadow-toss-lg → 일관성 감사 단계에서 rounded-lg/shadow-md 토큰으로 정리 */}
-      <DialogContent className="w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg border-none">
+      <DialogContent className="w-full max-w-sm rounded-3xl bg-card p-8 shadow-md border-none">
         {/* 로고 */}
         <div className="mb-8 flex flex-col items-center gap-1.5">
           <Logo size={56} />
@@ -72,7 +71,7 @@ export const LoginModal = () => {
           <button
             onClick={handleGoogleLogin}
             aria-label="Google로 로그인"
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-white px-5 py-3.5 text-[13px] font-bold text-text-primary hover:bg-surface active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-border bg-card px-5 py-3.5 text-[13px] font-bold text-text-primary hover:bg-muted active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

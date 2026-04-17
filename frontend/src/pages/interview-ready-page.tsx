@@ -80,7 +80,7 @@ export const InterviewReadyPage = () => {
               size="lg"
               fullWidth
               onClick={() => navigate(is404 ? '/' : 0 as never)}
-              className="rounded-[24px] font-black"
+              className="rounded-3xl font-black"
             >
               {is404 ? '홈으로 돌아가기' : '다시 시도하기'}
             </Button>
@@ -237,7 +237,7 @@ export const InterviewReadyPage = () => {
               onClick={handleStartInterview}
               disabled={!canStart || updateStatus.isPending}
               loading={updateStatus.isPending}
-              className="rounded-[24px] py-5 text-xl font-black"
+              className="rounded-3xl py-5 text-xl font-black"
             >
               {updateStatus.isPending ? '시작하는 중...' : isResume ? '면접 이어하기' : '면접 시작하기'}
             </Button>

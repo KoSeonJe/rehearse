@@ -64,15 +64,15 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
           {/* TODO(plan-04): Aceternity 인터랙션 삽입 자리 — Hero 우측 카드에 Spotlight/Beam 효과 적용 예정 */}
           <div className="flex-1 flex justify-center w-full md:justify-end">
             <div
-              className="w-full max-w-[420px] rounded-[32px] bg-surface border border-border shadow-toss-lg rotate-2"
+              className="w-full max-w-[420px] rounded-4xl bg-surface border border-border shadow-toss-lg rotate-2"
               aria-hidden="true"
             >
-              <div className="relative aspect-video rounded-[24px] bg-surface overflow-hidden flex items-center justify-center border border-border">
+              <div className="relative aspect-video rounded-3xl bg-surface overflow-hidden flex items-center justify-center border border-border">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03),transparent_70%)]" />
                 <div className="relative z-10 drop-shadow-2xl">
                   <Character mood="happy" size={120} />
                 </div>
-                <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-white/80 backdrop-blur-md rounded-xl border border-border">
+                <div className="absolute bottom-4 right-4 flex items-center gap-2 h-8 px-3 bg-background/80 backdrop-blur-md rounded-xl border border-border">
                   <div className="flex items-end gap-0.5 h-3">
                     {[1, 2, 3, 4].map((i) => (
                       <div

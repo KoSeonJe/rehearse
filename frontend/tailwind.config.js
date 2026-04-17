@@ -93,6 +93,10 @@ export default {
         /* 시맨틱 radius 스케일 */
         card: '12px',
         badge: '999px',
+        /* arbitrary 대체 토큰 */
+        '2xl': '20px',
+        '3xl': '24px',
+        '4xl': '32px',
       },
       keyframes: {
         'fade-in': {

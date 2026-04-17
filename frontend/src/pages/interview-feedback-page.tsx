@@ -224,7 +224,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 
   if (feedbackLoading) {
     return (
-      <div className="rounded-[32px] bg-surface p-8 animate-pulse">
+      <div className="rounded-4xl bg-surface p-8 animate-pulse">
         <div className="h-6 w-48 bg-border/50 rounded-lg mb-4" />
         <div className="h-40 bg-border/30 rounded-2xl" />
       </div>
@@ -233,7 +233,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 
   if (!feedback) {
     return (
-      <div className="rounded-[32px] bg-surface border border-border p-8 text-center">
+      <div className="rounded-4xl bg-surface border border-border p-8 text-center">
         <p className="text-sm font-bold text-text-tertiary">피드백을 불러올 수 없습니다</p>
       </div>
     )
@@ -369,7 +369,7 @@ export const InterviewFeedbackPage = () => {
           variant="default"
           size="lg"
           onClick={() => navigate('/')}
-          className="mt-10 w-full max-w-xs rounded-[24px]"
+          className="mt-10 w-full max-w-xs rounded-3xl"
         >
           홈으로 돌아가기
         </Button>

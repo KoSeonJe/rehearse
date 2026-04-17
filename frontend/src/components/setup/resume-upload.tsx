@@ -86,7 +86,7 @@ export const ResumeUpload = ({
           <button
             onClick={onFileRemove}
             disabled={isLoading}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-text-tertiary transition-colors hover:bg-red-50 hover:text-red-500"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-card text-text-tertiary transition-colors hover:bg-red-50 hover:text-red-500"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />

@@ -14,7 +14,7 @@ interface MicTestRowProps {
 
 export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-card p-5 transition-colors ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-2xl border bg-card p-5 transition-colors ${statusBorder(status)}`}>
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-surface">
         {(status === 'testing' || status === 'passed') ? (
           <div className="flex items-end justify-center gap-1 h-10">
