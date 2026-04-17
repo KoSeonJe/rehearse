@@ -1,3 +1,4 @@
+import { Progress } from '@/components/ui/progress'
 import type { Step } from '@/constants/setup'
 
 interface SetupProgressBarProps {
@@ -6,6 +7,8 @@ interface SetupProgressBarProps {
 }
 
 export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarProps) => {
+  const percent = Math.round((currentStep / totalSteps) * 100)
+
   return (
     <div className="mb-12">
       <div className="flex items-center justify-between mb-2">
@@ -31,16 +34,7 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
           </div>
         ))}
       </div>
-      <div className="flex gap-1">
-        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-          <div
-            key={step}
-            className={`h-1 flex-1 rounded-full transition-colors ${
-              step <= currentStep ? 'bg-primary' : 'bg-surface'
-            }`}
-          />
-        ))}
-      </div>
+      <Progress value={percent} className="h-1 bg-surface" />
       <p className="mt-2 text-right text-[11px] font-bold text-text-tertiary">
         {currentStep} / {totalSteps}
       </p>

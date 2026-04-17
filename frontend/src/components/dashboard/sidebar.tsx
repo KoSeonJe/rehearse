@@ -3,6 +3,7 @@ import { LayoutDashboard, ListChecks, User } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
 import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface SidebarProps {
@@ -20,11 +21,12 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-60 bg-surface border-r border-border shadow-sm z-40">
       {/* 로고 영역 */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border/50">
+      <div className="flex items-center gap-2.5 px-5 py-5">
         <Logo size={36} />
         <span className="text-lg font-extrabold tracking-tight text-text-primary">리허설</span>
         <BetaBadge size="sm" />
       </div>
+      <Separator className="opacity-50" />
 
       {/* 네비게이션 */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
@@ -57,7 +59,8 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
       </nav>
 
       {/* 유저 프로필 */}
-      <div className="px-3 py-4 border-t border-border/50">
+      <Separator className="opacity-50" />
+      <div className="px-3 py-4">
         <div className="flex items-center gap-3 px-2 py-2">
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-border flex items-center justify-center">
             <User size={16} className="text-text-tertiary" />
