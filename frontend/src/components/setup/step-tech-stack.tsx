@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { POSITION_TECH_STACKS, TECH_STACK_LABELS } from '@/constants/interview-labels'
 import type { Position, TechStack } from '@/types/interview'
 
@@ -48,15 +49,15 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
               <div className="flex w-full items-center justify-between gap-1">
                 <span className="text-base font-extrabold leading-tight">{label}</span>
                 {isDefault && (
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  <Badge
+                    className={`shrink-0 rounded-full text-[10px] font-bold border-transparent ${
                       isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-secondary text-text-secondary'
+                        ? 'bg-white/20 text-white hover:bg-white/20'
+                        : 'bg-secondary text-text-secondary hover:bg-secondary'
                     }`}
                   >
                     기본
-                  </span>
+                  </Badge>
                 )}
               </div>
               <span

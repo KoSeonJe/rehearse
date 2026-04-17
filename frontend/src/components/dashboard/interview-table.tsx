@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { DeleteConfirmDialog } from './delete-confirm-dialog'
@@ -14,40 +15,39 @@ interface StatusBadgeProps {
 const STATUS_BADGE_CONFIG: Record<InterviewStatus, { label: string; className: string }> = {
   READY: {
     label: '준비됨',
-    className: 'bg-blue-100 text-blue-700',
+    className: 'bg-blue-100 text-blue-700 border-transparent hover:bg-blue-100',
   },
   IN_PROGRESS: {
     label: '진행 중',
-    className: 'bg-warning-light text-warning',
+    className: 'bg-warning-light text-warning border-transparent hover:bg-warning-light',
   },
   COMPLETED: {
     label: '완료',
-    className: 'bg-success-light text-success',
+    className: 'bg-success-light text-success border-transparent hover:bg-success-light',
   },
 }
 
 const CATEGORY_BADGE_CLASS: Record<InterviewType, string> = {
-  CS_FUNDAMENTAL: 'bg-muted text-muted-foreground',
-  BEHAVIORAL: 'bg-pink-100 text-pink-700',
-  RESUME_BASED: 'bg-rose-100 text-rose-700',
-  LANGUAGE_FRAMEWORK: 'bg-secondary text-secondary-foreground',
-  SYSTEM_DESIGN: 'bg-secondary text-secondary-foreground',
-  SQL_MODELING: 'bg-amber-100 text-amber-700',
-  DATA_PIPELINE: 'bg-orange-100 text-orange-700',
-  UI_FRAMEWORK: 'bg-sky-100 text-sky-700',
-  BROWSER_PERFORMANCE: 'bg-cyan-100 text-cyan-700',
-  FULLSTACK_STACK: 'bg-teal-100 text-teal-700',
-  INFRA_CICD: 'bg-emerald-100 text-emerald-700',
-  CLOUD: 'bg-lime-100 text-lime-700',
+  CS_FUNDAMENTAL: 'bg-muted text-muted-foreground border-transparent hover:bg-muted',
+  BEHAVIORAL: 'bg-pink-100 text-pink-700 border-transparent hover:bg-pink-100',
+  RESUME_BASED: 'bg-rose-100 text-rose-700 border-transparent hover:bg-rose-100',
+  LANGUAGE_FRAMEWORK: 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary',
+  SYSTEM_DESIGN: 'bg-secondary text-secondary-foreground border-transparent hover:bg-secondary',
+  SQL_MODELING: 'bg-amber-100 text-amber-700 border-transparent hover:bg-amber-100',
+  DATA_PIPELINE: 'bg-orange-100 text-orange-700 border-transparent hover:bg-orange-100',
+  UI_FRAMEWORK: 'bg-sky-100 text-sky-700 border-transparent hover:bg-sky-100',
+  BROWSER_PERFORMANCE: 'bg-cyan-100 text-cyan-700 border-transparent hover:bg-cyan-100',
+  FULLSTACK_STACK: 'bg-teal-100 text-teal-700 border-transparent hover:bg-teal-100',
+  INFRA_CICD: 'bg-emerald-100 text-emerald-700 border-transparent hover:bg-emerald-100',
+  CLOUD: 'bg-lime-100 text-lime-700 border-transparent hover:bg-lime-100',
 }
 
 const StatusBadge = ({ status }: StatusBadgeProps) => {
   const { label, className } = STATUS_BADGE_CONFIG[status]
-
   return (
-    <span className={`rounded-badge px-2.5 py-0.5 text-xs font-bold ${className}`}>
+    <Badge className={`rounded-badge font-bold ${className}`}>
       {label}
-    </span>
+    </Badge>
   )
 }
 
@@ -180,12 +180,12 @@ export const InterviewTable = ({
                   <td className="py-4 px-4">
                     <div className="flex flex-wrap justify-center gap-1">
                       {typeBadges.map(({ type, label }) => (
-                        <span
+                        <Badge
                           key={type}
-                          className={`rounded-badge px-2 py-0.5 text-xs font-semibold ${CATEGORY_BADGE_CLASS[type] ?? 'bg-muted text-muted-foreground'}`}
+                          className={`rounded-badge font-semibold ${CATEGORY_BADGE_CLASS[type] ?? 'bg-muted text-muted-foreground border-transparent hover:bg-muted'}`}
                         >
                           {label}
-                        </span>
+                        </Badge>
                       ))}
                       {interview.interviewTypes.length > 2 && (
                         <span className="text-xs text-text-tertiary self-center">

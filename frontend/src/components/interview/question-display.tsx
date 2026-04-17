@@ -1,6 +1,7 @@
 import type { FollowUpResponse, InterviewType, Question } from '@/types/interview'
 import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface QuestionDisplayProps {
   question: Question
@@ -29,9 +30,12 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
             {currentIndex + 1} / {totalCount}
           </span>
           {question.category && (
-            <span className="rounded-badge bg-background px-3 py-1 text-xs font-medium text-text-secondary">
+            <Badge
+              variant="outline"
+              className="rounded-badge bg-background text-text-secondary"
+            >
               {INTERVIEW_TYPE_LABELS[question.category as InterviewType]?.label ?? question.category}
-            </span>
+            </Badge>
           )}
         </div>
         <p className="text-lg leading-relaxed font-medium text-text-primary">{question.content}</p>
@@ -49,12 +53,12 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
       {followUp && !isFollowUpLoading && (
         <Card className="border border-info/30 bg-info-light p-5 shadow-sm">
           <div className="mb-2 flex items-center gap-2">
-            <span className="rounded-badge bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
+            <Badge className="rounded-badge bg-info/10 text-info border-transparent hover:bg-info/10">
               후속 질문
-            </span>
-            <span className="rounded-badge bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
+            </Badge>
+            <Badge className="rounded-badge bg-info/10 text-info border-transparent hover:bg-info/10">
               {FOLLOW_UP_TYPE_LABELS[followUp.type] ?? followUp.type}
-            </span>
+            </Badge>
           </div>
           <p className="text-base leading-relaxed font-medium text-text-primary">{followUp.question}</p>
           <p className="mt-2 text-sm text-text-secondary">{followUp.reason}</p>

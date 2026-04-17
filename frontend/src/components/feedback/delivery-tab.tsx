@@ -1,6 +1,7 @@
 import { Fragment, type ReactNode } from 'react'
 import { isCommentBlockEmpty, type DeliveryFeedback } from '@/types/interview'
 import LevelBadge from '@/components/feedback/level-badge'
+import { Badge } from '@/components/ui/badge'
 import {
   formatExpressionLabel,
   formatFeedbackLevel,
@@ -132,12 +133,13 @@ const DeliveryTab = ({ delivery }: DeliveryTabProps) => {
             </p>
             <div className="flex flex-wrap gap-2">
               {fillerWords.map((word, idx) => (
-                <span
+                <Badge
                   key={idx}
-                  className="rounded-lg bg-card border border-border px-3 py-1.5 text-[13px] font-bold text-text-primary"
+                  variant="outline"
+                  className="rounded-lg bg-card border-border px-3 py-1.5 text-[13px] font-bold text-text-primary"
                 >
                   {word}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>

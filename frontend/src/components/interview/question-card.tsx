@@ -1,6 +1,7 @@
 import type { Question, InterviewType } from '@/types/interview'
 import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface QuestionCardProps {
   question: Question
@@ -14,9 +15,12 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
           {question.order}
         </span>
         {question.category && (
-          <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
+          <Badge
+            variant="outline"
+            className="rounded-badge bg-background text-text-secondary"
+          >
             {INTERVIEW_TYPE_LABELS[question.category as InterviewType]?.label ?? question.category}
-          </span>
+          </Badge>
         )}
       </div>
       <p className="mt-3 text-base leading-relaxed text-text-primary">

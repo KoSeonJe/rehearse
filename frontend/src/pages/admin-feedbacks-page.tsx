@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useAdminFeedbacks } from '@/hooks/use-service-feedback'
 import type { FeedbackSource } from '@/types/service-feedback'
 
@@ -31,15 +32,15 @@ const renderStars = (rating: number | null): string => {
 const SourceBadge = ({ source }: { source: FeedbackSource }) => {
   if (source === 'AUTO_POPUP') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+      <Badge className="rounded-full bg-blue-100 text-blue-700 border-transparent hover:bg-blue-100">
         자동
-      </span>
+      </Badge>
     )
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+    <Badge className="rounded-full bg-green-100 text-green-700 border-transparent hover:bg-green-100">
       자발적
-    </span>
+    </Badge>
   )
 }
 
