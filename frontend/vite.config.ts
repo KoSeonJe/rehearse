@@ -2,6 +2,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import { PUBLIC_ROUTES as RAW_PUBLIC_ROUTES } from './scripts/public-routes.mjs'
 
 interface SitemapRoute {
   path: string
@@ -9,15 +10,7 @@ interface SitemapRoute {
   changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
 }
 
-const PUBLIC_ROUTES: SitemapRoute[] = [
-  { path: '/', priority: 1.0, changefreq: 'weekly' },
-  { path: '/about', priority: 0.7, changefreq: 'monthly' },
-  { path: '/faq', priority: 0.7, changefreq: 'monthly' },
-  { path: '/guide/ai-mock-interview', priority: 0.8, changefreq: 'monthly' },
-  { path: '/guide/developer-interview-prep', priority: 0.8, changefreq: 'monthly' },
-  { path: '/guide/resume-based-interview', priority: 0.8, changefreq: 'monthly' },
-  { path: '/privacy', priority: 0.3, changefreq: 'yearly' },
-]
+const PUBLIC_ROUTES = RAW_PUBLIC_ROUTES as SitemapRoute[]
 
 function seoPlugin(siteUrl: string, isProd: boolean): Plugin {
   return {

@@ -35,3 +35,6 @@ dist-ssr
 
 # Test coverage
 coverage
+
+# Puppeteer cache (PUPPETEER_SKIP_DOWNLOAD 미설정 시 이 경로로 Chromium 다운)
+.cache/
