@@ -38,7 +38,7 @@ export const ContentPageShell = ({
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
           <Link
             to="/"
-            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">리허설</span>
@@ -46,7 +46,7 @@ export const ContentPageShell = ({
           </Link>
           <Link
             to="/"
-            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             ← 홈으로
           </Link>

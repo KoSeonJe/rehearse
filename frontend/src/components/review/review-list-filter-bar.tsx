@@ -73,7 +73,7 @@ export const ReviewListFilterBar = ({
               type="button"
               className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors cursor-pointer ${
                 isActive
-                  ? 'bg-violet-legacy text-white border-violet-legacy'
+                  ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-background text-text-secondary border-border hover:border-text-secondary'
               }`}
               onClick={() => onStatusChange(option.value)}

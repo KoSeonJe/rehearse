@@ -52,7 +52,7 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
       className="fixed bottom-6 right-6 z-50 flex max-w-sm items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-lg animate-toast-slide-in motion-reduce:animate-none"
     >
       <div
-        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-violet-legacy"
+        className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-primary"
         aria-hidden="true"
       >
         <svg
@@ -80,7 +80,7 @@ const ReviewToast = ({ timestampFeedbackId, onDismiss }: ReviewToastProps) => {
       <button
         type="button"
         onClick={handleNavigate}
-        className="flex-shrink-0 text-[13px] font-bold text-violet-legacy underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0F172A]"
+        className="flex-shrink-0 text-[13px] font-bold text-white underline underline-offset-2 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
       >
         보러가기
       </button>

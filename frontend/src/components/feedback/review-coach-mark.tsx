@@ -271,7 +271,7 @@ const AnchorHighlight = ({ rect }: AnchorHighlightProps) => {
       <div
         aria-hidden="true"
         style={baseStyle}
-        className="ring-2 ring-violet-legacy/70 animate-tutorial-ring motion-reduce:animate-none"
+        className="ring-2 ring-primary/70 animate-tutorial-ring motion-reduce:animate-none"
       />
     </>
   )
@@ -336,7 +336,7 @@ const TutorialDock = ({
         {showBounce && (
           <div
             aria-hidden="true"
-            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-violet-legacy text-white shadow animate-tutorial-nudge motion-reduce:animate-none"
+            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow animate-tutorial-nudge motion-reduce:animate-none"
           >
             <ChevronDown size={18} aria-hidden="true" />
           </div>
@@ -347,7 +347,7 @@ const TutorialDock = ({
         <button
           type="button"
           onClick={onAdvance}
-          className="inline-flex items-center gap-1 rounded-full bg-violet-legacy px-4 py-1.5 text-[12px] font-bold text-white shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-1.5 text-[12px] font-bold text-primary-foreground shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {isLast ? '완료' : '다음'}
         </button>
@@ -377,9 +377,9 @@ const StepDots = ({ current, total }: StepDotsProps) => (
           aria-hidden="true"
           className={`h-1.5 rounded-full transition-width duration-300 ${
             isActive
-              ? 'w-5 bg-violet-legacy'
+              ? 'w-5 bg-primary'
               : isPast
-                ? 'w-1.5 bg-violet-legacy/50'
+                ? 'w-1.5 bg-primary/50'
                 : 'w-1.5 bg-border'
           }`}
         />

@@ -20,7 +20,7 @@ export const ReviewCategorySection = ({
         <h2 id={sectionId} className="text-[15px] font-bold text-text-primary">
           {label}
         </h2>
-        <span className="text-[12px] font-semibold text-violet-legacy bg-violet-legacy-light rounded-full px-2.5 py-0.5">
+        <span className="text-[12px] font-semibold text-muted-foreground bg-muted rounded-full px-2.5 py-0.5">
           {items.length}
         </span>
       </div>
