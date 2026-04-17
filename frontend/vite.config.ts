@@ -11,7 +11,7 @@ interface SitemapRoute {
 
 const PUBLIC_ROUTES: SitemapRoute[] = [
   { path: '/', priority: 1.0, changefreq: 'weekly' },
-  { path: '/privacy-policy', priority: 0.5, changefreq: 'yearly' },
+  { path: '/privacy', priority: 0.3, changefreq: 'yearly' },
 ]
 
 function seoPlugin(siteUrl: string, isProd: boolean): Plugin {
