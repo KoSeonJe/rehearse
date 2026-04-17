@@ -16,7 +16,7 @@
 | 3e | Form 표준화 | Skipped | 폼 2개(password-protected-route, interview-setup-page) < 3 기준, 유효성 로직 단순 — react-hook-form 도입 이득 미미 |
 | 3f | 랜딩 페이지 레이아웃 | Completed | home (보수 범위) |
 | 3g | 대시보드/리뷰 리스트 레이아웃 | Completed | dashboard, review-list |
-| 3h | 인터뷰 진행 레이아웃 | Draft | setup, ready, interview-page |
+| 3h | 인터뷰 진행 레이아웃 | Completed | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Draft | feedback, analysis |
 | 3j | 정보/정적 페이지 | Draft | about, faq, guide, privacy, admin, 404 |
 | 4 | Aceternity hero | Draft | [optional] 랜딩 hero 1곳 |
@@ -49,9 +49,9 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 | 3f | home | Completed |
 | 3g | dashboard | Completed |
 | 3g | review-list | Completed |
-| 3h | interview-setup | Draft |
-| 3h | interview-ready | Draft |
-| 3h | interview-page | Draft |
+| 3h | interview-setup | Completed |
+| 3h | interview-ready | Completed |
+| 3h | interview-page | Completed |
 | 3i | interview-feedback | Draft |
 | 3i | interview-analysis | Draft |
 | 3j | about | Draft |
@@ -101,3 +101,10 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 커밋 2 (d428ac8): sidebar shadow-toss → shadow-sm (TODO(plan-03g) 해소)
   - 커밋 3 (06be281): dashboard-header bg-white/95 → bg-background/95, review-empty-state bg-white → bg-card, answer-comparison-view border-slate-100/bg-slate-50/text-slate-400 → 토큰
   - 이관 항목: delete-confirm-dialog/service-feedback-modal bg-white/shadow-toss-lg → TODO(plan-05) 마킹 유지
+- Plan 03h 완료 (보수 범위): setup/ready 퍼플 제거, 레이블 모노크롬화, transition-all 정리, 토큰 정합. interview-page 스튜디오 UI 보존 (커밋 4건)
+  - 커밋 1 (5f188c7): 인터뷰 setup/ready 퍼플/violet 하드코딩 제거 — ready-page h1/태그/스피너/재시도, resume-upload 드래그/아이콘, speaker-test-row 들려요 버튼, mic-test-row 레벨 바, audio-waveform idle fill, question-card/display 번호 뱃지, step-tech-stack 기본 뱃지, step-interview-type 체크박스/CS 태그, step-level 체크 아이콘 (10파일)
+  - 커밋 2 (b730824): setup font-mono 레이블 → text-xs font-semibold uppercase tracking-wider text-muted-foreground (step 5개 + ready-page, 6파일)
+  - 커밋 3 (783c83c): transition-all → 구체 속성 — setup 선택 카드/progress-bar/resume-upload + camera/mic/speaker-test-row + interviewer-avatar (11파일)
+  - 커밋 4 (1b7c1a5): bg-white → bg-background/bg-card 토큰 정합 — setup-page/ready-page + 3개 test-row (5파일)
+  - interview-page.tsx 변경 라인: 0 (스튜디오 다크 UI 완전 보존)
+  - 의도 잔존(Phase 5): setup step active bg-violet-legacy, setup-progress-bar bg-violet-legacy
