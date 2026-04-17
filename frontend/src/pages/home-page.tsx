@@ -46,7 +46,7 @@ export const HomePage = () => {
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
-    <div className="min-h-screen bg-white text-text-primary selection:bg-violet-legacy/10">
+    <div className="min-h-screen bg-white text-text-primary selection:bg-secondary">
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
         <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
@@ -116,7 +116,7 @@ export const HomePage = () => {
           <div className="flex flex-col items-start gap-1">
             <Link
               to="/privacy"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               개인정보 처리방침
             </Link>
@@ -129,7 +129,7 @@ export const HomePage = () => {
               href="https://github.com/KoSeonJe/rehearse"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
               aria-label="GitHub 저장소 열기"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -138,7 +138,7 @@ export const HomePage = () => {
             </a>
             <a
               href="mailto:a01039261344@gmail.com"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               a01039261344@gmail.com
             </a>
