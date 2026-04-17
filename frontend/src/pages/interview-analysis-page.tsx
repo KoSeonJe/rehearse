@@ -127,7 +127,7 @@ const AnalysisStatusFloat = ({
                       {PROGRESS_STEPS.map((step, stepIdx) => (
                         <div key={step.key} className="flex items-center flex-1">
                           <div
-                            className={`h-1.5 w-full rounded-full transition-all duration-500 ${
+                            className={`h-1.5 w-full rounded-full transition-colors duration-500 ${
                               stepIdx <= currentStep
                                 ? 'bg-violet-legacy'
                                 : 'bg-border'
@@ -341,7 +341,7 @@ export const InterviewAnalysisPage = () => {
             </p>
             <button
               onClick={() => navigate('/')}
-              className="h-14 w-full max-w-xs rounded-[24px] bg-violet-legacy font-bold text-white transition-all active:scale-95"
+              className="h-14 w-full max-w-xs rounded-[24px] bg-violet-legacy font-bold text-white transition-transform active:scale-95"
             >
               대시보드로 이동
             </button>

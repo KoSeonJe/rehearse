@@ -133,7 +133,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={togglePlay}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface text-text-primary transition-all hover:bg-border active:scale-95"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface text-text-primary transition-[background-color,transform] hover:bg-border active:scale-95"
             aria-label={isPlaying ? '일시정지' : '재생'}
           >
             {isPlaying ? (

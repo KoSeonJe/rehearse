@@ -36,7 +36,7 @@ export const TimelineBar = ({
           return (
             <button
               key={fb.id}
-              className={`absolute top-1 bottom-1 rounded-md transition-all cursor-pointer ${
+              className={`absolute top-1 bottom-1 rounded-md transition-[box-shadow,filter] cursor-pointer ${
                 isActive ? 'ring-2 ring-violet-legacy ring-offset-1 z-10' : 'hover:brightness-110'
               } ${getTypeColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
