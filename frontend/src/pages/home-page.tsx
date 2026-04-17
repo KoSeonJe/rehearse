@@ -16,6 +16,8 @@ import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLogout } from '@/hooks/use-logout'
 
+const HOME_SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
+
 export const HomePage = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -47,8 +49,8 @@ export const HomePage = () => {
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
         <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
-        <link rel="canonical" href="https://rehearse.co.kr/" />
-        <meta property="og:url" content="https://rehearse.co.kr/" />
+        <link rel="canonical" href={`${HOME_SITE_URL}/`} />
+        <meta property="og:url" content={`${HOME_SITE_URL}/`} />
         <meta property="og:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
         <meta property="og:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지." />
       </Helmet>

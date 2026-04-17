@@ -14,9 +14,9 @@ import { PUBLIC_ROUTES } from './public-routes.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const distDir = path.resolve(__dirname, '..', 'dist')
-const PORT = 4173
 const CONTENT_READY_MIN_LENGTH = 50
-const DEFAULT_TITLE = 'Vite + React'
+// index.html 폴백이 보여주는 기본 title — 라우트별 Helmet title 이 이 값에서 벗어났는지로 commit 완료 판정.
+const FALLBACK_TITLE = '리허설 | AI 모의면접 · 개발자 면접 연습 플랫폼'
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -39,20 +39,26 @@ const MIME_TYPES = {
 function createStaticServer() {
   return http.createServer(async (req, res) => {
     try {
-      const urlPath = decodeURIComponent(new URL(req.url, `http://localhost:${PORT}`).pathname)
+      const urlPath = decodeURIComponent(new URL(req.url, `http://localhost`).pathname)
+      // API 호출은 prerender 중 네트워크 성공 처리 — networkidle 대기가 실 API 응답을 기다리다 timeout 되는 것 방지.
+      if (urlPath.startsWith('/api/')) {
+        res.writeHead(204, { 'Cache-Control': 'no-store' })
+        res.end()
+        return
+      }
       const hasExtension = path.extname(urlPath) !== ''
-      // SPA 폴백: 확장자 없는 경로는 index.html 로 — puppeteer 가 실제 React 라우터를 타도록.
       const relPath = hasExtension ? urlPath : '/index.html'
       const filePath = path.join(distDir, relPath)
-
-      if (!filePath.startsWith(distDir)) {
+      const realDist = await fs.realpath(distDir)
+      const realTarget = await fs.realpath(filePath).catch(() => filePath)
+      if (!realTarget.startsWith(realDist)) {
         res.writeHead(403)
         res.end('Forbidden')
         return
       }
 
-      const data = await fs.readFile(filePath)
-      const mime = MIME_TYPES[path.extname(filePath)] ?? 'application/octet-stream'
+      const data = await fs.readFile(realTarget)
+      const mime = MIME_TYPES[path.extname(realTarget)] ?? 'application/octet-stream'
       res.writeHead(200, { 'Content-Type': mime })
       res.end(data)
     } catch (err) {
@@ -62,11 +68,22 @@ function createStaticServer() {
   })
 }
 
-async function prerenderRoute(browser, route) {
+async function prerenderRoute(browser, port, route) {
   const page = await browser.newPage()
   try {
-    const url = `http://localhost:${PORT}${route.path}`
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30_000 })
+    // 외부 API/CDN 로 빠지는 네트워크는 즉시 중단 — 정적 dev 서버가 커버하지 않는 origin 호출로 networkidle 이 지연되는 것 방지.
+    await page.setRequestInterception(true)
+    page.on('request', (req) => {
+      const reqUrl = req.url()
+      if (reqUrl.startsWith(`http://localhost:${port}`) || reqUrl.startsWith('data:')) {
+        req.continue()
+      } else {
+        req.abort()
+      }
+    })
+
+    const url = `http://localhost:${port}${route.path}`
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 })
 
     await page.waitForFunction(
       (minLength) => {
@@ -77,10 +94,15 @@ async function prerenderRoute(browser, route) {
       CONTENT_READY_MIN_LENGTH,
     )
 
+    // Helmet 이 head 를 commit 했는지 — title 이 폴백에서 벗어났고 canonical link 가 존재하면 완료로 판정.
     await page.waitForFunction(
-      (defaultTitle) => document.title && document.title !== defaultTitle,
-      { timeout: 10_000 },
-      DEFAULT_TITLE,
+      (fallback) => {
+        const title = document.title
+        const canonical = document.head.querySelector('link[rel="canonical"]')
+        return !!title && title !== fallback && !!canonical
+      },
+      { timeout: 15_000 },
+      FALLBACK_TITLE,
     )
 
     const html = await page.evaluate(() => `<!DOCTYPE html>\n${document.documentElement.outerHTML}`)
@@ -98,28 +120,53 @@ async function prerenderRoute(browser, route) {
   }
 }
 
+async function resolveExecutablePath() {
+  const envPath = process.env.PUPPETEER_EXECUTABLE_PATH
+  if (!envPath) return undefined
+  try {
+    await fs.access(envPath)
+    return envPath
+  } catch {
+    // GHA 이미지 업데이트로 google-chrome 경로가 이동한 경우 폴백 후보 탐색.
+    const fallbacks = ['/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser']
+    for (const candidate of fallbacks) {
+      try {
+        await fs.access(candidate)
+        console.warn(`[prerender] PUPPETEER_EXECUTABLE_PATH '${envPath}' not found, falling back to ${candidate}`)
+        return candidate
+      } catch {
+        // keep trying
+      }
+    }
+    throw new Error(
+      `PUPPETEER_EXECUTABLE_PATH '${envPath}' not found and no fallback Chrome binary located. ` +
+        `Install google-chrome or unset PUPPETEER_SKIP_DOWNLOAD to use puppeteer's bundled Chromium.`,
+    )
+  }
+}
+
 async function main() {
-  // dist 존재 확인 — vite build 이전이면 즉시 실패.
   await fs.access(distDir).catch(() => {
     console.error(`[prerender] dist not found: ${distDir}. Run \`vite build\` first.`)
     process.exit(1)
   })
 
   const server = createStaticServer()
-  await new Promise((resolve) => server.listen(PORT, resolve))
-  console.log(`[prerender] static server on :${PORT}`)
+  await new Promise((resolve) => server.listen(0, resolve))
+  const port = server.address().port
+  console.log(`[prerender] static server on :${port}`)
 
-  const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined
+  const executablePath = await resolveExecutablePath()
   const browser = await puppeteer.launch({
     headless: true,
     executablePath,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   })
-  console.log(`[prerender] chrome launched${executablePath ? ` (${executablePath})` : ''}`)
+  console.log(`[prerender] chrome launched${executablePath ? ` (${executablePath})` : ' (bundled)'}`)
 
   try {
     for (const route of PUBLIC_ROUTES) {
-      await prerenderRoute(browser, route)
+      await prerenderRoute(browser, port, route)
     }
   } finally {
     await browser.close()

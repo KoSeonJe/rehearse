@@ -17,9 +17,12 @@ function seoPlugin(siteUrl: string, isProd: boolean): Plugin {
     name: 'rehearse-seo',
     apply: 'build',
     transformIndexHtml(html) {
-      if (isProd) return html
+      // Vite 는 %VAR% 치환을 기본 지원하지 않으므로 수동 치환.
+      // canonical / og:url / JSON-LD url 이 리터럴로 prod 노출되는 것을 차단.
+      const substituted = html.replace(/%VITE_SITE_URL%/g, siteUrl)
+      if (isProd) return substituted
 
-      const stripped = html
+      const stripped = substituted
         .replace(/\s*<!-- Google Search Console[^>]*-->\s*/g, '')
         .replace(/\s*<!-- Naver Search Advisor[^>]*-->\s*/g, '')
         .replace(/\s*<meta name="google-site-verification"[^>]*\/?>\s*/g, '')
@@ -57,10 +60,9 @@ Disallow: /interview/
 
 Sitemap: ${siteUrl}/sitemap.xml
 `
-        : `User-agent: *
+        : // dev 는 Sitemap 선언을 노출하지 않는다 — 네이버 웹마스터도구 수동 등록으로 dev 가 색인되는 우회 경로 차단.
+          `User-agent: *
 Disallow: /
-
-Sitemap: ${siteUrl}/sitemap.xml
 `
       fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsBody)
     },

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { useAuthInterceptor } from '@/hooks/use-auth-interceptor'
 import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
@@ -17,6 +17,7 @@ import { FaqPage } from '@/pages/faq-page'
 import { AiMockInterviewGuidePage } from '@/pages/guide/ai-mock-interview-page'
 import { DeveloperInterviewPrepGuidePage } from '@/pages/guide/developer-interview-prep-page'
 import { ResumeBasedInterviewGuidePage } from '@/pages/guide/resume-based-interview-page'
+import { NotFoundPage } from '@/pages/not-found-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
@@ -51,7 +52,7 @@ export const App = () => {
         <Route path="/guide/ai-mock-interview" element={<AiMockInterviewGuidePage />} />
         <Route path="/guide/developer-interview-prep" element={<DeveloperInterviewPrepGuidePage />} />
         <Route path="/guide/resume-based-interview" element={<ResumeBasedInterviewGuidePage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <LoginModal />
     </>

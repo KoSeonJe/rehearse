@@ -155,7 +155,8 @@ jobs:
         # root index.html + prerender 결과 모든 하위 디렉토리 index.html 을 no-cache 로 업로드.
         run: |
           cd frontend/dist
-          find . -name 'index.html' -type f | while read -r file; do
+          # -print0 | xargs -0 로 공백/특수문자 안전화
+          find . -name 'index.html' -type f -print0 | while IFS= read -r -d '' file; do
             key="${file#./}"
             aws s3 cp "$file" "s3://${{ secrets.S3_BUCKET_NAME }}/${key}" \
               --cache-control "no-cache, no-store, must-revalidate" \
