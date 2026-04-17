@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
 import { useAuthStore } from '@/stores/auth-store'
+import { Button } from '@/components/ui/button'
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8080'
 
@@ -51,15 +52,17 @@ export const LoginModal = () => {
     >
       <div className="relative w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg animate-fade-in">
         {/* 닫기 버튼 */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleClose}
           aria-label="닫기"
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-text-tertiary transition-colors hover:bg-surface hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2"
+          className="absolute right-4 top-4 h-8 w-8 rounded-full text-text-tertiary hover:text-text-secondary"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
-        </button>
+        </Button>
 
         {/* 로고 */}
         <div className="mb-8 flex flex-col items-center gap-1.5">
@@ -79,6 +82,7 @@ export const LoginModal = () => {
 
         {/* OAuth 버튼 */}
         <div className="flex flex-col gap-3">
+          {/* TODO(design): variant 판단 보류 — GitHub/Google 브랜드 색상 고정, 사용자 확인 필요 */}
           <button
             onClick={handleGithubLogin}
             aria-label="GitHub으로 로그인"
