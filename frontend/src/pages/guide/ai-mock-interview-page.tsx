@@ -130,7 +130,7 @@ const Cta = () => (
     <p className="text-sm text-text-secondary mb-4">
       이력서 업로드 → AI 면접 진행 → 영상 + 타임스탬프 피드백 — 30분이면 한 사이클을 끝낼 수 있습니다.
     </p>
-    <Link to="/" className="inline-block px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:opacity-90">
+    <Link to="/" className="inline-block px-4 py-2 bg-violet-legacy text-white rounded-md text-sm font-medium hover:opacity-90">
       바로 시작하기
     </Link>
   </div>

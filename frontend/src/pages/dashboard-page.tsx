@@ -72,7 +72,7 @@ export const DashboardPage = () => {
         </h1>
         <button
           onClick={handleOpenVoluntaryFeedback}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-accent hover:bg-accent-light transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-violet-legacy hover:bg-violet-legacy-light transition-colors cursor-pointer"
         >
           <MessageSquarePlus size={16} />
           피드백 보내기
@@ -88,7 +88,7 @@ export const DashboardPage = () => {
           <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
           <button
             onClick={() => navigate('/interview/setup')}
-            className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
+            className="h-9 px-4 rounded-button bg-violet-legacy text-white text-sm font-bold hover:bg-violet-legacy-hover active:scale-95 transition-all cursor-pointer"
           >
             + 새 면접
           </button>
@@ -112,7 +112,7 @@ export const DashboardPage = () => {
             <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
             <button
               onClick={() => navigate('/interview/setup')}
-              className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
+              className="h-9 px-4 rounded-button bg-violet-legacy text-white text-sm font-bold hover:bg-violet-legacy-hover active:scale-95 transition-all cursor-pointer"
             >
               + 새 면접
             </button>

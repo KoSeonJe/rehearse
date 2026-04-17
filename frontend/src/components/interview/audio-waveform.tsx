@@ -52,7 +52,7 @@ export const AudioWaveform = ({ isSpeaking, size = 240 }: AudioWaveformProps) =>
               width={barWidth}
               height={barHeight}
               rx={barWidth / 2}
-              className={isSpeaking ? 'fill-accent' : 'fill-accent/20'}
+              className={isSpeaking ? 'fill-accent' : 'fill-violet-legacy/20'}
               style={
                 isSpeaking
                   ? {

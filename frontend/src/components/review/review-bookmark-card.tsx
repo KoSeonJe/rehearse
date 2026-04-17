@@ -77,7 +77,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
       >
         <button
           type="button"
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 w-full text-left px-5 py-4 flex items-center gap-3"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 w-full text-left px-5 py-4 flex items-center gap-3"
           onClick={handleCardClick}
           aria-expanded={isExpanded}
         >
@@ -100,7 +100,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             {isResolved ? (
               <button
                 type="button"
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full bg-success text-white px-3 py-1.5 text-[13px] font-semibold border border-success hover:bg-[#059669] transition-colors whitespace-nowrap"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full bg-success text-white px-3 py-1.5 text-[13px] font-semibold border border-success hover:bg-[#059669] transition-colors whitespace-nowrap"
                 aria-pressed={true}
                 aria-label="복습중으로 되돌리기"
                 onClick={handleToggleResolved}
@@ -112,7 +112,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             ) : (
               <button
                 type="button"
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-text-tertiary hover:border-success hover:text-success hover:bg-success-light transition-colors whitespace-nowrap"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-text-tertiary hover:border-success hover:text-success hover:bg-success-light transition-colors whitespace-nowrap"
                 aria-pressed={false}
                 aria-label="복습완료로 표시"
                 onClick={handleToggleResolved}
@@ -125,7 +125,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
 
             <button
               type="button"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 w-8 h-8 flex items-center justify-center rounded-xl text-border hover:text-accent-hover hover:bg-accent-light transition-colors"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 w-8 h-8 flex items-center justify-center rounded-xl text-border hover:text-violet-legacy-hover hover:bg-violet-legacy-light transition-colors"
               aria-label="북마크 삭제"
               onClick={handleDeleteClick}
             >

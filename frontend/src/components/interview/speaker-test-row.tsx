@@ -53,7 +53,7 @@ export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onRese
         {status === 'testing' && (
           <button
             onClick={onConfirmSpeaker}
-            className="h-10 rounded-xl bg-accent px-5 text-xs font-bold text-white transition-all hover:bg-accent/90 active:scale-95"
+            className="h-10 rounded-xl bg-violet-legacy px-5 text-xs font-bold text-white transition-all hover:bg-violet-legacy/90 active:scale-95"
           >
             들려요
           </button>

@@ -4,6 +4,73 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* Surface */
+    --background: 0 0% 100%;              /* #ffffff */
+    --foreground: 0 0% 14%;               /* #242424 Charcoal */
+
+    /* Card / popover */
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 14%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 14%;
+
+    /* Primary — DESIGN.md는 Charcoal을 primary로 */
+    --primary: 0 0% 14%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary / muted / accent */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 14%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 54%;          /* #898989 */
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 14%;
+
+    /* Link only (DESIGN.md의 유일한 blue) */
+    --link: 204 100% 50%;                  /* #0099ff */
+
+    /* Feedback */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Border / input / ring */
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 217 91% 60%;                   /* focus ring */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* Legacy — Phase 3~5에서 사용처 제거 후 삭제 */
+    --violet-legacy: 239 84% 67%;          /* #6366F1 */
+  }
+
+  .dark {
+    --background: 0 0% 4%;                 /* #0a0a0a */
+    --foreground: 0 0% 96%;                /* #f5f5f5 — pure white 금지 */
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 0 0% 96%;
+    --primary-foreground: 0 0% 7%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 12%;
+    --accent-foreground: 0 0% 96%;
+    --link: 204 100% 60%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 96%;
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 217 91% 60%;
+  }
+}
+
 /* U3: 접근성 — 모션 감소 선호 지원 (WCAG 2.1 AA) */
 @media (prefers-reduced-motion: reduce) {
   *,

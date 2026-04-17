@@ -95,7 +95,7 @@ const AnalysisStatusFloat = ({
         {isAnalyzing && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent border-t-transparent flex-shrink-0" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-legacy border-t-transparent flex-shrink-0" />
               <p className="text-sm font-bold text-text-primary">AI가 영상을 분석 중...</p>
             </div>
             <p className="text-xs text-text-secondary">
@@ -113,7 +113,7 @@ const AnalysisStatusFloat = ({
                   <div key={questionSets[idx]?.id ?? idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-text-primary">{label}</span>
-                      <span className="font-bold text-accent">{progressLabel}</span>
+                      <span className="font-bold text-violet-legacy">{progressLabel}</span>
                     </div>
                     <div
                       className="flex items-center gap-1"
@@ -128,7 +128,7 @@ const AnalysisStatusFloat = ({
                           <div
                             className={`h-1.5 w-full rounded-full transition-all duration-500 ${
                               stepIdx <= currentStep
-                                ? 'bg-accent'
+                                ? 'bg-violet-legacy'
                                 : 'bg-border'
                             } ${stepIdx === currentStep ? 'animate-pulse' : ''}`}
                           />
@@ -145,14 +145,14 @@ const AnalysisStatusFloat = ({
         {allCompleted && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-accent text-[10px] font-black text-white flex-shrink-0">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-legacy text-[10px] font-black text-white flex-shrink-0">
                 ✓
               </div>
               <p className="text-sm font-bold text-text-primary">분석 완료!</p>
             </div>
             <button
               onClick={onNavigateFeedback}
-              className="w-full h-10 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+              className="w-full h-10 rounded-xl bg-violet-legacy text-sm font-bold text-white transition-all active:scale-95"
             >
               피드백 보러가기
             </button>
@@ -178,7 +178,7 @@ const AnalysisStatusFloat = ({
               {completedCount > 0 && (
                 <button
                   onClick={onNavigateFeedback}
-                  className="flex-1 h-10 rounded-xl bg-accent text-sm font-bold text-white transition-all active:scale-95"
+                  className="flex-1 h-10 rounded-xl bg-violet-legacy text-sm font-bold text-white transition-all active:scale-95"
                 >
                   완료된 결과 보기
                 </button>
@@ -264,10 +264,10 @@ export const InterviewAnalysisPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
-          <div className="h-1 w-24 bg-accent/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-accent animate-progress-loading" />
+          <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-violet-legacy animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">로딩 중</p>
+          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-violet-legacy">로딩 중</p>
         </div>
       </div>
     )
@@ -287,7 +287,7 @@ export const InterviewAnalysisPage = () => {
           </div>
           <button
             onClick={() => navigate('/')}
-            className="h-16 w-full rounded-[24px] bg-accent font-black text-lg text-white transition-all active:scale-95"
+            className="h-16 w-full rounded-[24px] bg-violet-legacy font-black text-lg text-white transition-all active:scale-95"
           >
             홈으로 돌아가기
           </button>
@@ -309,7 +309,7 @@ export const InterviewAnalysisPage = () => {
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2" onClick={() => navigate('/')} role="button">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-lg shadow-accent/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-legacy shadow-lg shadow-violet-legacy/20">
               <Logo size={24} />
             </div>
             <span className="text-lg font-black tracking-tight text-text-primary">면접 완료</span>
@@ -329,7 +329,7 @@ export const InterviewAnalysisPage = () => {
             </p>
             <button
               onClick={() => navigate('/')}
-              className="h-14 w-full max-w-xs rounded-[24px] bg-accent font-bold text-white transition-all active:scale-95"
+              className="h-14 w-full max-w-xs rounded-[24px] bg-violet-legacy font-bold text-white transition-all active:scale-95"
             >
               대시보드로 이동
             </button>

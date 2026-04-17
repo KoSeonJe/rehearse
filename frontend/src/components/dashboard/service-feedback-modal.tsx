@@ -114,7 +114,7 @@ export const ServiceFeedbackModal = ({
             onChange={(e) => setContent(e.target.value)}
             placeholder="서비스에 대한 의견을 자유롭게 남겨주세요 (최소 10자)"
             rows={4}
-            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all"
+            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-violet-legacy/50 focus:border-violet-legacy transition-all"
           />
           <p
             className={`mt-1 text-xs text-right ${isContentValid ? 'text-text-secondary' : 'text-red-500'}`}
@@ -139,7 +139,7 @@ export const ServiceFeedbackModal = ({
             type="button"
             onClick={handleSubmit}
             disabled={!isContentValid || isPending}
-            className="flex-1 h-11 rounded-button bg-accent text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 h-11 rounded-button bg-violet-legacy text-white text-sm font-bold hover:opacity-90 active:scale-95 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPending ? '보내는 중...' : '보내기'}
           </button>

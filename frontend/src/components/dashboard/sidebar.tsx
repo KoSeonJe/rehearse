@@ -31,7 +31,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
           onClick={() => navigate('/')}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
             isDashboardActive
-              ? 'bg-accent-light text-accent font-bold'
+              ? 'bg-violet-legacy-light text-violet-legacy font-bold'
               : 'text-text-secondary hover:bg-border/40 hover:text-text-primary'
           }`}
         >

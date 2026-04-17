@@ -45,7 +45,7 @@ export const StepInterviewType = ({
 }: StepInterviewTypeProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
+      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
         Step 4 — Interview Type
       </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
@@ -63,7 +63,7 @@ export const StepInterviewType = ({
               disabled={isLoading}
               className={`flex w-full items-center justify-between rounded-[20px] p-5 text-left transition-all active:scale-[0.98] ${
                 interviewTypes.includes(type)
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                  ? 'bg-violet-legacy text-white shadow-lg shadow-violet-legacy/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'
               }`}
             >
@@ -84,7 +84,7 @@ export const StepInterviewType = ({
               <div
                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all ${
                   interviewTypes.includes(type)
-                    ? 'border-white bg-white text-accent'
+                    ? 'border-white bg-white text-violet-legacy'
                     : 'border-text-tertiary'
                 }`}
               >
@@ -106,7 +106,7 @@ export const StepInterviewType = ({
                     disabled={isLoading}
                     className={`rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95 ${
                       csSubTopics.includes(topic)
-                        ? 'bg-accent/10 text-accent ring-1 ring-accent/30'
+                        ? 'bg-violet-legacy/10 text-violet-legacy ring-1 ring-violet-legacy/30'
                         : 'bg-surface text-text-secondary hover:bg-slate-200'
                     }`}
                   >

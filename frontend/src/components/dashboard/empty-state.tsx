@@ -14,7 +14,7 @@ export const EmptyState = () => {
 
       <button
         onClick={() => navigate('/interview/setup')}
-        className="mt-8 h-14 w-full max-w-xs rounded-button bg-accent font-bold text-white hover:bg-accent-hover active:scale-95 transition-all cursor-pointer mx-auto block"
+        className="mt-8 h-14 w-full max-w-xs rounded-button bg-violet-legacy font-bold text-white hover:bg-violet-legacy-hover active:scale-95 transition-all cursor-pointer mx-auto block"
       >
         새 면접 시작하기
       </button>
@@ -26,7 +26,7 @@ export const EmptyState = () => {
           {SUGGESTED_TOPICS.map((topic) => (
             <span
               key={topic}
-              className="rounded-badge bg-accent-light px-3 py-1.5 text-sm font-semibold text-accent"
+              className="rounded-badge bg-violet-legacy-light px-3 py-1.5 text-sm font-semibold text-violet-legacy"
             >
               {topic}
             </span>

@@ -49,7 +49,7 @@ const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
               {interview.interviewTypes.map((type) => (
                 <span
                   key={type}
-                  className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent"
+                  className="rounded-full bg-violet-legacy/10 px-2 py-0.5 text-xs font-semibold text-violet-legacy"
                 >
                   {INTERVIEW_TYPE_LABELS[type]?.label ?? type}
                 </span>
@@ -149,8 +149,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
           <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
         </div>
-        <div className="h-1 w-32 bg-accent/20 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-accent animate-progress-loading" />
+        <div className="h-1 w-32 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-violet-legacy animate-progress-loading" />
         </div>
       </div>
     )
@@ -246,7 +246,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       <section className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-legacy text-xs font-bold text-white">
             {index + 1}
           </div>
           <div>
@@ -348,10 +348,10 @@ export const InterviewFeedbackPage = () => {
       <div className="flex min-h-screen items-center justify-center bg-white">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
-          <div className="h-1 w-24 bg-accent/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-accent animate-progress-loading" />
+          <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-violet-legacy animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">피드백 로딩 중</p>
+          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-violet-legacy">피드백 로딩 중</p>
         </div>
       </div>
     )
@@ -365,7 +365,7 @@ export const InterviewFeedbackPage = () => {
           피드백을 불러올 수 없습니다
         </h1>
         <button
-          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-accent font-semibold text-white active:scale-95"
+          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-violet-legacy font-semibold text-white active:scale-95"
           onClick={() => navigate('/')}
         >
           홈으로 돌아가기
@@ -407,7 +407,7 @@ export const InterviewFeedbackPage = () => {
       <main className="mx-auto max-w-6xl px-5 pt-10 md:px-8">
         {/* Hero */}
         <section className="text-center mb-12">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
             Timestamp Feedback Review
           </p>
           <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary sm:text-3xl">

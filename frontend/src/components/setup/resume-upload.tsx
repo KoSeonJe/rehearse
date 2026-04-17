@@ -48,8 +48,8 @@ export const ResumeUpload = ({
           onClick={() => fileInputRef.current?.click()}
           className={`flex cursor-pointer items-center gap-3 rounded-[16px] border-2 border-dashed p-4 transition-all ${
             dragOver
-              ? 'border-accent bg-accent/5'
-              : 'border-red-300 bg-red-50/40 hover:border-accent/60 hover:bg-slate-50'
+              ? 'border-violet-legacy bg-violet-legacy/5'
+              : 'border-red-300 bg-red-50/40 hover:border-violet-legacy/60 hover:bg-slate-50'
           }`}
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-text-tertiary shrink-0">
@@ -69,8 +69,8 @@ export const ResumeUpload = ({
       ) : (
         <div className="flex items-center justify-between rounded-[16px] bg-surface p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-legacy/10">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-violet-legacy">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>

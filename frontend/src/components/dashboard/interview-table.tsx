@@ -125,23 +125,23 @@ export const InterviewTable = ({
       <div className="rounded-card bg-surface overflow-hidden border border-border shadow-toss">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-accent-light">
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+            <tr className="border-b border-border bg-violet-legacy-light">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 포지션
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 카테고리
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 설정 시간
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 답변 수
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 날짜
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-accent/70 uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-violet-legacy/70 uppercase tracking-wide">
                 상태
               </th>
             </tr>
@@ -162,7 +162,7 @@ export const InterviewTable = ({
                 <tr
                   key={interview.id}
                   onClick={() => handleRowClick(interview)}
-                  className={`group border-b border-border/50 last:border-0 transition-colors hover:bg-accent-light/50 cursor-pointer ${
+                  className={`group border-b border-border/50 last:border-0 transition-colors hover:bg-violet-legacy-light/50 cursor-pointer ${
                     isInProgress ? 'opacity-80' : ''
                   }`}
                   title={isInProgress ? '클릭하여 면접 이어하기' : undefined}
@@ -220,7 +220,7 @@ export const InterviewTable = ({
                       onClick={(e) => handleDeleteClick(e, interview.id)}
                       aria-label="면접 삭제"
                       disabled={deletingId === interview.id}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 p-1.5 text-text-tertiary hover:text-error transition-all duration-150 cursor-pointer rounded-lg disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy"
                     >
                       <Trash2 size={15} />
                     </button>

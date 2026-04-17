@@ -4,6 +4,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        display: [
+          'Cal Sans',
+          'Pretendard Variable',
+          'Pretendard',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'system-ui',
+          'sans-serif',
+        ],
         sans: [
           'Pretendard Variable',
           'Pretendard',
@@ -15,18 +24,54 @@ export default {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        background: '#F1F5F9',   // Slate-100 — 페이지 배경 (연한 회색 틴트)
-        surface: '#FFFFFF',      // 카드/패널 배경 (깨끗한 흰색)
-        border: '#E2E8F0',       // Slate-200 — 명확한 경계선
-        text: {
-          primary: '#0F172A',   // Deep Charcoal (Our Signature Text)
-          secondary: '#334155',
-          tertiary: '#64748B',
+        /* shadcn CSS 변수 참조 토큰 */
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: '#6366F1',   // Electric Violet (Our Brand Signature)
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+
+        /* Legacy — Phase 3~5에서 사용처 제거 후 삭제 */
+        'violet-legacy': {
+          DEFAULT: 'hsl(var(--violet-legacy))',          /* #6366F1 */
           hover: '#4F46E5',
           light: '#EEF2FF',
+        },
+
+        /* 기존 토큰 유지 (Phase 3에서 개별 처리) */
+        surface: '#FFFFFF',
+        text: {
+          primary: '#0F172A',
+          secondary: '#334155',
+          tertiary: '#64748B',
         },
         success: { DEFAULT: '#10B981', light: '#ECFDF5' },
         warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
@@ -49,7 +94,11 @@ export default {
         'toss-lg': '0 16px 32px 0 rgba(0, 0, 0, 0.08)',
       },
       borderRadius: {
-        card: '20px',    // Toss uses more rounded corners
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+        /* 기존 유지 — Phase 3d에서 정리 */
+        card: '20px',
         button: '24px',
         badge: '999px',
       },
@@ -105,5 +154,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 }

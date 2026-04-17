@@ -36,7 +36,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               className="text-4xl font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-5xl"
             >
               면접, 연습하면<br />
-              <span className="text-accent">달라집니다.</span>
+              <span className="text-violet-legacy">달라집니다.</span>
             </h1>
             <p className="mt-6 text-lg font-medium leading-relaxed text-text-secondary md:text-xl">
               이력서 분석은 물론, CS 기초와 직무 지식까지<br className="hidden md:block" />
@@ -44,7 +44,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
             </p>
             <div className="mt-10">
               <button
-                className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+                className="rounded-2xl bg-violet-legacy px-12 py-5 text-lg font-bold text-white transition-all hover:bg-violet-legacy-hover active:scale-95 shadow-lg shadow-violet-legacy/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2"
                 onClick={handleStart}
                 aria-label="무료로 리허설 시작하기"
               >
@@ -73,7 +73,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="w-[2px] bg-accent rounded-full h-full animate-pulse"
+                        className="w-[2px] bg-violet-legacy rounded-full h-full animate-pulse"
                         style={{ animationDelay: `${i * 100}ms` }}
                       />
                     ))}

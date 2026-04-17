@@ -21,7 +21,7 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
     <div className="sticky top-20 z-10 space-y-3">
       <div className="rounded-card border border-border bg-surface p-6 shadow-sm">
         <div className="mb-3 flex items-center gap-3">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-legacy text-sm font-bold text-white">
             {currentIndex + 1}
           </span>
           <span className="text-sm text-text-secondary">

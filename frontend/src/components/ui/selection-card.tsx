@@ -36,9 +36,9 @@ export const SelectionCard = ({
       onKeyDown={handleKeyDown}
       className={[
         'cursor-pointer rounded-card border p-4 text-left transition-all duration-200',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2',
         selected
-          ? 'border-accent bg-accent-light'
+          ? 'border-violet-legacy bg-violet-legacy-light'
           : 'border-border bg-surface hover:border-text-tertiary hover:shadow-md hover:-translate-y-0.5',
         disabled
           ? 'cursor-not-allowed border-border bg-background text-text-tertiary'

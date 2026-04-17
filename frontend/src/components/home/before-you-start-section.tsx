@@ -61,7 +61,7 @@ export const BeforeYouStartSection = () => {
     >
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
             PREPARATION
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-text-primary">
@@ -83,7 +83,7 @@ export const BeforeYouStartSection = () => {
             >
               <div className="flex items-start gap-4">
                 <div
-                  className="h-8 w-8 shrink-0 rounded-xl bg-accent/10 flex items-center justify-center text-accent"
+                  className="h-8 w-8 shrink-0 rounded-xl bg-violet-legacy/10 flex items-center justify-center text-violet-legacy"
                   aria-hidden="true"
                 >
                   <CheckIcon />

@@ -59,15 +59,15 @@ const PAIN_POINTS: PainPoint[] = [
 
 const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
   <article className="rounded-[20px] bg-white border border-border p-6 shadow-sm">
-    <div className="h-10 w-10 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
+    <div className="h-10 w-10 rounded-2xl bg-violet-legacy/10 flex items-center justify-center mb-4">
       {icon}
     </div>
     <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
-    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-accent/20 pl-3">
+    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-violet-legacy/20 pl-3">
       "{quote}"
     </blockquote>
     <div className="border-t border-border my-4" />
-    <p className="text-sm font-bold text-accent leading-relaxed">{solution}</p>
+    <p className="text-sm font-bold text-violet-legacy leading-relaxed">{solution}</p>
   </article>
 )
 
@@ -83,7 +83,7 @@ export const PainPointsSection = () => {
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
         <div className="mb-14 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
             WHY REHEARSE
           </p>
           <h2

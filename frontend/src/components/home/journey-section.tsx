@@ -73,7 +73,7 @@ interface StepTextProps {
 const StepText = ({ step, isReversed }: StepTextProps) => (
   <div className={`flex-1 space-y-4 ${isReversed ? 'md:text-right' : ''}`}>
     <div
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-legacy text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
       aria-label={`${step.number}단계`}
     >
       {step.number}
@@ -101,7 +101,7 @@ export const JourneySection = () => {
 
         {/* 헤딩 */}
         <div className="mb-20 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
             THE JOURNEY
           </p>
           <h2

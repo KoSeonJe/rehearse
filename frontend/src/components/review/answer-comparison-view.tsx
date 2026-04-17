@@ -48,8 +48,8 @@ export const AnswerComparisonView = ({
       {coachingImprovement !== null && coachingImprovement.length > 0 && (
         <div className="mx-5 mb-5 rounded-xl border border-border px-4 py-3">
           <div className="flex items-center gap-2 mb-1.5">
-            <Sparkles size={13} className="text-accent" aria-hidden="true" />
-            <span className="text-[12px] font-bold text-accent">AI 코칭</span>
+            <Sparkles size={13} className="text-violet-legacy" aria-hidden="true" />
+            <span className="text-[12px] font-bold text-violet-legacy">AI 코칭</span>
           </div>
           <p className="text-[13px] text-text-tertiary leading-relaxed">{coachingImprovement}</p>
         </div>

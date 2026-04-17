@@ -27,7 +27,7 @@ export const SetupNavigation = ({
         <button
           onClick={onSubmit}
           disabled={!canNext || isLoading}
-          className="h-16 w-full rounded-[24px] bg-accent py-4 text-lg font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50"
+          className="h-16 w-full rounded-[24px] bg-violet-legacy py-4 text-lg font-black text-white shadow-lg shadow-violet-legacy/20 transition-all active:scale-95 disabled:opacity-50"
         >
           {isLoading ? '면접관이 질문을 생성 중입니다...' : '면접 시작하기'}
         </button>
@@ -37,7 +37,7 @@ export const SetupNavigation = ({
           disabled={!canNext || isLoading}
           className={`h-16 w-full rounded-[24px] py-4 text-lg font-black text-white transition-all active:scale-95 shadow-lg ${
             canNext && !isLoading
-              ? 'bg-accent shadow-accent/20'
+              ? 'bg-violet-legacy shadow-violet-legacy/20'
               : 'bg-slate-200 cursor-not-allowed opacity-50'
           }`}
         >

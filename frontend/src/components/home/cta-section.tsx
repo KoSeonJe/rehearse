@@ -12,7 +12,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="bg-gradient-to-b from-accent/5 to-white pt-20 pb-32"
+      className="bg-gradient-to-b from-violet-legacy/5 to-white pt-20 pb-32"
     >
       <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
         <div className="mb-8 flex justify-center">
@@ -27,7 +27,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
         </p>
         <div className="mt-10">
           <button
-            className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+            className="rounded-2xl bg-violet-legacy px-12 py-5 text-lg font-bold text-white transition-all hover:bg-violet-legacy-hover active:scale-95 shadow-lg shadow-violet-legacy/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2"
             onClick={onNavigate}
             aria-label="무료로 Rehearse 시작하기"
           >

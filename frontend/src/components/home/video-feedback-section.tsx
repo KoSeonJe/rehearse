@@ -21,7 +21,7 @@ export const VideoFeedbackSection = () => {
 
         {/* 헤딩 */}
         <div className="mb-12 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
             VIDEO + FEEDBACK
           </p>
           <h2
@@ -64,16 +64,16 @@ export const VideoFeedbackSection = () => {
               </div>
               {/* 세그먼트 바 (원본 / 후속질문 시각화) */}
               <div className="mt-3 relative h-2.5">
-                <div className="absolute left-0 top-0 h-full rounded bg-accent" style={{ width: '30%' }} />
-                <div className="absolute top-0 h-full rounded bg-accent/60" style={{ left: '76%', width: '8%' }} />
+                <div className="absolute left-0 top-0 h-full rounded bg-violet-legacy" style={{ width: '30%' }} />
+                <div className="absolute top-0 h-full rounded bg-violet-legacy/60" style={{ left: '76%', width: '8%' }} />
               </div>
               <div className="mt-2 flex items-center gap-4 px-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-accent" />
+                  <span className="w-3 h-3 rounded-sm bg-violet-legacy" />
                   <span className="text-[10px] font-bold text-text-tertiary">원본</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-accent/60" />
+                  <span className="w-3 h-3 rounded-sm bg-violet-legacy/60" />
                   <span className="text-[10px] font-bold text-text-tertiary">후속질문</span>
                 </div>
               </div>
@@ -84,13 +84,13 @@ export const VideoFeedbackSection = () => {
               <p className="text-sm font-extrabold text-text-primary mb-4">질문 목록</p>
               <div className="space-y-2">
                 {/* Q1 */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-accent/5 border border-accent/20">
-                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md bg-accent/10 text-accent text-[11px] font-black">Q1</span>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-violet-legacy/5 border border-violet-legacy/20">
+                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md bg-violet-legacy/10 text-violet-legacy text-[11px] font-black">Q1</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-text-primary truncate">메시지 큐(Message Queue)란 무엇이고, 왜 사용하나요?</p>
                     <p className="font-mono text-[11px] font-medium text-text-tertiary mt-0.5">0:00 ~ 0:11</p>
                   </div>
-                  <span className="shrink-0 inline-flex items-center rounded-md bg-accent px-2.5 py-1 text-[11px] font-bold text-white">선택</span>
+                  <span className="shrink-0 inline-flex items-center rounded-md bg-violet-legacy px-2.5 py-1 text-[11px] font-bold text-white">선택</span>
                 </div>
                 {/* Q1-1 후속 (들여쓰기 + 트리 커넥터) */}
                 <div className="flex items-center gap-3 pl-6">
@@ -122,8 +122,8 @@ export const VideoFeedbackSection = () => {
 
             {/* 모범 답변 (접힘) */}
             <div className="rounded-xl bg-blue-50/60 border border-blue-100 p-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-accent">모범 답변</span>
-              <span className="text-[11px] font-bold text-accent">펼치기</span>
+              <span className="text-xs font-bold text-violet-legacy">모범 답변</span>
+              <span className="text-[11px] font-bold text-violet-legacy">펼치기</span>
             </div>
 
             {/* 탭 */}

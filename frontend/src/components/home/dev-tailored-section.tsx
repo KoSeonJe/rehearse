@@ -47,7 +47,7 @@ export const DevTailoredSection = () => {
 
           {/* 좌측: 텍스트 */}
           <div className="flex-1">
-            <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+            <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
               DEVELOPER FOCUSED
             </p>
             <h2
@@ -67,7 +67,7 @@ export const DevTailoredSection = () => {
                   key={item}
                   className="flex items-center gap-2 text-sm font-medium text-text-secondary"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-violet-legacy shrink-0" />
                   {item}
                 </li>
               ))}

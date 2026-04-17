@@ -27,7 +27,7 @@ export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHe
           {onFeedbackClick && (
             <button
               onClick={onFeedbackClick}
-              className="rounded-xl border border-border p-2 text-text-secondary transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
+              className="rounded-xl border border-border p-2 text-text-secondary transition-colors hover:bg-surface hover:text-violet-legacy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
               aria-label="피드백 보내기"
             >
               <MessageSquarePlus size={18} />

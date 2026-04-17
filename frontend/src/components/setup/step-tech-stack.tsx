@@ -14,7 +14,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
 
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
+      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
         Step 2 — Tech Stack
       </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
@@ -40,7 +40,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
               aria-pressed={isSelected}
               className={`flex flex-col items-start gap-1.5 rounded-[20px] p-5 transition-all active:scale-95 ${
                 isSelected
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                  ? 'bg-violet-legacy text-white shadow-lg shadow-violet-legacy/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'
               }`}
             >
@@ -51,7 +51,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       isSelected
                         ? 'bg-white/20 text-white'
-                        : 'bg-accent/10 text-accent'
+                        : 'bg-violet-legacy/10 text-violet-legacy'
                     }`}
                   >
                     기본
