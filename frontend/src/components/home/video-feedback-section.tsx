@@ -80,7 +80,7 @@ export const VideoFeedbackSection = () => {
             </div>
 
             {/* 질문 목록 카드 — 하단까지 채움 */}
-            <div className="flex-1 rounded-2xl bg-white border border-border p-5">
+            <div className="flex-1 rounded-2xl bg-background border border-border p-5">
               <p className="text-sm font-extrabold text-text-primary mb-4">질문 목록</p>
               <div className="space-y-2">
                 {/* Q1 */}
@@ -155,7 +155,7 @@ export const VideoFeedbackSection = () => {
             </div>
 
             {/* 이렇게 말하면 더 좋아요 */}
-            <div className="rounded-xl bg-white border border-border p-3">
+            <div className="rounded-xl bg-background border border-border p-3">
               <p className="text-[11px] font-extrabold text-text-primary mb-1">이렇게 말하면 더 좋아요</p>
               <p className="text-xs text-text-secondary leading-relaxed">
                 질문의 모든 요소를 파악하여 메시지 큐의 사용 목적(비동기 처리, 디커플링 등)을 구체적인 예시와 함께 설명하여 답변을 확장해야 합니다.

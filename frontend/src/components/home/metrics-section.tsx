@@ -143,7 +143,7 @@ const NONVERBAL_METRICS: MetricItem[] = [
 // ── Card ───────────────────────────────────────────────────────────────
 const MetricCard = ({ label, question, icon }: MetricItem) => (
   <Card
-    className="group border border-border bg-white p-5 transition-colors duration-200 hover:-translate-y-1 hover:border-text-tertiary hover:shadow-md"
+    className="group border border-border bg-background p-5 transition-colors duration-200 hover:-translate-y-1 hover:border-text-tertiary hover:shadow-md"
     role="article"
   >
     <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3 bg-secondary text-text-primary transition-colors duration-200 group-hover:bg-text-primary group-hover:text-white">
@@ -162,7 +162,7 @@ export const MetricsSection = () => {
       ref={ref}
       style={style}
       aria-labelledby="metrics-heading"
-      className="bg-white py-20 md:py-28"
+      className="bg-background py-20 md:py-28"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
 

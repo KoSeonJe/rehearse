@@ -76,7 +76,7 @@ export const DevTailoredSection = () => {
 
           {/* 우측: 질문 목업 카드 (장식적) */}
           <div className="flex-1 flex justify-center md:justify-end" aria-hidden="true">
-            <div className="w-full max-w-[480px] rounded-[32px] bg-white border border-border shadow-toss -rotate-1 p-7">
+            <div className="w-full max-w-[480px] rounded-[32px] bg-background border border-border shadow-toss -rotate-1 p-7">
 
               {/* 질문 카드 3개 */}
               <div className="space-y-3">

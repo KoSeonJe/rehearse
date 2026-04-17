@@ -58,7 +58,7 @@ export const BeforeYouStartSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-white py-32"
+      className="bg-background py-32"
     >
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">

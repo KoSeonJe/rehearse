@@ -63,7 +63,7 @@ interface PainCardProps extends PainPoint {
 }
 
 const PainCard = ({ title, quote, solution, icon, index }: PainCardProps) => (
-  <Card className="bg-white border border-border shadow-sm" role="article">
+  <Card className="bg-background border border-border shadow-sm" role="article">
     <div className="flex items-start gap-6 p-6 md:p-8">
       {/* 좌측: 번호 + 아이콘 */}
       <div className="shrink-0 flex flex-col items-center gap-3">

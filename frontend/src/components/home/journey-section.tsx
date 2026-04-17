@@ -95,7 +95,7 @@ export const JourneySection = () => {
       ref={ref}
       style={style}
       aria-labelledby="journey-heading"
-      className="bg-white py-24 md:py-32"
+      className="bg-background py-24 md:py-32"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
 
