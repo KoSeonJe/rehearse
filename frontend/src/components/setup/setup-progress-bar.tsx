@@ -34,7 +34,7 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
           </div>
         ))}
       </div>
-      <Progress value={percent} className="h-1 bg-surface" />
+      <Progress value={percent} aria-label="면접 설정 진행 상황" className="h-1 bg-surface" />
       <p className="mt-2 text-right text-[11px] font-bold text-text-tertiary">
         {currentStep} / {totalSteps}
       </p>

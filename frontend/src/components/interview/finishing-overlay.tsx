@@ -59,6 +59,7 @@ export const FinishingOverlay = ({ open, stage, total, completed }: FinishingOve
             {showProgress && (
               <Progress
                 value={percent}
+                aria-label="녹화 업로드 진행률"
                 className="h-1.5 bg-[#3c4043] [&>div]:bg-blue-500"
               />
             )}
