@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
@@ -375,6 +376,10 @@ export const InterviewFeedbackPage = () => {
 
   return (
     <div className="min-h-screen bg-white pb-32">
+      <Helmet>
+        <title>면접 피드백 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
