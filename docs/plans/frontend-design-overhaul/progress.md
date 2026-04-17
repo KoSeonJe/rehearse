@@ -13,7 +13,7 @@
 | 3b | Input 교체 | Completed | shadcn Input/Label 설치 + TextInput 어댑터 재정의 + password-protected-route 교체 |
 | 3c | Dialog 교체 | Completed | shadcn Dialog/AlertDialog 교체 완료 (커밋 4건, 판단 보류 3건) |
 | 3d | Card 교체 | Completed | shadcn Card 설치 + 7개 영역 교체 (커밋 7건, 이관 5건) |
-| 3e | Form 표준화 | Draft | [optional] audit 결과 기반 |
+| 3e | Form 표준화 | Skipped | 폼 2개(password-protected-route, interview-setup-page) < 3 기준, 유효성 로직 단순 — react-hook-form 도입 이득 미미 |
 | 3f | 랜딩 페이지 레이아웃 | Draft | home |
 | 3g | 대시보드/리뷰 리스트 레이아웃 | Draft | dashboard, review-list |
 | 3h | 인터뷰 진행 레이아웃 | Draft | setup, ready, interview-page |
@@ -87,4 +87,5 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 교체 완료: SelectionCard, 대시보드(stats-cards/interview-card/interview-table/interview-list), 홈(pain-points/before-you-start/metrics), 리뷰(review-bookmark-card), 인터뷰(question-card/question-display/question-card-skeleton), 어드민(admin-feedbacks), password-protected-route
   - shadow-toss → shadow-sm/shadow-md, rounded-card → rounded-lg(shadcn default)
   - Phase 3f/3i 이관(TODO 마킹): hero-section rounded-[32px], journey-section rounded-[32px], dev-tailored-section rounded-[32px], login-modal DialogContent rounded-[28px], sidebar shadow-toss
+- Plan 03e Skip: 프로젝트 내 폼 2개(password-protected-route, interview-setup-page) 모두 단순 제어형 + 로컬 상태 기반. react-hook-form + zod 도입은 ROI 부족 — Phase 5 재평가
   - Plan 03c 이관: delete-confirm-dialog/service-feedback-modal의 rounded-card/shadow-toss-lg (Dialog 스타일)
