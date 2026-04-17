@@ -12,32 +12,32 @@ export const AnswerComparisonView = ({
   coachingImprovement,
 }: AnswerComparisonViewProps) => {
   return (
-    <div className="border-t border-slate-100">
+    <div className="border-t border-border">
       {/* 좌우 비교 패널 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-5 pt-4 pb-4">
         {/* 내 답변 */}
-        <div className="rounded-xl bg-slate-50 p-4">
+        <div className="rounded-xl bg-muted p-4">
           <p className="text-[12px] font-bold text-text-tertiary mb-2 uppercase tracking-wide">
             내 답변
           </p>
           {transcript !== null && transcript.length > 0 ? (
             <p className="text-[14px] leading-[1.75] text-text-secondary">{transcript}</p>
           ) : (
-            <p className="text-[14px] leading-[1.75] text-slate-400 italic">
+            <p className="text-[14px] leading-[1.75] text-text-tertiary italic">
               분석 결과 준비 중이에요.
             </p>
           )}
         </div>
 
         {/* 모범 답변 */}
-        <div className="rounded-xl bg-slate-50 p-4">
+        <div className="rounded-xl bg-muted p-4">
           <p className="text-[12px] font-bold text-text-tertiary mb-2 uppercase tracking-wide">
             모범 답변
           </p>
           {modelAnswer !== null && modelAnswer.length > 0 ? (
             <p className="text-[14px] leading-[1.75] text-text-secondary">{modelAnswer}</p>
           ) : (
-            <p className="text-[14px] leading-[1.75] text-slate-400 italic">
+            <p className="text-[14px] leading-[1.75] text-text-tertiary italic">
               모범 답변이 제공되지 않은 질문입니다.
             </p>
           )}
