@@ -18,7 +18,7 @@
 | 3g | 대시보드/리뷰 리스트 레이아웃 | Completed | dashboard, review-list |
 | 3h | 인터뷰 진행 레이아웃 | Completed | setup, ready, interview-page |
 | 3i | 피드백/분석 레이아웃 | Completed | feedback, analysis |
-| 3j | 정보/정적 페이지 | Draft | about, faq, guide, privacy, admin, 404 |
+| 3j | 정보/정적 페이지 | Completed | about, faq, guide, privacy, admin, 404 |
 | 4 | Aceternity hero | Draft | [optional] 랜딩 hero 1곳 |
 | 5 | 일관성 감사 | Draft | `docs/consistency-issues.md` |
 
@@ -54,12 +54,12 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 | 3h | interview-page | Completed |
 | 3i | interview-feedback | Completed |
 | 3i | interview-analysis | Completed |
-| 3j | about | Draft |
-| 3j | faq | Draft |
-| 3j | guide | Draft |
-| 3j | privacy-policy | Draft |
-| 3j | admin-feedbacks | Draft |
-| 3j | not-found | Draft |
+| 3j | about | Completed |
+| 3j | faq | Completed |
+| 3j | guide | Completed |
+| 3j | privacy-policy | Completed |
+| 3j | admin-feedbacks | Completed |
+| 3j | not-found | Completed |
 
 ## 진행 로그
 
@@ -115,3 +115,8 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - 커밋 4 (b0bdc79): 페이지 하드코딩 색상 토큰화 — interview-feedback-page bg-white→bg-background(4건+헤더backdrop), interview-analysis-page bg-white→bg-background(전체) + 카드/패널 bg-card 재정정(2건)
   - video-player.tsx / timeline-bar.tsx / question-list.tsx 기능 로직 diff 0 확인
   - lint green, test 24/24 passed
+- Plan 03j 완료 (보수 범위): 정보/정적 페이지 하드코딩 색상 토큰화 및 hover 정리 (커밋 1건)
+  - 커밋 1 (32fcd91): bg-white → bg-background (content-page-shell, privacy-policy, not-found), CTA 블록 bg-gray-50 → bg-muted (about, faq, guide 3개), hover:opacity-90 → hover:bg-violet-legacy-hover (CTA 버튼 6개)
+  - admin-feedbacks: text-amber-400 별점, bg-blue-100/text-blue-700, bg-green-100/text-green-700 SourceBadge — 시맨틱 의미 있음, 유지
+  - not-found: bg-white → bg-background 1건, 나머지 이미 토큰화 완료
+  - lint green, build green
