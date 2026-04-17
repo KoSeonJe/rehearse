@@ -21,7 +21,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div
                 key={i}
-                className="w-1.5 rounded-full bg-violet-legacy transition-all duration-75"
+                className="w-1.5 rounded-full bg-foreground transition-all duration-75"
                 style={{
                   height: `${Math.max(MIC_LEVEL_MIN_HEIGHT, Math.min(micLevel * (i <= 4 ? i * MIC_LEVEL_SCALE_FACTOR : (8 - i) * MIC_LEVEL_SCALE_FACTOR), 100))}%`,
                 }}
@@ -47,7 +47,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'testing' && (
           <div className="mt-1 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-violet-legacy transition-all duration-75"
+              className="h-full rounded-full bg-foreground transition-all duration-75"
               style={{ width: `${Math.min(micLevel, 100)}%` }}
             />
           </div>

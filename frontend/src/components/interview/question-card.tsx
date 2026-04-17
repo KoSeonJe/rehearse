@@ -10,7 +10,7 @@ export const QuestionCard = ({ question }: QuestionCardProps) => {
   return (
     <Card className="border border-border bg-surface p-5 shadow-sm" role="listitem">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-violet-legacy text-sm font-medium text-white">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background">
           {question.order}
         </span>
         {question.category && (

@@ -52,7 +52,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
                     className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                       isSelected
                         ? 'bg-white/20 text-white'
-                        : 'bg-violet-legacy/10 text-violet-legacy'
+                        : 'bg-secondary text-text-secondary'
                     }`}
                   >
                     기본

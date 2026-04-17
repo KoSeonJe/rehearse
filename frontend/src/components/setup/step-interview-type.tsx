@@ -85,7 +85,7 @@ export const StepInterviewType = ({
               <div
                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all ${
                   interviewTypes.includes(type)
-                    ? 'border-white bg-white text-violet-legacy'
+                    ? 'border-white bg-white text-text-primary'
                     : 'border-text-tertiary'
                 }`}
               >
@@ -107,7 +107,7 @@ export const StepInterviewType = ({
                     disabled={isLoading}
                     className={`rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95 ${
                       csSubTopics.includes(topic)
-                        ? 'bg-violet-legacy/10 text-violet-legacy ring-1 ring-violet-legacy/30'
+                        ? 'bg-secondary text-text-primary ring-1 ring-border'
                         : 'bg-surface text-text-secondary hover:bg-slate-200'
                     }`}
                   >

@@ -54,7 +54,7 @@ export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
               </span>
             </div>
             {level === l && (
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white text-violet-legacy">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                 </svg>

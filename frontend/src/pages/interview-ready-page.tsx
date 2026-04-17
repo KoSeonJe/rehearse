@@ -115,7 +115,7 @@ export const InterviewReadyPage = () => {
           </p>
           <h1 className="text-4xl font-extrabold tracking-tighter text-text-primary sm:text-5xl">
             장치를 확인하고<br />
-            <span className="text-violet-legacy">시작하세요.</span>
+            <span className="text-text-primary">시작하세요.</span>
           </h1>
 
           {interview && (
@@ -132,12 +132,12 @@ export const InterviewReadyPage = () => {
                 </span>
               ))}
               {interview.csSubTopics?.map((topic) => (
-                <span key={topic} className="shrink-0 rounded-full bg-violet-legacy/10 px-4 py-2 text-xs font-bold text-violet-legacy">
+                <span key={topic} className="shrink-0 rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                   {CS_SUB_TOPIC_LABELS[topic as CsSubTopic] ?? topic}
                 </span>
               ))}
               {interview.durationMinutes && (
-                <span className="shrink-0 rounded-full bg-violet-legacy/10 px-4 py-2 text-xs font-bold text-violet-legacy">
+                <span className="shrink-0 rounded-full bg-surface px-4 py-2 text-xs font-bold text-text-secondary">
                   {interview.durationMinutes}분
                 </span>
               )}
@@ -156,7 +156,7 @@ export const InterviewReadyPage = () => {
             <div className="rounded-2xl border border-border bg-surface/50 p-5">
               {isQuestionGenerating && (
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-violet-legacy border-t-transparent" />
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
                   <span className="text-sm font-bold text-text-secondary">
                     AI가 면접 질문을 생성하고 있어요...
                   </span>
@@ -191,7 +191,7 @@ export const InterviewReadyPage = () => {
                     onClick={handleRetryQuestions}
                     disabled={retryQuestions.isPending}
                     loading={retryQuestions.isPending}
-                    className="ml-8 w-fit rounded-xl text-violet-legacy hover:bg-violet-legacy/10 hover:text-violet-legacy"
+                    className="ml-8 w-fit rounded-xl text-text-secondary hover:bg-secondary hover:text-text-primary"
                   >
                     {retryQuestions.isPending ? '재시도 중...' : '다시 시도하기'}
                   </Button>
