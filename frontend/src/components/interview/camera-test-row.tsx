@@ -10,7 +10,7 @@ interface CameraTestRowProps {
 
 export const CameraTestRow = ({ status, videoRef, onCameraTest }: CameraTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-all ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-colors ${statusBorder(status)}`}>
       <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-2xl bg-slate-950">
         <video
           ref={videoRef as React.RefObject<HTMLVideoElement>}
@@ -41,7 +41,7 @@ export const CameraTestRow = ({ status, videoRef, onCameraTest }: CameraTestRowP
         {status === 'idle' && (
           <button
             onClick={onCameraTest}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
           >
             테스트
           </button>

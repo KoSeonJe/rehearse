@@ -62,7 +62,7 @@ export const StepInterviewType = ({
             <button
               onClick={() => onTypeToggle(type)}
               disabled={isLoading}
-              className={`flex w-full items-center justify-between rounded-[20px] p-5 text-left transition-all active:scale-[0.98] ${
+              className={`flex w-full items-center justify-between rounded-[20px] p-5 text-left transition-colors active:scale-[0.98] ${
                 interviewTypes.includes(type)
                   ? 'bg-violet-legacy text-white shadow-lg shadow-violet-legacy/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'
@@ -83,7 +83,7 @@ export const StepInterviewType = ({
                 </span>
               </div>
               <div
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all ${
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
                   interviewTypes.includes(type)
                     ? 'border-white bg-white text-text-primary'
                     : 'border-text-tertiary'
@@ -105,7 +105,7 @@ export const StepInterviewType = ({
                     key={topic}
                     onClick={() => onCsSubTopicToggle(topic)}
                     disabled={isLoading}
-                    className={`rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95 ${
+                    className={`rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 ${
                       csSubTopics.includes(topic)
                         ? 'bg-secondary text-text-primary ring-1 ring-border'
                         : 'bg-surface text-text-secondary hover:bg-slate-200'

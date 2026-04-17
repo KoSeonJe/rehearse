@@ -46,7 +46,7 @@ export const ResumeUpload = ({
           onDragLeave={onDragLeave}
           onDrop={onDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`flex cursor-pointer items-center gap-3 rounded-[16px] border-2 border-dashed p-4 transition-all ${
+          className={`flex cursor-pointer items-center gap-3 rounded-[16px] border-2 border-dashed p-4 transition-colors ${
             dragOver
               ? 'border-foreground bg-secondary'
               : 'border-red-300 bg-red-50/40 hover:border-border hover:bg-secondary'
@@ -86,7 +86,7 @@ export const ResumeUpload = ({
           <button
             onClick={onFileRemove}
             disabled={isLoading}
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-text-tertiary transition-all hover:bg-red-50 hover:text-red-500"
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-text-tertiary transition-colors hover:bg-red-50 hover:text-red-500"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />

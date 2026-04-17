@@ -14,14 +14,14 @@ interface MicTestRowProps {
 
 export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-all ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-colors ${statusBorder(status)}`}>
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-surface">
         {(status === 'testing' || status === 'passed') ? (
           <div className="flex items-end justify-center gap-1 h-10">
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
               <div
                 key={i}
-                className="w-1.5 rounded-full bg-foreground transition-all duration-75"
+                className="w-1.5 rounded-full bg-foreground transition-[height] duration-75"
                 style={{
                   height: `${Math.max(MIC_LEVEL_MIN_HEIGHT, Math.min(micLevel * (i <= 4 ? i * MIC_LEVEL_SCALE_FACTOR : (8 - i) * MIC_LEVEL_SCALE_FACTOR), 100))}%`,
                 }}
@@ -47,7 +47,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'testing' && (
           <div className="mt-1 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-slate-100">
             <div
-              className="h-full rounded-full bg-foreground transition-all duration-75"
+              className="h-full rounded-full bg-foreground transition-[width] duration-75"
               style={{ width: `${Math.min(micLevel, 100)}%` }}
             />
           </div>
@@ -58,7 +58,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'idle' && (
           <button
             onClick={onMicTest}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
           >
             테스트
           </button>
@@ -66,7 +66,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'passed' && onReset && (
           <button
             onClick={onReset}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
           >
             다시 테스트
           </button>

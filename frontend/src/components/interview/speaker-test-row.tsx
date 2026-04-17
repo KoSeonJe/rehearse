@@ -11,7 +11,7 @@ interface SpeakerTestRowProps {
 
 export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onReset }: SpeakerTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-all ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-colors ${statusBorder(status)}`}>
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-surface">
         {status === 'testing' ? (
           <div className="flex items-center gap-1">
@@ -45,7 +45,7 @@ export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onRese
         {status === 'idle' && (
           <button
             onClick={onSpeakerTest}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
           >
             테스트
           </button>
@@ -61,7 +61,7 @@ export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onRese
         {status === 'passed' && onReset && (
           <button
             onClick={onReset}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
           >
             다시 테스트
           </button>

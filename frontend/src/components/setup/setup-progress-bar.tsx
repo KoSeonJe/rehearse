@@ -12,7 +12,7 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
           <div key={step} className="flex items-center gap-1">
             <div
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-all ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-colors ${
                 step < currentStep
                   ? 'bg-violet-legacy text-white'
                   : step === currentStep
@@ -35,7 +35,7 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
           <div
             key={step}
-            className={`h-1 flex-1 rounded-full transition-all ${
+            className={`h-1 flex-1 rounded-full transition-colors ${
               step <= currentStep ? 'bg-violet-legacy' : 'bg-surface'
             }`}
           />
