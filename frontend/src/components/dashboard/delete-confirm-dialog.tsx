@@ -1,5 +1,12 @@
-import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from '@/components/ui/alert-dialog'
 
 interface DeleteConfirmDialogProps {
   isOpen: boolean
@@ -16,40 +23,22 @@ export const DeleteConfirmDialog = ({
   isPending,
   itemLabel = '면접',
 }: DeleteConfirmDialogProps) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isPending) onCancel()
-    }
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-    }
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel, isPending])
-
-  if (!isOpen) return null
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !isPending) onCancel()
+  }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onClick={isPending ? undefined : onCancel}
-    >
-      <div
-        className="bg-white rounded-card p-6 shadow-toss-lg max-w-sm w-full"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-dialog-title"
-      >
-        <h2
-          id="delete-dialog-title"
-          className="text-base font-extrabold text-text-primary"
-        >
-          {`${itemLabel}을 삭제하시겠습니까?`}
-        </h2>
-        <p className="mt-2 text-sm text-text-secondary">
-          {`삭제된 ${itemLabel}은 복구할 수 없습니다.`}
-        </p>
-        <div className="mt-6 flex gap-3">
+    <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+      <AlertDialogContent className="bg-white rounded-card shadow-toss-lg border-none max-w-sm">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-base font-extrabold text-text-primary">
+            {`${itemLabel}을 삭제하시겠습니까?`}
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-text-secondary">
+            {`삭제된 ${itemLabel}은 복구할 수 없습니다.`}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter className="flex gap-3 sm:space-x-0">
           <Button
             variant="secondary"
             size="sm"
@@ -68,8 +57,8 @@ export const DeleteConfirmDialog = ({
           >
             {isPending ? '삭제 중...' : '삭제'}
           </Button>
-        </div>
-      </div>
-    </div>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

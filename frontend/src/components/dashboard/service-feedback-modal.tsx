@@ -1,7 +1,14 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Star } from 'lucide-react'
 import { useSubmitServiceFeedback } from '@/hooks/use-service-feedback'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import type { FeedbackSource } from '@/types/service-feedback'
 
 interface ServiceFeedbackModalProps {
@@ -30,17 +37,9 @@ export const ServiceFeedbackModal = ({
     onClose()
   }, [onClose])
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isPending) resetAndClose()
-    }
-    if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-    }
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, isPending, resetAndClose])
-
-  if (!isOpen) return null
+  const handleOpenChange = (open: boolean) => {
+    if (!open && !isPending) resetAndClose()
+  }
 
   const handleStarClick = (starIndex: number) => {
     if (rating === starIndex) {
@@ -62,26 +61,16 @@ export const ServiceFeedbackModal = ({
   const displayRating = hoverRating ?? rating
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onClick={isPending ? undefined : resetAndClose}
-    >
-      <div
-        className="bg-white rounded-card p-6 shadow-toss-lg max-w-md w-full mx-4"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="feedback-dialog-title"
-      >
-        <h2
-          id="feedback-dialog-title"
-          className="text-base font-extrabold text-text-primary"
-        >
-          서비스 피드백
-        </h2>
-        <p className="mt-1 text-sm text-text-secondary">
-          Rehearse를 사용하시면서 느낀 점을 알려주세요
-        </p>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="bg-white rounded-card shadow-toss-lg border-none max-w-md mx-4">
+        <DialogHeader>
+          <DialogTitle className="text-base font-extrabold text-text-primary">
+            서비스 피드백
+          </DialogTitle>
+          <DialogDescription className="text-sm text-text-secondary">
+            Rehearse를 사용하시면서 느낀 점을 알려주세요
+          </DialogDescription>
+        </DialogHeader>
 
         {/* 별점 */}
         <div className="mt-4 flex items-center gap-1">
@@ -115,7 +104,7 @@ export const ServiceFeedbackModal = ({
             onChange={(e) => setContent(e.target.value)}
             placeholder="서비스에 대한 의견을 자유롭게 남겨주세요 (최소 10자)"
             rows={4}
-            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-violet-legacy/50 focus:border-violet-legacy transition-all"
+            className="w-full resize-none rounded-button border border-border px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-violet-legacy/50 focus:border-violet-legacy"
           />
           <p
             className={`mt-1 text-xs text-right ${isContentValid ? 'text-text-secondary' : 'text-red-500'}`}
@@ -150,7 +139,7 @@ export const ServiceFeedbackModal = ({
             {isPending ? '보내는 중...' : '보내기'}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
