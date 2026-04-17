@@ -10,7 +10,7 @@
 | 1 | Audit (Phase 1) | Completed | `docs/design-audit.md` 생성, 코드 수정 없음 |
 | 2 | Tokens + shadcn init (Phase 2) | Completed | CSS 변수 + shadcn init + Cal Sans 도입 |
 | 3a | Button 교체 | Completed | shadcn Button 재정의 + 전체 교체 완료 |
-| 3b | Input 교체 | Draft | 3a 완료 후 |
+| 3b | Input 교체 | Completed | shadcn Input/Label 설치 + TextInput 어댑터 재정의 + password-protected-route 교체 |
 | 3c | Dialog 교체 | Draft | 3b 완료 후 |
 | 3d | Card 교체 | Draft | 3c 완료 후 |
 | 3e | Form 표준화 | Draft | [optional] audit 결과 기반 |
@@ -76,3 +76,7 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 - Plan 03a 완료: Button shadcn 교체 (커밋 8건, 판단 보류 12건 — 실측 `grep -rn "TODO(design)" frontend/src` 기준)
   - 교체 완료: home CTA/header, login-modal 닫기, dashboard 전반, setup-navigation, interview-ready, interview-analysis, admin-feedbacks 페이지네이션
   - 판단 보류: login OAuth 브랜드 버튼, sidebar nav active 스타일, step 선택 카드, feedback 탭/타임라인/플레이어, interview-page 스튜디오 UI, review-coach-mark 퍼플 그라디언트, review-list-filter-bar 칩
+- Plan 03b 완료: Input shadcn 교체 (커밋 2건, 판단 보류 0건)
+  - shadcn Input/Label 설치 + TextInput 어댑터 재정의 (1건)
+  - password-protected-route 관리자 인증 Input 교체 + a11y 개선 (1건)
+  - 인라인 유지(special): type="file" 1건, type="range" 1건
