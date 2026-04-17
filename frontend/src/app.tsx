@@ -12,6 +12,11 @@ import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
+import { AboutPage } from '@/pages/about-page'
+import { FaqPage } from '@/pages/faq-page'
+import { AiMockInterviewGuidePage } from '@/pages/guide/ai-mock-interview-page'
+import { DeveloperInterviewPrepGuidePage } from '@/pages/guide/developer-interview-prep-page'
+import { ResumeBasedInterviewGuidePage } from '@/pages/guide/resume-based-interview-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
@@ -41,6 +46,11 @@ export const App = () => {
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
         </Route>
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/guide/ai-mock-interview" element={<AiMockInterviewGuidePage />} />
+        <Route path="/guide/developer-interview-prep" element={<DeveloperInterviewPrepGuidePage />} />
+        <Route path="/guide/resume-based-interview" element={<ResumeBasedInterviewGuidePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <LoginModal />
