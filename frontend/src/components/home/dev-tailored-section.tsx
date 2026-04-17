@@ -47,7 +47,7 @@ export const DevTailoredSection = () => {
 
           {/* 좌측: 텍스트 */}
           <div className="flex-1">
-            <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
               DEVELOPER FOCUSED
             </p>
             <h2

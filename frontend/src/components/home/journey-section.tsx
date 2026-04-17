@@ -101,7 +101,7 @@ export const JourneySection = () => {
 
         {/* 헤딩 */}
         <div className="mb-20 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             THE JOURNEY
           </p>
           <h2

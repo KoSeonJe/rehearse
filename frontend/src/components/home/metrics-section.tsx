@@ -168,7 +168,7 @@ export const MetricsSection = () => {
 
         {/* 헤딩 */}
         <div className="text-center mb-14">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             FEEDBACK METRICS
           </p>
           <h2

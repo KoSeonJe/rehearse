@@ -68,7 +68,7 @@ export const FaqSection = () => {
     >
       <div className="max-w-3xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             FAQ
           </p>
           <h2

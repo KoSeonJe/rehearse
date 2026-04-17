@@ -62,7 +62,7 @@ export const BeforeYouStartSection = () => {
     >
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             PREPARATION
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-text-primary">
