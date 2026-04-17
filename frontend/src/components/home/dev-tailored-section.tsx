@@ -17,8 +17,8 @@ const QUESTION_ITEMS: QuestionItem[] = [
   },
   {
     badge: '직무 지식',
-    badgeBg: 'bg-violet-100',
-    badgeText: 'text-violet-600',
+    badgeBg: 'bg-secondary',
+    badgeText: 'text-text-secondary',
     question: 'Spring Boot에서 트랜잭션 전파 전략을 어떻게 설계하셨나요?',
   },
   {
@@ -67,7 +67,7 @@ export const DevTailoredSection = () => {
                   key={item}
                   className="flex items-center gap-2 text-sm font-medium text-text-secondary"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-violet-legacy shrink-0" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-text-tertiary shrink-0" />
                   {item}
                 </li>
               ))}

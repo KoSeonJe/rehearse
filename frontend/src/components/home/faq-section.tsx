@@ -95,7 +95,7 @@ export const FaqSection = () => {
                     tabIndex={0}
                     aria-expanded={isOpen}
                     aria-controls={`faq-answer-${i}`}
-                    className="py-6 cursor-pointer flex items-center justify-between gap-4 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-legacy focus-visible:ring-offset-2 rounded-sm"
+                    className="py-6 cursor-pointer flex items-center justify-between gap-4 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
                     onClick={() => toggle(i)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {

@@ -43,8 +43,8 @@ export const VideoFeedbackSection = () => {
           {/* 좌측: 영상 + 타임라인 + 질문 목록 (flex col, 질문 목록이 bottom 까지 채움) */}
           <div className="md:col-span-3 flex flex-col gap-4 h-full">
             {/* 영상 영역 — 가상 인물(Character) */}
-            <div className="relative aspect-video rounded-[20px] overflow-hidden border border-border bg-gradient-to-br from-slate-100 via-white to-indigo-50/40">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.08),transparent_70%)]" />
+            <div className="relative aspect-video rounded-[20px] overflow-hidden border border-border bg-surface">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03),transparent_70%)]" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <Character mood="happy" size={160} />
               </div>
@@ -64,16 +64,16 @@ export const VideoFeedbackSection = () => {
               </div>
               {/* 세그먼트 바 (원본 / 후속질문 시각화) */}
               <div className="mt-3 relative h-2.5">
-                <div className="absolute left-0 top-0 h-full rounded bg-violet-legacy" style={{ width: '30%' }} />
-                <div className="absolute top-0 h-full rounded bg-violet-legacy/60" style={{ left: '76%', width: '8%' }} />
+                <div className="absolute left-0 top-0 h-full rounded bg-text-primary" style={{ width: '30%' }} />
+                <div className="absolute top-0 h-full rounded bg-text-tertiary" style={{ left: '76%', width: '8%' }} />
               </div>
               <div className="mt-2 flex items-center gap-4 px-0.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-violet-legacy" />
+                  <span className="w-3 h-3 rounded-sm bg-text-primary" />
                   <span className="text-[10px] font-bold text-text-tertiary">원본</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-violet-legacy/60" />
+                  <span className="w-3 h-3 rounded-sm bg-text-tertiary" />
                   <span className="text-[10px] font-bold text-text-tertiary">후속질문</span>
                 </div>
               </div>
@@ -84,13 +84,13 @@ export const VideoFeedbackSection = () => {
               <p className="text-sm font-extrabold text-text-primary mb-4">질문 목록</p>
               <div className="space-y-2">
                 {/* Q1 */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-violet-legacy/5 border border-violet-legacy/20">
-                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md bg-violet-legacy/10 text-violet-legacy text-[11px] font-black">Q1</span>
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary border border-border">
+                  <span className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-md bg-border text-text-primary text-[11px] font-black">Q1</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-text-primary truncate">메시지 큐(Message Queue)란 무엇이고, 왜 사용하나요?</p>
                     <p className="font-mono text-[11px] font-medium text-text-tertiary mt-0.5">0:00 ~ 0:11</p>
                   </div>
-                  <span className="shrink-0 inline-flex items-center rounded-md bg-violet-legacy px-2.5 py-1 text-[11px] font-bold text-white">선택</span>
+                  <span className="shrink-0 inline-flex items-center rounded-md bg-text-primary px-2.5 py-1 text-[11px] font-bold text-white">선택</span>
                 </div>
                 {/* Q1-1 후속 (들여쓰기 + 트리 커넥터) */}
                 <div className="flex items-center gap-3 pl-6">
@@ -121,9 +121,9 @@ export const VideoFeedbackSection = () => {
             </div>
 
             {/* 모범 답변 (접힘) */}
-            <div className="rounded-xl bg-blue-50/60 border border-blue-100 p-3 flex items-center justify-between">
-              <span className="text-xs font-bold text-violet-legacy">모범 답변</span>
-              <span className="text-[11px] font-bold text-violet-legacy">펼치기</span>
+            <div className="rounded-xl bg-secondary border border-border p-3 flex items-center justify-between">
+              <span className="text-xs font-bold text-text-primary">모범 답변</span>
+              <span className="text-[11px] font-bold text-text-secondary">펼치기</span>
             </div>
 
             {/* 탭 */}

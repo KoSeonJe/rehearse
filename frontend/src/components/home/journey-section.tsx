@@ -73,7 +73,7 @@ interface StepTextProps {
 const StepText = ({ step, isReversed }: StepTextProps) => (
   <div className={`flex-1 space-y-4 ${isReversed ? 'md:text-right' : ''}`}>
     <div
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-violet-legacy text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-text-primary text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
       aria-label={`${step.number}단계`}
     >
       {step.number}

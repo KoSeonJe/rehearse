@@ -10,27 +10,27 @@ interface PainPoint {
 
 const ScoreIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <rect x="3" y="12" width="4" height="8" rx="1" stroke="#6366F1" strokeWidth="2" />
-    <rect x="10" y="7" width="4" height="13" rx="1" stroke="#6366F1" strokeWidth="2" />
-    <rect x="17" y="3" width="4" height="17" rx="1" stroke="#6366F1" strokeWidth="2" />
+    <rect x="3" y="12" width="4" height="8" rx="1" stroke="currentColor" strokeWidth="2" />
+    <rect x="10" y="7" width="4" height="13" rx="1" stroke="currentColor" strokeWidth="2" />
+    <rect x="17" y="3" width="4" height="17" rx="1" stroke="currentColor" strokeWidth="2" />
   </svg>
 )
 
 const SpeechIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M12 2v8" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
-    <rect x="9" y="2" width="6" height="12" rx="3" stroke="#6366F1" strokeWidth="2" />
-    <path d="M5 11a7 7 0 0 0 14 0" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
-    <path d="M12 18v3" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 2v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" strokeWidth="2" />
+    <path d="M5 11a7 7 0 0 0 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 18v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 )
 
 const AnswerIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="#6366F1" strokeWidth="2" strokeLinejoin="round" />
-    <circle cx="9" cy="11.5" r="1" fill="#6366F1" />
-    <circle cx="13" cy="11.5" r="1" fill="#6366F1" />
-    <circle cx="17" cy="11.5" r="1" fill="#6366F1" />
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="9" cy="11.5" r="1" fill="currentColor" />
+    <circle cx="13" cy="11.5" r="1" fill="currentColor" />
+    <circle cx="17" cy="11.5" r="1" fill="currentColor" />
   </svg>
 )
 
@@ -60,15 +60,15 @@ const PAIN_POINTS: PainPoint[] = [
 
 const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
   <Card className="bg-white border border-border p-6 shadow-sm" role="article">
-    <div className="h-10 w-10 rounded-2xl bg-violet-legacy/10 flex items-center justify-center mb-4">
+    <div className="h-10 w-10 rounded-2xl bg-secondary flex items-center justify-center mb-4 text-text-primary">
       {icon}
     </div>
     <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
-    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-violet-legacy/20 pl-3">
+    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-border pl-3">
       "{quote}"
     </blockquote>
     <div className="border-t border-border my-4" />
-    <p className="text-sm font-bold text-violet-legacy leading-relaxed">{solution}</p>
+    <p className="text-sm font-bold text-text-primary leading-relaxed">{solution}</p>
   </Card>
 )
 

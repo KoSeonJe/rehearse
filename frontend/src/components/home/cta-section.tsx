@@ -13,7 +13,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="bg-gradient-to-b from-violet-legacy/5 to-white pt-20 pb-32"
+      className="bg-gradient-to-b from-secondary to-white pt-20 pb-32"
     >
       <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
         <div className="mb-8 flex justify-center">

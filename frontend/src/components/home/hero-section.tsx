@@ -66,8 +66,8 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               className="w-full max-w-[420px] rounded-[32px] bg-surface border border-border shadow-toss-lg rotate-2"
               aria-hidden="true"
             >
-              <div className="relative aspect-video rounded-[24px] bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 overflow-hidden flex items-center justify-center border border-slate-100">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.08),transparent_70%)]" />
+              <div className="relative aspect-video rounded-[24px] bg-surface overflow-hidden flex items-center justify-center border border-border">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(0,0,0,0.03),transparent_70%)]" />
                 <div className="relative z-10 drop-shadow-2xl">
                   <Character mood="happy" size={120} />
                 </div>
@@ -76,7 +76,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
                     {[1, 2, 3, 4].map((i) => (
                       <div
                         key={i}
-                        className="w-[2px] bg-violet-legacy rounded-full h-full animate-pulse"
+                        className="w-[2px] bg-text-primary rounded-full h-full animate-pulse"
                         style={{ animationDelay: `${i * 100}ms` }}
                       />
                     ))}

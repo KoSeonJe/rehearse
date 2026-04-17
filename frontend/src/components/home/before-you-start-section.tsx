@@ -86,7 +86,7 @@ export const BeforeYouStartSection = () => {
             >
               <div className="flex items-start gap-4">
                 <div
-                  className="h-8 w-8 shrink-0 rounded-xl bg-violet-legacy/10 flex items-center justify-center text-violet-legacy"
+                  className="h-8 w-8 shrink-0 rounded-xl bg-secondary flex items-center justify-center text-text-primary"
                   aria-hidden="true"
                 >
                   <CheckIcon />
