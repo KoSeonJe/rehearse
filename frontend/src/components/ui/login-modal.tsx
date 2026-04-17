@@ -37,6 +37,7 @@ export const LoginModal = () => {
 
   return (
     <Dialog open={showLoginModal} onOpenChange={handleOpenChange}>
+      {/* TODO(plan-05): rounded-[28px]/shadow-toss-lg → 일관성 감사 단계에서 rounded-lg/shadow-md 토큰으로 정리 */}
       <DialogContent className="w-full max-w-sm rounded-[28px] bg-white p-8 shadow-toss-lg border-none">
         {/* 로고 */}
         <div className="mb-8 flex flex-col items-center gap-1.5">

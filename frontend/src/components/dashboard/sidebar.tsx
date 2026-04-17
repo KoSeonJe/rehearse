@@ -18,6 +18,7 @@ export const Sidebar = ({ user, onLogout }: SidebarProps) => {
   const isReviewListActive = location.pathname === '/review-list'
 
   return (
+    // TODO(plan-03g): shadow-toss → 대시보드 레이아웃 재정렬 단계에서 shadow 토큰 정리
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-screen w-60 bg-surface border-r border-border shadow-toss z-40">
       {/* 로고 영역 */}
       <div className="flex items-center gap-2.5 px-5 py-5 border-b border-border/50">

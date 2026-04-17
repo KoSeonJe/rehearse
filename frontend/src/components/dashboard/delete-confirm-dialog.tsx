@@ -31,6 +31,7 @@ export const DeleteConfirmDialog = ({
 
   return (
     <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
+      {/* TODO(plan-05): rounded-card/shadow-toss-lg → 일관성 감사 단계에서 rounded-lg/shadow-md 토큰으로 정리 */}
       <AlertDialogContent className="bg-white rounded-card shadow-toss-lg border-none max-w-sm">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-base font-extrabold text-text-primary">
