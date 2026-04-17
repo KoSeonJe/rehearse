@@ -11,7 +11,7 @@ interface SpeakerTestRowProps {
 
 export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onReset }: SpeakerTestRowProps) => {
   return (
-    <div className={`flex items-center gap-5 rounded-[20px] border bg-white p-5 transition-colors ${statusBorder(status)}`}>
+    <div className={`flex items-center gap-5 rounded-[20px] border bg-card p-5 transition-colors ${statusBorder(status)}`}>
       <div className="flex h-20 w-32 shrink-0 items-center justify-center rounded-2xl bg-surface">
         {status === 'testing' ? (
           <div className="flex items-center gap-1">

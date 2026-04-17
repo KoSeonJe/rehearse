@@ -64,7 +64,7 @@ export const InterviewReadyPage = () => {
   if (isError) {
     const is404 = error?.message?.includes('404')
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-background">
         <header className="px-5 pt-8 md:px-8">
           <BackLink to="/interview/setup" replace />
         </header>
@@ -91,7 +91,7 @@ export const InterviewReadyPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>면접 준비 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
