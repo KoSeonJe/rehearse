@@ -37,7 +37,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               className="text-4xl font-extrabold leading-[1.2] tracking-tighter text-text-primary md:text-5xl"
             >
               면접, 연습하면<br />
-              <span className="text-violet-legacy">달라집니다.</span>
+              <span className="text-text-primary">달라집니다.</span>
             </h1>
             <p className="mt-6 text-lg font-medium leading-relaxed text-text-secondary md:text-xl">
               이력서 분석은 물론, CS 기초와 직무 지식까지<br className="hidden md:block" />
@@ -61,6 +61,7 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
           </div>
 
           {/* Right: 캐릭터 목업 */}
+          {/* TODO(plan-04): Aceternity 인터랙션 삽입 자리 — Hero 우측 카드에 Spotlight/Beam 효과 적용 예정 */}
           <div className="flex-1 flex justify-center w-full md:justify-end">
             <div
               className="w-full max-w-[420px] rounded-[32px] bg-surface border border-border shadow-toss-lg rotate-2"
