@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { useAdminFeedbacks } from '@/hooks/use-service-feedback'
 import type { FeedbackSource } from '@/types/service-feedback'
 
@@ -75,7 +76,7 @@ export const AdminFeedbacksPage = () => {
                 <p className="text-base font-medium">아직 피드백이 없습니다</p>
               </div>
             ) : (
-              <div className="bg-surface rounded-2xl border border-border shadow-toss overflow-hidden">
+              <Card className="bg-surface border border-border shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-background">
@@ -100,7 +101,7 @@ export const AdminFeedbacksPage = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Card>
             )}
           </div>
 
@@ -117,7 +118,7 @@ export const AdminFeedbacksPage = () => {
             ) : (
               <div className="flex flex-col gap-3">
                 {feedbackList.map((item) => (
-                  <div key={item.id} className="bg-surface rounded-2xl border border-border shadow-toss p-4">
+                  <Card key={item.id} className="bg-surface border border-border shadow-sm p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold text-text-primary">{item.userName}</span>
                       <SourceBadge source={item.source} />
@@ -127,7 +128,7 @@ export const AdminFeedbacksPage = () => {
                       <span className="text-amber-400 text-sm">{renderStars(item.rating)}</span>
                       <span className="text-xs text-text-tertiary">{formatDate(item.createdAt)}</span>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             )}
