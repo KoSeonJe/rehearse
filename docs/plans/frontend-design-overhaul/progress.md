@@ -11,7 +11,7 @@
 | 2 | Tokens + shadcn init (Phase 2) | Completed | CSS 변수 + shadcn init + Cal Sans 도입 |
 | 3a | Button 교체 | Completed | shadcn Button 재정의 + 전체 교체 완료 |
 | 3b | Input 교체 | Completed | shadcn Input/Label 설치 + TextInput 어댑터 재정의 + password-protected-route 교체 |
-| 3c | Dialog 교체 | Draft | 3b 완료 후 |
+| 3c | Dialog 교체 | Completed | shadcn Dialog/AlertDialog 교체 완료 (커밋 4건, 판단 보류 3건) |
 | 3d | Card 교체 | Draft | 3c 완료 후 |
 | 3e | Form 표준화 | Draft | [optional] audit 결과 기반 |
 | 3f | 랜딩 페이지 레이아웃 | Draft | home |
@@ -76,6 +76,9 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
 - Plan 03a 완료: Button shadcn 교체 (커밋 8건, 판단 보류 12건 — 실측 `grep -rn "TODO(design)" frontend/src` 기준)
   - 교체 완료: home CTA/header, login-modal 닫기, dashboard 전반, setup-navigation, interview-ready, interview-analysis, admin-feedbacks 페이지네이션
   - 판단 보류: login OAuth 브랜드 버튼, sidebar nav active 스타일, step 선택 카드, feedback 탭/타임라인/플레이어, interview-page 스튜디오 UI, review-coach-mark 퍼플 그라디언트, review-list-filter-bar 칩
+- Plan 03c 완료: Dialog/AlertDialog shadcn 교체 (커밋 4건, 판단 보류 3건)
+  - 교체 완료: login-modal(Dialog), delete-confirm-dialog(AlertDialog), service-feedback-modal(Dialog)
+  - 판단 보류(TODO(plan-03c)): upload-recovery-dialog, interview-page finish-dialog, exit-guard — 스튜디오 다크 테마 영역, Phase 3a 범위로 디자인 검수 후 교체
 - Plan 03b 완료: Input shadcn 교체 (커밋 2건, 판단 보류 0건)
   - shadcn Input/Label 설치 + TextInput 어댑터 재정의 (1건)
   - password-protected-route 관리자 인증 Input 교체 + a11y 개선 (1건)
