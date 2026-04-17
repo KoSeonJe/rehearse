@@ -68,7 +68,7 @@ export const AboutPage = () => (
     <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
       <h3 className="text-lg font-bold mb-2">지금 바로 한 사이클 돌려보기</h3>
       <p className="text-sm text-text-secondary mb-4">베타 기간 무료. 이력서 업로드 → 30분이면 첫 영상 + 피드백.</p>
-      <Link to="/" className="inline-block px-4 py-2 bg-violet-legacy text-white rounded-md text-sm font-medium hover:bg-violet-legacy-hover">
+      <Link to="/" className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90">
         리허설 시작하기
       </Link>
     </div>

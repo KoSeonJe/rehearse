@@ -50,7 +50,7 @@ const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
               {interview.interviewTypes.map((type) => (
                 <span
                   key={type}
-                  className="rounded-full bg-violet-legacy/10 px-2 py-0.5 text-xs font-semibold text-violet-legacy"
+                  className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
                 >
                   {INTERVIEW_TYPE_LABELS[type]?.label ?? type}
                 </span>
@@ -150,8 +150,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
           <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
         </div>
-        <div className="h-1 w-32 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-violet-legacy animate-progress-loading" />
+        <div className="h-1 w-32 bg-primary/20 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-primary animate-progress-loading" />
         </div>
       </div>
     )
@@ -247,7 +247,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       <section className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-legacy text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
             {index + 1}
           </div>
           <div>
@@ -349,8 +349,8 @@ export const InterviewFeedbackPage = () => {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
-          <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-violet-legacy animate-progress-loading" />
+          <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-primary animate-progress-loading" />
           </div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">피드백 로딩 중</p>
         </div>

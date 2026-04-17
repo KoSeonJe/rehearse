@@ -127,7 +127,7 @@ const Cta = () => (
     </p>
     <Link
       to="/"
-      className="inline-block px-4 py-2 bg-violet-legacy text-white rounded-md text-sm font-medium hover:bg-violet-legacy-hover"
+      className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
     >
       바로 시작하기
     </Link>

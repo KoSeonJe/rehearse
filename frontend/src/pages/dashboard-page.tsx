@@ -75,7 +75,7 @@ export const DashboardPage = () => {
           variant="ghost"
           size="sm"
           onClick={handleOpenVoluntaryFeedback}
-          className="rounded-xl text-violet-legacy hover:bg-violet-legacy-light hover:text-violet-legacy"
+          className="rounded-xl text-primary hover:bg-muted hover:text-primary"
         >
           <MessageSquarePlus size={16} />
           피드백 보내기
@@ -116,7 +116,7 @@ export const DashboardPage = () => {
             <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
             <button
               onClick={() => navigate('/interview/setup')}
-              className="h-9 px-4 rounded-button bg-violet-legacy text-white text-sm font-bold hover:bg-violet-legacy-hover active:scale-95 transition-all cursor-pointer"
+              className="h-9 px-4 rounded-button bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 active:scale-95 transition-colors cursor-pointer"
             >
               + 새 면접
             </button>

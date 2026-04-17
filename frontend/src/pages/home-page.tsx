@@ -46,7 +46,7 @@ export const HomePage = () => {
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
-    <div className="min-h-screen bg-white text-text-primary selection:bg-secondary">
+    <div className="min-h-screen bg-background text-text-primary selection:bg-secondary">
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
         <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
@@ -111,7 +111,7 @@ export const HomePage = () => {
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
-      <footer className="border-t border-border bg-white">
+      <footer className="border-t border-border bg-background">
         <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
           <div className="flex flex-col items-start gap-1">
             <Link
