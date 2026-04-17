@@ -30,6 +30,12 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # push 이벤트에서는 github.event.before(직전 커밋)와 비교.
+          # workflow_dispatch 등 before가 없는 이벤트에서는 HEAD~1로 폴백.
+          # 이렇게 base를 명시하지 않으면 default branch와 비교하게 되어,
+          # default branch가 develop이고 main HEAD가 develop의 ancestor인 상태에서
+          # diff가 비어 backend/frontend step이 전부 skip되는 사고가 발생한다.
+          base: ${{ github.event.before || 'HEAD~1' }}
           filters: |
             backend:
               - 'backend/**'
