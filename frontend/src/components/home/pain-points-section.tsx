@@ -58,17 +58,32 @@ const PAIN_POINTS: PainPoint[] = [
   },
 ]
 
-const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
-  <Card className="bg-white border border-border p-6 shadow-sm" role="article">
-    <div className="h-10 w-10 rounded-2xl bg-secondary flex items-center justify-center mb-4 text-text-primary">
-      {icon}
+interface PainCardProps extends PainPoint {
+  index: number
+}
+
+const PainCard = ({ title, quote, solution, icon, index }: PainCardProps) => (
+  <Card className="bg-white border border-border shadow-sm" role="article">
+    <div className="flex items-start gap-6 p-6 md:p-8">
+      {/* 좌측: 번호 + 아이콘 */}
+      <div className="shrink-0 flex flex-col items-center gap-3">
+        <span className="text-xs font-black text-text-tertiary tabular-nums">
+          0{index + 1}
+        </span>
+        <div className="h-10 w-10 rounded-2xl bg-secondary flex items-center justify-center text-text-primary">
+          {icon}
+        </div>
+      </div>
+      {/* 우측: 콘텐츠 */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
+        <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-border pl-3">
+          "{quote}"
+        </blockquote>
+        <div className="border-t border-border my-4" />
+        <p className="text-sm font-bold text-text-primary leading-relaxed">{solution}</p>
+      </div>
     </div>
-    <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
-    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-border pl-3">
-      "{quote}"
-    </blockquote>
-    <div className="border-t border-border my-4" />
-    <p className="text-sm font-bold text-text-primary leading-relaxed">{solution}</p>
   </Card>
 )
 
@@ -82,9 +97,9 @@ export const PainPointsSection = () => {
       aria-labelledby="pain-heading"
       className="bg-surface py-20 md:py-28"
     >
-      <div className="mx-auto max-w-5xl px-5 md:px-8">
+      <div className="mx-auto max-w-3xl px-5 md:px-8">
         <div className="mb-14 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             WHY REHEARSE
           </p>
           <h2
@@ -97,9 +112,9 @@ export const PainPointsSection = () => {
             점수와 총평만으로는 다음 면접에서 무엇을 바꿔야 할지 알기 어렵습니다.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {PAIN_POINTS.map((item) => (
-            <PainCard key={item.title} {...item} />
+        <div className="flex flex-col gap-4">
+          {PAIN_POINTS.map((item, index) => (
+            <PainCard key={item.title} {...item} index={index} />
           ))}
         </div>
       </div>
