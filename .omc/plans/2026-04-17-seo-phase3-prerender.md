@@ -72,20 +72,50 @@ function handler(event) {
 
 ### Sub-phase 3A: 프리렌더 파이프라인 (코드만, infra 무관)
 
-1. **의존성 추가**: `puppeteer` (frontend devDependencies)
-2. **스크립트 추가**: `frontend/scripts/prerender.mjs`
+1. **라우트 목록 공유 모듈로 추출** (전제 작업)
+   - 현재 `vite.config.ts`의 `PUBLIC_ROUTES`는 `const` (export 안 됨) + TS + Vite 전용 의존성. `.mjs` 스크립트에서 import 불가.
+   - `frontend/scripts/public-routes.mjs` (또는 `.json`)에 라우트 목록을 정규 위치로 두고, vite.config.ts와 prerender 스크립트가 둘 다 import.
+
+2. **의존성 추가**: `puppeteer` (frontend devDependencies)
+   - `.puppeteerrc.cjs`에 `cacheDirectory` 명시(또는 `frontend/.gitignore`에 `.cache/puppeteer/` 추가)
+
+3. **스크립트 추가**: `frontend/scripts/prerender.mjs`
    - dist/ 디렉토리에 정적 HTTP 서버 띄움 (Node http)
-   - 라우트 목록 import (vite.config.ts의 PUBLIC_ROUTES 재사용 또는 별도 모듈로 추출)
+   - puppeteer launch args: **`--no-sandbox --disable-setuid-sandbox` 필수** (CI ubuntu-latest sandbox 미지원)
    - 각 라우트:
-     - puppeteer로 navigate
-     - `document.querySelector('#root').innerText.length > 50` 등으로 콘텐츠 렌더 대기
+     - puppeteer navigate
+     - `await page.waitForFunction(() => document.querySelector('#root')?.innerText?.length > 50)` 로 콘텐츠 렌더 대기
+     - `await page.waitForFunction(() => document.title && document.title !== 'Vite + React')` 로 Helmet 동기화 대기
      - `document.documentElement.outerHTML` 캡처
-     - `dist/<route>/index.html`로 저장 (root는 dist/index.html 덮어쓰기)
+     - 출력: 6개 신규 + 1개 덮어쓰기 (총 7 라우트, root는 dist/index.html 덮어쓰기)
    - puppeteer + 서버 종료
-3. **package.json 업데이트**:
+
+4. **하이드레이션 정책 결정**
+   - 현재 `main.tsx`는 `createRoot()` 사용 → prerender HTML이 와도 React가 throw away 후 재렌더 (콘텐츠 깜빡임 가능).
+   - **결정 A (권장)**: 그대로 둔다. 이유: (1) 사용자 체감엔 거의 영향 없음(즉시 동일 콘텐츠 재렌더), (2) `hydrateRoot` 전환 시 마크업 mismatch 디버깅 부담 큼, (3) prerender 목적은 크롤러용.
+   - 결정 B: 공개 라우트만 `hydrateRoot` 사용. main.tsx 분기 필요. 본 spec 범위 외.
+
+5. **package.json 업데이트**:
    - `"build": "tsc -b && vite build && node scripts/prerender.mjs"`
-4. **CI 영향**: puppeteer postinstall 시 Chromium 다운로드 (~150MB, 캐시되면 빠름). GitHub Actions ubuntu-latest는 Chrome 사전 설치되어 있으므로 `PUPPETEER_SKIP_DOWNLOAD=true` + `PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome` 설정 권장.
-5. **Helmet 처리**: react-helmet-async는 클라이언트에서 마운트 후 비동기로 head를 갱신. puppeteer는 마운트 완료까지 대기 후 캡처 → Helmet 메타가 정적 HTML에 인라인됨.
+
+6. **CI 영향 (deploy-dev.yml / deploy-prod.yml frontend-build job)**
+   - `frontend-build` 잡은 `ubuntu-latest`에서 실행 → 시스템에 Chrome 사전 설치됨.
+   - **PUPPETEER_SKIP_DOWNLOAD를 `npm ci` 시점부터 적용**해야 Chromium 다운로드(~280MB) 회피 가능 → `env:` 를 step이 아니라 **job-level**에 선언:
+     ```yaml
+     frontend-build:
+       runs-on: ubuntu-latest
+       env:
+         PUPPETEER_SKIP_DOWNLOAD: "true"
+         PUPPETEER_EXECUTABLE_PATH: /usr/bin/google-chrome
+     ```
+
+7. **Helmet 처리**: react-helmet-async는 클라이언트에서 마운트 후 비동기로 head를 갱신. puppeteer는 위 4번의 `waitForFunction`으로 마운트 완료까지 대기 후 캡처 → Helmet 메타가 정적 HTML에 인라인됨.
+
+8. **배포 워크플로우 캐시 헤더 수정 (필수)** ⚠️
+   - `deploy-prod.yml` 현재는 `dist/`를 `--exclude "index.html"` + 1년 immutable 캐시로 sync, 그 후 root `index.html`만 no-cache로 별도 업로드.
+   - prerender 도입 후 `dist/guide/ai-mock-interview/index.html` 등 **하위 디렉토리 index.html이 1년 캐시로 업로드되어 콘텐츠 갱신 시 stale** 발생.
+   - 수정: sync 단계에 `--exclude "*/index.html" --exclude "index.html"` + 별도 단계로 모든 `index.html`을 no-cache 업로드(예: `find dist -name index.html | xargs ...`).
+   - deploy-dev.yml은 현재 sync만 하므로 영향 적지만 일관성 위해 동일 수정 권장.
 
 ### Sub-phase 3B: CloudFront 라우팅 (인프라)
 
@@ -93,9 +123,15 @@ function handler(event) {
 2. Publish
 3. Distribution `d2n8xljv54hfw0` 의 default behavior에 viewer-request로 attach
 4. 캐시 무효화 (`/*`)
-5. 검증:
-   - `curl https://rehearse.co.kr/guide/ai-mock-interview` → 본문 HTML 200 OK
-   - `curl https://rehearse.co.kr/dashboard` → 폴백으로 SPA 셸 (CSR로 로그인 페이지)
+
+**SPA 폴백과의 상호작용 (명시)**
+- 공개 라우트 `/about`: CF Function이 `/about/index.html`로 rewrite → S3에 prerender된 파일 존재 → 200 OK 정적 HTML 반환.
+- 비공개 라우트 `/dashboard`: CF Function이 `/dashboard/index.html`로 rewrite → S3에 객체 없음 → 403 → 기존 CloudFront error response가 `/index.html` 200으로 폴백 → CSR로 React Router가 `/dashboard` 처리.
+- 두 경로 모두 정상 동작. 기존 SPA 폴백 제거하지 말 것.
+
+**검증**
+- `curl https://rehearse.co.kr/guide/ai-mock-interview` → 본문 HTML 200 OK
+- `curl https://rehearse.co.kr/dashboard` → 폴백으로 SPA 셸 (CSR로 로그인 페이지)
 
 ### Sub-phase 3C: 검증 및 모니터링
 
@@ -107,10 +143,13 @@ function handler(event) {
 ## 변경/검토 대상 파일
 
 ### Sub-phase 3A
-- `frontend/package.json` (puppeteer 추가, build 스크립트 변경)
+- `frontend/scripts/public-routes.mjs` (신규 — 라우트 목록 단일 출처)
+- `frontend/vite.config.ts` (PUBLIC_ROUTES를 위 모듈에서 import)
 - `frontend/scripts/prerender.mjs` (신규)
-- `frontend/vite.config.ts` (PUBLIC_ROUTES export)
-- `.github/workflows/deploy-dev.yml`, `deploy-prod.yml` (PUPPETEER 환경변수)
+- `frontend/.puppeteerrc.cjs` (신규 — cache 디렉토리 명시)
+- `frontend/package.json` (puppeteer 추가, build 스크립트 변경)
+- `.github/workflows/deploy-dev.yml` (frontend-build job-level env로 PUPPETEER_SKIP_DOWNLOAD/EXECUTABLE_PATH)
+- `.github/workflows/deploy-prod.yml` (위 + sync 캐시 헤더 단계 수정)
 - `frontend/.gitignore` (puppeteer 캐시 무시)
 
 ### Sub-phase 3B (인프라, 코드 외)
@@ -127,6 +166,9 @@ function handler(event) {
 | CloudFront Function 미적용 시 prerender 무용 | 3A 머지 전에 3B 인프라 작업 완료 권장 (또는 같은 PR에서 IaC 추가) |
 | 비공개 라우트가 prerender되어 보안 데이터 노출 | PUBLIC_ROUTES만 prerender. 명시적 화이트리스트. |
 | dev/prod URL 분기 | 3A의 `BASE_URL` 환경변수로 분리 |
+| **`s3 sync --delete`로 prerender 디렉토리 의도치 않게 삭제** | prerender 단계가 vite build 후 실패하면 dist에 하위 디렉토리 부재 상태로 sync → 기존 prerender 파일 wipe. 완화: build 스크립트에서 prerender 실패 시 exit 1로 잡 fail시켜 deploy 단계 진입 차단 (CI의 `needs:` 의존성). |
+| **하이드레이션 mismatch로 prerender 콘텐츠 깜빡임** | 결정 A 채택: createRoot 유지, prerender는 크롤러 전용으로 활용. 사용자 체감 영향 미미. 필요 시 후속 PR에서 hydrateRoot 도입. |
+| **stale cached HTML on update** | 위 Sub-phase 3A.8 캐시 헤더 수정으로 해결. PR에서 반드시 검증. |
 
 ## 진행 권장 순서
 
