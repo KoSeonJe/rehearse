@@ -277,6 +277,7 @@ export const InterviewPage = () => {
         />
 
         {/* Right: Leave button (Google Meet: red pill, far right) */}
+        {/* TODO(design): variant 판단 보류 — Google Meet 스타일 스튜디오 UI (meet-red/green/blue 팔레트), 사용자 확인 필요 */}
         <div className="flex justify-end min-w-[200px]">
           <button
             onClick={() => setShowFinishDialog(true)}

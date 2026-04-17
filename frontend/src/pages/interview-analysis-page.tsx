@@ -8,6 +8,7 @@ import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } from '@/hooks/use-question-sets'
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
+import { Button } from '@/components/ui/button'
 
 interface ModelAnswerSectionProps {
   interviewId: number
@@ -150,12 +151,15 @@ const AnalysisStatusFloat = ({
               </div>
               <p className="text-sm font-bold text-text-primary">분석 완료!</p>
             </div>
-            <button
+            <Button
+              variant="default"
+              size="sm"
+              fullWidth
               onClick={onNavigateFeedback}
-              className="w-full h-10 rounded-xl bg-violet-legacy text-sm font-bold text-white transition-all active:scale-95"
+              className="rounded-xl"
             >
               피드백 보러가기
-            </button>
+            </Button>
           </div>
         )}
 
@@ -168,20 +172,25 @@ const AnalysisStatusFloat = ({
               <p className="text-sm font-bold text-text-primary">일부 피드백 생성 실패</p>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={onRetry}
                 disabled={isRetrying}
-                className="flex-1 h-10 rounded-xl border border-border text-sm font-bold text-text-primary transition-all active:scale-95 disabled:opacity-50"
+                loading={isRetrying}
+                className="flex-1 h-10 rounded-xl"
               >
                 {isRetrying ? '재시도 중...' : '재시도'}
-              </button>
+              </Button>
               {completedCount > 0 && (
-                <button
+                <Button
+                  variant="default"
+                  size="sm"
                   onClick={onNavigateFeedback}
-                  className="flex-1 h-10 rounded-xl bg-violet-legacy text-sm font-bold text-white transition-all active:scale-95"
+                  className="flex-1 h-10 rounded-xl"
                 >
                   완료된 결과 보기
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -285,12 +294,15 @@ export const InterviewAnalysisPage = () => {
               수고하셨습니다!
             </p>
           </div>
-          <button
+          <Button
+            variant="default"
+            size="lg"
+            fullWidth
             onClick={() => navigate('/')}
-            className="h-16 w-full rounded-[24px] bg-violet-legacy font-black text-lg text-white transition-all active:scale-95"
+            className="rounded-[24px] font-black text-lg"
           >
             홈으로 돌아가기
-          </button>
+          </Button>
         </div>
       </div>
     )

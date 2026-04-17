@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
+import { Button } from '@/components/ui/button'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
@@ -364,12 +365,14 @@ export const InterviewFeedbackPage = () => {
         <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary text-center">
           피드백을 불러올 수 없습니다
         </h1>
-        <button
-          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-violet-legacy font-semibold text-white active:scale-95"
+        <Button
+          variant="default"
+          size="lg"
           onClick={() => navigate('/')}
+          className="mt-10 w-full max-w-xs rounded-[24px]"
         >
           홈으로 돌아가기
-        </button>
+        </Button>
       </div>
     )
   }
@@ -383,6 +386,7 @@ export const InterviewFeedbackPage = () => {
       {/* Header */}
       <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
+          {/* TODO(design): variant 판단 보류 — 로고+텍스트 조합 헤더 버튼, 레이아웃 영향 검토 필요 */}
           <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
             <Logo size={60} />
             <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
