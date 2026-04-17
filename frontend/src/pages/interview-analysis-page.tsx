@@ -276,7 +276,7 @@ export const InterviewAnalysisPage = () => {
           <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-violet-legacy animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-violet-legacy">로딩 중</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">로딩 중</p>
         </div>
       </div>
     )

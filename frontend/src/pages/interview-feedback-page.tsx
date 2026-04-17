@@ -352,7 +352,7 @@ export const InterviewFeedbackPage = () => {
           <div className="h-1 w-24 bg-violet-legacy/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-violet-legacy animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-violet-legacy">피드백 로딩 중</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">피드백 로딩 중</p>
         </div>
       </div>
     )
@@ -411,7 +411,7 @@ export const InterviewFeedbackPage = () => {
       <main className="mx-auto max-w-6xl px-5 pt-10 md:px-8">
         {/* Hero */}
         <section className="text-center mb-12">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-violet-legacy mb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Timestamp Feedback Review
           </p>
           <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary sm:text-3xl">
