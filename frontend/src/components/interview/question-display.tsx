@@ -1,5 +1,6 @@
 import type { FollowUpResponse, InterviewType, Question } from '@/types/interview'
 import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
+import { Card } from '@/components/ui/card'
 
 interface QuestionDisplayProps {
   question: Question
@@ -19,7 +20,7 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
 export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {
   return (
     <div className="sticky top-20 z-10 space-y-3">
-      <div className="rounded-card border border-border bg-surface p-6 shadow-sm">
+      <Card className="border border-border bg-surface p-6 shadow-sm">
         <div className="mb-3 flex items-center gap-3">
           <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-legacy text-sm font-bold text-white">
             {currentIndex + 1}
@@ -34,19 +35,19 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
           )}
         </div>
         <p className="text-lg leading-relaxed font-medium text-text-primary">{question.content}</p>
-      </div>
+      </Card>
 
       {isFollowUpLoading && (
-        <div className="rounded-card border border-info/30 bg-info-light p-4">
+        <Card className="border border-info/30 bg-info-light p-4 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-info border-t-transparent" />
             <span className="text-sm text-info">질문을 생각하고 있습니다...</span>
           </div>
-        </div>
+        </Card>
       )}
 
       {followUp && !isFollowUpLoading && (
-        <div className="rounded-card border border-info/30 bg-info-light p-5">
+        <Card className="border border-info/30 bg-info-light p-5 shadow-sm">
           <div className="mb-2 flex items-center gap-2">
             <span className="rounded-badge bg-info/10 px-2.5 py-0.5 text-xs font-medium text-info">
               후속 질문
@@ -57,7 +58,7 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
           </div>
           <p className="text-base leading-relaxed font-medium text-text-primary">{followUp.question}</p>
           <p className="mt-2 text-sm text-text-secondary">{followUp.reason}</p>
-        </div>
+        </Card>
       )}
     </div>
   )
