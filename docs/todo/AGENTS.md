@@ -12,11 +12,19 @@
 ## File Naming
 
 ```
-docs/todo/todo-YYYY-MM-DD.md         # 단일 의사결정
-docs/todo/todo-YYYY-MM-DD-{slug}.md  # 같은 날 여러 건이면 slug 추가
+docs/todo/YYYY-MM-DD/{slug}.md       # 날짜 폴더 하위에 작업 성격 슬러그 파일
 ```
 
-예: `todo-2026-04-17.md`, `todo-2026-04-17-cloudfront.md`
+- 날짜 폴더는 **최초 작성일** 기준 (결정일이 아님)
+- slug 는 작업 성격을 나타내는 kebab-case (`seo-phase3-prerender`, `cloudfront-routing`, `auth-migration` 등)
+- 한 결정 = 한 파일. 같은 날 여러 결정이 있으면 파일을 여러 개 만든다.
+
+예: `docs/todo/2026-04-17/seo-phase3-prerender.md`, `docs/todo/2026-04-17/cloudfront-routing.md`
+
+## Tracking
+
+`docs/todo/` 하위 개별 todo 파일은 **로컬 전용** (`.gitignore` 처리).
+규약 문서인 이 `AGENTS.md` 만 원격에 공유된다. 팀 공유가 필요한 결정은 결정 후 `.omc/plans/` spec 또는 PR 본문으로 이관할 것.
 
 ## Required Sections
 
@@ -96,7 +104,7 @@ docs/todo/todo-YYYY-MM-DD-{slug}.md  # 같은 날 여러 건이면 slug 추가
 2. **검토**: 의사결정자가 읽고 코멘트로 질문 / Resolved 옵션 선택
 3. **결정**: Status를 `Decided`로 변경, 결정 결과 기입, 결정자 본인 또는 작성자가 commit
 4. **실행**: 결정 결과를 바탕으로 별도 PR로 spec(`.omc/plans/`) 또는 코드 PR 작성
-5. **완료**: 실행 PR 머지 후 todo 문서 Status를 `Done`으로 변경, archive 폴더로 이동(`docs/todo/archive/YYYY/`)
+5. **완료**: 실행 PR 머지 후 todo 문서 Status를 `Done`으로 변경, archive 폴더로 이동(`docs/todo/archive/YYYY-MM-DD/{slug}.md`)
 
 ## DO / DON'T
 
