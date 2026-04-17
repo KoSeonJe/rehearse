@@ -59,13 +59,6 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
 
-        /* Legacy — Phase 3~5에서 사용처 제거 후 삭제 */
-        'violet-legacy': {
-          DEFAULT: 'hsl(var(--violet-legacy))',          /* #6366F1 */
-          hover: '#4F46E5',
-          light: '#EEF2FF',
-        },
-
         /* 기존 토큰 유지 (Phase 3에서 개별 처리) */
         surface: '#FFFFFF',
         text: {
@@ -97,9 +90,8 @@ export default {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
-        /* 기존 유지 — Phase 3d에서 정리 */
-        card: '20px',
-        button: '24px',
+        /* 시맨틱 radius 스케일 */
+        card: '12px',
         badge: '999px',
       },
       keyframes: {
@@ -133,8 +125,8 @@ export default {
           to: { transform: 'translateY(0)', opacity: '1' },
         },
         'tutorial-ring': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.22)' },
-          '50%': { boxShadow: '0 0 0 5px rgba(99, 102, 241, 0)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(36, 36, 36, 0.22)' },
+          '50%': { boxShadow: '0 0 0 5px rgba(36, 36, 36, 0)' },
         },
         'tutorial-nudge': {
           '0%, 100%': { transform: 'translateY(0)' },
