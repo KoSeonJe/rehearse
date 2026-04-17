@@ -23,8 +23,8 @@
 | 5 | 일관성 감사 | Completed | `docs/consistency-issues.md` 생성, 코드 수정 0건 |
 | 6 | 최종 클린업 (H1~H4) | Completed | violet-legacy 0건, #6366F1 0건, bg-white→bg-background, radius 토큰 정리. 커밋 8건 (7163eb4~55226cb) |
 | 7 | 토큰 정리 최종 마무리 (Group A) | Completed | `plan-07-tokens-final.md` — radius 스케일 정의 + arbitrary 치환, bg-white 잔여, character.tsx transition 정리 |
-| 8 | shadcn 대량 전환 (Group C) | Draft | `plan-08-shadcn-migration.md` — Tabs/Badge/Sonner/Progress/Tooltip/Separator 도입, P0 3건 + P1 3건 |
-| 9 | 검증 보강 — a11y/smoke/build (Group B) | Draft | `plan-09-verification.md` — vitest-axe 14 페이지, 풀 빌드 로그, 라이트/다크 28컷 캡처 |
+| 8 | shadcn 대량 전환 (Group C) | Completed | `plan-08-shadcn-migration.md` — Tabs/Badge/Sonner/Progress/Separator 전환 완료. Tooltip은 가치 있는 지점 없어 전원 보류 |
+| 9 | 검증 보강 — a11y/smoke/build (Group B) | Completed | B1(axe 14/14) + B2(빌드 로그) 완료. B3 스크린샷은 사용자 로컬 수동 수행으로 이관 |
 
 ## 체크포인트 원칙
 
@@ -144,3 +144,17 @@ Phase별 커밋 메시지는 아래 패턴으로 통일한다 (한국어 convent
   - `login-modal.tsx` `TODO(plan-05)` 주석 제거
   - 검증: lint green, test 24/24 passed, build `✓ built in 4.19s` (prerender puppeteer 이슈는 로컬 Chrome 미설치로 기존부터 동일, 본 변경 무관)
   - grep 검증: `rounded-[20/24/28/32px]` 0건, `TODO(plan-05)` 0건, `character.tsx transition-all` 0건
+- Plan 08 완료: shadcn 대량 전환 (P0 + P1, 5 커밋)
+  - 08-1 설치 (커밋 `5e07ffa`): Tabs/Badge/Sonner/Progress/Tooltip/Separator 6종 + app.tsx `<TooltipProvider>`/`<Toaster />` 마운트
+  - 08-2 Tabs (커밋 `0d1c8c0`): feedback-panel 커스텀 탭 → shadcn Tabs (controlled value/onValueChange, border-b 언더라인 스타일 유지). Radix 자동 ARIA + 방향키 내비게이션
+  - 08-3 Badge (커밋 `21b1555`): 8파일 인라인 span 뱃지 → shadcn Badge. beta-badge/SourceBadge/상태/카테고리/습관어. LevelBadge는 뱃지 형태 아니라 제외. semantic className 유지
+  - 08-4 Sonner (커밋 `132f2a5`): review-toast 컴포넌트 → showReviewToast(id, navigate) 명령형 함수. 호출부(bookmark-toggle-button) navigate 주입. sonner mock으로 테스트 업데이트
+  - 08-5/7 Progress+Separator (커밋 `1ffe8cc`): setup-progress-bar/finishing-overlay uploading → shadcn Progress (indeterminate 바 유지). sidebar 로고/프로필 경계 → Separator
+  - 08-6 Tooltip 전원 보류: sidebar 축소 모드 없음, interview-controls 스튜디오 보존, dashboard-header 모바일 전용 — 가치 없음
+  - 검증: 각 단계 lint green, test 24/24, build ✓. 번들 +0.64KB (허용 50KB 이내)
+- Plan 09 완료: 검증 보강 (Group B)
+  - B1 vitest-axe 14 페이지 스펙 (`tests/a11y/pages.spec.tsx`): 14/14 pass, critical/serious **0건**
+  - 발견 즉시 수정: `setup-progress-bar.tsx`, `finishing-overlay.tsx` Progress에 `aria-label` 추가 → `aria-progressbar-name` 해소
+  - B2 빌드 로그: `docs/plans/frontend-design-overhaul/phase-7-verify.md` 기록. lint/test(38/38)/build 모두 green, 번들 675KB(+93KB 누적, gzip 203KB +22KB)
+  - B3 스크린샷 28컷: Playwright 미도입으로 사용자 로컬 수동 수행으로 이관
+  - 후속: RadioGroup(C8) / Sidebar(C9) / 히어로(C10)는 별도 spec
