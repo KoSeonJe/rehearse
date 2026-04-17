@@ -1,3 +1,5 @@
+// TODO(plan-03c): shadcn AlertDialog 교체 보류 — 스튜디오 다크 테마(bg-[#2c2c2c])는
+// interview 스튜디오 Phase 3a 범위. 라이트 테마 Dialog로 교체 시 디자인 검수 필요.
 interface UploadRecoveryDialogProps {
   open: boolean
   failedCount: number
