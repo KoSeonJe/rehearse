@@ -1,6 +1,6 @@
 # Plan 03d: Card 컴포넌트 shadcn 교체
 
-> 상태: Draft
+> 상태: Completed
 > 작성일: 2026-04-17
 
 ## Why
