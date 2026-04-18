@@ -30,11 +30,12 @@ export const TabBar = ({ items, activeId, onSelect, className }: TabBarProps) =>
           onClick={() => onSelect(item.id)}
           aria-current={isActive ? 'true' : undefined}
           className={cn(
-            'shrink-0 px-3 py-2.5 text-[13px] relative font-tabular',
-            'transition-[color,border-color] duration-[var(--duration-fast)]',
+            'shrink-0 px-3.5 py-2.5 text-[13px] relative font-tabular rounded-t-md',
+            'transition-[color,background-color,border-color] duration-[var(--duration-fast)]',
+            /* 선택 강조 — 배경 tint + 3px bottom bar + 굵은 terracotta 텍스트 */
             isActive
-              ? 'text-foreground border-b-2 border-accent-editorial font-medium'
-              : 'text-muted-foreground border-b-2 border-transparent hover:text-foreground',
+              ? 'text-accent-editorial font-bold border-b-[3px] border-accent-editorial bg-accent-editorial-bg/60 -mb-px'
+              : 'text-muted-foreground border-b-[3px] border-transparent hover:text-foreground hover:bg-foreground/4',
           )}
         >
           {String(item.index).padStart(2, '0')}

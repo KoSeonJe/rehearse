@@ -49,12 +49,19 @@ export const MobileSheet = ({
                 }}
                 aria-current={isActive ? 'true' : undefined}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 text-left rounded-sm min-h-11',
+                  'flex items-center gap-3 px-4 py-3 text-left rounded-md min-h-11',
                   'transition-colors duration-[var(--duration-fast)]',
-                  isActive ? 'text-foreground font-medium' : 'text-muted-foreground',
+                  isActive
+                    ? 'bg-accent-editorial-bg text-foreground font-semibold border-l-[3px] border-accent-editorial pl-[calc(1rem-3px)]'
+                    : 'text-muted-foreground hover:bg-foreground/4',
                 )}
               >
-                <span className="font-tabular text-[11px] w-5 text-accent-editorial">
+                <span
+                  className={cn(
+                    'font-tabular text-[11px] w-5',
+                    isActive ? 'text-accent-editorial font-bold' : 'text-muted-foreground/60',
+                  )}
+                >
                   {String(item.index).padStart(2, '0')}
                 </span>
                 <span className="flex-1">{item.label}</span>
