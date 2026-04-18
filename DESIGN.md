@@ -46,14 +46,16 @@ The elevation system is notably sophisticated for a minimal site — 11 shadow d
 
 > Cal.com은 의도적으로 무채색이지만, Rehearse는 "면접 도구"로서 상태 신호가 필요하다. 4종을 엄격히 분리해 오염 없이 사용한다.
 
-| 토큰 | 값 | 용도 | 사용 제한 |
-|------|----|------|-----------|
-| `--accent-editorial` (`#b8741a`) | Amber ochre | 피드백 하이라이트, 챕터 숫자 마커 | `--signal-warning`과 인접 8px 이상 간격 유지 |
-| `--signal-record` (`#c8322a`) | Warm red | 녹화 중 상태 dot + "REC" 라벨 | `interview-page` 전용. 다른 페이지 사용 금지 |
-| `--signal-warning` (`#d4a017`) | Ochre | 타임 카운트다운, 시간 초과 경고 | 타임 경고에만. `--accent-editorial`과 인접 금지 |
-| `--signal-success` (`#5a7a4a`) | Muted sage | 저장 완료 toast | toast 1개에만. 페이지 수준 배경 사용 금지 |
+| 토큰 | 값 (light) | 값 (dark) | 용도 | 사용 제한 |
+|------|-----------|-----------|------|-----------|
+| `--accent-editorial` | `#a65131` (terracotta) | `#c57458` | 피드백 하이라이트, 챕터 숫자 마커 | hue 13°로 ochre(warning)와 ≥30° 이격 |
+| `--signal-record` | `#c8322a` (warm red) | `#d46b5f` | 녹화 중 상태 dot + "REC" 라벨 | `interview-page` 전용. 다른 페이지 사용 금지 |
+| `--signal-warning` | `#d4a017` (ochre) | `#e6b946` | 타임 카운트다운, 시간 초과 경고 | 타임 경고에만 |
+| `--signal-success` | `#5a7a4a` (muted sage) | `#87a26f` | 저장 완료 toast | toast 1개에만. 페이지 수준 배경 사용 금지 |
 
-**배경 tint 변수**: 각 signal에 `-bg` suffix 변수 제공 (`--accent-editorial-bg`, `--signal-record-bg` 등)
+**배경 tint 변수**: 각 signal에 `-bg` suffix 제공 (`--accent-editorial-bg`, `--signal-record-bg` 등). 라이트는 95% L pastel tint, 다크는 14–16% L shade로 명도 내려 `#14130f` 배경 위에서 과발광 방지.
+
+**테마 기본값**: light-default, system-following (`prefers-color-scheme: dark`로 자동 진입). interview-page는 테마와 무관하게 `bg-interview-stage` 강제 (몰입 모드).
 
 ### Gradient System
 - No gradients on the marketing site — the design is fully flat and monochrome
@@ -61,46 +63,44 @@ The elevation system is notably sophisticated for a minimal site — 11 shadow d
 
 ## 3. Typography Rules
 
-### Font Family (Phase A 개정)
+### Font Family (2026-04-18 designer critique 반영 — 3-폰트 확정)
 
-> **개정 이유**: Rehearse는 한국어 중심 서비스다. Cal Sans(영문 전용)를 주력에서 optional로 격하하고, Pretendard를 본문 기준으로 확립한다. Fraunces는 영문 display 요소에만 선택 적용.
+> **개정 이유**: 기존 "Pretendard + Cal Sans + Fraunces" 3-폰트 시스템은 Cal Sans와 Fraunces가 영문 display 역할을 놓고 경쟁하는 햇지 구조였다. 한글 지배 페이지에서 Fraunces가 `01` 숫자 장식으로만 남아 editorial voice가 발생하지 않았다. **Cal Sans를 제거하고 Fraunces를 영문 display 단일 폰트로 승격**해 "Quiet Rigor"의 타이포그래피 서명을 확보한다.
 
-- **Body (필수)**: `Pretendard Variable` / `Pretendard` — 한국어 우선 본문. `font-sans` 클래스. 이미 CDN 로드 중
-- **Display (optional, 영문 전용)**: `Fraunces` — 챕터 숫자 마커(`01`, `02`), 통계 헤드라인 영문에만. `font-serif` 클래스. Phase B 활성화 예정 (현재 preload 태그 주석 처리)
-- **Display (기존 유지)**: `Cal Sans` — `font-display` 클래스. 기존 영문 헤딩에서 점진적 교체 예정
+- **Sans (필수)**: `Pretendard Variable` / `Pretendard` — 한글·영문 UI 본문·헤딩. `font-sans` 클래스. 이미 CDN 로드 중
+- **Serif (영문 display 단일)**: `Fraunces` — 영문 헤드라인, ChapterMarker 숫자(`01`, `02`), MetricsSection 초대형 숫자, 피드백 질문 제목 중 영문 부분. `font-serif` 클래스
 - **Mono**: `JetBrains Mono` — 코드, 기술 스택 태그. `font-mono` 클래스
+- **Display (하위 호환 alias)**: `font-display` 클래스는 Fraunces 스택으로 재포인트. 신규 사용 금지 — `font-serif` 사용
 - **Tabular (유틸리티)**: `.font-tabular` CSS 클래스 — `font-feature-settings: 'tnum' 1`. 타이머·통계 숫자에 **필수** 적용
 
-> **한국어 위계 전략**: 한국어 헤딩은 Fraunces 적용 불가(한글 미지원). Pretendard 굵기(700→600→500) + 자간(-0.02em~0) + 크기 차등으로 위계 구성.
+> **Cal Sans 제거 결정**: 실제 `frontend/src/**/*.tsx`에서 `font-display` / `Cal Sans` 참조 0건 확인. Cal Sans는 Cal.com 정체성이지 Rehearse 정체성이 아니며, 제거 시 마이그레이션 비용 실효 없음.
 
-> **Fraunces trade-off**: 한국어 글자에 적용 시 폰트 믹스 현상 발생. 영문 display(챕터 숫자, 통계 수치)에만 선택적 적용. 비용(약 80KB) → `&text=0123456789` subset으로 10KB 이하 최적화.
+> **한글 위계 전략**: Fraunces는 한글 미지원. 한글 헤딩은 Pretendard 굵기(700→600→500) + 자간(-0.02em → 0) + 크기 차등만으로 위계 구성. Fraunces는 영문 단어·숫자가 등장하는 지점에만 노출해 폰트 믹스 파편화 회피.
 
-### Hierarchy
+### Hierarchy (Quiet Rigor — Pretendard + Fraunces + JetBrains Mono)
 
 | Role | Font | Size | Weight | Line Height | Letter Spacing | Notes |
 |------|------|------|--------|-------------|----------------|-------|
-| Display Hero | Cal Sans | 64px | 600 | 1.10 | 0px | Maximum impact, tight default spacing |
-| Section Heading | Cal Sans | 48px | 600 | 1.10 | 0px | Large section titles |
-| Feature Heading | Cal Sans | 24px | 600 | 1.30 | 0px | Feature block headlines |
-| Sub-heading | Cal Sans | 20px | 600 | 1.20 | +0.2px | Positive spacing for readability at smaller size |
-| Sub-heading Alt | Cal Sans | 20px | 600 | 1.50 | 0px | Relaxed line-height variant |
-| Card Title | Cal Sans | 16px | 600 | 1.10 | 0px | Smallest Cal Sans usage |
-| Caption Label | Cal Sans | 12px | 600 | 1.50 | 0px | Small labels in Cal Sans |
-| Body Light | Cal Sans UI Light | 18px | 300 | 1.30 | -0.2px | Light-weight body intro text |
-| Body Light Standard | Cal Sans UI Light | 16px | 300 | 1.50 | -0.2px | Light-weight body text |
-| Caption Light | Cal Sans UI Light | 14px | 300 | 1.40–1.50 | -0.2 to -0.28px | Light captions and descriptions |
-| UI Label | Inter | 16px | 600 | 1.00 | 0px | UI buttons and nav labels |
-| Caption Inter | Inter | 14px | 500 | 1.14 | 0px | Small UI text |
-| Micro | Inter | 12px | 500 | 1.00 | 0px | Smallest Inter text |
-| Code | Roboto Mono | 14px | 600 | 1.00 | 0px | Code snippets, technical text |
-| Body Matter | Matter Regular | 14px | 400 | 1.14 | 0px | Alternate body text (product UI) |
+| `display-xl` | Fraunces (영문) / Pretendard (한글) | 64px | 700 | 1.05 | -0.02em | MetricsSection 초대형 숫자, 히어로 영문 |
+| `display-lg` | Fraunces / Pretendard | 48px | 700 | 1.10 | -0.02em | ChapterMarker 질문 제목 |
+| `h1` | Pretendard | 40px | 700 | 1.20 | -0.01em | 페이지 주요 타이틀 |
+| `h2` | Pretendard | 28px | 700 | 1.30 | -0.01em | 섹션 헤딩 |
+| `h3` | Pretendard | 20px | 600 | 1.40 | 0 | 서브 섹션 |
+| `body-lg` | Pretendard | 18px | 400 | 1.65 | 0 | 피드백 본문 (scan-first) |
+| `body` | Pretendard | 16px | 400 | 1.70 | 0 | 일반 본문 |
+| `body-sm` | Pretendard | 14px | 400 | 1.60 | 0 | 보조 설명 |
+| `caption` | Pretendard | 12px | 500 | 1.50 | +0.02em | 레이블, 메타 정보 |
+| `over-line` | Pretendard | 11px | 600 | 1.50 | +0.10em | ChapterMarker 숫자 caption, UtilityBar 챕터 표시 |
+| `mono` | JetBrains Mono | 13px | 400 | 1.60 | 0 | 코드, 기술 스택 태그 |
+| `numeric-display` | Fraunces | any | 700 | 1.05 | -0.02em | 숫자 단독 표기 (`01`, `42min`) |
+| `tabular` | Pretendard | any | — | — | `font-feature-settings: 'tnum'` | 타이머·통계 숫자 **필수** |
 
-### Principles
-- **Cal Sans at large, Inter at small**: Cal Sans is exclusively for headings and display — never for body text. The system enforces this division strictly
-- **Tight by default, space when small**: Cal Sans letters are "intentionally spaced to be extremely close" at large sizes. At 20px and below, positive letter-spacing (+0.2px) must be applied to prevent cramming
-- **Weight 300 body variant**: Cal Sans UI Variable Light at 300 weight creates an elegant, airy body text that contrasts with the dense 600-weight headlines
-- **Weight 600 dominance**: Nearly all Cal Sans usage is at weight 600 (semi-bold) — the font was designed to perform at this weight
-- **Negative tracking on light text**: Cal Sans UI Light uses -0.2px to -0.28px letter-spacing, subtly tightening the already-compact letterforms
+### Principles (2026-04-18 개정)
+- **Fraunces는 영문·숫자 전용**: 한글에 Fraunces 강제 시 폰트 믹스 파편화 발생. 영문 단어·숫자가 독립적으로 나타나는 지점에만 노출
+- **Pretendard 굵기 변주가 한글 위계의 전부**: 700(주 헤딩) → 600(서브) → 500(캡션) → 400(본문). 자간 -0.02em ~ 0 범위에서 크기에 비례
+- **숫자는 항상 tabular**: 타이머·통계는 `font-tabular` 클래스 필수, 시각 정렬 유지
+- **scan-first 피드백**: `body-lg`는 1.65 line-height (독서가 아닌 스캔)
+- **over-line(11px) > display 숫자 장식**: ChapterMarker는 질문 제목이 주인공, 숫자는 참조 레이블
 
 ## 4. Component Stylings
 
@@ -196,24 +196,23 @@ Cal.com's shadow system is the most sophisticated element of the design — 11 s
 ## 7. Do's and Don'ts
 
 ### Do
-- Use Cal Sans exclusively for headings (24px+) and never for body text — it's a display font with tight default spacing
-- Apply positive letter-spacing (+0.2px) when using Cal Sans below 24px — the font cramps at small sizes without it
-- Maintain the grayscale palette — boldness comes from contrast, not color
-- Use the multi-layered shadow system for card elevation — ring shadow + diffused shadow + contact shadow
-- Keep backgrounds pure white — the monochrome philosophy requires a clean canvas
-- Use Inter for all body text at weight 300–600 — it's the reliable counterpart to Cal Sans's display personality
+- Use **Fraunces for English display and all numerals** — ChapterMarker 숫자, MetricsSection 대형 수치, 영문 헤드라인. 숫자 `subset=0123456789` 로드로 비용 최소화
+- Use **Pretendard for all Korean content** (headings + body) — 굵기 변주(700→600→500→400)로 위계 구성
+- Maintain warm off-neutral palette (`#fafaf7` / `#14130f`) — no pure black/white
+- Use the 5-step shadow system (`shadow-xs` ~ `shadow-lg`) — ring border + diffused shadow 조합 유지
+- Apply `font-tabular` to all timers and statistical numerals — visual alignment 필수
 - Let product screenshots be the visual content — no illustrations, no decorative graphics
-- Apply generous section spacing (80px–96px) — the breathing room is essential to the premium feel
+- Apply generous section spacing (80px–96px) — breathing room is essential to Quiet Rigor
 
 ### Don't
-- Use Cal Sans for body text or text below 16px — it wasn't designed for extended reading
-- Add brand colors — Cal.com is intentionally grayscale, color is reserved for links and UI states only
-- Use CSS borders when shadows can achieve the same containment — the ring-shadow technique is the system's approach
-- Apply negative letter-spacing to Cal Sans at small sizes — it needs positive spacing (+0.2px) below 24px
-- Create heavy, dark shadows — Cal.com's shadows are subtle (5% opacity diffused) with sharp contact edges
-- Use illustrations, abstract graphics, or decorative elements — the visual language is typography + product UI only
-- Mix Cal Sans weights — the font is designed for weight 600, other weights break the intended character
-- Reduce section spacing below 48px — the generous whitespace is core to the premium monochrome aesthetic
+- **Do NOT re-introduce Cal Sans** — removed 2026-04-18 (designer critique). Fraunces is the sole English display font
+- **Do NOT use `backdrop-blur` on sticky headers** — anti-slop rule (`frontend-design-rules.md`). Use opaque `bg-background` + hairline border
+- **Do NOT force Fraunces on Korean text** — font mix 파편화 발생. 한글은 Pretendard 전담
+- **Do NOT place `--accent-editorial` near `--signal-warning`** as if they're the same token — terracotta vs ochre는 색상환 ≥30° 이격이지만 의미(하이라이트 vs 경고)가 다르므로 용도로만 구분
+- Add purple/indigo brand colors — AI slop, `frontend-design-rules.md` 명시 금지
+- Apply `transition-all duration-300` 무차별 — `transition-colors` / `transition-transform` 등 필요 property만 명시
+- Use illustrations, abstract graphics, or decorative 3D elements — typography + product UI only
+- Reduce section spacing below 48px on mobile — generous whitespace is core to the aesthetic
 
 ## 8. Responsive Behavior
 
