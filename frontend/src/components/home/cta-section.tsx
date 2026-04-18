@@ -34,7 +34,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
               className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-brand-foreground"
             >
               지금 시작하면,<br />
-              베타 피드백을 같이 만듭니다.
+              제품 방향을 함께 정합니다.
             </h2>
             <p className="mt-6 max-w-xl text-[16px] md:text-lg font-medium leading-[1.75] text-brand-foreground/80">
               <span className="text-brand-foreground font-semibold">베타 전 기능 무료</span>. 이력서만 있으면 3분 뒤 첫 면접이 시작되고, 질문이 자동 생성됩니다.

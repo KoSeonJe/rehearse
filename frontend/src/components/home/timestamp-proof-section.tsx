@@ -38,16 +38,16 @@ export const TimestampProofSection = () => {
               id="proof-heading"
               className="text-3xl md:text-[2.5rem] font-bold leading-[1.15] tracking-[-0.025em] text-foreground"
             >
-              초 단위로 묶어주는 건,
+              답변별로 피드백을 주는 건,
               <br className="hidden md:block" />{' '}
               여기뿐입니다.
             </h2>
             <p className="mt-5 max-w-md text-[15px] md:text-base font-medium leading-[1.75] text-muted-foreground">
-              답변 어느 지점에서 흔들렸는지
+              잘한 점 · 아쉬운 점 · 다음엔 이렇게 —
               <br className="hidden md:block" />{' '}
-              <span className="text-foreground font-semibold">초 단위로 돌려봅니다.</span>
+              <span className="text-foreground font-semibold">답변 하나하나에 따로 코멘트가 붙습니다.</span>
               <br className="hidden md:block" />{' '}
-              영상 · 지표 · 코멘트가 같은 타임스탬프로 묶여 클릭 한 번에 그 순간으로 돌아가요.
+              영상 · 지표 · 코멘트가 같은 타임스탬프로 묶여, 클릭 한 번에 그 순간으로 돌아가요.
             </p>
 
             <dl className="mt-10 divide-y divide-foreground/8 border-t border-foreground/10">
