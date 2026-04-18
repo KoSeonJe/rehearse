@@ -2,7 +2,7 @@ import type { TimestampFeedback } from '@/types/interview'
 
 const getTypeColor = (feedback: TimestampFeedback): string => {
   if (feedback.questionType === 'FOLLOWUP') return 'bg-blue-400'
-  return 'bg-accent'
+  return 'bg-brand'
 }
 
 interface TimelineBarProps {
@@ -36,8 +36,8 @@ export const TimelineBar = ({
           return (
             <button
               key={fb.id}
-              className={`absolute top-1 bottom-1 rounded-md transition-all cursor-pointer ${
-                isActive ? 'ring-2 ring-accent ring-offset-1 z-10' : 'hover:brightness-110'
+              className={`absolute top-1 bottom-1 rounded-md transition-[box-shadow,filter] cursor-pointer ${
+                isActive ? 'ring-2 ring-primary ring-offset-1 z-10' : 'hover:brightness-110'
               } ${getTypeColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
@@ -56,7 +56,7 @@ export const TimelineBar = ({
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-accent" />
+          <div className="h-2.5 w-2.5 rounded-sm bg-brand" />
           <span className="text-[10px] font-medium text-text-tertiary">원본</span>
         </div>
         {feedbacks.some((f) => f.questionType === 'FOLLOWUP') && (

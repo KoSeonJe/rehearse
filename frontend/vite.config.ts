@@ -1,22 +1,94 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+import { PUBLIC_ROUTES as RAW_PUBLIC_ROUTES } from './scripts/public-routes.mjs'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+interface SitemapRoute {
+  path: string
+  priority: number
+  changefreq: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never'
+}
+
+const PUBLIC_ROUTES = RAW_PUBLIC_ROUTES as SitemapRoute[]
+
+function seoPlugin(siteUrl: string, isProd: boolean): Plugin {
+  return {
+    name: 'rehearse-seo',
+    apply: 'build',
+    transformIndexHtml(html) {
+      // Vite 는 %VAR% 치환을 기본 지원하지 않으므로 수동 치환.
+      // canonical / og:url / JSON-LD url 이 리터럴로 prod 노출되는 것을 차단.
+      const substituted = html.replace(/%VITE_SITE_URL%/g, siteUrl)
+      if (isProd) return substituted
+
+      const stripped = substituted
+        .replace(/\s*<!-- Google Search Console[^>]*-->\s*/g, '')
+        .replace(/\s*<!-- Naver Search Advisor[^>]*-->\s*/g, '')
+        .replace(/\s*<meta name="google-site-verification"[^>]*\/?>\s*/g, '')
+        .replace(/\s*<meta name="naver-site-verification"[^>]*\/?>\s*/g, '')
+
+      return stripped.replace(
+        /<meta name="viewport"[^>]*\/?>/,
+        (match) => `${match}\n    <meta name="robots" content="noindex, nofollow" />`,
+      )
     },
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
+    closeBundle() {
+      const lastmod = new Date().toISOString().split('T')[0]
+      const urlEntries = PUBLIC_ROUTES.map(
+        (r) => `  <url>
+    <loc>${siteUrl}${r.path}</loc>
+    <lastmod>${lastmod}</lastmod>
+    <changefreq>${r.changefreq}</changefreq>
+    <priority>${r.priority.toFixed(1)}</priority>
+  </url>`,
+      ).join('\n')
+
+      const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries}
+</urlset>
+`
+      const distDir = path.resolve(__dirname, 'dist')
+      fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemap)
+
+      const robotsBody = isProd
+        ? `User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /interview/
+
+Sitemap: ${siteUrl}/sitemap.xml
+`
+        : // dev 는 Sitemap 선언을 노출하지 않는다 — 네이버 웹마스터도구 수동 등록으로 dev 가 색인되는 우회 경로 차단.
+          `User-agent: *
+Disallow: /
+`
+      fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsBody)
+    },
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  const siteUrl = env.VITE_SITE_URL || 'https://rehearse.co.kr'
+  const isProd = mode === 'production'
+
+  return {
+    plugins: [react(), seoPlugin(siteUrl, isProd)],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
       },
     },
-  },
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+        },
+      },
+    },
+  }
 })

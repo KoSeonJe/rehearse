@@ -28,6 +28,13 @@ dist-ssr
 .env.*
 .env.local
 .env.*.local
+# 공개 SEO/빌드용 환경 파일은 커밋 (시크릿 없음)
+!.env.development
+!.env.production
+!.env.example
 
 # Test coverage
 coverage
+
+# Puppeteer cache (PUPPETEER_SKIP_DOWNLOAD 미설정 시 이 경로로 Chromium 다운)
+.cache/

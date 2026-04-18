@@ -3,18 +3,17 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
+import { Button } from '@/components/ui/button'
 import { HeroSection } from '@/components/home/hero-section'
-import { PainPointsSection } from '@/components/home/pain-points-section'
-import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
+import { TimestampProofSection } from '@/components/home/timestamp-proof-section'
+import { PainFixSection } from '@/components/home/pain-fix-section'
 import { MetricsSection } from '@/components/home/metrics-section'
-import { DevTailoredSection } from '@/components/home/dev-tailored-section'
-import { JourneySection } from '@/components/home/journey-section'
-import { BeforeYouStartSection } from '@/components/home/before-you-start-section'
-import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
 import { useLogout } from '@/hooks/use-logout'
+
+const HOME_SITE_URL = import.meta.env.VITE_SITE_URL || 'https://rehearse.co.kr'
 
 export const HomePage = () => {
   const navigate = useNavigate()
@@ -43,22 +42,25 @@ export const HomePage = () => {
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
-    <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+    <div className="min-h-screen bg-background text-text-primary selection:bg-secondary">
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
-        <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
-        <link rel="canonical" href="https://rehearse.co.kr/" />
-        <meta property="og:url" content="https://rehearse.co.kr/" />
+        <meta name="description" content="한국 개발자 취업 준비 AI 모의면접. 이력서 기반 맞춤 질문, 영상 녹화, 초 단위 타임스탬프 피드백까지 — 다음 면접에서 무엇을 고쳐야 할지 30분이면 보입니다. 베타 전 기능 무료." />
+        <link rel="canonical" href={`${HOME_SITE_URL}/`} />
+        <meta property="og:url" content={`${HOME_SITE_URL}/`} />
         <meta property="og:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
-        <meta property="og:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지." />
+        <meta property="og:description" content="이력서 기반 AI 질문 · 면접 녹화 · 초 단위 타임스탬프 피드백. 개발자 CS·시스템 설계 특화. 베타 전 기능 무료." />
       </Helmet>
       {hasOauthError && !dismissed && (
-        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-destructive/30 bg-destructive/10 px-5 py-3 text-sm font-medium text-destructive shadow-md"
+        >
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
       )}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
+      <header className="sticky top-0 z-50 bg-background border-b border-border/50">
+        <div className="mx-auto flex h-20 w-full max-w-canvas items-center justify-between px-4 md:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">
@@ -68,25 +70,36 @@ export const HomePage = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              to="/faq"
+              aria-label="자주 묻는 질문으로 이동"
+              className="rounded-sm text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2"
+            >
+              FAQ
+            </Link>
             {isAuthenticated ? (
               <>
                 <span className="hidden text-sm font-medium text-text-secondary sm:block">
                   {user?.name}
                 </span>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={logout}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                  className="rounded-xl"
                 >
                   로그아웃
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleOpenLogin}
-                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                className="rounded-xl"
               >
                 로그인
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -94,22 +107,18 @@ export const HomePage = () => {
 
       <main>
         <HeroSection onNavigate={handleStartLogin} isAuthenticated={isAuthenticated} />
-        <PainPointsSection />
-        <VideoFeedbackSection />
+        <PainFixSection />
+        <TimestampProofSection />
         <MetricsSection />
-        <DevTailoredSection />
-        <JourneySection />
-        <BeforeYouStartSection />
-        <FaqSection />
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
-      <footer className="border-t border-border bg-white">
-        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
+      <footer className="border-t border-border bg-background">
+        <div className="mx-auto w-full max-w-canvas px-4 md:px-8 lg:px-12 py-6 flex items-center justify-between gap-4">
           <div className="flex flex-col items-start gap-1">
             <Link
               to="/privacy"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               개인정보 처리방침
             </Link>
@@ -122,7 +131,7 @@ export const HomePage = () => {
               href="https://github.com/KoSeonJe/rehearse"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
               aria-label="GitHub 저장소 열기"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -131,7 +140,7 @@ export const HomePage = () => {
             </a>
             <a
               href="mailto:a01039261344@gmail.com"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               a01039261344@gmail.com
             </a>

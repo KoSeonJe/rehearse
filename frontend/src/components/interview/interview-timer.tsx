@@ -41,11 +41,11 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
           displayRef.current.textContent = formatTimeFull(Math.max(0, remaining))
           // 2분 이하 경고 스타일
           if (remaining <= TIME_WARNING_THRESHOLD_MS && remaining > 0) {
-            displayRef.current.classList.add('text-warning')
-            displayRef.current.classList.remove('text-studio-text-secondary')
+            displayRef.current.classList.add('text-signal-warning')
+            displayRef.current.classList.remove('text-foreground/50')
           } else if (remaining <= 0) {
-            displayRef.current.classList.add('text-error')
-            displayRef.current.classList.remove('text-studio-text-secondary', 'text-warning')
+            displayRef.current.classList.add('text-signal-record')
+            displayRef.current.classList.remove('text-foreground/50', 'text-signal-warning')
           }
         }
         if (remaining <= TIME_WARNING_THRESHOLD_MS && !warningFiredRef.current) {
@@ -75,7 +75,7 @@ export const InterviewTimer = memo(({ startTime, durationMinutes, onTick, onTime
       ref={displayRef}
       role="timer"
       aria-label={durationMinutes ? '남은 면접 시간' : '면접 경과 시간'}
-      className="font-mono text-base tabular-nums text-studio-text-secondary transition-colors duration-700"
+      className="font-mono text-base tabular-nums text-foreground/50 transition-colors duration-700"
     >
       {durationMinutes ? formatTimeFull(durationMinutes * 60 * 1000) : '00:00'}
     </span>

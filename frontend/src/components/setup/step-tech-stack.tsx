@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge'
 import { POSITION_TECH_STACKS, TECH_STACK_LABELS } from '@/constants/interview-labels'
 import type { Position, TechStack } from '@/types/interview'
 
@@ -14,9 +15,6 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
 
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
-        Step 2 — Tech Stack
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         기술 스택을 선택해주세요
       </h1>
@@ -27,6 +25,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
       </p>
 
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
         {availableStacks.map((stack) => {
           const { label, description } = TECH_STACK_LABELS[stack]
           const isSelected = techStack === stack
@@ -38,24 +37,24 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
               onClick={() => onSelect(isSelected ? null : stack)}
               disabled={isLoading}
               aria-pressed={isSelected}
-              className={`flex flex-col items-start gap-1.5 rounded-[20px] p-5 transition-all active:scale-95 ${
+              className={`flex flex-col items-start gap-1.5 rounded-2xl p-5 transition-colors active:scale-95 ${
                 isSelected
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                  : 'bg-surface text-text-primary hover:bg-slate-200'
+                  ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                  : 'bg-surface text-text-primary hover:bg-muted'
               }`}
             >
               <div className="flex w-full items-center justify-between gap-1">
                 <span className="text-base font-extrabold leading-tight">{label}</span>
                 {isDefault && (
-                  <span
-                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  <Badge
+                    className={`shrink-0 rounded-full text-[10px] font-bold border-transparent ${
                       isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-accent/10 text-accent'
+                        ? 'bg-brand-foreground/20 text-brand-foreground hover:bg-brand-foreground/20'
+                        : 'bg-secondary text-text-secondary hover:bg-secondary'
                     }`}
                   >
                     기본
-                  </span>
+                  </Badge>
                 )}
               </div>
               <span

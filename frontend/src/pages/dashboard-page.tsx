@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { InterviewList } from '@/components/dashboard/interview-list'
 import { InterviewTable } from '@/components/dashboard/interview-table'
@@ -70,13 +71,15 @@ export const DashboardPage = () => {
         <h1 className="text-xl font-extrabold text-text-primary tracking-tight">
           {user?.name ? `${user.name}님, 안녕하세요` : '안녕하세요'}
         </h1>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleOpenVoluntaryFeedback}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-accent hover:bg-accent-light transition-colors cursor-pointer"
+          className="rounded-xl text-primary hover:bg-muted hover:text-primary"
         >
           <MessageSquarePlus size={16} />
           피드백 보내기
-        </button>
+        </Button>
       </div>
 
       {/* 통계 카드 */}
@@ -86,12 +89,13 @@ export const DashboardPage = () => {
       {(!isInterviewsLoading && interviews.length > 0) && (
         <div className="hidden lg:flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => navigate('/interview/setup')}
-            className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
           >
             + 새 면접
-          </button>
+          </Button>
         </div>
       )}
 
@@ -112,7 +116,7 @@ export const DashboardPage = () => {
             <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
             <button
               onClick={() => navigate('/interview/setup')}
-              className="h-9 px-4 rounded-button bg-accent text-white text-sm font-bold hover:bg-accent-hover active:scale-95 transition-all cursor-pointer"
+              className="h-9 px-4 rounded-button bg-brand text-brand-foreground text-sm font-bold hover:bg-brand-hover active:scale-95 transition-colors cursor-pointer"
             >
               + 새 면접
             </button>

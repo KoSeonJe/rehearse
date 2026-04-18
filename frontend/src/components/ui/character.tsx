@@ -15,14 +15,14 @@ export const Character = ({ mood = 'default', size = 120, className = '' }: Char
         return {
           eyePath: 'M 45 45 Q 50 38 55 45 M 65 45 Q 70 38 75 45', // Energetic curved eyes
           mouthPath: 'M 48 58 Q 60 68 72 58', // Wide smile
-          color: '#6366F1',
+          color: 'currentColor',
           animation: 'animate-bounce-subtle'
         }
       case 'thinking':
         return {
           eyePath: 'M 45 45 L 55 45 M 65 45 L 75 45', // Flat focused eyes
           mouthPath: 'M 52 62 Q 60 62 68 62', // Neutral line
-          color: '#6366F1',
+          color: 'currentColor',
           animation: 'animate-pulse-subtle'
         }
       case 'confused':
@@ -43,7 +43,7 @@ export const Character = ({ mood = 'default', size = 120, className = '' }: Char
         return {
           eyePath: 'M 48 45 A 2 2 0 1 0 52 45 A 2 2 0 1 0 48 45 M 68 45 A 2 2 0 1 0 72 45 A 2 2 0 1 0 68 45', // Default dots
           mouthPath: 'M 50 60 Q 60 68 70 60', // Gentle smile (from Logo)
-          color: '#6366F1',
+          color: 'currentColor',
           animation: 'animate-float'
         }
     }
@@ -51,7 +51,7 @@ export const Character = ({ mood = 'default', size = 120, className = '' }: Char
 
   return (
     <div 
-      className={`relative inline-flex items-center justify-center transition-all duration-500 ${className} ${moodStyles.animation}`}
+      className={`relative inline-flex items-center justify-center transition-[transform,opacity] duration-500 ${className} ${moodStyles.animation}`}
       style={{ width: size, height: size }}
     >
       {/* Soft Glow based on Brand Color */}

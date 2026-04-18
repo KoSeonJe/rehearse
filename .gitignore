@@ -26,6 +26,9 @@ application-local.yml
 .DS_Store
 Thumbs.db
 
+# === 디자인 검토용 스크린샷 (루트에만 금지 — frontend/public/images 는 허용) ===
+/*.png
+
 # === OMC (세션/상태는 로컬 전용) ===
 **/.omc/sessions/
 **/.omc/state/
@@ -33,6 +36,7 @@ Thumbs.db
 
 # === Claude Code (로컬 전용) ===
 **/.claude/skills/
+skills-lock.json
 **/.claude/agents/
 **/.claude/worktrees/
 **/.claude/settings.local.json
@@ -42,6 +46,11 @@ Thumbs.db
 # === 개인 문서 ===
 docs/resume/
 docs/local/
+
+# === docs/todo (개별 todo 는 로컬 전용, 규약 AGENTS.md 만 공유) ===
+docs/todo/**
+!docs/todo/
+!docs/todo/AGENTS.md
 
 # === Docker ===
 backend/.env
@@ -60,7 +69,13 @@ lambda/**/package/
 lambda/**/*.zip
 
 # === Claude Code 설정 ===
-.claude/
+.claude/*
+!.claude/rules/
+!.claude/rules/**
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/shadcn/
+!.claude/skills/shadcn/**
 .claude.local.md
 
 # === 부하테스트 ===

@@ -1,6 +1,7 @@
 import { MessageSquarePlus } from 'lucide-react'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
+import { Button } from '@/components/ui/button'
 import type { AuthUser } from '@/stores/auth-store'
 
 interface DashboardHeaderProps {
@@ -11,7 +12,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHeaderProps) => {
   return (
-    <header className="lg:hidden sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-border shadow-sm">
+    <header className="lg:hidden sticky top-0 z-50 bg-background border-b border-border shadow-sm">
       <div className="flex h-16 items-center justify-between px-5">
         <div className="flex items-center gap-2">
           <Logo size={80} />
@@ -25,20 +26,24 @@ export const DashboardHeader = ({ user, onLogout, onFeedbackClick }: DashboardHe
             {user?.name}
           </span>
           {onFeedbackClick && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onFeedbackClick}
-              className="rounded-xl border border-border p-2 text-text-secondary transition-colors hover:bg-surface hover:text-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
               aria-label="피드백 보내기"
+              className="rounded-xl border border-border text-text-secondary hover:text-primary"
             >
               <MessageSquarePlus size={18} />
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={onLogout}
-            className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border cursor-pointer"
+            className="rounded-xl"
           >
             로그아웃
-          </button>
+          </Button>
         </div>
       </div>
     </header>

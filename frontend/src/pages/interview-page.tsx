@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useInterviewStore, MAX_FOLLOWUP_ROUNDS, type InterviewPhase } from '@/stores/interview-store'
+import { useInterviewStore, type InterviewPhase } from '@/stores/interview-store'
 import { useInterview } from '@/hooks/use-interviews'
 import { useMediaStream } from '@/hooks/use-media-stream'
 import { useMediaRecorder } from '@/hooks/use-media-recorder'
@@ -17,27 +17,181 @@ const GUARD_ACTIVE_PHASES: ReadonlySet<InterviewPhase> = new Set([
   'paused',
   'finishing',
 ])
-import { InterviewerAvatar } from '@/components/interview/interviewer-avatar'
+
 import { VideoPreview } from '@/components/interview/video-preview'
 import { InterviewControls } from '@/components/interview/interview-controls'
 import { InterviewTimer } from '@/components/interview/interview-timer'
 import { FinishingOverlay } from '@/components/interview/finishing-overlay'
 import { UploadRecoveryDialog } from '@/components/interview/upload-recovery-dialog'
+import { MicIcon } from '@/components/ui/mic-icon'
 
-const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
-  DEEP_DIVE: '심화',
-  CLARIFICATION: '명확화',
-  CHALLENGE: '반론',
-  APPLICATION: '적용',
+// ─── 로딩 화면 ───────────────────────────────────────────────────────────────
+
+const LoadingScreen = () => (
+  /* interview-page와 동일하게 `dark` 클래스로 스코프 강제 — 라이트 테마에서도
+     스테이지 텍스트가 off-white로 해석되도록 보장 (C1 contrast 버그 수정). */
+  <div className="dark flex min-h-screen items-center justify-center bg-interview-stage">
+    <div className="text-center space-y-4">
+      <div className="h-px w-24 bg-foreground/20 mx-auto overflow-hidden">
+        <div className="h-full bg-foreground/60 animate-progress-loading" />
+      </div>
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-3 w-3 animate-spin rounded-full border border-foreground/40 border-t-transparent" aria-hidden="true" />
+        <p className="text-sm font-medium text-foreground">준비 중</p>
+      </div>
+    </div>
+  </div>
+)
+
+// ─── 질문 Caption (비디오 하단 중앙 오버레이) ─────────────────────────────────
+
+interface QuestionCaptionProps {
+  isGreeting: boolean
+  currentQuestion: { content: string } | undefined
+  currentFollowUp: { question: string; type: string } | null
+  isFollowUpLoading: boolean
+  timeWarning: boolean
+  autoTransitionMessage: string | null
 }
+
+const QuestionCaption = ({
+  isGreeting,
+  currentQuestion,
+  currentFollowUp,
+  isFollowUpLoading,
+  timeWarning,
+  autoTransitionMessage,
+}: QuestionCaptionProps) => (
+  <div className="pointer-events-none absolute bottom-24 left-1/2 z-10 w-[calc(100vw-32px)] max-w-3xl -translate-x-1/2 space-y-2">
+    {timeWarning && (
+      <div className="pointer-events-auto rounded-lg bg-signal-warning-bg/90 backdrop-blur-sm border border-signal-warning/25 px-4 py-2 text-center animate-fade-in">
+        <span className="text-xs font-medium text-signal-warning">마무리할 시간입니다</span>
+      </div>
+    )}
+
+    {autoTransitionMessage && (
+      <div className="pointer-events-auto rounded-lg bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/5 px-4 py-2 text-center animate-fade-in">
+        <span className="text-xs text-foreground/70">{autoTransitionMessage}</span>
+      </div>
+    )}
+
+    {isFollowUpLoading ? (
+      <div className="pointer-events-auto flex items-center justify-center gap-2 rounded-xl bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/5 px-5 py-3 animate-fade-in">
+        <div className="h-3 w-3 animate-spin rounded-full border border-foreground/30 border-t-transparent" />
+        <span className="text-xs text-foreground/50">후속 질문 생성 중</span>
+      </div>
+    ) : currentFollowUp ? (
+      <div className="pointer-events-auto rounded-xl bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/5 px-5 py-3 text-center animate-fade-in">
+        <p className="text-sm md:text-base font-medium leading-relaxed text-foreground line-clamp-3">
+          {currentFollowUp.question}
+        </p>
+      </div>
+    ) : (
+      <div className="pointer-events-auto rounded-xl bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/5 px-5 py-3 text-center animate-fade-in">
+        <p className="text-sm md:text-base font-medium leading-relaxed text-foreground line-clamp-3">
+          {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
+        </p>
+      </div>
+    )}
+  </div>
+)
+
+// ─── 종료 다이얼로그 ──────────────────────────────────────────────────────────
+
+interface FinishDialogProps {
+  onCancel: () => void
+  onConfirm: () => void
+}
+
+const FinishDialog = ({ onCancel, onConfirm }: FinishDialogProps) => (
+  <div
+    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+    onClick={onCancel}
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="finish-dialog-title"
+  >
+    <div
+      className="w-full max-w-sm mx-4 rounded-2xl bg-card border border-foreground/10 p-6 shadow-lg animate-fade-in"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <h2 id="finish-dialog-title" className="text-base font-semibold text-foreground mb-2">
+        면접을 종료하시겠습니까?
+      </h2>
+      <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+        답변하지 않은 질문은 분석되지 않습니다.
+      </p>
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="cursor-pointer h-11 min-w-[44px] px-4 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/6 transition-colors duration-[var(--duration-fast)]"
+        >
+          계속하기
+        </button>
+        <button
+          onClick={onConfirm}
+          className="cursor-pointer h-11 min-w-[44px] px-4 rounded-full bg-brand text-sm font-medium text-brand-foreground transition-colors duration-[var(--duration-fast)] hover:bg-brand-hover active:scale-95"
+        >
+          종료하기
+        </button>
+      </div>
+    </div>
+  </div>
+)
+
+// ─── 이탈 가드 다이얼로그 ────────────────────────────────────────────────────
+
+interface ExitGuardDialogProps {
+  phase: InterviewPhase
+  onDismiss: () => void
+  onConfirmExit: () => void
+}
+
+const ExitGuardDialog = ({ phase, onDismiss, onConfirmExit }: ExitGuardDialogProps) => (
+  <div
+    className="fixed inset-0 z-[60] flex items-center justify-center bg-black/75"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="exit-guard-title"
+    aria-describedby="exit-guard-desc"
+  >
+    <div className="w-full max-w-sm mx-4 rounded-2xl bg-card border border-foreground/10 p-6 shadow-lg animate-fade-in">
+      <h2 id="exit-guard-title" className="text-base font-semibold text-foreground mb-2">
+        {phase === 'finishing' ? '면접 종료 처리 중입니다' : '면접을 나가시겠습니까?'}
+      </h2>
+      <p id="exit-guard-desc" className="text-sm text-muted-foreground leading-relaxed mb-6">
+        {phase === 'finishing'
+          ? '안전하게 저장 중이에요. 잠시만 기다려주세요.'
+          : '지금 나가면 녹화된 답변이 저장되지 않을 수 있어요. 정식으로 종료하시겠습니까?'}
+      </p>
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={onDismiss}
+          className="cursor-pointer h-11 min-w-[44px] px-4 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/6 transition-colors duration-[var(--duration-fast)]"
+        >
+          계속 면접
+        </button>
+        {phase !== 'finishing' && (
+          <button
+            onClick={onConfirmExit}
+            className="cursor-pointer h-11 min-w-[44px] px-4 rounded-full bg-signal-record text-sm font-medium text-white transition-colors duration-[var(--duration-fast)] hover:brightness-110 active:scale-95"
+          >
+            면접 종료하기
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+)
+
+// ─── InterviewPage ────────────────────────────────────────────────────────────
 
 export const InterviewPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const interviewId = id ?? ''
 
-  // 이전 세션의 store 잔상 제거: URL id가 store의 interviewId와 다르면 reset
-  // (동일 탭에서 두 번째 면접 진입 / 비정상 종료 후 재진입 시 stale phase 방지)
+  // 이전 세션의 store 잔상 제거
   useEffect(() => {
     const parsed = Number(interviewId)
     if (!parsed) return
@@ -50,8 +204,6 @@ export const InterviewPage = () => {
   const { data: response, error } = useInterview(interviewId)
   const interview = response?.data
 
-  // 이미 종료된 면접 / 존재하지 않는 면접 → 안전 redirect.
-  // 일시적 네트워크 에러(TanStack 재시도 중)에는 이탈시키지 않음 — 404만 404로 대응.
   useEffect(() => {
     if (error instanceof ApiError && error.status === 404) {
       navigate('/dashboard', { replace: true })
@@ -75,7 +227,6 @@ export const InterviewPage = () => {
   const autoTransitionMessage = useInterviewStore((s) => s.autoTransitionMessage)
   const currentFollowUp = useInterviewStore((s) => s.currentFollowUp)
   const isFollowUpLoading = useInterviewStore((s) => s.isFollowUpLoading)
-  const followUpRound = useInterviewStore((s) => s.followUpRound)
 
   const mediaStream = useMediaStream()
   const recorder = useMediaRecorder()
@@ -94,12 +245,11 @@ export const InterviewPage = () => {
     mediaStream,
     recorder,
   })
+
   const [timeWarning, setTimeWarning] = useState(false)
   const [showFinishDialog, setShowFinishDialog] = useState(false)
-  // 사용자가 가드 모달의 "종료하기"를 누른 직후 → 종료 비동기 처리 동안 재-가드 방지
   const [isExitConfirmed, setIsExitConfirmed] = useState(false)
 
-  // 면접 진행 중 이탈 가드
   const { blocked: exitBlocked, dismiss: dismissExit } = useInterviewExitGuard({
     active:
       interview != null &&
@@ -108,11 +258,14 @@ export const InterviewPage = () => {
     suppress: uploadFailureState !== null || isExitConfirmed,
   })
 
-  const handleEscKey = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape' && showFinishDialog) {
-      setShowFinishDialog(false)
-    }
-  }, [showFinishDialog])
+  const handleEscKey = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showFinishDialog) {
+        setShowFinishDialog(false)
+      }
+    },
+    [showFinishDialog],
+  )
 
   useEffect(() => {
     if (showFinishDialog) {
@@ -122,7 +275,9 @@ export const InterviewPage = () => {
   }, [showFinishDialog, handleEscKey])
 
   const currentQuestion = questions[currentQuestionIndex]
-  const isGreeting = !greetingCompleted && (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
+  const isGreeting =
+    !greetingCompleted &&
+    (phase === 'greeting' || (phase === 'recording' && currentQuestionIndex === 0))
 
   const avatarMood = useMemo(() => {
     if (isTtsSpeaking) return 'speaking' as const
@@ -131,201 +286,158 @@ export const InterviewPage = () => {
     return 'neutral' as const
   }, [isTtsSpeaking, isFollowUpLoading, phase])
 
+  const handleConfirmFinish = useCallback(() => {
+    setShowFinishDialog(false)
+    handleFinishInterview()
+  }, [handleFinishInterview])
+
+  const handleConfirmExit = useCallback(() => {
+    setIsExitConfirmed(true)
+    dismissExit()
+    void (async () => {
+      try {
+        await handleFinishInterview()
+      } finally {
+        setIsExitConfirmed(false)
+      }
+    })()
+  }, [dismissExit, handleFinishInterview])
+
   if (!interview || (!currentQuestion && !isGreeting)) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-studio-bg">
-        <div className="text-center space-y-4">
-          <div className="h-1 w-24 bg-studio-surface-elevated rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-meet-green animate-progress-loading" />
-          </div>
-          <p className="text-xs font-medium text-studio-text-secondary">면접 준비 중...</p>
-        </div>
-      </div>
-    )
+    return <LoadingScreen />
   }
 
   return (
-    <div className="flex h-screen flex-col bg-studio-bg text-studio-text overflow-hidden">
+    /* interview-page는 테마 무관 강제 다크 (몰입 모드). `dark` 클래스 스코프로
+       내부의 text-foreground/muted-foreground가 다크 팔레트(off-white)로 해석되도록 한다.
+       라이트 테마 사용자가 스테이지 진입 시 텍스트가 invisible 되는 이슈 방지. */
+    <div className="dark flex h-screen flex-col bg-interview-stage text-foreground overflow-hidden">
       <Helmet>
         <title>면접 진행 중 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* ── Video Area (Google Meet PIP 레이아웃) ── */}
-      <main className="flex-1 relative p-2 overflow-hidden">
+      {/* ── 메인 스테이지: 화상통화 레이아웃 (spotlight + PIP + floating dock) ── */}
+      <main className="relative flex-1 overflow-hidden">
+        {/* AI 면접관 — full-bleed spotlight 화면 */}
+        <div className="absolute inset-0 bg-interview-stage">
+          <img
+            src="/images/interviewer-avatar.png"
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+          />
+          {/* 하단 그라데이션 — nameplate·caption·dock 가독성 확보 */}
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-interview-stage via-interview-stage/60 to-transparent pointer-events-none" />
 
-        {/* AI Interviewer Tile — 전체 화면 */}
-        <div className={`h-full w-full relative rounded-lg overflow-hidden bg-[#1a1a1a] transition-all duration-500 ${
-          isTtsSpeaking ? 'ring-2 ring-meet-green' : phase === 'recording' ? 'ring-2 ring-meet-red animate-rec-pulse' : ''
-        }`}>
-          {/* Avatar centered */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`absolute w-[320px] h-[320px] rounded-full blur-[120px] transition-all duration-1000 pointer-events-none ${
-              phase === 'recording' ? 'bg-meet-red/10 scale-105' : isTtsSpeaking ? 'bg-blue-500/15 scale-110' : 'bg-blue-500/5 scale-100'
-            }`} />
-            <InterviewerAvatar mood={avatarMood} size={200} />
-          </div>
+          {/* Active speaker glow — AI 말할 때 teal, thinking dots */}
+          {avatarMood === 'speaking' && (
+            <div className="absolute inset-0 pointer-events-none ring-[3px] ring-inset ring-brand/40 motion-safe:animate-[fade-in_1.2s_ease-in-out_infinite_alternate] motion-reduce:opacity-70" />
+          )}
+          {avatarMood === 'thinking' && (
+            <div className="absolute bottom-36 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-10">
+              {[0, 1, 2].map(i => (
+                <div
+                  key={i}
+                  className="h-2 w-2 rounded-full bg-foreground/70 animate-bounce"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
 
-          {/* Name label — bottom-left */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 px-3 py-1 bg-black/60 rounded z-20">
-            {isTtsSpeaking && (
-              <svg className="w-3.5 h-3.5 text-meet-green" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-              </svg>
-            )}
-            <span className="text-[13px] font-medium text-white">AI 면접관</span>
-          </div>
+        {/* AI 면접관 Nameplate — 좌하단 (Meet/Zoom 스타일) */}
+        <div className="absolute bottom-6 left-6 z-10 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-interview-stage/70 backdrop-blur-sm ring-1 ring-white/5">
+          <MicIcon className={`w-3 h-3 ${isTtsSpeaking ? 'text-brand animate-pulse' : 'text-foreground/50'}`} />
+          <span className="text-[11px] font-medium text-foreground/80">AI 면접관</span>
+        </div>
 
-          {/* Question overlay — bottom-center caption style */}
-          <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-full max-w-2xl px-4 z-10">
-            {/* Warnings */}
-            {timeWarning && (
-              <div className="mb-2 flex justify-center">
-                <div className="rounded-md bg-[#F9AB00]/20 px-4 py-1.5 animate-fade-in">
-                  <span className="text-sm font-medium text-[#F9AB00]">마무리할 시간입니다 - 곧 면접이 종료됩니다</span>
-                </div>
-              </div>
-            )}
-            {autoTransitionMessage && (
-              <div className="mb-2 flex justify-center">
-                <div className="rounded-md bg-blue-500/20 px-4 py-1.5 animate-fade-in">
-                  <span className="text-sm font-medium text-blue-400">{autoTransitionMessage}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Main question */}
-            {!currentFollowUp && !isFollowUpLoading && (
-              <div className="rounded-lg bg-black/70 backdrop-blur-sm px-6 py-4">
-                <p className="text-base md:text-lg font-medium leading-relaxed text-center text-white">
-                  {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
-                </p>
-              </div>
-            )}
-
-            {/* Follow-up loading */}
-            {isFollowUpLoading && (
-              <div className="rounded-lg bg-black/70 backdrop-blur-sm px-6 py-4 animate-fade-in">
-                <div className="flex items-center justify-center gap-3">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
-                  <span className="text-sm font-medium text-blue-400">후속 질문 생성 중...</span>
-                </div>
-              </div>
-            )}
-
-            {/* Follow-up question */}
-            {currentFollowUp && !isFollowUpLoading && (
-              <div className="rounded-lg bg-black/70 backdrop-blur-sm px-6 py-4 animate-fade-in">
-                <div className="mb-2 flex items-center justify-center gap-2">
-                  <span className="rounded bg-blue-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                    후속 {followUpRound + 1}/{MAX_FOLLOWUP_ROUNDS}
-                  </span>
-                  <span className="rounded bg-blue-500/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-blue-300">
-                    {FOLLOW_UP_TYPE_LABELS[currentFollowUp.type] ?? currentFollowUp.type}
-                  </span>
-                </div>
-                <p className="text-base md:text-lg font-medium leading-relaxed text-center text-white">
-                  {currentFollowUp.question}
-                </p>
-              </div>
-            )}
+        {/* 사용자 비디오 PIP (우하단, dock 위쪽) — 녹화 중 red glow */}
+        <div
+          className={`absolute bottom-28 right-4 md:bottom-28 md:right-6 w-[200px] md:w-[320px] aspect-video rounded-lg overflow-hidden shadow-2xl z-20 transition-[box-shadow,--tw-ring-color] duration-[var(--duration-normal)] ${
+            phase === 'recording'
+              ? 'ring-2 ring-signal-record shadow-[0_0_24px_hsl(var(--signal-record)/0.35)]'
+              : 'ring-1 ring-white/10'
+          }`}
+        >
+          <VideoPreview stream={mediaStream.stream} />
+          {/* 사용자 Nameplate */}
+          <div className="absolute bottom-1.5 left-1.5 z-10 flex items-center gap-1 px-2 py-1 rounded bg-interview-stage/70 backdrop-blur-sm">
+            <MicIcon className={`w-2.5 h-2.5 ${phase === 'recording' ? 'text-signal-record animate-pulse' : 'text-foreground/50'}`} />
+            <span className="text-[10px] font-medium text-foreground/80">나</span>
           </div>
         </div>
 
-        {/* User Video — PIP (우하단 소형 오버레이) */}
-        <div className={`absolute bottom-4 right-4 w-[300px] aspect-video rounded-lg overflow-hidden shadow-2xl z-30 transition-all duration-300 ${
-          phase === 'recording' ? 'ring-2 ring-meet-green' : 'ring-1 ring-white/10'
-        }`}>
-          <VideoPreview stream={mediaStream.stream} />
-          {/* Name label */}
-          <div className="absolute bottom-2 left-2 flex items-center gap-1.5 px-2 py-0.5 bg-black/60 rounded z-20">
-            {phase === 'recording' && (
-              <svg className="w-3 h-3 text-meet-green" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-              </svg>
+        {/* 질문 Subtitle Bar — 하단 중앙 (dock 위쪽에 떠있음) */}
+        <QuestionCaption
+          isGreeting={isGreeting}
+          currentQuestion={currentQuestion}
+          currentFollowUp={currentFollowUp}
+          isFollowUpLoading={isFollowUpLoading}
+          timeWarning={timeWarning}
+          autoTransitionMessage={autoTransitionMessage}
+        />
+
+        {/* Floating Control Dock — 하단 중앙 Meet/FaceTime 스타일 pill */}
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 md:gap-3 px-3 py-2 rounded-full bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/10 shadow-2xl">
+          {/* 타이머 + 진행도 + REC dot */}
+          <div className="flex items-center gap-2 pl-1 pr-3">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              {phase === 'recording' && (
+                <span className="absolute inset-0 rounded-full bg-signal-record animate-ping opacity-60" />
+              )}
+              <span className={`relative h-2 w-2 rounded-full ${phase === 'recording' ? 'bg-signal-record' : 'bg-foreground/30'}`} />
+            </span>
+            <InterviewTimer
+              startTime={startTime}
+              durationMinutes={interview.durationMinutes}
+              onTimeWarning={() => setTimeWarning(true)}
+              onTimeExpired={handleTimeExpired}
+            />
+            {!isGreeting && questions.length > 0 && (
+              <>
+                <span className="hidden text-xs text-foreground/15 sm:inline">·</span>
+                <span className="hidden font-tabular text-xs text-foreground/50 sm:inline">
+                  Q{currentQuestionIndex + 1}/{questions.length}
+                </span>
+              </>
             )}
-            <span className="text-[11px] font-medium text-white">나</span>
           </div>
+
+          <span className="h-6 w-px bg-white/10" aria-hidden="true" />
+
+          {/* 답변 컨트롤 */}
+          <InterviewControls
+            phase={phase}
+            isTtsSpeaking={isTtsSpeaking}
+            isFollowUpLoading={isFollowUpLoading}
+            onStartAnswer={handleStartAnswer}
+            onStopAnswer={handleStopAnswer}
+            onFinishInterview={handleFinishInterview}
+          />
+
+          {phase !== 'finishing' && phase !== 'completed' && (
+            <>
+              <span className="h-6 w-px bg-white/10" aria-hidden="true" />
+              <button
+                onClick={() => setShowFinishDialog(true)}
+                className="cursor-pointer h-10 min-w-[44px] rounded-full border border-signal-record/30 px-3 md:px-4 text-xs md:text-sm font-medium text-signal-record/90 transition-colors duration-[var(--duration-fast)] hover:bg-signal-record/10 hover:border-signal-record hover:text-signal-record active:scale-95"
+              >
+                <span className="hidden md:inline">면접 종료</span>
+                <span className="md:hidden">종료</span>
+              </button>
+            </>
+          )}
         </div>
       </main>
 
-      {/* ── Bottom Control Bar (Google Meet 스타일) ── */}
-      <div className="flex items-center justify-between px-4 py-3 bg-studio-bg">
-
-        {/* Left: Meeting info */}
-        <div className="flex items-center gap-3 min-w-[200px]">
-          <InterviewTimer
-            startTime={startTime}
-            durationMinutes={interview.durationMinutes}
-            onTimeWarning={() => setTimeWarning(true)}
-            onTimeExpired={handleTimeExpired}
-          />
-          <span className="text-[13px] text-studio-text-secondary">|</span>
-          <span className="text-[13px] text-studio-text-secondary">AI 모의 면접</span>
-        </div>
-
-        {/* Center: Controls */}
-        <InterviewControls
-          phase={phase}
-          isTtsSpeaking={isTtsSpeaking}
-          isFollowUpLoading={isFollowUpLoading}
-          onStartAnswer={handleStartAnswer}
-          onStopAnswer={handleStopAnswer}
-          onFinishInterview={handleFinishInterview}
-        />
-
-        {/* Right: Leave button (Google Meet: red pill, far right) */}
-        <div className="flex justify-end min-w-[200px]">
-          <button
-            onClick={() => setShowFinishDialog(true)}
-            className="cursor-pointer flex items-center gap-2 h-10 px-5 rounded-full bg-meet-red text-sm font-medium text-white transition-all active:scale-95"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 9c-1.6 0-3.15.25-4.6.72v3.1c0 .39-.23.74-.56.9-.98.49-1.87 1.12-2.66 1.85-.18.18-.43.28-.7.28-.28 0-.53-.11-.71-.29L.29 13.08c-.18-.17-.29-.42-.29-.7 0-.28.11-.53.29-.71C3.34 8.78 7.46 7 12 7s8.66 1.78 11.71 4.67c.18.18.29.43.29.71 0 .28-.11.53-.29.71l-2.48 2.48c-.18.18-.43.29-.71.29-.27 0-.52-.1-.7-.28-.79-.73-1.68-1.36-2.66-1.85-.33-.16-.56-.5-.56-.9v-3.1C15.15 9.25 13.6 9 12 9z" />
-            </svg>
-            면접 종료
-          </button>
-        </div>
-      </div>
-
-      {/* ── Finish Dialog ── */}
+      {/* ── 종료 확인 다이얼로그 ── */}
       {showFinishDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-          onClick={() => setShowFinishDialog(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="finish-dialog-title"
-        >
-          <div
-            className="w-full max-w-sm mx-4 rounded-2xl bg-[#2c2c2c] border border-[#3c4043] p-6 shadow-2xl animate-fade-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="finish-dialog-title" className="text-base font-medium text-white mb-2">면접을 종료하시겠습니까?</h2>
-            <p className="text-sm text-studio-text-secondary leading-relaxed mb-6">
-              답변하지 않은 질문은 분석되지 않습니다.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowFinishDialog(false)}
-                className="cursor-pointer h-9 px-4 rounded-full text-sm font-medium text-blue-400 hover:bg-blue-400/10 transition-all"
-              >
-                계속하기
-              </button>
-              <button
-                onClick={() => {
-                  setShowFinishDialog(false)
-                  handleFinishInterview()
-                }}
-                className="cursor-pointer h-9 px-4 rounded-full bg-blue-500 text-sm font-medium text-white transition-all hover:bg-blue-600 active:scale-95"
-              >
-                종료하기
-              </button>
-            </div>
-          </div>
-        </div>
+        <FinishDialog
+          onCancel={() => setShowFinishDialog(false)}
+          onConfirm={handleConfirmFinish}
+        />
       )}
 
       {/* ── 면접 안전하게 종료 중 오버레이 ── */}
@@ -346,54 +458,11 @@ export const InterviewPage = () => {
 
       {/* ── 뒤로가기 이탈 가드 다이얼로그 ── */}
       {exitBlocked && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="exit-guard-title"
-          aria-describedby="exit-guard-desc"
-        >
-          <div className="w-full max-w-sm mx-4 rounded-2xl bg-[#2c2c2c] border border-[#3c4043] p-6 shadow-2xl animate-fade-in">
-            <h2 id="exit-guard-title" className="text-base font-medium text-white mb-2">
-              {phase === 'finishing' ? '면접 종료 처리 중입니다' : '면접을 나가시겠습니까?'}
-            </h2>
-            <p id="exit-guard-desc" className="text-sm text-studio-text-secondary leading-relaxed mb-6">
-              {phase === 'finishing'
-                ? '안전하게 저장 중이에요. 잠시만 기다려주세요.'
-                : '지금 나가면 녹화된 답변이 저장되지 않을 수 있어요. 정식으로 종료하시겠습니까?'}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={dismissExit}
-                className="cursor-pointer h-9 px-4 rounded-full text-sm font-medium text-blue-400 hover:bg-blue-400/10 transition-all"
-              >
-                계속 면접
-              </button>
-              {phase !== 'finishing' && (
-                <button
-                  onClick={() => {
-                    setIsExitConfirmed(true)
-                    dismissExit()
-                    // 업로드 실패 후 사용자가 취소를 선택하면 handleFinishInterview가
-                    // early-return하여 면접이 계속된다. 이 경우 isExitConfirmed를 복원해
-                    // 가드가 다시 활성화되도록 한다. (성공 시에는 컴포넌트가 언마운트되어
-                    // setState no-op.)
-                    void (async () => {
-                      try {
-                        await handleFinishInterview()
-                      } finally {
-                        setIsExitConfirmed(false)
-                      }
-                    })()
-                  }}
-                  className="cursor-pointer h-9 px-4 rounded-full bg-meet-red text-sm font-medium text-white transition-all hover:bg-red-600 active:scale-95"
-                >
-                  면접 종료하기
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <ExitGuardDialog
+          phase={phase}
+          onDismiss={dismissExit}
+          onConfirmExit={handleConfirmExit}
+        />
       )}
     </div>
   )

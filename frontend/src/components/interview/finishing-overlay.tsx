@@ -1,3 +1,5 @@
+import { Progress } from '@/components/ui/progress'
+
 interface FinishingOverlayProps {
   open: boolean
   stage: 'uploading' | 'saving' | 'finalizing'
@@ -37,14 +39,14 @@ export const FinishingOverlay = ({ open, stage, total, completed }: FinishingOve
             <h2 className="text-base font-medium text-white mb-1">
               면접을 안전하게 종료하고 있어요
             </h2>
-            <p className="text-sm text-studio-text-secondary">
+            <p className="text-sm text-foreground/60">
               잠시만 기다려 주세요. 화면을 닫지 말아 주세요.
             </p>
           </div>
 
           {/* Stage 메시지 */}
           <div className="w-full">
-            <div className="flex items-center justify-between text-xs text-studio-text-secondary mb-2">
+            <div className="flex items-center justify-between text-xs text-foreground/60 mb-2">
               <span>{STAGE_LABELS[stage]}</span>
               {showProgress && (
                 <span className="tabular-nums">
@@ -55,12 +57,11 @@ export const FinishingOverlay = ({ open, stage, total, completed }: FinishingOve
 
             {/* 진행률 바 (uploading stage 에만) */}
             {showProgress && (
-              <div className="h-1.5 w-full rounded-full bg-[#3c4043] overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                  style={{ width: `${percent}%` }}
-                />
-              </div>
+              <Progress
+                value={percent}
+                aria-label="녹화 업로드 진행률"
+                className="h-1.5 bg-[#3c4043] [&>div]:bg-blue-500"
+              />
             )}
 
             {/* saving/finalizing 단계에선 무한 progress bar */}

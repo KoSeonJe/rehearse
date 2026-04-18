@@ -64,10 +64,10 @@ devlens/
 
 ## Branch Strategy
 
-- **GitHub default branch**: `main` (프로덕션 배포 브랜치, v0.1.0 부트스트랩 시 전환됨)
-- **개발 통합 브랜치**: `develop` (모든 feature PR의 기본 타겟)
-- **feature PR 생성 시**: 반드시 `--base develop` 명시 (`gh pr create --base develop`)
-- **프로덕션 릴리즈 PR**: `develop → main` (스킬: `/prod-release`)
+- **GitHub default branch**: `develop` (개발 통합 브랜치, 모든 feature PR의 기본 타겟)
+- **프로덕션 배포 브랜치**: `main` (deploy-prod.yml이 `push: main`으로 자동 트리거)
+- **feature PR 생성**: base는 `develop` (default). `/create-pr` 스킬이 명시적으로 지정함
+- **프로덕션 릴리즈 PR**: `develop → main` (스킬: `/prod-release`, `gh release create --target main`)
 - Branch naming: `feat/{name}`, `fix/{name}`, `refactor/{name}`
 - **BE/FE PR 분리 필수**: BE PR 먼저 머지 → FE PR 생성
 - **CI 통과 필수**: `Frontend CI` (lint + build), `Backend CI` (test)
@@ -108,6 +108,20 @@ devlens/
 
 ---
 
+## 디자인 기준 (Frontend)
+
+프론트엔드 UI/디자인 작업 시 아래 지침을 **반드시 먼저 로드**하고 따를 것.
+
+- **비주얼 방향**: `DESIGN.md` — Cal.com 기반 모노크롬 디자인 시스템 (색상/타이포/섀도/스페이싱 토큰)
+- **AI 티 방지 규칙**: `.claude/rules/frontend-design-rules.md` — 금지 색상/폰트/레이아웃 및 self-check 체크리스트
+- **베이스 컴포넌트**: shadcn/ui (ui.shadcn.com) — 모든 기본 UI primitive는 shadcn 우선 사용. `/shadcn` 스킬로 추가·검색
+- **장식 컴포넌트**: Aceternity UI — **레퍼런스 용도**, 페이지당 **최대 1-2개**까지만 사용 (남용 금지)
+
+작업 순서:
+1. `DESIGN.md` 토큰/원칙 확인 → 2. shadcn primitive로 구성 → 3. 필요 시 Aceternity 1-2개로 포인트 → 4. `frontend-design-rules.md` self-check 통과 후 완료
+
+---
+
 ## Commit / PR Rules
 
 - Commit messages: Korean, conventional commits (`feat:`, `fix:`, `refactor:`, etc.)
@@ -116,6 +130,7 @@ devlens/
   - e.g. `[FE/BE] feat: 면접 Setup 페이지 UX 리디자인`
 - PR scope: per feature or per issue
 - **BE/FE PR 분리**: backend → frontend 순서로 별도 PR
+- **PR 생성은 반드시 `/create-pr` 스킬 사용** — 직접 `gh pr create` 호출 금지. 스킬이 BE/FE 분리·base 브랜치(`develop`)·한국어 컨벤션·브랜치 네이밍을 강제함
 
 ---
 

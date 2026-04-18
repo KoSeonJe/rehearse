@@ -4,8 +4,145 @@
 @tailwind components;
 @tailwind utilities;
 
-/* U3: 접근성 — 모션 감소 선호 지원 (WCAG 2.1 AA) */
+@layer base {
+  :root {
+    /* ─── Pure White + Deep Teal Base (2026-04-18 전환 — warm off-neutral 제거) ─── */
+    --background: 0 0% 100%;               /* #ffffff — pure white */
+    --foreground: 180 76% 10%;             /* #042f2e — teal-950, 본문 텍스트 */
+
+    /* Card / popover */
+    --card: 0 0% 100%;
+    --card-foreground: 180 76% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 76% 10%;
+
+    /* Primary — teal-950 (secondary dark 버튼·본문 강조. CTA는 brand 사용) */
+    --primary: 180 76% 10%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary / muted / accent — cool mint surface */
+    --secondary: 180 30% 96%;              /* #eff7f6 — cool mint */
+    --secondary-foreground: 180 76% 10%;
+    --muted: 180 30% 96%;
+    --muted-foreground: 180 15% 41%;       /* #5a7574 — teal-gray, 4.63:1 on #fff (AA) */
+    --accent: 180 30% 96%;
+    --accent-foreground: 180 76% 10%;
+
+    /* ─── Brand Point Color ─── */
+    /* Teal — 전역 시그니처. CTA, link, focus, selected, active 상태 */
+    --brand:        173 76% 26%;           /* #0F766E — teal-700 */
+    --brand-hover:  173 84% 32%;           /* #0D9488 — teal-600 */
+    --brand-bg:     166 77% 89%;           /* #ccfbf1 — teal-100 subtle surface */
+    --brand-foreground: 0 0% 100%;         /* #ffffff — pure white on brand */
+
+    /* Link — brand 계열로 통합 (기존 #0099ff 폐기) */
+    --link: var(--brand);
+
+    /* Feedback */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 40 20% 98%;
+
+    /* Border / input / ring — teal-tinted hairline */
+    --border: 180 20% 92%;                 /* #e6f0ef — teal hairline */
+    --input: 180 20% 92%;
+    --ring: var(--brand);                  /* focus ring = brand signature */
+
+    /* Radius */
+    --radius: 0.5rem;
+
+    /* ─── Semantic Color 4종 (신규) ─── */
+
+    /* ① Editorial accent — 피드백 하이라이트, 챕터 숫자 마커 */
+    /* 2026-04-18: terracotta 제거. deep teal shade로 교체 (brand와 hue 공유, 명도로 위계 구분) */
+    --accent-editorial: 180 57% 19%;       /* #134e4a — teal-900, 10.1:1 on #fff AAA */
+    --accent-editorial-bg: 165 70% 94%;    /* #d7faf3 — pastel teal mint */
+
+    /* ② Signal: Record — 녹화 중 상태 전용. 다른 signal과 동시 사용 금지 */
+    --signal-record: 3 66% 47%;            /* #c8322a */
+    --signal-record-bg: 3 66% 96%;         /* #fdf0ef */
+
+    /* ③ Signal: Warning — 시간 경고, 주의. amber와 명도 분리된 ochre */
+    --signal-warning: 43 88% 45%;          /* #d4a017 */
+    --signal-warning-bg: 43 88% 95%;       /* #fdf8e7 */
+
+    /* ④ Signal: Success — 완료, 저장. 기본적으로 쓰지 않는 편 */
+    --signal-success: 100 20% 39%;         /* #5a7a4a */
+    --signal-success-bg: 100 20% 95%;      /* #eef3eb */
+
+    /* ─── Interview Stage (유일한 의도적 dark — 극장 몰입 모드) ─── */
+    /* interview-page 전용. 나머지 전 페이지는 light base, 이 스테이지만 dark teal-black */
+    --interview-stage: 180 76% 7%;              /* #031f1e — base보다 더 깊은 teal-black */
+    --interview-stage-foreground: 170 76% 97%;  /* #f0fdfa — teal-50 on stage */
+    --interview-stage-muted: 170 20% 72%;       /* #a3c0be — light teal-gray on stage */
+    --interview-stage-border: 180 58% 20%;      /* #123b39 — teal hairline on stage */
+
+    /* ─── Layout 토큰 ─── */
+    --utility-bar-height: 44px;
+
+    /* ─── Motion 토큰 ─── */
+    --duration-instant:  80ms;
+    --duration-fast:    150ms;   /* hover, focus 상태 전환 */
+    --duration-normal:  220ms;   /* 패널 전환, 드로어 open */
+    --duration-slow:    350ms;   /* 페이지 레벨 전환 */
+
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);   /* Material You standard */
+    --ease-decel:    cubic-bezier(0, 0, 0.2, 1);    /* 요소가 화면 안으로 들어올 때 */
+    --ease-accel:    cubic-bezier(0.4, 0, 1, 1);    /* 요소가 화면 밖으로 나갈 때 */
+  }
+
+  /* 모바일: utility-bar 높이 56px */
+  @media (max-width: 767px) {
+    :root {
+      --utility-bar-height: 56px;
+    }
+  }
+
+  /*
+   * ─── Interview Stage Scope (2026-04-18) ──────────────────────────
+   * Rehearse는 light-only 디자인 시스템이다. `.dark` 클래스는 일반 다크모드가 아니라
+   * **interview-page 극장 몰입 스코프** 전용. 기존 토큰(`bg-background`, `text-foreground` 등)을
+   * interview-stage 값으로 재바인딩해서, 컴포넌트 코드 변경 없이 dark 스테이지 컨텍스트 확보.
+   *
+   * 사용처: `<div className="dark ... bg-interview-stage">` (interview-page.tsx)
+   * 다른 페이지에서는 절대 사용 금지.
+   */
+  .dark {
+    --background:       var(--interview-stage);
+    --foreground:       var(--interview-stage-foreground);
+    --card:             var(--interview-stage);
+    --card-foreground:  var(--interview-stage-foreground);
+    --popover:          var(--interview-stage);
+    --popover-foreground: var(--interview-stage-foreground);
+    --primary:          var(--interview-stage-foreground);
+    --primary-foreground: var(--interview-stage);
+    --muted:            var(--interview-stage-border);
+    --muted-foreground: var(--interview-stage-muted);
+    --secondary:        var(--interview-stage-border);
+    --secondary-foreground: var(--interview-stage-foreground);
+    --accent:           var(--interview-stage-border);
+    --accent-foreground: var(--interview-stage-foreground);
+    --border:           var(--interview-stage-border);
+    --input:            var(--interview-stage-border);
+    /* Brand은 light 값 유지 — 스테이지 위에서도 teal CTA 동일 톤 */
+  }
+
+  /* ─── font-tabular 유틸리티 (타이머·통계 숫자 필수 적용) ─── */
+  .font-tabular {
+    font-feature-settings: 'tnum' 1, 'kern' 1;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ─── 전역 reduced-motion override (WCAG 2.1 AA + 스펙 §3.5) ─── */
+/* 기존 animation/transition 속성 override에 더해 CSS 변수 duration도 0으로 */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast:    0.01ms;
+    --duration-normal:  0.01ms;
+    --duration-slow:    0.01ms;
+  }
+
   *,
   *::before,
   *::after {

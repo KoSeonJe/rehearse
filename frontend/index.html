@@ -3,30 +3,97 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cal+Sans&display=swap" rel="stylesheet">
+
+    <!-- Phase B 활성화 예정: Fraunces optional (영문 display·숫자 마커 전용, font-serif 클래스) -->
+    <!-- ChapterMarker(01/02 숫자), MetricsSection 헤드라인에 사용. 한국어 헤딩에는 사용 금지.  -->
+    <!-- &text=0123456789 subset으로 ~80KB → 10KB 이하 최적화 적용                             -->
+    <!--
+    <link
+      rel="preload"
+      href="https://fonts.gstatic.com/s/fraunces/v24/6NUh8FyLNQOQZAnv9bYEvDiIdE9Eqcbf_vK183lJ.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@700&text=0123456789&display=optional"
+      rel="stylesheet"
+    />
+    -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>리허설 - AI 개발자 모의면접 플랫폼</title>
-    <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
-    <meta name="keywords" content="개발자 면접, AI 모의면접, 면접 연습, 코딩 면접, 기술 면접, 취업 준비" />
-    <link rel="canonical" href="https://rehearse.co.kr/" />
+    <title>리허설 | AI 모의면접 · 개발자 면접 연습 플랫폼</title>
+    <meta name="description" content="리허설은 AI 면접관과 진행하는 개발자 모의면접 플랫폼입니다. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백으로 실전처럼 면접을 연습하세요." />
+    <meta name="keywords" content="AI 모의면접, 개발자 모의면접, 리허설, AI 면접, 면접 연습, 백엔드 면접, 프론트엔드 면접, 신입 개발자 면접" />
+    <meta name="author" content="리허설" />
+    <meta name="application-name" content="리허설" />
+    <link rel="canonical" href="%VITE_SITE_URL%/" />
     <meta name="theme-color" content="#ffffff" />
 
-    <!-- Google Search Console -->
+    <!-- Google Search Console (dev 빌드에서는 vite 플러그인이 제거) -->
     <meta name="google-site-verification" content="M6N7eSbZzCaQdLSUgBR6iIKrGq-0KJ1e0a2DM5rcmus" />
     <!-- Naver Search Advisor -->
     <meta name="naver-site-verification" content="2199a1e9ddfbfc5061f35f5188f4ae837e6e2ec6" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://rehearse.co.kr/" />
-    <meta property="og:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
-    <meta property="og:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지." />
+    <meta property="og:url" content="%VITE_SITE_URL%/" />
+    <meta property="og:title" content="리허설 | AI 모의면접 · 개발자 면접 연습 플랫폼" />
+    <meta property="og:description" content="AI 면접관과 진행하는 개발자 모의면접 — 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백" />
     <meta property="og:site_name" content="리허설" />
     <meta property="og:locale" content="ko_KR" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
-    <meta name="twitter:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요." />
+    <meta name="twitter:title" content="리허설 | AI 모의면접 · 개발자 면접 연습 플랫폼" />
+    <meta name="twitter:description" content="AI 면접관과 진행하는 개발자 모의면접 — 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백" />
+
+    <!-- 구조화 데이터: Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "리허설",
+      "alternateName": "Rehearse",
+      "url": "%VITE_SITE_URL%/",
+      "logo": "%VITE_SITE_URL%/favicon.svg",
+      "description": "AI 면접관과 진행하는 개발자 모의면접 플랫폼",
+      "inLanguage": "ko-KR"
+    }
+    </script>
+
+    <!-- 구조화 데이터: WebSite -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "리허설",
+      "alternateName": "Rehearse",
+      "url": "%VITE_SITE_URL%/",
+      "inLanguage": "ko-KR"
+    }
+    </script>
+
+    <!-- 구조화 데이터: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "리허설",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "description": "AI 면접관과 함께하는 개발자 모의면접. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백을 제공합니다.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KRW",
+        "availability": "https://schema.org/InStock"
+      },
+      "inLanguage": "ko-KR"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

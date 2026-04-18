@@ -9,9 +9,6 @@ interface StepDurationProps {
 export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurationProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
-        Step 3 — Duration
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         면접 시간을 선택해주세요
       </h1>
@@ -19,16 +16,17 @@ export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurat
         시간에 맞춰 질문 수가 자동으로 조정됩니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 grid grid-cols-2 gap-3">
         {DURATION_PRESETS.map((preset) => (
           <button
             key={preset.minutes}
             onClick={() => onSelect(preset.minutes)}
             disabled={isLoading}
-            className={`flex flex-col items-center gap-2 rounded-[20px] p-6 transition-all active:scale-95 ${
+            className={`flex flex-col items-center gap-2 rounded-2xl p-6 transition-colors active:scale-95 ${
               durationMinutes === preset.minutes
-                ? 'bg-accent text-white shadow-lg shadow-accent/20'
-                : 'bg-surface text-text-primary hover:bg-slate-200'
+                ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                : 'bg-surface text-text-primary hover:bg-muted'
             }`}
           >
             <span className="text-3xl font-extrabold">{preset.label}</span>

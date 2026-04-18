@@ -1,9 +1,20 @@
-import { Character } from '@/components/ui/character'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
+import { Button } from '@/components/ui/button'
 
 interface CtaSectionProps {
   onNavigate: () => void
 }
+
+interface ReadyItem {
+  label: string
+  note: string
+}
+
+const READY_ITEMS: ReadyItem[] = [
+  { label: 'Chrome 최신 버전', note: '데스크톱 Chrome에 최적화' },
+  { label: '카메라 · 마이크 허용', note: '권한 승인 1회면 끝' },
+  { label: '조용하고 밝은 환경', note: '소음이 적고 조명이 고른 곳' },
+]
 
 export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
   const { ref, style } = useFadeInOnScroll<HTMLElement>()
@@ -12,31 +23,49 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="bg-gradient-to-b from-accent/5 to-white pt-20 pb-32"
+      aria-labelledby="cta-heading"
+      className="bg-background py-20 md:py-28"
     >
-      <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
-        <div className="mb-8 flex justify-center">
-          <Character mood="happy" size={80} />
-        </div>
-        <h2 className="text-3xl font-extrabold leading-snug tracking-tighter text-text-primary md:text-4xl">
-          준비된 만큼 보여줄 수 있습니다.
-        </h2>
-        <p className="mt-4 text-base text-text-secondary md:text-lg">
-          지금 바로 리허설을 시작하고,<br />
-          당신의 면접 영상을 한 프레임씩 복기해보세요.
-        </p>
-        <div className="mt-10">
-          <button
-            className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
-            onClick={onNavigate}
-            aria-label="무료로 Rehearse 시작하기"
-          >
-            지금 시작하기
-          </button>
-          <p className="mt-4 text-sm text-text-tertiary">
-            <span aria-hidden="true">무료 · 30초 가입 · Chrome 브라우저만 필요</span>
-            <span className="sr-only">무료, 30초 가입, Chrome 브라우저만 필요</span>
-          </p>
+      <div className="mx-auto max-w-5xl px-5 md:px-8">
+        <div className="rounded-3xl bg-brand px-7 py-14 text-brand-foreground md:px-14 md:py-20">
+          <div className="max-w-2xl">
+            <h2
+              id="cta-heading"
+              className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-brand-foreground"
+            >
+              지금 시작하면,<br />
+              제품 방향을 함께 정합니다.
+            </h2>
+            <p className="mt-6 max-w-xl text-[16px] md:text-lg font-medium leading-[1.75] text-brand-foreground/80">
+              <span className="text-brand-foreground font-semibold">베타 전 기능 무료</span>. 이력서만 있으면 3분 뒤 첫 면접이 시작되고, 질문이 자동 생성됩니다.
+              <br className="hidden md:block" />
+              쓰면서 불편한 점을 남겨주시면 다음 업데이트에 반영해요 — 만들어지는 제품을 같이 다듬는 피드백이 환영입니다.
+            </p>
+
+            <ul className="mt-10 divide-y divide-brand-foreground/15 border-t border-brand-foreground/20" aria-label="시작 전 체크리스트">
+              {READY_ITEMS.map((item) => (
+                <li
+                  key={item.label}
+                  className="flex flex-col gap-0.5 py-3.5 md:flex-row md:items-baseline md:justify-between md:gap-6"
+                >
+                  <span className="text-[15px] font-semibold text-brand-foreground">{item.label}</span>
+                  <span className="text-[13px] font-medium text-brand-foreground/65">{item.note}</span>
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-10">
+              <Button
+                variant="secondary"
+                size="lg"
+                onClick={onNavigate}
+                aria-label="무료로 리허설 시작하기"
+                className="rounded-2xl bg-brand-foreground px-9 text-brand hover:bg-brand-foreground/90 border-transparent"
+              >
+                무료로 시작하기
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

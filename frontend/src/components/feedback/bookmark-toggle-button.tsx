@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ListChecks, ListPlus } from 'lucide-react'
 import { useCreateBookmark, useDeleteBookmark } from '@/hooks/use-review-bookmarks'
 import { ApiError } from '@/lib/api-client'
-import ReviewToast from '@/components/common/review-toast'
+import { showReviewToast } from '@/components/common/review-toast'
 import { TOAST_SEEN_PREFIX } from '@/constants/review-bookmark'
 
 interface BookmarkToggleButtonProps {
@@ -18,7 +19,7 @@ const BookmarkToggleButton = ({
 }: BookmarkToggleButtonProps) => {
   const isBookmarked = bookmarkId !== undefined
   const [isAnimating, setIsAnimating] = useState(false)
-  const [showToast, setShowToast] = useState(false)
+  const navigate = useNavigate()
 
   const createBookmark = useCreateBookmark()
   const deleteBookmark = useDeleteBookmark()
@@ -65,7 +66,7 @@ const BookmarkToggleButton = ({
         {
           onSuccess: () => {
             if (localStorage.getItem(`${TOAST_SEEN_PREFIX}${timestampFeedbackId}`) !== '1') {
-              setShowToast(true)
+              showReviewToast(timestampFeedbackId, navigate)
             }
           },
           onError: (error) => {
@@ -81,7 +82,7 @@ const BookmarkToggleButton = ({
   }
 
   return (
-    <div data-tutorial-anchor="bookmark-button" className="relative flex-shrink-0">
+    <div className="relative flex-shrink-0">
       <button
         type="button"
         aria-pressed={isBookmarked}
@@ -90,12 +91,12 @@ const BookmarkToggleButton = ({
         onClick={handleClick}
         className={[
           'flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
           'disabled:cursor-not-allowed disabled:opacity-60',
           isAnimating ? 'animate-bookmark-pop motion-reduce:animate-none' : '',
           isBookmarked
-            ? 'border border-[#C7D2FE] font-bold bg-accent-light text-accent-hover'
-            : 'border border-[#E2E8F0] bg-white font-medium text-[#64748B] hover:border-[#6366F1] hover:bg-[#EEF2FF] hover:text-[#6366F1]',
+            ? 'border border-brand/40 font-bold bg-brand-bg text-brand'
+            : 'border border-border bg-card font-medium text-text-secondary hover:border-brand hover:bg-brand-bg hover:text-brand',
         ]
           .filter(Boolean)
           .join(' ')}
@@ -110,12 +111,6 @@ const BookmarkToggleButton = ({
         </span>
       </button>
 
-      {showToast && (
-        <ReviewToast
-          timestampFeedbackId={timestampFeedbackId}
-          onDismiss={() => setShowToast(false)}
-        />
-      )}
     </div>
   )
 }

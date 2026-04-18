@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { useAuthInterceptor } from '@/hooks/use-auth-interceptor'
 import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
@@ -12,9 +12,17 @@ import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
+import { AboutPage } from '@/pages/about-page'
+import { FaqPage } from '@/pages/faq-page'
+import { AiMockInterviewGuidePage } from '@/pages/guide/ai-mock-interview-page'
+import { DeveloperInterviewPrepGuidePage } from '@/pages/guide/developer-interview-prep-page'
+import { ResumeBasedInterviewGuidePage } from '@/pages/guide/resume-based-interview-page'
+import { NotFoundPage } from '@/pages/not-found-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
+import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export const App = () => {
   usePostLoginRedirect()
@@ -22,7 +30,7 @@ export const App = () => {
   useCrossTabSync()
 
   return (
-    <>
+    <TooltipProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
 
@@ -41,9 +49,15 @@ export const App = () => {
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
         </Route>
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/faq" element={<FaqPage />} />
+        <Route path="/guide/ai-mock-interview" element={<AiMockInterviewGuidePage />} />
+        <Route path="/guide/developer-interview-prep" element={<DeveloperInterviewPrepGuidePage />} />
+        <Route path="/guide/resume-based-interview" element={<ResumeBasedInterviewGuidePage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <LoginModal />
-    </>
+      <Toaster />
+    </TooltipProvider>
   )
 }
