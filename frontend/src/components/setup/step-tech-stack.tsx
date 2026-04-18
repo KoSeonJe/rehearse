@@ -15,9 +15,6 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
 
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 2 — Tech Stack
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         기술 스택을 선택해주세요
       </h1>

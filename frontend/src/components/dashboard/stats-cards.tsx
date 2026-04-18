@@ -10,7 +10,7 @@ const StatItem = ({ label, value }: StatItemProps) => (
     <p className="font-tabular text-[3rem] font-bold leading-none tracking-[-0.03em] text-foreground">
       {value}
     </p>
-    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground mt-2">
+    <p className="text-sm font-semibold text-muted-foreground mt-2">
       {label}
     </p>
   </div>

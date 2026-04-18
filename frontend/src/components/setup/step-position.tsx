@@ -11,9 +11,6 @@ interface StepPositionProps {
 export const StepPosition = ({ position, isLoading, onSelect }: StepPositionProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 1 — Position
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         어떤 직무를 준비하고 계신가요?
       </h1>

@@ -126,22 +126,22 @@ export const InterviewTable = ({
         <table className="w-full">
           <thead>
             <tr className="border-b border-foreground/8 bg-background">
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 포지션
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 카테고리
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 설정 시간
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 답변 수
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 날짜
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 상태
               </th>
             </tr>

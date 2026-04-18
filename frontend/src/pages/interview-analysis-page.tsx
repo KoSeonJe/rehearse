@@ -24,7 +24,7 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-black uppercase tracking-widest text-text-tertiary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
+      <h4 className="text-sm font-bold text-text-secondary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
       {questions.map((q) => (
         <div key={q.questionId} className="rounded-2xl bg-card border border-border p-5">
           <p className="text-sm font-bold text-text-primary mb-2">{q.questionText}</p>
@@ -276,7 +276,7 @@ export const InterviewAnalysisPage = () => {
           <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-primary animate-progress-loading" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">로딩 중</p>
+          <p className="text-sm font-medium text-muted-foreground">불러오는 중</p>
         </div>
       </div>
     )

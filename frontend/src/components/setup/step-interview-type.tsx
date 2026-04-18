@@ -45,9 +45,6 @@ export const StepInterviewType = ({
 }: StepInterviewTypeProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 4 — Interview Type
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         어떤 면접을 연습할까요?
       </h1>

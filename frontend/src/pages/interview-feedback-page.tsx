@@ -445,8 +445,8 @@ export const InterviewFeedbackPage = () => {
           <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
             <div className="h-full bg-primary animate-progress-loading" />
           </div>
-          <p className="font-tabular text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-            피드백 로딩 중
+          <p className="text-sm font-medium text-muted-foreground">
+            피드백 불러오는 중
           </p>
         </div>
       </div>
@@ -507,7 +507,7 @@ export const InterviewFeedbackPage = () => {
       </Helmet>
 
       {/* Utility bar */}
-      <UtilityBar chapter="FEEDBACK" actions={dashboardAction} />
+      <UtilityBar chapter="피드백" actions={dashboardAction} />
 
       {/* Info band — thin, tabular, no card chrome */}
       <InfoBand interview={interview} />
@@ -515,12 +515,12 @@ export const InterviewFeedbackPage = () => {
       {/* Page title header */}
       <PageGrid as="div" className="mt-10 mb-2">
         <div className="col-span-4 md:col-span-8 lg:col-span-12">
-          <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-editorial mb-2">
-            Timestamp Feedback Review
-          </p>
           <h1 className="text-[2rem] md:text-[2.5rem] font-bold leading-[1.10] tracking-[-0.02em] text-foreground">
             {positionLabel} 면접 피드백
           </h1>
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
+            답변별 타임스탬프를 클릭하면 그 순간 영상으로 이동합니다.
+          </p>
         </div>
       </PageGrid>
 

@@ -53,7 +53,7 @@ export const InterviewSetupPage = () => {
           className="hidden lg:block lg:col-span-4 sticky top-[calc(var(--utility-bar-height)+2rem)] self-start"
           aria-label="설정 단계 목록"
         >
-          <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-6">
+          <p className="text-xs font-semibold text-muted-foreground mb-5">
             진행 상황
           </p>
           <ol className="space-y-1" aria-label="단계 목차">
@@ -94,7 +94,7 @@ export const InterviewSetupPage = () => {
           {/* 선택 누적 요약 */}
           {setup.position && (
             <div className="mt-10 border-t border-foreground/10 pt-6 space-y-2">
-              <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-3">
+              <p className="text-xs font-semibold text-muted-foreground mb-3">
                 선택 내역
               </p>
               {setup.position && (

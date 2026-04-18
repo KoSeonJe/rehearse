@@ -17,7 +17,7 @@ export const AnswerComparisonView = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-5 pt-4 pb-4">
         {/* 내 답변 */}
         <div className="rounded-xl bg-muted p-4">
-          <p className="text-[12px] font-bold text-text-tertiary mb-2 uppercase tracking-wide">
+          <p className="text-xs font-bold text-text-tertiary mb-2">
             내 답변
           </p>
           {transcript !== null && transcript.length > 0 ? (
@@ -31,7 +31,7 @@ export const AnswerComparisonView = ({
 
         {/* 모범 답변 */}
         <div className="rounded-xl bg-muted p-4">
-          <p className="text-[12px] font-bold text-text-tertiary mb-2 uppercase tracking-wide">
+          <p className="text-xs font-bold text-text-tertiary mb-2">
             모범 답변
           </p>
           {modelAnswer !== null && modelAnswer.length > 0 ? (

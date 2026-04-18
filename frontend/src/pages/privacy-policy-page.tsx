@@ -42,7 +42,7 @@ export const PrivacyPolicyPage = () => {
 
         {/* 목차 */}
         <nav className="mb-10 rounded-xl border border-border bg-surface px-5 py-5">
-          <p className="text-xs font-bold text-text-tertiary uppercase tracking-wider mb-3">목차</p>
+          <p className="text-sm font-bold text-text-secondary mb-3">목차</p>
           <ol className="space-y-1.5 text-sm">
             {[
               ['#general', '1. 총칙'],

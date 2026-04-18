@@ -11,9 +11,6 @@ interface StepLevelProps {
 export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 2 — Level
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         경력 수준을 선택해주세요
       </h1>

@@ -110,9 +110,6 @@ export const InterviewReadyPage = () => {
       <main className="mx-auto max-w-3xl px-5 pb-32 pt-16 md:px-8">
         {/* Intro + Tags */}
         <section className="mb-12">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Device Check
-          </p>
           <h1 className="text-4xl font-extrabold tracking-tighter text-text-primary sm:text-5xl">
             장치를 확인하고<br />
             <span className="text-text-primary">시작하세요.</span>
@@ -149,7 +146,7 @@ export const InterviewReadyPage = () => {
         {!isLoading && interview && (
           <section className="mb-8">
             <div className="mb-4 flex items-center gap-2 px-1">
-              <h2 className="text-xs font-black uppercase tracking-widest text-text-tertiary">
+              <h2 className="text-sm font-bold text-text-secondary">
                 질문 준비
               </h2>
             </div>
@@ -204,12 +201,12 @@ export const InterviewReadyPage = () => {
         {/* Device Test — Main Content */}
         {!isLoading && (
           <section>
-            <div className="mb-6 flex items-center gap-2 px-1">
-              <h2 className="text-xs font-black uppercase tracking-widest text-text-tertiary">
+            <div className="mb-6 flex items-baseline gap-2 px-1">
+              <h2 className="text-sm font-bold text-text-secondary">
                 장치 테스트
               </h2>
-              <span className="text-[10px] font-bold text-text-tertiary">
-                — 3개 모두 통과해야 시작할 수 있어요
+              <span className="text-xs font-medium text-text-tertiary">
+                3개 모두 통과해야 시작할 수 있어요
               </span>
             </div>
 
