@@ -22,7 +22,7 @@ export const ContentPageShell = ({
   const canonical = `${siteUrl}${canonicalPath}`
 
   return (
-    <div className="min-h-screen bg-white text-text-primary">
+    <div className="min-h-screen bg-background text-text-primary">
       <Helmet>
         <title>{title}</title>
         <meta name="description" content={description} />
@@ -34,11 +34,11 @@ export const ContentPageShell = ({
         {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
       </Helmet>
 
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
           <Link
             to="/"
-            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+            className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">리허설</span>
@@ -46,7 +46,7 @@ export const ContentPageShell = ({
           </Link>
           <Link
             to="/"
-            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             ← 홈으로
           </Link>

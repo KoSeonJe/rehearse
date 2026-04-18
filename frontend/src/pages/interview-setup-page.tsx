@@ -14,7 +14,7 @@ export const InterviewSetupPage = () => {
   const setup = useInterviewSetup()
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Helmet>
         <title>면접 설정 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />

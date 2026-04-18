@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
+import { Button } from '@/components/ui/button'
 import { HeroSection } from '@/components/home/hero-section'
 import { PainPointsSection } from '@/components/home/pain-points-section'
 import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
@@ -45,7 +46,7 @@ export const HomePage = () => {
   const handleStartLogin = () => openLoginModal('/interview/setup', '로그인이 필요합니다')
 
   return (
-    <div className="min-h-screen bg-white text-text-primary selection:bg-accent/10">
+    <div className="min-h-screen bg-background text-text-primary selection:bg-secondary">
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
         <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
@@ -59,7 +60,7 @@ export const HomePage = () => {
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
       )}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />
@@ -75,20 +76,24 @@ export const HomePage = () => {
                 <span className="hidden text-sm font-medium text-text-secondary sm:block">
                   {user?.name}
                 </span>
-                <button
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={logout}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                  className="rounded-xl"
                 >
                   로그아웃
-                </button>
+                </Button>
               </>
             ) : (
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={handleOpenLogin}
-                className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-text-secondary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border"
+                className="rounded-xl"
               >
                 로그인
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -106,12 +111,12 @@ export const HomePage = () => {
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
-      <footer className="border-t border-border bg-white">
+      <footer className="border-t border-border bg-background">
         <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
           <div className="flex flex-col items-start gap-1">
             <Link
               to="/privacy"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               개인정보 처리방침
             </Link>
@@ -124,7 +129,7 @@ export const HomePage = () => {
               href="https://github.com/KoSeonJe/rehearse"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
               aria-label="GitHub 저장소 열기"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -133,7 +138,7 @@ export const HomePage = () => {
             </a>
             <a
               href="mailto:a01039261344@gmail.com"
-              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+              className="text-xs font-medium text-text-tertiary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2 rounded-sm"
             >
               a01039261344@gmail.com
             </a>

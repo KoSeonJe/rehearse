@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface CheckItem {
@@ -57,11 +58,11 @@ export const BeforeYouStartSection = () => {
     <section
       ref={ref}
       style={style}
-      className="bg-white py-32"
+      className="bg-background py-32"
     >
       <div className="max-w-4xl mx-auto px-5 md:px-8">
         <div className="text-center mb-16">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             PREPARATION
           </p>
           <h2 className="text-3xl md:text-4xl font-extrabold tracking-tighter text-text-primary">
@@ -72,18 +73,20 @@ export const BeforeYouStartSection = () => {
           </p>
         </div>
 
-        <ul
+        <div
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          role="list"
           aria-label="면접 준비 체크리스트"
         >
           {CHECK_ITEMS.map((item) => (
-            <li
+            <Card
               key={item.title}
-              className="bg-surface rounded-card border border-border p-6"
+              className="bg-surface border border-border p-6 shadow-sm"
+              role="listitem"
             >
               <div className="flex items-start gap-4">
                 <div
-                  className="h-8 w-8 shrink-0 rounded-xl bg-accent/10 flex items-center justify-center text-accent"
+                  className="h-8 w-8 shrink-0 rounded-xl bg-secondary flex items-center justify-center text-text-primary"
                   aria-hidden="true"
                 >
                   <CheckIcon />
@@ -93,9 +96,9 @@ export const BeforeYouStartSection = () => {
                   <p className="text-sm text-text-secondary mt-1">{item.description}</p>
                 </div>
               </div>
-            </li>
+            </Card>
           ))}
-        </ul>
+        </div>
       </div>
     </section>
   )

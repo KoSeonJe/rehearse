@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, Circle, CircleCheck, Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
 import { useUpdateBookmarkStatus, useDeleteBookmark } from '@/hooks/use-review-bookmarks'
 import { DeleteConfirmDialog } from '@/components/dashboard/delete-confirm-dialog'
 import { AnswerComparisonView } from '@/components/review/answer-comparison-view'
@@ -68,16 +69,17 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
 
   return (
     <>
-      <article
-        className={`rounded-card overflow-hidden transition-shadow duration-200 ${
+      <Card
+        className={`overflow-hidden transition-shadow duration-200 ${
           isResolved
-            ? 'bg-success-light border border-success/20'
-            : 'bg-surface border border-border shadow-toss hover:shadow-toss-lg'
+            ? 'bg-success-light border border-success/20 shadow-none'
+            : 'bg-surface border border-border shadow-sm hover:shadow-md'
         }`}
+        role="article"
       >
         <button
           type="button"
-          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 w-full text-left px-5 py-4 flex items-center gap-3"
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 w-full text-left px-5 py-4 flex items-center gap-3"
           onClick={handleCardClick}
           aria-expanded={isExpanded}
         >
@@ -100,7 +102,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             {isResolved ? (
               <button
                 type="button"
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full bg-success text-white px-3 py-1.5 text-[13px] font-semibold border border-success hover:bg-[#059669] transition-colors whitespace-nowrap"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full bg-success text-white px-3 py-1.5 text-[13px] font-semibold border border-success hover:bg-success/90 transition-colors whitespace-nowrap"
                 aria-pressed={true}
                 aria-label="복습중으로 되돌리기"
                 onClick={handleToggleResolved}
@@ -112,7 +114,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             ) : (
               <button
                 type="button"
-                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-text-tertiary hover:border-success hover:text-success hover:bg-success-light transition-colors whitespace-nowrap"
+                className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-text-tertiary hover:border-success hover:text-success hover:bg-success-light transition-colors whitespace-nowrap"
                 aria-pressed={false}
                 aria-label="복습완료로 표시"
                 onClick={handleToggleResolved}
@@ -125,7 +127,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
 
             <button
               type="button"
-              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 w-8 h-8 flex items-center justify-center rounded-xl text-border hover:text-accent-hover hover:bg-accent-light transition-colors"
+              className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 w-8 h-8 flex items-center justify-center rounded-xl text-border hover:text-text-primary hover:bg-muted transition-colors"
               aria-label="북마크 삭제"
               onClick={handleDeleteClick}
             >
@@ -150,7 +152,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
             />
           </div>
         )}
-      </article>
+      </Card>
 
       <DeleteConfirmDialog
         isOpen={isDeleteDialogOpen}

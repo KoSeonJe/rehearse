@@ -1,5 +1,6 @@
 import { Character } from '@/components/ui/character'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
+import { Button } from '@/components/ui/button'
 
 interface CtaSectionProps {
   onNavigate: () => void
@@ -12,7 +13,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
     <section
       ref={ref}
       style={style}
-      className="bg-gradient-to-b from-accent/5 to-white pt-20 pb-32"
+      className="bg-gradient-to-b from-secondary to-white pt-20 pb-32"
     >
       <div className="mx-auto max-w-4xl px-5 md:px-8 text-center">
         <div className="mb-8 flex justify-center">
@@ -26,13 +27,15 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
           당신의 면접 영상을 한 프레임씩 복기해보세요.
         </p>
         <div className="mt-10">
-          <button
-            className="rounded-2xl bg-accent px-12 py-5 text-lg font-bold text-white transition-all hover:bg-accent-hover active:scale-95 shadow-lg shadow-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          <Button
+            variant="cta"
+            size="lg"
             onClick={onNavigate}
             aria-label="무료로 Rehearse 시작하기"
+            className="rounded-2xl px-12"
           >
             지금 시작하기
-          </button>
+          </Button>
           <p className="mt-4 text-sm text-text-tertiary">
             <span aria-hidden="true">무료 · 30초 가입 · Chrome 브라우저만 필요</span>
             <span className="sr-only">무료, 30초 가입, Chrome 브라우저만 필요</span>

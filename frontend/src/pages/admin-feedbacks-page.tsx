@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useAdminFeedbacks } from '@/hooks/use-service-feedback'
 import type { FeedbackSource } from '@/types/service-feedback'
 
@@ -29,15 +32,15 @@ const renderStars = (rating: number | null): string => {
 const SourceBadge = ({ source }: { source: FeedbackSource }) => {
   if (source === 'AUTO_POPUP') {
     return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+      <Badge className="rounded-full bg-blue-100 text-blue-700 border-transparent hover:bg-blue-100">
         자동
-      </span>
+      </Badge>
     )
   }
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+    <Badge className="rounded-full bg-green-100 text-green-700 border-transparent hover:bg-green-100">
       자발적
-    </span>
+    </Badge>
   )
 }
 
@@ -74,7 +77,7 @@ export const AdminFeedbacksPage = () => {
                 <p className="text-base font-medium">아직 피드백이 없습니다</p>
               </div>
             ) : (
-              <div className="bg-surface rounded-2xl border border-border shadow-toss overflow-hidden">
+              <Card className="bg-surface border border-border shadow-sm overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-background">
@@ -99,7 +102,7 @@ export const AdminFeedbacksPage = () => {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Card>
             )}
           </div>
 
@@ -116,7 +119,7 @@ export const AdminFeedbacksPage = () => {
             ) : (
               <div className="flex flex-col gap-3">
                 {feedbackList.map((item) => (
-                  <div key={item.id} className="bg-surface rounded-2xl border border-border shadow-toss p-4">
+                  <Card key={item.id} className="bg-surface border border-border shadow-sm p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-semibold text-text-primary">{item.userName}</span>
                       <SourceBadge source={item.source} />
@@ -126,7 +129,7 @@ export const AdminFeedbacksPage = () => {
                       <span className="text-amber-400 text-sm">{renderStars(item.rating)}</span>
                       <span className="text-xs text-text-tertiary">{formatDate(item.createdAt)}</span>
                     </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
             )}
@@ -135,25 +138,29 @@ export const AdminFeedbacksPage = () => {
           {/* 페이지네이션 */}
           {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-center gap-3 mt-6">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-text-secondary border border-border hover:bg-border/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl"
               >
                 <ChevronLeft size={16} />
                 이전
-              </button>
+              </Button>
               <span className="text-sm font-medium text-text-primary">
                 {page + 1} / {totalPages}
               </span>
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-medium text-text-secondary border border-border hover:bg-border/40 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="rounded-xl"
               >
                 다음
                 <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
           )}
         </main>

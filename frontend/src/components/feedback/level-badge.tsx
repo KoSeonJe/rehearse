@@ -5,11 +5,11 @@ interface LevelBadgeProps {
 }
 
 const LevelBadge = ({ label, value, bg = 'white' }: LevelBadgeProps) => {
-  const bgClass = bg === 'white' ? 'bg-white' : 'bg-gray-50'
+  const bgClass = bg === 'white' ? 'bg-card' : 'bg-muted'
   return (
     <div className={`${bgClass} rounded-xl p-3 text-center`}>
-      <p className="text-[12px] text-gray-400 mb-1">{label}</p>
-      <p className="text-[15px] font-bold text-gray-900">{value ?? '—'}</p>
+      <p className="text-xs text-text-tertiary mb-1">{label}</p>
+      <p className="text-sm font-bold text-text-primary">{value ?? '—'}</p>
     </div>
   )
 }

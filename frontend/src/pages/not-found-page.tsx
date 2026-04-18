@@ -8,7 +8,7 @@ export const NotFoundPage = () => {
         <title>페이지를 찾을 수 없습니다 | 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white px-5 text-center text-text-primary">
+      <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background px-5 text-center text-text-primary">
         <p className="text-sm font-semibold text-text-tertiary">404</p>
         <h1 className="text-2xl font-bold md:text-3xl">페이지를 찾을 수 없어요</h1>
         <p className="max-w-md text-sm text-text-secondary md:text-base">

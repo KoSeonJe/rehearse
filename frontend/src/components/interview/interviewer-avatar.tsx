@@ -43,7 +43,7 @@ export const InterviewerAvatar = memo(({ mood, size = 180 }: InterviewerAvatarPr
 
       {/* Border ring — speaking: 초록, listening: 빨강 */}
       <div
-        className={`absolute rounded-full transition-all duration-300 ${
+        className={`absolute rounded-full transition-colors duration-300 ${
           mood === 'speaking' ? 'border-[3px] border-meet-green'
             : mood === 'listening' ? 'border-[3px] border-meet-red/60'
             : 'border-[3px] border-transparent'

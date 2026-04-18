@@ -20,32 +20,40 @@ The elevation system is notably sophisticated for a minimal site — 11 shadow d
 
 ## 2. Color Palette & Roles
 
-### Primary
-- **Charcoal** (`#242424`): Primary heading and button text — Cal.com's signature near-black, warmer than pure black
-- **Midnight** (`#111111`): Deepest text/overlay color — used at 50% opacity for subtle overlays
-- **White** (`#ffffff`): Primary background and surface — the dominant canvas
+### Primary (Phase A 개정: warm off-neutral)
+
+> **개정 이유**: Cal.com 모노크롬 철학은 유지하되, pure black/white 대신 warm off-tone으로 미세 조정. 눈의 피로 감소 + "조용한 온기" 방향성 반영.
+
+- **Warm Off-Black** (`#14130f`, CSS: `--foreground`): Primary heading, button text — warm off-black (pure black 금지)
+- **Warm Off-White** (`#fafaf7`, CSS: `--background`): Primary background — warm off-white (pure white 금지)
+- **Midnight** (`#111111`): 필요 시 deep overlay용으로만 (50% opacity)
 
 ### Secondary & Accent
 - **Link Blue** (`#0099ff`): In-text links with underline decoration — the only blue in the system, reserved strictly for hyperlinks
 - **Focus Ring** (`#3b82f6` at 50% opacity): Keyboard focus indicator — accessibility-only, invisible in normal interaction
-- **Default Link** (`#0000ee`): Browser-default link color on some elements — unmodified, signaling openness
 
 ### Surface & Background
-- **Pure White** (`#ffffff`): Primary page background and card surfaces
-- **Light Gray** (approx `#f5f5f5`): Subtle section differentiation — barely visible tint
-- **Mid Gray** (`#898989`): Secondary text, descriptions, and muted labels
+- **Warm Off-White** (`#fafaf7`, `--background`): Primary page background — warm tint, not pure white
+- **Warm Off-White Alt** (`#f8f7f4`, `--foreground` dark mode): Dark mode foreground
+- **Mid Gray** (`#737373`, `--muted-foreground`): Secondary text, descriptions and muted labels — 4.53:1 contrast on `#fafaf7` (AA 통과)
 
 ### Neutrals & Text
-- **Charcoal** (`#242424`): Headlines, buttons, primary UI text
-- **Midnight** (`#111111`): Deep black for high-contrast links and nav text
-- **Mid Gray** (`#898989`): Descriptions, secondary labels, muted content
-- **Pure Black** (`#000000`): Certain link text elements
-- **Border Gray** (approx `rgba(34, 42, 53, 0.08–0.10)`): Shadow-based borders using ring shadows instead of CSS borders
+- **Warm Off-Black** (`#14130f`, `--foreground`): Headlines, buttons, primary UI text — 17.8:1 on `#fafaf7` (AAA)
+- **Mid Gray** (`#737373`, `--muted-foreground`): Descriptions, secondary labels, muted content
+- **Border Warm** (`--border`): Hairline separators — warm-tinted, not cold gray
 
-### Semantic & Accent
-- Cal.com is deliberately colorless for brand elements — "a grayscale brand to emphasise on boldness and professionalism"
-- Product UI screenshots show color (blues, greens in the scheduling interface), but the marketing site itself stays monochrome
-- The philosophy mirrors Uber's approach: let the content carry color, the frame stays neutral
+### Semantic Color 4종 (Phase A 신규)
+
+> Cal.com은 의도적으로 무채색이지만, Rehearse는 "면접 도구"로서 상태 신호가 필요하다. 4종을 엄격히 분리해 오염 없이 사용한다.
+
+| 토큰 | 값 | 용도 | 사용 제한 |
+|------|----|------|-----------|
+| `--accent-editorial` (`#b8741a`) | Amber ochre | 피드백 하이라이트, 챕터 숫자 마커 | `--signal-warning`과 인접 8px 이상 간격 유지 |
+| `--signal-record` (`#c8322a`) | Warm red | 녹화 중 상태 dot + "REC" 라벨 | `interview-page` 전용. 다른 페이지 사용 금지 |
+| `--signal-warning` (`#d4a017`) | Ochre | 타임 카운트다운, 시간 초과 경고 | 타임 경고에만. `--accent-editorial`과 인접 금지 |
+| `--signal-success` (`#5a7a4a`) | Muted sage | 저장 완료 toast | toast 1개에만. 페이지 수준 배경 사용 금지 |
+
+**배경 tint 변수**: 각 signal에 `-bg` suffix 변수 제공 (`--accent-editorial-bg`, `--signal-record-bg` 등)
 
 ### Gradient System
 - No gradients on the marketing site — the design is fully flat and monochrome
@@ -53,13 +61,19 @@ The elevation system is notably sophisticated for a minimal site — 11 shadow d
 
 ## 3. Typography Rules
 
-### Font Family
-- **Display**: `Cal Sans` — custom geometric sans-serif by Mark Davis. Open-source, available on Google Fonts and GitHub. Extremely tight default letter-spacing designed for large headlines. Has 6 character variants (Cc, j, t, u, 0, 1)
-- **Body**: `Inter` — "rock-solid" standard body font. Fallback: `Inter Placeholder`
-- **UI Light**: `Cal Sans UI Variable Light` — light-weight variant (300) for softer UI text with -0.2px letter-spacing
-- **UI Medium**: `Cal Sans UI Medium` — medium-weight variant (500) for emphasized captions
-- **Mono**: `Roboto Mono` — for code blocks and technical content
-- **Tertiary**: `Matter Regular` / `Matter SemiBold` / `Matter Medium` — additional body fonts for specific contexts
+### Font Family (Phase A 개정)
+
+> **개정 이유**: Rehearse는 한국어 중심 서비스다. Cal Sans(영문 전용)를 주력에서 optional로 격하하고, Pretendard를 본문 기준으로 확립한다. Fraunces는 영문 display 요소에만 선택 적용.
+
+- **Body (필수)**: `Pretendard Variable` / `Pretendard` — 한국어 우선 본문. `font-sans` 클래스. 이미 CDN 로드 중
+- **Display (optional, 영문 전용)**: `Fraunces` — 챕터 숫자 마커(`01`, `02`), 통계 헤드라인 영문에만. `font-serif` 클래스. Phase B 활성화 예정 (현재 preload 태그 주석 처리)
+- **Display (기존 유지)**: `Cal Sans` — `font-display` 클래스. 기존 영문 헤딩에서 점진적 교체 예정
+- **Mono**: `JetBrains Mono` — 코드, 기술 스택 태그. `font-mono` 클래스
+- **Tabular (유틸리티)**: `.font-tabular` CSS 클래스 — `font-feature-settings: 'tnum' 1`. 타이머·통계 숫자에 **필수** 적용
+
+> **한국어 위계 전략**: 한국어 헤딩은 Fraunces 적용 불가(한글 미지원). Pretendard 굵기(700→600→500) + 자간(-0.02em~0) + 크기 차등으로 위계 구성.
+
+> **Fraunces trade-off**: 한국어 글자에 적용 시 폰트 믹스 현상 발생. 영문 display(챕터 숫자, 통계 수치)에만 선택적 적용. 비용(약 80KB) → `&text=0123456789` subset으로 10KB 이하 최적화.
 
 ### Hierarchy
 
@@ -252,8 +266,150 @@ Cal.com's shadow system is the most sophisticated element of the design — 11 s
 
 ### Iteration Guide
 When refining existing screens generated with this design system:
-1. Verify headings use Cal Sans at weight 600, body uses Inter — never mix them
-2. Check that the palette is purely grayscale — if you see brand colors, remove them
+1. Verify headings use Cal Sans at weight 600, body uses Pretendard — never mix them
+2. Check that the palette is warm off-neutral — if you see pure #000/#fff, replace with `--foreground`/`--background`
 3. Ensure card elevation uses the multi-layered shadow stack, not CSS borders
 4. Confirm section spacing is generous (80px+) — if sections feel cramped, add more space
-5. The overall tone should feel like a clean, professional scheduling tool — monochrome confidence without any decorative flourishes
+5. The overall tone should feel like a quiet, rigorous practice room — warm monochrome with editorial detail
+
+---
+
+## 10. Layout System (Phase A 신규)
+
+> 기존 Cal.com 중앙 정렬(max-w-* mx-auto) 패턴에서 벗어나 12-col 비대칭 그리드로 전환한다. 각 페이지가 다른 컬럼 점유로 시각 비율을 차별화한다.
+
+### 12-column Asymmetric Grid
+
+- **전역 컨테이너**: `grid grid-cols-12 gap-x-6 max-w-[1440px] mx-auto px-4 md:px-8 lg:px-12`
+- **본문 anchor**: 좌측 anchor 원칙 — 중앙 정렬 금지
+- **반응형**: `sm: 4-col` / `md: 8-col` / `lg+: 12-col`
+
+### Page Layout Recipes (4종)
+
+| Recipe | 비율 | 적용 페이지 | 설명 |
+|--------|------|-------------|------|
+| **A: 7+5** | col-7 + col-5 | Home Hero | 좌 anchor copy + 우 제품 스크린샷 |
+| **B: 4+8** | col-4 sticky + col-8 | Setup | 좌 sticky 목차 + 우 스텝 편집 영역 |
+| **C: 2+6+4** | col-2 + col-6 + col-4 | Feedback | StickyOutline + ReadingColumn + VideoDock |
+| **D: 8+4** | col-8 + col-4 | Dashboard | 메인 콘텐츠 + 활동 타임라인 |
+
+### Elevation Levels (L1–L6 원칙)
+
+| Level | 원칙 | 적용 |
+|-------|------|------|
+| L1 | `max-w-* mx-auto` 중앙 정렬 제거 → PageGrid 교체 | 모든 Priority 1 페이지 |
+| L2 | 12-col Recipe 적용 (A/B/C/D 중 택일) | 페이지별 |
+| L3 | 박스형 섹션 카드 → ReadingColumn + ChapterMarker | Feedback/Setup |
+| L4 | SaaS 표준 헤더 → UtilityBar (44px/56px) | 전 페이지 |
+| L5 | `space-y-6` 균등 → 챕터 96px / 단락 24px 차등 | 본문 영역 |
+| L6 | 고정 2분할 → Structural Primitive 조합 | Feedback/Setup/Interview |
+
+### Structural Primitives (Phase B 도입 — 신규 6개)
+
+저장 경로: `frontend/src/components/layout/`
+
+| Primitive | 역할 | Phase |
+|-----------|------|-------|
+| `<PageGrid>` | 12-col 전역 wrapper | B |
+| `<ReadingColumn>` | 피드백 본문 컨테이너 (`max-w-[55ch]`, `leading-1.65`) | B |
+| `<StickyOutline>` | 질문 목차 compound (Desktop/TabBar/MobileSheet) | B |
+| `<StickyRail>` | col 배치 + sticky top 순수 layout primitive | B |
+| `<VideoDock>` | StickyRail + VideoPlayer + TimelineBar composite | B |
+| `<ChapterMarker>` | 섹션 구분 — 숫자 over-line(11px) + 질문 제목(40–48px) | B |
+| `<UtilityBar>` | 전 페이지 헤더 대체 (h-11 / md:h-14) | B |
+
+---
+
+## 11. Responsive Strategy (Phase A 신규)
+
+### Breakpoint 매트릭스
+
+| Breakpoint | 범위 | 레이아웃 | 주요 변화 |
+|------------|------|----------|-----------|
+| `sm` | < 768px | 단일 컬럼 | VideoDock sticky-top 25vh, StickyOutline → MobileSheet |
+| `md` | 768–1023px | 단일 컬럼 | VideoDock sticky-top 30vh, StickyOutline → MobileSheet |
+| `lg` | 1024–1279px | 2-pane | StickyOutline → TabBar, col-8 + col-4 |
+| `xl` | ≥ 1280px | 3-pane | StickyOutline → Desktop, col-2 + col-6 + col-4 |
+
+### Primitive별 Fallback 원칙
+
+- `<StickyOutline.Desktop>`: `hidden xl:flex` — xl 미만 CSS 숨김
+- `<StickyOutline.TabBar>`: `flex xl:hidden` — xl 이상 CSS 숨김
+- `<StickyOutline.MobileSheet>`: trigger `lg:hidden`, Portal은 CSS 제어 불가 (JS state)
+- `<PageGrid>`: `grid-cols-4 md:grid-cols-8 lg:grid-cols-12` 순차 확장
+- Recipe B(4+8): `lg+ 분할`, `sm/md 단일 컬럼 + 상단 tab bar`
+
+### 터치 타겟 규칙 (WCAG 2.5.5)
+
+- 모든 인터랙티브 요소 hitbox 최소 **44×44px**
+- `--utility-bar-height: 44px` (데스크탑) / `56px` (모바일 `max-width: 767px`)
+- UtilityBar 내 아이콘 버튼: `min-w-11 min-h-11` 보장
+- Interview 종료·일시중지 버튼: **항상 visible** — hover에 숨기지 않음
+- 모바일 하단 고정 bar: `h-14` (56px), 버튼 전체 높이 활용
+
+### 섹션 간격 축소 규칙
+
+- 데스크탑: 섹션 간 80–96px (`py-20 md:py-24`)
+- 모바일 (`sm`): 48px로 축소 (`py-12`)
+- 카드 내부 패딩: 12–24px 유지
+
+---
+
+## 12. Asset Policy (Phase A 신규)
+
+### 제품 스크린샷 정책
+
+Rehearse 마케팅 및 UI에서 사용할 제품 목업 이미지는 아래 정책을 따른다.
+
+### 필요 자산 5종
+
+| 자산명 | 크기 | 용도 |
+|--------|------|------|
+| `feedback-3pane-light.png` / `feedback-3pane-dark.png` | 2400×1500 @2x | Home Hero 우 5-col 제품 목업 |
+| `feedback-timeline-closeup.png` | 800×600 @2x | 피드백 UI 시연 클로즈업 |
+| `interview-theater-preview.png` | 1920×1080 @2x | 극장식 몰입 모드 면접 화면 |
+| `dashboard-headline.png` | 1600×1000 @2x | 대시보드 초대형 숫자 헤드라인 |
+| `section-pain-points.png` / `section-journey.png` | 1200×800 @2x 각 | Home 섹션 기능 증빙 |
+
+### 제작 방법
+
+**옵션 A (Playwright 자동 캡처) — 권장**: Phase B/C 완료 시마다 `e2e/capture-mockups.ts`로 자동 재생성. 목업 데이터는 `fixtures/mockup-interview.json` (실명 없는 더미).
+
+**옵션 B (초기 임시)**: Phase B 완료 전 Home 랜딩 작업 시 Figma 임시 목업 사용 가능. Phase B 완료 후 옵션 A로 교체 필수.
+
+### 저장소 및 파일명 규칙
+
+```
+frontend/public/mockups/
+  feedback-3pane-light.png
+  feedback-3pane-dark.png
+  feedback-timeline-closeup.png
+  interview-theater-preview.png
+  dashboard-headline.png
+  section-pain-points.png
+  section-journey.png
+```
+
+- 파일명 형식: `{page}-{variant}-{theme}.{ext}`
+- 해상도: @2x PNG 기본, 애니메이션(GIF/WebM) 5MB 이하
+- 지원하지 않는 브라우저 대비 `<picture>` + `srcset` 필수
+
+### srcset 템플릿
+
+```html
+<picture>
+  <source media="(min-width: 1280px)" srcset="/mockups/feedback-3pane-light.png 2x">
+  <img
+    src="/mockups/feedback-3pane-light.png"
+    alt="Rehearse 피드백 3-pane 화면"
+    loading="lazy"
+    decoding="async"
+  >
+</picture>
+```
+
+### 이미지 철학 (Cal.com 계승)
+
+- 제품 스크린샷이 주요 시각 콘텐츠 — 일러스트, 추상 그래픽, 장식 이미지 금지
+- 모든 이미지는 실제 제품 UI (더미 데이터 허용, 가상 UI 불가)
+- 다크/라이트 테마별 별도 캡처 제공 (`-light` / `-dark` suffix)

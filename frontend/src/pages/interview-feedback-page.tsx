@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
+import { Button } from '@/components/ui/button'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
@@ -49,7 +50,7 @@ const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
               {interview.interviewTypes.map((type) => (
                 <span
                   key={type}
-                  className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent"
+                  className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
                 >
                   {INTERVIEW_TYPE_LABELS[type]?.label ?? type}
                 </span>
@@ -149,8 +150,8 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
           <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
           <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
         </div>
-        <div className="h-1 w-32 bg-accent/20 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-accent animate-progress-loading" />
+        <div className="h-1 w-32 bg-primary/20 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-primary animate-progress-loading" />
         </div>
       </div>
     )
@@ -223,7 +224,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 
   if (feedbackLoading) {
     return (
-      <div className="rounded-[32px] bg-surface p-8 animate-pulse">
+      <div className="rounded-4xl bg-surface p-8 animate-pulse">
         <div className="h-6 w-48 bg-border/50 rounded-lg mb-4" />
         <div className="h-40 bg-border/30 rounded-2xl" />
       </div>
@@ -232,7 +233,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
 
   if (!feedback) {
     return (
-      <div className="rounded-[32px] bg-surface border border-border p-8 text-center">
+      <div className="rounded-4xl bg-surface border border-border p-8 text-center">
         <p className="text-sm font-bold text-text-tertiary">피드백을 불러올 수 없습니다</p>
       </div>
     )
@@ -246,7 +247,7 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       <section className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-bold text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
             {index + 1}
           </div>
           <div>
@@ -345,13 +346,13 @@ export const InterviewFeedbackPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
-          <div className="h-1 w-24 bg-accent/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-accent animate-progress-loading" />
+          <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-primary animate-progress-loading" />
           </div>
-          <p className="font-mono text-[10px] font-black uppercase tracking-widest text-accent">피드백 로딩 중</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">피드백 로딩 중</p>
         </div>
       </div>
     )
@@ -359,30 +360,33 @@ export const InterviewFeedbackPage = () => {
 
   if (!interview || questionSets.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-white px-5">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5">
         <Character mood="confused" size={140} className="mb-8" />
         <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary text-center">
           피드백을 불러올 수 없습니다
         </h1>
-        <button
-          className="mt-10 h-16 w-full max-w-xs rounded-[24px] bg-accent font-semibold text-white active:scale-95"
+        <Button
+          variant="default"
+          size="lg"
           onClick={() => navigate('/')}
+          className="mt-10 w-full max-w-xs rounded-3xl"
         >
           홈으로 돌아가기
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white pb-32">
+    <div className="min-h-screen bg-background pb-32">
       <Helmet>
         <title>면접 피드백 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       {/* Header */}
-      <header className="sticky top-0 z-[60] bg-white/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-[60] bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
+          {/* TODO(design): variant 판단 보류 — 로고+텍스트 조합 헤더 버튼, 레이아웃 영향 검토 필요 */}
           <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
             <Logo size={60} />
             <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
@@ -407,7 +411,7 @@ export const InterviewFeedbackPage = () => {
       <main className="mx-auto max-w-6xl px-5 pt-10 md:px-8">
         {/* Hero */}
         <section className="text-center mb-12">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
             Timestamp Feedback Review
           </p>
           <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary sm:text-3xl">

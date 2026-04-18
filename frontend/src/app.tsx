@@ -21,6 +21,8 @@ import { NotFoundPage } from '@/pages/not-found-page'
 import { ProtectedRoute } from '@/components/ui/protected-route'
 import { PasswordProtectedRoute } from '@/components/ui/password-protected-route'
 import { LoginModal } from '@/components/ui/login-modal'
+import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export const App = () => {
   usePostLoginRedirect()
@@ -28,7 +30,7 @@ export const App = () => {
   useCrossTabSync()
 
   return (
-    <>
+    <TooltipProvider>
       <Routes>
         <Route path="/" element={<HomePage />} />
 
@@ -55,6 +57,7 @@ export const App = () => {
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <LoginModal />
-    </>
+      <Toaster />
+    </TooltipProvider>
   )
 }

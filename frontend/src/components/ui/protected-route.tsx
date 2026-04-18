@@ -21,7 +21,7 @@ export const ProtectedRoute = () => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white">
+      <div className="flex min-h-screen items-center justify-center bg-background">
         <Spinner className="h-8 w-8" />
       </div>
     )

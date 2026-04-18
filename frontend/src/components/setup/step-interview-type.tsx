@@ -45,7 +45,7 @@ export const StepInterviewType = ({
 }: StepInterviewTypeProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
         Step 4 — Interview Type
       </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
@@ -55,15 +55,16 @@ export const StepInterviewType = ({
         여러 개를 선택할 수 있습니다
       </p>
 
+      {/* TODO(design): variant 판단 보류 — 선택 카드 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div className="mt-10 space-y-3">
         {POSITION_INTERVIEW_TYPES[position].map((type) => (
           <div key={type}>
             <button
               onClick={() => onTypeToggle(type)}
               disabled={isLoading}
-              className={`flex w-full items-center justify-between rounded-[20px] p-5 text-left transition-all active:scale-[0.98] ${
+              className={`flex w-full items-center justify-between rounded-2xl p-5 text-left transition-colors active:scale-[0.98] ${
                 interviewTypes.includes(type)
-                  ? 'bg-accent text-white shadow-lg shadow-accent/20'
+                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
                   : 'bg-surface text-text-primary hover:bg-slate-200'
               }`}
             >
@@ -82,9 +83,9 @@ export const StepInterviewType = ({
                 </span>
               </div>
               <div
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-all ${
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
                   interviewTypes.includes(type)
-                    ? 'border-white bg-white text-accent'
+                    ? 'border-white bg-white text-text-primary'
                     : 'border-text-tertiary'
                 }`}
               >
@@ -104,9 +105,9 @@ export const StepInterviewType = ({
                     key={topic}
                     onClick={() => onCsSubTopicToggle(topic)}
                     disabled={isLoading}
-                    className={`rounded-full px-4 py-2 text-xs font-bold transition-all active:scale-95 ${
+                    className={`rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 ${
                       csSubTopics.includes(topic)
-                        ? 'bg-accent/10 text-accent ring-1 ring-accent/30'
+                        ? 'bg-secondary text-text-primary ring-1 ring-border'
                         : 'bg-surface text-text-secondary hover:bg-slate-200'
                     }`}
                   >

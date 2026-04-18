@@ -51,10 +51,10 @@ interface StepImageProps {
 
 const StepImage = ({ step, isReversed }: StepImageProps) => (
   <div
-    className={`flex-1 w-full max-w-[440px] rounded-[32px] bg-surface border border-border shadow-toss p-4 ${step.rotate} ${isReversed ? 'md:mr-auto' : 'md:ml-auto'}`}
+    className={`flex-1 w-full max-w-[440px] rounded-4xl bg-surface border border-border shadow-toss p-4 ${step.rotate} ${isReversed ? 'md:mr-auto' : 'md:ml-auto'}`}
     aria-hidden="true"
   >
-    <div className="relative rounded-[24px] overflow-hidden bg-white border border-slate-100">
+    <div className="relative rounded-3xl overflow-hidden bg-card border border-slate-100">
       <img
         src={step.imageSrc}
         alt={step.imageAlt}
@@ -73,7 +73,7 @@ interface StepTextProps {
 const StepText = ({ step, isReversed }: StepTextProps) => (
   <div className={`flex-1 space-y-4 ${isReversed ? 'md:text-right' : ''}`}>
     <div
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
+      className={`inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-text-primary text-white font-black text-sm ${isReversed ? 'md:ml-auto' : ''}`}
       aria-label={`${step.number}단계`}
     >
       {step.number}
@@ -95,13 +95,13 @@ export const JourneySection = () => {
       ref={ref}
       style={style}
       aria-labelledby="journey-heading"
-      className="bg-white py-24 md:py-32"
+      className="bg-background py-24 md:py-32"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
 
         {/* 헤딩 */}
         <div className="mb-20 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             THE JOURNEY
           </p>
           <h2

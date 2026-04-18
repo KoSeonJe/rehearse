@@ -277,6 +277,7 @@ export const InterviewPage = () => {
         />
 
         {/* Right: Leave button (Google Meet: red pill, far right) */}
+        {/* TODO(design): variant 판단 보류 — Google Meet 스타일 스튜디오 UI (meet-red/green/blue 팔레트), 사용자 확인 필요 */}
         <div className="flex justify-end min-w-[200px]">
           <button
             onClick={() => setShowFinishDialog(true)}
@@ -291,6 +292,8 @@ export const InterviewPage = () => {
       </div>
 
       {/* ── Finish Dialog ── */}
+      {/* TODO(plan-03c): shadcn AlertDialog 교체 보류 — 스튜디오 다크 테마(bg-[#2c2c2c])는
+          interview 스튜디오 Phase 3a 범위. 라이트 테마 전환 시 디자인 검수 후 교체. */}
       {showFinishDialog && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -345,6 +348,8 @@ export const InterviewPage = () => {
       />
 
       {/* ── 뒤로가기 이탈 가드 다이얼로그 ── */}
+      {/* TODO(plan-03c): shadcn AlertDialog 교체 보류 — 스튜디오 다크 테마(bg-[#2c2c2c])는
+          interview 스튜디오 Phase 3a 범위. 라이트 테마 전환 시 디자인 검수 후 교체. */}
       {exitBlocked && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70"

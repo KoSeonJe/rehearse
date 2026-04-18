@@ -1,9 +1,10 @@
 import type { InterviewListItem } from '@/types/interview'
+import { Card } from '@/components/ui/card'
 import { InterviewCard } from './interview-card'
 import { EmptyState } from './empty-state'
 
 const InterviewCardSkeleton = () => (
-  <div className="rounded-card bg-surface p-5 animate-pulse">
+  <Card className="bg-surface p-5 animate-pulse border border-border shadow-sm">
     <div className="h-4 w-48 bg-border/50 rounded-lg" />
     <div className="mt-3 flex gap-2">
       <div className="h-5 w-16 bg-border/50 rounded-badge" />
@@ -14,7 +15,7 @@ const InterviewCardSkeleton = () => (
       <div className="h-3 w-24 bg-border/50 rounded-lg" />
       <div className="h-5 w-12 bg-border/50 rounded-badge" />
     </div>
-  </div>
+  </Card>
 )
 
 interface InterviewListProps {

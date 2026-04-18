@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface MetricItem {
@@ -141,15 +142,16 @@ const NONVERBAL_METRICS: MetricItem[] = [
 
 // ── Card ───────────────────────────────────────────────────────────────
 const MetricCard = ({ label, question, icon }: MetricItem) => (
-  <article
-    className="group rounded-[20px] border border-border bg-white p-5 transition-all duration-200 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md"
+  <Card
+    className="group border border-border bg-background p-5 transition-colors duration-200 hover:-translate-y-1 hover:border-text-tertiary hover:shadow-md"
+    role="article"
   >
-    <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3 bg-accent/10 text-accent transition-colors duration-200 group-hover:bg-accent group-hover:text-white">
+    <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3 bg-secondary text-text-primary transition-colors duration-200 group-hover:bg-text-primary group-hover:text-white">
       {icon}
     </div>
     <h3 className="text-sm font-extrabold text-text-primary mb-1">{label}</h3>
     <p className="text-xs font-medium text-text-secondary leading-relaxed">{question}</p>
-  </article>
+  </Card>
 )
 
 export const MetricsSection = () => {
@@ -160,13 +162,13 @@ export const MetricsSection = () => {
       ref={ref}
       style={style}
       aria-labelledby="metrics-heading"
-      className="bg-white py-20 md:py-28"
+      className="bg-background py-20 md:py-28"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
 
         {/* 헤딩 */}
         <div className="text-center mb-14">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             FEEDBACK METRICS
           </p>
           <h2
@@ -178,7 +180,7 @@ export const MetricsSection = () => {
         </div>
 
         {/* 지표 컨테이너 — 언어/비언어를 한 배경 안에 함께 감쌈 */}
-        <div className="rounded-[24px] bg-accent/[0.04] p-6 md:p-8">
+        <div className="rounded-3xl bg-secondary p-6 md:p-8">
           {/* 언어 피드백 그룹 */}
           <div className="mb-8" role="group" aria-label="언어 피드백 지표">
             <div className="flex items-center gap-3 mb-6">

@@ -1,5 +1,7 @@
 import type { Question, InterviewType } from '@/types/interview'
 import { INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface QuestionCardProps {
   question: Question
@@ -7,20 +9,23 @@ interface QuestionCardProps {
 
 export const QuestionCard = ({ question }: QuestionCardProps) => {
   return (
-    <li className="rounded-card border border-border bg-surface p-5">
+    <Card className="border border-border bg-surface p-5 shadow-sm" role="listitem">
       <div className="flex items-center gap-3">
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-sm font-medium text-white">
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background">
           {question.order}
         </span>
         {question.category && (
-          <span className="rounded-badge bg-background px-2 py-0.5 text-xs font-medium text-text-secondary">
+          <Badge
+            variant="outline"
+            className="rounded-badge bg-background text-text-secondary"
+          >
             {INTERVIEW_TYPE_LABELS[question.category as InterviewType]?.label ?? question.category}
-          </span>
+          </Badge>
         )}
       </div>
       <p className="mt-3 text-base leading-relaxed text-text-primary">
         {question.content}
       </p>
-    </li>
+    </Card>
   )
 }

@@ -1,4 +1,5 @@
 import { type KeyboardEvent } from 'react'
+import { cn } from '@/lib/utils'
 
 interface SelectionCardProps {
   value: string
@@ -34,18 +35,16 @@ export const SelectionCard = ({
       disabled={disabled}
       onClick={() => onSelect(value)}
       onKeyDown={handleKeyDown}
-      className={[
-        'cursor-pointer rounded-card border p-4 text-left transition-all duration-200',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
+      className={cn(
+        'cursor-pointer rounded-lg border p-4 text-left transition-colors duration-200 shadow-sm w-full',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         selected
-          ? 'border-accent bg-accent-light'
+          ? 'border-primary bg-muted'
           : 'border-border bg-surface hover:border-text-tertiary hover:shadow-md hover:-translate-y-0.5',
         disabled
           ? 'cursor-not-allowed border-border bg-background text-text-tertiary'
           : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      )}
     >
       <span className="block text-base font-medium text-text-primary">
         {label}

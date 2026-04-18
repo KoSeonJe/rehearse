@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
 import { DeleteConfirmDialog } from './delete-confirm-dialog'
@@ -9,30 +11,27 @@ interface StatusBadgeProps {
   status: InterviewStatus
 }
 
+const STATUS_CONFIG: Record<InterviewStatus, { label: string; className: string }> = {
+  COMPLETED: {
+    label: '완료',
+    className: 'bg-success-light text-success border-transparent hover:bg-success-light',
+  },
+  READY: {
+    label: '준비됨',
+    className: 'bg-blue-100 text-blue-700 border-transparent hover:bg-blue-100',
+  },
+  IN_PROGRESS: {
+    label: '진행 중',
+    className: 'bg-warning-light text-warning border-transparent hover:bg-warning-light',
+  },
+}
+
 const StatusBadge = ({ status }: StatusBadgeProps) => {
-  const config: Record<InterviewStatus, { label: string; className: string }> = {
-    COMPLETED: {
-      label: '완료',
-      className: 'bg-success-light text-success',
-    },
-    READY: {
-      label: '준비됨',
-      className: 'bg-blue-100 text-blue-700',
-    },
-    IN_PROGRESS: {
-      label: '진행 중',
-      className: 'bg-warning-light text-warning',
-    },
-  }
-
-  const { label, className } = config[status]
-
+  const { label, className } = STATUS_CONFIG[status]
   return (
-    <span
-      className={`rounded-badge px-2.5 py-0.5 text-xs font-bold ${className}`}
-    >
+    <Badge className={`rounded-badge font-bold ${className}`}>
       {label}
-    </span>
+    </Badge>
   )
 }
 
@@ -79,12 +78,12 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
 
   return (
     <>
-      <div
+      <Card
         onClick={handleCardClick}
-        className={`rounded-card bg-surface p-5 border border-border shadow-toss transition-all duration-200 ${
+        className={`bg-surface p-5 border border-border transition-colors duration-200 ${
           isInProgress
-            ? 'opacity-60 cursor-default'
-            : 'cursor-pointer hover:shadow-toss-lg'
+            ? 'opacity-60 cursor-default shadow-sm'
+            : 'cursor-pointer shadow-sm hover:shadow-md'
         }`}
         title={isInProgress ? '면접이 진행 중입니다' : undefined}
       >
@@ -97,12 +96,13 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
         {/* 2행: 태그 + 메타 */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {typeLabels.map((label) => (
-            <span
+            <Badge
               key={label}
-              className="rounded-badge bg-accent-light px-2.5 py-0.5 text-xs font-semibold text-accent"
+              variant="secondary"
+              className="rounded-badge font-semibold"
             >
               {label}
-            </span>
+            </Badge>
           ))}
           <span className="text-xs text-text-tertiary">{interview.durationMinutes}분</span>
           <span className="text-xs text-text-tertiary">답변 {interview.answerCount}개</span>
@@ -122,7 +122,7 @@ export const InterviewCard = ({ interview, onDelete, isDeleting }: InterviewCard
             </button>
           </div>
         </div>
-      </div>
+      </Card>
 
       <DeleteConfirmDialog
         isOpen={showDeleteDialog}

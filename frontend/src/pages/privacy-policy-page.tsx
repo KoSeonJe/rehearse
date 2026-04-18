@@ -11,18 +11,18 @@ const Section = ({ id, title, children }: { id: string; title: string; children:
 
 export const PrivacyPolicyPage = () => {
   return (
-    <div className="min-h-screen bg-white text-text-primary">
+    <div className="min-h-screen bg-background text-text-primary">
       {/* 헤더 */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
-          <Link to="/" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm">
+          <Link to="/" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">리허설</span>
             <BetaBadge size="md" />
           </Link>
           <Link
             to="/"
-            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             ← 홈으로
           </Link>
@@ -65,7 +65,7 @@ export const PrivacyPolicyPage = () => {
               <li key={href}>
                 <a
                   href={href}
-                  className="text-text-secondary hover:text-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded-sm"
+                  className="text-text-secondary hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
                 >
                   {label}
                 </a>
@@ -207,7 +207,7 @@ export const PrivacyPolicyPage = () => {
               <strong>이메일:</strong>{' '}
               <a
                 href="mailto:a01039261344@gmail.com"
-                className="text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 rounded-sm"
+                className="text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 rounded-sm"
               >
                 a01039261344@gmail.com
               </a>
@@ -223,7 +223,7 @@ export const PrivacyPolicyPage = () => {
           </p>
           <Link
             to="/"
-            className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 rounded-sm"
+            className="text-xs font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
           >
             홈으로 돌아가기
           </Link>

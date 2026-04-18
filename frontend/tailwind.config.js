@@ -4,6 +4,23 @@ export default {
   theme: {
     extend: {
       fontFamily: {
+        /* display: Cal Sans 유지 (기존 호환), Fraunces는 별도 serif 키 */
+        display: [
+          'Cal Sans',
+          'Pretendard Variable',
+          'Pretendard',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'system-ui',
+          'sans-serif',
+        ],
+        /* ─── serif: Fraunces optional (영문 display·숫자 마커 전용) ─── */
+        /* Phase B 활성화 예정 — ChapterMarker, MetricsSection 숫자에만 사용 */
+        serif: [
+          'Fraunces',
+          'Georgia',
+          'serif',
+        ],
         sans: [
           'Pretendard Variable',
           'Pretendard',
@@ -15,18 +32,60 @@ export default {
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       colors: {
-        background: '#F1F5F9',   // Slate-100 — 페이지 배경 (연한 회색 틴트)
-        surface: '#FFFFFF',      // 카드/패널 배경 (깨끗한 흰색)
-        border: '#E2E8F0',       // Slate-200 — 명확한 경계선
-        text: {
-          primary: '#0F172A',   // Deep Charcoal (Our Signature Text)
-          secondary: '#334155',
-          tertiary: '#64748B',
+        /* shadcn CSS 변수 참조 토큰 */
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: '#6366F1',   // Electric Violet (Our Brand Signature)
-          hover: '#4F46E5',
-          light: '#EEF2FF',
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+
+        /* ─── Semantic 토큰 (Phase A 신규 — P0-1 BLOCKER) ─── */
+        /* Tailwind 유틸리티 클래스 생성: bg-accent-editorial, text-signal-record 등 */
+        'accent-editorial':    'hsl(var(--accent-editorial))',
+        'accent-editorial-bg': 'hsl(var(--accent-editorial-bg))',
+        'signal-record':       'hsl(var(--signal-record))',
+        'signal-record-bg':    'hsl(var(--signal-record-bg))',
+        'signal-warning':      'hsl(var(--signal-warning))',
+        'signal-warning-bg':   'hsl(var(--signal-warning-bg))',
+        'signal-success':      'hsl(var(--signal-success))',
+        'signal-success-bg':   'hsl(var(--signal-success-bg))',
+        /* interview-page 전용 배경 (P1-8) */
+        'interview-stage':     'hsl(var(--interview-stage))',
+
+        /* 기존 토큰 유지 (Phase B/C에서 개별 마이그레이션 예정) */
+        surface: '#FFFFFF',
+        text: {
+          primary: '#0F172A',
+          secondary: '#334155',
+          tertiary: '#64748B',
         },
         success: { DEFAULT: '#10B981', light: '#ECFDF5' },
         warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
@@ -45,65 +104,92 @@ export default {
         },
       },
       boxShadow: {
-        'toss': '0 8px 16px 0 rgba(0, 0, 0, 0.04)',
+        /* ─── Quiet Rigor 5단계 섀도우 (Phase A — §3.3) ─── */
+        /* 기존 toss/toss-lg는 하위 호환을 위해 Phase B까지 유지 */
+        'toss':    '0 8px 16px 0 rgba(0, 0, 0, 0.04)',
         'toss-lg': '0 16px 32px 0 rgba(0, 0, 0, 0.08)',
+        'xs':  '0 1px 2px rgba(20,19,15,0.04)',
+        'sm':  '0 1px 5px -2px rgba(20,19,15,0.08), 0 0 0 1px rgba(20,19,15,0.04)',
+        'md':  '0 4px 12px -4px rgba(20,19,15,0.12), 0 0 0 1px rgba(20,19,15,0.06)',
+        'lg':  '0 8px 24px -6px rgba(20,19,15,0.16), 0 0 0 1px rgba(20,19,15,0.08)',
       },
       borderRadius: {
-        card: '20px',    // Toss uses more rounded corners
-        button: '24px',
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
+        /* ─── Quiet Rigor 차등 radius 스케일 (Phase A — §3.4) ─── */
+        'xs':   '4px',   /* 인라인 badge, 작은 pill */
+        /* sm: 8px — 기존 sm 재활용 */
+        /* md: 12px — 기존 md 재활용 */
+        'radius-lg':  '16px',  /* Sheet, drawer */
+        'radius-xl':  '24px',  /* Modal, video-dock */
+        'pill': '9999px',      /* Tag pill, 상태 indicator */
+        /* 기존 시맨틱 토큰 유지 */
+        card: '12px',
         badge: '999px',
+        '2xl': '20px',
+        '3xl': '24px',
+        '4xl': '32px',
+      },
+      /* ─── 12-col grid + 1440px canvas (Phase A — §4.1) ─── */
+      gridTemplateColumns: {
+        '12': 'repeat(12, minmax(0, 1fr))',
+      },
+      maxWidth: {
+        'canvas': '1440px',
       },
       keyframes: {
+        /* fade-in: 8px→0 스크롤 진입 애니메이션 (ChapterMarker 용) */
         'fade-in': {
-          '0%': { opacity: '0', transform: 'translateY(4px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          from: { opacity: '0', transform: 'translateY(8px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
         },
         'progress-loading': {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(400%)' },
         },
-        'glow-pulse': {
-          '0%, 100%': { opacity: '0.4' },
-          '50%': { opacity: '0.8' },
-        },
-        'rec-pulse': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' },
-          '50%': { boxShadow: '0 0 20px 4px rgba(239, 68, 68, 0.3)' },
-        },
-        'ripple': {
-          '0%': { transform: 'scale(1)', opacity: '0.6' },
-          '100%': { transform: 'scale(1.8)', opacity: '0' },
-        },
         'bookmark-pop': {
-          '0%': { transform: 'scale(1)' },
-          '40%': { transform: 'scale(1.15)' },
+          '0%':   { transform: 'scale(1)' },
+          '40%':  { transform: 'scale(1.15)' },
           '100%': { transform: 'scale(1)' },
         },
         'toast-slide-in': {
           from: { transform: 'translateY(12px)', opacity: '0' },
-          to: { transform: 'translateY(0)', opacity: '1' },
+          to:   { transform: 'translateY(0)',    opacity: '1' },
+        },
+        /* ─── @deprecated: Phase C/D에서 제거 예정 ─── */
+        /* Phase A는 토큰 교체만 담당. 다음 컴포넌트가 여전히 참조하므로 유지: */
+        /*   - interview-page.tsx:159 animate-rec-pulse → Phase C 교체 */
+        /*   - review-coach-mark.tsx:274/339 animate-tutorial-ring/nudge → Phase B/D Drop */
+        'rec-pulse': {
+          '0%, 100%': { opacity: '1' },
+          '50%':      { opacity: '0.4' },
+        },
+        'ripple': {
+          '0%':   { transform: 'scale(1)',   opacity: '0.6' },
+          '100%': { transform: 'scale(1.6)', opacity: '0' },
         },
         'tutorial-ring': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(99, 102, 241, 0.22)' },
-          '50%': { boxShadow: '0 0 0 5px rgba(99, 102, 241, 0)' },
+          '0%':        { transform: 'scale(1)',   opacity: '1' },
+          '70%':       { transform: 'scale(1.4)', opacity: '0' },
+          '100%':      { transform: 'scale(1.4)', opacity: '0' },
         },
         'tutorial-nudge': {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(3px)' },
+          '50%':      { transform: 'translateY(-3px)' },
         },
       },
       animation: {
-        'fade-in': 'fade-in 0.3s ease-out',
-        'progress-loading': 'progress-loading 1.5s ease-in-out infinite',
-        'glow-pulse': 'glow-pulse 3s ease-in-out infinite',
-        'rec-pulse': 'rec-pulse 2s ease-in-out infinite',
-        'ripple': 'ripple 2s ease-out infinite',
-        'bookmark-pop': 'bookmark-pop 0.18s ease-out',
-        'toast-slide-in': 'toast-slide-in 0.2s ease-out',
-        'tutorial-ring': 'tutorial-ring 3s ease-in-out infinite',
-        'tutorial-nudge': 'tutorial-nudge 2s ease-in-out infinite',
+        'fade-in':         'fade-in 0.3s ease-out',
+        'progress-loading':'progress-loading 1.5s ease-in-out infinite',
+        'bookmark-pop':    'bookmark-pop 0.18s ease-out',
+        'toast-slide-in':  'toast-slide-in 0.2s ease-out',
+        /* @deprecated — Phase C/D 제거 대상, 당면 호환성 유지용 */
+        'rec-pulse':       'rec-pulse 1.4s ease-in-out infinite',
+        'tutorial-ring':   'tutorial-ring 1.8s ease-out infinite',
+        'tutorial-nudge':  'tutorial-nudge 1.4s ease-in-out infinite',
       },
     },
   },
-  plugins: [],
+  plugins: [require('tailwindcss-animate')],
 }

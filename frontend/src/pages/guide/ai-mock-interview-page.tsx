@@ -125,12 +125,12 @@ const Faq = ({ q, a }: { q: string; a: string }) => (
 )
 
 const Cta = () => (
-  <div className="mt-12 p-6 rounded-xl bg-gray-50 border border-border/50">
+  <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
     <h3 className="text-lg font-bold mb-2">리허설로 AI 모의면접 시작하기</h3>
     <p className="text-sm text-text-secondary mb-4">
       이력서 업로드 → AI 면접 진행 → 영상 + 타임스탬프 피드백 — 30분이면 한 사이클을 끝낼 수 있습니다.
     </p>
-    <Link to="/" className="inline-block px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:opacity-90">
+    <Link to="/" className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90">
       바로 시작하기
     </Link>
   </div>

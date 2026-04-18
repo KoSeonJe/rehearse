@@ -1,4 +1,5 @@
 import type { Step } from '@/constants/setup'
+import { Button } from '@/components/ui/button'
 
 interface SetupNavigationProps {
   currentStep: Step
@@ -24,35 +25,41 @@ export const SetupNavigation = ({
   return (
     <div className="mt-16 space-y-3">
       {isSubmitStep ? (
-        <button
+        <Button
+          variant="default"
+          size="lg"
+          fullWidth
           onClick={onSubmit}
           disabled={!canNext || isLoading}
-          className="h-16 w-full rounded-[24px] bg-accent py-4 text-lg font-black text-white shadow-lg shadow-accent/20 transition-all active:scale-95 disabled:opacity-50"
+          loading={isLoading}
+          className="rounded-3xl font-black"
         >
           {isLoading ? '면접관이 질문을 생성 중입니다...' : '면접 시작하기'}
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
+          variant="default"
+          size="lg"
+          fullWidth
           onClick={onNext}
           disabled={!canNext || isLoading}
-          className={`h-16 w-full rounded-[24px] py-4 text-lg font-black text-white transition-all active:scale-95 shadow-lg ${
-            canNext && !isLoading
-              ? 'bg-accent shadow-accent/20'
-              : 'bg-slate-200 cursor-not-allowed opacity-50'
-          }`}
+          className="rounded-3xl font-black"
         >
           다음
-        </button>
+        </Button>
       )}
 
       {currentStep > 1 && (
-        <button
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
           onClick={onPrev}
           disabled={isLoading}
-          className="h-14 w-full rounded-[24px] bg-surface py-3 text-base font-bold text-text-secondary transition-all hover:bg-slate-200 active:scale-95 disabled:opacity-50"
+          className="rounded-3xl h-14 text-base bg-surface hover:bg-slate-200 border-none shadow-none"
         >
           이전
-        </button>
+        </Button>
       )}
 
       {serverError && (

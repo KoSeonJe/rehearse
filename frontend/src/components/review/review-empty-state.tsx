@@ -7,7 +7,7 @@ interface ReviewEmptyStateProps {
 export const ReviewEmptyState = ({ isFiltered = false }: ReviewEmptyStateProps) => {
   if (isFiltered) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl bg-white shadow-sm">
+      <div className="flex flex-col items-center justify-center py-16 text-center rounded-2xl bg-card shadow-sm">
         <ListChecks
           size={36}
           className="mb-4 text-border"

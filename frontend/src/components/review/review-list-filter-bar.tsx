@@ -29,7 +29,8 @@ const SelectChevron = () => (
       height="12"
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#64748B"
+      stroke="currentColor"
+      className="text-text-tertiary"
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -62,6 +63,7 @@ export const ReviewListFilterBar = ({
   return (
     <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
       {/* 상태 필터 칩 */}
+      {/* TODO(design): variant 판단 보류 — 필터 칩 패턴(active/inactive 조건부 스타일), 사용자 확인 필요 */}
       <div role="group" aria-label="상태 필터" className="flex items-center gap-1.5">
         {STATUS_OPTIONS.map((option) => {
           const isActive = status === option.value
@@ -69,10 +71,10 @@ export const ReviewListFilterBar = ({
             <button
               key={option.value}
               type="button"
-              className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors cursor-pointer ${
+              className={`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-full border px-3.5 py-1.5 text-[13px] font-medium transition-colors cursor-pointer ${
                 isActive
-                  ? 'bg-accent text-white border-accent'
-                  : 'bg-white text-[#334155] border-[#E2E8F0] hover:border-[#334155]'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-text-secondary border-border hover:border-text-secondary'
               }`}
               onClick={() => onStatusChange(option.value)}
               aria-pressed={isActive}
@@ -85,12 +87,12 @@ export const ReviewListFilterBar = ({
 
       {/* 직무 → 카테고리 드롭다운 */}
       <div className="sm:ml-auto flex items-center gap-2">
-        <Filter size={14} className="text-[#64748B]" aria-hidden="true" />
+        <Filter size={14} className="text-text-tertiary" aria-hidden="true" />
 
         {/* 직무 선택 */}
         <div className="relative">
           <select
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2 appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3.5 py-1.5 pr-8 text-[13px] font-medium text-[#334155] cursor-pointer"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 appearance-none bg-background border border-border rounded-xl px-3.5 py-1.5 pr-8 text-[13px] font-medium text-text-secondary cursor-pointer"
             aria-label="직무 필터"
             value={positionFilter}
             onChange={handlePositionChange}
@@ -108,7 +110,7 @@ export const ReviewListFilterBar = ({
         {/* 면접 카테고리 선택 (직무 선택 시 활성화) */}
         <div className="relative">
           <select
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6366F1] focus-visible:ring-offset-2 appearance-none bg-white border border-[#E2E8F0] rounded-xl px-3.5 py-1.5 pr-8 text-[13px] font-medium text-[#334155] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 appearance-none bg-background border border-border rounded-xl px-3.5 py-1.5 pr-8 text-[13px] font-medium text-text-secondary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="카테고리 필터"
             value={interviewTypeFilter}
             onChange={handleTypeChange}

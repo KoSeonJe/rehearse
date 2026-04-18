@@ -120,14 +120,14 @@ const List = ({ items }: { items: [string, string][] }) => (
 )
 
 const Cta = () => (
-  <div className="mt-12 p-6 rounded-xl bg-gray-50 border border-border/50">
+  <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
     <h3 className="text-lg font-bold mb-2">리허설로 모의면접 시작하기</h3>
     <p className="text-sm text-text-secondary mb-4">
       백엔드/프론트엔드/CS 면접 타입을 골라 이력서 기반으로 맞춤 질문을 받아 보세요.
     </p>
     <Link
       to="/"
-      className="inline-block px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:opacity-90"
+      className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90"
     >
       바로 시작하기
     </Link>

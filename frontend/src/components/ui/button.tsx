@@ -1,75 +1,64 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import * as React from 'react'
+import { Slot } from '@radix-ui/react-slot'
+import { type VariantProps } from 'class-variance-authority'
+import { cn } from '@/lib/utils'
 import { Spinner } from '@/components/ui/spinner'
+import { buttonVariants } from '@/components/ui/button-variants'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'cta'
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant
-  fullWidth?: boolean
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
+  asChild?: boolean
   loading?: boolean
-  children: ReactNode
+  fullWidth?: boolean
 }
 
-const variantStyles: Record<ButtonVariant, string> = {
-  primary: [
-    'bg-accent text-white shadow-lg shadow-accent/20 border-t border-white/10',
-    'hover:bg-accent-hover hover:shadow-[0_4px_12px_rgba(0,0,0,0.1)] active:scale-[0.98]',
-    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100',
-    'px-8 py-4 rounded-button text-sm font-black',
-  ].join(' '),
-  secondary: [
-    'bg-white text-text-primary border border-border shadow-[0_1px_2px_rgba(0,0,0,0.02)]',
-    'hover:bg-background hover:border-text-tertiary/30 active:scale-[0.98]',
-    'disabled:bg-background disabled:text-text-tertiary disabled:border-border disabled:cursor-not-allowed disabled:scale-100',
-    'px-8 py-4 rounded-button text-sm font-bold',
-  ].join(' '),
-  ghost: [
-    'bg-transparent text-text-secondary hover:text-text-primary',
-    'hover:bg-accent-light active:scale-[0.98]',
-    'disabled:text-text-tertiary disabled:cursor-not-allowed disabled:scale-100',
-    'px-4 py-2 rounded-button text-sm font-bold',
-  ].join(' '),
-  cta: [
-    'bg-accent text-white shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] border-t border-white/10',
-    'hover:bg-accent-hover hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)] active:scale-[0.98]',
-    'disabled:bg-border disabled:text-text-tertiary disabled:cursor-not-allowed disabled:shadow-none disabled:scale-100',
-    'px-10 py-4 text-base font-black tracking-tight rounded-button',
-  ].join(' '),
-}
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  (
+    {
+      className,
+      variant,
+      size,
+      asChild = false,
+      loading = false,
+      fullWidth = false,
+      disabled,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
+    const Comp = asChild ? Slot : 'button'
+    const isDisabled = disabled || loading
 
-export const Button = ({
-  variant = 'primary',
-  fullWidth = false,
-  loading = false,
-  disabled,
-  children,
-  className = '',
-  ...rest
-}: ButtonProps) => {
-  const isDisabled = disabled || loading
+    return (
+      <Comp
+        className={cn(
+          buttonVariants({ variant, size }),
+          fullWidth && 'w-full',
+          className,
+        )}
+        ref={ref}
+        disabled={isDisabled}
+        aria-disabled={isDisabled || undefined}
+        aria-busy={loading || undefined}
+        {...props}
+      >
+        {loading && (
+          <Spinner
+            className={`h-5 w-5 mr-2 ${
+              variant === 'ghost' || variant === 'secondary' || variant === 'outline'
+                ? 'border-text-secondary'
+                : 'border-white'
+            }`}
+          />
+        )}
+        {children}
+      </Comp>
+    )
+  },
+)
 
-  return (
-    <button
-      className={[
-        'inline-flex items-center justify-center font-medium transition-all duration-150',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
-        variantStyles[variant],
-        fullWidth ? 'w-full' : '',
-        className,
-      ]
-        .filter(Boolean)
-        .join(' ')}
-      disabled={isDisabled}
-      aria-disabled={isDisabled || undefined}
-      aria-busy={loading || undefined}
-      {...rest}
-    >
-      {loading && (
-        <Spinner
-          className={`h-5 w-5 mr-2 ${variant === 'ghost' ? 'border-text-secondary' : 'border-white'}`}
-        />
-      )}
-      {children}
-    </button>
-  )
-}
+Button.displayName = 'Button'
+
+export { Button }

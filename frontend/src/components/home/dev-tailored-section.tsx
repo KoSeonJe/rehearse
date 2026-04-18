@@ -17,8 +17,8 @@ const QUESTION_ITEMS: QuestionItem[] = [
   },
   {
     badge: '직무 지식',
-    badgeBg: 'bg-violet-100',
-    badgeText: 'text-violet-600',
+    badgeBg: 'bg-secondary',
+    badgeText: 'text-text-secondary',
     question: 'Spring Boot에서 트랜잭션 전파 전략을 어떻게 설계하셨나요?',
   },
   {
@@ -47,7 +47,7 @@ export const DevTailoredSection = () => {
 
           {/* 좌측: 텍스트 */}
           <div className="flex-1">
-            <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
               DEVELOPER FOCUSED
             </p>
             <h2
@@ -67,7 +67,7 @@ export const DevTailoredSection = () => {
                   key={item}
                   className="flex items-center gap-2 text-sm font-medium text-text-secondary"
                 >
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-text-tertiary shrink-0" />
                   {item}
                 </li>
               ))}
@@ -76,14 +76,14 @@ export const DevTailoredSection = () => {
 
           {/* 우측: 질문 목업 카드 (장식적) */}
           <div className="flex-1 flex justify-center md:justify-end" aria-hidden="true">
-            <div className="w-full max-w-[480px] rounded-[32px] bg-white border border-border shadow-toss -rotate-1 p-7">
+            <div className="w-full max-w-[480px] rounded-4xl bg-background border border-border shadow-toss -rotate-1 p-7">
 
               {/* 질문 카드 3개 */}
               <div className="space-y-3">
                 {QUESTION_ITEMS.map((item) => (
                   <div
                     key={item.badge}
-                    className="rounded-[20px] bg-surface border border-border p-4"
+                    className="rounded-2xl bg-surface border border-border p-4"
                   >
                     <span
                       className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[9px] font-black mb-2 ${item.badgeBg} ${item.badgeText}`}

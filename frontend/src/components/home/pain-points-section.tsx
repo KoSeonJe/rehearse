@@ -1,3 +1,4 @@
+import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface PainPoint {
@@ -9,27 +10,27 @@ interface PainPoint {
 
 const ScoreIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <rect x="3" y="12" width="4" height="8" rx="1" stroke="#6366F1" strokeWidth="2" />
-    <rect x="10" y="7" width="4" height="13" rx="1" stroke="#6366F1" strokeWidth="2" />
-    <rect x="17" y="3" width="4" height="17" rx="1" stroke="#6366F1" strokeWidth="2" />
+    <rect x="3" y="12" width="4" height="8" rx="1" stroke="currentColor" strokeWidth="2" />
+    <rect x="10" y="7" width="4" height="13" rx="1" stroke="currentColor" strokeWidth="2" />
+    <rect x="17" y="3" width="4" height="17" rx="1" stroke="currentColor" strokeWidth="2" />
   </svg>
 )
 
 const SpeechIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M12 2v8" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
-    <rect x="9" y="2" width="6" height="12" rx="3" stroke="#6366F1" strokeWidth="2" />
-    <path d="M5 11a7 7 0 0 0 14 0" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
-    <path d="M12 18v3" stroke="#6366F1" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 2v8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <rect x="9" y="2" width="6" height="12" rx="3" stroke="currentColor" strokeWidth="2" />
+    <path d="M5 11a7 7 0 0 0 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    <path d="M12 18v3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 )
 
 const AnswerIcon = () => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="#6366F1" strokeWidth="2" strokeLinejoin="round" />
-    <circle cx="9" cy="11.5" r="1" fill="#6366F1" />
-    <circle cx="13" cy="11.5" r="1" fill="#6366F1" />
-    <circle cx="17" cy="11.5" r="1" fill="#6366F1" />
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    <circle cx="9" cy="11.5" r="1" fill="currentColor" />
+    <circle cx="13" cy="11.5" r="1" fill="currentColor" />
+    <circle cx="17" cy="11.5" r="1" fill="currentColor" />
   </svg>
 )
 
@@ -57,18 +58,33 @@ const PAIN_POINTS: PainPoint[] = [
   },
 ]
 
-const PainCard = ({ title, quote, solution, icon }: PainPoint) => (
-  <article className="rounded-[20px] bg-white border border-border p-6 shadow-sm">
-    <div className="h-10 w-10 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
-      {icon}
+interface PainCardProps extends PainPoint {
+  index: number
+}
+
+const PainCard = ({ title, quote, solution, icon, index }: PainCardProps) => (
+  <Card className="bg-background border border-border shadow-sm" role="article">
+    <div className="flex items-start gap-6 p-6 md:p-8">
+      {/* 좌측: 번호 + 아이콘 */}
+      <div className="shrink-0 flex flex-col items-center gap-3">
+        <span className="text-xs font-black text-text-tertiary tabular-nums">
+          0{index + 1}
+        </span>
+        <div className="h-10 w-10 rounded-2xl bg-secondary flex items-center justify-center text-text-primary">
+          {icon}
+        </div>
+      </div>
+      {/* 우측: 콘텐츠 */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
+        <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-border pl-3">
+          "{quote}"
+        </blockquote>
+        <div className="border-t border-border my-4" />
+        <p className="text-sm font-bold text-text-primary leading-relaxed">{solution}</p>
+      </div>
     </div>
-    <h3 className="text-lg font-extrabold text-text-primary mb-3">{title}</h3>
-    <blockquote className="text-sm font-medium text-text-secondary italic leading-relaxed border-l-2 border-accent/20 pl-3">
-      "{quote}"
-    </blockquote>
-    <div className="border-t border-border my-4" />
-    <p className="text-sm font-bold text-accent leading-relaxed">{solution}</p>
-  </article>
+  </Card>
 )
 
 export const PainPointsSection = () => {
@@ -81,9 +97,9 @@ export const PainPointsSection = () => {
       aria-labelledby="pain-heading"
       className="bg-surface py-20 md:py-28"
     >
-      <div className="mx-auto max-w-5xl px-5 md:px-8">
+      <div className="mx-auto max-w-3xl px-5 md:px-8">
         <div className="mb-14 text-center">
-          <p className="font-mono text-[10px] font-black uppercase tracking-[0.2em] text-accent mb-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
             WHY REHEARSE
           </p>
           <h2
@@ -96,9 +112,9 @@ export const PainPointsSection = () => {
             점수와 총평만으로는 다음 면접에서 무엇을 바꿔야 할지 알기 어렵습니다.
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {PAIN_POINTS.map((item) => (
-            <PainCard key={item.title} {...item} />
+        <div className="flex flex-col gap-4">
+          {PAIN_POINTS.map((item, index) => (
+            <PainCard key={item.title} {...item} index={index} />
           ))}
         </div>
       </div>

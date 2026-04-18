@@ -133,7 +133,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         <div className="mt-3 flex items-center gap-3">
           <button
             onClick={togglePlay}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface text-text-primary transition-all hover:bg-border active:scale-95"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface text-text-primary transition-[background-color,transform] hover:bg-border active:scale-95"
             aria-label={isPlaying ? '일시정지' : '재생'}
           >
             {isPlaying ? (
@@ -155,7 +155,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             step={0.1}
             value={currentTime}
             onChange={handleSeekBarChange}
-            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-accent [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent"
+            className="h-1.5 flex-1 cursor-pointer appearance-none rounded-full bg-border accent-accent [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary"
           />
 
           <span className="shrink-0 text-xs font-bold tabular-nums text-text-tertiary">
