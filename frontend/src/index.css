@@ -6,72 +6,127 @@
 
 @layer base {
   :root {
-    /* Surface */
-    --background: 0 0% 100%;              /* #ffffff */
-    --foreground: 0 0% 14%;               /* #242424 Charcoal */
+    /* ─── Off-neutral Base (Phase A: warm off-white / off-black) ─── */
+    --background: 40 20% 98%;              /* #fafaf7 — warm off-white */
+    --foreground: 30 8% 8%;               /* #14130f — warm off-black */
 
     /* Card / popover */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 14%;
+    --card: 40 20% 98%;
+    --card-foreground: 30 8% 8%;
+    --popover: 40 20% 98%;
+    --popover-foreground: 30 8% 8%;
 
-    /* Primary — DESIGN.md는 Charcoal을 primary로 */
-    --primary: 0 0% 14%;
-    --primary-foreground: 0 0% 100%;
+    /* Primary — warm off-black */
+    --primary: 30 8% 8%;
+    --primary-foreground: 40 20% 98%;
 
     /* Secondary / muted / accent */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 14%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 54%;          /* #898989 */
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 14%;
+    --secondary: 40 15% 94%;
+    --secondary-foreground: 30 8% 8%;
+    --muted: 40 15% 94%;
+    --muted-foreground: 0 0% 45%;          /* #737373 — 4.53:1 on #fafaf7 (AA 통과, §3.1 gate) */
+    --accent: 40 15% 94%;
+    --accent-foreground: 30 8% 8%;
 
     /* Link only (DESIGN.md의 유일한 blue) */
     --link: 204 100% 50%;                  /* #0099ff */
 
     /* Feedback */
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 40 20% 98%;
 
     /* Border / input / ring */
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --border: 40 10% 88%;
+    --input: 40 10% 88%;
     --ring: 217 91% 60%;                   /* focus ring */
 
     /* Radius */
     --radius: 0.5rem;
 
+    /* ─── Semantic Color 4종 (신규) ─── */
+
+    /* ① Editorial accent — 피드백 하이라이트, 챕터 숫자 마커 */
+    --accent-editorial: 33 75% 40%;        /* #b8741a */
+    --accent-editorial-bg: 40 80% 95%;     /* #fdf4e7 — 배경 tint */
+
+    /* ② Signal: Record — 녹화 중 상태 전용. 다른 signal과 동시 사용 금지 */
+    --signal-record: 3 66% 47%;            /* #c8322a */
+    --signal-record-bg: 3 66% 96%;         /* #fdf0ef */
+
+    /* ③ Signal: Warning — 시간 경고, 주의. amber와 명도 분리된 ochre */
+    --signal-warning: 43 88% 45%;          /* #d4a017 */
+    --signal-warning-bg: 43 88% 95%;       /* #fdf8e7 */
+
+    /* ④ Signal: Success — 완료, 저장. 기본적으로 쓰지 않는 편 */
+    --signal-success: 100 20% 39%;         /* #5a7a4a */
+    --signal-success-bg: 100 20% 95%;      /* #eef3eb */
+
+    /* ─── Interview Stage (P1-8) ─── */
+    /* interview-page 전용 배경. bg-interview-stage 클래스로만 사용 */
+    --interview-stage: 30 8% 8%;           /* #14130f */
+
+    /* ─── Layout 토큰 ─── */
+    --utility-bar-height: 44px;
+
+    /* ─── Motion 토큰 ─── */
+    --duration-instant:  80ms;
+    --duration-fast:    150ms;   /* hover, focus 상태 전환 */
+    --duration-normal:  220ms;   /* 패널 전환, 드로어 open */
+    --duration-slow:    350ms;   /* 페이지 레벨 전환 */
+
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);   /* Material You standard */
+    --ease-decel:    cubic-bezier(0, 0, 0.2, 1);    /* 요소가 화면 안으로 들어올 때 */
+    --ease-accel:    cubic-bezier(0.4, 0, 1, 1);    /* 요소가 화면 밖으로 나갈 때 */
+  }
+
+  /* 모바일: utility-bar 높이 56px */
+  @media (max-width: 767px) {
+    :root {
+      --utility-bar-height: 56px;
+    }
   }
 
   .dark {
-    --background: 0 0% 4%;                 /* #0a0a0a */
-    --foreground: 0 0% 96%;                /* #f5f5f5 — pure white 금지 */
-    --card: 0 0% 7%;
-    --card-foreground: 0 0% 96%;
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 0 0% 96%;
-    --primary-foreground: 0 0% 7%;
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 0 0% 12%;
+    /* ─── Off-neutral Dark (Phase A: warm off-black / off-white) ─── */
+    --background: 30 8% 8%;                /* #14130f — warm off-black */
+    --foreground: 40 20% 97%;              /* #f8f7f4 — warm off-white */
+    --card: 30 8% 10%;
+    --card-foreground: 40 20% 97%;
+    --popover: 30 8% 10%;
+    --popover-foreground: 40 20% 97%;
+    --primary: 40 20% 97%;
+    --primary-foreground: 30 8% 8%;
+    --secondary: 30 8% 15%;
+    --secondary-foreground: 40 20% 97%;
+    --muted: 30 8% 15%;
     --muted-foreground: 0 0% 64%;
-    --accent: 0 0% 12%;
-    --accent-foreground: 0 0% 96%;
+    --accent: 30 8% 15%;
+    --accent-foreground: 40 20% 97%;
     --link: 204 100% 60%;
     --destructive: 0 70% 50%;
-    --destructive-foreground: 0 0% 96%;
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 217 91% 60%;                   /* focus ring: light와 동일 — dark 배경(#0a0a0a) 대비 AA 충족, 일관된 브랜드 포커스 신호 유지 */
+    --destructive-foreground: 40 20% 97%;
+    --border: 30 8% 18%;
+    --input: 30 8% 18%;
+    --ring: 217 91% 60%;                   /* focus ring: light와 동일 — 일관된 브랜드 포커스 신호 유지 */
+  }
 
+  /* ─── font-tabular 유틸리티 (타이머·통계 숫자 필수 적용) ─── */
+  .font-tabular {
+    font-feature-settings: 'tnum' 1, 'kern' 1;
+    font-variant-numeric: tabular-nums;
   }
 }
 
-/* U3: 접근성 — 모션 감소 선호 지원 (WCAG 2.1 AA) */
+/* ─── 전역 reduced-motion override (WCAG 2.1 AA + 스펙 §3.5) ─── */
+/* 기존 animation/transition 속성 override에 더해 CSS 변수 duration도 0으로 */
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0.01ms;
+    --duration-fast:    0.01ms;
+    --duration-normal:  0.01ms;
+    --duration-slow:    0.01ms;
+  }
+
   *,
   *::before,
   *::after {
