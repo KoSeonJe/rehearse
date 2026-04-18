@@ -28,15 +28,15 @@ export const ChapterMarker = ({
   as: Heading = 'h2',
 }: ChapterMarkerProps) => (
   <div className={cn('pt-12 pb-6 border-t border-foreground/10 animate-fade-in', className)}>
-    <div className="flex items-center gap-2 mb-3">
+    <div className="flex items-baseline gap-3 mb-3">
       <span
-        className="font-tabular text-[11px] font-semibold uppercase tracking-[0.1em] text-accent-editorial select-none"
+        className="font-tabular text-sm font-semibold text-accent-editorial select-none"
         aria-hidden="true"
       >
         {String(index).padStart(2, '0')}
       </span>
       {label && (
-        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+        <span className="text-xs font-semibold text-muted-foreground">
           {label}
         </span>
       )}

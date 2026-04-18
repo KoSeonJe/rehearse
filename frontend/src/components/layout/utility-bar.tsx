@@ -19,7 +19,9 @@ export const UtilityBar = ({ chapter, actions, className }: UtilityBarProps) => 
     role="banner"
     className={cn(
       'sticky top-0 z-20 w-full border-b border-foreground/8',
-      'bg-background/95 backdrop-blur-sm',
+      /* Quiet Rigor anti-slop: backdrop-blur 사용 금지.
+         불투명 배경 + hairline border로 정직하게 분리한다. */
+      'bg-background',
       'h-[var(--utility-bar-height)]',
       'flex items-center justify-between',
       'px-4 md:px-8',
@@ -27,7 +29,7 @@ export const UtilityBar = ({ chapter, actions, className }: UtilityBarProps) => 
     )}
   >
     {chapter ? (
-      <span className="font-tabular text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="text-xs font-semibold text-muted-foreground">
         {chapter}
       </span>
     ) : (

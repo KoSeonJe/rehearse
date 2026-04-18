@@ -15,7 +15,8 @@ export const TabBar = ({ items, activeId, onSelect, className }: TabBarProps) =>
     className={cn(
       'hidden lg:flex xl:hidden overflow-x-auto',
       'sticky top-[var(--utility-bar-height)] z-10',
-      'bg-background/95 backdrop-blur-sm border-b border-foreground/10',
+      /* anti-slop: backdrop-blur 제거. 불투명 배경으로 스크롤 시 가독성 확보. */
+      'bg-background border-b border-foreground/10',
       'px-4 gap-1',
       className,
     )}
