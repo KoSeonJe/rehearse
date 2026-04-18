@@ -1,5 +1,3 @@
-import { MockAvatar } from '@/components/home/mock-avatar'
-
 type FeedbackPreviewVariant = 'hero' | 'proof'
 
 interface FeedbackPreviewMockProps {
@@ -109,8 +107,13 @@ export const FeedbackPreviewMock = ({
 
   const VideoDock = (
     <div className="rounded-2xl bg-card shadow-sm overflow-hidden">
-      <div className="relative aspect-video w-full overflow-hidden bg-muted/40 text-foreground">
-        <MockAvatar className="absolute inset-0 h-full w-full" />
+      <div className="relative aspect-video w-full overflow-hidden bg-white text-foreground">
+        <img
+          src="/images/interviewee-placeholder.png"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
         {/* 재생 컨트롤 자리 */}
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background/85 shadow-sm">
