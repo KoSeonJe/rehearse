@@ -65,9 +65,9 @@ export const InterviewControls = memo(({
   if (phase === 'finishing') {
     return (
       <div className="flex items-center gap-3">
-        <span className="text-sm text-studio-text-secondary">수고하셨습니다!</span>
+        <span className="text-sm text-foreground/50">수고하셨습니다!</span>
         <button
-          className="cursor-pointer h-10 px-5 rounded-full bg-blue-500 text-sm font-medium text-white transition-all hover:bg-blue-600 active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95"
           onClick={onFinishInterview}
         >
           면접 종료하기
@@ -81,7 +81,7 @@ export const InterviewControls = memo(({
     return (
       <div className="flex items-center gap-3">
         <button
-          className="cursor-pointer h-10 px-5 rounded-full bg-blue-500 text-sm font-medium text-white transition-all hover:bg-blue-600 active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95"
           onClick={onFinishInterview}
         >
           피드백 보기
@@ -92,46 +92,37 @@ export const InterviewControls = memo(({
 
   return (
     <div className="flex items-center gap-3">
-      {/* REC indicator */}
-      {isRecording && (
-        <div className="flex items-center gap-1.5 px-2">
-          <div className="h-2 w-2 rounded-full bg-meet-red animate-pulse" />
-          <span className="text-xs font-medium text-meet-red">REC</span>
-          <span ref={elapsedRef} className="font-mono text-xs font-medium tabular-nums text-studio-text" />
-        </div>
-      )}
-
       {/* Answer control */}
       {isWaiting ? (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-studio-surface">
-          <div className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-          <span className="text-xs text-studio-text-secondary">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-foreground/8">
+          <div className="h-2 w-2 rounded-full bg-foreground/40 animate-pulse" />
+          <span className="text-xs text-foreground/60">
             {isFollowUpLoading ? '분석 중...' : 'AI 발언 중'}
           </span>
         </div>
       ) : isRecording ? (
-        /* 답변 종료 — 빨간 pill 버튼 + 텍스트 */
+        /* 답변 종료 */
         <button
-          className="cursor-pointer h-10 px-5 rounded-full bg-meet-red flex items-center gap-2 text-sm font-medium text-white transition-all hover:brightness-110 active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-signal-record flex items-center gap-2 text-sm font-medium text-white transition-colors duration-[var(--duration-fast)] hover:brightness-110 active:scale-95"
           onClick={onStopAnswer}
           aria-label="답변 완료"
           title="답변 완료 (Space)"
         >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <rect x="6" y="6" width="12" height="12" rx="2" />
           </svg>
           답변 종료
         </button>
       ) : phase !== 'preparing' ? (
-        /* 답변 시작 — 초록 pill 버튼 + 텍스트 */
+        /* 답변 시작 */
         <button
-          className="cursor-pointer h-10 px-5 rounded-full bg-meet-green flex items-center gap-2 text-sm font-medium text-white transition-all hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary flex items-center gap-2 text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
           disabled={isWaiting}
           onClick={onStartAnswer}
           aria-label={currentFollowUp ? '후속 질문에 답변하기' : '답변 시작'}
           title="Space 키로도 시작"
         >
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
             <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
           </svg>

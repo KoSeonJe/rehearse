@@ -14,7 +14,7 @@ export const VideoPreview = memo(({ stream }: VideoPreviewProps) => {
   }, [stream])
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-studio-bg">
+    <div className="relative h-full w-full overflow-hidden bg-interview-stage">
       <video
         ref={videoRef}
         autoPlay
@@ -23,8 +23,8 @@ export const VideoPreview = memo(({ stream }: VideoPreviewProps) => {
         className="h-full w-full -scale-x-100 object-cover"
       />
       {!stream && (
-        <div className="absolute inset-0 flex items-center justify-center bg-studio-bg/90">
-          <p className="text-xs text-studio-text-secondary">카메라 준비 중...</p>
+        <div className="absolute inset-0 flex items-center justify-center bg-interview-stage/90">
+          <p className="text-xs text-foreground/60">카메라 준비 중...</p>
         </div>
       )}
     </div>

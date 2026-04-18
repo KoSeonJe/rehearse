@@ -90,18 +90,7 @@ export default {
         success: { DEFAULT: '#10B981', light: '#ECFDF5' },
         warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
         error: { DEFAULT: '#EF4444', light: '#FEF2F2' },
-        studio: {
-          bg: '#202124',
-          surface: '#2c2c2c',
-          'surface-elevated': '#3c4043',
-          border: '#3c4043',
-          text: '#e8eaed',
-          'text-secondary': '#9aa0a6',
-        },
-        meet: {
-          green: '#00AC47',
-          red: '#EA4335',
-        },
+        /* studio / meet 블록 제거 (Phase C) — interview-page는 interview-stage + semantic 토큰 사용 */
       },
       boxShadow: {
         /* ─── Quiet Rigor 5단계 섀도우 (Phase A — §3.3) ─── */
@@ -157,37 +146,18 @@ export default {
           from: { transform: 'translateY(12px)', opacity: '0' },
           to:   { transform: 'translateY(0)',    opacity: '1' },
         },
-        /* ─── @deprecated: Phase C/D에서 제거 예정 ─── */
-        /* Phase A는 토큰 교체만 담당. 다음 컴포넌트가 여전히 참조하므로 유지: */
-        /*   - interview-page.tsx:159 animate-rec-pulse → Phase C 교체 */
-        /*   - review-coach-mark.tsx:274/339 animate-tutorial-ring/nudge → Phase B/D Drop */
-        'rec-pulse': {
-          '0%, 100%': { opacity: '1' },
-          '50%':      { opacity: '0.4' },
-        },
-        'ripple': {
-          '0%':   { transform: 'scale(1)',   opacity: '0.6' },
-          '100%': { transform: 'scale(1.6)', opacity: '0' },
-        },
-        'tutorial-ring': {
-          '0%':        { transform: 'scale(1)',   opacity: '1' },
-          '70%':       { transform: 'scale(1.4)', opacity: '0' },
-          '100%':      { transform: 'scale(1.4)', opacity: '0' },
-        },
-        'tutorial-nudge': {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%':      { transform: 'translateY(-3px)' },
-        },
+        /* rec-pulse / ripple / tutorial-ring / tutorial-nudge — Phase C 제거 완료 */
+        /* 모든 사용처 교체됨:
+           - interview-page.tsx → RecLabel (opacity transition)
+           - interviewer-avatar.tsx → border + fade-in alternate
+           - review-coach-mark.tsx → static boxShadow ring */
       },
       animation: {
         'fade-in':         'fade-in 0.3s ease-out',
         'progress-loading':'progress-loading 1.5s ease-in-out infinite',
         'bookmark-pop':    'bookmark-pop 0.18s ease-out',
         'toast-slide-in':  'toast-slide-in 0.2s ease-out',
-        /* @deprecated — Phase C/D 제거 대상, 당면 호환성 유지용 */
-        'rec-pulse':       'rec-pulse 1.4s ease-in-out infinite',
-        'tutorial-ring':   'tutorial-ring 1.8s ease-out infinite',
-        'tutorial-nudge':  'tutorial-nudge 1.4s ease-in-out infinite',
+        /* rec-pulse / tutorial-ring / tutorial-nudge — Phase C 제거 완료 */
       },
     },
   },

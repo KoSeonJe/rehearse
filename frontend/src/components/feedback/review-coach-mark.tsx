@@ -267,11 +267,16 @@ const AnchorHighlight = ({ rect }: AnchorHighlightProps) => {
 
   return (
     <>
-      {/* Single breathing accent ring — subtle 'click me' affordance. */}
+      {/* Single accent ring — subtle 'click me' affordance. */}
+      {/* @deprecated animate-tutorial-ring removed (Phase C). Uses opacity pulse via CSS. */}
       <div
         aria-hidden="true"
-        style={baseStyle}
-        className="ring-2 ring-primary/70 animate-tutorial-ring motion-reduce:animate-none"
+        style={{
+          ...baseStyle,
+          boxShadow: '0 0 0 2px hsl(var(--primary) / 0.5)',
+          animation: 'none',
+          opacity: 1,
+        }}
       />
     </>
   )
@@ -333,10 +338,11 @@ const TutorialDock = ({
           <strong className="mb-1 block text-[14px] font-bold text-text-primary">{step.title}</strong>
           <p className="text-[13px] font-medium leading-[1.55] text-text-secondary">{step.body}</p>
         </div>
+        {/* @deprecated animate-tutorial-nudge removed (Phase C). Static icon. */}
         {showBounce && (
           <div
             aria-hidden="true"
-            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow animate-tutorial-nudge motion-reduce:animate-none"
+            className="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow"
           >
             <ChevronDown size={18} aria-hidden="true" />
           </div>

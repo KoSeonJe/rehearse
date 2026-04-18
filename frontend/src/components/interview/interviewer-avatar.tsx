@@ -15,38 +15,28 @@ export const InterviewerAvatar = memo(({ mood, size = 180 }: InterviewerAvatarPr
       role="img"
       aria-label={`AI 면접관 - ${mood === 'speaking' ? '말하는 중' : mood === 'listening' ? '듣는 중' : mood === 'thinking' ? '생각하는 중' : '대기 중'}`}
     >
-      {/* Ripple waves - speaking animation */}
+      {/* Speaking — subtle expanding ring, no color gimmick */}
       {mood === 'speaking' && (
-        <>
-          <div
-            className="absolute rounded-full border-2 border-meet-green/30 animate-[ripple_2s_ease-out_infinite]"
-            style={{ width: size, height: size }}
-          />
-          <div
-            className="absolute rounded-full border-2 border-meet-green/20 animate-[ripple_2s_ease-out_0.6s_infinite]"
-            style={{ width: size, height: size }}
-          />
-          <div
-            className="absolute rounded-full border-2 border-meet-green/10 animate-[ripple_2s_ease-out_1.2s_infinite]"
-            style={{ width: size, height: size }}
-          />
-        </>
-      )}
-
-      {/* Listening — 부드러운 빨간 glow */}
-      {mood === 'listening' && (
         <div
-          className="absolute rounded-full bg-meet-red/10 animate-pulse"
-          style={{ width: size * 1.3, height: size * 1.3 }}
+          className="absolute rounded-full border border-foreground/20 opacity-0 animate-[fade-in_1.6s_ease-out_infinite_alternate]"
+          style={{ width: size * 1.15, height: size * 1.15 }}
         />
       )}
 
-      {/* Border ring — speaking: 초록, listening: 빨강 */}
+      {/* Listening — faint warm halo */}
+      {mood === 'listening' && (
+        <div
+          className="absolute rounded-full bg-signal-record/8 transition-opacity duration-[var(--duration-slow)]"
+          style={{ width: size * 1.2, height: size * 1.2 }}
+        />
+      )}
+
+      {/* Border ring — speaking: foreground/40, listening: signal-record/40 */}
       <div
-        className={`absolute rounded-full transition-colors duration-300 ${
-          mood === 'speaking' ? 'border-[3px] border-meet-green'
-            : mood === 'listening' ? 'border-[3px] border-meet-red/60'
-            : 'border-[3px] border-transparent'
+        className={`absolute rounded-full transition-[border-color,opacity] duration-[var(--duration-normal)] ${
+          mood === 'speaking' ? 'border-[2px] border-foreground/40'
+            : mood === 'listening' ? 'border-[2px] border-signal-record/40'
+            : 'border-[2px] border-transparent'
         }`}
         style={{ width: size + 8, height: size + 8 }}
       />
