@@ -46,8 +46,9 @@
     /* ─── Semantic Color 4종 (신규) ─── */
 
     /* ① Editorial accent — 피드백 하이라이트, 챕터 숫자 마커 */
-    --accent-editorial: 33 75% 40%;        /* #b8741a */
-    --accent-editorial-bg: 40 80% 95%;     /* #fdf4e7 — 배경 tint */
+    /* 테라코타(warm red-brown) — signal-warning(ochre yellow)과 색상환에서 명확히 분리 */
+    --accent-editorial: 13 60% 40%;        /* #a65131 — terracotta */
+    --accent-editorial-bg: 14 60% 95%;     /* #faece4 — warm peach tint */
 
     /* ② Signal: Record — 녹화 중 상태 전용. 다른 signal과 동시 사용 금지 */
     --signal-record: 3 66% 47%;            /* #c8322a */
@@ -108,6 +109,21 @@
     --border: 30 8% 18%;
     --input: 30 8% 18%;
     --ring: 217 91% 60%;                   /* focus ring: light와 동일 — 일관된 브랜드 포커스 신호 유지 */
+
+    /* ─── Semantic Color 다크 카운터파트 (P0 — 리뷰 반영) ─── */
+    /* 라이트의 pastel tint(95% L)를 그대로 쓰면 warm off-black 위에서 과발광.
+       채도는 유지하되 명도를 14–18%로 내려 다크 배경에 앉힌다. */
+    --accent-editorial: 13 55% 58%;        /* #c57458 — 다크에서 대비 확보 위해 밝기 상향 */
+    --accent-editorial-bg: 13 35% 16%;     /* #3b251d — earthy terracotta shade */
+    --signal-record: 3 60% 58%;            /* #d46b5f — dot/라벨용 채도 유지 */
+    --signal-record-bg: 3 35% 16%;         /* #3b1f1c */
+    --signal-warning: 43 80% 60%;          /* #e6b946 — ochre, 배경 대비 확보 */
+    --signal-warning-bg: 43 30% 15%;       /* #362f1e */
+    --signal-success: 100 25% 55%;         /* #87a26f */
+    --signal-success-bg: 100 18% 15%;      /* #262e22 */
+
+    /* interview-page 전용 배경 — 다크 모드에서도 동일 경계값 유지 */
+    --interview-stage: 30 8% 6%;           /* #0f0e0b — 일반 dark --background보다 한 단 더 어두움 */
   }
 
   /* ─── font-tabular 유틸리티 (타이머·통계 숫자 필수 적용) ─── */

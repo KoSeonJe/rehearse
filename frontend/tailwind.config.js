@@ -4,23 +4,10 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        /* display: Cal Sans 유지 (기존 호환), Fraunces는 별도 serif 키 */
-        display: [
-          'Cal Sans',
-          'Pretendard Variable',
-          'Pretendard',
-          '-apple-system',
-          'BlinkMacSystemFont',
-          'system-ui',
-          'sans-serif',
-        ],
-        /* ─── serif: Fraunces optional (영문 display·숫자 마커 전용) ─── */
-        /* Phase B 활성화 예정 — ChapterMarker, MetricsSection 숫자에만 사용 */
-        serif: [
-          'Fraunces',
-          'Georgia',
-          'serif',
-        ],
+        /* ─── Quiet Rigor 타이포 시스템 (3 폰트 확정 — Cal Sans 제거) ─── */
+        /* 의사결정 근거: Cal Sans는 Cal.com 정체성이지 Rehearse 정체성이 아니다.
+           Fraunces를 영문 display의 단일 폰트로 승격해 editorial signature를 확보하고,
+           Pretendard 굵기·자간 변주만으로 한글 위계를 구성한다. */
         sans: [
           'Pretendard Variable',
           'Pretendard',
@@ -28,6 +15,20 @@ export default {
           'BlinkMacSystemFont',
           'system-ui',
           'sans-serif',
+        ],
+        /* serif: Fraunces — 영문 headline + 모든 숫자 마커의 단일 display */
+        serif: [
+          'Fraunces',
+          'Georgia',
+          'serif',
+        ],
+        /* display: Fraunces로 통일 (하위 호환 alias — font-display 잔존 surface 대비) */
+        display: [
+          'Fraunces',
+          'Pretendard Variable',
+          'Pretendard',
+          'Georgia',
+          'serif',
         ],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
