@@ -36,17 +36,15 @@ export const TimestampProofSection = () => {
           <div className="lg:col-span-5 flex flex-col justify-center">
             <h2
               id="proof-heading"
-              className="text-3xl md:text-[2.5rem] font-bold leading-[1.15] tracking-[-0.025em] text-foreground"
+              className="text-3xl md:text-[2.5rem] font-bold leading-[1.15] tracking-[-0.025em] text-foreground break-keep"
             >
-              답변별로 피드백을 주는 건,
-              <br className="hidden md:block" />{' '}
+              답변마다 피드백을 주는 건,
+              <br />
               여기뿐입니다.
             </h2>
-            <p className="mt-5 max-w-md text-[15px] md:text-base font-medium leading-[1.75] text-muted-foreground">
-              잘한 점 · 아쉬운 점 · 다음엔 이렇게 —
-              <br className="hidden md:block" />{' '}
-              <span className="text-foreground font-semibold">답변 하나하나에 따로 코멘트가 붙습니다.</span>
-              <br className="hidden md:block" />{' '}
+            <p className="mt-5 max-w-md text-[15px] md:text-base font-medium leading-[1.75] text-muted-foreground break-keep">
+              잘한 점 · 아쉬운 점 · 다음엔 이렇게 —{' '}
+              <span className="text-foreground font-semibold">답변 하나하나에 따로 코멘트가 붙습니다.</span>{' '}
               영상 · 지표 · 코멘트가 같은 타임스탬프로 묶여, 클릭 한 번에 그 순간으로 돌아가요.
             </p>
 
