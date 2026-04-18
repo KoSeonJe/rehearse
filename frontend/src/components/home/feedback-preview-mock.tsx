@@ -181,7 +181,38 @@ export const FeedbackPreviewMock = ({
         {isProof ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
             <div className="lg:col-span-3">{FeedbackCard}</div>
-            <div className="lg:col-span-2">{VideoDock}</div>
+            {/* 우측 col 하단 빈공간을 비언어 지표 카드로 채움 — "언어·비언어 레벨 분석" 증빙 */}
+            <div className="lg:col-span-2 flex flex-col gap-4">
+              {VideoDock}
+              <div className="rounded-2xl bg-card shadow-sm overflow-hidden">
+                <div className="px-4 py-3 border-b border-foreground/8">
+                  <p className="text-[11px] font-bold text-muted-foreground">이 구간 비언어 지표</p>
+                </div>
+                <dl className="divide-y divide-foreground/6">
+                  {[
+                    { label: '말하기 속도', value: '빠름', tone: 'warn' },
+                    { label: '습관어', value: '7회', tone: 'warn' },
+                    { label: '시선 집중도', value: '보통', tone: 'neutral' },
+                    { label: '자세 안정성', value: '좋음', tone: 'good' },
+                  ].map((m) => (
+                    <div key={m.label} className="flex items-center justify-between px-4 py-2.5">
+                      <dt className="text-[12px] font-medium text-muted-foreground">{m.label}</dt>
+                      <dd
+                        className={`font-tabular text-[12px] font-bold ${
+                          m.tone === 'warn'
+                            ? 'text-accent-editorial'
+                            : m.tone === 'good'
+                              ? 'text-foreground'
+                              : 'text-foreground/70'
+                        }`}
+                      >
+                        {m.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
