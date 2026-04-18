@@ -68,6 +68,15 @@ export default {
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
 
+        /* ─── Brand Point Color (2026-04-18 신규) ─── */
+        /* Teal — 전역 시그니처. CTA, link, focus, selected, active 상태 */
+        brand: {
+          DEFAULT:    'hsl(var(--brand))',
+          hover:      'hsl(var(--brand-hover))',
+          bg:         'hsl(var(--brand-bg))',
+          foreground: 'hsl(var(--brand-foreground))',
+        },
+
         /* ─── Semantic 토큰 (Phase A 신규 — P0-1 BLOCKER) ─── */
         /* Tailwind 유틸리티 클래스 생성: bg-accent-editorial, text-signal-record 등 */
         'accent-editorial':    'hsl(var(--accent-editorial))',
@@ -81,12 +90,12 @@ export default {
         /* interview-page 전용 배경 (P1-8) */
         'interview-stage':     'hsl(var(--interview-stage))',
 
-        /* 기존 토큰 유지 (Phase B/C에서 개별 마이그레이션 예정) */
+        /* 기존 토큰 — teal neutral로 전환 (2026-04-18 warm cream 제거) */
         surface: '#FFFFFF',
         text: {
-          primary: '#0F172A',
-          secondary: '#334155',
-          tertiary: '#64748B',
+          primary: '#042f2e',   /* was #0F172A (slate-900) → teal-950 */
+          secondary: '#164e4c', /* was #334155 (slate-700) → teal-800 */
+          tertiary: '#5a7574',  /* was #64748B (slate-500) → teal-gray, matches muted-foreground */
         },
         success: { DEFAULT: '#10B981', light: '#ECFDF5' },
         warning: { DEFAULT: '#F59E0B', light: '#FFFBEB' },
@@ -94,14 +103,14 @@ export default {
         /* studio / meet 블록 제거 (Phase C) — interview-page는 interview-stage + semantic 토큰 사용 */
       },
       boxShadow: {
-        /* ─── Quiet Rigor 5단계 섀도우 (Phase A — §3.3) ─── */
-        /* 기존 toss/toss-lg는 하위 호환을 위해 Phase B까지 유지 */
-        'toss':    '0 8px 16px 0 rgba(0, 0, 0, 0.04)',
-        'toss-lg': '0 16px 32px 0 rgba(0, 0, 0, 0.08)',
-        'xs':  '0 1px 2px rgba(20,19,15,0.04)',
-        'sm':  '0 1px 5px -2px rgba(20,19,15,0.08), 0 0 0 1px rgba(20,19,15,0.04)',
-        'md':  '0 4px 12px -4px rgba(20,19,15,0.12), 0 0 0 1px rgba(20,19,15,0.06)',
-        'lg':  '0 8px 24px -6px rgba(20,19,15,0.16), 0 0 0 1px rgba(20,19,15,0.08)',
+        /* ─── 5단계 섀도우 — teal-tinted (2026-04-18 warm rgba 제거) ─── */
+        /* 모든 shadow는 teal-950 rgba 기반 — 순백 배경 위에서 쿨톤 일관 유지 */
+        'toss':    '0 8px 16px 0 rgba(4,47,46,0.05)',
+        'toss-lg': '0 16px 32px 0 rgba(4,47,46,0.08)',
+        'xs':  '0 1px 2px rgba(4,47,46,0.05)',
+        'sm':  '0 1px 5px -2px rgba(4,47,46,0.08), 0 0 0 1px rgba(4,47,46,0.04)',
+        'md':  '0 4px 12px -4px rgba(4,47,46,0.10), 0 0 0 1px rgba(4,47,46,0.06)',
+        'lg':  '0 8px 24px -6px rgba(4,47,46,0.14), 0 0 0 1px rgba(4,47,46,0.08)',
       },
       borderRadius: {
         lg: 'var(--radius)',

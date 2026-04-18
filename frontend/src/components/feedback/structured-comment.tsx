@@ -3,7 +3,7 @@ import type { CommentBlock } from '@/types/interview'
 const COMMENT_STYLES = {
   positive: { bg: 'bg-emerald-50/60', label: 'text-emerald-600' },
   negative: { bg: 'bg-amber-50/60', label: 'text-amber-600' },
-  suggestion: { bg: 'bg-slate-50', label: 'text-slate-500' },
+  suggestion: { bg: 'bg-muted', label: 'text-muted-foreground' },
 } as const
 
 type CommentType = keyof typeof COMMENT_STYLES

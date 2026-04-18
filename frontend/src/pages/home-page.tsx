@@ -45,19 +45,19 @@ export const HomePage = () => {
     <div className="min-h-screen bg-background text-text-primary selection:bg-secondary">
       <Helmet>
         <title>리허설 - AI 개발자 모의면접 플랫폼</title>
-        <meta name="description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지 — 리허설로 합격을 준비하세요." />
+        <meta name="description" content="한국 개발자 취업 준비 AI 모의면접. 이력서 기반 맞춤 질문, 영상 녹화, 초 단위 타임스탬프 피드백까지 — 다음 면접에서 무엇을 고쳐야 할지 30분이면 보입니다. 베타 전 기능 무료." />
         <link rel="canonical" href={`${HOME_SITE_URL}/`} />
         <meta property="og:url" content={`${HOME_SITE_URL}/`} />
         <meta property="og:title" content="리허설 - AI 개발자 모의면접 플랫폼" />
-        <meta property="og:description" content="AI 면접관과 함께 실전 같은 개발자 면접을 연습하세요. 이력서 기반 맞춤 질문, 영상 녹화, 타임스탬프 피드백까지." />
+        <meta property="og:description" content="이력서 기반 AI 질문 · 면접 녹화 · 초 단위 타임스탬프 피드백. 개발자 CS·시스템 설계 특화. 베타 전 기능 무료." />
       </Helmet>
       {hasOauthError && !dismissed && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
       )}
-      <header className="sticky top-0 z-50 bg-background border-b border-border/50">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+        <div className="mx-auto flex h-20 w-full max-w-canvas items-center justify-between px-4 md:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <Logo size={80} />
             <span className="text-xl font-extrabold tracking-tight text-text-primary">
@@ -104,14 +104,14 @@ export const HomePage = () => {
 
       <main>
         <HeroSection onNavigate={handleStartLogin} isAuthenticated={isAuthenticated} />
-        <TimestampProofSection />
         <PainFixSection />
+        <TimestampProofSection />
         <MetricsSection />
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
       <footer className="border-t border-border bg-background">
-        <div className="mx-auto max-w-5xl px-5 md:px-8 py-6 flex items-center justify-between gap-4">
+        <div className="mx-auto w-full max-w-canvas px-4 md:px-8 lg:px-12 py-6 flex items-center justify-between gap-4">
           <div className="flex flex-col items-start gap-1">
             <Link
               to="/privacy"

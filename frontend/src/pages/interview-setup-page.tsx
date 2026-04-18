@@ -2,23 +2,13 @@ import { Helmet } from 'react-helmet-async'
 import { Logo } from '@/components/ui/logo'
 import { BackLink } from '@/components/ui/back-link'
 import { useInterviewSetup } from '@/hooks/use-interview-setup'
+import { SetupProgressBar } from '@/components/setup/setup-progress-bar'
 import { StepPosition } from '@/components/setup/step-position'
 import { StepTechStack } from '@/components/setup/step-tech-stack'
 import { StepLevel } from '@/components/setup/step-level'
 import { StepDuration } from '@/components/setup/step-duration'
 import { StepInterviewType } from '@/components/setup/step-interview-type'
 import { SetupNavigation } from '@/components/setup/setup-navigation'
-import { PageGrid } from '@/components/layout/page-grid'
-import { UtilityBar } from '@/components/layout/utility-bar'
-import { POSITION_LABELS, LEVEL_LABELS, TECH_STACK_LABELS } from '@/constants/interview-labels'
-
-const STEP_LABELS: Record<number, string> = {
-  1: '직무 선택',
-  2: '기술 스택',
-  3: '경력 수준',
-  4: '면접 시간',
-  5: '면접 유형',
-}
 
 export const InterviewSetupPage = () => {
   const setup = useInterviewSetup()
@@ -29,212 +19,83 @@ export const InterviewSetupPage = () => {
         <title>면접 설정 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-
-      {/* 유틸리티 바 — SaaS 헤더 대신 얇은 컨텍스트 바 */}
-      <UtilityBar
-        chapter={`SETUP · ${setup.currentStep} / ${setup.totalSteps}`}
-        actions={
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Logo size={60} />
-              <span className="text-sm font-bold tracking-tight text-foreground hidden sm:block">
-                리허설
-              </span>
-            </div>
-            <BackLink to="/" />
-          </div>
-        }
-      />
-
-      {/* 12-col 4+8 split */}
-      <PageGrid as="main" className="mt-0 pb-32 pt-8 lg:pt-12 items-start">
-
-        {/* 좌 3-col — 스텝 목차 (lg+에서만 표시). 3+9 split: 좌가 너무 넓게 차지해
-            메인 콘텐츠가 우측으로 몰리는 인상을 완화. */}
-        <aside
-          className="hidden lg:block lg:col-span-3 sticky top-[calc(var(--utility-bar-height)+2rem)] self-start max-w-[240px]"
-          aria-label="설정 단계 목록"
-        >
-          <p className="text-xs font-semibold text-muted-foreground mb-5">
-            진행 상황
-          </p>
-          <ol className="space-y-1" aria-label="단계 목차">
-            {Array.from({ length: setup.totalSteps }, (_, i) => i + 1).map((step) => {
-              const isDone = step < setup.currentStep
-              const isActive = step === setup.currentStep
-
-              return (
-                <li key={step} className="flex items-center gap-3 py-2">
-                  <span
-                    className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${
-                      isDone
-                        ? 'bg-foreground text-background'
-                        : isActive
-                          ? 'bg-foreground text-background ring-2 ring-foreground/20 ring-offset-2'
-                          : 'bg-muted text-muted-foreground'
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {isDone ? (
-                      <svg width="10" height="10" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
-                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : step}
-                  </span>
-                  <span
-                    className={`text-sm font-medium transition-colors ${
-                      isActive ? 'text-foreground font-bold' : isDone ? 'text-foreground/60' : 'text-muted-foreground'
-                    }`}
-                  >
-                    {STEP_LABELS[step]}
-                  </span>
-                </li>
-              )
-            })}
-          </ol>
-
-          {/* 선택 누적 요약 — 사용자가 지나온 스텝의 결정만 표시 (C3 수정).
-              이전에는 hook 초기값(level='JUNIOR', duration=30)이 즉시 표시되어
-              "결정 프로세스 신뢰 상실" 이슈 발생 → currentStep 기반 visited 판정으로 전환. */}
-          <div className="mt-10 border-t border-foreground/10 pt-6 space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground mb-3">
-              선택 내역
-            </p>
-
-            {/* 직무 (Step 1 완료 후 노출) */}
-            <p className="text-xs text-foreground/70">
-              <span className="font-semibold text-foreground">직무</span> ·{' '}
-              {setup.currentStep > 1 && setup.position ? (
-                POSITION_LABELS[setup.position].label
-              ) : (
-                <span className="text-foreground/40">미선택</span>
-              )}
-            </p>
-
-            {/* 기술 스택 (Step 2 완료 + 선택됨) */}
-            {setup.currentStep > 2 && setup.techStack && (
-              <p className="text-xs text-foreground/70">
-                <span className="font-semibold text-foreground">스택</span> ·{' '}
-                {TECH_STACK_LABELS[setup.techStack].label}
-              </p>
-            )}
-
-            {/* 경력 수준 (Step 3 완료 후 노출) */}
-            <p className="text-xs text-foreground/70">
-              <span className="font-semibold text-foreground">수준</span> ·{' '}
-              {setup.currentStep > 3 && setup.level ? (
-                LEVEL_LABELS[setup.level].label
-              ) : (
-                <span className="text-foreground/40">미선택</span>
-              )}
-            </p>
-
-            {/* 면접 시간 (Step 4 완료 후 노출) */}
-            <p className="text-xs text-foreground/70">
-              <span className="font-semibold text-foreground">시간</span> ·{' '}
-              {setup.currentStep > 4 ? (
-                `${setup.durationMinutes}분`
-              ) : (
-                <span className="text-foreground/40">미선택</span>
-              )}
-            </p>
-          </div>
-        </aside>
-
-        {/* 모바일 — 상단 수평 탭바 (< lg) */}
-        <div className="col-span-4 lg:hidden mb-6">
-          <div
-            className="flex gap-0 overflow-x-auto scrollbar-none border-b border-foreground/10 -mx-4 px-4"
-            role="tablist"
-            aria-label="설정 단계"
-          >
-            {Array.from({ length: setup.totalSteps }, (_, i) => i + 1).map((step) => (
-              <div
-                key={step}
-                role="tab"
-                aria-selected={step === setup.currentStep}
-                className={`flex-shrink-0 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
-                  step === setup.currentStep
-                    ? 'border-foreground text-foreground'
-                    : step < setup.currentStep
-                      ? 'border-transparent text-foreground/50'
-                      : 'border-transparent text-muted-foreground'
-                }`}
-              >
-                {STEP_LABELS[step]}
-              </div>
-            ))}
-          </div>
+      <header className="flex items-center justify-between px-5 pt-8 md:px-8">
+        <div className="flex items-center gap-2">
+          <Logo size={80} />
+          <span className="text-xl font-extrabold tracking-tight text-text-primary">
+            리허설
+          </span>
         </div>
+        <BackLink to="/" />
+      </header>
 
-        {/* 우 9-col — 메인 콘텐츠 (max-w 제한으로 와이드 화면에서도 가독 폭 유지) */}
-        <div className="col-span-4 md:col-span-8 lg:col-span-9 min-w-0 max-w-3xl">
+      <main className="mx-auto max-w-2xl px-5 pb-32 pt-12 md:px-8">
+        <SetupProgressBar currentStep={setup.currentStep} totalSteps={setup.totalSteps} />
 
-          {setup.currentStep === 1 && (
-            <StepPosition
-              position={setup.position}
-              isLoading={setup.isLoading}
-              onSelect={setup.handlePositionSelect}
-            />
-          )}
-
-          {setup.currentStep === 2 && setup.position && (
-            <StepTechStack
-              position={setup.position}
-              techStack={setup.techStack}
-              isLoading={setup.isLoading}
-              onSelect={setup.handleTechStackSelect}
-            />
-          )}
-
-          {setup.currentStep === 3 && (
-            <StepLevel
-              level={setup.level}
-              isLoading={setup.isLoading}
-              onSelect={setup.handleLevelSelect}
-            />
-          )}
-
-          {setup.currentStep === 4 && (
-            <StepDuration
-              durationMinutes={setup.durationMinutes}
-              isLoading={setup.isLoading}
-              onSelect={setup.handleDurationSelect}
-            />
-          )}
-
-          {setup.currentStep === 5 && setup.position && (
-            <StepInterviewType
-              position={setup.position}
-              techStack={setup.techStack}
-              interviewTypes={setup.interviewTypes}
-              csSubTopics={setup.csSubTopics}
-              resumeFile={setup.resumeFile}
-              dragOver={setup.dragOver}
-              isLoading={setup.isLoading}
-              fileInputRef={setup.fileInputRef}
-              onTypeToggle={setup.handleTypeToggle}
-              onCsSubTopicToggle={setup.handleCsSubTopicToggle}
-              onFileSelect={setup.handleFileSelect}
-              onFileRemove={setup.handleFileRemove}
-              onDrop={setup.handleDrop}
-              onDragOver={setup.handleDragOver}
-              onDragLeave={setup.handleDragLeave}
-            />
-          )}
-
-          <SetupNavigation
-            currentStep={setup.currentStep}
-            isSubmitStep={setup.isSubmitStep}
-            canNext={setup.canNext(setup.currentStep)}
+        {setup.currentStep === 1 && (
+          <StepPosition
+            position={setup.position}
             isLoading={setup.isLoading}
-            serverError={setup.serverError}
-            onNext={setup.handleNext}
-            onPrev={setup.handlePrev}
-            onSubmit={setup.handleSubmit}
+            onSelect={setup.handlePositionSelect}
           />
-        </div>
-      </PageGrid>
+        )}
+
+        {setup.currentStep === 2 && setup.position && (
+          <StepTechStack
+            position={setup.position}
+            techStack={setup.techStack}
+            isLoading={setup.isLoading}
+            onSelect={setup.handleTechStackSelect}
+          />
+        )}
+
+        {setup.currentStep === 3 && (
+          <StepLevel
+            level={setup.level}
+            isLoading={setup.isLoading}
+            onSelect={setup.handleLevelSelect}
+          />
+        )}
+
+        {setup.currentStep === 4 && (
+          <StepDuration
+            durationMinutes={setup.durationMinutes}
+            isLoading={setup.isLoading}
+            onSelect={setup.handleDurationSelect}
+          />
+        )}
+
+        {setup.currentStep === 5 && setup.position && (
+          <StepInterviewType
+            position={setup.position}
+            techStack={setup.techStack}
+            interviewTypes={setup.interviewTypes}
+            csSubTopics={setup.csSubTopics}
+            resumeFile={setup.resumeFile}
+            dragOver={setup.dragOver}
+            isLoading={setup.isLoading}
+            fileInputRef={setup.fileInputRef}
+            onTypeToggle={setup.handleTypeToggle}
+            onCsSubTopicToggle={setup.handleCsSubTopicToggle}
+            onFileSelect={setup.handleFileSelect}
+            onFileRemove={setup.handleFileRemove}
+            onDrop={setup.handleDrop}
+            onDragOver={setup.handleDragOver}
+            onDragLeave={setup.handleDragLeave}
+          />
+        )}
+
+        <SetupNavigation
+          currentStep={setup.currentStep}
+          isSubmitStep={setup.isSubmitStep}
+          canNext={setup.canNext(setup.currentStep)}
+          isLoading={setup.isLoading}
+          serverError={setup.serverError}
+          onNext={setup.handleNext}
+          onPrev={setup.handlePrev}
+          onSubmit={setup.handleSubmit}
+        />
+      </main>
     </div>
   )
 }

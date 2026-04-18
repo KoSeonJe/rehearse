@@ -27,8 +27,8 @@ export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
             disabled={isLoading}
             className={`flex w-full items-center justify-between rounded-2xl p-6 text-left transition-colors active:scale-[0.98] ${
               level === l
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                : 'bg-surface text-text-primary hover:bg-slate-200'
+                ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                : 'bg-surface text-text-primary hover:bg-muted'
             }`}
           >
             <div className="flex flex-col gap-1">
@@ -51,7 +51,7 @@ export const StepLevel = ({ level, isLoading, onSelect }: StepLevelProps) => {
               </span>
             </div>
             {level === l && (
-              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-brand-foreground/20 text-brand-foreground">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                 </svg>

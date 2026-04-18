@@ -1,4 +1,4 @@
-import { type Ref } from 'react'
+import { type ReactNode, type Ref } from 'react'
 import { cn } from '@/lib/utils'
 import { StickyRail } from '@/components/layout/sticky-rail'
 import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video-player'
@@ -17,6 +17,10 @@ interface VideoDockProps {
   videoRef?: Ref<VideoPlayerHandle>
   state?: 'loading' | 'empty' | 'error'
   className?: string
+  /** 영상 + 타임라인 아래에 추가로 노출할 콘텐츠 (예: 질문 목록). */
+  bottomSlot?: ReactNode
+  /** 그리드 컬럼 span. 기본 col-span-4. */
+  col?: string
 }
 
 /**
@@ -36,10 +40,12 @@ export const VideoDock = ({
   videoRef,
   state,
   className,
+  bottomSlot,
+  col = 'col-span-4',
 }: VideoDockProps) => {
   return (
     <StickyRail
-      col="col-span-4"
+      col={col}
       offset="top-[var(--utility-bar-height)]"
       className={cn('space-y-4 py-4', className)}
     >
@@ -77,6 +83,8 @@ export const VideoDock = ({
         activeFeedbackId={activeFeedbackId}
         onSeek={onSeek}
       />
+
+      {bottomSlot}
     </StickyRail>
   )
 }

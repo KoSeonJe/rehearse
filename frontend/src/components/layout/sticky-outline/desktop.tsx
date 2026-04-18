@@ -32,14 +32,14 @@ export const Desktop = ({ items, activeId, onSelect, className }: DesktopProps) 
             'text-[13px] transition-[color,background-color,border-color] duration-[var(--duration-fast)]',
             /* 선택 상태를 더 확실히 강조 — 배경 tint + 굵은 텍스트 + 3px accent 바 */
             isActive
-              ? 'bg-accent-editorial-bg text-foreground font-semibold border-l-[3px] border-accent-editorial shadow-[inset_0_0_0_1px_rgba(166,81,49,0.08)]'
+              ? 'bg-brand-bg text-foreground font-semibold border-l-[3px] border-brand shadow-[inset_0_0_0_1px_hsl(var(--brand)/0.1)]'
               : 'text-muted-foreground border-l-[3px] border-transparent hover:text-foreground hover:bg-foreground/4',
           )}
         >
           <span
             className={cn(
               'font-tabular text-[11px] w-5 shrink-0 transition-colors',
-              isActive ? 'text-accent-editorial font-bold' : '',
+              isActive ? 'text-brand font-bold' : '',
             )}
           >
             {String(item.index).padStart(2, '0')}

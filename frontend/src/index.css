@@ -6,39 +6,46 @@
 
 @layer base {
   :root {
-    /* ─── Off-neutral Base (Phase A: warm off-white / off-black) ─── */
-    --background: 40 20% 98%;              /* #fafaf7 — warm off-white */
-    --foreground: 30 8% 8%;               /* #14130f — warm off-black */
+    /* ─── Pure White + Deep Teal Base (2026-04-18 전환 — warm off-neutral 제거) ─── */
+    --background: 0 0% 100%;               /* #ffffff — pure white */
+    --foreground: 180 76% 10%;             /* #042f2e — teal-950, 본문 텍스트 */
 
     /* Card / popover */
-    --card: 40 20% 98%;
-    --card-foreground: 30 8% 8%;
-    --popover: 40 20% 98%;
-    --popover-foreground: 30 8% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 180 76% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 180 76% 10%;
 
-    /* Primary — warm off-black */
-    --primary: 30 8% 8%;
-    --primary-foreground: 40 20% 98%;
+    /* Primary — teal-950 (secondary dark 버튼·본문 강조. CTA는 brand 사용) */
+    --primary: 180 76% 10%;
+    --primary-foreground: 0 0% 100%;
 
-    /* Secondary / muted / accent */
-    --secondary: 40 15% 94%;
-    --secondary-foreground: 30 8% 8%;
-    --muted: 40 15% 94%;
-    --muted-foreground: 0 0% 45%;          /* #737373 — 4.53:1 on #fafaf7 (AA 통과, §3.1 gate) */
-    --accent: 40 15% 94%;
-    --accent-foreground: 30 8% 8%;
+    /* Secondary / muted / accent — cool mint surface */
+    --secondary: 180 30% 96%;              /* #eff7f6 — cool mint */
+    --secondary-foreground: 180 76% 10%;
+    --muted: 180 30% 96%;
+    --muted-foreground: 180 15% 41%;       /* #5a7574 — teal-gray, 4.63:1 on #fff (AA) */
+    --accent: 180 30% 96%;
+    --accent-foreground: 180 76% 10%;
 
-    /* Link only (DESIGN.md의 유일한 blue) */
-    --link: 204 100% 50%;                  /* #0099ff */
+    /* ─── Brand Point Color ─── */
+    /* Teal — 전역 시그니처. CTA, link, focus, selected, active 상태 */
+    --brand:        173 76% 26%;           /* #0F766E — teal-700 */
+    --brand-hover:  173 84% 32%;           /* #0D9488 — teal-600 */
+    --brand-bg:     166 77% 89%;           /* #ccfbf1 — teal-100 subtle surface */
+    --brand-foreground: 0 0% 100%;         /* #ffffff — pure white on brand */
+
+    /* Link — brand 계열로 통합 (기존 #0099ff 폐기) */
+    --link: var(--brand);
 
     /* Feedback */
     --destructive: 0 84% 60%;
     --destructive-foreground: 40 20% 98%;
 
-    /* Border / input / ring */
-    --border: 40 10% 88%;
-    --input: 40 10% 88%;
-    --ring: 217 91% 60%;                   /* focus ring */
+    /* Border / input / ring — teal-tinted hairline */
+    --border: 180 20% 92%;                 /* #e6f0ef — teal hairline */
+    --input: 180 20% 92%;
+    --ring: var(--brand);                  /* focus ring = brand signature */
 
     /* Radius */
     --radius: 0.5rem;
@@ -46,9 +53,9 @@
     /* ─── Semantic Color 4종 (신규) ─── */
 
     /* ① Editorial accent — 피드백 하이라이트, 챕터 숫자 마커 */
-    /* 테라코타(warm red-brown) — signal-warning(ochre yellow)과 색상환에서 명확히 분리 */
-    --accent-editorial: 13 60% 40%;        /* #a65131 — terracotta */
-    --accent-editorial-bg: 14 60% 95%;     /* #faece4 — warm peach tint */
+    /* 2026-04-18: terracotta 제거. deep teal shade로 교체 (brand와 hue 공유, 명도로 위계 구분) */
+    --accent-editorial: 180 57% 19%;       /* #134e4a — teal-900, 10.1:1 on #fff AAA */
+    --accent-editorial-bg: 165 70% 94%;    /* #d7faf3 — pastel teal mint */
 
     /* ② Signal: Record — 녹화 중 상태 전용. 다른 signal과 동시 사용 금지 */
     --signal-record: 3 66% 47%;            /* #c8322a */
@@ -62,9 +69,12 @@
     --signal-success: 100 20% 39%;         /* #5a7a4a */
     --signal-success-bg: 100 20% 95%;      /* #eef3eb */
 
-    /* ─── Interview Stage (P1-8) ─── */
-    /* interview-page 전용 배경. bg-interview-stage 클래스로만 사용 */
-    --interview-stage: 30 8% 8%;           /* #14130f */
+    /* ─── Interview Stage (유일한 의도적 dark — 극장 몰입 모드) ─── */
+    /* interview-page 전용. 나머지 전 페이지는 light base, 이 스테이지만 dark teal-black */
+    --interview-stage: 180 76% 7%;              /* #031f1e — base보다 더 깊은 teal-black */
+    --interview-stage-foreground: 170 76% 97%;  /* #f0fdfa — teal-50 on stage */
+    --interview-stage-muted: 170 20% 72%;       /* #a3c0be — light teal-gray on stage */
+    --interview-stage-border: 180 58% 20%;      /* #123b39 — teal hairline on stage */
 
     /* ─── Layout 토큰 ─── */
     --utility-bar-height: 44px;
@@ -87,43 +97,33 @@
     }
   }
 
+  /*
+   * ─── Interview Stage Scope (2026-04-18) ──────────────────────────
+   * Rehearse는 light-only 디자인 시스템이다. `.dark` 클래스는 일반 다크모드가 아니라
+   * **interview-page 극장 몰입 스코프** 전용. 기존 토큰(`bg-background`, `text-foreground` 등)을
+   * interview-stage 값으로 재바인딩해서, 컴포넌트 코드 변경 없이 dark 스테이지 컨텍스트 확보.
+   *
+   * 사용처: `<div className="dark ... bg-interview-stage">` (interview-page.tsx)
+   * 다른 페이지에서는 절대 사용 금지.
+   */
   .dark {
-    /* ─── Off-neutral Dark (Phase A: warm off-black / off-white) ─── */
-    --background: 30 8% 8%;                /* #14130f — warm off-black */
-    --foreground: 40 20% 97%;              /* #f8f7f4 — warm off-white */
-    --card: 30 8% 10%;
-    --card-foreground: 40 20% 97%;
-    --popover: 30 8% 10%;
-    --popover-foreground: 40 20% 97%;
-    --primary: 40 20% 97%;
-    --primary-foreground: 30 8% 8%;
-    --secondary: 30 8% 15%;
-    --secondary-foreground: 40 20% 97%;
-    --muted: 30 8% 15%;
-    --muted-foreground: 0 0% 64%;
-    --accent: 30 8% 15%;
-    --accent-foreground: 40 20% 97%;
-    --link: 204 100% 60%;
-    --destructive: 0 70% 50%;
-    --destructive-foreground: 40 20% 97%;
-    --border: 30 8% 18%;
-    --input: 30 8% 18%;
-    --ring: 217 91% 60%;                   /* focus ring: light와 동일 — 일관된 브랜드 포커스 신호 유지 */
-
-    /* ─── Semantic Color 다크 카운터파트 (P0 — 리뷰 반영) ─── */
-    /* 라이트의 pastel tint(95% L)를 그대로 쓰면 warm off-black 위에서 과발광.
-       채도는 유지하되 명도를 14–18%로 내려 다크 배경에 앉힌다. */
-    --accent-editorial: 13 55% 58%;        /* #c57458 — 다크에서 대비 확보 위해 밝기 상향 */
-    --accent-editorial-bg: 13 35% 16%;     /* #3b251d — earthy terracotta shade */
-    --signal-record: 3 60% 58%;            /* #d46b5f — dot/라벨용 채도 유지 */
-    --signal-record-bg: 3 35% 16%;         /* #3b1f1c */
-    --signal-warning: 43 80% 60%;          /* #e6b946 — ochre, 배경 대비 확보 */
-    --signal-warning-bg: 43 30% 15%;       /* #362f1e */
-    --signal-success: 100 25% 55%;         /* #87a26f */
-    --signal-success-bg: 100 18% 15%;      /* #262e22 */
-
-    /* interview-page 전용 배경 — 다크 모드에서도 동일 경계값 유지 */
-    --interview-stage: 30 8% 6%;           /* #0f0e0b — 일반 dark --background보다 한 단 더 어두움 */
+    --background:       var(--interview-stage);
+    --foreground:       var(--interview-stage-foreground);
+    --card:             var(--interview-stage);
+    --card-foreground:  var(--interview-stage-foreground);
+    --popover:          var(--interview-stage);
+    --popover-foreground: var(--interview-stage-foreground);
+    --primary:          var(--interview-stage-foreground);
+    --primary-foreground: var(--interview-stage);
+    --muted:            var(--interview-stage-border);
+    --muted-foreground: var(--interview-stage-muted);
+    --secondary:        var(--interview-stage-border);
+    --secondary-foreground: var(--interview-stage-foreground);
+    --accent:           var(--interview-stage-border);
+    --accent-foreground: var(--interview-stage-foreground);
+    --border:           var(--interview-stage-border);
+    --input:            var(--interview-stage-border);
+    /* Brand은 light 값 유지 — 스테이지 위에서도 teal CTA 동일 톤 */
   }
 
   /* ─── font-tabular 유틸리티 (타이머·통계 숫자 필수 적용) ─── */

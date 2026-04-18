@@ -30,16 +30,21 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
     >
       <PageGrid>
         <div className="col-span-4 md:col-span-5 lg:col-span-6 flex flex-col justify-center">
+          <p className="mb-5 text-[12px] md:text-[13px] font-semibold uppercase tracking-[0.12em] text-brand">
+            AI 개발자 모의면접 · 타임스탬프 영상 피드백
+          </p>
           <h1
             id="hero-heading"
-            className="text-[2.5rem] leading-[1.05] font-bold tracking-[-0.03em] text-foreground md:text-5xl lg:text-[3.75rem]"
+            className="text-[2.5rem] leading-[1.1] font-bold tracking-[-0.03em] text-foreground md:text-5xl lg:text-[3.75rem]"
           >
-            면접의 약한 순간만<br />
-            다시 연습합니다.
+            다음 면접에서 뭘 고칠지,
+            <br className="hidden md:block" />{' '}
+            30분이면 보입니다.
           </h1>
-          <p className="mt-7 max-w-lg text-base md:text-lg font-medium leading-relaxed text-muted-foreground">
-            답변을 녹화하면, 타임스탬프마다 무엇을 고쳐야 하는지가 보입니다.
-            총평이 아니라 순간을 돌려봅니다.
+          <p className="mt-7 max-w-md text-[17px] md:text-lg font-medium leading-[1.7] text-muted-foreground">
+            이력서 한 장이면 맞춤 질문이 시작되고,
+            <br className="hidden md:block" />{' '}
+            녹화한 답변을 <span className="text-foreground font-semibold">초 단위 타임스탬프</span>로 짚어드려요.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-5">
             <Button
@@ -52,8 +57,8 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               무료로 시작하기
             </Button>
             <p className="text-xs font-medium text-muted-foreground">
-              <span aria-hidden="true">베타 기간 전 기능 무료 · 30초 가입 · Chrome 권장</span>
-              <span className="sr-only">베타 기간 전 기능 무료, 30초 가입, Chrome 권장</span>
+              <span aria-hidden="true">베타 전 기능 무료 · 이력서 올리면 3분 뒤 시작 · Chrome 권장</span>
+              <span className="sr-only">베타 전 기능 무료, 이력서 올리면 3분 뒤 시작, Chrome 권장</span>
             </p>
           </div>
         </div>

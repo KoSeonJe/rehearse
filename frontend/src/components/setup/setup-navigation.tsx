@@ -65,7 +65,7 @@ export const SetupNavigation = ({
             disabled={!canNext || isLoading}
             title={disabledHint ?? undefined}
             aria-describedby={disabledHint ? 'setup-disabled-hint' : undefined}
-            className="text-sm font-bold text-accent-editorial underline underline-offset-4 decoration-accent-editorial/50 hover:decoration-accent-editorial transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-editorial/30 rounded-sm"
+            className="text-sm font-bold text-brand underline underline-offset-4 decoration-brand/50 hover:decoration-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 rounded-sm"
           >
             {isLoading ? '생성 중...' : '면접 시작하기 →'}
           </button>
@@ -76,7 +76,7 @@ export const SetupNavigation = ({
             disabled={!canNext || isLoading}
             title={disabledHint ?? undefined}
             aria-describedby={disabledHint ? 'setup-disabled-hint' : undefined}
-            className="text-sm font-bold text-accent-editorial underline underline-offset-4 decoration-accent-editorial/50 hover:decoration-accent-editorial transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-editorial/30 rounded-sm"
+            className="text-sm font-bold text-brand underline underline-offset-4 decoration-brand/50 hover:decoration-brand transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 rounded-sm"
           >
             다음 단계 →
           </button>

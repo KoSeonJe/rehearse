@@ -93,8 +93,8 @@ export const FeedbackPreviewMock = ({
             습관어(“어”, “음”)가 답변 중반 이후 반복돼, 확신 있는 말투가 약해졌어요.
           </p>
         </div>
-        <div className="rounded-xl bg-slate-50 px-4 py-3">
-          <p className="text-[12px] font-bold text-slate-500 mb-0.5">
+        <div className="rounded-xl bg-muted px-4 py-3">
+          <p className="text-[12px] font-bold text-muted-foreground mb-0.5">
             이렇게 말하면 더 좋아요
           </p>
           <p className="text-[13px] leading-[1.6] text-foreground/75">
@@ -107,7 +107,7 @@ export const FeedbackPreviewMock = ({
 
   const VideoDock = (
     <div className="rounded-2xl bg-card shadow-sm overflow-hidden">
-      <div className="relative aspect-video w-full overflow-hidden bg-white text-foreground">
+      <div className="relative aspect-video w-full overflow-hidden bg-background text-foreground">
         <img
           src="/images/interviewee-placeholder.png"
           alt=""
@@ -156,27 +156,13 @@ export const FeedbackPreviewMock = ({
     </div>
   )
 
-  // 상단 브라우저 크롬
-  const Chrome = (
-    <div className="flex items-center justify-between border-b border-foreground/8 px-4 py-2.5 bg-surface">
-      <div className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-      </div>
-      <span className="font-tabular text-[10px] font-semibold tracking-tight text-foreground/40">
-        rehearse.co.kr/interview/feedback
-      </span>
-      <span className="w-10" />
-    </div>
-  )
+  // 브라우저 크롬 제거 — 실제 제품 스크린샷 톤 유지
 
   return (
     <div
       aria-hidden="true"
       className={`relative w-full overflow-hidden rounded-3xl border border-border bg-background shadow-lg ${className}`}
     >
-      {Chrome}
       <div className="p-4 md:p-5 bg-surface/60">
         {isProof ? (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">

@@ -45,7 +45,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         </p>
         <StatusMessage status={status} passedText="음성 감지 완료" />
         {status === 'testing' && (
-          <div className="mt-1 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-slate-100">
+          <div className="mt-1 h-1.5 w-full max-w-[200px] overflow-hidden rounded-full bg-muted">
             <div
               className="h-full rounded-full bg-foreground transition-[width] duration-75"
               style={{ width: `${Math.min(micLevel, 100)}%` }}
@@ -58,7 +58,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'idle' && (
           <button
             onClick={onMicTest}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-muted active:scale-95"
           >
             테스트
           </button>
@@ -66,7 +66,7 @@ export const MicTestRow = ({ status, micLevel, onMicTest, onReset }: MicTestRowP
         {status === 'passed' && onReset && (
           <button
             onClick={onReset}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-muted active:scale-95"
           >
             다시 테스트
           </button>

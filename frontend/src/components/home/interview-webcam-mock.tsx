@@ -15,21 +15,8 @@ export const InterviewWebcamMock = ({ className = '' }: InterviewWebcamMockProps
     aria-hidden="true"
     className={`relative w-full overflow-hidden rounded-3xl border border-border bg-background shadow-lg ${className}`}
   >
-    {/* 상단 브라우저 크롬 */}
-    <div className="flex items-center justify-between border-b border-foreground/8 px-4 py-2.5 bg-surface">
-      <div className="flex items-center gap-1.5">
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-        <span className="h-2 w-2 rounded-full bg-foreground/12" />
-      </div>
-      <span className="font-tabular text-[10px] font-semibold tracking-tight text-foreground/40">
-        rehearse.co.kr/interview/conduct
-      </span>
-      <span className="w-10" />
-    </div>
-
-    {/* 웹캠 뷰 — 면접자 일러스트를 실제 스트림처럼 채움 */}
-    <div className="relative aspect-[4/3] w-full overflow-hidden bg-white">
+    {/* 웹캠 뷰 — 면접자 일러스트를 실제 스트림처럼 채움. 브라우저 chrome 제거 (실제 제품 스크린샷 톤) */}
+    <div className="relative aspect-[4/3] w-full overflow-hidden bg-background">
       <img
         src="/images/interviewee-placeholder.png"
         alt=""

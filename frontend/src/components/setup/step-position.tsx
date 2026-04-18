@@ -27,8 +27,8 @@ export const StepPosition = ({ position, isLoading, onSelect }: StepPositionProp
             disabled={isLoading}
             className={`flex flex-col items-center gap-2 rounded-2xl p-5 transition-colors active:scale-95 ${
               position === p
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                : 'bg-surface text-text-primary hover:bg-slate-200'
+                ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                : 'bg-surface text-text-primary hover:bg-muted'
             }`}
           >
             <span className="text-base font-extrabold">{POSITION_LABELS[p].label}</span>

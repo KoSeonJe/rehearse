@@ -27,28 +27,29 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
       className="bg-background py-20 md:py-28"
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
-        <div className="rounded-3xl bg-foreground px-7 py-14 text-background md:px-14 md:py-20">
+        <div className="rounded-3xl bg-brand px-7 py-14 text-brand-foreground md:px-14 md:py-20">
           <div className="max-w-2xl">
             <h2
               id="cta-heading"
-              className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-background"
+              className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-brand-foreground"
             >
-              지금은<br />
-              전부 무료입니다.
+              지금 시작하면,<br />
+              베타 피드백을 같이 만듭니다.
             </h2>
-            <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-background/75">
-              베타 기간 동안 모든 기능을 결제 없이 사용할 수 있습니다. 이력서만 있으면 3분 뒤 시작 —
-              질문이 자동 생성되고, 녹화가 끝나면 타임스탬프 피드백이 따라옵니다.
+            <p className="mt-6 max-w-xl text-[16px] md:text-lg font-medium leading-[1.75] text-brand-foreground/80">
+              <span className="text-brand-foreground font-semibold">베타 전 기능 무료</span>. 이력서만 있으면 3분 뒤 첫 면접이 시작되고, 질문이 자동 생성됩니다.
+              <br className="hidden md:block" />
+              쓰면서 불편한 점을 남겨주시면 다음 업데이트에 반영해요 — 만들어지는 제품을 같이 다듬는 피드백이 환영입니다.
             </p>
 
-            <ul className="mt-10 divide-y divide-background/15 border-t border-background/20" aria-label="시작 전 체크리스트">
+            <ul className="mt-10 divide-y divide-brand-foreground/15 border-t border-brand-foreground/20" aria-label="시작 전 체크리스트">
               {READY_ITEMS.map((item) => (
                 <li
                   key={item.label}
                   className="flex flex-col gap-0.5 py-3.5 md:flex-row md:items-baseline md:justify-between md:gap-6"
                 >
-                  <span className="text-[15px] font-semibold text-background">{item.label}</span>
-                  <span className="text-[13px] font-medium text-background/60">{item.note}</span>
+                  <span className="text-[15px] font-semibold text-brand-foreground">{item.label}</span>
+                  <span className="text-[13px] font-medium text-brand-foreground/65">{item.note}</span>
                 </li>
               ))}
             </ul>
@@ -59,7 +60,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
                 size="lg"
                 onClick={onNavigate}
                 aria-label="무료로 리허설 시작하기"
-                className="rounded-2xl bg-background px-9 text-foreground hover:bg-background/90"
+                className="rounded-2xl bg-brand-foreground px-9 text-brand hover:bg-brand-foreground/90 border-transparent"
               >
                 무료로 시작하기
               </Button>

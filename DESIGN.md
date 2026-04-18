@@ -20,17 +20,35 @@ The elevation system is notably sophisticated for a minimal site — 11 shadow d
 
 ## 2. Color Palette & Roles
 
-### Primary (Phase A 개정: warm off-neutral)
+### Primary (2026-04-18 개정: Pure White + Deep Teal, Light-only)
 
-> **개정 이유**: Cal.com 모노크롬 철학은 유지하되, pure black/white 대신 warm off-tone으로 미세 조정. 눈의 피로 감소 + "조용한 온기" 방향성 반영.
+> **개정 이유**: warm off-neutral 베이스가 Claude(Anthropic) 팔레트와 식별 불가 → 전면 쿨톤으로 전환. Light-only 배포 (일반 다크모드 폐지. Interview 페이지만 극장 몰입 스테이지).
 
-- **Warm Off-Black** (`#14130f`, CSS: `--foreground`): Primary heading, button text — warm off-black (pure black 금지)
-- **Warm Off-White** (`#fafaf7`, CSS: `--background`): Primary background — warm off-white (pure white 금지)
-- **Midnight** (`#111111`): 필요 시 deep overlay용으로만 (50% opacity)
+- **Pure White** (`#ffffff`, CSS: `--background`): 모든 페이지 배경 — 순백
+- **Deep Teal** (`#042f2e` = teal-950, CSS: `--foreground`): 본문·제목 텍스트 — 대비 17.8:1 AAA
+- **Teal-gray** (`#5a7574`, CSS: `--muted-foreground`): 보조 텍스트·캡션 — 4.63:1 AA
+- **Cool Mint Surface** (`#eff7f6`, CSS: `--muted`/`--secondary`): hover/accent subtle surface
+- **Teal Hairline** (`#e6f0ef`, CSS: `--border`): border, input — 쿨 hairline
+
+### Brand Point Color (2026-04-18 신규 — Teal 시그니처)
+
+> **개정 이유**: 기존 warm off-neutral + terracotta 조합이 Anthropic Claude 팔레트와 사실상 동일해 브랜드 식별성이 없었다. Teal을 전역 시그니처로 도입해 cold-warm tension을 만들고, CTA·link·focus·selected 상태 전부를 brand로 통일한다.
+
+| 토큰 | Light | Dark | 용도 |
+|------|-------|------|------|
+| `--brand` | `#0F766E` (teal-700, 대비 7.3:1 AAA) | `#2dd4bf` (teal-400, 대비 6.8:1) | Primary CTA 버튼, 인라인 링크, focus ring, active 네비, 선택 상태 |
+| `--brand-hover` | `#0D9488` (teal-600) | `#14b8a6` (teal-500) | CTA hover, active state 진입 |
+| `--brand-bg` | `#ccfbf1` (teal-100) | `#134e4a` (teal-900) | Active 항목 subtle surface, selected pill 배경, chapter badge 배경 |
+| `--brand-foreground` | `#fafaf7` (warm off-white) | `#14130f` (warm off-black) | Brand 배경 위 텍스트 |
+
+**사용 원칙 (역할 단일화)**:
+- Brand = **액션·선택·활성**: Primary 버튼, 링크, focus ring, active nav, selected pill, 타임라인 scrubber
+- Primary (`#14130f`) = **일반 UI 강조**: 본문 텍스트, secondary dark 버튼 — CTA 역할은 brand로 이전
+- `--link`와 `--ring`은 `--brand` 참조로 통합 (기존 `#0099ff` 링크 blue와 `#3b82f6` ring blue는 제거)
 
 ### Secondary & Accent
-- **Link Blue** (`#0099ff`): In-text links with underline decoration — the only blue in the system, reserved strictly for hyperlinks
-- **Focus Ring** (`#3b82f6` at 50% opacity): Keyboard focus indicator — accessibility-only, invisible in normal interaction
+- **Focus Ring**: `--ring: var(--brand)` — 키보드 포커스는 브랜드 시그니처의 일부. `focus-visible:ring-2 ring-ring` 유틸 사용
+- **Link**: `--link: var(--brand)` — 인라인 링크도 brand teal. underline-offset-4 권장
 
 ### Surface & Background
 - **Warm Off-White** (`#fafaf7`, `--background`): Primary page background — warm tint, not pure white
@@ -205,6 +223,10 @@ Cal.com's shadow system is the most sophisticated element of the design — 11 s
 - Apply generous section spacing (80px–96px) — breathing room is essential to Quiet Rigor
 
 ### Don't
+- **Do NOT re-introduce warm off-white/off-black** (`#fafaf7`, `#14130f`) — 2026-04-18 전면 제거. 웜 크림 배경은 Claude 팔레트와 구분 불가
+- **Do NOT add warm tints anywhere** — terracotta, warm peach, warm cream surface 전부 금지. surface tint는 `--muted` (`#eff7f6` cool mint)만 사용
+- **Do NOT add a general dark mode** — Rehearse는 light-only. `.dark` 클래스는 **interview-page 극장 스테이지 전용 scope**. 다른 페이지에서 사용 금지
+- **Do NOT use `bg-primary` for CTA buttons** — primary CTA 역할은 `bg-brand` (teal). `bg-primary`는 일반 UI 강조·본문·secondary dark 버튼 전용
 - **Do NOT re-introduce Cal Sans** — removed 2026-04-18 (designer critique). Fraunces is the sole English display font
 - **Do NOT use `backdrop-blur` on sticky headers** — anti-slop rule (`frontend-design-rules.md`). Use opaque `bg-background` + hairline border
 - **Do NOT force Fraunces on Korean text** — font mix 파편화 발생. 한글은 Pretendard 전담
@@ -247,14 +269,17 @@ Cal.com's shadow system is the most sophisticated element of the design — 11 s
 
 ## 9. Agent Prompt Guide
 
-### Quick Color Reference
-- Primary Text: Charcoal (`#242424`)
-- Deep Text: Midnight (`#111111`)
-- Secondary Text: Mid Gray (`#898989`)
+### Quick Color Reference (2026-04-18 Light-only Teal)
 - Background: Pure White (`#ffffff`)
-- Link: Link Blue (`#0099ff`)
-- CTA Button: Charcoal (`#242424`) bg, white text
-- Shadow Border: `rgba(34, 42, 53, 0.08)` ring
+- Primary Text: Deep Teal (`#042f2e`, teal-950)
+- Secondary Text: Teal-gray (`#5a7574`)
+- Border: Teal hairline (`#e6f0ef`)
+- Muted surface: Cool mint (`#eff7f6`)
+- **Brand (CTA·link·focus)**: `#0F766E` (teal-700), hover `#0D9488` (teal-600)
+- **Brand subtle surface**: `#ccfbf1` (teal-100)
+- **Editorial accent (Feedback only)**: `#134e4a` (teal-900) — 인용·하이라이트
+- **Interview stage (극장 전용)**: `#031f1e` background + `#f0fdfa` foreground
+- Shadow: `rgba(4, 47, 46, 0.x)` teal-950 rgba
 
 ### Example Component Prompts
 - "Create a hero section with white background, 64px Cal Sans heading at weight 600, line-height 1.10, #242424 text, centered layout with a dark CTA button (#242424, 8px radius, white text)"

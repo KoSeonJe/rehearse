@@ -67,7 +67,7 @@ export const InterviewControls = memo(({
       <div className="flex items-center gap-3">
         <span className="text-sm text-foreground/50">수고하셨습니다!</span>
         <button
-          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-brand text-sm font-medium text-brand-foreground transition-colors duration-[var(--duration-fast)] hover:bg-brand-hover active:scale-95"
           onClick={onFinishInterview}
         >
           면접 종료하기
@@ -81,7 +81,7 @@ export const InterviewControls = memo(({
     return (
       <div className="flex items-center gap-3">
         <button
-          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-brand text-sm font-medium text-brand-foreground transition-colors duration-[var(--duration-fast)] hover:bg-brand-hover active:scale-95"
           onClick={onFinishInterview}
         >
           피드백 보기
@@ -116,7 +116,7 @@ export const InterviewControls = memo(({
       ) : phase !== 'preparing' ? (
         /* 답변 시작 */
         <button
-          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-primary flex items-center gap-2 text-sm font-medium text-primary-foreground transition-colors duration-[var(--duration-fast)] hover:bg-primary/90 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+          className="cursor-pointer h-11 min-w-[44px] px-5 rounded-full bg-brand flex items-center gap-2 text-sm font-medium text-brand-foreground transition-colors duration-[var(--duration-fast)] hover:bg-brand-hover active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
           disabled={isWaiting}
           onClick={onStartAnswer}
           aria-label={currentFollowUp ? '후속 질문에 답변하기' : '답변 시작'}

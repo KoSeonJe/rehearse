@@ -10,10 +10,12 @@ import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
 import { type VideoPlayerHandle } from '@/components/feedback/video-player'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { VideoDock } from '@/components/feedback/video-dock'
+import { QuestionList } from '@/components/feedback/question-list'
 import { FeedbackOnboardingCallout } from '@/components/feedback/feedback-onboarding-callout'
 import { Character } from '@/components/ui/character'
 import { ErrorState } from '@/components/ui/error-state'
-import { UtilityBar } from '@/components/layout/utility-bar'
+import { Logo } from '@/components/ui/logo'
+import { BackLink } from '@/components/ui/back-link'
 import { PageGrid } from '@/components/layout/page-grid'
 import { ChapterMarker } from '@/components/layout/chapter-marker'
 import { StickyOutline, type OutlineItem } from '@/components/layout/sticky-outline'
@@ -44,8 +46,8 @@ const InfoBand = ({ interview }: InfoBandProps) => {
   })
 
   return (
-    <div className="border-b border-foreground/8 px-4 md:px-8 lg:px-12 py-2">
-      <div className="mx-auto flex max-w-canvas flex-wrap items-center gap-x-4 gap-y-1">
+    <div className="mt-5 border-t border-foreground/10 pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="font-tabular text-[13px] font-semibold text-foreground">
           {positionLabel}
         </span>
@@ -231,8 +233,8 @@ const QuestionSetSection = ({
             영상을 분석하고 피드백을 생성하고 있습니다
           </p>
         </div>
-        <div className="h-1 w-32 bg-primary/20 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-primary animate-progress-loading" />
+        <div className="h-1 w-32 bg-brand/15 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-brand animate-progress-loading" />
         </div>
       </div>
     )
@@ -347,20 +349,12 @@ const QuestionSetSection = ({
         onSelect={handleOutlineSelect}
       />
 
-      {/* 3-pane editorial grid (spec §4.3):
-          xl: 2 (outline) + 6 (reading) + 4 (video) = 12
-          lg:             8 (reading) + 4 (video)
+      {/* 2-pane editorial grid:
+          lg+:           8 (reading) + 4 (video + 질문 목록)
           md/sm:         single column; mobile outline via Sheet */}
       <div className="grid grid-cols-4 gap-x-4 md:grid-cols-8 md:gap-x-5 lg:grid-cols-12 lg:gap-x-6 mt-6">
-        {/* Left rail — outline (xl only; CSS hides below xl) */}
-        <StickyOutline.Desktop
-          items={outlineItems}
-          activeId={activeOutlineId}
-          onSelect={handleOutlineSelect}
-        />
-
-        {/* Middle — reading column */}
-        <div className="col-span-4 md:col-span-8 lg:col-span-8 xl:col-span-6 space-y-8">
+        {/* Left — reading column (outline 제거, 질문 텍스트는 우측 VideoDock 하단으로 이동) */}
+        <div className="col-span-4 md:col-span-8 lg:col-span-7 space-y-8">
           {feedback.questionSetComment && (
             <blockquote className="border-l-2 border-accent-editorial/50 pl-4 text-[1.0625rem]/[1.65] text-muted-foreground not-italic">
               {feedback.questionSetComment}
@@ -377,8 +371,9 @@ const QuestionSetSection = ({
           />
         </div>
 
-        {/* Right rail — video dock (lg+ col-4) */}
+        {/* Right rail — video dock (lg+ col-4) + 질문 목록 (웹캠 하단) */}
         <VideoDock
+          col="col-span-4 md:col-span-8 lg:col-span-5"
           streamingUrl={feedback.streamingUrl}
           fallbackUrl={feedback.fallbackUrl}
           feedbacks={feedbacks}
@@ -388,6 +383,14 @@ const QuestionSetSection = ({
           onSeek={seekTo}
           onUrlExpired={handleUrlExpired}
           videoRef={videoRef}
+          bottomSlot={
+            <QuestionList
+              questions={questions}
+              feedbacks={feedbacks}
+              selectedFeedbackId={selectedFeedbackId}
+              onSeek={seekTo}
+            />
+          }
         />
 
         {/* Mobile outline — fixed-position Sheet, outside grid flow */}
@@ -442,8 +445,8 @@ export const InterviewFeedbackPage = () => {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
-          <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-primary animate-progress-loading" />
+          <div className="h-1 w-24 bg-brand/15 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-brand animate-progress-loading" />
           </div>
           <p className="text-sm font-medium text-muted-foreground">
             피드백 불러오는 중
@@ -471,30 +474,6 @@ export const InterviewFeedbackPage = () => {
 
   const positionLabel = POSITION_LABELS[interview.position]?.label ?? interview.position
 
-  // ── 대시보드 액션 버튼 ────────────────────────────────────────────────────
-  const dashboardAction = (
-    <button
-      type="button"
-      onClick={() => navigate('/dashboard', { replace: true })}
-      aria-label="대시보드로 이동"
-      className="flex h-11 w-11 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground transition-colors duration-[var(--duration-fast)]"
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M19 12H5M12 5l-7 7 7 7" />
-      </svg>
-    </button>
-  )
-
   return (
     <div className="min-h-screen bg-background pb-32">
       <Helmet>
@@ -502,13 +481,18 @@ export const InterviewFeedbackPage = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* Utility bar */}
-      <UtilityBar chapter="피드백" actions={dashboardAction} />
+      {/* Setup 페이지와 동일한 헤더 — Logo + 리허설 / 뒤로 */}
+      <header className="flex items-center justify-between px-5 pt-8 pb-2 md:px-8">
+        <div className="flex items-center gap-2">
+          <Logo size={80} />
+          <span className="text-xl font-extrabold tracking-tight text-text-primary">
+            리허설
+          </span>
+        </div>
+        <BackLink to="/dashboard" />
+      </header>
 
-      {/* Info band — thin, tabular, no card chrome */}
-      <InfoBand interview={interview} />
-
-      {/* Page title header */}
+      {/* Page title header — InfoBand는 타이틀 아래로 이동 */}
       <PageGrid as="div" className="mt-10 mb-2">
         <div className="col-span-4 md:col-span-8 lg:col-span-12">
           <h1 className="text-[2rem] md:text-[2.5rem] font-bold leading-[1.10] tracking-[-0.02em] text-foreground">
@@ -517,6 +501,7 @@ export const InterviewFeedbackPage = () => {
           <p className="mt-2 text-sm font-medium text-muted-foreground">
             답변별 타임스탬프를 클릭하면 그 순간 영상으로 이동합니다.
           </p>
+          <InfoBand interview={interview} />
         </div>
       </PageGrid>
 

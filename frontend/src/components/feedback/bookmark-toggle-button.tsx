@@ -95,8 +95,8 @@ const BookmarkToggleButton = ({
           'disabled:cursor-not-allowed disabled:opacity-60',
           isAnimating ? 'animate-bookmark-pop motion-reduce:animate-none' : '',
           isBookmarked
-            ? 'border border-primary/30 font-bold bg-muted text-primary'
-            : 'border border-border bg-card font-medium text-text-secondary hover:border-primary hover:bg-muted hover:text-primary',
+            ? 'border border-brand/40 font-bold bg-brand-bg text-brand'
+            : 'border border-border bg-card font-medium text-text-secondary hover:border-brand hover:bg-brand-bg hover:text-brand',
         ]
           .filter(Boolean)
           .join(' ')}

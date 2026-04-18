@@ -28,7 +28,7 @@ export const AboutPage = () => (
   <ContentPageShell title={TITLE} description={DESCRIPTION} canonicalPath={PATH} jsonLd={aboutJsonLd}>
     {/* 히어로 배너 — editorial 톤의 over-line + 대형 headline + sub-copy */}
     <header className="mb-14">
-      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent-editorial mb-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-brand mb-4">
         ABOUT · REHEARSE
       </p>
       <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-text-primary leading-[1.15] mb-5">
@@ -47,7 +47,7 @@ export const AboutPage = () => (
         { step: '03', title: '해결', desc: '이력서 분석 → 맞춤 follow-up → 타임스탬프 피드백' },
       ].map((item) => (
         <li key={item.step} className="flex flex-col gap-2">
-          <span className="font-tabular text-xs font-semibold text-accent-editorial">
+          <span className="font-tabular text-xs font-semibold text-brand">
             {item.step}
           </span>
           <h3 className="text-base font-bold text-text-primary">{item.title}</h3>
@@ -94,7 +94,7 @@ export const AboutPage = () => (
     <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
       <h3 className="text-lg font-bold mb-2">지금 바로 한 사이클 돌려보기</h3>
       <p className="text-sm text-text-secondary mb-4">베타 기간 무료. 이력서 업로드 → 30분이면 첫 영상 + 피드백.</p>
-      <Link to="/" className="inline-block px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90">
+      <Link to="/" className="inline-block px-4 py-2 bg-brand text-brand-foreground rounded-md text-sm font-medium hover:bg-brand-hover">
         리허설 시작하기
       </Link>
     </div>

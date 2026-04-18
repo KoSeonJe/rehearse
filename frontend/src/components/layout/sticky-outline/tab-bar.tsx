@@ -34,7 +34,7 @@ export const TabBar = ({ items, activeId, onSelect, className }: TabBarProps) =>
             'transition-[color,background-color,border-color] duration-[var(--duration-fast)]',
             /* 선택 강조 — 배경 tint + 3px bottom bar + 굵은 terracotta 텍스트 */
             isActive
-              ? 'text-accent-editorial font-bold border-b-[3px] border-accent-editorial bg-accent-editorial-bg/60 -mb-px'
+              ? 'text-brand font-bold border-b-[3px] border-brand bg-brand-bg/60 -mb-px'
               : 'text-muted-foreground border-b-[3px] border-transparent hover:text-foreground hover:bg-foreground/4',
           )}
         >

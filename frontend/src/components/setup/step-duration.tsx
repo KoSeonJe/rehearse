@@ -25,8 +25,8 @@ export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurat
             disabled={isLoading}
             className={`flex flex-col items-center gap-2 rounded-2xl p-6 transition-colors active:scale-95 ${
               durationMinutes === preset.minutes
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                : 'bg-surface text-text-primary hover:bg-slate-200'
+                ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                : 'bg-surface text-text-primary hover:bg-muted'
             }`}
           >
             <span className="text-3xl font-extrabold">{preset.label}</span>

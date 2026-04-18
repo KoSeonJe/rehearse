@@ -41,7 +41,7 @@ export const InterviewerAvatar = memo(({ mood, size = 180 }: InterviewerAvatarPr
         style={{ width: size + 8, height: size + 8 }}
       />
 
-      {/* Google-style default profile circle */}
+      {/* AI 면접관 캐릭터 — 원형 clip */}
       <svg
         width={size}
         height={size}
@@ -54,11 +54,14 @@ export const InterviewerAvatar = memo(({ mood, size = 180 }: InterviewerAvatarPr
           </clipPath>
         </defs>
         <g clipPath={`url(#${clipId})`}>
-          <circle cx="60" cy="60" r="60" fill="#5F6368" />
-          <circle cx="60" cy="44" r="16" fill="#E8EAED" />
-          <path
-            d="M60 64 C40 64 26 78 26 94 L26 120 L94 120 L94 94 C94 78 80 64 60 64Z"
-            fill="#E8EAED"
+          <rect width="120" height="120" fill="hsl(var(--muted))" />
+          <image
+            href="/images/interviewer-avatar.png"
+            x="0"
+            y="0"
+            width="120"
+            height="120"
+            preserveAspectRatio="xMidYMid slice"
           />
         </g>
       </svg>

@@ -23,7 +23,7 @@ export const VideoPreview = memo(({ stream }: VideoPreviewProps) => {
         className="h-full w-full -scale-x-100 object-cover"
       />
       {!stream && (
-        <div className="absolute inset-0 flex flex-col items-center justify-end bg-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-end bg-background">
           {/* 스트림 대기 중일 때 면접자 캐릭터 일러스트로 영역 채움.
               video 요소 아래 배치되므로 stream 활성화 시 자동으로 가려진다. */}
           <img

@@ -50,6 +50,17 @@ Follow these rules strictly. Exceptions only when the user explicitly permits.
 
 ---
 
+## 🎨 Brand Point Color — Teal (2026-04-18 확정)
+
+- **Brand 시그니처**: `--brand` (`#0F766E` light / `#2dd4bf` dark). Tailwind: `bg-brand`, `text-brand`, `ring-brand`, `hover:bg-brand-hover`, `bg-brand-bg`
+- **사용해야 할 곳**: Primary CTA 버튼, 인라인 링크, focus ring, active 네비, 선택된 step/pill, 타임라인 scrubber, 챕터 배지(진행 맥락)
+- **사용하면 안 되는 곳**:
+  - Signal 계열(record/warning/success)과 **같은 요소에 동시 배치 금지** — `bg-brand`와 `text-signal-warning`을 한 버튼에 섞지 말 것
+  - Feedback 페이지 **읽기 맥락의 editorial 장식**(인용문 border, 챕터 숫자 over-line)에는 `accent-editorial` 유지. teal로 바꾸면 "읽기 톤"이 "액션 톤"으로 변질됨
+  - Signal-success (sage green)과 동일 화면에 대형으로 공존 금지 — 색약 시뮬레이션(Deuteranopia)에서 구분 불가
+
+---
+
 ## ✅ What To Do Instead
 
 - Before starting work, commit to one aesthetic direction: brutalist, editorial, retro-futuristic, soft pastel, industrial, playful, luxury, maximalist, refined minimal, etc.
