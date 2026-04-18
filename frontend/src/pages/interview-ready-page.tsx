@@ -4,7 +4,7 @@ import { BackLink } from '@/components/ui/back-link'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { DeviceTestSection } from '@/components/interview/device-test-section'
-import { Character } from '@/components/ui/character'
+import { ErrorState } from '@/components/ui/error-state'
 import { useInterview, useUpdateInterviewStatus, useRetryQuestions } from '@/hooks/use-interviews'
 import { useDeviceTest } from '@/hooks/use-device-test'
 import {
@@ -68,24 +68,25 @@ export const InterviewReadyPage = () => {
         <header className="px-5 pt-8 md:px-8">
           <BackLink to="/interview/setup" replace />
         </header>
-        <main className="mx-auto max-w-2xl px-5 pt-24 text-center">
-          <Character mood="confused" size={120} className="mx-auto mb-8" />
-          <h1 className="text-3xl font-extrabold text-text-primary">문제가 발생했어요</h1>
-          <p className="mt-4 text-text-secondary">
-            {is404 ? '세션을 찾을 수 없습니다.' : '일시적인 오류가 발생했습니다.'}
-          </p>
-          <div className="mt-12 flex flex-col gap-3">
-            <Button
-              variant="default"
-              size="lg"
-              fullWidth
-              onClick={() => navigate(is404 ? '/' : 0 as never)}
-              className="rounded-3xl font-black"
-            >
-              {is404 ? '홈으로 돌아가기' : '다시 시도하기'}
-            </Button>
-          </div>
-        </main>
+        <ErrorState
+          title={is404 ? '세션을 찾을 수 없습니다' : '문제가 발생했어요'}
+          description={
+            is404
+              ? '만료되었거나 존재하지 않는 면접 링크입니다.'
+              : '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+          }
+          actions={
+            is404
+              ? [
+                  { label: '새 면접 시작하기', onClick: () => navigate('/interview/setup', { replace: true }) },
+                  { label: '홈으로 돌아가기', onClick: () => navigate('/'), variant: 'outline' },
+                ]
+              : [
+                  { label: '다시 시도하기', onClick: () => navigate(0 as never) },
+                  { label: '설정 화면으로 돌아가기', onClick: () => navigate('/interview/setup', { replace: true }), variant: 'outline' },
+                ]
+          }
+        />
       </div>
     )
   }

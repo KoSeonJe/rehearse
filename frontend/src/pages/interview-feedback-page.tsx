@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import { Button } from '@/components/ui/button'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
@@ -13,6 +12,7 @@ import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { VideoDock } from '@/components/feedback/video-dock'
 import { FeedbackOnboardingCallout } from '@/components/feedback/feedback-onboarding-callout'
 import { Character } from '@/components/ui/character'
+import { ErrorState } from '@/components/ui/error-state'
 import { UtilityBar } from '@/components/layout/utility-bar'
 import { PageGrid } from '@/components/layout/page-grid'
 import { ChapterMarker } from '@/components/layout/chapter-marker'
@@ -456,19 +456,15 @@ export const InterviewFeedbackPage = () => {
   // ── 데이터 없음 ──────────────────────────────────────────────────────────
   if (!interview || questionSets.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5">
-        <Character mood="confused" size={140} className="mb-8" />
-        <h1 className="text-2xl font-bold tracking-tight text-foreground text-center">
-          피드백을 불러올 수 없습니다
-        </h1>
-        <Button
-          variant="default"
-          size="lg"
-          onClick={() => navigate('/')}
-          className="mt-10 w-full max-w-xs"
-        >
-          홈으로 돌아가기
-        </Button>
+      <div className="min-h-screen bg-background">
+        <ErrorState
+          title="피드백을 불러올 수 없습니다"
+          description="면접 데이터가 아직 준비되지 않았거나, 만료된 링크일 수 있습니다."
+          actions={[
+            { label: '다시 시도하기', onClick: () => navigate(0 as never) },
+            { label: '복습 목록으로', onClick: () => navigate('/review'), variant: 'outline' },
+          ]}
+        />
       </div>
     )
   }
