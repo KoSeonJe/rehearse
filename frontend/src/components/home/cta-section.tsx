@@ -33,11 +33,12 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
               id="cta-heading"
               className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-background"
             >
-              첫 면접 1건은<br />
-              무료입니다.
+              지금은<br />
+              전부 무료입니다.
             </h2>
             <p className="mt-5 text-base md:text-lg font-medium leading-relaxed text-background/75">
-              이력서만 있으면 3분 뒤 시작합니다. 이력서 기반으로 질문이 생성되고, 녹화가 끝나면 타임스탬프 피드백이 자동 생성됩니다.
+              베타 기간 동안 모든 기능을 결제 없이 사용할 수 있습니다. 이력서만 있으면 3분 뒤 시작 —
+              질문이 자동 생성되고, 녹화가 끝나면 타임스탬프 피드백이 따라옵니다.
             </p>
 
             <ul className="mt-10 divide-y divide-background/15 border-t border-background/20" aria-label="시작 전 체크리스트">
@@ -60,7 +61,7 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
                 aria-label="무료로 리허설 시작하기"
                 className="rounded-2xl bg-background px-9 text-foreground hover:bg-background/90"
               >
-                무료로 1회 면접 시작
+                무료로 시작하기
               </Button>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 import { Button } from '@/components/ui/button'
 import { PageGrid } from '@/components/layout/page-grid'
-import { FeedbackPreviewMock } from '@/components/home/feedback-preview-mock'
+import { InterviewWebcamMock } from '@/components/home/interview-webcam-mock'
 
 interface HeroSectionProps {
   onNavigate: () => void
@@ -49,17 +49,17 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
               aria-label="무료로 리허설 시작하기"
               className="rounded-2xl px-9"
             >
-              무료로 1회 면접 시작
+              무료로 시작하기
             </Button>
             <p className="text-xs font-medium text-muted-foreground">
-              <span aria-hidden="true">30초 가입 · Chrome 권장</span>
-              <span className="sr-only">30초 가입, Chrome 권장</span>
+              <span aria-hidden="true">베타 기간 전 기능 무료 · 30초 가입 · Chrome 권장</span>
+              <span className="sr-only">베타 기간 전 기능 무료, 30초 가입, Chrome 권장</span>
             </p>
           </div>
         </div>
 
         <div className="col-span-4 md:col-span-3 lg:col-span-6 mt-10 md:mt-0 flex items-center">
-          <FeedbackPreviewMock variant="hero" className="rotate-[0.5deg]" />
+          <InterviewWebcamMock className="rotate-[0.5deg]" />
         </div>
       </PageGrid>
     </section>
