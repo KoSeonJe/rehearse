@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { ContentPageShell } from '@/components/content/content-page-shell'
 
 const TITLE = '리허설 자주 묻는 질문 (FAQ) | AI 모의면접 플랫폼'
@@ -59,20 +60,49 @@ const faqJsonLd = {
   })),
 }
 
-export const FaqPage = () => (
+export const FaqPage = () => {
+  const { hash } = useLocation()
+
+  /* 딥링크 지원 — #faq-3 등 해시가 있으면 해당 details open + 스크롤. */
+  useEffect(() => {
+    if (!hash) return
+    const target = document.getElementById(hash.slice(1))
+    if (target instanceof HTMLDetailsElement) {
+      target.open = true
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [hash])
+
+  return (
   <ContentPageShell title={TITLE} description={DESCRIPTION} canonicalPath={PATH} jsonLd={faqJsonLd}>
     <h1 className="text-3xl font-extrabold tracking-tight text-text-primary mb-6">자주 묻는 질문</h1>
     <p className="text-base text-text-secondary leading-relaxed mb-10">
       리허설을 사용하면서 자주 받는 질문을 모았습니다. 추가 문의는 홈 화면 하단의 피드백 채널을 이용해 주세요.
     </p>
 
-    <div className="space-y-6">
-      {FAQS.map((f) => (
-        <div key={f.q} className="border-b border-border/40 pb-5">
-          <h2 className="text-base font-bold text-text-primary mb-2">Q. {f.q}</h2>
-          <p className="text-sm text-text-secondary leading-relaxed">{f.a}</p>
-        </div>
-      ))}
+    <div className="space-y-3">
+      {FAQS.map((f, idx) => {
+        const itemId = `faq-${idx + 1}`
+        return (
+          <details
+            key={f.q}
+            id={itemId}
+            className="group border-b border-border/40 pb-4 open:pb-5"
+          >
+            <summary className="flex items-start justify-between gap-4 cursor-pointer list-none py-2 -my-2 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <h2 className="text-base font-bold text-text-primary">Q. {f.q}</h2>
+              <span
+                aria-hidden="true"
+                className="text-muted-foreground transition-transform duration-[var(--duration-fast)] group-open:rotate-45 text-xl leading-none shrink-0 mt-0.5"
+              >
+                +
+              </span>
+            </summary>
+            <p className="text-sm text-text-secondary leading-relaxed mt-3">{f.a}</p>
+            {/* 딥링크 앵커 — URL 해시(#faq-N)로 접근 시 자동 스크롤 + open 처리 */}
+          </details>
+        )
+      })}
     </div>
 
     <div className="mt-12 p-6 rounded-xl bg-muted border border-border/50">
@@ -83,4 +113,5 @@ export const FaqPage = () => (
       </Link>
     </div>
   </ContentPageShell>
-)
+  )
+}
