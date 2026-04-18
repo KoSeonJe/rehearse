@@ -18,16 +18,15 @@ import { Logo } from '@/components/ui/logo'
 import { BackLink } from '@/components/ui/back-link'
 import { PageGrid } from '@/components/layout/page-grid'
 import { ChapterMarker } from '@/components/layout/chapter-marker'
-import { StickyOutline, type OutlineItem } from '@/components/layout/sticky-outline'
+import { StickyOutline } from '@/components/layout/sticky-outline'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
+import { buildOutlineItems } from '@/lib/feedback/outline'
 import type {
   AnalysisStatus,
   ApiResponse,
   InterviewSession,
   InterviewType,
   QuestionSetFeedbackResponse,
-  TimestampFeedback,
-  QuestionWithAnswer,
 } from '@/types/interview'
 
 // ---------------------------------------------------------------------------
@@ -88,61 +87,6 @@ const failureMessages: Record<string, string> = {
   VISION_ERROR: '영상 분석 중 오류가 발생했습니다.',
   ZOMBIE_TIMEOUT: '분석이 시간 내 완료되지 않았습니다.',
   INTERNAL_ERROR: '분석 중 오류가 발생했습니다.',
-}
-
-// ---------------------------------------------------------------------------
-// Outline item builder (extracted from QuestionList logic)
-// ---------------------------------------------------------------------------
-interface PlayableQuestion extends QuestionWithAnswer {
-  startMs: number
-  endMs: number
-}
-
-const isPlayable = (q: QuestionWithAnswer): q is PlayableQuestion =>
-  q.startMs !== null && q.endMs !== null
-
-function buildOutlineItems(
-  questions: QuestionWithAnswer[],
-  feedbacks: TimestampFeedback[],
-): OutlineItem[] {
-  const playable = questions.filter(isPlayable)
-  const sorted = [...playable].sort((a, b) => a.startMs - b.startMs)
-
-  const labeled = sorted.reduce<{
-    items: Array<{ q: PlayableQuestion; label: string }>
-    mainCounter: number
-    followupCounter: number
-  }>(
-    (acc, q) => {
-      const isFollowup = q.questionType === 'FOLLOWUP'
-      if (!isFollowup) {
-        const nextMain = acc.mainCounter + 1
-        return {
-          items: [...acc.items, { q, label: `Q${nextMain}` }],
-          mainCounter: nextMain,
-          followupCounter: 0,
-        }
-      }
-      const nextFollowup = acc.followupCounter + 1
-      const parentMain = acc.mainCounter || 1
-      return {
-        items: [...acc.items, { q, label: `Q${parentMain}-${nextFollowup}` }],
-        mainCounter: acc.mainCounter,
-        followupCounter: nextFollowup,
-      }
-    },
-    { items: [], mainCounter: 0, followupCounter: 0 },
-  ).items
-
-  return labeled.map(({ q, label }, idx) => {
-    const fb = feedbacks.find((f) => f.startMs >= q.startMs && f.startMs < q.endMs)
-    return {
-      id: fb ? `feedback-${fb.id}` : `q-${q.questionId}`,
-      label,
-      index: idx + 1,
-      hasIssue: false,
-    }
-  })
 }
 
 // ---------------------------------------------------------------------------
