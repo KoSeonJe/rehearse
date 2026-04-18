@@ -40,7 +40,7 @@ const LoadingScreen = () => (
       <div className="h-px w-24 bg-foreground/10 mx-auto overflow-hidden">
         <div className="h-full bg-foreground/30 animate-progress-loading" />
       </div>
-      <p className="text-xs font-medium text-foreground/40 tracking-widest uppercase">준비 중</p>
+      <p className="text-sm font-medium text-foreground/45">준비 중</p>
     </div>
   </div>
 )
@@ -74,9 +74,9 @@ const RecLabel = ({ visible }: RecLabelProps) => (
   </div>
 )
 
-// ─── 질문 표시 영역 ──────────────────────────────────────────────────────────
+// ─── 질문 Caption (비디오 하단 중앙 오버레이) ─────────────────────────────────
 
-interface QuestionDisplayProps {
+interface QuestionCaptionProps {
   isGreeting: boolean
   currentQuestion: { content: string } | undefined
   currentFollowUp: { question: string; type: string } | null
@@ -86,7 +86,7 @@ interface QuestionDisplayProps {
   autoTransitionMessage: string | null
 }
 
-const QuestionDisplay = ({
+const QuestionCaption = ({
   isGreeting,
   currentQuestion,
   currentFollowUp,
@@ -94,74 +94,60 @@ const QuestionDisplay = ({
   followUpRound,
   timeWarning,
   autoTransitionMessage,
-}: QuestionDisplayProps) => (
-  <div className="flex-1 flex flex-col gap-3 overflow-y-auto">
-    {/* 시간 경고 */}
+}: QuestionCaptionProps) => (
+  <div className="pointer-events-none absolute bottom-6 left-1/2 z-10 w-[calc(100vw-32px)] max-w-2xl -translate-x-1/2 space-y-2">
     {timeWarning && (
-      <div className="px-3 py-2 rounded bg-signal-warning-bg border border-signal-warning/20 animate-fade-in">
+      <div className="pointer-events-auto rounded-lg bg-signal-warning-bg/90 backdrop-blur-sm border border-signal-warning/25 px-4 py-2 text-center animate-fade-in">
         <span className="text-xs font-medium text-signal-warning">마무리할 시간입니다</span>
       </div>
     )}
 
-    {/* 자동 전환 메시지 */}
     {autoTransitionMessage && (
-      <div className="px-3 py-2 rounded bg-foreground/5 border border-foreground/10 animate-fade-in">
-        <span className="text-xs text-foreground/60">{autoTransitionMessage}</span>
+      <div className="pointer-events-auto rounded-lg bg-foreground/6 backdrop-blur-sm border border-foreground/10 px-4 py-2 text-center animate-fade-in">
+        <span className="text-xs text-foreground/70">{autoTransitionMessage}</span>
       </div>
     )}
 
-    {/* 메인 질문 */}
-    {!currentFollowUp && !isFollowUpLoading && (
-      <div className="animate-fade-in">
-        <p className="text-sm font-medium leading-relaxed text-foreground/80">
-          {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
-        </p>
-      </div>
-    )}
-
-    {/* 후속 질문 로딩 */}
-    {isFollowUpLoading && (
-      <div className="flex items-center gap-2 animate-fade-in">
+    {isFollowUpLoading ? (
+      <div className="pointer-events-auto flex items-center justify-center gap-2 rounded-lg bg-foreground/6 backdrop-blur-sm px-4 py-3 animate-fade-in">
         <div className="h-3 w-3 animate-spin rounded-full border border-foreground/30 border-t-transparent" />
-        <span className="text-xs text-foreground/40">후속 질문 생성 중</span>
+        <span className="text-xs text-foreground/50">후속 질문 생성 중</span>
       </div>
-    )}
-
-    {/* 후속 질문 */}
-    {currentFollowUp && !isFollowUpLoading && (
-      <div className="animate-fade-in">
-        <div className="flex items-center gap-1.5 mb-2">
-          <span className="rounded-xs bg-accent-editorial-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-editorial">
+    ) : currentFollowUp ? (
+      <div className="pointer-events-auto rounded-lg bg-foreground/6 backdrop-blur-sm px-5 py-3 text-center animate-fade-in">
+        <div className="mb-1.5 flex items-center justify-center gap-1.5">
+          <span className="rounded-xs bg-accent-editorial-bg px-2 py-0.5 text-[11px] font-semibold text-accent-editorial">
             후속 {followUpRound + 1}/{MAX_FOLLOWUP_ROUNDS}
           </span>
-          <span className="rounded-xs bg-accent-editorial-bg px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-accent-editorial">
+          <span className="rounded-xs bg-accent-editorial-bg px-2 py-0.5 text-[11px] font-semibold text-accent-editorial">
             {FOLLOW_UP_TYPE_LABELS[currentFollowUp.type] ?? currentFollowUp.type}
           </span>
         </div>
-        <p className="text-sm font-medium leading-relaxed text-foreground/80">
+        <p className="text-sm md:text-base font-medium leading-relaxed text-foreground line-clamp-3">
           {currentFollowUp.question}
+        </p>
+      </div>
+    ) : (
+      <div className="pointer-events-auto rounded-lg bg-foreground/6 backdrop-blur-sm px-5 py-3 text-center animate-fade-in">
+        <p className="text-sm md:text-base font-medium leading-relaxed text-foreground line-clamp-3">
+          {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
         </p>
       </div>
     )}
   </div>
 )
 
-// ─── 우측 Rail (lg+) ─────────────────────────────────────────────────────────
+// ─── 하단 Control Bar (데스크톱 + 모바일 통합) ────────────────────────────────
 
-interface RightRailProps {
-  isGreeting: boolean
-  currentQuestion: { content: string } | undefined
-  currentFollowUp: { question: string; type: string } | null
-  isFollowUpLoading: boolean
-  followUpRound: number
-  timeWarning: boolean
-  autoTransitionMessage: string | null
+interface ControlBarProps {
   phase: InterviewPhase
+  isTtsSpeaking: boolean
+  isFollowUpLoading: boolean
+  isGreeting: boolean
   startTime: number | null
   durationMinutes: number | null | undefined
   questions: { content: string }[]
   currentQuestionIndex: number
-  isTtsSpeaking: boolean
   onTimeWarning: () => void
   onTimeExpired: () => void
   onStartAnswer: () => void
@@ -170,155 +156,47 @@ interface RightRailProps {
   onRequestFinish: () => void
 }
 
-const RightRail = ({
-  isGreeting,
-  currentQuestion,
-  currentFollowUp,
-  isFollowUpLoading,
-  followUpRound,
-  timeWarning,
-  autoTransitionMessage,
+const ControlBar = ({
   phase,
+  isTtsSpeaking,
+  isFollowUpLoading,
+  isGreeting,
   startTime,
   durationMinutes,
   questions,
   currentQuestionIndex,
-  isTtsSpeaking,
   onTimeWarning,
   onTimeExpired,
   onStartAnswer,
   onStopAnswer,
   onFinishInterview,
   onRequestFinish,
-}: RightRailProps) => (
-  <aside
-    className="hidden md:flex flex-col md:w-64 lg:w-72 xl:w-80 h-full border-l border-foreground/8 bg-interview-stage"
-    aria-label="면접 컨트롤"
-  >
-    {/* 헤더: 진행 현황 */}
-    <div className="px-4 py-4 border-b border-foreground/8">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-foreground/30 mb-1">
-        AI 모의 면접
-      </p>
-      {!isGreeting && questions.length > 0 && (
-        <p className="text-xs text-foreground/50 font-tabular">
-          {currentQuestionIndex + 1} / {questions.length}
-        </p>
-      )}
-    </div>
-
-    {/* 타이머 */}
-    <div className="px-4 py-3 border-b border-foreground/8">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-foreground/30 mb-1">
-        {durationMinutes ? '남은 시간' : '경과 시간'}
-      </p>
-      <InterviewTimer
-        startTime={startTime}
-        durationMinutes={durationMinutes}
-        onTimeWarning={onTimeWarning}
-        onTimeExpired={onTimeExpired}
-      />
-    </div>
-
-    {/* 질문 디스플레이 */}
-    <div className="flex-1 px-4 py-4 overflow-y-auto">
-      <p className="text-[10px] font-semibold tracking-widest uppercase text-foreground/30 mb-2">
-        현재 질문
-      </p>
-      <QuestionDisplay
-        isGreeting={isGreeting}
-        currentQuestion={currentQuestion}
-        currentFollowUp={currentFollowUp}
-        isFollowUpLoading={isFollowUpLoading}
-        followUpRound={followUpRound}
-        timeWarning={timeWarning}
-        autoTransitionMessage={autoTransitionMessage}
-      />
-    </div>
-
-    {/* 하단 컨트롤 — 항상 visible */}
-    <div className="px-4 py-4 border-t border-foreground/8 flex flex-col gap-2">
-      <InterviewControls
-        phase={phase}
-        isTtsSpeaking={isTtsSpeaking}
-        isFollowUpLoading={isFollowUpLoading}
-        onStartAnswer={onStartAnswer}
-        onStopAnswer={onStopAnswer}
-        onFinishInterview={onFinishInterview}
-      />
-      {/* 종료 버튼 — 항상 visible, 44px 이상 hitbox */}
-      {phase !== 'finishing' && phase !== 'completed' && (
-        <button
-          onClick={onRequestFinish}
-          className="cursor-pointer w-full h-11 min-w-[44px] rounded-full border border-foreground/20 text-sm font-medium text-foreground/50 transition-colors duration-[var(--duration-fast)] hover:border-signal-record/50 hover:text-signal-record active:scale-95"
-        >
-          면접 종료
-        </button>
-      )}
-    </div>
-  </aside>
-)
-
-// ─── 하단 Bar (모바일 < md) ──────────────────────────────────────────────────
-
-interface MobileBarProps {
-  phase: InterviewPhase
-  isTtsSpeaking: boolean
-  isFollowUpLoading: boolean
-  isGreeting: boolean
-  currentQuestion: { content: string } | undefined
-  currentFollowUp: { question: string; type: string } | null
-  startTime: number | null
-  durationMinutes: number | null | undefined
-  onTimeWarning: () => void
-  onTimeExpired: () => void
-  onStartAnswer: () => void
-  onStopAnswer: () => void
-  onFinishInterview: () => void
-  onRequestFinish: () => void
-}
-
-const MobileBar = ({
-  phase,
-  isTtsSpeaking,
-  isFollowUpLoading,
-  isGreeting,
-  currentQuestion,
-  currentFollowUp,
-  startTime,
-  durationMinutes,
-  onTimeWarning,
-  onTimeExpired,
-  onStartAnswer,
-  onStopAnswer,
-  onFinishInterview,
-  onRequestFinish,
-}: MobileBarProps) => (
+}: ControlBarProps) => (
   <div
-    className="md:hidden flex items-center justify-between px-3 border-t border-foreground/8 bg-interview-stage"
-    style={{ height: 56, minHeight: 56 }}
+    className="flex items-center justify-between gap-3 border-t border-foreground/8 bg-interview-stage px-3 md:px-5"
+    style={{ height: 64, minHeight: 64 }}
     aria-label="면접 컨트롤"
   >
-    {/* 좌: 타이머 또는 질문 축약 */}
-    <div className="flex items-center gap-2 min-w-0 flex-1">
+    {/* 좌: 타이머 + 진행도 */}
+    <div className="flex min-w-0 items-center gap-3">
       <InterviewTimer
         startTime={startTime}
         durationMinutes={durationMinutes}
         onTimeWarning={onTimeWarning}
         onTimeExpired={onTimeExpired}
       />
-      <span className="text-foreground/20 text-xs">|</span>
-      <span className="text-xs text-foreground/40 truncate max-w-[120px]">
-        {currentFollowUp
-          ? '후속 질문'
-          : isGreeting
-            ? '자기소개'
-            : currentQuestion?.content}
-      </span>
+      {!isGreeting && questions.length > 0 && (
+        <>
+          <span className="hidden text-xs text-foreground/20 sm:inline">|</span>
+          <span className="hidden font-tabular text-xs text-foreground/50 sm:inline">
+            {currentQuestionIndex + 1} / {questions.length}
+          </span>
+        </>
+      )}
     </div>
 
-    {/* 우: 컨트롤 + 종료 */}
-    <div className="flex items-center gap-2 shrink-0">
+    {/* 중앙: 답변 컨트롤 */}
+    <div className="flex items-center">
       <InterviewControls
         phase={phase}
         isTtsSpeaking={isTtsSpeaking}
@@ -327,12 +205,17 @@ const MobileBar = ({
         onStopAnswer={onStopAnswer}
         onFinishInterview={onFinishInterview}
       />
+    </div>
+
+    {/* 우: 종료 */}
+    <div className="flex items-center">
       {phase !== 'finishing' && phase !== 'completed' && (
         <button
           onClick={onRequestFinish}
-          className="cursor-pointer h-11 min-w-[44px] px-3 rounded-full border border-foreground/20 text-xs font-medium text-foreground/50 transition-colors duration-[var(--duration-fast)] hover:border-signal-record/50 hover:text-signal-record active:scale-95"
+          className="cursor-pointer h-11 min-w-[44px] rounded-full border border-foreground/20 px-3 md:px-4 text-xs md:text-sm font-medium text-foreground/50 transition-colors duration-[var(--duration-fast)] hover:border-signal-record/50 hover:text-signal-record active:scale-95"
         >
-          종료
+          <span className="hidden md:inline">면접 종료</span>
+          <span className="md:hidden">종료</span>
         </button>
       )}
     </div>
@@ -558,68 +441,45 @@ export const InterviewPage = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* ── 메인 레이아웃: 비디오 full-bleed + 우측 rail ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── 메인 스테이지: 비디오 full-bleed, 하단 ControlBar 통합 ── */}
+      <main className="relative flex-1 overflow-hidden">
+        {/* AI 면접관 — 중앙 배치, 모노크롬 링 (interviewer-avatar 내부에서 mood 처리) */}
+        <div className="absolute inset-0 flex items-center justify-center bg-interview-stage">
+          <InterviewerAvatar mood={avatarMood} size={200} />
+        </div>
 
-        {/* ── 비디오 영역 (full-bleed) ── */}
-        <main className="relative flex-1 overflow-hidden">
+        {/* 상단 좌측: REC 라벨 */}
+        <div className="absolute top-4 left-4 z-10">
+          <RecLabel visible={phase === 'recording'} />
+        </div>
 
-          {/* AI 면접관 타일 — 완전 full-bleed, ring/glow 없음 */}
-          <div className="absolute inset-0 flex items-center justify-center bg-interview-stage">
-            <InterviewerAvatar mood={avatarMood} size={200} />
-          </div>
+        {/* 상단 우측: AI 면접관 명패 */}
+        <div className="absolute top-4 right-4 z-10 flex items-center gap-2 px-2.5 py-1.5 bg-foreground/6 backdrop-blur-sm rounded">
+          {isTtsSpeaking && (
+            <svg className="w-3 h-3 text-foreground/60" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+              <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
+            </svg>
+          )}
+          <span className="text-[11px] font-medium text-foreground/60">AI 면접관</span>
+        </div>
 
-          {/* 상단 좌측: REC 라벨 고정 */}
-          <div className="absolute top-3 left-3 z-10">
-            <RecLabel visible={phase === 'recording'} />
-          </div>
-
-          {/* 상단 좌측: AI 면접관 명패 */}
-          <div className="absolute bottom-3 left-3 z-10 flex items-center gap-2 px-2 py-1 bg-foreground/6 backdrop-blur-sm rounded">
-            {isTtsSpeaking && (
-              <svg className="w-3 h-3 text-foreground/60" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        {/* 사용자 비디오 PIP (우하단, 컨트롤바 위쪽) */}
+        <div className="absolute bottom-4 right-4 w-[200px] md:w-[260px] aspect-video rounded-lg overflow-hidden shadow-lg z-20 ring-1 ring-foreground/15">
+          <VideoPreview stream={mediaStream.stream} />
+          <div className="absolute bottom-1.5 left-2 flex items-center gap-1 z-10">
+            {phase === 'recording' && (
+              <svg className="w-2.5 h-2.5 text-signal-record" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
                 <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
               </svg>
             )}
-            <span className="text-[11px] font-medium text-foreground/60">AI 면접관</span>
+            <span className="text-[10px] font-medium text-foreground/60">나</span>
           </div>
+        </div>
 
-          {/* 사용자 비디오 PIP (우하단) */}
-          <div className="absolute bottom-4 right-4 w-[240px] md:w-[280px] aspect-video rounded overflow-hidden shadow-lg z-20 ring-1 ring-foreground/10">
-            <VideoPreview stream={mediaStream.stream} />
-            <div className="absolute bottom-1.5 left-2 flex items-center gap-1 z-10">
-              {phase === 'recording' && (
-                <svg className="w-2.5 h-2.5 text-signal-record" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-                  <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-                </svg>
-              )}
-              <span className="text-[10px] font-medium text-foreground/50">나</span>
-            </div>
-          </div>
-
-          {/* 모바일 전용: 질문 caption (비디오 하단) */}
-          <div className="md:hidden absolute bottom-16 left-0 right-0 px-3 z-10">
-            {!currentFollowUp && !isFollowUpLoading && (
-              <div className="bg-foreground/6 backdrop-blur-sm rounded px-3 py-2">
-                <p className="text-xs font-medium text-foreground/70 line-clamp-2 text-center">
-                  {isGreeting ? '간단하게 자기소개를 해주세요' : currentQuestion?.content}
-                </p>
-              </div>
-            )}
-            {currentFollowUp && !isFollowUpLoading && (
-              <div className="bg-foreground/6 backdrop-blur-sm rounded px-3 py-2">
-                <p className="text-xs font-medium text-foreground/70 line-clamp-2 text-center">
-                  {currentFollowUp.question}
-                </p>
-              </div>
-            )}
-          </div>
-        </main>
-
-        {/* ── 우측 Rail (md+) ── */}
-        <RightRail
+        {/* 질문 Caption — 하단 중앙 오버레이 (PIP 왼쪽 공간에 정렬) */}
+        <QuestionCaption
           isGreeting={isGreeting}
           currentQuestion={currentQuestion}
           currentFollowUp={currentFollowUp}
@@ -627,31 +487,19 @@ export const InterviewPage = () => {
           followUpRound={followUpRound}
           timeWarning={timeWarning}
           autoTransitionMessage={autoTransitionMessage}
-          phase={phase}
-          startTime={startTime}
-          durationMinutes={interview.durationMinutes}
-          questions={questions}
-          currentQuestionIndex={currentQuestionIndex}
-          isTtsSpeaking={isTtsSpeaking}
-          onTimeWarning={() => setTimeWarning(true)}
-          onTimeExpired={handleTimeExpired}
-          onStartAnswer={handleStartAnswer}
-          onStopAnswer={handleStopAnswer}
-          onFinishInterview={handleFinishInterview}
-          onRequestFinish={() => setShowFinishDialog(true)}
         />
-      </div>
+      </main>
 
-      {/* ── 하단 Bar (모바일 < md, 56px 고정) ── */}
-      <MobileBar
+      {/* ── 하단 Control Bar (단일, 데스크톱+모바일 통합) ── */}
+      <ControlBar
         phase={phase}
         isTtsSpeaking={isTtsSpeaking}
         isFollowUpLoading={isFollowUpLoading}
         isGreeting={isGreeting}
-        currentQuestion={currentQuestion}
-        currentFollowUp={currentFollowUp}
         startTime={startTime}
         durationMinutes={interview.durationMinutes}
+        questions={questions}
+        currentQuestionIndex={currentQuestionIndex}
         onTimeWarning={() => setTimeWarning(true)}
         onTimeExpired={handleTimeExpired}
         onStartAnswer={handleStartAnswer}
