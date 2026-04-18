@@ -10,6 +10,7 @@ import { StepInterviewType } from '@/components/setup/step-interview-type'
 import { SetupNavigation } from '@/components/setup/setup-navigation'
 import { PageGrid } from '@/components/layout/page-grid'
 import { UtilityBar } from '@/components/layout/utility-bar'
+import { POSITION_LABELS, LEVEL_LABELS, TECH_STACK_LABELS } from '@/constants/interview-labels'
 
 const STEP_LABELS: Record<number, string> = {
   1: '직무 선택',
@@ -91,29 +92,52 @@ export const InterviewSetupPage = () => {
             })}
           </ol>
 
-          {/* 선택 누적 요약 */}
-          {setup.position && (
-            <div className="mt-10 border-t border-foreground/10 pt-6 space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground mb-3">
-                선택 내역
+          {/* 선택 누적 요약 — 사용자가 지나온 스텝의 결정만 표시 (C3 수정).
+              이전에는 hook 초기값(level='JUNIOR', duration=30)이 즉시 표시되어
+              "결정 프로세스 신뢰 상실" 이슈 발생 → currentStep 기반 visited 판정으로 전환. */}
+          <div className="mt-10 border-t border-foreground/10 pt-6 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground mb-3">
+              선택 내역
+            </p>
+
+            {/* 직무 (Step 1 완료 후 노출) */}
+            <p className="text-xs text-foreground/70">
+              <span className="font-semibold text-foreground">직무</span> ·{' '}
+              {setup.currentStep > 1 && setup.position ? (
+                POSITION_LABELS[setup.position].label
+              ) : (
+                <span className="text-foreground/40">미선택</span>
+              )}
+            </p>
+
+            {/* 기술 스택 (Step 2 완료 + 선택됨) */}
+            {setup.currentStep > 2 && setup.techStack && (
+              <p className="text-xs text-foreground/70">
+                <span className="font-semibold text-foreground">스택</span> ·{' '}
+                {TECH_STACK_LABELS[setup.techStack].label}
               </p>
-              {setup.position && (
-                <p className="text-xs text-foreground/70">
-                  <span className="font-semibold text-foreground">직무</span> · {setup.position}
-                </p>
+            )}
+
+            {/* 경력 수준 (Step 3 완료 후 노출) */}
+            <p className="text-xs text-foreground/70">
+              <span className="font-semibold text-foreground">수준</span> ·{' '}
+              {setup.currentStep > 3 && setup.level ? (
+                LEVEL_LABELS[setup.level].label
+              ) : (
+                <span className="text-foreground/40">미선택</span>
               )}
-              {setup.level && (
-                <p className="text-xs text-foreground/70">
-                  <span className="font-semibold text-foreground">수준</span> · {setup.level}
-                </p>
+            </p>
+
+            {/* 면접 시간 (Step 4 완료 후 노출) */}
+            <p className="text-xs text-foreground/70">
+              <span className="font-semibold text-foreground">시간</span> ·{' '}
+              {setup.currentStep > 4 ? (
+                `${setup.durationMinutes}분`
+              ) : (
+                <span className="text-foreground/40">미선택</span>
               )}
-              {setup.durationMinutes && (
-                <p className="text-xs text-foreground/70">
-                  <span className="font-semibold text-foreground">시간</span> · {setup.durationMinutes}분
-                </p>
-              )}
-            </div>
-          )}
+            </p>
+          </div>
         </aside>
 
         {/* 모바일 — 상단 수평 탭바 (< lg) */}
