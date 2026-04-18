@@ -45,7 +45,7 @@ export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onRese
         {status === 'idle' && (
           <button
             onClick={onSpeakerTest}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-muted active:scale-95"
           >
             테스트
           </button>
@@ -61,7 +61,7 @@ export const SpeakerTestRow = ({ status, onSpeakerTest, onConfirmSpeaker, onRese
         {status === 'passed' && onReset && (
           <button
             onClick={onReset}
-            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-slate-200 active:scale-95"
+            className="h-10 rounded-xl bg-surface px-5 text-xs font-bold text-text-secondary transition-colors hover:bg-muted active:scale-95"
           >
             다시 테스트
           </button>

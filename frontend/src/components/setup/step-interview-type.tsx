@@ -45,9 +45,6 @@ export const StepInterviewType = ({
 }: StepInterviewTypeProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 4 — Interview Type
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         어떤 면접을 연습할까요?
       </h1>
@@ -64,8 +61,8 @@ export const StepInterviewType = ({
               disabled={isLoading}
               className={`flex w-full items-center justify-between rounded-2xl p-5 text-left transition-colors active:scale-[0.98] ${
                 interviewTypes.includes(type)
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                  : 'bg-surface text-text-primary hover:bg-slate-200'
+                  ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                  : 'bg-surface text-text-primary hover:bg-muted'
               }`}
             >
               <div className="flex flex-col gap-1">
@@ -85,7 +82,7 @@ export const StepInterviewType = ({
               <div
                 className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2 transition-colors ${
                   interviewTypes.includes(type)
-                    ? 'border-white bg-white text-text-primary'
+                    ? 'border-brand-foreground bg-brand-foreground text-brand'
                     : 'border-text-tertiary'
                 }`}
               >
@@ -108,7 +105,7 @@ export const StepInterviewType = ({
                     className={`rounded-full px-4 py-2 text-xs font-bold transition-colors active:scale-95 ${
                       csSubTopics.includes(topic)
                         ? 'bg-secondary text-text-primary ring-1 ring-border'
-                        : 'bg-surface text-text-secondary hover:bg-slate-200'
+                        : 'bg-surface text-text-secondary hover:bg-muted'
                     }`}
                   >
                     {CS_SUB_TOPIC_LABELS[topic]}

@@ -34,7 +34,7 @@ export const ContentPageShell = ({
         {jsonLd && <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>}
       </Helmet>
 
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
           <Link
             to="/"

@@ -39,14 +39,14 @@ export const FinishingOverlay = ({ open, stage, total, completed }: FinishingOve
             <h2 className="text-base font-medium text-white mb-1">
               면접을 안전하게 종료하고 있어요
             </h2>
-            <p className="text-sm text-studio-text-secondary">
+            <p className="text-sm text-foreground/60">
               잠시만 기다려 주세요. 화면을 닫지 말아 주세요.
             </p>
           </div>
 
           {/* Stage 메시지 */}
           <div className="w-full">
-            <div className="flex items-center justify-between text-xs text-studio-text-secondary mb-2">
+            <div className="flex items-center justify-between text-xs text-foreground/60 mb-2">
               <span>{STAGE_LABELS[stage]}</span>
               {showProgress && (
                 <span className="tabular-nums">

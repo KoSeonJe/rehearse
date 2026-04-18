@@ -15,9 +15,6 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
 
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 2 — Tech Stack
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         기술 스택을 선택해주세요
       </h1>
@@ -42,8 +39,8 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
               aria-pressed={isSelected}
               className={`flex flex-col items-start gap-1.5 rounded-2xl p-5 transition-colors active:scale-95 ${
                 isSelected
-                  ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                  : 'bg-surface text-text-primary hover:bg-slate-200'
+                  ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                  : 'bg-surface text-text-primary hover:bg-muted'
               }`}
             >
               <div className="flex w-full items-center justify-between gap-1">
@@ -52,7 +49,7 @@ export const StepTechStack = ({ position, techStack, isLoading, onSelect }: Step
                   <Badge
                     className={`shrink-0 rounded-full text-[10px] font-bold border-transparent ${
                       isSelected
-                        ? 'bg-white/20 text-white hover:bg-white/20'
+                        ? 'bg-brand-foreground/20 text-brand-foreground hover:bg-brand-foreground/20'
                         : 'bg-secondary text-text-secondary hover:bg-secondary'
                     }`}
                   >

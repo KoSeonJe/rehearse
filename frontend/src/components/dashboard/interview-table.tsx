@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
@@ -37,7 +36,7 @@ const CATEGORY_BADGE_CLASS: Record<InterviewType, string> = {
   DATA_PIPELINE: 'bg-orange-100 text-orange-700 border-transparent hover:bg-orange-100',
   UI_FRAMEWORK: 'bg-sky-100 text-sky-700 border-transparent hover:bg-sky-100',
   BROWSER_PERFORMANCE: 'bg-cyan-100 text-cyan-700 border-transparent hover:bg-cyan-100',
-  FULLSTACK_STACK: 'bg-teal-100 text-teal-700 border-transparent hover:bg-teal-100',
+  FULLSTACK_STACK: 'bg-brand-bg text-brand border-transparent hover:bg-brand-bg',
   INFRA_CICD: 'bg-emerald-100 text-emerald-700 border-transparent hover:bg-emerald-100',
   CLOUD: 'bg-lime-100 text-lime-700 border-transparent hover:bg-lime-100',
 }
@@ -89,9 +88,9 @@ export const InterviewTable = ({
 
   if (isLoading) {
     return (
-      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
+      <div className="overflow-hidden border-t border-foreground/8">
         <InterviewTableSkeleton />
-      </Card>
+      </div>
     )
   }
 
@@ -123,26 +122,26 @@ export const InterviewTable = ({
 
   return (
     <>
-      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
+      <div className="overflow-hidden border-t border-foreground/8">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-muted">
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <tr className="border-b border-foreground/8 bg-background">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 포지션
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 카테고리
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 설정 시간
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 답변 수
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 날짜
               </th>
-              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground">
                 상태
               </th>
             </tr>
@@ -163,7 +162,7 @@ export const InterviewTable = ({
                 <tr
                   key={interview.id}
                   onClick={() => handleRowClick(interview)}
-                  className={`group border-b border-border/50 last:border-0 transition-colors hover:bg-muted/50 cursor-pointer ${
+                  className={`group border-b border-foreground/8 last:border-0 transition-colors hover:bg-muted/40 cursor-pointer ${
                     isInProgress ? 'opacity-80' : ''
                   }`}
                   title={isInProgress ? '클릭하여 면접 이어하기' : undefined}
@@ -231,7 +230,7 @@ export const InterviewTable = ({
             })}
           </tbody>
         </table>
-      </Card>
+      </div>
 
       <DeleteConfirmDialog
         isOpen={dialogId !== null}

@@ -9,9 +9,6 @@ interface StepDurationProps {
 export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurationProps) => {
   return (
     <section className="motion-safe:animate-fadeIn">
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-        Step 3 — Duration
-      </p>
       <h1 className="text-3xl font-extrabold tracking-tighter text-text-primary sm:text-4xl">
         면접 시간을 선택해주세요
       </h1>
@@ -28,8 +25,8 @@ export const StepDuration = ({ durationMinutes, isLoading, onSelect }: StepDurat
             disabled={isLoading}
             className={`flex flex-col items-center gap-2 rounded-2xl p-6 transition-colors active:scale-95 ${
               durationMinutes === preset.minutes
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
-                : 'bg-surface text-text-primary hover:bg-slate-200'
+                ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25'
+                : 'bg-surface text-text-primary hover:bg-muted'
             }`}
           >
             <span className="text-3xl font-extrabold">{preset.label}</span>

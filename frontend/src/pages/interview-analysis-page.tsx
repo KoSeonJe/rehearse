@@ -9,6 +9,7 @@ import { useAllQuestionSetStatuses, useQuestionsWithAnswers, useRetryAnalysis } 
 import { Logo } from '@/components/ui/logo'
 import { Character } from '@/components/ui/character'
 import { Button } from '@/components/ui/button'
+import { PROGRESS_STEPS, getProgressIndex, getProgressLabel } from '@/constants/analysis-progress'
 
 interface ModelAnswerSectionProps {
   interviewId: number
@@ -24,7 +25,7 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
 
   return (
     <div className="space-y-3">
-      <h4 className="text-xs font-black uppercase tracking-widest text-text-tertiary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
+      <h4 className="text-sm font-bold text-text-secondary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h4>
       {questions.map((q) => (
         <div key={q.questionId} className="rounded-2xl bg-card border border-border p-5">
           <p className="text-sm font-bold text-text-primary mb-2">{q.questionText}</p>
@@ -37,25 +38,6 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
       ))}
     </div>
   )
-}
-
-const PROGRESS_STEPS = [
-  { key: 'PENDING_UPLOAD', label: '대기', fullLabel: '업로드 대기 중' },
-  { key: 'EXTRACTING', label: '추출', fullLabel: '영상 처리 중' },
-  { key: 'ANALYZING', label: '분석', fullLabel: 'AI가 답변을 분석 중' },
-  { key: 'FINALIZING', label: '생성', fullLabel: '종합 피드백 생성 중' },
-] as const
-
-const getProgressIndex = (analysisStatus: string | null): number => {
-  if (!analysisStatus) return -1
-  return PROGRESS_STEPS.findIndex((s) => s.key === analysisStatus)
-}
-
-const getProgressLabel = (analysisStatus: string | null): string => {
-  if (!analysisStatus) return '대기 중'
-  const step = PROGRESS_STEPS.find((s) => s.key === analysisStatus)
-  if (step) return step.fullLabel
-  return '대기 중'
 }
 
 interface AnalysisStatusFloatProps {
@@ -114,7 +96,7 @@ const AnalysisStatusFloat = ({
                   <div key={questionSets[idx]?.id ?? idx} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-text-primary">{label}</span>
-                      <span className="font-bold text-primary">{progressLabel}</span>
+                      <span className="font-bold text-brand">{progressLabel}</span>
                     </div>
                     <div
                       className="flex items-center gap-1"
@@ -129,7 +111,7 @@ const AnalysisStatusFloat = ({
                           <div
                             className={`h-1.5 w-full rounded-full transition-colors duration-500 ${
                               stepIdx <= currentStep
-                                ? 'bg-primary'
+                                ? 'bg-brand'
                                 : 'bg-border'
                             } ${stepIdx === currentStep ? 'animate-pulse' : ''}`}
                           />
@@ -146,7 +128,7 @@ const AnalysisStatusFloat = ({
         {allCompleted && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground flex-shrink-0">
+              <div className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-[10px] font-black text-brand-foreground flex-shrink-0">
                 ✓
               </div>
               <p className="text-sm font-bold text-text-primary">분석 완료!</p>
@@ -273,10 +255,10 @@ export const InterviewAnalysisPage = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-primary animate-progress-loading" />
+          <div className="h-1 w-24 bg-brand/15 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-brand animate-progress-loading" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">로딩 중</p>
+          <p className="text-sm font-medium text-muted-foreground">불러오는 중</p>
         </div>
       </div>
     )
@@ -318,10 +300,10 @@ export const InterviewAnalysisPage = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-50 bg-background px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2" onClick={() => navigate('/')} role="button">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand shadow-lg shadow-brand/25">
               <Logo size={24} />
             </div>
             <span className="text-lg font-black tracking-tight text-text-primary">면접 완료</span>
@@ -341,7 +323,7 @@ export const InterviewAnalysisPage = () => {
             </p>
             <button
               onClick={() => navigate('/')}
-              className="h-14 w-full max-w-xs rounded-3xl bg-primary font-bold text-primary-foreground transition-transform active:scale-95"
+              className="h-14 w-full max-w-xs rounded-3xl bg-brand font-bold text-brand-foreground transition-transform hover:bg-brand-hover active:scale-95"
             >
               대시보드로 이동
             </button>

@@ -17,9 +17,9 @@ export const SetupProgressBar = ({ currentStep, totalSteps }: SetupProgressBarPr
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-black transition-colors ${
                 step < currentStep
-                  ? 'bg-primary text-primary-foreground'
+                  ? 'bg-brand text-brand-foreground'
                   : step === currentStep
-                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                    ? 'bg-brand text-brand-foreground shadow-lg shadow-brand/25 ring-2 ring-brand/20 ring-offset-2 ring-offset-background'
                     : 'bg-surface text-text-tertiary'
               }`}
             >

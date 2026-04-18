@@ -1,0 +1,52 @@
+import { cn } from '@/lib/utils'
+import type { StickyOutlineBaseProps } from './types'
+
+interface TabBarProps extends StickyOutlineBaseProps {
+  className?: string
+}
+
+/**
+ * lg variant: horizontal scrollable tab bar (spec §5.3).
+ * Visible in [lg, xl); hidden at xl+ where Desktop takes over.
+ */
+export const TabBar = ({ items, activeId, onSelect, className }: TabBarProps) => (
+  <nav
+    aria-label="질문 탭"
+    className={cn(
+      'hidden lg:flex xl:hidden overflow-x-auto',
+      'sticky top-[var(--utility-bar-height)] z-10',
+      /* anti-slop: backdrop-blur 제거. 불투명 배경으로 스크롤 시 가독성 확보. */
+      'bg-background border-b border-foreground/10',
+      'px-4 gap-1',
+      className,
+    )}
+  >
+    {items.map((item) => {
+      const isActive = activeId === item.id
+      return (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onSelect(item.id)}
+          aria-current={isActive ? 'true' : undefined}
+          className={cn(
+            'shrink-0 px-3.5 py-2.5 text-[13px] relative font-tabular rounded-t-md',
+            'transition-[color,background-color,border-color] duration-[var(--duration-fast)]',
+            /* 선택 강조 — 배경 tint + 3px bottom bar + 굵은 terracotta 텍스트 */
+            isActive
+              ? 'text-brand font-bold border-b-[3px] border-brand bg-brand-bg/60 -mb-px'
+              : 'text-muted-foreground border-b-[3px] border-transparent hover:text-foreground hover:bg-foreground/4',
+          )}
+        >
+          {String(item.index).padStart(2, '0')}
+          {item.hasIssue && (
+            <span
+              aria-label="이슈 있음"
+              className="absolute top-2 right-1 w-1.5 h-1.5 rounded-full bg-signal-warning"
+            />
+          )}
+        </button>
+      )
+    })}
+  </nav>
+)

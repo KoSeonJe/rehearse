@@ -90,7 +90,7 @@ export const DashboardPage = () => {
         <div className="hidden lg:flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
           <Button
-            variant="default"
+            variant="primary"
             size="sm"
             onClick={() => navigate('/interview/setup')}
           >
@@ -116,7 +116,7 @@ export const DashboardPage = () => {
             <h2 className="text-lg font-bold text-text-primary">면접 기록</h2>
             <button
               onClick={() => navigate('/interview/setup')}
-              className="h-9 px-4 rounded-button bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 active:scale-95 transition-colors cursor-pointer"
+              className="h-9 px-4 rounded-button bg-brand text-brand-foreground text-sm font-bold hover:bg-brand-hover active:scale-95 transition-colors cursor-pointer"
             >
               + 새 면접
             </button>

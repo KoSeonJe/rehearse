@@ -13,21 +13,22 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         // shadcn 표준 variants
+        // default = warm off-black (secondary dark), primary/cta = teal brand signature
         default:
           'bg-primary text-primary-foreground shadow-lg shadow-primary/20 border-t border-white/10 hover:bg-primary/90 active:scale-[0.98]',
         destructive:
           'bg-error text-white hover:opacity-90 active:scale-[0.98]',
         outline:
-          'border border-border bg-background text-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-muted hover:border-text-tertiary/30 active:scale-[0.98]',
+          'border border-brand bg-background text-brand shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-brand-bg active:scale-[0.98]',
         secondary:
           'bg-background text-text-primary border border-border shadow-[0_1px_2px_rgba(0,0,0,0.02)] hover:bg-muted hover:border-text-tertiary/30 active:scale-[0.98]',
         ghost:
-          'bg-transparent text-text-secondary hover:text-text-primary hover:bg-muted active:scale-[0.98]',
-        link: 'text-primary underline-offset-4 hover:underline',
-        // 기존 호환 aliases
+          'bg-transparent text-text-secondary hover:text-brand hover:bg-brand-bg active:scale-[0.98]',
+        link: 'text-brand underline-offset-4 hover:underline',
+        // Brand-colored primary CTA (teal)
         primary:
-          'bg-primary text-primary-foreground shadow-lg shadow-primary/20 border-t border-white/10 hover:bg-primary/90 active:scale-[0.98]',
-        cta: 'bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(0,0,0,0.1)] border-t border-white/10 hover:bg-primary/90 hover:shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1)] active:scale-[0.98]',
+          'bg-brand text-brand-foreground shadow-lg shadow-brand/25 border-t border-white/15 hover:bg-brand-hover active:scale-[0.98]',
+        cta: 'bg-brand text-brand-foreground shadow-[0_10px_20px_-5px_hsl(var(--brand)/0.35)] border-t border-white/15 hover:bg-brand-hover hover:shadow-[0_20px_25px_-5px_hsl(var(--brand)/0.4)] active:scale-[0.98]',
       },
       size: {
         default: 'h-10 px-8 py-2 rounded-button text-sm',

@@ -2,7 +2,7 @@ import type { TimestampFeedback } from '@/types/interview'
 
 const getTypeColor = (feedback: TimestampFeedback): string => {
   if (feedback.questionType === 'FOLLOWUP') return 'bg-blue-400'
-  return 'bg-primary'
+  return 'bg-brand'
 }
 
 interface TimelineBarProps {
@@ -56,7 +56,7 @@ export const TimelineBar = ({
       {/* Legend */}
       <div className="flex flex-wrap gap-3">
         <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-sm bg-primary" />
+          <div className="h-2.5 w-2.5 rounded-sm bg-brand" />
           <span className="text-[10px] font-medium text-text-tertiary">원본</span>
         </div>
         {feedbacks.some((f) => f.questionType === 'FOLLOWUP') && (

@@ -3,29 +3,40 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
-import { Button } from '@/components/ui/button'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
-import { VideoPlayer, type VideoPlayerHandle } from '@/components/feedback/video-player'
-import { TimelineBar } from '@/components/feedback/timeline-bar'
-import { QuestionList } from '@/components/feedback/question-list'
+import { type VideoPlayerHandle } from '@/components/feedback/video-player'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
-import {
-  ReviewTutorialProvider,
-  ReviewTutorialStack,
-} from '@/components/feedback/review-coach-mark'
-import { Logo } from '@/components/ui/logo'
+import { VideoDock } from '@/components/feedback/video-dock'
+import { QuestionList } from '@/components/feedback/question-list'
+import { FeedbackOnboardingCallout } from '@/components/feedback/feedback-onboarding-callout'
 import { Character } from '@/components/ui/character'
+import { ErrorState } from '@/components/ui/error-state'
+import { Logo } from '@/components/ui/logo'
+import { BackLink } from '@/components/ui/back-link'
+import { PageGrid } from '@/components/layout/page-grid'
+import { ChapterMarker } from '@/components/layout/chapter-marker'
+import { StickyOutline } from '@/components/layout/sticky-outline'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
-import type { AnalysisStatus, ApiResponse, InterviewSession, InterviewType, QuestionSetFeedbackResponse } from '@/types/interview'
+import { buildOutlineItems } from '@/lib/feedback/outline'
+import type {
+  AnalysisStatus,
+  ApiResponse,
+  InterviewSession,
+  InterviewType,
+  QuestionSetFeedbackResponse,
+} from '@/types/interview'
 
-interface InterviewInfoBarProps {
+// ---------------------------------------------------------------------------
+// Info band (thin, editorial — replaces old InterviewInfoBar card)
+// ---------------------------------------------------------------------------
+interface InfoBandProps {
   interview: InterviewSession
 }
 
-const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
+const InfoBand = ({ interview }: InfoBandProps) => {
   const positionLabel = POSITION_LABELS[interview.position]?.label ?? interview.position
   const createdDate = new Date(interview.createdAt).toLocaleDateString('ko-KR', {
     year: 'numeric',
@@ -34,39 +45,41 @@ const InterviewInfoBar = ({ interview }: InterviewInfoBarProps) => {
   })
 
   return (
-    <div className="border-b border-border bg-surface px-5 py-3">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-1 md:px-8">
-        <span className="text-sm font-bold text-text-primary">{positionLabel}</span>
+    <div className="mt-5 border-t border-foreground/10 pt-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="font-tabular text-[13px] font-semibold text-foreground">
+          {positionLabel}
+        </span>
         {interview.positionDetail && (
           <>
-            <span className="text-text-tertiary">·</span>
-            <span className="text-sm font-medium text-text-secondary">{interview.positionDetail}</span>
+            <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+            <span className="text-[13px] text-muted-foreground">{interview.positionDetail}</span>
           </>
         )}
         {interview.interviewTypes.length > 0 && (
           <>
-            <span className="text-text-tertiary">·</span>
-            <div className="flex flex-wrap gap-1">
-              {interview.interviewTypes.map((type) => (
-                <span
-                  key={type}
-                  className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
-                >
-                  {INTERVIEW_TYPE_LABELS[type]?.label ?? type}
-                </span>
-              ))}
-            </div>
+            <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+            <span className="text-[13px] text-muted-foreground">
+              {interview.interviewTypes
+                .map((t) => INTERVIEW_TYPE_LABELS[t]?.label ?? t)
+                .join(' / ')}
+            </span>
           </>
         )}
-        <span className="text-text-tertiary">·</span>
-        <span className="text-xs font-medium text-text-tertiary">{interview.durationMinutes}분</span>
-        <span className="text-text-tertiary">·</span>
-        <span className="text-xs font-medium text-text-tertiary">{createdDate}</span>
+        <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+        <span className="font-tabular text-[13px] text-muted-foreground">
+          {interview.durationMinutes}분
+        </span>
+        <span className="text-muted-foreground/40" aria-hidden="true">·</span>
+        <span className="font-tabular text-[13px] text-muted-foreground">{createdDate}</span>
       </div>
     </div>
   )
 }
 
+// ---------------------------------------------------------------------------
+// Failure messages
+// ---------------------------------------------------------------------------
 const failureMessages: Record<string, string> = {
   TIMEOUT: '분석 시간이 초과되었습니다. 다시 시도해주세요.',
   API_ERROR: '외부 서비스 연결에 실패했습니다.',
@@ -76,6 +89,9 @@ const failureMessages: Record<string, string> = {
   INTERNAL_ERROR: '분석 중 오류가 발생했습니다.',
 }
 
+// ---------------------------------------------------------------------------
+// QuestionSetSection
+// ---------------------------------------------------------------------------
 interface QuestionSetSectionProps {
   interviewId: number
   questionSetId: number
@@ -87,15 +103,30 @@ interface QuestionSetSectionProps {
   isFirstSection: boolean
 }
 
-const QuestionSetSection = ({ interviewId, questionSetId, category, index, analysisStatus, failureReason, bookmarkIdsByTsfId, isFirstSection }: QuestionSetSectionProps) => {
+const QuestionSetSection = ({
+  interviewId,
+  questionSetId,
+  category,
+  index,
+  analysisStatus,
+  failureReason,
+  bookmarkIdsByTsfId,
+  isFirstSection,
+}: QuestionSetSectionProps) => {
   const videoRef = useRef<VideoPlayerHandle>(null)
   const queryClient = useQueryClient()
 
   const shouldFetchFeedback = analysisStatus === 'COMPLETED' || analysisStatus === 'PARTIAL'
   const { data: feedbackRes, isLoading: feedbackLoading } = useQuestionSetFeedback(
-    interviewId, questionSetId, shouldFetchFeedback,
+    interviewId,
+    questionSetId,
+    shouldFetchFeedback,
   )
-  const { data: questionsRes } = useQuestionsWithAnswers(interviewId, questionSetId, shouldFetchFeedback)
+  const { data: questionsRes } = useQuestionsWithAnswers(
+    interviewId,
+    questionSetId,
+    shouldFetchFeedback,
+  )
 
   const feedback = feedbackRes?.data
   const feedbacks = feedback?.timestampFeedbacks ?? []
@@ -110,48 +141,44 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
     })
   }, [queryClient, interviewId, questionSetId])
 
-  // Use actual video duration as timeline base; fall back to feedback endMs
-  const feedbackMaxMs = feedbacks.length > 0
-    ? Math.max(...feedbacks.map((f) => f.endMs))
-    : 0
-  const durationMs = videoDurationMs > 0
-    ? Math.max(videoDurationMs, feedbackMaxMs)
-    : feedbackMaxMs
+  const feedbackMaxMs = feedbacks.length > 0 ? Math.max(...feedbacks.map((f) => f.endMs)) : 0
+  const durationMs =
+    videoDurationMs > 0 ? Math.max(videoDurationMs, feedbackMaxMs) : feedbackMaxMs
 
-  // FAILED 상태 UI
+  const categoryLabel = INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category
+
+  // ── FAILED ──────────────────────────────────────────────────────────────
   if (analysisStatus === 'FAILED') {
     return (
-      <section className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-error/10 text-xs font-bold text-error">
-            {index + 1}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
-            <p className="text-xs text-error font-semibold">분석 실패</p>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-error/20 bg-error/5 p-6 text-center">
-          <p className="text-sm font-bold text-error mb-2">이 질문세트의 분석에 실패했습니다</p>
-          <p className="text-xs text-text-tertiary">
-            {failureReason ? (failureMessages[failureReason] ?? failureReason) : '알 수 없는 오류가 발생했습니다.'}
+      <section className="col-span-4 md:col-span-8 lg:col-span-12 space-y-6">
+        <ChapterMarker index={index + 1} title={categoryLabel} label="분석 실패" />
+        <div className="border border-destructive/20 bg-destructive/5 p-6">
+          <p className="text-sm font-semibold text-destructive mb-2">
+            이 질문세트의 분석에 실패했습니다
+          </p>
+          <p className="text-[13px] text-muted-foreground">
+            {failureReason
+              ? (failureMessages[failureReason] ?? failureReason)
+              : '알 수 없는 오류가 발생했습니다.'}
           </p>
         </div>
       </section>
     )
   }
 
-  // 분석 미완료 상태
+  // ── 미완료 상태 ──────────────────────────────────────────────────────────
   if (analysisStatus !== 'COMPLETED' && analysisStatus !== 'PARTIAL') {
     const analysisInProgressBody = (
-      <div className="rounded-2xl bg-surface p-8 text-center space-y-4">
+      <div className="border border-foreground/8 p-8 text-center space-y-4">
         <Character mood="thinking" size={80} className="mx-auto" />
         <div>
-          <p className="text-sm font-semibold text-text-primary">분석이 진행 중이에요</p>
-          <p className="text-xs text-text-tertiary mt-1">영상을 분석하고 피드백을 생성하고 있습니다</p>
+          <p className="text-sm font-semibold text-foreground">분석이 진행 중이에요</p>
+          <p className="text-[13px] text-muted-foreground mt-1">
+            영상을 분석하고 피드백을 생성하고 있습니다
+          </p>
         </div>
-        <div className="h-1 w-32 bg-primary/20 rounded-full mx-auto overflow-hidden">
-          <div className="h-full bg-primary animate-progress-loading" />
+        <div className="h-1 w-32 bg-brand/15 rounded-full mx-auto overflow-hidden">
+          <div className="h-full bg-brand animate-progress-loading" />
         </div>
       </div>
     )
@@ -160,38 +187,37 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
       PENDING: {
         subtitle: '업로드 대기 중',
         body: (
-          <div className="rounded-2xl bg-surface p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-text-secondary">영상 업로드를 기다리고 있어요</p>
-            <p className="text-xs text-text-tertiary">면접 영상이 업로드되면 자동으로 분석이 시작됩니다</p>
+          <div className="border border-foreground/8 p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-muted-foreground">
+              영상 업로드를 기다리고 있어요
+            </p>
+            <p className="text-[13px] text-muted-foreground">
+              면접 영상이 업로드되면 자동으로 분석이 시작됩니다
+            </p>
           </div>
         ),
       },
       PENDING_UPLOAD: {
         subtitle: '업로드 대기 중',
         body: (
-          <div className="rounded-2xl bg-surface p-8 text-center space-y-3">
-            <p className="text-sm font-semibold text-text-secondary">영상 업로드를 기다리고 있어요</p>
-            <p className="text-xs text-text-tertiary">면접 영상이 업로드되면 자동으로 분석이 시작됩니다</p>
+          <div className="border border-foreground/8 p-8 text-center space-y-3">
+            <p className="text-sm font-semibold text-muted-foreground">
+              영상 업로드를 기다리고 있어요
+            </p>
+            <p className="text-[13px] text-muted-foreground">
+              면접 영상이 업로드되면 자동으로 분석이 시작됩니다
+            </p>
           </div>
         ),
       },
-      EXTRACTING: {
-        subtitle: '영상 처리 중',
-        body: analysisInProgressBody,
-      },
-      ANALYZING: {
-        subtitle: '분석 진행 중',
-        body: analysisInProgressBody,
-      },
-      FINALIZING: {
-        subtitle: '피드백 생성 중',
-        body: analysisInProgressBody,
-      },
+      EXTRACTING: { subtitle: '영상 처리 중', body: analysisInProgressBody },
+      ANALYZING: { subtitle: '분석 진행 중', body: analysisInProgressBody },
+      FINALIZING: { subtitle: '피드백 생성 중', body: analysisInProgressBody },
       SKIPPED: {
         subtitle: '건너뜀',
         body: (
-          <div className="rounded-2xl bg-surface p-8 text-center">
-            <p className="text-sm font-semibold text-text-tertiary">이 질문세트는 건너뛰었습니다</p>
+          <div className="border border-foreground/8 p-8 text-center">
+            <p className="text-[13px] text-muted-foreground">이 질문세트는 건너뛰었습니다</p>
           </div>
         ),
       },
@@ -200,115 +226,131 @@ const QuestionSetSection = ({ interviewId, questionSetId, category, index, analy
     const config = statusConfig[analysisStatus] ?? {
       subtitle: '대기 중',
       body: (
-        <div className="rounded-2xl bg-surface p-8 text-center animate-pulse">
-          <p className="text-sm font-semibold text-text-tertiary">분석이 아직 완료되지 않았습니다</p>
+        <div className="border border-foreground/8 p-8 text-center animate-pulse">
+          <p className="text-[13px] text-muted-foreground">분석이 아직 완료되지 않았습니다</p>
         </div>
       ),
     }
 
     return (
-      <section className="space-y-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-border text-xs font-bold text-text-tertiary">
-            {index + 1}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
-            <p className="text-xs text-text-tertiary font-medium">{config.subtitle}</p>
-          </div>
-        </div>
+      <section className="col-span-4 md:col-span-8 lg:col-span-12 space-y-6">
+        <ChapterMarker index={index + 1} title={categoryLabel} label={config.subtitle} />
         {config.body}
       </section>
     )
   }
 
+  // ── 로딩 / 데이터 없음 ───────────────────────────────────────────────────
   if (feedbackLoading) {
     return (
-      <div className="rounded-4xl bg-surface p-8 animate-pulse">
-        <div className="h-6 w-48 bg-border/50 rounded-lg mb-4" />
-        <div className="h-40 bg-border/30 rounded-2xl" />
+      <div className="col-span-4 md:col-span-8 lg:col-span-12 border border-foreground/8 p-8 animate-pulse">
+        <div className="h-6 w-48 bg-muted rounded mb-4" />
+        <div className="h-40 bg-muted/60 rounded" />
       </div>
     )
   }
 
   if (!feedback) {
     return (
-      <div className="rounded-4xl bg-surface border border-border p-8 text-center">
-        <p className="text-sm font-bold text-text-tertiary">피드백을 불러올 수 없습니다</p>
+      <div className="col-span-4 md:col-span-8 lg:col-span-12 border border-foreground/8 p-8 text-center">
+        <p className="text-[13px] text-muted-foreground">피드백을 불러올 수 없습니다</p>
       </div>
     )
   }
 
-  const shouldTriggerTutorial =
-    isFirstSection && feedbacks.length > 0 && selectedFeedbackId === feedbacks[0].id
+  // ── COMPLETED / PARTIAL ─────────────────────────────────────────────────
+  // OutlineItem id는 `feedback-{feedbackId}` or `q-{questionId}`
+  const outlineItems = buildOutlineItems(questions, feedbacks)
+  const activeOutlineId = selectedFeedbackId !== null ? `feedback-${selectedFeedbackId}` : ''
+
+  // onSelect: outlineId → startMs → seekTo
+  const handleOutlineSelect = (id: string) => {
+    const fbIdStr = id.replace('feedback-', '')
+    const fb = feedbacks.find((f) => String(f.id) === fbIdStr)
+    if (fb) seekTo(fb.startMs)
+  }
 
   return (
-    <ReviewTutorialProvider shouldTrigger={shouldTriggerTutorial}>
-      <section className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {index + 1}
-          </div>
-          <div>
-            <h2 className="text-lg font-bold tracking-tight text-text-primary">{INTERVIEW_TYPE_LABELS[category as InterviewType]?.label ?? category}</h2>
-            <p className="text-xs text-text-tertiary">{feedbacks.length}개 구간 분석</p>
-          </div>
+    <section className="col-span-4 md:col-span-8 lg:col-span-12">
+      {/* Chapter header — full width */}
+      <ChapterMarker
+        index={index + 1}
+        title={categoryLabel}
+        label={`${feedbacks.length}개 구간`}
+      />
+
+      {/* Onboarding callout — first section only */}
+      {isFirstSection && (
+        <div className="mb-8">
+          <FeedbackOnboardingCallout />
+        </div>
+      )}
+
+      {/* Outline nav — all 3 variants always mounted, CSS controls visibility */}
+      <StickyOutline.TabBar
+        items={outlineItems}
+        activeId={activeOutlineId}
+        onSelect={handleOutlineSelect}
+      />
+
+      {/* 2-pane editorial grid:
+          lg+:           8 (reading) + 4 (video + 질문 목록)
+          md/sm:         single column; mobile outline via Sheet */}
+      <div className="grid grid-cols-4 gap-x-4 md:grid-cols-8 md:gap-x-5 lg:grid-cols-12 lg:gap-x-6 mt-6">
+        {/* Left — reading column (outline 제거, 질문 텍스트는 우측 VideoDock 하단으로 이동) */}
+        <div className="col-span-4 md:col-span-8 lg:col-span-7 space-y-8">
+          {feedback.questionSetComment && (
+            <blockquote className="border-l-2 border-accent-editorial/50 pl-4 text-[1.0625rem]/[1.65] text-muted-foreground not-italic">
+              {feedback.questionSetComment}
+            </blockquote>
+          )}
+
+          <FeedbackPanel
+            feedbacks={feedbacks}
+            questions={questions}
+            selectedFeedbackId={selectedFeedbackId}
+            onSeek={seekTo}
+            interviewId={interviewId}
+            bookmarkIdsByTsfId={bookmarkIdsByTsfId}
+          />
         </div>
 
-        {/* Comment */}
-        {feedback.questionSetComment && (
-          <div className="rounded-2xl bg-surface p-5">
-            <p className="text-sm font-medium text-text-secondary leading-relaxed">{feedback.questionSetComment}</p>
-          </div>
-        )}
-
-        {/* Content: Video (left) + Feedback (right) */}
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* 좌측: Video + Timeline */}
-          <div className="lg:w-[60%] space-y-4 lg:sticky lg:top-20 lg:self-start">
-            <VideoPlayer
-              ref={videoRef}
-              streamingUrl={feedback.streamingUrl}
-              fallbackUrl={feedback.fallbackUrl}
-              onUrlExpired={handleUrlExpired}
-            />
-            <TimelineBar
-              feedbacks={feedbacks}
-              durationMs={durationMs}
-              currentTimeMs={currentTimeMs}
-              activeFeedbackId={activeFeedbackId}
-              onSeek={seekTo}
-            />
-            <div data-tutorial-anchor="question-list">
-              <QuestionList
-                questions={questions}
-                feedbacks={feedbacks}
-                selectedFeedbackId={selectedFeedbackId}
-                onSeek={seekTo}
-              />
-            </div>
-          </div>
-
-          {/* 우측: Feedback Panel */}
-          <div className="lg:w-[40%]">
-            <FeedbackPanel
-              feedbacks={feedbacks}
+        {/* Right rail — video dock (lg+ col-4) + 질문 목록 (웹캠 하단) */}
+        <VideoDock
+          col="col-span-4 md:col-span-8 lg:col-span-5"
+          streamingUrl={feedback.streamingUrl}
+          fallbackUrl={feedback.fallbackUrl}
+          feedbacks={feedbacks}
+          durationMs={durationMs}
+          currentTimeMs={currentTimeMs}
+          activeFeedbackId={activeFeedbackId}
+          onSeek={seekTo}
+          onUrlExpired={handleUrlExpired}
+          videoRef={videoRef}
+          bottomSlot={
+            <QuestionList
               questions={questions}
+              feedbacks={feedbacks}
               selectedFeedbackId={selectedFeedbackId}
               onSeek={seekTo}
-              interviewId={interviewId}
-              bookmarkIdsByTsfId={bookmarkIdsByTsfId}
             />
-          </div>
-        </div>
+          }
+        />
 
-        <ReviewTutorialStack />
-      </section>
-    </ReviewTutorialProvider>
+        {/* Mobile outline — fixed-position Sheet, outside grid flow */}
+        <StickyOutline.MobileSheet
+          items={outlineItems}
+          activeId={activeOutlineId}
+          onSelect={handleOutlineSelect}
+        />
+      </div>
+    </section>
   )
 }
 
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 export const InterviewFeedbackPage = () => {
   const { publicId } = useParams<{ publicId: string }>()
   const navigate = useNavigate()
@@ -316,9 +358,6 @@ export const InterviewFeedbackPage = () => {
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 
-  // Batch-fetch all feedback to collect tsfIds for the bookmark exists query.
-  // Uses the same query keys as QuestionSetSection → TanStack Query deduplicates
-  // network calls; sections that have already loaded hit the cache immediately.
   const completedQs = questionSets.filter(
     (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
   )
@@ -344,87 +383,77 @@ export const InterviewFeedbackPage = () => {
 
   const { bookmarkIdMap } = useBookmarkExistsForInterview(interview?.id ?? 0, allTsfIds)
 
+  // ── 로딩 ─────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <Character mood="thinking" size={120} className="mx-auto" />
-          <div className="h-1 w-24 bg-primary/20 rounded-full mx-auto overflow-hidden">
-            <div className="h-full bg-primary animate-progress-loading" />
+          <div className="h-1 w-24 bg-brand/15 rounded-full mx-auto overflow-hidden">
+            <div className="h-full bg-brand animate-progress-loading" />
           </div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">피드백 로딩 중</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            피드백 불러오는 중
+          </p>
         </div>
       </div>
     )
   }
 
+  // ── 데이터 없음 ──────────────────────────────────────────────────────────
   if (!interview || questionSets.length === 0) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-5">
-        <Character mood="confused" size={140} className="mb-8" />
-        <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary text-center">
-          피드백을 불러올 수 없습니다
-        </h1>
-        <Button
-          variant="default"
-          size="lg"
-          onClick={() => navigate('/')}
-          className="mt-10 w-full max-w-xs rounded-3xl"
-        >
-          홈으로 돌아가기
-        </Button>
+      <div className="min-h-screen bg-background">
+        <ErrorState
+          title="피드백을 불러올 수 없습니다"
+          description="면접 데이터가 아직 준비되지 않았거나, 만료된 링크일 수 있습니다."
+          actions={[
+            { label: '다시 시도하기', onClick: () => navigate(0 as never) },
+            { label: '복습 목록으로', onClick: () => navigate('/review'), variant: 'outline' },
+          ]}
+        />
       </div>
     )
   }
+
+  const positionLabel = POSITION_LABELS[interview.position]?.label ?? interview.position
 
   return (
     <div className="min-h-screen bg-background pb-32">
       <Helmet>
-        <title>면접 피드백 - 리허설</title>
+        <title>면접 피드백 — {positionLabel} · 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      {/* Header */}
-      <header className="sticky top-0 z-[60] bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          {/* TODO(design): variant 판단 보류 — 로고+텍스트 조합 헤더 버튼, 레이아웃 영향 검토 필요 */}
-          <button className="flex items-center gap-2" onClick={() => navigate('/dashboard', { replace: true })}>
-            <Logo size={60} />
-            <span className="text-lg font-bold tracking-tight text-text-primary">타임스탬프 리뷰</span>
-          </button>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => navigate('/dashboard', { replace: true })}
-              className="flex items-center gap-1 text-sm font-semibold text-text-secondary hover:text-text-primary"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5M12 5l-7 7 7 7" />
-              </svg>
-              대시보드
-            </button>
-          </div>
+
+      {/* Setup 페이지와 동일한 헤더 — Logo + 리허설 / 뒤로 */}
+      <header className="flex items-center justify-between px-5 pt-8 pb-2 md:px-8">
+        <div className="flex items-center gap-2">
+          <Logo size={80} />
+          <span className="text-xl font-extrabold tracking-tight text-text-primary">
+            리허설
+          </span>
         </div>
+        <BackLink to="/dashboard" />
       </header>
 
-      {/* 면접 정보 요약 바 */}
-      <InterviewInfoBar interview={interview} />
-
-      <main className="mx-auto max-w-6xl px-5 pt-10 md:px-8">
-        {/* Hero */}
-        <section className="text-center mb-12">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-            Timestamp Feedback Review
-          </p>
-          <h1 className="text-2xl font-extrabold tracking-tighter text-text-primary sm:text-3xl">
-            영상을 보며 정밀 교정하기
+      {/* Page title header — InfoBand는 타이틀 아래로 이동 */}
+      <PageGrid as="div" className="mt-10 mb-2">
+        <div className="col-span-4 md:col-span-8 lg:col-span-12">
+          <h1 className="text-[2rem] md:text-[2.5rem] font-bold leading-[1.10] tracking-[-0.02em] text-foreground">
+            {positionLabel} 면접 피드백
           </h1>
-          <p className="mt-2 text-base font-medium text-text-secondary">
-            피드백이 생성된 정확한 시점을 확인하고, 나의 답변을 다시 체크해보세요.
+          <p className="mt-2 text-sm font-medium text-muted-foreground">
+            답변별 타임스탬프를 클릭하면 그 순간 영상으로 이동합니다.
           </p>
-        </section>
+          <InfoBand interview={interview} />
+        </div>
+      </PageGrid>
 
-        {/* Question Set Sections */}
-        <div className="space-y-16">
-          {questionSets.filter(qs => qs.analysisStatus !== 'SKIPPED').map((qs, idx) => (
+      {/* Question set sections */}
+      <PageGrid as="main" className="mt-4 gap-y-20">
+        {questionSets
+          .filter((qs) => qs.analysisStatus !== 'SKIPPED')
+          .map((qs, idx) => (
             <QuestionSetSection
               key={qs.id}
               interviewId={interview.id}
@@ -437,8 +466,7 @@ export const InterviewFeedbackPage = () => {
               isFirstSection={idx === 0}
             />
           ))}
-        </div>
-      </main>
+      </PageGrid>
     </div>
   )
 }
