@@ -36,7 +36,7 @@ const CATEGORY_BADGE_CLASS: Record<InterviewType, string> = {
   DATA_PIPELINE: 'bg-orange-100 text-orange-700 border-transparent hover:bg-orange-100',
   UI_FRAMEWORK: 'bg-sky-100 text-sky-700 border-transparent hover:bg-sky-100',
   BROWSER_PERFORMANCE: 'bg-cyan-100 text-cyan-700 border-transparent hover:bg-cyan-100',
-  FULLSTACK_STACK: 'bg-teal-100 text-teal-700 border-transparent hover:bg-teal-100',
+  FULLSTACK_STACK: 'bg-brand-bg text-brand border-transparent hover:bg-brand-bg',
   INFRA_CICD: 'bg-emerald-100 text-emerald-700 border-transparent hover:bg-emerald-100',
   CLOUD: 'bg-lime-100 text-lime-700 border-transparent hover:bg-lime-100',
 }

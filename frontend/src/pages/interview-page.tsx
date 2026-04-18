@@ -23,14 +23,7 @@ import { InterviewControls } from '@/components/interview/interview-controls'
 import { InterviewTimer } from '@/components/interview/interview-timer'
 import { FinishingOverlay } from '@/components/interview/finishing-overlay'
 import { UploadRecoveryDialog } from '@/components/interview/upload-recovery-dialog'
-
-/** 마이크 아이콘 — nameplate·dock에서 공용 사용 */
-const MicIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-  </svg>
-)
+import { MicIcon } from '@/components/ui/mic-icon'
 
 // ─── 로딩 화면 ───────────────────────────────────────────────────────────────
 
@@ -364,7 +357,7 @@ export const InterviewPage = () => {
         <div
           className={`absolute bottom-28 right-4 md:bottom-28 md:right-6 w-[200px] md:w-[320px] aspect-video rounded-lg overflow-hidden shadow-2xl z-20 transition-[box-shadow,--tw-ring-color] duration-[var(--duration-normal)] ${
             phase === 'recording'
-              ? 'ring-2 ring-signal-record shadow-[0_0_24px_rgba(200,50,42,0.35)]'
+              ? 'ring-2 ring-signal-record shadow-[0_0_24px_hsl(var(--signal-record)/0.35)]'
               : 'ring-1 ring-white/10'
           }`}
         >

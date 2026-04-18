@@ -52,11 +52,14 @@ export const HomePage = () => {
         <meta property="og:description" content="이력서 기반 AI 질문 · 면접 녹화 · 초 단위 타임스탬프 피드백. 개발자 CS·시스템 설계 특화. 베타 전 기능 무료." />
       </Helmet>
       {hasOauthError && !dismissed && (
-        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-red-50 border border-red-200 px-5 py-3 text-sm font-medium text-red-700 shadow-md">
+        <div
+          role="alert"
+          className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-xl border border-destructive/30 bg-destructive/10 px-5 py-3 text-sm font-medium text-destructive shadow-md"
+        >
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
       )}
-      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background border-b border-border/50">
         <div className="mx-auto flex h-20 w-full max-w-canvas items-center justify-between px-4 md:px-8 lg:px-12">
           <div className="flex items-center gap-2">
             <Logo size={80} />
