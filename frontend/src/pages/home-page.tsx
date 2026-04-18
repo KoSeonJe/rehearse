@@ -56,7 +56,7 @@ export const HomePage = () => {
           로그인에 실패했습니다. 다시 시도해주세요.
         </div>
       )}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+      <header className="sticky top-0 z-50 bg-background border-b border-border/50">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-5 md:px-8">
           <div className="flex items-center gap-2">
             <Logo size={80} />

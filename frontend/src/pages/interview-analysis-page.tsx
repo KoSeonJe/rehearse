@@ -318,7 +318,7 @@ export const InterviewAnalysisPage = () => {
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md px-5 pt-6 pb-4 border-b border-border">
+      <header className="sticky top-0 z-50 bg-background px-5 pt-6 pb-4 border-b border-border">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
           <div className="flex items-center gap-2" onClick={() => navigate('/')} role="button">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20">
