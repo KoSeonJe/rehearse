@@ -49,9 +49,10 @@ export const InterviewSetupPage = () => {
       {/* 12-col 4+8 split */}
       <PageGrid as="main" className="mt-0 pb-32 pt-8 lg:pt-12 items-start">
 
-        {/* 좌 4-col — 스텝 목차 (lg+에서만 표시) */}
+        {/* 좌 3-col — 스텝 목차 (lg+에서만 표시). 3+9 split: 좌가 너무 넓게 차지해
+            메인 콘텐츠가 우측으로 몰리는 인상을 완화. */}
         <aside
-          className="hidden lg:block lg:col-span-4 sticky top-[calc(var(--utility-bar-height)+2rem)] self-start"
+          className="hidden lg:block lg:col-span-3 sticky top-[calc(var(--utility-bar-height)+2rem)] self-start max-w-[240px]"
           aria-label="설정 단계 목록"
         >
           <p className="text-xs font-semibold text-muted-foreground mb-5">
@@ -166,8 +167,8 @@ export const InterviewSetupPage = () => {
           </div>
         </div>
 
-        {/* 우 8-col — 메인 콘텐츠 */}
-        <div className="col-span-4 md:col-span-8 lg:col-span-8 min-w-0">
+        {/* 우 9-col — 메인 콘텐츠 (max-w 제한으로 와이드 화면에서도 가독 폭 유지) */}
+        <div className="col-span-4 md:col-span-8 lg:col-span-9 min-w-0 max-w-3xl">
 
           {setup.currentStep === 1 && (
             <StepPosition
