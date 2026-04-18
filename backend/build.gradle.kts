@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.rehearse"
-version = "0.1.3"
+version = "0.1.5"
 
 java {
     toolchain {

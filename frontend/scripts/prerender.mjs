@@ -94,11 +94,12 @@ async function prerenderRoute(browser, port, route) {
       CONTENT_READY_MIN_LENGTH,
     )
 
-    // Helmet 이 head 를 commit 했는지 — title 이 폴백에서 벗어났고 canonical link 가 존재하면 완료로 판정.
+    // Helmet 이 head 를 commit 했는지 — title 이 폴백에서 벗어났고 Helmet 이 주입한 canonical
+    // (data-rh="true") 이 존재할 때만 스냅샷. 베이스 템플릿의 canonical 과 혼동 방지.
     await page.waitForFunction(
       (fallback) => {
         const title = document.title
-        const canonical = document.head.querySelector('link[rel="canonical"]')
+        const canonical = document.head.querySelector('link[rel="canonical"][data-rh="true"]')
         return !!title && title !== fallback && !!canonical
       },
       { timeout: 15_000 },
