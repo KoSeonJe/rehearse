@@ -35,12 +35,17 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
 // ─── 로딩 화면 ───────────────────────────────────────────────────────────────
 
 const LoadingScreen = () => (
-  <div className="flex min-h-screen items-center justify-center bg-interview-stage">
+  /* interview-page와 동일하게 `dark` 클래스로 스코프 강제 — 라이트 테마에서도
+     스테이지 텍스트가 off-white로 해석되도록 보장 (C1 contrast 버그 수정). */
+  <div className="dark flex min-h-screen items-center justify-center bg-interview-stage">
     <div className="text-center space-y-4">
-      <div className="h-px w-24 bg-foreground/10 mx-auto overflow-hidden">
-        <div className="h-full bg-foreground/30 animate-progress-loading" />
+      <div className="h-px w-24 bg-foreground/20 mx-auto overflow-hidden">
+        <div className="h-full bg-foreground/60 animate-progress-loading" />
       </div>
-      <p className="text-sm font-medium text-foreground/45">준비 중</p>
+      <div className="flex items-center justify-center gap-2">
+        <div className="h-3 w-3 animate-spin rounded-full border border-foreground/40 border-t-transparent" aria-hidden="true" />
+        <p className="text-sm font-medium text-foreground">준비 중</p>
+      </div>
     </div>
   </div>
 )
@@ -435,7 +440,10 @@ export const InterviewPage = () => {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-interview-stage text-foreground overflow-hidden">
+    /* interview-page는 테마 무관 강제 다크 (몰입 모드). `dark` 클래스 스코프로
+       내부의 text-foreground/muted-foreground가 다크 팔레트(off-white)로 해석되도록 한다.
+       라이트 테마 사용자가 스테이지 진입 시 텍스트가 invisible 되는 이슈 방지. */
+    <div className="dark flex h-screen flex-col bg-interview-stage text-foreground overflow-hidden">
       <Helmet>
         <title>면접 진행 중 - 리허설</title>
         <meta name="robots" content="noindex, nofollow" />
