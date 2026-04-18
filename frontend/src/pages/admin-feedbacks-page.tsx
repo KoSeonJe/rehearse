@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Spinner } from '@/components/ui/spinner'
 import { Button } from '@/components/ui/button'
@@ -55,6 +56,10 @@ export const AdminFeedbacksPage = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary">
+      <Helmet>
+        <title>피드백 관리 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="max-w-5xl mx-auto">
         <main className="px-5 py-8 lg:px-10 lg:py-10">
           <div className="mb-6">

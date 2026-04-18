@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { Helmet } from 'react-helmet-async'
 import { useSearchParams } from 'react-router-dom'
 import { useReviewBookmarkList } from '@/hooks/use-review-bookmarks'
 import { INTERVIEW_TYPE_LABELS, POSITION_INTERVIEW_TYPES } from '@/constants/interview-labels'
@@ -123,6 +124,10 @@ export const ReviewListPage = () => {
 
   return (
     <AppShell>
+      <Helmet>
+        <title>복습 목록 - 리허설</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <ReviewListHeader total={totalCount} />
 
       {isLoading && (
