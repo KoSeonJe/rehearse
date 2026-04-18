@@ -26,9 +26,35 @@ const aboutJsonLd = {
 
 export const AboutPage = () => (
   <ContentPageShell title={TITLE} description={DESCRIPTION} canonicalPath={PATH} jsonLd={aboutJsonLd}>
-    <h1 className="text-3xl font-extrabold tracking-tight text-text-primary mb-6">
-      리허설 — AI 모의면접으로 개발자 합격을 돕습니다
-    </h1>
+    {/* 히어로 배너 — editorial 톤의 over-line + 대형 headline + sub-copy */}
+    <header className="mb-14">
+      <p className="text-xs font-semibold uppercase tracking-[0.1em] text-accent-editorial mb-4">
+        ABOUT · REHEARSE
+      </p>
+      <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-text-primary leading-[1.15] mb-5">
+        AI 모의면접으로<br />개발자 합격을 돕습니다
+      </h1>
+      <p className="text-lg text-text-secondary leading-relaxed max-w-2xl">
+        혼자 거울 앞에서 연습하던 면접을, 24시간 이력서 기반 AI 면접관과 영상·비언어 피드백으로 대체합니다.
+      </p>
+    </header>
+
+    {/* mini 타임라인 — "왜 만들었는지" 3단 */}
+    <ol className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14 pb-14 border-b border-border/40">
+      {[
+        { step: '01', title: '문제', desc: '실전 모의면접은 비싸고, 혼자 연습은 객관성이 없다' },
+        { step: '02', title: '관찰', desc: '개발자 면접은 이력서와 프로젝트 깊이에서 결판난다' },
+        { step: '03', title: '해결', desc: '이력서 분석 → 맞춤 follow-up → 타임스탬프 피드백' },
+      ].map((item) => (
+        <li key={item.step} className="flex flex-col gap-2">
+          <span className="font-tabular text-xs font-semibold text-accent-editorial">
+            {item.step}
+          </span>
+          <h3 className="text-base font-bold text-text-primary">{item.title}</h3>
+          <p className="text-sm text-text-secondary leading-relaxed">{item.desc}</p>
+        </li>
+      ))}
+    </ol>
 
     <Section title="우리가 만든 이유">
       <p>
