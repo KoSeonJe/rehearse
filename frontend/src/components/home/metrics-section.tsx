@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import { Card } from '@/components/ui/card'
 import { useFadeInOnScroll } from '@/hooks/use-fade-in-on-scroll'
 
 interface MetricItem {
@@ -10,8 +9,8 @@ interface MetricItem {
 
 // ── Icons ──────────────────────────────────────────────────────────────
 const iconProps = {
-  width: 20,
-  height: 20,
+  width: 16,
+  height: 16,
   viewBox: '0 0 24 24',
   fill: 'none',
   stroke: 'currentColor',
@@ -90,68 +89,29 @@ const SparkleIcon = () => (
 
 // ── Metric data ────────────────────────────────────────────────────────
 const VERBAL_METRICS: MetricItem[] = [
-  {
-    label: '답변 완성도',
-    question: '질문에 얼마나 정확히 답했는가?',
-    icon: <CheckIcon />,
-  },
-  {
-    label: '기술적 정확도',
-    question: '기술 용어나 개념에 오류가 있었는가?',
-    icon: <CodeIcon />,
-  },
-  {
-    label: '반복사 횟수',
-    question: '어, 음, 그 같은 반복사가 몇 개?',
-    icon: <FilterIcon />,
-  },
-  {
-    label: '말하기 속도',
-    question: '빨랐나, 느렸나, 적당했나?',
-    icon: <StopwatchIcon />,
-  },
+  { label: '답변 완성도', question: '질문에 얼마나 정확히 답했는가?', icon: <CheckIcon /> },
+  { label: '기술적 정확도', question: '기술 용어나 개념에 오류가 있었는가?', icon: <CodeIcon /> },
+  { label: '반복사 횟수', question: '어, 음, 그 같은 반복사가 몇 개?', icon: <FilterIcon /> },
+  { label: '말하기 속도', question: '빨랐나, 느렸나, 적당했나?', icon: <StopwatchIcon /> },
 ]
 
 const NONVERBAL_METRICS: MetricItem[] = [
-  {
-    label: '자세 안정성',
-    question: '몸이 흔들렸거나 웅크렸나?',
-    icon: <PostureIcon />,
-  },
-  {
-    label: '표정 변화',
-    question: '표정이 딱딱했나, 자연스러웠나?',
-    icon: <SmileIcon />,
-  },
-  {
-    label: '시선 처리',
-    question: '카메라를 얼마나 바라봤나?',
-    icon: <EyeIcon />,
-  },
-  {
-    label: '음성 자신감',
-    question: '목소리가 떨렸나, 확신감 있나?',
-    icon: <MicIcon />,
-  },
-  {
-    label: '감정 표현',
-    question: '긍정적/중립적/불안했나?',
-    icon: <SparkleIcon />,
-  },
+  { label: '자세 안정성', question: '몸이 흔들렸거나 웅크렸나?', icon: <PostureIcon /> },
+  { label: '표정 변화', question: '표정이 딱딱했나, 자연스러웠나?', icon: <SmileIcon /> },
+  { label: '시선 처리', question: '카메라를 얼마나 바라봤나?', icon: <EyeIcon /> },
+  { label: '음성 자신감', question: '목소리가 떨렸나, 확신감 있나?', icon: <MicIcon /> },
+  { label: '감정 표현', question: '긍정적/중립적/불안했나?', icon: <SparkleIcon /> },
 ]
 
-// ── Card ───────────────────────────────────────────────────────────────
-const MetricCard = ({ label, question, icon }: MetricItem) => (
-  <Card
-    className="group border border-border bg-background p-5 transition-colors duration-200 hover:-translate-y-1 hover:border-text-tertiary hover:shadow-md"
-    role="article"
-  >
-    <div className="h-10 w-10 rounded-xl flex items-center justify-center mb-3 bg-secondary text-text-primary transition-colors duration-200 group-hover:bg-text-primary group-hover:text-white">
-      {icon}
+// ── Row item — hairline 구분, 박스 없음 ───────────────────────────────
+const MetricRow = ({ label, question, icon }: MetricItem) => (
+  <li className="flex items-start gap-4 py-4 border-b border-foreground/8 last:border-none">
+    <span className="flex-shrink-0 mt-0.5 text-muted-foreground">{icon}</span>
+    <div className="min-w-0">
+      <p className="text-sm font-bold text-foreground">{label}</p>
+      <p className="text-xs font-medium text-muted-foreground mt-0.5 leading-relaxed">{question}</p>
     </div>
-    <h3 className="text-sm font-extrabold text-text-primary mb-1">{label}</h3>
-    <p className="text-xs font-medium text-text-secondary leading-relaxed">{question}</p>
-  </Card>
+  </li>
 )
 
 export const MetricsSection = () => {
@@ -166,50 +126,46 @@ export const MetricsSection = () => {
     >
       <div className="mx-auto max-w-5xl px-5 md:px-8">
 
-        {/* 헤딩 */}
-        <div className="text-center mb-14">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+        {/* 헤딩 — 좌정렬 editorial */}
+        <div className="mb-12 border-t border-foreground/10 pt-10">
+          <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.1em] text-muted-foreground mb-4">
             FEEDBACK METRICS
           </p>
           <h2
             id="metrics-heading"
-            className="text-3xl md:text-4xl font-extrabold tracking-tighter text-text-primary"
+            className="text-3xl md:text-[2.75rem] font-bold leading-[1.1] tracking-[-0.02em] text-foreground"
           >
-            답변의 매 순간을 분석하는 9가지 지표
+            답변의 매 순간을<br className="hidden md:block" />
+            9가지 지표로 분석합니다
           </h2>
         </div>
 
-        {/* 지표 컨테이너 — 언어/비언어를 한 배경 안에 함께 감쌈 */}
-        <div className="rounded-3xl bg-secondary p-6 md:p-8">
-          {/* 언어 피드백 그룹 */}
-          <div className="mb-8" role="group" aria-label="언어 피드백 지표">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-bold text-text-tertiary uppercase tracking-wider">언어 피드백</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
+        {/* 지표 — 2열 hairline 리스트 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16">
+
+          <div role="group" aria-label="언어 피드백 지표">
+            <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2">
+              언어 피드백
+            </p>
+            <ul aria-label="언어 피드백 지표 목록">
               {VERBAL_METRICS.map((m) => (
-                <MetricCard key={m.label} {...m} />
+                <MetricRow key={m.label} {...m} />
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* 비언어 피드백 그룹 */}
           <div role="group" aria-label="비언어 피드백 지표">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-bold text-text-tertiary uppercase tracking-wider">비언어 피드백</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            <p className="font-tabular text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground mb-2 mt-10 md:mt-0">
+              비언어 피드백
+            </p>
+            <ul aria-label="비언어 피드백 지표 목록">
               {NONVERBAL_METRICS.map((m) => (
-                <MetricCard key={m.label} {...m} />
+                <MetricRow key={m.label} {...m} />
               ))}
-            </div>
+            </ul>
           </div>
-        </div>
 
+        </div>
       </div>
     </section>
   )

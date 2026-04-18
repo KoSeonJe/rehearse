@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Logo } from '@/components/ui/logo'
-import { BetaBadge } from '@/components/ui/beta-badge'
+import { UtilityBar } from '@/components/layout/utility-bar'
 
 const Section = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
   <section id={id} className="scroll-mt-8">
@@ -12,22 +11,17 @@ const Section = ({ id, title, children }: { id: string; title: string; children:
 export const PrivacyPolicyPage = () => {
   return (
     <div className="min-h-screen bg-background text-text-primary">
-      {/* 헤더 */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-5 md:px-8">
-          <Link to="/" className="flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm">
-            <Logo size={80} />
-            <span className="text-xl font-extrabold tracking-tight text-text-primary">리허설</span>
-            <BetaBadge size="md" />
-          </Link>
+      <UtilityBar
+        chapter="PRIVACY POLICY"
+        actions={
           <Link
             to="/"
-            className="text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            className="text-xs font-medium text-muted-foreground underline underline-offset-4 decoration-muted-foreground/40 hover:text-foreground hover:decoration-foreground/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/30 rounded-sm"
           >
             ← 홈으로
           </Link>
-        </div>
-      </header>
+        }
+      />
 
       <main className="mx-auto max-w-3xl px-5 md:px-8 py-12">
         {/* 제목 */}

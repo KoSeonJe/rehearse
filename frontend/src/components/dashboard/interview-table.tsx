@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Trash2 } from 'lucide-react'
-import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { InterviewListItem, InterviewStatus, InterviewType } from '@/types/interview'
 import { POSITION_LABELS, INTERVIEW_TYPE_LABELS } from '@/constants/interview-labels'
@@ -89,9 +88,9 @@ export const InterviewTable = ({
 
   if (isLoading) {
     return (
-      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
+      <div className="overflow-hidden border-t border-foreground/8">
         <InterviewTableSkeleton />
-      </Card>
+      </div>
     )
   }
 
@@ -123,10 +122,10 @@ export const InterviewTable = ({
 
   return (
     <>
-      <Card className="bg-surface overflow-hidden border border-border shadow-sm">
+      <div className="overflow-hidden border-t border-foreground/8">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-border bg-muted">
+            <tr className="border-b border-foreground/8 bg-background">
               <th className="py-3 px-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 포지션
               </th>
@@ -163,7 +162,7 @@ export const InterviewTable = ({
                 <tr
                   key={interview.id}
                   onClick={() => handleRowClick(interview)}
-                  className={`group border-b border-border/50 last:border-0 transition-colors hover:bg-muted/50 cursor-pointer ${
+                  className={`group border-b border-foreground/8 last:border-0 transition-colors hover:bg-muted/40 cursor-pointer ${
                     isInProgress ? 'opacity-80' : ''
                   }`}
                   title={isInProgress ? '클릭하여 면접 이어하기' : undefined}
@@ -231,7 +230,7 @@ export const InterviewTable = ({
             })}
           </tbody>
         </table>
-      </Card>
+      </div>
 
       <DeleteConfirmDialog
         isOpen={dialogId !== null}

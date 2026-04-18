@@ -28,10 +28,6 @@ vi.mock('@/hooks/use-review-bookmarks', () => ({
   }),
 }))
 
-vi.mock('@/components/feedback/review-coach-mark', () => ({
-  default: () => null,
-}))
-
 vi.mock('sonner', () => ({
   toast: vi.fn(),
 }))

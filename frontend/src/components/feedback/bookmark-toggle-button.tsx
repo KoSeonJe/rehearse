@@ -82,7 +82,7 @@ const BookmarkToggleButton = ({
   }
 
   return (
-    <div data-tutorial-anchor="bookmark-button" className="relative flex-shrink-0">
+    <div className="relative flex-shrink-0">
       <button
         type="button"
         aria-pressed={isBookmarked}
