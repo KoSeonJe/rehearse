@@ -5,13 +5,9 @@ import { Logo } from '@/components/ui/logo'
 import { BetaBadge } from '@/components/ui/beta-badge'
 import { Button } from '@/components/ui/button'
 import { HeroSection } from '@/components/home/hero-section'
-import { PainPointsSection } from '@/components/home/pain-points-section'
-import { VideoFeedbackSection } from '@/components/home/video-feedback-section'
+import { TimestampProofSection } from '@/components/home/timestamp-proof-section'
+import { PainFixSection } from '@/components/home/pain-fix-section'
 import { MetricsSection } from '@/components/home/metrics-section'
-import { DevTailoredSection } from '@/components/home/dev-tailored-section'
-import { JourneySection } from '@/components/home/journey-section'
-import { BeforeYouStartSection } from '@/components/home/before-you-start-section'
-import { FaqSection } from '@/components/home/faq-section'
 import { CtaSection } from '@/components/home/cta-section'
 import { useAuth } from '@/hooks/use-auth'
 import { useAuthStore } from '@/stores/auth-store'
@@ -71,6 +67,13 @@ export const HomePage = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              to="/faq"
+              aria-label="자주 묻는 질문으로 이동"
+              className="rounded-sm text-sm font-medium text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-text-primary focus-visible:ring-offset-2"
+            >
+              FAQ
+            </Link>
             {isAuthenticated ? (
               <>
                 <span className="hidden text-sm font-medium text-text-secondary sm:block">
@@ -101,13 +104,9 @@ export const HomePage = () => {
 
       <main>
         <HeroSection onNavigate={handleStartLogin} isAuthenticated={isAuthenticated} />
-        <PainPointsSection />
-        <VideoFeedbackSection />
+        <TimestampProofSection />
+        <PainFixSection />
         <MetricsSection />
-        <DevTailoredSection />
-        <JourneySection />
-        <BeforeYouStartSection />
-        <FaqSection />
         <CtaSection onNavigate={handleStartLogin} />
       </main>
 
