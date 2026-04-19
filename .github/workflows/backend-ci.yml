@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   test:
-    name: Test
+    name: Backend CI
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
