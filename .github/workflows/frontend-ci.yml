@@ -2,9 +2,6 @@ name: Frontend CI
 
 on:
   pull_request:
-    paths:
-      - 'frontend/**'
-      - '.github/workflows/frontend-ci.yml'
 
 concurrency:
   group: frontend-ci-${{ github.ref }}
@@ -14,13 +11,19 @@ jobs:
   lint-and-build:
     name: Lint & Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/frontend-ci.yml'
+
       - name: Set up Node.js
+        if: steps.filter.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -28,10 +31,20 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: frontend
         run: npm ci
 
       - name: Lint
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: frontend
         run: npm run lint
 
       - name: Type check & Build
+        if: steps.filter.outputs.frontend == 'true'
+        working-directory: frontend
         run: npm run build
+
+      - name: No frontend changes — skipping
+        if: steps.filter.outputs.frontend != 'true'
+        run: echo "No frontend changes detected; reporting success."
