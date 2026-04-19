@@ -72,6 +72,13 @@ devlens/
 - **BE/FE PR 분리 필수**: BE PR 먼저 머지 → FE PR 생성
 - **CI 통과 필수**: `Frontend CI` (lint + build), `Backend CI` (test)
 
+### 직접 push 절대 금지 (Required)
+
+- `main`, `develop`은 **브랜치 보호 규칙으로 직접 push 차단**됨. 모든 변경은 PR 경유.
+- **`main`으로 머지**: `develop → main` 릴리즈 PR로만 가능. feature/fix 브랜치에서 main 직접 PR 금지. 반드시 `/prod-release` 스킬 사용.
+- **`develop`으로 머지**: `feat/*`, `fix/*`, `refactor/*` 브랜치 PR로만 가능. 반드시 `/create-pr` 스킬 사용.
+- 릴리즈 머지 직후 develop은 `main` 머지 커밋이 빠진 상태가 됨 → 다음 릴리즈 PR 생성 전 `git merge origin/main` back-merge 필수.
+
 ---
 
 ## Tech Stack
