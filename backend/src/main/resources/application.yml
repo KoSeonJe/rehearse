@@ -45,7 +45,24 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, refresh, prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+rehearse:
+  features:
+    intent-classifier:
+      enabled: false
+    answer-analyzer:
+      enabled: false
+    followup-v3:
+      enabled: false
+    resume-track:
+      enabled: false
+    context-engineering:
+      enabled: false

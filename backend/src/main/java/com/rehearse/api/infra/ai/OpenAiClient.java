@@ -24,7 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,13 +55,14 @@ public class OpenAiClient {
             FollowUpPromptBuilder followUpPromptBuilder,
             AiResponseParser responseParser,
             @Value("${openai.api-key}") String apiKey,
-            @Value("${openai.model:gpt-4o-mini}") String model) {
+            @Value("${openai.model:gpt-4o-mini}") String model,
+            @Value("${openai.base-url:https://api.openai.com/v1/chat/completions}") String baseUrl) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofSeconds(60));
 
         this.restClient = restClientBuilder
-                .baseUrl("https://api.openai.com/v1/chat/completions")
+                .baseUrl(baseUrl)
                 .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
@@ -67,6 +70,58 @@ public class OpenAiClient {
         this.responseParser = responseParser;
         this.apiKey = apiKey;
         this.model = model;
+    }
+
+    @RateLimiter(name = "openai-api")
+    public ChatResponse chat(ChatRequest req) {
+        String resolvedModel = (req.modelOverride() != null && !req.modelOverride().isBlank())
+                ? req.modelOverride()
+                : model;
+
+        int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
+        Double resolvedTemperature = req.temperature();
+
+        List<Map<String, Object>> messages = new ArrayList<>();
+        for (ChatMessage msg : req.messages()) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("role", msg.roleLowercase());
+            entry.put("content", msg.content());
+            messages.add(entry);
+        }
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("model", resolvedModel);
+        requestBody.put("messages", messages);
+        requestBody.put("max_tokens", resolvedMaxTokens);
+        if (resolvedTemperature != null) {
+            requestBody.put("temperature", resolvedTemperature);
+        }
+        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
+            requestBody.put("response_format", Map.of("type", "json_object"));
+        }
+
+        String apiLabel = "OpenAI API [" + req.callType() + "]";
+        OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
+
+        int inputTokens = 0;
+        int outputTokens = 0;
+        int cachedTokens = 0;
+        if (openAiResponse.getUsage() != null) {
+            inputTokens = openAiResponse.getUsage().getPromptTokens();
+            outputTokens = openAiResponse.getUsage().getCompletionTokens();
+            cachedTokens = openAiResponse.getUsage().getCachedTokens();
+        }
+        boolean cacheHit = cachedTokens > 0;
+
+        String content = openAiResponse.getChoices().get(0).getMessage().getContent();
+        return new ChatResponse(
+                content,
+                ChatResponse.Usage.of(inputTokens, outputTokens, cachedTokens, 0),
+                "openai",
+                resolvedModel,
+                cacheHit,
+                false
+        );
     }
 
     @RateLimiter(name = "openai-api")
@@ -143,7 +198,8 @@ public class OpenAiClient {
                 .temperature(temperature)
                 .build();
 
-        return executeWithRetry(requestBody, "OpenAI API", maxTokens);
+        return executeWithRetry(requestBody, "OpenAI API", maxTokens)
+                .getChoices().get(0).getMessage().getContent();
     }
 
     private String callOpenAiAudioApi(String systemPrompt, String userPrompt, String audioBase64, String audioFormat) {
@@ -161,10 +217,11 @@ public class OpenAiClient {
                 "temperature", TEMPERATURE_FOLLOW_UP
         );
 
-        return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP);
+        return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP)
+                .getChoices().get(0).getMessage().getContent();
     }
 
-    private String executeWithRetry(Object requestBody, String apiLabel, int maxTokens) {
+    private OpenAiResponse executeWithRetry(Object requestBody, String apiLabel, int maxTokens) {
         long delayMs = INITIAL_RETRY_DELAY_MS;
 
         for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
@@ -208,7 +265,7 @@ public class OpenAiClient {
                 if (content == null || content.isBlank()) {
                     throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
                 }
-                return content;
+                return response;
 
             } catch (BusinessException e) {
                 throw e;

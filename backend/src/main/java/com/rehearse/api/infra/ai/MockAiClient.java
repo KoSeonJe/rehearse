@@ -1,11 +1,14 @@
 package com.rehearse.api.infra.ai;
 
+import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
+import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.*;
+import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
@@ -15,13 +18,29 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 
+/**
+ * Mock AiClient — API 키 없이 동작하는 테스트/개발 환경용 구현체.
+ *
+ * <p>chat() 은 Mock 응답을 반환한다. legacy 3개 메서드는 AbstractAiClient 를 통해
+ * chat() 경유 어댑터로 위임된다. 단, Mock 환경에서는 실제 프롬프트 빌더가 필요하므로
+ * 어댑터에 의존한다.</p>
+ *
+ * <p>단순한 고정 응답이 필요한 테스트라면 직접 override 가능하다.</p>
+ */
 @Slf4j
 @Component
 @ConditionalOnMissingBean(ResilientAiClient.class)
-@RequiredArgsConstructor
-public class MockAiClient implements AiClient {
+public class MockAiClient extends AbstractAiClient {
 
     private final ObjectMapper objectMapper;
+
+    public MockAiClient(
+            ObjectMapper objectMapper,
+            QuestionGenerationAdapter questionAdapter,
+            FollowUpGenerationAdapter followUpAdapter) {
+        super(questionAdapter, followUpAdapter, null);
+        this.objectMapper = objectMapper;
+    }
 
     @PostConstruct
     void init() {
@@ -29,50 +48,51 @@ public class MockAiClient implements AiClient {
     }
 
     @Override
-    public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
-        log.info("[Mock] generateQuestions 호출 - position={}, level={}, types={}, techStack={}, resume={}, duration={}",
-                request.position(), request.level(), request.interviewTypes(), request.techStack(),
-                request.resumeText() != null ? "있음" : "없음", request.durationMinutes());
+    public ChatResponse chat(ChatRequest request) {
+        log.info("[Mock] chat 호출 - callType={}, messages={}", request.callType(), request.messages().size());
 
-        int questionCount = QuestionCountCalculator.calculate(request.durationMinutes(), request.interviewTypes().size());
-
-        String json = """
-                [
-                  {"content": "[Mock] Java에서 GC(Garbage Collection)의 동작 원리를 설명해주세요.", "category": "JVM", "order": 1, "evaluationCriteria": "GC 알고리즘과 힙 구조 이해", "questionCategory": "CS", "modelAnswer": "Java GC는 힙 메모리에서 더 이상 참조되지 않는 객체를 자동으로 해제합니다. Young Gen(Eden+Survivor)에서 Minor GC, Old Gen에서 Major GC가 발생하며, G1GC는 리전 단위로 관리합니다.", "referenceType": "GUIDE"},
-                  {"content": "[Mock] RESTful API 설계 원칙 중 가장 중요하다고 생각하는 것은 무엇인가요?", "category": "API 설계", "order": 2, "evaluationCriteria": "REST 원칙 이해와 실무 적용", "questionCategory": "CS", "modelAnswer": "리소스 중심 URI 설계, HTTP 메서드의 의미론적 사용, 상태 코드 활용, HATEOAS 등이 핵심입니다. 특히 멱등성과 안전성 개념을 이해하고 적용하는 것이 중요합니다.", "referenceType": "GUIDE"},
-                  {"content": "[Mock] 데이터베이스 인덱스의 장단점을 설명해주세요.", "category": "데이터베이스", "order": 3, "evaluationCriteria": "인덱스 구조와 성능 트레이드오프 이해", "questionCategory": "CS", "modelAnswer": "인덱스는 B-Tree/Hash 구조로 검색 속도를 O(log n)으로 개선합니다. 장점은 SELECT 성능 향상, 단점은 INSERT/UPDATE/DELETE 시 인덱스 갱신 오버헤드와 추가 저장 공간입니다.", "referenceType": "GUIDE"},
-                  {"content": "[Mock] 동시성 문제를 해결하기 위한 방법들을 설명해주세요.", "category": "운영체제", "order": 4, "evaluationCriteria": "락, 세마포어, CAS 등 동시성 제어 이해", "questionCategory": "CS", "modelAnswer": "뮤텍스, 세마포어, 모니터 등의 동기화 기법과 CAS(Compare-And-Swap) 기반 락프리 알고리즘이 있습니다. Java에서는 synchronized, ReentrantLock, Atomic 클래스 등을 활용합니다.", "referenceType": "GUIDE"},
-                  {"content": "[Mock] 최근 진행한 프로젝트에서 가장 어려웠던 기술적 문제와 해결 과정을 설명해주세요.", "category": "경험", "order": 5, "evaluationCriteria": "문제 해결 과정과 학습 능력", "questionCategory": "RESUME", "modelAnswer": "프로젝트 배경, 직면한 기술적 문제, 시도한 해결 방법들, 최종 해결책과 그 이유, 결과와 배운 점을 STAR 기법으로 구조화하여 답변하세요.", "referenceType": "MODEL_ANSWER"}
-                ]
-                """;
-
-        List<GeneratedQuestion> allQuestions = parseJson(json, new TypeReference<>() {});
-        return allQuestions.subList(0, Math.min(questionCount, allQuestions.size()));
+        // Mock 환경에서 callType에 따라 적절한 Mock JSON 응답 반환
+        String content = resolveMockContent(request);
+        return new ChatResponse(
+                content,
+                ChatResponse.Usage.empty(),
+                "mock",
+                "mock-model",
+                false,
+                false
+        );
     }
 
-    @Override
-    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
-        log.info("[Mock] generateFollowUpQuestion 호출 - previousExchanges={}",
-                request.previousExchanges() != null ? request.previousExchanges().size() : 0);
-
-        String json = """
-                {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "modelAnswer": "[Mock] 성능 최적화를 위해 캐싱 전략, 쿼리 최적화, 비동기 처리 등의 접근 방식을 구체적으로 설명할 수 있어야 합니다."}
-                """;
-
-        return parseJson(json, new TypeReference<>() {});
+    /**
+     * callType 에 따라 적절한 Mock JSON 응답을 반환한다.
+     * AbstractAiClient 어댑터가 chat() 응답을 파싱하므로 JSON 형식을 맞춰야 한다.
+     */
+    private String resolveMockContent(ChatRequest request) {
+        return switch (request.callType()) {
+            case "generate_questions" -> mockQuestionsJson(request);
+            case "generate_followup" -> mockFollowUpJson();
+            default -> "[Mock] " + request.callType() + " response";
+        };
     }
 
-    @Override
-    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
-        log.info("[Mock] generateFollowUpWithAudio 호출 - audioFile={}, size={}bytes",
-                audioFile != null ? audioFile.getOriginalFilename() : "null",
-                audioFile != null ? audioFile.getSize() : 0);
-
-        String json = """
-                {"question": "[Mock] 방금 말씀하신 정렬 알고리즘에서 실무에서는 어떤 기준으로 선택하시나요?", "reason": "실무 적용 경험을 확인하기 위함", "type": "DEEP_DIVE", "answerText": "[Mock] 퀵정렬은 평균 O(n log n)이고 최악은 O(n^2)입니다.", "modelAnswer": "[Mock] 데이터 크기, 안정성 요구사항, 메모리 제약 등을 고려하여 적절한 정렬 알고리즘을 선택해야 합니다."}
+    private String mockQuestionsJson(ChatRequest request) {
+        int questionCount = 5;
+        // messages 에서 질문 수 추정이 어려우므로 기본값 사용
+        return """
+                {"questions": [
+                  {"content": "[Mock] Java에서 GC(Garbage Collection)의 동작 원리를 설명해주세요.", "category": "JVM", "order": 1, "evaluationCriteria": "GC 알고리즘과 힙 구조 이해", "questionCategory": "CS", "modelAnswer": "Java GC는 힙 메모리에서 더 이상 참조되지 않는 객체를 자동으로 해제합니다.", "referenceType": "GUIDE"},
+                  {"content": "[Mock] RESTful API 설계 원칙 중 가장 중요하다고 생각하는 것은 무엇인가요?", "category": "API 설계", "order": 2, "evaluationCriteria": "REST 원칙 이해와 실무 적용", "questionCategory": "CS", "modelAnswer": "리소스 중심 URI 설계, HTTP 메서드의 의미론적 사용이 핵심입니다.", "referenceType": "GUIDE"},
+                  {"content": "[Mock] 데이터베이스 인덱스의 장단점을 설명해주세요.", "category": "데이터베이스", "order": 3, "evaluationCriteria": "인덱스 구조와 성능 트레이드오프 이해", "questionCategory": "CS", "modelAnswer": "인덱스는 B-Tree 구조로 검색 속도를 개선하지만 INSERT/UPDATE 오버헤드가 있습니다.", "referenceType": "GUIDE"},
+                  {"content": "[Mock] 동시성 문제를 해결하기 위한 방법들을 설명해주세요.", "category": "운영체제", "order": 4, "evaluationCriteria": "락, 세마포어, CAS 등 동시성 제어 이해", "questionCategory": "CS", "modelAnswer": "뮤텍스, 세마포어, CAS 기반 락프리 알고리즘이 있습니다.", "referenceType": "GUIDE"},
+                  {"content": "[Mock] 최근 진행한 프로젝트에서 가장 어려웠던 기술적 문제와 해결 과정을 설명해주세요.", "category": "경험", "order": 5, "evaluationCriteria": "문제 해결 과정과 학습 능력", "questionCategory": "RESUME", "modelAnswer": "STAR 기법으로 구조화하여 답변하세요.", "referenceType": "MODEL_ANSWER"}
+                ]}
                 """;
+    }
 
-        return parseJson(json, new TypeReference<>() {});
+    private String mockFollowUpJson() {
+        return """
+                {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "modelAnswer": "[Mock] 성능 최적화를 위해 캐싱, 쿼리 최적화, 비동기 처리 등을 설명할 수 있어야 합니다."}
+                """;
     }
 
     private <T> T parseJson(String json, TypeReference<T> typeRef) {

@@ -2,8 +2,8 @@
 
 ## 목차
 1. [데이터베이스 테이블 구조](#1-데이터베이스-테이블-구조)
-2. [Spring Boot 프롬프트 (Claude API)](#2-spring-boot-프롬프트-claude-api)
-3. [Lambda 프롬프트 (OpenAI API)](#3-lambda-프롬프트-openai-api)
+2. [Spring Boot 프롬프트 (OpenAI primary / Claude fallback)](#2-spring-boot-프롬프트-openai-primary--claude-fallback)
+3. [Lambda 프롬프트 (Gemini / OpenAI)](#3-lambda-프롬프트-gemini--openai)
 
 ---
 
@@ -231,10 +231,23 @@ Interview (1) ──< (N) QuestionSet (1) ── (1) QuestionSetFeedback (1) ─
 
 ---
 
-## 2. Spring Boot 프롬프트 (Claude API)
+## 2. Spring Boot 프롬프트 (OpenAI primary / Claude fallback)
 
-> 파일: `backend/.../infra/ai/ClaudePromptBuilder.java`
-> 모델: `claude-sonnet-4-20250514`
+> **공급자 구조** — `ResilientAiClient.java` 가 primary/fallback 이중화
+> - Primary: **OpenAI GPT-4o-mini** (`openai.model`)
+> - Primary (audio 꼬리질문): **gpt-4o-mini-audio-preview** (STT 불필요)
+> - Fallback: **Claude Sonnet** (질문생성) / **Claude Haiku** (꼬리질문, Whisper STT 선행)
+>
+> **프롬프트 빌더** (OpenAI/Claude 공용, 템플릿 1벌 관리):
+> - `backend/.../infra/ai/prompt/QuestionGenerationPromptBuilder.java`
+> - `backend/.../infra/ai/prompt/FollowUpPromptBuilder.java`
+>
+> **템플릿 파일**:
+> - `backend/src/main/resources/prompts/template/question-generation.txt`
+> - `backend/src/main/resources/prompts/template/follow-up-concept.txt` (CS 개념)
+> - `backend/src/main/resources/prompts/template/follow-up-experience.txt` (경험/7관점 순환)
+>
+> 아래 프롬프트 본문은 양쪽 공급자에 동일 주입됨. 모델 스펙(temp/max tokens)은 §4 요약 참조.
 
 ### 2.1 질문 생성 프롬프트
 
@@ -416,9 +429,16 @@ strengths와 improvements는 각각 최소 2개, 최대 5개 항목입니다.
 
 ---
 
-## 3. Lambda 프롬프트 (OpenAI API)
+## 3. Lambda 프롬프트 (Gemini / OpenAI)
 
-> 모델: `gpt-4o` | Lambda 런타임: Python 3.12
+> **공급자 구조** — handler.py 가 4개 analyzer 활용
+> - **주력 경로**: `gemini_analyzer.analyze_answer_audio` — Google **Gemini** (오디오 → verbal+technical+vocal 통합)
+> - 보조 언어 분석: `verbal_analyzer.analyze_verbal` — OpenAI GPT (텍스트 transcript 기반)
+> - 비언어: `vision_analyzer.analyze_frames` — OpenAI **GPT-4o Vision**
+> - STT (fallback 경로): `stt_analyzer.transcribe_chunked` — OpenAI Whisper
+> - 프롬프트 팩토리 `verbal_prompt_factory.py` 는 모델 중립 (Gemini/OpenAI 공용)
+>
+> Lambda 런타임: Python 3.12
 
 ### 3.1 비언어 분석 프롬프트 (GPT-4o Vision)
 
@@ -548,11 +568,26 @@ S3 업로드 → EventBridge 트리거 → Lambda 실행
 
 ## 4. 프롬프트 설정 요약
 
-| 용도 | 모델 | Temperature | Max Tokens | 위치 |
-|------|------|-------------|------------|------|
-| 질문 생성 | claude-sonnet-4-20250514 | 0.9 | 4096 | Backend (ClaudePromptBuilder) |
-| 후속 질문 | claude-sonnet-4-20250514 | 1.0 | 1024 | Backend (ClaudePromptBuilder) |
-| 종합 리포트 | claude-sonnet-4-20250514 | 0.3 | 2048 | Backend (ClaudePromptBuilder) |
-| 비언어 분석 | gpt-4o | 0.3 | 500 | Lambda (vision_analyzer.py) |
-| 언어 분석 | gpt-4o | 0.3 | 500 | Lambda (verbal_analyzer.py) |
-| STT 전사 | whisper-1 | — | — | Lambda (stt_analyzer.py) |
+### Backend (Spring Boot)
+
+| 용도 | Primary | Fallback | Temp | Max Tokens | 빌더 |
+|------|---------|----------|------|------------|------|
+| 질문 생성 | OpenAI **gpt-4o-mini** | Claude Sonnet | 0.9 | 8192 | `QuestionGenerationPromptBuilder` |
+| 꼬리질문 (텍스트) | OpenAI **gpt-4o-mini** | Claude Haiku | 0.7 | 1024 | `FollowUpPromptBuilder` |
+| 꼬리질문 (오디오) | OpenAI **gpt-4o-mini-audio-preview** | Whisper STT → Claude Haiku | 0.7 | 1024 | `FollowUpPromptBuilder` |
+
+> **활성 조건**: `openai.api-key` 존재 → primary, 없으면 Claude only, 둘 다 없으면 `MockAiClient`
+> **비재시도**: `CLIENT_ERROR`, `PARSE_FAILED` 는 fallback 생략 (Claude에서도 동일 실패)
+> Claude 경로는 Prompt Caching(`SystemContent.withCaching()`) 활성
+
+### Lambda (Python)
+
+| 용도 | 공급자 / 모델 | 파일 |
+|------|--------------|------|
+| Audio 통합 분석 (주력) | Google **Gemini** | `gemini_analyzer.py` |
+| 언어 분석 (보조) | OpenAI GPT | `verbal_analyzer.py` |
+| 비언어 분석 | OpenAI **gpt-4o** Vision | `vision_analyzer.py` |
+| STT 전사 | OpenAI **whisper-1** | `stt_analyzer.py` |
+| 프롬프트 팩토리 | (모델 중립) | `verbal_prompt_factory.py` |
+
+> ⚠️ 아래 §2, §3 의 프롬프트 본문은 일부 snapshot 이며 최신 템플릿은 각 `.txt`/`.py` 파일을 참조할 것.

@@ -86,8 +86,8 @@ devlens/
 - **Frontend**: React 18 + TypeScript 5+ / Tailwind CSS / Vite / Zustand / TanStack Query
 - **Backend**: Java 21 + Spring Boot 3.x / Gradle (Kotlin DSL) / Spring Data JPA
 - **Database**: MySQL 8.0 (prod) / H2 (dev)
-- **AI**: Claude API (Sonnet) — backend only, 모델 ID는 `application-*.yml`에서 관리
-- **Analysis**: OpenAI API (Whisper STT, GPT-4o Vision/LLM) — Lambda only
+- **AI (Backend)**: OpenAI **GPT-4o-mini** primary + **Claude Sonnet/Haiku** fallback — `ResilientAiClient` 이중화, 프롬프트 빌더 공용. 모델 ID는 `application-*.yml`에서 관리
+- **Analysis (Lambda)**: **Gemini** (audio 통합 분석, 주력) + OpenAI **GPT-4o Vision** (프레임) + OpenAI **Whisper** (STT fallback 경로)
 - **Browser**: MediaRecorder (WebM), Web Speech API
 - **Infra**: S3, EventBridge, Lambda (Python 3.12), MediaConvert, ECR, CloudFront
 

@@ -7,7 +7,7 @@
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
-| 00b | AiClient Generalization `[blocking]` | W1 후 | Draft | 00a | C1+C3+M5+Missing(JSON 폴백, @RefreshScope) 근본 해결 |
+| 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백, @RefreshScope) 근본 해결 (S2, 2026-04-20) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Draft | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 |
 | 00d | Observability + Eval Smoke `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
@@ -50,19 +50,19 @@
 - 의존성 그래프 재정리
 
 ### 해결 체크리스트 (REMEDIATION.md 동기)
-- [ ] C1 AiClient 범용화 (00b)
+- [x] C1 AiClient 범용화 (00b) — chat(ChatRequest) 추가, 3개 도메인 메서드 어댑터 보존 (S2)
 - [ ] C2 DB 영속화/Flyway (00c)
-- [ ] C3 호출별 모델 선택 (00b)
+- [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
 - [ ] M2 W1-W3 회귀 방어 (00d)
 - [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
-- [ ] M5 Fallback 캐시 정책 (00b + plan-04 edit)
+- [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
 - [ ] M6 Feedback 관계 (00e)
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
 - [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
-- [ ] Missing Feature flag runtime (00b @RefreshScope)
+- [x] Missing Feature flag runtime (00b) — AiFeatureProperties @RefreshScope + /actuator/refresh (S2)
 - [ ] Missing 동시성 제어 (00c InterviewLockService)
-- [ ] Missing JSON 파싱 폴백 (00b AiResponseParser)
+- [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)
 - [ ] Minor plan-10 수동 라벨 = 골든셋 부분집합 (plan-10 edit)
 - [ ] Addendum 비언어 루브릭 (plan-11) — TODO 09 반영. D11~D14 결정론 매퍼 + context_weights + V28
