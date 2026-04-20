@@ -311,3 +311,49 @@ docker compose --env-file .env logs backend | tail -50
 - CloudWatch 로그 확인: `/aws/lambda/rehearse-convert-dev`
 - MediaConvert 콘솔에서 Job 상태 확인
 - IAM `rehearse-mediaconvert-role`의 S3 권한 확인
+
+---
+
+## Dev 인스턴스 자동 Start/Stop 스케줄러
+
+비용 절감을 위해 dev EC2(`i-0c7d5af781b430b85`)는 EventBridge Scheduler로 자동 start/stop 됩니다.
+
+- **Stop**: 매일 KST 02:00 (`rehearse-dev-stop`)
+- **Start**: 매일 KST 10:00 (`rehearse-dev-start`)
+- **리소스 정의**: `infra/dev-instance-scheduler.yaml` (CloudFormation)
+- **Stack**: `rehearse-dev-scheduler` (region `ap-northeast-2`)
+
+### 배포 / 재배포
+```bash
+aws cloudformation deploy \
+  --template-file infra/dev-instance-scheduler.yaml \
+  --stack-name rehearse-dev-scheduler \
+  --capabilities CAPABILITY_NAMED_IAM \
+  --region ap-northeast-2
+```
+
+### 스케줄 해제 (전체 롤백)
+```bash
+aws cloudformation delete-stack --stack-name rehearse-dev-scheduler --region ap-northeast-2
+```
+
+### 긴급 수동 start (stop 상태에서)
+```bash
+aws ec2 start-instances --instance-ids i-0c7d5af781b430b85 --region ap-northeast-2
+```
+
+### 일시적으로 스케줄 비활성화
+콘솔 또는 CLI로 개별 스케줄 disable:
+```bash
+aws scheduler update-schedule --name rehearse-dev-stop \
+  --state DISABLED --flexible-time-window Mode=OFF \
+  --schedule-expression "cron(0 2 * * ? *)" \
+  --schedule-expression-timezone Asia/Seoul \
+  --target '{"Arn":"arn:aws:scheduler:::aws-sdk:ec2:stopInstances","RoleArn":"arn:aws:iam::776735194358:role/rehearse-dev-scheduler-role","Input":"{\"InstanceIds\":[\"i-0c7d5af781b430b85\"]}"}' \
+  --region ap-northeast-2
+```
+
+### 주의
+- **GitHub Actions dev 배포는 10:00–02:00 구간에만 실행**해야 함. 그 외 시간대엔 인스턴스가 stopped라 SSH 실패
+- EIP는 유지되므로 start 후 IP 변경 없음
+- prod 인스턴스(`i-08c7eb8711b295401`)는 스케줄러 대상이 **아님** (24/7 운영)

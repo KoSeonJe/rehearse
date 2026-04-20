@@ -79,6 +79,14 @@ rehearse:
 - Review: `architect-reviewer` — 분기 레이어링(의도 분류가 follow-up 파이프라인 앞에 올바르게 위치했는지)
 - Review: `code-reviewer` — 기존 `FollowUpService` 공개 API 변경 없음 확인, 3-intent 프롬프트 temperature/few-shot
 
+## Flag Exit Criteria
+
+`rehearse.features.intent-classifier` 는 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
+- 프로덕션 100% 롤아웃 2주 유지
+- Intent 정확도 ≥ 90% 안정 (주간 리포트)
+- OFF_TOPIC / CLARIFY 오분류율 ≤ 3%
+- 제거 범위: flag 필드 + application.yml 블록 + "classifier 없이 돌아가는 폴백 경로"
+
 ## 검증
 
 1. 수작업 골든셋 20개 (ANSWER 10 / CLARIFY 6 / GIVE_UP 4)로 confusion matrix 작성

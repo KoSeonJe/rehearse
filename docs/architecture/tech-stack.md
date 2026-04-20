@@ -97,29 +97,45 @@
 
 ---
 
-## Analysis (Lambda)
+## AI / LLM
 
-| 영역 | 기술 | 버전/사양 |
-|------|------|-----------|
-| Runtime | Python | 3.12 |
-| STT | OpenAI Whisper API | whisper-1 |
-| Vision/LLM | OpenAI GPT-4o | Vision + LLM |
-| 미디어 처리 | FFmpeg (static) | 7.x |
+면접 서비스 특성상 LLM을 **용도별로 다른 공급자**로 분리 운영한다.
+
+### Backend (질문 생성 · 꼬리질문) — `ResilientAiClient`
+
+| 역할 | 공급자 / 모델 | 용도 |
+|------|--------------|------|
+| **Primary** | OpenAI **GPT-4o-mini** | 초기 질문 생성 (temp 0.9), 꼬리질문 (temp 0.7) |
+| Primary (audio) | OpenAI **gpt-4o-mini-audio-preview** | 오디오 직접 입력 꼬리질문 (STT 불필요) |
+| **Fallback** | Anthropic **Claude Sonnet** | 질문 생성 fallback |
+| Fallback | Anthropic **Claude Haiku** | 꼬리질문 fallback (Whisper STT 선행) |
+
+- 활성 조건: `openai.api-key` 존재 → primary, 없으면 Claude only, 둘 다 없으면 `MockAiClient`
+- 프롬프트 빌더(`QuestionGenerationPromptBuilder`, `FollowUpPromptBuilder`)는 **양쪽 공용** — 템플릿 1벌로 관리
+- Claude는 Prompt Caching(`SystemContent.withCaching()`) 활성
+
+### Analysis (Lambda) — Python 3.12
+
+| 역할 | 공급자 / 모델 | 파일 |
+|------|--------------|------|
+| **Audio 통합 분석 (주력)** | Google **Gemini** (`google.generativeai`) | `gemini_analyzer.py` — verbal+technical+vocal 통합 |
+| 언어 분석 (보조) | OpenAI GPT | `verbal_analyzer.py` |
+| 비언어 (Vision) | OpenAI **GPT-4o Vision** | `vision_analyzer.py` — 프레임 기반 |
+| STT (fallback 경로) | OpenAI **Whisper** | `stt_analyzer.py` |
+| 미디어 처리 | FFmpeg (static) 7.x | - |
+
+- 프롬프트 팩토리 `verbal_prompt_factory.py` 는 모델 중립으로 설계 → Gemini/OpenAI 양쪽이 공유
+- handler 가 4개 analyzer 모두 import. 실제 주력 경로는 `analyze_answer_audio` (Gemini)
 
 ### 선택 근거
 
-> **문제**: 면접 녹화 영상에서 STT, 비언어 분석, 언어 분석을 서버사이드로 처리해야 한다.
+> **문제**: 면접 질문 생성/꼬리질문, 녹화 영상의 STT·언어·비언어 분석을 안정적으로 처리해야 한다.
 >
-> **상황**: 기존 클라이언트 분석(MediaPipe/Web Audio)에서 서버사이드 분석으로 전환. 정확도와 일관성이 핵심.
+> **상황**: 단일 벤더 종속 리스크와 장애 내성이 필요. 언어·비언어 분석은 오디오 직접 이해 능력이 중요.
 >
-> **선택지**:
-> | 옵션 | 장점 | 단점 |
-> |------|------|------|
-> | OpenAI Whisper + GPT-4o | 높은 한국어 STT 정확도, Vision으로 비언어 분석 통합 | API 비용 발생 |
-> | 클라이언트 분석 (MediaPipe) | 서버 비용 $0 | 디바이스 의존, 분석 정확도/일관성 낮음 |
-> | AWS Transcribe + Rekognition | AWS 네이티브 통합 | 한국어 지원 제한, 비언어 분석 커스텀 어려움 |
->
-> **결정**: OpenAI Whisper + GPT-4o. 한국어 STT 정확도가 가장 높고, Vision API로 프레임 기반 비언어 분석을 단일 벤더에서 처리 가능.
+> **결정**:
+> - Backend: GPT-4o-mini primary + Claude fallback 이중화로 벤더 장애 내성 확보. 동일 템플릿 공유로 운영 복잡도 최소.
+> - Lambda: Gemini 의 long-context 오디오 분석 + OpenAI Vision 의 프레임 해석력 조합이 비용·품질 최적.
 
 ---
 

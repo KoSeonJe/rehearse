@@ -10,6 +10,8 @@ import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+
+import java.util.ArrayList;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -71,6 +73,86 @@ public class ClaudeApiClient {
         this.model = model;
     }
 
+    // Claude 는 response_format 파라미터 미지원 → system 메시지 앞에 prepend 해서 JSON 강제.
+    private static final String JSON_OBJECT_INSTRUCTION =
+            "You MUST respond with a single JSON object only. No prose, no markdown, no code fences.";
+
+    @RateLimiter(name = "claude-api")
+    public ChatResponse chat(ChatRequest req) {
+        String resolvedModel = (req.modelOverride() != null && !req.modelOverride().isBlank())
+                ? req.modelOverride()
+                : model;
+
+        int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
+        Double resolvedTemperature = req.temperature();
+
+        List<SystemContent> systemContents = new ArrayList<>();
+        List<ClaudeRequest.Message> userMessages = new ArrayList<>();
+
+        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
+            systemContents.add(SystemContent.of(JSON_OBJECT_INSTRUCTION));
+        }
+
+        for (ChatMessage msg : req.messages()) {
+            if (msg.role() == ChatMessage.Role.SYSTEM) {
+                if (msg.cacheControl()) {
+                    systemContents.add(SystemContent.withCaching(msg.content()));
+                } else {
+                    systemContents.add(SystemContent.of(msg.content()));
+                }
+            } else {
+                userMessages.add(ClaudeRequest.Message.builder()
+                        .role(msg.roleLowercase())
+                        .content(msg.content())
+                        .build());
+            }
+        }
+
+        if (userMessages.isEmpty()) {
+            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+        }
+
+        ClaudeRequest claudeRequest = ClaudeRequest.builder()
+                .model(resolvedModel)
+                .maxTokens(resolvedMaxTokens)
+                .system(systemContents.isEmpty() ? null : systemContents)
+                .messages(userMessages)
+                .temperature(resolvedTemperature)
+                .build();
+
+        String apiLabel = "Claude API [" + req.callType() + "]";
+        ClaudeResponse response = executeClaudeRequest(claudeRequest, apiLabel, resolvedMaxTokens);
+
+        int cacheRead = 0;
+        int cacheWrite = 0;
+        int inputTokens = 0;
+        int outputTokens = 0;
+        boolean cacheHit = false;
+
+        if (response.getUsage() != null) {
+            var usage = response.getUsage();
+            inputTokens = usage.getInputTokens();
+            outputTokens = usage.getOutputTokens();
+            cacheRead = usage.getCacheReadInputTokens();
+            cacheWrite = usage.getCacheCreationInputTokens();
+            cacheHit = cacheRead > 0;
+        }
+
+        String content = response.getContent().get(0).getText();
+        if (content == null || content.isBlank()) {
+            throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
+        }
+
+        return new ChatResponse(
+                content,
+                ChatResponse.Usage.of(inputTokens, outputTokens, cacheRead, cacheWrite),
+                "claude",
+                resolvedModel,
+                cacheHit,
+                false
+        );
+    }
+
     @RateLimiter(name = "claude-api")
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
@@ -116,6 +198,11 @@ public class ClaudeApiClient {
                 .temperature(temperature)
                 .build();
 
+        ClaudeResponse response = executeClaudeRequest(request, "Claude API", maxTokens);
+        return response.getContent().get(0).getText();
+    }
+
+    private ClaudeResponse executeClaudeRequest(ClaudeRequest request, String apiLabel, int maxTokens) {
         long delayMs = INITIAL_RETRY_DELAY_MS;
 
         for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
@@ -127,17 +214,17 @@ public class ClaudeApiClient {
                         .body(request)
                         .retrieve()
                         .onStatus(status -> status.value() == 429, (req, res) -> {
-                            log.warn("[Claude API] Rate Limited (429)");
-                            throw new RetryableApiException("Claude API rate limited (429)");
+                            log.warn("[{}] Rate Limited (429)", apiLabel);
+                            throw new RetryableApiException(apiLabel + " rate limited (429)");
                         })
                         .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
                             String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
-                            log.error("Claude API 클라이언트 에러: status={}, body={}", res.getStatusCode(), body);
+                            log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
                             throw new BusinessException(AiErrorCode.CLIENT_ERROR);
                         })
                         .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                            log.warn("[Claude API] 서버 에러: status={}", res.getStatusCode());
-                            throw new RetryableApiException("Claude API 서버 에러: " + res.getStatusCode());
+                            log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
+                            throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
                         })
                         .body(ClaudeResponse.class);
 
@@ -147,24 +234,22 @@ public class ClaudeApiClient {
 
                 if (response.getUsage() != null) {
                     var usage = response.getUsage();
-                    log.info("[Claude API] 토큰 사용량 - input: {}, output: {}, cache_write: {}, cache_read: {}, total: {}",
-                            usage.getInputTokens(), usage.getOutputTokens(),
-                            usage.getCacheCreationInputTokens(), usage.getCacheReadInputTokens(),
-                            usage.getInputTokens() + usage.getOutputTokens()
-                                    + usage.getCacheCreationInputTokens() + usage.getCacheReadInputTokens());
+                    log.info("[{}] 토큰 사용량 - input: {}, output: {}, cache_write: {}, cache_read: {}",
+                            apiLabel, usage.getInputTokens(), usage.getOutputTokens(),
+                            usage.getCacheCreationInputTokens(), usage.getCacheReadInputTokens());
                 }
 
                 if ("max_tokens".equals(response.getStopReason())) {
-                    log.warn("[Claude API] 응답이 max_tokens({})에 도달하여 잘림. model={}", maxTokens, requestModel);
+                    log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림. model={}", apiLabel, maxTokens, request.getModel());
                 }
 
-                return response.getContent().get(0).getText();
+                return response;
 
             } catch (BusinessException e) {
                 throw e;
             } catch (RetryableApiException | RestClientException e) {
                 if (attempt < MAX_RETRY_ATTEMPTS) {
-                    log.info("[Claude API] 재시도 {}/{}: {}", attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
+                    log.info("[{}] 재시도 {}/{}: {}", apiLabel, attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
                     try {
                         Thread.sleep(delayMs);
                     } catch (InterruptedException ie) {
@@ -173,7 +258,7 @@ public class ClaudeApiClient {
                     }
                     delayMs *= 2;
                 } else {
-                    log.error("[Claude API] 모든 재시도 실패", e);
+                    log.error("[{}] 모든 재시도 실패", apiLabel, e);
                     throw new BusinessException(AiErrorCode.TIMEOUT);
                 }
             }

@@ -1,6 +1,6 @@
 # Plan 00b: AiClient Generalization (Phase 0) `[blocking]`
 
-> 상태: Draft
+> 상태: Completed
 > 작성일: 2026-04-20
 > 주차: W1 후반 (3-4일)
 > 해결 RC: RC1(AiClient 도메인 결합), RC7(Feature flag runtime), RC6의 JSON 파싱 폴백

@@ -86,8 +86,8 @@ devlens/
 - **Frontend**: React 18 + TypeScript 5+ / Tailwind CSS / Vite / Zustand / TanStack Query
 - **Backend**: Java 21 + Spring Boot 3.x / Gradle (Kotlin DSL) / Spring Data JPA
 - **Database**: MySQL 8.0 (prod) / H2 (dev)
-- **AI**: Claude API (Sonnet) — backend only, 모델 ID는 `application-*.yml`에서 관리
-- **Analysis**: OpenAI API (Whisper STT, GPT-4o Vision/LLM) — Lambda only
+- **AI (Backend)**: OpenAI **GPT-4o-mini** primary + **Claude Sonnet/Haiku** fallback — `ResilientAiClient` 이중화, 프롬프트 빌더 공용. 모델 ID는 `application-*.yml`에서 관리
+- **Analysis (Lambda)**: **Gemini** (audio 통합 분석, 주력) + OpenAI **GPT-4o Vision** (프레임) + OpenAI **Whisper** (STT fallback 경로)
 - **Browser**: MediaRecorder (WebM), Web Speech API
 - **Infra**: S3, EventBridge, Lambda (Python 3.12), MediaConvert, ECR, CloudFront
 
@@ -226,3 +226,31 @@ Example:
 
 - A plan without agent assignments is considered **incomplete**
 - Mark parallelizable tasks with `[parallel]` tag
+
+### Sub-Agent Convention Contract (Required, Blocking)
+
+모든 서브 에이전트는 **작업 착수 전** 담당 영역의 컨벤션 문서를 `Read` 도구로 직접 로드한 뒤 구현한다. 이는 에이전트 자체 프롬프트(`.claude/agents/*.md`)에도 강제되어 있지만, 에이전트 호출 프롬프트에도 반드시 아래 파일들을 명시한다.
+
+**Backend 작업 (backend / backend-architect / debugger / architect-reviewer)**:
+- `backend/CONVENTIONS.md`, `backend/CODING_GUIDE.md`, `backend/TEST_STRATEGY.md`
+
+**Frontend 작업 (frontend / frontend-developer / designer / debugger)**:
+- `frontend/CONVENTIONS.md`, `frontend/CODING_GUIDE.md`
+- `DESIGN.md`, `.claude/rules/frontend-design-rules.md`
+
+**리뷰/테스트 에이전트 (code-reviewer / architect-reviewer / test-engineer / qa)**:
+- 대상 코드 영역의 BE/FE 컨벤션 + `CLAUDE.md` (루트)
+
+**공통 필수 룰 (재확인용 요약)**:
+- BE: Entity 직접 반환 금지, `@Transactional(readOnly=true)` 기본, DB 스키마 변경 시 Flyway
+- FE: `any` 금지, `console.log` 커밋 금지, Claude API 직접 호출 금지, shadcn primitive 우선
+- 공통: 기본 주석 ZERO — WHY 가 비명시적일 때만 1~2줄
+
+**호출 프롬프트 예시 (권장)**:
+```
+backend 에이전트로 {기능} 구현. 시작 전에 backend/CONVENTIONS.md, backend/CODING_GUIDE.md,
+backend/TEST_STRATEGY.md, CLAUDE.md 를 Read 로 확인할 것. Entity 직접 반환 금지,
+@Transactional(readOnly=true) 기본, 주석 최소화 규칙 준수.
+```
+
+위 문서 로드 없이 구현이 진행됐다면 **리뷰 단계에서 컨벤션 위반을 이유로 재작업**을 요청한다.

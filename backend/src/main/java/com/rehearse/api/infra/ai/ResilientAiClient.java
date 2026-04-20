@@ -1,41 +1,33 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
-import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
-import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
+import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
+import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
+import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.RetryableApiException;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
+import org.springframework.web.client.RestClientException;
 
 /**
- * Primary AiClient — OpenAI(GPT-4o-mini) 호출 후 실패 시 Claude fallback.
- *
- * <p>서비스 계층은 AiClient 인터페이스만 의존하므로 변경 없음.</p>
- *
- * <p>빈 생성 조건: OpenAiClient 또는 ClaudeApiClient 중 하나 이상 존재.
- * 둘 다 없으면 MockAiClient가 활성화됨.</p>
- *
- * <p>Fallback 전략:
+ * Fallback 전략:
  * <ul>
- *   <li>OpenAI만 있음: OpenAI 호출, 실패 시 에러</li>
- *   <li>Claude만 있음: Claude 호출</li>
- *   <li>둘 다 있음: OpenAI 호출 (1회 재시도, 총 2회) → 실패 시 Claude fallback</li>
- *   <li>Claude도 실패 → SERVICE_UNAVAILABLE (503)</li>
+ *   <li>OpenAI/Claude 중 한쪽만 설정 → 해당 provider 만 사용</li>
+ *   <li>둘 다 설정 → OpenAI primary → 실패 시 Claude fallback (cache allowMiss=true)</li>
+ *   <li>모두 실패 → SERVICE_UNAVAILABLE (503)</li>
  * </ul>
  */
 @Slf4j
 @Component
 @Primary
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty() or !'${claude.api-key:}'.isEmpty()")
-public class ResilientAiClient implements AiClient {
+public class ResilientAiClient extends AbstractAiClient {
 
     @Nullable
     private final OpenAiClient openAiClient;
@@ -43,16 +35,19 @@ public class ResilientAiClient implements AiClient {
     @Nullable
     private final ClaudeApiClient claudeApiClient;
 
-    @Nullable
-    private final SttService sttService;
+    private final AiCallMetrics aiCallMetrics;
 
     public ResilientAiClient(
             @Nullable OpenAiClient openAiClient,
             @Nullable ClaudeApiClient claudeApiClient,
-            @Nullable SttService sttService) {
+            @Nullable SttService sttService,
+            AiCallMetrics aiCallMetrics,
+            QuestionGenerationAdapter questionAdapter,
+            FollowUpGenerationAdapter followUpAdapter) {
+        super(questionAdapter, followUpAdapter, sttService);
         this.openAiClient = openAiClient;
         this.claudeApiClient = claudeApiClient;
-        this.sttService = sttService;
+        this.aiCallMetrics = aiCallMetrics;
 
         if (openAiClient == null && claudeApiClient == null) {
             throw new IllegalStateException("OpenAiClient와 ClaudeApiClient 중 하나 이상 설정되어야 합니다.");
@@ -68,113 +63,56 @@ public class ResilientAiClient implements AiClient {
     }
 
     @Override
-    public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
+    public ChatResponse chat(ChatRequest request) {
+        return aiCallMetrics.recordChat(request.callType(), () -> doChat(request));
+    }
+
+    private ChatResponse doChat(ChatRequest request) {
         if (openAiClient == null) {
-            return fallbackGenerateQuestions(request);
+            return fallbackChat(request);
         }
 
         try {
-            return openAiClient.generateQuestions(request);
+            return openAiClient.chat(request);
         } catch (BusinessException e) {
             if (isNonRetryableError(e)) {
                 throw e;
             }
-            log.warn("[AI Fallback] OpenAI 질문 생성 실패 → Claude 전환: {}", e.getMessage());
-            return fallbackGenerateQuestions(request);
-        } catch (Exception e) {
-            log.warn("[AI Fallback] OpenAI 질문 생성 실패 → Claude 전환: {}", e.getMessage());
-            return fallbackGenerateQuestions(request);
+            log.warn("[AI Fallback] OpenAI chat 실패 → Claude 전환: callType={}, {}", request.callType(), e.getMessage());
+            return fallbackChat(request);
+        } catch (RestClientException | RetryableApiException e) {
+            // 네트워크/API 오류만 fallback. 프로그래밍 오류(NPE, IAE 등)는 rethrow 하여 즉시 드러냄.
+            log.warn("[AI Fallback] OpenAI chat 실패 → Claude 전환: callType={}, {}", request.callType(), e.getMessage());
+            return fallbackChat(request);
         }
     }
 
-    @Override
-    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
-        if (openAiClient == null) {
-            return fallbackGenerateFollowUp(request);
-        }
-
-        try {
-            return openAiClient.generateFollowUpQuestion(request);
-        } catch (BusinessException e) {
-            if (isNonRetryableError(e)) {
-                throw e;
-            }
-            log.warn("[AI Fallback] OpenAI 후속 질문 실패 → Claude 전환: {}", e.getMessage());
-            return fallbackGenerateFollowUp(request);
-        } catch (Exception e) {
-            log.warn("[AI Fallback] OpenAI 후속 질문 실패 → Claude 전환: {}", e.getMessage());
-            return fallbackGenerateFollowUp(request);
-        }
-    }
-
-    @Override
-    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
-        if (openAiClient == null) {
-            return fallbackWithSttAndClaude(audioFile, request);
-        }
-
-        try {
-            return openAiClient.generateFollowUpWithAudio(audioFile, request);
-        } catch (BusinessException e) {
-            if (isNonRetryableError(e)) {
-                throw e;
-            }
-            log.warn("[AI Fallback] GPT-audio 실패 → Whisper+Claude 전환: {}", e.getMessage());
-            return fallbackWithSttAndClaude(audioFile, request);
-        } catch (Exception e) {
-            log.warn("[AI Fallback] GPT-audio 실패 → Whisper+Claude 전환: {}", e.getMessage());
-            return fallbackWithSttAndClaude(audioFile, request);
-        }
-    }
-
-    private GeneratedFollowUp fallbackWithSttAndClaude(MultipartFile audioFile, FollowUpGenerationRequest request) {
-        if (sttService == null || claudeApiClient == null) {
+    private ChatResponse fallbackChat(ChatRequest request) {
+        if (claudeApiClient == null) {
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         try {
-            String answerText = sttService.transcribe(audioFile);
-            FollowUpGenerationRequest updatedReq = new FollowUpGenerationRequest(
-                    request.position(), request.techStack(), request.level(),
-                    request.questionContent(), answerText,
-                    request.nonVerbalSummary(), request.previousExchanges(),
-                    request.mainReferenceType()
+            ChatRequest fallbackReq = request.withCachePolicy(
+                    request.cachePolicy().withAllowMiss(true)
             );
-            return claudeApiClient.generateFollowUpQuestion(updatedReq).withAnswerText(answerText);
+            ChatResponse response = claudeApiClient.chat(fallbackReq);
+            return new ChatResponse(
+                    response.content(),
+                    response.usage(),
+                    response.provider(),
+                    response.model(),
+                    response.cacheHit(),
+                    true
+            );
         } catch (Exception fallbackEx) {
-            log.error("[AI Fallback] Whisper+Claude도 실패 — 이중 장애: {}", fallbackEx.getMessage());
+            log.error("[AI Fallback] Claude chat도 실패 — 이중 장애: callType={}, {}", request.callType(), fallbackEx.getMessage());
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
     }
 
-    /**
-     * 요청 자체의 문제(CLIENT_ERROR, PARSE_FAILED)는 Claude로 보내도 동일하게 실패하므로 fallback하지 않는다.
-     */
+    // 요청 자체 문제(CLIENT_ERROR / PARSE_FAILED)는 Claude 로 보내도 동일 실패 → fallback 생략.
     private boolean isNonRetryableError(BusinessException e) {
         return AiErrorCode.CLIENT_ERROR.getCode().equals(e.getCode())
                 || AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());
-    }
-
-    private List<GeneratedQuestion> fallbackGenerateQuestions(QuestionGenerationRequest request) {
-        if (claudeApiClient == null) {
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
-        }
-        try {
-            return claudeApiClient.generateQuestions(request);
-        } catch (Exception fallbackEx) {
-            log.error("[AI Fallback] Claude도 실패 — 이중 장애: {}", fallbackEx.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
-        }
-    }
-
-    private GeneratedFollowUp fallbackGenerateFollowUp(FollowUpGenerationRequest request) {
-        if (claudeApiClient == null) {
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
-        }
-        try {
-            return claudeApiClient.generateFollowUpQuestion(request);
-        } catch (Exception fallbackEx) {
-            log.error("[AI Fallback] Claude도 실패 — 이중 장애: {}", fallbackEx.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
-        }
     }
 }

@@ -83,10 +83,16 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
 
+    // Spring Cloud Context (@RefreshScope — Config Server 불필요, Actuator /refresh 만 사용)
+    implementation("org.springframework.cloud:spring-cloud-context:4.1.4")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // WireMock (HTTP mock server for OpenAI/Claude API contract tests)
+    testImplementation("org.wiremock:wiremock-standalone:3.9.1")
 }
 
 tasks.withType<Test> {
