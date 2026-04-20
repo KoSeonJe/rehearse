@@ -10,16 +10,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-/**
- * AiClient 구현 기반 클래스.
- *
- * <p>legacy 3개 메서드({@code generateQuestions}, {@code generateFollowUpQuestion},
- * {@code generateFollowUpWithAudio})를 어댑터를 통해 {@code chat()} 경유로 위임한다.
- * 구현체({@link ResilientAiClient}, {@link MockAiClient})는 이 클래스를 상속하고
- * {@code chat()} 만 구현하면 된다.</p>
- *
- * <p>{@link MockAiClient} 의 경우 테스트 목적으로 override 가능하다.</p>
- */
 public abstract class AbstractAiClient implements AiClient {
 
     protected final QuestionGenerationAdapter questionAdapter;

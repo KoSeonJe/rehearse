@@ -2,44 +2,22 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
-import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.stereotype.Component;
 
-import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.annotation.PostConstruct;
-import java.util.List;
-
-/**
- * Mock AiClient — API 키 없이 동작하는 테스트/개발 환경용 구현체.
- *
- * <p>chat() 은 Mock 응답을 반환한다. legacy 3개 메서드는 AbstractAiClient 를 통해
- * chat() 경유 어댑터로 위임된다. 단, Mock 환경에서는 실제 프롬프트 빌더가 필요하므로
- * 어댑터에 의존한다.</p>
- *
- * <p>단순한 고정 응답이 필요한 테스트라면 직접 override 가능하다.</p>
- */
 @Slf4j
 @Component
 @ConditionalOnMissingBean(ResilientAiClient.class)
 public class MockAiClient extends AbstractAiClient {
 
-    private final ObjectMapper objectMapper;
-
     public MockAiClient(
-            ObjectMapper objectMapper,
             QuestionGenerationAdapter questionAdapter,
             FollowUpGenerationAdapter followUpAdapter) {
         super(questionAdapter, followUpAdapter, null);
-        this.objectMapper = objectMapper;
     }
 
     @PostConstruct
@@ -51,8 +29,11 @@ public class MockAiClient extends AbstractAiClient {
     public ChatResponse chat(ChatRequest request) {
         log.info("[Mock] chat 호출 - callType={}, messages={}", request.callType(), request.messages().size());
 
-        // Mock 환경에서 callType에 따라 적절한 Mock JSON 응답 반환
-        String content = resolveMockContent(request);
+        String content = switch (request.callType()) {
+            case "generate_questions" -> mockQuestionsJson();
+            case "generate_followup" -> mockFollowUpJson();
+            default -> "[Mock] " + request.callType() + " response";
+        };
         return new ChatResponse(
                 content,
                 ChatResponse.Usage.empty(),
@@ -63,21 +44,7 @@ public class MockAiClient extends AbstractAiClient {
         );
     }
 
-    /**
-     * callType 에 따라 적절한 Mock JSON 응답을 반환한다.
-     * AbstractAiClient 어댑터가 chat() 응답을 파싱하므로 JSON 형식을 맞춰야 한다.
-     */
-    private String resolveMockContent(ChatRequest request) {
-        return switch (request.callType()) {
-            case "generate_questions" -> mockQuestionsJson(request);
-            case "generate_followup" -> mockFollowUpJson();
-            default -> "[Mock] " + request.callType() + " response";
-        };
-    }
-
-    private String mockQuestionsJson(ChatRequest request) {
-        int questionCount = 5;
-        // messages 에서 질문 수 추정이 어려우므로 기본값 사용
+    private String mockQuestionsJson() {
         return """
                 {"questions": [
                   {"content": "[Mock] Java에서 GC(Garbage Collection)의 동작 원리를 설명해주세요.", "category": "JVM", "order": 1, "evaluationCriteria": "GC 알고리즘과 힙 구조 이해", "questionCategory": "CS", "modelAnswer": "Java GC는 힙 메모리에서 더 이상 참조되지 않는 객체를 자동으로 해제합니다.", "referenceType": "GUIDE"},
@@ -93,13 +60,5 @@ public class MockAiClient extends AbstractAiClient {
         return """
                 {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "modelAnswer": "[Mock] 성능 최적화를 위해 캐싱, 쿼리 최적화, 비동기 처리 등을 설명할 수 있어야 합니다."}
                 """;
-    }
-
-    private <T> T parseJson(String json, TypeReference<T> typeRef) {
-        try {
-            return objectMapper.readValue(json, typeRef);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Mock JSON 파싱 실패", e);
-        }
     }
 }

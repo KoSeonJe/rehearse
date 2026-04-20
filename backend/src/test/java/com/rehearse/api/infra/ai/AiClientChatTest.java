@@ -1,6 +1,5 @@
 package com.rehearse.api.infra.ai;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
@@ -40,7 +39,6 @@ class AiClientChatTest {
     @BeforeEach
     void setUp() {
         mockAiClient = new MockAiClient(
-                new ObjectMapper(),
                 mock(QuestionGenerationAdapter.class),
                 mock(FollowUpGenerationAdapter.class));
         basicMessages = List.of(

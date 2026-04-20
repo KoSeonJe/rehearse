@@ -30,18 +30,6 @@ public class AiResponseParser {
         }
     }
 
-    /**
-     * JSON 파싱 실패 시 1회 재호출 후 재시도하는 파싱 메서드.
-     *
-     * <p>1차 파싱 실패 시 {@code retryCall} Supplier 를 실행해 새 응답을 받아 다시 파싱한다.
-     * 2차 파싱도 실패하면 {@link BusinessException}(PARSE_FAILED) 를 던진다.</p>
-     *
-     * @param text      1차 파싱 대상 텍스트
-     * @param clazz     파싱 대상 클래스
-     * @param retryCall 재호출 Supplier — 호출측이 "이전 응답은 스키마를 위반" 프롬프트를 주입한 새 ChatResponse 를 반환해야 함
-     * @param <T>       파싱 결과 타입
-     * @return 파싱된 객체
-     */
     public <T> T parseWithRetry(String text, Class<T> clazz, Supplier<ChatResponse> retryCall) {
         try {
             String json = extractJson(text);
@@ -59,20 +47,7 @@ public class AiResponseParser {
         }
     }
 
-    /**
-     * 고수준 parseOrRetry — ChatResponse 기반 자동 재호출.
-     *
-     * <p>1차: {@code initial.content()} 파싱 시도.
-     * 실패 시 {@code originalRequest.withSchemaRetryHint(violation)} 으로 {@code client.chat()} 재호출
-     * → 2차 파싱 시도. 2차도 실패하면 {@link BusinessException}(PARSE_FAILED) 를 던진다.</p>
-     *
-     * @param initial         최초 AI 응답
-     * @param clazz           파싱 대상 클래스
-     * @param client          재호출에 사용할 AiClient (JSON_OBJECT 요청이어야 효과적)
-     * @param originalRequest 재호출 시 스키마 힌트를 덧붙일 원본 요청
-     * @param <T>             파싱 결과 타입
-     * @return 파싱된 객체
-     */
+    // 1차 파싱 실패 시 originalRequest 에 스키마 힌트를 덧붙여 client.chat() 재호출 → 2차 파싱.
     public <T> T parseOrRetry(ChatResponse initial, Class<T> clazz, AiClient client, ChatRequest originalRequest) {
         try {
             String json = extractJson(initial.content());

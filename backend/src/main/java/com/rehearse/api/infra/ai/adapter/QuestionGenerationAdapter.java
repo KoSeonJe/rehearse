@@ -11,12 +11,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * QuestionGenerationRequest → ChatRequest 변환 후 AiClient.chat() 경유로 질문 생성.
- *
- * <p>AiClient 구현체(ResilientAiClient, MockAiClient)가 이 어댑터를 주입받아
- * generateQuestions() 를 chat() 경유로 위임한다.</p>
- */
 @Component
 @RequiredArgsConstructor
 public class QuestionGenerationAdapter {
@@ -27,10 +21,6 @@ public class QuestionGenerationAdapter {
     private final QuestionGenerationPromptBuilder promptBuilder;
     private final AiResponseParser responseParser;
 
-    /**
-     * QuestionGenerationRequest 를 ChatRequest 로 변환하고 client.chat() 을 호출해
-     * GeneratedQuestion 목록을 반환한다.
-     */
     public List<GeneratedQuestion> adapt(AiClient client, QuestionGenerationRequest req) {
         String systemPrompt = promptBuilder.buildSystemPrompt(req);
         String userPrompt = promptBuilder.buildUserPrompt(req);

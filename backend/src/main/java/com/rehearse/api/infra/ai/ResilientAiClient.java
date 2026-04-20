@@ -16,23 +16,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 
 /**
- * Primary AiClient — OpenAI(GPT-4o-mini) 호출 후 실패 시 Claude fallback.
- *
- * <p>서비스 계층은 AiClient 인터페이스만 의존하므로 변경 없음.</p>
- *
- * <p>빈 생성 조건: OpenAiClient 또는 ClaudeApiClient 중 하나 이상 존재.
- * 둘 다 없으면 MockAiClient가 활성화됨.</p>
- *
- * <p>Fallback 전략:
+ * Fallback 전략:
  * <ul>
- *   <li>OpenAI만 있음: OpenAI 호출, 실패 시 에러</li>
- *   <li>Claude만 있음: Claude 호출</li>
- *   <li>둘 다 있음: OpenAI 호출 → 실패 시 Claude fallback</li>
- *   <li>Claude도 실패 → SERVICE_UNAVAILABLE (503)</li>
+ *   <li>OpenAI/Claude 중 한쪽만 설정 → 해당 provider 만 사용</li>
+ *   <li>둘 다 설정 → OpenAI primary → 실패 시 Claude fallback (cache allowMiss=true)</li>
+ *   <li>모두 실패 → SERVICE_UNAVAILABLE (503)</li>
  * </ul>
- *
- * <p>legacy 3개 메서드(generateQuestions, generateFollowUpQuestion, generateFollowUpWithAudio)는
- * {@link AbstractAiClient} 를 통해 {@code chat()} 경유 어댑터로 위임된다.</p>
  */
 @Slf4j
 @Component
@@ -92,7 +81,7 @@ public class ResilientAiClient extends AbstractAiClient {
             log.warn("[AI Fallback] OpenAI chat 실패 → Claude 전환: callType={}, {}", request.callType(), e.getMessage());
             return fallbackChat(request);
         } catch (RestClientException | RetryableApiException e) {
-            // M4: 네트워크/API 레벨 오류만 fallback. 프로그래밍 오류(NPE, IAE 등)는 rethrow.
+            // 네트워크/API 오류만 fallback. 프로그래밍 오류(NPE, IAE 등)는 rethrow 하여 즉시 드러냄.
             log.warn("[AI Fallback] OpenAI chat 실패 → Claude 전환: callType={}, {}", request.callType(), e.getMessage());
             return fallbackChat(request);
         }
@@ -121,9 +110,7 @@ public class ResilientAiClient extends AbstractAiClient {
         }
     }
 
-    /**
-     * 요청 자체의 문제(CLIENT_ERROR, PARSE_FAILED)는 Claude로 보내도 동일하게 실패하므로 fallback하지 않는다.
-     */
+    // 요청 자체 문제(CLIENT_ERROR / PARSE_FAILED)는 Claude 로 보내도 동일 실패 → fallback 생략.
     private boolean isNonRetryableError(BusinessException e) {
         return AiErrorCode.CLIENT_ERROR.getCode().equals(e.getCode())
                 || AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());

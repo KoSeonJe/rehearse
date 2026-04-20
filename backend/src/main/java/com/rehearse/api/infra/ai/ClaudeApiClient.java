@@ -73,10 +73,7 @@ public class ClaudeApiClient {
         this.model = model;
     }
 
-    /**
-     * JSON_OBJECT 응답 강제 지시문. Claude는 response_format 파라미터를 지원하지 않으므로
-     * system 메시지 앞에 이 지시를 prepend하여 순수 JSON 반환을 유도한다.
-     */
+    // Claude 는 response_format 파라미터 미지원 → system 메시지 앞에 prepend 해서 JSON 강제.
     private static final String JSON_OBJECT_INSTRUCTION =
             "You MUST respond with a single JSON object only. No prose, no markdown, no code fences.";
 
@@ -89,11 +86,9 @@ public class ClaudeApiClient {
         int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
         Double resolvedTemperature = req.temperature();
 
-        // SYSTEM 메시지를 system 배열로 분리, cacheControl=true 이면 ephemeral 마킹
         List<SystemContent> systemContents = new ArrayList<>();
         List<ClaudeRequest.Message> userMessages = new ArrayList<>();
 
-        // M2: JSON_OBJECT 요청 시 system 메시지 맨 앞에 JSON 강제 지시 prepend
         if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
             systemContents.add(SystemContent.of(JSON_OBJECT_INSTRUCTION));
         }
@@ -143,7 +138,6 @@ public class ClaudeApiClient {
             cacheHit = cacheRead > 0;
         }
 
-        // M8: null guard — content[0].getText() 가 null/blank 이면 EMPTY_RESPONSE
         String content = response.getContent().get(0).getText();
         if (content == null || content.isBlank()) {
             throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
@@ -208,10 +202,6 @@ public class ClaudeApiClient {
         return response.getContent().get(0).getText();
     }
 
-    /**
-     * ClaudeRequest 를 재시도 로직과 함께 실행하고 ClaudeResponse 를 반환.
-     * chat() 과 callClaudeApiWithModel() 에서 공통으로 사용.
-     */
     private ClaudeResponse executeClaudeRequest(ClaudeRequest request, String apiLabel, int maxTokens) {
         long delayMs = INITIAL_RETRY_DELAY_MS;
 
