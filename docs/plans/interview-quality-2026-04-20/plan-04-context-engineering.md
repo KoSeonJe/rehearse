@@ -81,6 +81,14 @@ rehearse:
 - Implement: `backend-architect` — 4-layer 레이어링, 추상화 경계, `ResilientAiClient` 리팩토링
 - Review: `architect-reviewer` — 레이어 책임 분리(SRP), 멀티 프로바이더 어댑터 패턴
 
+## Flag Exit Criteria
+
+`rehearse.features.context-engineering` 은 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
+- 프로덕션 100% 롤아웃 2주 유지
+- L1 캐시 히트율 ≥ 70% 안정 (주간 리포트, 목표치 75% 의 보수적 하한)
+- 레이턴시 회귀 없음 (p95 ≤ flag-off 대비 +100ms)
+- 제거 범위: flag 필드 + 4-layer 빌더를 default 경로로 승격 + 구버전 플랫 프롬프트 생성 로직 삭제
+
 ## 검증
 
 1. 10턴 세션 평균 입력 토큰 ≤ 8,000 (측정 스크립트 `eval/context/measure_tokens.py`)

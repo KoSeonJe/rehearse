@@ -27,6 +27,7 @@
 | 09 | Feedback Synthesizer (M3 세션 종합) | W7 | Draft | 08, 00e | FEEDBACK_DOMAIN.md 결정 소비 |
 | 10 | Eval Harness (M4 Full) `[parallel:09]` | W7 | Draft | 01~09 | smoke는 00d에서 이미 확보 |
 | 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 | Draft | 00a,00c,00e,08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
+| 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
 
 ## 진행 로그
 
@@ -66,3 +67,4 @@
 - [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)
 - [ ] Minor plan-10 수동 라벨 = 골든셋 부분집합 (plan-10 edit)
 - [ ] Addendum 비언어 루브릭 (plan-11) — TODO 09 반영. D11~D14 결정론 매퍼 + context_weights + V28
+- [ ] Flag Cleanup (plan-12) — 5개 release flag + v2 코드 제거. 스프린트 종료 후 트리거

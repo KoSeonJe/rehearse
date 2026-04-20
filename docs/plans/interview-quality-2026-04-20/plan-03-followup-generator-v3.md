@@ -67,6 +67,14 @@ v3는 **`target_claim_idx` 명시 + 관점 선정 로직을 depth_score/evidence
 - Implement: `prompt-engineer` — v2 → v3 프롬프트 diff, few-shot 예시 작성
 - Review: `code-reviewer` — JSON 파싱 방어(기존 SchemaValidator 재사용 여부), null 처리
 
+## Flag Exit Criteria
+
+`rehearse.features.followup-v3` + `answer-analyzer` 는 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
+- 프로덕션 100% 롤아웃 2주 유지
+- v3 human eval 점수 ≥ v2 (plan-10 J1 ≥ 4.0 유지)
+- 레이턴시 p95 ≤ v2 + 200ms
+- 제거 범위: 두 flag 동시 삭제 + **v2 꼬리질문 구현 통째 삭제** + 구버전 프롬프트 파일 삭제 + v2 전용 테스트 정리
+
 ## 검증
 
 1. Before/After 5쌍 수동 비교 문서화(`docs/plans/interview-quality-2026-04-20/ab-test-followup-v3.md`)

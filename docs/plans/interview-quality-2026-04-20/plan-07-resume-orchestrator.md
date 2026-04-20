@@ -107,6 +107,14 @@ rehearse:
 - Review: `architect-reviewer` — 기존 `InterviewTurnService` 확장 vs 분리 판단, SOLID
 - Review: `qa` — Playground ↔ Interrogation 전환 시나리오, 엣지 케이스
 
+## Flag Exit Criteria
+
+`rehearse.features.resume-track` 은 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
+- 이력서 업로드 유저 100% 롤아웃 2주 유지
+- 에러율 ≤ 일반 트랙 + 0.5%p
+- plan-05/06/07 전체 기능이 하나의 resume 트랙으로 단일 경로화 완료
+- 제거 범위: flag 필드 + `resume_track_enabled = false` 폴백 분기 삭제 (이력서 업로드 = 항상 resume 트랙)
+
 ## 검증
 
 1. 본인 이력서로 dogfooding 5회 — 놀이터 → 심문 전환이 자연스러운지 체감
