@@ -104,7 +104,7 @@ rehearse:
 ## 담당 에이전트
 
 - Implement: `backend-architect` — Orchestrator/Handler/Tracker 3계층 설계, Mode 상태기계
-- Review: `architect-reviewer` — 기존 `InterviewTurnService` 확장 vs 분리 판단, SOLID
+- Review: `architect-reviewer` — 기존 `FollowUpService` 확장 vs `ResumeInterviewOrchestrator` 분리 판단, SOLID (`InterviewTurnService` 는 실재하지 않음 — INVENTORY.md:108)
 - Review: `qa` — Playground ↔ Interrogation 전환 시나리오, 엣지 케이스
 
 ## Flag Exit Criteria
@@ -121,6 +121,6 @@ rehearse:
 2. Chain 진행이 L1→L2→L3→L4 순서 (level jump/skip rate ≤ 5%)
 3. Playground 모드에서 "왜", "원리" 질문 발생 0회 (정규식 필터 감지)
 4. 하드 리밋(3턴) 도달 시 강제 전환 동작
-5. 기존 CS/언어 면접 경로 회귀 없음 (`./gradlew test --tests "InterviewTurnServiceTest"`)
+5. 기존 CS/언어 면접 경로 회귀 없음 (`./gradlew test --tests "FollowUpServiceTest"`)
 6. plan-10 J1 Follow-up Relevance (Resume 골든셋 20개) ≥ 4.0
 7. `progress.md` 07 → Completed

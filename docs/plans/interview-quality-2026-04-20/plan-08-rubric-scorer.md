@@ -284,6 +284,17 @@ TODO 03 개정판 섹션 "턴 채점 프롬프트" 그대로. 핵심:
 4. `AnswerAnalysis` 재활용
 5. 채점 불가 시 score=null, observation에 사유
 
+### 호출 시점 — **비동기 post-turn (사용자 응답 latency 밖)**
+
+Rubric Scorer 는 **사용자 턴 응답 latency 경로에 들어가지 않는다**. 턴 종료 후 배경에서 실행:
+
+- **트리거**: `FollowUpService.generateFollowUp()` 가 사용자에게 다음 질문 응답을 보낸 **직후** `ApplicationEventPublisher.publishEvent(TurnCompletedEvent)` 발행
+- **리스너**: `@Async @TransactionalEventListener(phase = AFTER_COMMIT)` 로 `RubricScorer.score()` 실행 → V26 `rubric_score` 저장
+- **실패 정책**: 채점 실패는 **턴 진행 차단하지 않음**. 저장 실패 시 `application.log` WARN + `rehearse.ai.rubric.failures` 카운터 증가. 누락된 턴은 plan-09 Synthesizer 가 "score=null" 로 처리
+- **재시도**: 이벤트 리스너 단일 시도, 실패는 포기 (세션 종합 피드백은 나머지 턴 점수로도 생성 가능). 운영 이슈 시 admin 수동 backfill 가능
+
+이유: Rubric 채점은 "다음 턴 응답"이 아니라 "세션 종합 피드백"의 재료. 사용자가 기다리는 동안 수행할 필요 없음. 따라서 **Aggregate Latency SLA (plan-01/02/03)에 포함되지 않음**.
+
 ### 모델 파라미터
 - Primary: GPT-4o-mini / Fallback: Claude Haiku (채점은 경량 모델 충분)
 - temperature: 0.2

@@ -73,6 +73,27 @@ rehearse:
 - plan-00b 의 `AiClient.chat(ChatRequest)` 범용 메서드로 호출. `callType = "intent_classifier"` 태그
 - plan-00c 의 `InterviewLockService.withLock(interviewId, ...)` 감싸기 (동시 답변 race 방지)
 
+## Aggregate Latency SLA (Interview Quality 스프린트 공용 규약)
+
+본 스프린트의 턴 처리 파이프라인 전체 SLA. plan-01/02/03 모두 이 규약을 공유하며, 각 plan 의 개별 SLA 는 이 aggregate 안에 맞춰야 한다.
+
+| 단계 | 호출 | 성격 | 개별 p95 | 누적 p95 |
+|------|------|------|---------|---------|
+| L1 Intent Classifier (plan-01) | 1회 LLM | 동기 (사용자 path) | ≤ 500ms | 500ms |
+| L2 Answer Analyzer (plan-02) | 1회 LLM (intent=ANSWER 일 때만) | 동기 | ≤ 1500ms | 2000ms |
+| L3 Follow-up Generator v3 (plan-03) | 1회 LLM | 동기 | ≤ 2000ms | **≤ 4000ms (Aggregate p95 상한)** |
+| L4 Rubric Scorer (plan-08) | 1회 LLM | **비동기 post-turn (사용자 path 밖)** | — | 제외 |
+| L5 Dialogue Compactor (plan-04) | 1회 LLM × ~0.15 트리거율 | 비동기 백그라운드 | — | 제외 |
+
+- **Aggregate p95 ≤ 4,000ms** — 사용자가 답변 제출 → 다음 질문 수신까지. 이 값을 초과하는 plan 은 재설계 필요.
+- intent=CLARIFY_REQUEST / GIVE_UP 분기에서는 L2/L3 생략 → p95 ≤ 1,500ms.
+- Rubric Scorer 는 Event-driven 비동기 (plan-08 §호출 시점) 이므로 본 SLA 에 포함되지 않음.
+- DialogueCompactor 는 백그라운드 (plan-04:57-61) 이므로 포함되지 않음. 단, 동기 fallback 발동 시에만 L3 에 +500ms 허용.
+
+### 측정
+- Micrometer 태그 `ai.call.chain=turn-pipeline` 으로 3개 호출 묶어 `rehearse.turn.pipeline.duration_seconds` 히스토그램 기록 (plan-00d 계측 인프라 활용)
+- Exit Criteria 각 plan 의 개별 SLA + aggregate SLA 동시 충족 시에만 flag cleanup (plan-12)
+
 ## 담당 에이전트
 
 - Implement: `backend` — 프롬프트 + Builder + Classifier 서비스 + 분기 라우팅

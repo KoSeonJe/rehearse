@@ -19,8 +19,8 @@ v3는 **`target_claim_idx` 명시 + 관점 선정 로직을 depth_score/evidence
 | `backend/src/main/resources/prompts/template/follow-up-concept.txt` | **수정** v2 → v3 (Step B 구조로 변환, Step A 분석 입력 수용) |
 | `backend/src/main/resources/prompts/template/follow-up-experience.txt` | **수정** v2 → v3 (동일) |
 | `backend/src/main/java/com/rehearse/api/infra/ai/prompt/FollowUpPromptBuilder.java` | 수정. Step A 결과를 `ANSWER_ANALYSIS` 섹션으로 주입 |
-| `backend/src/main/java/com/rehearse/api/domain/interview/FollowUpService.java` (or equivalent) | 수정. Step A 호출 → 결과 주입 → Step B 호출 순으로 재구성 |
-| `backend/src/main/java/com/rehearse/api/domain/interview/FollowUpQuestion.java` | 수정. `targetClaimIdx`, `selectedPerspective`, `reason` 필드 추가 |
+| `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` | 수정. Step A 호출 → 결과 주입 → Step B 호출 순으로 재구성 |
+| `backend/src/main/java/com/rehearse/api/infra/ai/dto/GeneratedFollowUp.java` | 수정. 기존 `question/reason/type/modelAnswer/answerText` 에 `targetClaimIdx`, `selectedPerspective` 2개 필드 추가 (`FollowUpQuestion` 클래스는 실재하지 않음 — 실제 DTO 경로 확인 완료) |
 
 ## 상세
 
@@ -60,6 +60,9 @@ v3는 **`target_claim_idx` 명시 + 관점 선정 로직을 depth_score/evidence
 ### 금지 규칙 (프롬프트에 명시)
 - 사용자 답변 긴 문장 인용 금지(키워드만) — 환각 방지
 - 복합질문 금지 (한 번에 하나)
+
+### Aggregate Latency SLA
+본 plan 은 plan-01 §Aggregate Latency SLA 규약에 속함. Step B 개별 p95 ≤ **2000ms**. aggregate (Intent + Analyzer + Follow-up) p95 ≤ **4000ms** 상한 준수. Rubric Scorer (plan-08) 는 비동기 post-turn 이므로 본 SLA 제외.
 
 ## 담당 에이전트
 
