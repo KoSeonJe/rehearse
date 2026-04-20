@@ -1,9 +1,10 @@
 # Plan 11: Nonverbal Rubric (D11~D14, 결정론적 매핑)
 
 > 상태: Draft
-> 작성일: 2026-04-20 (TODO 09 반영 추가)
-> 주차: W7 (plan-08과 병렬, plan-09 선행)
+> 작성일: 2026-04-20 (TODO 09 반영 추가, 2026-04-21 plan-11a 선행 분리)
+> 주차: W7 후반 (plan-11a 머지 후 착수, plan-08과 병렬, plan-09 선행)
 > 원본: `docs/todo/2026-04-20/09-nonverbal-rubric.md`
+> 선행 `[blocking]`: **plan-11a** (Gemini 프롬프트 필드 확장 — `speed_variance`/`gaze_on_camera_ratio`/`posture_unstable_count` 3개 신설)
 > 선행: plan-08(`_dimensions.yaml` 확장), plan-00c(turn 상태에 이전 턴 시그널 캐시)
 > 후행: plan-09 Synthesizer가 본 결과를 Delivery 섹션에서 소비
 
@@ -15,14 +16,14 @@
 
 ### 현 프로젝트 적합성 (반영)
 - Lambda 기존 `verbal_analyzer.py` 출력: `filler_word_count`, `tone_label ∈ {PROFESSIONAL|CASUAL|HESITANT|CONFIDENT|VERBOSE}` — D11/D12 원천 **존재**
-- Lambda 기존 `vision_analyzer.py` — gaze/posture 관련 필드 존재 여부 **확인 필요** (plan-00a INVENTORY에서 실측)
-- **선행 필드 갭**: `speed_variance`(D12), `gaze_on_camera_ratio`/`posture_unstable_count`(D13) — 현재 프롬프트 출력 스키마에 없을 가능성
-- CLAUDE.md: Lambda 분석 프롬프트 개편은 `prompt-improvement-2026-04` Lane 3-5 별도 트랙. **본 플랜은 필드 확장만 요청**, 프롬프트 전면 개편은 Out of Scope.
+- `speed_variance`, `gaze_on_camera_ratio`, `posture_unstable_count` 3개 수치 필드는 **VERIFICATION_REPORT.md §D3 에서 부재 확인 → plan-11a 에서 선행 확장 완료 후 본 plan 착수**
+- CLAUDE.md: Lambda 분석 프롬프트 개편은 `prompt-improvement-2026-04` Lane 3-5 별도 트랙. **plan-11a 는 필드 확장만의 최소 범위**, 프롬프트 전면 개편은 Out of Scope.
 - AI Provider Stack(memory): Lambda는 **Gemini 주력**. Whisper는 STT fallback. 매핑은 결정론적이라 provider 무관.
 
 ## 전제 (Phase 0 선행 필수)
 
-- plan-00a `INVENTORY.md` — `lambda/analysis/analyzers/vision_analyzer.py` 실제 출력 스키마 문서화(gaze/posture 필드 존재/부재 확정)
+- **`[blocking]` plan-11a** — `speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count` 3개 Lambda 출력 필드 확장 완료
+- plan-00a `INVENTORY.md` — Lambda 코드 현황 확인 (완료, VERIFICATION_REPORT §D3 참조)
 - plan-00c — `InterviewRuntimeState`에 `lastTurnNonverbalSignals` 필드 추가 (D14 Composure 이전 턴 비교용)
 - plan-00e `FEEDBACK_DOMAIN.md` — partial-first Delivery 섹션을 구조화 JSON으로 상향(기존 문자열 comment 대체)
 - plan-08 `_dimensions.yaml` — D11~D14 차원 추가. plan-08 범위를 "기술 루브릭(D1~D10)만"으로 명시 주석
@@ -64,12 +65,13 @@
 | `backend/src/main/resources/db/migration/V28__create_nonverbal_score.sql` | 신규. `rubric_score`와 분리된 테이블(결정론 매퍼라 별도 aggregate) |
 | `backend/src/main/resources/db/migration/rollback/V28__rollback.sql` | 신규 |
 
-### 수정 (Lambda 분석 프롬프트 필드 확장, 최소 범위)
+### 수정 (Lambda handler 출력 — 프롬프트 필드는 plan-11a 에서 선행 확장)
+
+> **중요**: `speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count` 3개 필드의 **Gemini 프롬프트 스키마 확장은 plan-11a 에서 완료**. 본 plan 은 확장된 필드를 소비하는 매퍼와 handler 페이로드 연결만 담당.
+
 | 파일 | 작업 |
 |---|---|
-| `lambda/analysis/analyzers/verbal_prompt_factory.py` | **수정**. 출력 스키마에 `speed_variance: <0~1 float>` 추가. 기존 필드 불변 |
-| `lambda/analysis/analyzers/vision_analyzer.py` | **수정**. 출력 스키마에 `gaze_on_camera_ratio`, `posture_unstable_count` 추가(없다면). 있으면 확인만 |
-| `lambda/analysis/handler.py` | **수정**. `nonverbal_rubric_mapper.score_turn()` 호출 후 결과를 기존 이벤트 페이로드에 `nonverbal_score` 필드로 첨부 |
+| `lambda/analysis/handler.py` | **수정**. `nonverbal_rubric_mapper.score_turn(verbal, vision, prev, meta)` 호출 후 결과를 기존 이벤트 페이로드에 `nonverbal_score` 필드로 첨부. plan-11a 가 제공하는 3개 수치 필드 소비 |
 
 ### 수정 (plan-09 연계)
 | 파일 | 작업 |

@@ -26,10 +26,21 @@
 | 08 | Rubric Family Scorer (10차원 × 7 rubric) | W7 | Draft | 02, 00c | **TODO 03 개정반영 — 전면 재작성**. `_dimensions.yaml` 마스터 + `_mapping.yaml` + 7개 rubric YAML. 작업량 1주 → 1~1.5주 |
 | 09 | Feedback Synthesizer (M3 세션 종합) | W7 | Draft | 08, 00e | FEEDBACK_DOMAIN.md 결정 소비 |
 | 10 | Eval Harness (M4 Full) `[parallel:09]` | W7 | Draft | 01~09 | smoke는 00d에서 이미 확보 |
-| 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 | Draft | 00a,00c,00e,08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
+| 11a | Lambda Nonverbal Schema Prerequisite `[blocking:11]` | W7 초 | Draft | 00a | **신규 (2026-04-21 VERIFICATION_REPORT §D3 대응)**. Gemini 프롬프트 3개 수치 필드 확장(`speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count`). plan-11 착수 전 필수 |
+| 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 후 | Draft | 11a, 00a, 00c, 00e, 08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
 | 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
 
 ## 진행 로그
+
+### 2026-04-21 (검증 리포트 반영 — 문서 교정)
+
+VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
+
+- **A-F1 모델 드리프트 제거** (`plan-05`): `modelOverride="gpt-4o"` 하드코딩 → `application.yml` 기본 `gpt-4o-mini` 유지. flag 경유 선택적 업그레이드로 변경
+- **B-F1 Aggregate Latency SLA 추가** (`plan-01/02/03/08`): 턴 파이프라인 aggregate p95 ≤ 4000ms 규약. plan-01 에 canonical 섹션 정의, plan-02/03 은 참조. Rubric Scorer(plan-08) 는 `@TransactionalEventListener(AFTER_COMMIT)` 비동기 post-turn 으로 명시 → SLA 제외
+- **C-F1/F2/F3 실체 불일치 교정**: plan-03 `GeneratedFollowUp` 경로 확정, plan-06 `InterviewRuntimeState` 로 전환, plan-07 `FollowUpService`/`FollowUpServiceTest` 로 교정
+- **D-F2 plan-11a 신규 생성**: Lambda Gemini 프롬프트 3개 수치 필드 확장(`speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count`). plan-11 의 `[blocking]` 선행 조건으로 편입. plan-11 본문에서 Lambda 프롬프트 확장 항목 → plan-11a 로 이관
+- **D-F4 Lambda Error Handling** (`plan-09`): failure_reason → 처리 매트릭스 + admin 재시도 엔드포인트 + 사용자 "일시 오류" 배너 정책. 모든 실패는 `deliveryRetryable=true` 기본 (영구 실패 금지)
 
 ### 2026-04-20 (S1 — plan-00a Codebase Inventory 완료)
 - `INVENTORY.md` (380L), `TEST_BASELINE.md` (249L), `IMPACT_MAP.md` (364L) 생성

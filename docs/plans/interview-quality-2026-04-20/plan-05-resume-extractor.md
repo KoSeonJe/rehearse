@@ -54,11 +54,11 @@
 4. priority: high(문제 해결 스토리) / medium(아키텍처 선택) / low(흔한 구현)
 
 ### 모델 선택 (critic C3 해결 — plan-00b 전제)
-- **plan-00b 의 `ChatRequest.modelOverride = "gpt-4o"` 를 사용** (application.yml 기본값 `gpt-4o-mini` 오버라이드)
-- Primary: GPT-4o / Fallback: Claude Sonnet (fallback도 modelOverride로 지정)
+- **기본값은 application.yml 의 `gpt-4o-mini` + Claude Sonnet fallback 을 유지** (현 스택 드리프트 방지)
+- `ChatRequest.modelOverride` 는 기본 `null` → application.yml 값 사용. 추출 품질 부족 확인 시 `rehearse.features.resume-track.extraction-model` flag 경유로 `gpt-4o` 승격 (plan-00b @RefreshScope)
 - temperature: 0.2, max_tokens: 4096, callType: `"resume_extractor"`
-- 비용: 이력서당 ~$0.05, 세션 전체 재사용 → 월 1만 세션 × 추출 = 약 $500/월 (예산 확인 필요)
-- 저비용 모드 flag: `rehearse.features.resume-track.extraction-model: gpt-4o | gpt-4o-mini` 로 runtime 교체 가능 (plan-00b @RefreshScope)
+- 비용 시나리오: gpt-4o-mini 기본 ≈ $0.005/이력서. 품질 이슈로 gpt-4o 전환 시 ≈ $0.05/이력서 → 월 1만 세션 기준 $50 vs $500 비교 후 의사결정
+- Exit Criteria (plan-12): flag OFF (gpt-4o-mini) 상태에서도 J1 Relevance ≥ 4.0 달성 시 gpt-4o 옵션 제거
 
 ### 영속화 (critic C2 해결 — plan-00c 전제)
 - Skeleton 은 plan-00c 의 V24 `resume_skeleton` 테이블에 저장(L2) + `InterviewRuntimeStateStore` 에 2h 캐시(L4)

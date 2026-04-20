@@ -1,4 +1,5 @@
-# Plan 02: Answer Analyzer (M1 Step A) `[parallel:03]`
+
+gogo# Plan 02: Answer Analyzer (M1 Step A) `[parallel:03]`
 
 > 상태: Draft
 > 작성일: 2026-04-20
@@ -58,6 +59,9 @@ plan-01 Intent Classifier가 META/OFF_TOPIC을 ANSWER로 병합했을 때의 오
 
 ### 코스트 영향
 기존 follow-up 1회 → Step A 1회 + Step B 1회 = 2회. Prompt Caching 적용 시 실제 코스트 증가 1.3~1.5배, 10분 세션당 +$0.01~0.02.
+
+### Aggregate Latency SLA
+본 plan 은 plan-01 §Aggregate Latency SLA 규약에 속함. Step A 개별 p95 ≤ **1500ms** (intent=ANSWER 분기에서만 호출), aggregate 에서의 위치는 Intent(500ms) → **Analyzer(1500ms)** → Follow-up(2000ms) → 합계 ≤ 4000ms.
 
 ## 담당 에이전트
 

@@ -16,6 +16,7 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 - `SessionFeedback` 은 별도 `session/` 서브패키지로 분리 — 기존 `FeedbackService` 건드리지 않음
 - **Partial-first**: 세션 종료 즉시 기술 피드백만 생성(`status=PRELIMINARY`), Verbal/Vision 도착 시 Delivery 섹션 보강(`status=COMPLETE`)
 - Verbal/Vision 10분 미도착 시 Delivery null + status=COMPLETE (무한 대기 방지)
+- **Lambda 실패는 모두 재시도 가능**: admin 이 수동 재처리 가능하도록 상태 보존. 사용자는 "일시 오류" 로 안내 (영구 실패 표시 금지). 세부 정책은 §Lambda Error Handling
 
 ## 생성/수정 파일
 
@@ -90,6 +91,45 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 
 ### Verbal/Vision 통합 원칙
 기술 피드백(Overall/Strengths/Gaps/Week Plan)과 **별도 섹션**(Delivery)으로 분리. 섞지 않음.
+
+### Lambda Error Handling (비언어/Verbal 실패 처리)
+
+Lambda `handler.py` 는 이미 `failure_reason` / `failure_detail` / `isVerbalCompleted` / `isNonverbalCompleted` 필드를 전달함. plan-09 는 이를 소비해 **모든 실패를 admin 재시도 가능 상태**로 저장하고, 사용자에게는 "일시 오류" 로만 안내.
+
+#### 수신 상태 → 처리 매트릭스
+
+| 수신 상태 | `SessionFeedback.status` | `deliveryRetryable` | 사용자 표시 (FE) | 자동 재시도 | admin 재시도 |
+|-----------|-------------------------|---------------------|------------------|-----------|-----------|
+| `isNonverbalCompleted=false` + `failure_reason=null` (진행 중) | PRELIMINARY | — | "분석 중..." spinner | — | — |
+| `failure_reason=TIMEOUT` | PRELIMINARY | **true** | "비언어 분석 일시 오류, 재처리 중" 배너 | 1회 (Lambda 재호출) | 가능 |
+| `failure_reason=VISION_ERROR` / `API_ERROR` | PRELIMINARY | **true** | "비언어 분석 일시 오류" 배너 | 1회 | 가능 |
+| `failure_reason=TRANSCRIPTION_ERROR` | PRELIMINARY | **true** | "음성 분석 일시 오류" 배너 | 1회 | 가능 |
+| `failure_reason=INTERNAL_ERROR` | PRELIMINARY | **true** | "비언어 분석 일시 오류" 배너 | — (로그만) | 가능 |
+| `failure_reason=SCHEMA_MISSING_FIELDS` (plan-11a 신규) | PRELIMINARY | **true** | "비언어 분석 일시 오류" 배너 | — | 가능 (Lambda 갱신 후) |
+| 10분 timeout (Backend 측 watchdog) | PRELIMINARY | **true** | "비언어 분석 지연" 배너 | — | 가능 |
+
+**핵심 원칙**:
+- 모든 실패는 `deliveryRetryable=true` (기본값). 영구 실패로 굳히지 않음.
+- 사용자 노출 문구는 전부 "일시 오류" 계열. "실패" / "불가" / "제외됨" 같은 종결 표현 금지.
+- `SessionFeedback.status` 는 `PRELIMINARY` 유지 → admin 재시도 후 Delivery 섹션 보강 시 `COMPLETE` 전환.
+- 세션 종료 후 2주 이내는 admin 재시도 허용. 그 이후는 `EXPIRED` 전환 (사용자에게는 그냥 "분석 없음" 표시, 실패 노출 X).
+
+#### Admin 재시도 엔드포인트
+
+- `POST /api/admin/interviews/{id}/session-feedback/retry-delivery` — 해당 interview 의 Lambda 분석 재실행 트리거
+- 권한: `ROLE_ADMIN` 만 허용
+- 동작: 원본 S3 미디어 경로로 Lambda 재호출 → 성공 시 `SessionFeedbackService.onAnalysisArrived()` 가 Delivery 섹션 보강 + `status=COMPLETE` 전환
+- 멱등성: 같은 interview 에 대해 재시도 진행 중이면 409 Conflict
+- 로그: `rehearse.ai.lambda.retry.*` 메트릭 + admin 식별자 기록
+
+#### 수정 파일 추가
+
+| 파일 | 작업 |
+|------|------|
+| `backend/src/main/java/com/rehearse/api/domain/feedback/session/entity/SessionFeedback.java` | 수정 (위 테이블). `deliveryRetryable: boolean` + `lastFailureReason: String` + `retryAttempts: int` 필드 추가 |
+| `backend/src/main/java/com/rehearse/api/domain/feedback/session/controller/AdminSessionFeedbackController.java` | 수정. retry-delivery 엔드포인트 추가 |
+| `backend/src/main/java/com/rehearse/api/domain/feedback/session/SessionFeedbackService.java` | 수정. `onAnalysisFailed(failureReason)`, `retryDelivery(interviewId, adminUserId)`, `onAnalysisArrived(...)` 메서드 추가 |
+| `frontend/src/components/feedback/DeliverySection.tsx` (FE 연동 별건) | **Out of Scope (본 plan)**. FE PR 에서 배너 문구 "일시 오류" 적용 |
 
 ## 담당 에이전트
 
