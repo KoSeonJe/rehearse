@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("InterviewLockService - 면접 동시성 제어")
 class InterviewLockServiceTest {
@@ -129,7 +131,6 @@ class InterviewLockServiceTest {
     @Test
     @DisplayName("stripe_해시_충돌_시에도_직렬화_보장_when_동일stripe_다른ID")
     void withLock_stillSerializes_when_differentIdsMappedToSameStripe() throws Exception {
-        // 256 stripe에서 interviewId 0과 256은 동일 stripe로 매핑됨
         Long id1 = 0L;
         Long id2 = 256L;
         List<String> log = Collections.synchronizedList(new ArrayList<>());
@@ -175,5 +176,79 @@ class InterviewLockServiceTest {
         executor.shutdown();
 
         assertThat(log).containsExactly("start-0", "end-0", "start-256", "end-256");
+    }
+
+    @Test
+    @DisplayName("tryLock_LockAcquisitionException_발생_when_timeout_내_락_획득_실패")
+    void tryLock_throwsLockAcquisitionException_when_lockNotAcquiredWithinTimeout() throws Exception {
+        Long interviewId = 99L;
+        CountDownLatch holderStarted = new CountDownLatch(1);
+        CountDownLatch holderRelease = new CountDownLatch(1);
+
+        Thread holder = new Thread(() -> lockService.withLock(interviewId, () -> {
+            holderStarted.countDown();
+            try {
+                holderRelease.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return null;
+        }));
+        holder.start();
+        holderStarted.await();
+
+        assertThatThrownBy(() ->
+                lockService.tryLock(interviewId, Duration.ofMillis(50), () -> "should-not-run")
+        ).isInstanceOf(LockAcquisitionException.class)
+                .hasMessageContaining("99");
+
+        holderRelease.countDown();
+        holder.join();
+    }
+
+    @Test
+    @DisplayName("tryLock_결과값_반환_when_락_즉시_획득")
+    void tryLock_returnsResult_when_lockAcquiredImmediately() {
+        String result = lockService.tryLock(1L, Duration.ofSeconds(1), () -> "ok");
+
+        assertThat(result).isEqualTo("ok");
+    }
+
+    @Test
+    @DisplayName("tryLock_interrupt_시_LockAcquisitionException_발생_when_스레드_인터럽트")
+    void tryLock_throwsLockAcquisitionException_when_threadInterrupted() throws Exception {
+        Long interviewId = 88L;
+        CountDownLatch holderStarted = new CountDownLatch(1);
+        CountDownLatch holderRelease = new CountDownLatch(1);
+
+        Thread holder = new Thread(() -> lockService.withLock(interviewId, () -> {
+            holderStarted.countDown();
+            try {
+                holderRelease.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            return null;
+        }));
+        holder.start();
+        holderStarted.await();
+
+        AtomicInteger exceptionCount = new AtomicInteger(0);
+        Thread waiter = new Thread(() -> {
+            try {
+                lockService.tryLock(interviewId, Duration.ofSeconds(10), () -> "should-not-run");
+            } catch (LockAcquisitionException e) {
+                exceptionCount.incrementAndGet();
+            }
+        });
+        waiter.start();
+        Thread.sleep(20);
+        waiter.interrupt();
+        waiter.join(1000);
+
+        assertThat(exceptionCount.get()).isEqualTo(1);
+
+        holderRelease.countDown();
+        holder.join();
     }
 }

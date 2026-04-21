@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.runtime;
 
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.rehearse.api.domain.interview.lock.InterviewLockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,10 @@ class InterviewRuntimeStateStoreTest {
 
     @BeforeEach
     void setUp() {
-        store = new InterviewRuntimeStateStore(new SimpleMeterRegistry());
-        store.init();
+        store = new InterviewRuntimeStateStore(
+                Caffeine.newBuilder().recordStats().<Long, InterviewRuntimeState>build(),
+                new InterviewLockService()
+        );
     }
 
     @Test
@@ -73,8 +76,8 @@ class InterviewRuntimeStateStoreTest {
     }
 
     @Test
-    @DisplayName("update_race_condition_없음_when_100스레드_동시_update")
-    void update_noRaceCondition_when_100ThreadsConcurrentlyUpdate() throws Exception {
+    @DisplayName("update_합성변경_직렬화_when_100스레드_동시_update")
+    void update_compositeChangesSerialised_when_100ThreadsConcurrentlyUpdate() throws Exception {
         int threadCount = 100;
         Long interviewId = 42L;
         store.getOrInit(interviewId, InterviewRuntimeState::new);
@@ -111,15 +114,35 @@ class InterviewRuntimeStateStoreTest {
     }
 
     @Test
-    @DisplayName("stats_hitCount_증가_when_캐시히트_발생")
-    void stats_hitsIncrement_when_cacheHitOccurs() {
-        store.getOrInit(7L, InterviewRuntimeState::new);
+    @DisplayName("update_read_modify_write_누적값_정확_when_여러스레드_동시_increment")
+    void update_accumulatesCorrectly_when_multipleThreadsIncrementCounter() throws Exception {
+        int threadCount = 50;
+        Long interviewId = 77L;
+        store.getOrInit(interviewId, InterviewRuntimeState::new);
 
-        long hitsBefore = store.stats().hitCount();
-        store.getOrInit(7L, InterviewRuntimeState::new);
-        long hitsAfter = store.stats().hitCount();
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        assertThat(hitsAfter).isGreaterThan(hitsBefore);
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    store.update(interviewId, InterviewRuntimeState::incrementPlaygroundTurns);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        doneLatch.await();
+        executor.shutdown();
+
+        InterviewRuntimeState finalState = store.getOrInit(interviewId, InterviewRuntimeState::new);
+        assertThat(finalState.getPlaygroundTurns()).isEqualTo(threadCount);
     }
 
     @Test

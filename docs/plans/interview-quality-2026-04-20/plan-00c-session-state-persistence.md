@@ -15,6 +15,8 @@ plan-05/06/08/09가 만드는 신규 상태 — `ResumeSkeleton`, `InterviewPlan
 
 **근본 해결**: 상태를 4계층으로 분류 → 각 계층의 저장소/TTL/consistency를 **먼저 결정** → 후속 plan은 이 결정만 소비.
 
+rollback SQL 은 Flyway Community 가 자동 실행하지 않고 기존 선례도 없어 제거 (2026-04-21).
+
 ## 생성/수정 파일
 
 | 파일 | 작업 |
@@ -24,7 +26,6 @@ plan-05/06/08/09가 만드는 신규 상태 — `ResumeSkeleton`, `InterviewPlan
 | `backend/src/main/resources/db/migration/V25__create_interview_plan.sql` | 신규 |
 | `backend/src/main/resources/db/migration/V26__create_rubric_score.sql` | 신규 |
 | `backend/src/main/resources/db/migration/V27__create_session_feedback.sql` | 신규 |
-| `backend/src/main/resources/db/migration/rollback/V24__rollback.sql` ~ `V27__rollback.sql` | 신규 롤백 스크립트 |
 | `backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeState.java` | 신규. request-scoped 런타임 상태 (covered_claims, active_chain, analysis_cache) |
 | `backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeStateStore.java` | 신규. Caffeine 기반 in-memory store (세션 ID → RuntimeState, 2h TTL) |
 | `backend/src/main/java/com/rehearse/api/domain/interview/lock/InterviewLockService.java` | 신규. interview.id 단위 pessimistic lock (동시 답변 방지) |
@@ -113,8 +114,6 @@ CREATE TABLE session_feedback (
   CONSTRAINT fk_session_feedback_interview FOREIGN KEY (interview_id) REFERENCES interview(id) ON DELETE CASCADE
 );
 ```
-
-각 V2X 마다 대응 rollback SQL(`DROP TABLE IF EXISTS ...`).
 
 ### 동시성 정책
 

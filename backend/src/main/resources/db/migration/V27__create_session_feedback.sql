@@ -7,6 +7,6 @@ CREATE TABLE session_feedback (
   delivery_json JSON,
   week_plan_json JSON NOT NULL,
   synthesizer_model VARCHAR(32) NOT NULL,
-  created_at DATETIME NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_session_feedback_interview FOREIGN KEY (interview_id) REFERENCES interview(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

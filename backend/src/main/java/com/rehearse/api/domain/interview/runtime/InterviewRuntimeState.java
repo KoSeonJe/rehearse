@@ -14,8 +14,8 @@ public class InterviewRuntimeState {
     private final List<Long> activeChain = new CopyOnWriteArrayList<>();
     private volatile String currentLevel;
     private final AtomicInteger playgroundTurns = new AtomicInteger(0);
-    private final Map<Long, Object> turnAnalysisCache = new ConcurrentHashMap<>();
-    private volatile Object resumeSkeletonCache;
+    private final Map<Long, TurnAnalysis> turnAnalysisCache = new ConcurrentHashMap<>();
+    private volatile CachedResumeSkeleton resumeSkeletonCache;
 
     public Set<String> getCoveredClaims() {
         return coveredClaims;
@@ -41,15 +41,15 @@ public class InterviewRuntimeState {
         playgroundTurns.incrementAndGet();
     }
 
-    public Map<Long, Object> getTurnAnalysisCache() {
+    public Map<Long, TurnAnalysis> getTurnAnalysisCache() {
         return turnAnalysisCache;
     }
 
-    public Object getResumeSkeletonCache() {
+    public CachedResumeSkeleton getResumeSkeletonCache() {
         return resumeSkeletonCache;
     }
 
-    public void setResumeSkeletonCache(Object resumeSkeletonCache) {
+    public void setResumeSkeletonCache(CachedResumeSkeleton resumeSkeletonCache) {
         this.resumeSkeletonCache = resumeSkeletonCache;
     }
 }

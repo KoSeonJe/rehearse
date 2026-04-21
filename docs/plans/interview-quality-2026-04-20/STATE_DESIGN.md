@@ -38,6 +38,23 @@ Guava `Striped<Lock>` 대신 `ReentrantLock[]` 256개 배열 자체 구현.
 이유: 외부 의존성(Guava) 추가 없이 동일 효과 달성 가능. 구현 코드 20줄 이내.
 Rejected: Guava Striped — 추가 의존성, 현재 프로젝트에 Guava 미사용.
 
+### D6. L4 계산 캐시는 L3 POJO 인라인 필드로 관리
+
+- 독립 Caffeine 인스턴스를 추가로 생성하지 않는다.
+- `InterviewRuntimeState` 의 필드 (`resumeSkeletonCache` 등) 에 인라인.
+- 사용자 저장 동의 `false` 일 때만 L4 활성화 (true 일 때는 L2 영속 저장).
+- **이유**: L3/L4 가 동일 TTL (2h idle) + 동일 세션 scope + 동일 저장소(Caffeine) 를 공유. 별도 캐시는 메모리 + 관리 오버헤드만 증가.
+- **제약**: multi-node 확장 시 L3/L4 동시 이관 (동일 lifecycle).
+
+### Lock Acquisition Contract
+
+후속 plan(05/06/08/09) 이 `withLock` + `@Transactional` 을 조합할 때 반드시 아래 순서를 지킨다.
+
+1. **lock outer → txn inner**: `withLock` / `tryLock` 은 `@Transactional` 메서드 **바깥**에서 획득한다. 트랜잭션 커밋 전에 락이 해제되면 후속 스레드가 미완료 상태를 읽는다.
+2. **단일 interviewId 원칙**: 락 블록 안에서는 동일 `interviewId` 의 DB 작업만 수행한다. 복수 interview 업데이트는 DB 트랜잭션 isolation 에 의존한다.
+3. **무한 블로킹 방지**: 운영 환경에서는 `withLock` 대신 `tryLock(interviewId, timeout, action)` 사용을 권장한다. timeout 초과 시 `LockAcquisitionException` 발생.
+4. **재진입 허용**: `ReentrantLock` 기반이므로 동일 스레드에서 중첩 호출 가능 — 데드락 없음.
+
 ## L2 테이블 스키마 (V24~V27)
 
 ### V24: resume_skeleton
