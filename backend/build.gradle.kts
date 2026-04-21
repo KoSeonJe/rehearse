@@ -86,6 +86,9 @@ dependencies {
     // Spring Cloud Context (@RefreshScope — Config Server 불필요, Actuator /refresh 만 사용)
     implementation("org.springframework.cloud:spring-cloud-context:4.1.4")
 
+    // Caffeine (in-memory cache for runtime session state)
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
