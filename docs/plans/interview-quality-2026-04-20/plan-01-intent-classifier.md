@@ -71,7 +71,7 @@ rehearse:
 ## 전제 (Phase 0 선행 필수)
 - plan-00a `IMPACT_MAP.md` 에서 `FollowUpService.generateFollowUp()` 실제 시그니처 확인 후 분기 삽입 위치 확정
 - plan-00b 의 `AiClient.chat(ChatRequest)` 범용 메서드로 호출. `callType = "intent_classifier"` 태그
-- plan-00c 의 `InterviewLockService.withLock(interviewId, ...)` 감싸기 (동시 답변 race 방지)
+- 동시 답변 race: `InterviewRuntimeStateStore.update()` 가 `Caffeine.asMap().compute()` 로 동일 interviewId read-modify-write 를 직렬화 (plan-00c). 중복 요청 자체는 컨트롤러 idempotency 로 막음
 
 ## Aggregate Latency SLA (Interview Quality 스프린트 공용 규약)
 

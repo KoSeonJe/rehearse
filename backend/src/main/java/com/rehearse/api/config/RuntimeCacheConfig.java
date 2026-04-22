@@ -16,7 +16,7 @@ public class RuntimeCacheConfig {
     @Bean
     public Cache<Long, InterviewRuntimeState> interviewRuntimeStateCache(MeterRegistry registry) {
         Cache<Long, InterviewRuntimeState> cache = Caffeine.newBuilder()
-                .expireAfterAccess(Duration.ofHours(2))
+                .expireAfterWrite(Duration.ofHours(8))
                 .maximumSize(10_000)
                 .recordStats()
                 .build();
