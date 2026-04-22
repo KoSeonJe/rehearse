@@ -21,9 +21,9 @@
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
-| 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용 |
-| 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25 |
-| 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06,00f | fact_check_flag 삭제 + 실제 진입점 명시 필요. `ResumeTrackPolicy` 에 `ChainStateTracker` 주입(00f skeleton 활용) |
+| 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
+| 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25. **Dynamic Pacing 재설계 (2026-04-22)**: duration 스케일링 폐기, priority 랭킹만 |
+| 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06,00f | fact_check_flag 삭제 + 실제 진입점 명시 필요. `ResumeTrackPolicy` 에 `ChainStateTracker` 주입(00f skeleton 활용). **WRAP_UP 모드 + ClockWatcher + Resume Exclusivity Rule 추가 (2026-04-22)** |
 | 08 | Rubric Family Scorer (10차원 × 7 rubric) | W7 | Draft | 02, 00c | **TODO 03 개정반영 — 전면 재작성**. `_dimensions.yaml` 마스터 + `_mapping.yaml` + 7개 rubric YAML. 작업량 1주 → 1~1.5주 |
 | 09 | Feedback Synthesizer (M3 세션 종합) | W7 | Draft | 08, 00e | FEEDBACK_DOMAIN.md 결정 소비 |
 | 10 | Eval Harness (M4 Full) `[parallel:09]` | W7 | Draft | 01~09 | smoke는 00d에서 이미 확보 |
@@ -32,6 +32,18 @@
 | 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
 
 ## 진행 로그
+
+### 2026-04-22 (Resume Track 스펙 보완 — Dynamic Pacing + Exclusivity)
+
+구현 착수 전 plan-05/06/07 Draft 허점 3개 차단:
+
+- **plan-06 Dynamic Pacing 재설계**: duration 별 스케일링 테이블 폐기. Planner 는 모든 chain 을 priority 랭킹만 수행. `allocated_time_min` / `max_turns` / `estimated_duration_min` 필드 제거, `duration_hint_min` 만 남김 — opener 톤 조정에만 사용
+- **plan-07 WRAP_UP 모드 추가**: `PLAYGROUND → INTERROGATION → WRAP_UP` 3단계 FSM. `ClockWatcher` 로 `remaining_time ≤ 2분` 전이. 새 chain 시작 금지, 현재 chain 완결 허용, 회고 질문 pool. `rehearse.features.resume-track.wrap-up-threshold-min` flag
+- **plan-07 Resume Exclusivity Rule**: `resumeFile != null` 이면 `interviewTypes = {RESUME_BASED}` 강제. 위반 시 BE 400 + `RESUME_EXCLUSIVITY_VIOLATION`. FE 는 RESUME_BASED 선택 시 다른 카드 disabled + 자동 해제. Defense in depth
+- **plan-05 최대 추출 원칙 명시**: Extractor 는 duration 무관 전체 Skeleton 추출 (이력서당 1회 비용 고정)
+- **STATE_DESIGN.md `currentLevel` 의미 확정**: 사용자 레벨(junior/mid/senior), Chain level(L1~L4) 과 무관. Chain level 은 항상 `activeChain.size()` 로 도출. 혼동 금지 note 추가. `startedAt: Instant` 필드 추가 (ClockWatcher 용)
+
+이유: 사용자 페이스 적응 불가 + 심층 체인 연속성 보호 + `currentLevel`/Chain level 오해석 위험을 구현 이전에 차단. 코드 수정 0건 — 각 plan 구현 PR 에서 소화.
 
 ### 2026-04-21 (S3 — plan-00c Session State Persistence 완료)
 

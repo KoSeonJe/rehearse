@@ -11,6 +11,8 @@
 
 **저장 정책은 세션 스코프 캐시로 단순화**(GDPR 상세는 Out of Scope). 2시간 TTL in-memory/Redis.
 
+**Dynamic Pacing 원칙 (2026-04-22, plan-06 연동)**: Extractor 는 이력서의 **모든 chain 을 최대로 추출한다. duration 무관**. 15분 세션이든 60분 세션이든 동일한 Skeleton 을 생성 (이력서당 1회 추출, 비용 고정). 어디까지 소화할지는 plan-07 Orchestrator 가 `ClockWatcher` 로 런타임 판단.
+
 ## 생성/수정 파일
 
 | 파일 | 작업 |
