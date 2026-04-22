@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.interview.runtime;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.rehearse.api.domain.interview.lock.InterviewLockService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,8 +22,7 @@ class InterviewRuntimeStateStoreTest {
     @BeforeEach
     void setUp() {
         store = new InterviewRuntimeStateStore(
-                Caffeine.newBuilder().recordStats().<Long, InterviewRuntimeState>build(),
-                new InterviewLockService()
+                Caffeine.newBuilder().recordStats().<Long, InterviewRuntimeState>build()
         );
     }
 

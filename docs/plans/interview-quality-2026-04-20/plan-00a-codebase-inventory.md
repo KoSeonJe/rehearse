@@ -43,7 +43,7 @@
 - `FollowUpTransactionHandler.java`
 
 실재 엔티티: `Interview`, `InterviewLevel`, `InterviewStatus`, `InterviewType`, `Position`, `QuestionGenerationStatus`, `TechStack`
-**`InterviewSession` 클래스 존재하지 않음** — aggregate root는 `Interview` 엔티티. 런타임 상태(covered_claims, chain_state, analysis_cache)는 별도 `InterviewRuntimeState`(신규, plan-00c)로 분리.
+**`InterviewSession` 클래스 존재하지 않음** — aggregate root는 `Interview` 엔티티. 턴 루프 워킹 메모리(coveredClaims, activeChain, turnAnalysisCache)는 별도 `InterviewRuntimeState`(신규, plan-00c)로 분리.
 
 Subpackages: `controller/`, `dto/`, `entity/`, `event/`, `exception/`, `generation/`, `repository/`, `service/`, `vo/`
 

@@ -46,9 +46,8 @@
 - `/Users/koseonje/dev/devlens/backend/src/main/resources/db/migration/rollback/V25__rollback.sql` — 롤백 스크립트
 - `/Users/koseonje/dev/devlens/backend/src/main/resources/db/migration/rollback/V26__rollback.sql` — 롤백 스크립트
 - `/Users/koseonje/dev/devlens/backend/src/main/resources/db/migration/rollback/V27__rollback.sql` — 롤백 스크립트
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeState.java` — request-scoped 런타임 상태 POJO (covered_claims/active_chain/analysis_cache)
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeStateStore.java` — Caffeine 기반 in-memory store (세션 ID → RuntimeState, 2h TTL)
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/lock/InterviewLockService.java` — interview.id 단위 pessimistic lock (동시 답변 방지)
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeState.java` — 턴 루프 워킹 메모리 POJO (coveredClaims/activeChain/turnAnalysisCache)
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeStateStore.java` — Caffeine 기반 in-memory store (interviewId → RuntimeState, 세션 상한 기반 TTL)
 
 ### 수정
 - `/Users/koseonje/dev/devlens/backend/build.gradle.kts` — Caffeine 의존성 추가 확인 (없으면 추가)
