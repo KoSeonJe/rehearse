@@ -44,6 +44,7 @@ Gemini `verbal_analyzer` / `vision_analyzer` 의 response_format 에 3개 수치
 - 프롬프트 템플릿 전면 개편 — `prompt-improvement-2026-04` 별건
 - Backend 측 필드 소비 (plan-11 범위)
 - 결정론 매퍼 구현 (plan-11 범위)
+- **Lambda `verbal` / `technical` 블록 제거 — plan-13 범위** (본 plan은 delivery 수치 필드 추가만, content 블록 제거는 별도 plan)
 
 ## 생성/수정 파일
 

@@ -1,13 +1,13 @@
 # Plan 12: Feature Flag Cleanup `[post-rollout]`
 
 > 상태: Draft
-> 작성일: 2026-04-21
+> 작성일: 2026-04-21 (2026-04-22 plan-13 플래그 추가)
 > 주차: W8+ (스프린트 후, 각 flag 의 Exit Criteria 충족 후 트리거)
-> 의존성: 01, 03, 04, 07 전부 전면 롤아웃 + 2주 안정화
+> 의존성: 01, 03, 04, 07, **13** 전부 전면 롤아웃 + 2주 안정화
 
 ## Why
 
-`AiFeatureProperties` 의 5개 flag(`intent-classifier / answer-analyzer / followup-v3 / resume-track / context-engineering`)는 모두 **release flag** — 점진 배포 안전망으로 도입됐고 영구적 on/off 스위치가 아니다. 스프린트 종료 후 제거하지 않으면:
+`AiFeatureProperties` 의 7개 flag(`intent-classifier / answer-analyzer / followup-v3 / resume-track / context-engineering / feedback-rubric / feedback-synthesizer`)는 모두 **release flag** — 점진 배포 안전망으로 도입됐고 영구적 on/off 스위치가 아니다. 스프린트 종료 후 제거하지 않으면:
 
 - 구버전(v2) 코드 경로가 "살아있지만 안 쓰이는" 상태로 영원히 남음
 - 분기문이 2배 → 유지보수 비용/리뷰 부담 증가
@@ -24,6 +24,7 @@
 | `answer-analyzer` + `followup-v3` | plan-02, 03 | 프로덕션 100% 2주 / v3 꼬리질문 human eval 점수 ≥ v2 / 레이턴시 p95 ≤ v2+200ms | **v2 꼬리질문 코드 통째 삭제** + 두 flag 동시 제거 |
 | `resume-track` | plan-05~07 | 이력서 업로드 유저 100% 2주 / 에러율 ≤ 일반 트랙 + 0.5%p | flag 제거 (feature 자체는 유지) |
 | `context-engineering` | plan-04 | 프로덕션 100% 2주 / 캐시 히트율 ≥ 70% / 레이턴시 회귀 없음 | flag 제거, 4-layer 빌더 단일 경로 |
+| `feedback-rubric` + `feedback-synthesizer` | plan-08, plan-09, plan-13 | plan-13 cut-over 후 2주 안정 / Rubric 실패율 <1% / content 품질 SLO 충족 / 사용자 피드백 페이지 500 에러 <0.1% | 두 flag 동시 제거 (기본 상시 on), plan-13 Exit Criteria 에 따라 V29 rollback migration 은 archival 보관 (실행 금지) |
 
 **측정 지표 출처**: `AiCallMetrics` (`rehearse.ai.call.duration_seconds{call.type, fallback, cache.hit, outcome}`) + plan-10 Eval Harness.
 
@@ -54,8 +55,15 @@
 - 4-layer 빌더를 단일 default 경로로 승격
 - 구버전 플랫 프롬프트 생성 로직 삭제
 
-### PR 5 (optional): `chore(ai): remove @RefreshScope + spring-cloud-context`
-- PR 1~4 완료 시 `AiFeatureProperties` 가 비어있거나 영구 flag 만 남음
+### PR 5: `chore(ai): remove feedback-rubric + feedback-synthesizer feature flags`
+- plan-13 cut-over 후 2주 안정화 + content 품질 SLO 충족 시 실행
+- `feedbackRubric`, `feedbackSynthesizer` 두 필드 동시 제거
+- `rehearse.features.feedback-rubric` / `feedback-synthesizer` 블록 제거
+- flag off 분기(없음 — plan-13 cut-over 시점에 Lambda content 블록이 이미 제거돼 fallback 경로 부재. flag off 는 "Content 탭 공백" 상태로만 정의됨)
+- V29 `drop_lambda_content_columns.sql` rollback SQL 은 archival 보관 (실행 금지) — 과거 데이터 복구 불가로 rollback 실익 없음
+
+### PR 6 (optional): `chore(ai): remove @RefreshScope + spring-cloud-context`
+- PR 1~5 완료 시 `AiFeatureProperties` 가 비어있거나 영구 flag 만 남음
 - 남는 flag 이 없으면 `spring-cloud-context:4.1.4` 의존성 제거 + `/actuator/refresh` 엔드포인트 노출 제거
 - `AiFeatureProperties` 자체 삭제 가능하면 삭제
 

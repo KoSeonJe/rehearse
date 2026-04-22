@@ -1,9 +1,10 @@
 # Plan 09: Feedback Synthesizer (M3 세션 종합)
 
 > 상태: Draft
-> 작성일: 2026-04-20
-> 주차: W4
+> 작성일: 2026-04-20 (2026-04-22 Content/Delivery 소스 분리 개정 반영)
+> 주차: W7 (plan-08과 병렬, plan-13과 flag-on cut-over 동시)
 > 원본: `docs/todo/2026-04-20/03-m3-feedback-rubric.md` (종합기 부분)
+> 연계: plan-08 (Rubric Family — content 유일 소스), plan-13 (Lambda Content Removal — delivery 전용 축소)
 
 ## Why
 
@@ -14,9 +15,13 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 ## 전제 (plan-00e FEEDBACK_DOMAIN.md 결정 소비)
 - 기존 `TimestampFeedback` / `QuestionSetFeedback` 과 **병존** (대체 아님)
 - `SessionFeedback` 은 별도 `session/` 서브패키지로 분리 — 기존 `FeedbackService` 건드리지 않음
-- **Partial-first**: 세션 종료 즉시 기술 피드백만 생성(`status=PRELIMINARY`), Verbal/Vision 도착 시 Delivery 섹션 보강(`status=COMPLETE`)
-- Verbal/Vision 10분 미도착 시 Delivery null + status=COMPLETE (무한 대기 방지)
+- **Partial-first**: 세션 종료 즉시 기술 피드백만 생성(`status=PRELIMINARY`), Delivery 분석 도착 시 Delivery 섹션 보강(`status=COMPLETE`)
+- Delivery 분석 10분 미도착 시 Delivery null + status=COMPLETE (무한 대기 방지)
 - **Lambda 실패는 모두 재시도 가능**: admin 이 수동 재처리 가능하도록 상태 보존. 사용자는 "일시 오류" 로 안내 (영구 실패 표시 금지). 세부 정책은 §Lambda Error Handling
+- **2026-04-22 결정: Content/Delivery 소스 분리** (plan-13 연계)
+  - **Content 섹션 (Overall/Strengths/Gaps/Week Plan) 의 유일 소스는 `TURN_SCORES` (plan-08 Rubric)** — Lambda 기술 내용 분석은 plan-13 cut-over 시점에 제거됨
+  - **Delivery 섹션의 유일 소스는 `DELIVERY_ANALYSIS` + `VISION_ANALYSIS`** (Lambda vocal + attitude + overall_delivery + vision)
+  - **두 소스를 섞지 말 것**: Content 섹션 observation은 `turn_scores[].evidenceQuote` 에서만 인용, Delivery 섹션 observation은 `delivery_analysis` / `vision_analysis` 에서만 인용
 
 ## 생성/수정 파일
 
@@ -34,10 +39,13 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 
 ## 상세
 
-### 입력 (plan-08 Rubric Family 반영)
+### 입력 (plan-08 Rubric Family + plan-13 Content 단일화 반영)
+
 - `SESSION_METADATA` (면접 유형, 페르소나, 레벨, 총 턴 수)
-- `TURN_SCORES[]` (plan-08 누적 — 각 턴의 `rubric_id`, `scored_dimensions`, `scores_json`)
-- **`SCORES_BY_CATEGORY`** — 카테고리별로 그룹핑된 평균 점수 (신규, 크로스-비교용):
+- `TURN_SCORES[]` (plan-08 누적 — 각 턴의 `rubric_id`, `scored_dimensions`, `scores_json`, **`status: OK|FAILED`** 포함)
+  - `status=FAILED` 인 턴은 `scores_json` 이 null 가능 → 평균 집계에서 제외, `overall.coverage` 필드에 `"8/10 turns scored"` 형식으로 명시
+  - Rubric LLM 실패 시 Lambda content fallback 없음 (plan-13 cut-over 후) → degraded 상태 그대로 합성
+- **`SCORES_BY_CATEGORY`** — 카테고리별로 그룹핑된 평균 점수 (status=OK turn만 집계):
   ```json
   {
     "cs": {"D2": 2.8, "D3": 3.0, "D4": 2.9, "D8": null},
@@ -46,8 +54,11 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
   }
   ```
 - `APPLIED_RUBRICS` — 세션에 사용된 rubric_id 목록 (피드백 narrative에 언급용)
-- `VERBAL_ANALYSIS` (기존 Gemini 결과, **구조 변경 없음** — Out of Scope)
-- `VISION_ANALYSIS` (기존 Gemini Vision, 동일)
+- `DELIVERY_ANALYSIS` (기존명 `VERBAL_ANALYSIS` — 2026-04-22 개명. plan-13 cut-over로 Lambda가 **delivery 전용**으로 축소됨)
+  - 필드: `vocal.{fillerWords, speechPace, toneConfidenceLevel, emotionLabel, positive, negative, suggestion}`, `attitude.{positive, negative, suggestion}`, `overall_delivery.{positive, negative, suggestion}`, `transcript`
+  - **제거된 필드** (plan-13 이전): `verbal.*`, `technical.accuracyIssues`, `technical.coaching.*` → 수신 안 함. 수신되면 Synthesizer는 무시 (방어적)
+- `VISION_ANALYSIS` (기존 Gemini Vision, 동일) — Delivery 섹션 전용
+- `NONVERBAL_SCORES_BY_TURN` / `NONVERBAL_AGGREGATE` (plan-11 연계, 해당 plan flag on 시에만) — Delivery 섹션 dimension D11~D14 점수
 - `RUBRIC_FAMILY` (plan-08 `_dimensions.yaml`) — 차원 설명 참조용
 
 ### 출력 5섹션 (강제)
@@ -56,7 +67,8 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
   "overall": {
     "dimension_scores": {"technical_depth": 2.4, ...},
     "level_assessment": "주니어 기대치 충족, 미드 수준에는 테크니컬 뎁스 보강 필요",
-    "narrative": "..."
+    "narrative": "...",
+    "coverage": "8/10 turns scored"
   },
   "strengths": [{
     "dimension": "reasoning_communication",
@@ -75,12 +87,18 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 ```
 
 ### 작문 원칙 (프롬프트 내)
+
 1. 모든 strength/gap에 `observation: "turn N에서 ~"` 포맷 강제
 2. 레벨 보정 명시 ("주니어로서 훌륭한" / "시니어 기대치 대비")
 3. 공감 톤 ("함께 개선해봅시다"), 평가자 톤 금지
 4. **추상 금지** — "더 공부하세요" 감지되면 재작성
 5. 5섹션 합계 800-1200 단어
 6. **카테고리 크로스-비교** (신규, plan-08 Rubric Family 연계): `SCORES_BY_CATEGORY` 에 2개 이상 카테고리 존재 시 `overall.narrative` 에 교차 패턴 1회 이상 언급. 예: "CS 개념에선 Conceptual Accuracy(D4) 평균 2.9로 탄탄하지만, 경험 질문에선 Experience Concreteness(D6) 1.8로 약함 — 이론은 정확히 알지만 자기 경험으로 구체화하지 못하는 패턴". 이런 패턴 감지가 MVP의 가장 실행 가능한 피드백 생성 경로.
+7. **Content/Delivery 소스 분리 강제** (2026-04-22, plan-13 연계):
+   - Overall/Strengths/Gaps/Week Plan 섹션의 `observation` 은 **오직 `TURN_SCORES[].evidenceQuote` 에서만** 인용. `DELIVERY_ANALYSIS` / `VISION_ANALYSIS` 텍스트 인용 금지 (delivery 단서를 content 평가 근거로 삼지 말 것)
+   - Delivery 섹션의 `observation` 은 **오직 `DELIVERY_ANALYSIS` + `VISION_ANALYSIS` + `NONVERBAL_SCORES_BY_TURN` 에서만** 인용. `TURN_SCORES` 의 D1~D10 점수/observation 인용 금지
+   - 위반 감지 시 재작성 (정규식으로 소스 cross-reference 검출)
+8. **Coverage 필수**: `TURN_SCORES` 전체 중 `status=OK` 비율이 100% 미만이면 `overall.coverage` 에 `"N/M turns scored"` 형식으로 명시. 100%면 필드 생략 또는 `"all turns scored"`. 이는 Rubric 실패가 은폐되지 않도록 하는 투명성 장치
 
 ### 모델 선택
 - **Synthesizer는 더 큰 모델 필요** (통합 작문)
@@ -89,8 +107,21 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 - max_tokens: 2048
 - Feature flag `synthesizer-model: gpt-4o-mini` 로 쉽게 교체
 
-### Verbal/Vision 통합 원칙
-기술 피드백(Overall/Strengths/Gaps/Week Plan)과 **별도 섹션**(Delivery)으로 분리. 섞지 않음.
+### Delivery/Vision 통합 원칙 (2026-04-22 개정 — plan-13 연계)
+
+기술 피드백(Overall/Strengths/Gaps/Week Plan)과 **별도 섹션**(Delivery)으로 분리. **섞지 않음**.
+
+**소스 엄격 분리**:
+- Content 섹션 (Overall/Strengths/Gaps/Week Plan) 은 `TURN_SCORES` 에서만 파생
+- Delivery 섹션은 `DELIVERY_ANALYSIS` + `VISION_ANALYSIS` + `NONVERBAL_SCORES_BY_TURN` 에서만 파생
+
+**크로스 모달 signal (선택)**:
+`DELIVERY_ANALYSIS.vocal.emotionLabel=긴장` + `transcript` 의 헤지 마커("아마도", "잘 모르겠는데") 동시 발생 시, **Synthesizer가 별도 cross-modal hint 로만** 기록 — D4/D8 차원 점수를 **수정하지 않음** (점수는 plan-08 Rubric이 독점). `overall.narrative` 에 "긴장감이 기술 자신감 서술에 영향을 준 듯" 정도의 **연성 관찰**로만 표현 가능.
+
+**금지**:
+- Delivery 단서("필러워드가 많았다")를 Content 차원("Conceptual Accuracy 점수 낮음")의 근거로 삼는 것
+- Content 차원 점수를 Delivery 섹션에 재인용 ("기술 깊이 점수가 낮으므로 자신감 부족")
+- Lambda가 (잘못) 반환한 `verbal`/`technical` 필드를 읽는 것 (plan-13 cut-over 후 이 필드는 존재하지 않음 — 방어적으로 무시)
 
 ### Lambda Error Handling (비언어/Verbal 실패 처리)
 
@@ -146,4 +177,9 @@ Lambda `handler.py` 는 이미 `failure_reason` / `failure_detail` / `isVerbalCo
 4. plan-10 J3(Feedback Rubric Adherence) ≥ 4.0
 5. Synthesizer 모델 교체(gpt-4o-mini ↔ gpt-4o) 시 품질 차이 수치화 — 비용 대비 선택 기준 문서화
 6. 기존 `FeedbackService` 호출 경로 회귀 없음
-7. `progress.md` 09 → Completed
+7. **Content/Delivery 소스 분리 (2026-04-22 신설)**:
+   - 10개 샘플 세션에서 Content 섹션 observation 이 `TURN_SCORES[].evidenceQuote` 에만 매칭 (정규식으로 delivery_analysis 텍스트 포함 여부 확인 — 0건)
+   - Delivery 섹션이 `TURN_SCORES` dimension 점수/observation 을 재인용하지 않음 (0건)
+   - Rubric `status=FAILED` turn 이 섞인 세션에서 `overall.coverage` 필드 정확히 렌더 (예: "8/10 turns scored")
+8. **plan-13 Lambda 계약 방어**: Lambda가 (잘못) `verbal`/`technical` 필드를 반환한 경우 Synthesizer가 무시하고 정상 출력 생성 (stub 테스트)
+9. `progress.md` 09 → Completed

@@ -169,3 +169,9 @@ rehearse:
 - Gemini 프롬프트 전면 개편(Whisper 포함) — `prompt-improvement-2026-04` Lane 3-5
 - 세션 전체(session_wide_degradation) 패턴 분석의 고급 통계 — MVP 이후
 - 사용자 설문 기반 유용성 측정 — 별도 피드백 트랙
+- **Lambda `verbal` / `technical` 블록 제거** — **plan-13** (본 plan은 비언어 D11~D14 채점만. Lambda content 정리는 별건)
+
+## 연계 plan (2026-04-22 추가)
+
+- **plan-13 Lambda Content Removal**: Lambda가 content 블록을 제거하고 delivery 전용으로 축소되면, 본 plan의 D11~D14 비언어 채점은 그대로 유지되며 Lambda delivery 출력(`vocal` + `vision` + `attitude`)만 소비. 본 plan과 plan-13은 **독립**이며 동시 진행 가능.
+- **plan-08 기술 루브릭 (D1~D10)**: Content 평가 유일 소스. 본 plan의 D11~D14와 **섞지 말 것** (데이터 소스도 다름: LLM vs 결정론 매퍼).

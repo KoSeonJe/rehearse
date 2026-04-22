@@ -8,9 +8,10 @@
 |---|--------|------|------|--------|------|
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백, @RefreshScope) 근본 해결 (S2, 2026-04-20) |
-| 00c | Session State Persistence `[parallel:00b]` | W2 초 | Draft | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 |
+| 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
 | 00d | Observability + Eval Smoke `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
+| 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
 
 ### Phase 1~4 (W3-W7) — 기존 플랜 (전제 인프라 위에서)
 
@@ -20,17 +21,65 @@
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
-| 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용 |
-| 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25 |
-| 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06 | fact_check_flag 삭제 + 실제 진입점 명시 필요 |
+| 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
+| 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25. **Dynamic Pacing 재설계 (2026-04-22)**: duration 스케일링 폐기, priority 랭킹만 |
+| 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06,00f | fact_check_flag 삭제 + 실제 진입점 명시 필요. `ResumeTrackPolicy` 에 `ChainStateTracker` 주입(00f skeleton 활용). **WRAP_UP 모드 + ClockWatcher + Resume Exclusivity Rule 추가 (2026-04-22)** |
 | 08 | Rubric Family Scorer (10차원 × 7 rubric) | W7 | Draft | 02, 00c | **TODO 03 개정반영 — 전면 재작성**. `_dimensions.yaml` 마스터 + `_mapping.yaml` + 7개 rubric YAML. 작업량 1주 → 1~1.5주 |
 | 09 | Feedback Synthesizer (M3 세션 종합) | W7 | Draft | 08, 00e | FEEDBACK_DOMAIN.md 결정 소비 |
 | 10 | Eval Harness (M4 Full) `[parallel:09]` | W7 | Draft | 01~09 | smoke는 00d에서 이미 확보 |
 | 11a | Lambda Nonverbal Schema Prerequisite `[blocking:11]` | W7 초 | Draft | 00a | **신규 (2026-04-21 VERIFICATION_REPORT §D3 대응)**. Gemini 프롬프트 3개 수치 필드 확장(`speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count`). plan-11 착수 전 필수 |
 | 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 후 | Draft | 11a, 00a, 00c, 00e, 08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
 | 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
+| 13 | Lambda Content Removal `[blocking:08,09 flag-on]` | W7 후 | Draft | 08, 09 flag-off 배포 + 스테이징 품질 검수 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정 |
 
 ## 진행 로그
+
+### 2026-04-22 (plan-13 신규 — Lambda Content Removal / Content·Delivery 책임 경계 확정)
+
+`lambda/analysis/analyzers/gemini_analyzer.py` 가 단일 프롬프트로 `verbal`(답변 구조), `technical`(정확성/코칭), `vocal`, `attitude`, `overall` 5개 블록을 생성 중이며, FE `content-tab.tsx` 가 이를 가공 없이 렌더 중임을 확인. plan-08 Rubric Scorer 도입 시 **같은 답변을 Gemini + Rubric 이 이중 LLM 호출로 평가**하는 구조가 굳어질 위험 확인.
+
+- **구조적 문제**: Gemini 는 `questionSetCategory` / `intentType` / `resumeMode` / `currentChainLevel` / resume 체인 컨텍스트를 받지 않아 레벨·의도 기준 정확성 판정 원천 불가. Rubric D1~D10 중 D2/D3/D4/D6 4차원이 Lambda `verbal`+`technical` 과 중복. Lambda `verbal` 블록 6개 축(용어 정확, 수치 구체, 논리 구조, 주제 이탈, 분량, 전달 명확성) 전부 D3/D4/D6 로 흡수됨 → 고유 가치 없음.
+- **결정**: Lambda = Delivery Analyzer (AV-grounded only, `transcript`+`vocal`+`attitude`+`vision`+`overall_delivery`), Rubric = Content Analyzer 단독. 이중 평가 금지.
+- **사용자 결정**: (1) 빠른 전환 (dual-read 단계 생략, plan-08/09 flag-off 배포 + 스테이징 품질 검수 후 flag-on 과 동시에 Lambda content 제거), (2) `verbal` 블록 완전 제거 (D3가 흡수), (3) DB 컬럼 바로 drop (V28, 과거 인터뷰 Content 탭은 "데이터 없음" 허용).
+- **신규 plan-13 Lambda Content Removal 생성** — cut-over 시 Lambda 프롬프트·handler 정리, Backend DTO/Entity/Mapper 제거, FE content-tab 재설계, V28 migration 드롭, 플래그 on 동시 적용.
+- **plan-08 개정**: Why 에 "Content 평가 유일 소스" 명시 + plan-13 연계 섹션 추가. 본 plan 범위를 "기술 내용 루브릭(D1~D10) 만" 으로 명시.
+- **plan-09 개정**: 입력 스키마 `VERBAL_ANALYSIS` → `DELIVERY_ANALYSIS` 개명, `TURN_SCORES[].status: OK|FAILED` 필드 추가, `overall.coverage` 출력 필드 추가 (Rubric 실패 투명성), 작문 원칙에 "Content/Delivery 소스 엄격 분리" 강제 추가 (정규식 검증), Delivery 섹션은 delivery_analysis 에서만 / Content 섹션은 turn_scores 에서만 인용. cross-modal signal 은 `overall.narrative` 연성 관찰로만 허용 (차원 점수 수정 금지).
+- **plan-11a 개정**: Out of Scope 에 "verbal/technical 블록 제거는 plan-13" 명시.
+- **plan-11 개정**: 연계 섹션에 plan-13 / plan-08 경계 명시 (기술 D1~D10 vs 비언어 D11~D14 섞지 말 것).
+
+이유: 이중 LLM 호출 구조가 굳기 전에 경계 확정. Rubric 품질 실패 시 Lambda fallback 이 존재하면 품질 드리프트가 은폐됨 → coverage 투명성과 fallback 금지로 품질 회복 루프 확보. 코드 수정 0건 — plan-13 구현 PR 에서 소화.
+
+### 2026-04-22 (Resume Track 스펙 보완 — Dynamic Pacing + Exclusivity)
+
+구현 착수 전 plan-05/06/07 Draft 허점 3개 차단:
+
+- **plan-06 Dynamic Pacing 재설계**: duration 별 스케일링 테이블 폐기. Planner 는 모든 chain 을 priority 랭킹만 수행. `allocated_time_min` / `max_turns` / `estimated_duration_min` 필드 제거, `duration_hint_min` 만 남김 — opener 톤 조정에만 사용
+- **plan-07 WRAP_UP 모드 추가**: `PLAYGROUND → INTERROGATION → WRAP_UP` 3단계 FSM. `ClockWatcher` 로 `remaining_time ≤ 2분` 전이. 새 chain 시작 금지, 현재 chain 완결 허용, 회고 질문 pool. `rehearse.features.resume-track.wrap-up-threshold-min` flag
+- **plan-07 Resume Exclusivity Rule**: `resumeFile != null` 이면 `interviewTypes = {RESUME_BASED}` 강제. 위반 시 BE 400 + `RESUME_EXCLUSIVITY_VIOLATION`. FE 는 RESUME_BASED 선택 시 다른 카드 disabled + 자동 해제. Defense in depth
+- **plan-05 최대 추출 원칙 명시**: Extractor 는 duration 무관 전체 Skeleton 추출 (이력서당 1회 비용 고정)
+- **STATE_DESIGN.md `currentLevel` 의미 확정**: 사용자 레벨(junior/mid/senior), Chain level(L1~L4) 과 무관. Chain level 은 항상 `activeChain.size()` 로 도출. 혼동 금지 note 추가. `startedAt: Instant` 필드 추가 (ClockWatcher 용)
+
+이유: 사용자 페이스 적응 불가 + 심층 체인 연속성 보호 + `currentLevel`/Chain level 오해석 위험을 구현 이전에 차단. 코드 수정 0건 — 각 plan 구현 PR 에서 소화.
+
+### 2026-04-21 (S3 — plan-00c Session State Persistence 완료)
+
+- Flyway V24~V27 마이그레이션 + rollback SQL 작성 (resume_skeleton / interview_plan / rubric_score / session_feedback)
+- `InterviewRuntimeState` POJO — thread-safe 컬렉션(ConcurrentHashMap, CopyOnWriteArrayList, AtomicInteger) 기반 L3 런타임 상태 POJO
+- `InterviewRuntimeStateStore` — Caffeine 2h idle TTL / max 10,000 / recordStats / Micrometer 메트릭(hits/misses/evictions) 노출
+- `InterviewLockService` — 자체 구현 StripedLock(256 stripe ReentrantLock 배열). Guava 의존성 없음
+- `build.gradle.kts` — `com.github.ben-manes.caffeine:caffeine` 의존성 추가
+- `STATE_DESIGN.md` — 4계층 분류 + 결정사항(D1~D5) + 후속 plan 소비 방법 정식 문서화
+- 신규 테스트 12개 추가: `InterviewRuntimeStateStoreTest`(7) + `InterviewLockServiceTest`(5)
+- 결정: H2 호환 불필요 — test 프로파일은 Flyway disabled + create-drop. JSON 컬럼은 MySQL 전용
+- 결정: StripedLock 자체 구현 채택 — Guava Striped 대비 외부 의존성 0, 구현 20줄 이내
+- `./gradlew test` 전체 통과 확인 (baseline 606 + 신규 12 = 618 예상)
+
+### 2026-04-21 (plan-00f 추가 — Interview Turn Policy Abstraction)
+
+- `FollowUpTransactionHandler.MAX_FOLLOWUP_ROUNDS=2` 하드코딩이 plan-07 Resume 트랙(최대 7턴) 을 차단하는 설계 결함 발견
+- `InterviewTurnPolicy` Strategy 도입 plan 작성: `StandardFollowUpPolicy` (CS/Language, 행위 무변경) + `ResumeTrackPolicy` skeleton + `InterviewTurnPolicyResolver`
+- plan-07 의존성에 plan-00f 추가, `ChainStateTracker` 주입은 plan-07 에서 완성
+- plan-00c 와 병렬 실행 가능 (W2)
 
 ### 2026-04-21 (검증 리포트 반영 — 문서 교정)
 
@@ -63,7 +112,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 
 ### 해결 체크리스트 (REMEDIATION.md 동기)
 - [x] C1 AiClient 범용화 (00b) — chat(ChatRequest) 추가, 3개 도메인 메서드 어댑터 보존 (S2)
-- [ ] C2 DB 영속화/Flyway (00c)
+- [x] C2 DB 영속화/Flyway (00c) — V24~V27 + InterviewRuntimeStateStore + InterviewLockService (S3)
 - [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
 - [ ] M2 W1-W3 회귀 방어 (00d)
@@ -74,7 +123,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
 - [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
 - [x] Missing Feature flag runtime (00b) — AiFeatureProperties @RefreshScope + /actuator/refresh (S2)
-- [ ] Missing 동시성 제어 (00c InterviewLockService)
+- [x] Missing 동시성 제어 (00c InterviewLockService) — StripedLock 256 자체 구현 (S3)
 - [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)
 - [ ] Minor plan-10 수동 라벨 = 골든셋 부분집합 (plan-10 edit)
 - [ ] Addendum 비언어 루브릭 (plan-11) — TODO 09 반영. D11~D14 결정론 매퍼 + context_weights + V28
