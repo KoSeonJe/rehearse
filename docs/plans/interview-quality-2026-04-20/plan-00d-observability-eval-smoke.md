@@ -120,7 +120,18 @@ sum(rate(rehearse_ai_call_duration_seconds_count[5m]))
 
 # 분당 토큰 사용량 (비용 추정)
 sum(rate(rehearse_ai_call_tokens_input[1m])) by (call_type)
+
+# Runtime State 캐시 히트율 (plan-00c Caffeine — 추가 2026-04-22)
+sum(rate(rehearse_runtime_state_cache_hits[5m])) /
+(sum(rate(rehearse_runtime_state_cache_hits[5m])) + sum(rate(rehearse_runtime_state_cache_misses[5m])))
+
+# Runtime State 캐시 eviction 추이 (세션 만료 패턴 파악)
+sum(rate(rehearse_runtime_state_cache_evictions[5m]))
 ```
+
+**plan-00c Caffeine 메트릭 노출 검증** (2026-04-22 추가):
+- `InterviewRuntimeStateStore` 는 `CaffeineCacheMetrics.monitor()` 로 Micrometer 바인딩 완료
+- `/actuator/prometheus` 에서 `rehearse_runtime_state_cache_hits`, `..._misses`, `..._evictions` 세 메트릭 노출 확인 필요 (본 plan 검증 시 항목 추가)
 
 ### Alert 임계치 (Out of Scope: 실제 설정 — 문서만)
 - Fallback 발동률 > 5% 5분 지속 → OpenAI 장애 의심
@@ -136,7 +147,7 @@ sum(rate(rehearse_ai_call_tokens_input[1m])) by (call_type)
 ## 검증
 
 1. `eval/scripts/smoke.py` 실행 시간 ≤ 2분, 5/5 통과
-2. 로컬 `/actuator/prometheus` 에서 `rehearse_ai_call_duration_seconds` 메트릭 노출 확인
+2. 로컬 `/actuator/prometheus` 에서 `rehearse_ai_call_duration_seconds` + `rehearse_runtime_state_cache_{hits,misses,evictions}` (plan-00c Caffeine) 메트릭 노출 확인
 3. plan-00b의 `chat()` 호출 1회에 대해 Timer + Counter 모두 기록되는지 통합 테스트
 4. OBSERVABILITY.md의 쿼리가 문법적으로 유효(Grafana 임시 import해서 에러 없음)
 5. Smoke eval 스크립트 README만 보고 제3자 실행 가능
