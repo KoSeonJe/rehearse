@@ -30,8 +30,24 @@
 | 11a | Lambda Nonverbal Schema Prerequisite `[blocking:11]` | W7 초 | Draft | 00a | **신규 (2026-04-21 VERIFICATION_REPORT §D3 대응)**. Gemini 프롬프트 3개 수치 필드 확장(`speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count`). plan-11 착수 전 필수 |
 | 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 후 | Draft | 11a, 00a, 00c, 00e, 08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
 | 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
+| 13 | Lambda Content Removal `[blocking:08,09 flag-on]` | W7 후 | Draft | 08, 09 flag-off 배포 + 스테이징 품질 검수 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정 |
 
 ## 진행 로그
+
+### 2026-04-22 (plan-13 신규 — Lambda Content Removal / Content·Delivery 책임 경계 확정)
+
+`lambda/analysis/analyzers/gemini_analyzer.py` 가 단일 프롬프트로 `verbal`(답변 구조), `technical`(정확성/코칭), `vocal`, `attitude`, `overall` 5개 블록을 생성 중이며, FE `content-tab.tsx` 가 이를 가공 없이 렌더 중임을 확인. plan-08 Rubric Scorer 도입 시 **같은 답변을 Gemini + Rubric 이 이중 LLM 호출로 평가**하는 구조가 굳어질 위험 확인.
+
+- **구조적 문제**: Gemini 는 `questionSetCategory` / `intentType` / `resumeMode` / `currentChainLevel` / resume 체인 컨텍스트를 받지 않아 레벨·의도 기준 정확성 판정 원천 불가. Rubric D1~D10 중 D2/D3/D4/D6 4차원이 Lambda `verbal`+`technical` 과 중복. Lambda `verbal` 블록 6개 축(용어 정확, 수치 구체, 논리 구조, 주제 이탈, 분량, 전달 명확성) 전부 D3/D4/D6 로 흡수됨 → 고유 가치 없음.
+- **결정**: Lambda = Delivery Analyzer (AV-grounded only, `transcript`+`vocal`+`attitude`+`vision`+`overall_delivery`), Rubric = Content Analyzer 단독. 이중 평가 금지.
+- **사용자 결정**: (1) 빠른 전환 (dual-read 단계 생략, plan-08/09 flag-off 배포 + 스테이징 품질 검수 후 flag-on 과 동시에 Lambda content 제거), (2) `verbal` 블록 완전 제거 (D3가 흡수), (3) DB 컬럼 바로 drop (V28, 과거 인터뷰 Content 탭은 "데이터 없음" 허용).
+- **신규 plan-13 Lambda Content Removal 생성** — cut-over 시 Lambda 프롬프트·handler 정리, Backend DTO/Entity/Mapper 제거, FE content-tab 재설계, V28 migration 드롭, 플래그 on 동시 적용.
+- **plan-08 개정**: Why 에 "Content 평가 유일 소스" 명시 + plan-13 연계 섹션 추가. 본 plan 범위를 "기술 내용 루브릭(D1~D10) 만" 으로 명시.
+- **plan-09 개정**: 입력 스키마 `VERBAL_ANALYSIS` → `DELIVERY_ANALYSIS` 개명, `TURN_SCORES[].status: OK|FAILED` 필드 추가, `overall.coverage` 출력 필드 추가 (Rubric 실패 투명성), 작문 원칙에 "Content/Delivery 소스 엄격 분리" 강제 추가 (정규식 검증), Delivery 섹션은 delivery_analysis 에서만 / Content 섹션은 turn_scores 에서만 인용. cross-modal signal 은 `overall.narrative` 연성 관찰로만 허용 (차원 점수 수정 금지).
+- **plan-11a 개정**: Out of Scope 에 "verbal/technical 블록 제거는 plan-13" 명시.
+- **plan-11 개정**: 연계 섹션에 plan-13 / plan-08 경계 명시 (기술 D1~D10 vs 비언어 D11~D14 섞지 말 것).
+
+이유: 이중 LLM 호출 구조가 굳기 전에 경계 확정. Rubric 품질 실패 시 Lambda fallback 이 존재하면 품질 드리프트가 은폐됨 → coverage 투명성과 fallback 금지로 품질 회복 루프 확보. 코드 수정 0건 — plan-13 구현 PR 에서 소화.
 
 ### 2026-04-22 (Resume Track 스펙 보완 — Dynamic Pacing + Exclusivity)
 
