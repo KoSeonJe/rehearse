@@ -1,0 +1,260 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 10차원 마스터 사전. 모든 rubric YAML 이 ref: D* 로 참조.
+# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L164-383
+version: 1
+
+dimensions:
+  D1:
+    id: problem_framing
+    name: Problem Framing
+    description: 질문 받고 전제/제약/엣지케이스 확인하는가
+    scope: general
+    scoring:
+      1:
+        label: 전제 확인 없음
+        observable:
+          - 질문을 받자마자 답변 시작
+          - 제약 조건 명시 없음
+          - 스케일/트래픽/규모 등 컨텍스트 언급 없음
+      2:
+        label: 부분 확인
+        observable:
+          - 하나의 가정만 명시 ("~라고 가정하면")
+          - 스케일/트래픽 등 컨텍스트 일부 확인
+          - 엣지케이스 1개 미만 언급
+      3:
+        label: 체계적 확인
+        observable:
+          - 여러 가정 명시적으로 나열
+          - 엣지케이스 능동적으로 언급
+          - "만약 ~라면"으로 경계 조건 탐색
+          - 제약 확인 후 답변 범위 스스로 정의
+
+  D2:
+    id: technical_depth
+    name: Technical Depth
+    description: 원리/트레이드오프/대안 인지
+    scope: general
+    scoring:
+      1:
+        label: 키워드 나열
+        observable:
+          - 기술명만 언급, 왜 쓰는지 설명 못함
+          - "Redis 썼어요"로 끝남
+          - 대안 고려 없음
+      2:
+        label: 정의 수준
+        observable:
+          - 원리 설명 있으나 트레이드오프 없음
+          - 단일 선택지만 언급
+          - 장점만 말하고 단점 안 봄
+      3:
+        label: 트레이드오프 + 대안 인지
+        observable:
+          - 선택 이유를 대안과 비교해 설명
+          - 단점도 솔직히 언급
+          - "만약 ~한 상황이면 ~을 썼을 것"
+          - 복수 옵션 간 의사결정 근거 제시
+
+  D3:
+    id: reasoning_communication
+    name: Reasoning Communication
+    description: 사고 과정 단계적 언어화
+    scope: general
+    scoring:
+      1:
+        label: 결론만
+        observable:
+          - "왜냐하면" 없음
+          - 결론을 단언만 하고 근거 생략
+          - 답변 구조가 보이지 않음
+      2:
+        label: 기본 설명
+        observable:
+          - "왜냐하면" 1회
+          - 단일 이유 제시
+          - 순서가 있으나 단계 구분은 약함
+      3:
+        label: 단계적 사고 공유
+        observable:
+          - "먼저 ~을 고려했고, 그다음 ~을 검토했고"
+          - 배제한 옵션까지 언급
+          - 전제 → 추론 → 결론 구조 명시적
+
+  D4:
+    id: conceptual_accuracy
+    name: Conceptual Accuracy
+    description: 개념 설명의 기술적 정확성
+    scope: general
+    scoring:
+      1:
+        label: 오개념 존재
+        observable:
+          - 기술적으로 틀린 서술
+          - 용어 혼동 (프로세스 ≠ 스레드를 혼용)
+          - 원리 설명에 사실 오류
+      2:
+        label: 대체로 정확, 일부 부정확
+        observable:
+          - 핵심 개념은 맞으나 디테일 틀림
+          - 범위를 과대/과소 표현
+          - 경계 조건에서 설명 흔들림
+      3:
+        label: 정확
+        observable:
+          - 용어 정확히 사용
+          - 예외 케이스까지 인지
+          - 경계 조건 정확히 설명
+          - 실제 동작 메커니즘까지 서술
+
+  D5:
+    id: practical_application
+    name: Practical Application
+    description: 실무 사용 맥락, 주의점, 흔한 실수 이해
+    scope: general
+    scoring:
+      1:
+        label: 교과서 수준
+        observable:
+          - 이론만 알고 "언제 쓰는지" 모름
+          - 흔한 함정/버그 언급 없음
+          - 실제 사용 경험 흔적 없음
+      2:
+        label: 일부 실무 감각
+        observable:
+          - 한두 가지 use case 언급
+          - 주의점 일부 인지
+          - 버전/호환성 정도만 언급
+      3:
+        label: 실무 감각
+        observable:
+          - "이럴 때 쓰고 이럴 땐 안 씀" 구분
+          - 흔한 실수/버그 패턴 언급
+          - 대안과 선택 기준 명확
+          - 운영 환경 고려 (모니터링, 장애 대응)
+
+  D6:
+    id: experience_concreteness
+    name: Experience Concreteness
+    description: 수치, 본인 기여, Learnings (CARL의 L)
+    scope: general
+    scoring:
+      1:
+        label: 추상적
+        observable:
+          - "팀에서 했어요" 수준
+          - "우리"만 있고 "나"가 없음
+          - 수치 0개
+          - 결과만 있고 과정 없음
+      2:
+        label: 일부 구체화
+        observable:
+          - 일부 수치 포함
+          - 본인 역할 일부 명시
+          - 배운 점 언급 시도
+      3:
+        label: 완전 구체화
+        observable:
+          - 정량 수치 (TPS, LCP, ms, %)
+          - "나는 ~했다"로 명확한 본인 기여
+          - 선택하지 않은 대안 언급
+          - Learnings (전이 가능한 교훈)
+
+  D7:
+    id: collaboration_awareness
+    name: Collaboration Awareness
+    description: 팀/이해관계자 관점 고려
+    scope: general
+    scoring:
+      1:
+        label: 본인 관점만
+        observable:
+          - "내가 주도했다"만 강조
+          - 다른 팀원/이해관계자 언급 없음
+          - 갈등/협의 과정 생략
+      2:
+        label: 일부 인식
+        observable:
+          - 팀원 의견 한 번 언급
+          - 갈등/합의 과정 일부 표현
+          - 이해관계자 구분 약함
+      3:
+        label: 다관점 이해
+        observable:
+          - 여러 stakeholder 관점 언급
+          - 갈등 시 타협/설득 과정 구체 설명
+          - "PM은 ~, 백엔드는 ~, 프론트는 ~" 식 구분
+          - 상대방 입장 언어로 재서술
+
+  D8:
+    id: recovery_from_gaps
+    name: Recovery from Gaps
+    description: 모르는 걸 만났을 때 대처
+    scope: general
+    scoring:
+      1:
+        label: 회피
+        observable:
+          - 침묵
+          - 얼버무림
+          - 확신 없이 추측
+          - 질문 자체를 바꿔치기
+      2:
+        label: 인정
+        observable:
+          - "그 부분은 잘 모릅니다" 명시
+          - 모르는 범위를 정확히 구분
+      3:
+        label: 인정 + 접근
+        observable:
+          - 모르는 걸 인정
+          - 추론/유추 시도
+          - 비슷한 경험으로 브릿지
+          - "만약 안다면 이렇게 접근하겠다" 제시
+
+  D9:
+    id: factual_consistency
+    name: Factual Consistency
+    description: (Resume 전용) 이력서 claim과 답변 일치
+    scope: resume_only
+    scoring:
+      1:
+        label: 불일치 다수
+        observable:
+          - 이력서 "MediaConvert"인데 답변 "Elemental"
+          - 규모 수치가 이력서와 다름
+          - 역할/기여도 과장
+      2:
+        label: 일부 불일치
+        observable:
+          - 한 건의 경미한 불일치
+          - 용어를 유사어로 대체했으나 개념 일치
+      3:
+        label: 완전 일치
+        observable:
+          - 이력서 claim을 답변이 정확히 뒷받침
+          - 숫자·기술명·역할 모두 일치
+          - 추가 설명이 이력서 맥락과 정합
+
+  D10:
+    id: chain_depth
+    name: Chain Depth
+    description: (Resume 전용) 심화 체인 어디까지 답했는가 (L1 What → L2 How → L3 Why-mech → L4 Tradeoff)
+    scope: resume_only
+    scoring:
+      1:
+        label: L1 (What)까지
+        observable:
+          - 개념 설명 수준까지만
+          - "무엇을 했는가"에서 멈춤
+      2:
+        label: L2-L3 (How/Why)까지
+        observable:
+          - 라이브러리/알고리즘까지 설명
+          - 구현 메커니즘·이유 일부 제시
+      3:
+        label: L4 (Tradeoff)까지
+        observable:
+          - 선택 근거와 대안 비교까지 도달
+          - "~대신 ~을 택한 이유"를 복수 관점에서 서술
+          - 운영/확장성 관점 포함

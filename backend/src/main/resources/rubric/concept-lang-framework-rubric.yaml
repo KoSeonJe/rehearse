@@ -1,0 +1,38 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 언어/프레임워크 개념 질문 평가 루브릭. backend/frontend 도메인 통합.
+# 도메인 차이는 질문 텍스트(Spring vs React)가 담고 있어 LLM 이 구분.
+# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L424-459 (backend 예시 확장)
+rubric_id: concept-lang-framework-v1
+description: 언어/프레임워크 (Java/Python/JS 언어 · Spring/Express/React/Vue 프레임워크) 개념 질문 평가 루브릭. 개념 정확성 + 실무 감각이 핵심.
+
+applies_to:
+  - category: LANGUAGE_FRAMEWORK
+  - category: UI_FRAMEWORK
+
+uses_dimensions:
+  - ref: D2   # Technical Depth
+    weight: 0.25
+  - ref: D3   # Reasoning Communication
+    weight: 0.20
+  - ref: D4   # Conceptual Accuracy
+    weight: 0.25
+  - ref: D5   # Practical Application
+    weight: 0.20
+  - ref: D8   # Recovery from Gaps
+    weight: 0.10
+
+per_turn_rules:
+  on_intent_clarify: []
+  on_intent_give_up: [D8]
+  on_intent_answer:  [D2, D3, D4, D5, D8]
+
+level_expectations:
+  junior:
+    must_reach_2: [D4]
+    must_reach_1: all
+  mid:
+    must_reach_2: all
+    must_reach_3: [D4, D5]
+  senior:
+    must_reach_3: [D2, D4, D5]
+    must_reach_2: all
