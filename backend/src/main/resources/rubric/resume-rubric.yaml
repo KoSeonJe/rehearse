@@ -1,0 +1,44 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 이력서 기반 Resume Track 질문 평가 루브릭. domain 무관.
+# mode-aware per_turn_rules: PLAYGROUND / INTERROGATION / WRAP_UP (plan-07)
+# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L525-554 + plan-08 L194-217 + plan-07 WRAP_UP 개정
+rubric_id: resume-v1
+description: Resume Track 전용 루브릭 (domain 무관). 사실 일치(D9) + 체인 깊이(D10) 가 핵심. ResumeMode 에 따라 채점 차원 가변.
+
+applies_to:
+  - resumeTrack: true
+  - category: RESUME_BASED
+
+uses_dimensions:
+  - ref: D2   # Technical Depth
+    weight: 0.25
+  - ref: D3   # Reasoning Communication
+    weight: 0.15
+  - ref: D6   # Experience Concreteness
+    weight: 0.20
+  - ref: D9   # Factual Consistency (핵심)
+    weight: 0.20
+  - ref: D10  # Chain Depth (핵심)
+    weight: 0.20
+
+# mode-aware: ResumeMode 에 따라 차원 선택
+# - PLAYGROUND: 놀이터 모드 — 구체성만 측정
+# - INTERROGATION: 심문 모드 — 깊이 + 사실 + 체인
+# - WRAP_UP: 회고 모드 — 체인 완결 중심
+# on_intent_* 는 모드와 독립 적용
+per_turn_rules:
+  on_intent_clarify: []
+  on_intent_give_up: [D8]
+  on_playground_mode:    [D6]
+  on_interrogation_mode: [D2, D3, D9, D10]
+  on_wrap_up_mode:       [D10]
+
+level_expectations:
+  junior:
+    must_reach_2: [D9]
+    must_reach_1: all
+  mid:
+    must_reach_3: [D9]           # 사실 일치는 필수
+    must_reach_2: all
+  senior:
+    must_reach_3: [D9, D2, D10]  # 사실 + 깊이 + 체인 모두

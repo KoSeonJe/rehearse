@@ -1,0 +1,33 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 협업/갈등/커뮤니케이션 질문 평가 루브릭. BEHAVIORAL 카테고리.
+# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L500-522
+rubric_id: experience-collaboration-v1
+description: 팀 협업·갈등 해결·커뮤니케이션 질문 평가 루브릭. 다관점 이해 (Collaboration Awareness) 가 핵심.
+
+applies_to:
+  - category: BEHAVIORAL
+
+uses_dimensions:
+  - ref: D1   # Problem Framing
+    weight: 0.15
+  - ref: D3   # Reasoning Communication
+    weight: 0.20
+  - ref: D6   # Experience Concreteness
+    weight: 0.30
+  - ref: D7   # Collaboration Awareness (핵심)
+    weight: 0.35
+
+per_turn_rules:
+  on_intent_clarify: []
+  on_intent_give_up: []                   # 협업 질문은 "모른다" 보다 상황 재구성을 기대
+  on_intent_answer:  [D1, D3, D6, D7]
+
+level_expectations:
+  junior:
+    must_reach_2: [D6, D7]
+    must_reach_1: all
+  mid:
+    must_reach_2: all
+    must_reach_3: [D7]
+  senior:
+    must_reach_3: [D6, D7]   # 다관점 이해 + 구체적 기여 필수

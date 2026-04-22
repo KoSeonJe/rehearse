@@ -1,0 +1,38 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 기술 경험 질문 평가 루브릭. FeedbackPerspective=EXPERIENCE 일 때 적용.
+# domain 무관 (backend/frontend/fullstack/devops/data 공통).
+# CARL 구조 + 본인 기여 구체성 + Learnings 가 핵심.
+# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L462-498 (backend 경험 예시 확장)
+rubric_id: experience-technical-v1
+description: 기술 경험 질문 평가 루브릭 (domain 무관). CARL 구조 + 수치/본인 기여 + Learnings 가 핵심. 기술 의사결정이 포함되면 Technical Depth 조건부 적용.
+
+applies_to:
+  - feedbackPerspective: EXPERIENCE
+
+uses_dimensions:
+  - ref: D1   # Problem Framing
+    weight: 0.15
+  - ref: D2   # Technical Depth (조건부: 기술 의사결정 포함 시)
+    weight: 0.20
+    conditional: answer_contains_technical_decision
+  - ref: D3   # Reasoning Communication
+    weight: 0.20
+  - ref: D6   # Experience Concreteness (핵심)
+    weight: 0.30
+  - ref: D8   # Recovery from Gaps
+    weight: 0.15
+
+per_turn_rules:
+  on_intent_clarify: []
+  on_intent_give_up: [D8]
+  on_intent_answer:  [D1, D3, D6, D8]     # D2 는 conditional, RubricScorer 가 런타임 판단
+
+level_expectations:
+  junior:
+    must_reach_2: [D6]
+    must_reach_1: all
+  mid:
+    must_reach_2: all
+    must_reach_3: [D6]
+  senior:
+    must_reach_3: [D6, D2]   # Learnings + 기술 의사결정 깊이 필수

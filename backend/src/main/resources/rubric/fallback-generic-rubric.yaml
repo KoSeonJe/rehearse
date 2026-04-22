@@ -1,0 +1,33 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 매핑 실패 시 기본 루브릭. _mapping.yaml 의 default 귀결.
+# 대상 카테고리 (전용 rubric 미보유): SYSTEM_DESIGN / INFRA_CICD / CLOUD /
+#                                     DATA_PIPELINE / SQL_MODELING /
+#                                     BROWSER_PERFORMANCE / FULLSTACK_STACK
+# 향후 카테고리별 전용 rubric 이 추가되면 _mapping.yaml 에 규칙 추가.
+rubric_id: fallback-generic-v1
+description: 매핑되지 않은 카테고리용 최소 공통 루브릭. Technical Depth + Reasoning + Recovery 3차원만 평가. 전용 rubric 이 생기면 우선 적용.
+
+applies_to:
+  - fallback: true
+
+uses_dimensions:
+  - ref: D2   # Technical Depth
+    weight: 0.45
+  - ref: D3   # Reasoning Communication
+    weight: 0.35
+  - ref: D8   # Recovery from Gaps
+    weight: 0.20
+
+per_turn_rules:
+  on_intent_clarify: []
+  on_intent_give_up: [D8]
+  on_intent_answer:  [D2, D3, D8]
+
+level_expectations:
+  junior:
+    must_reach_1: all
+  mid:
+    must_reach_2: all
+  senior:
+    must_reach_3: [D2]
+    must_reach_2: all

@@ -32,7 +32,7 @@
 
 - **`[blocking]` plan-08 완료**: Rubric Scorer가 7개 카테고리 rubric + 10 차원에 대해 `./gradlew test --tests "Rubric*Test"` 전부 통과. `rehearse.features.feedback-rubric.enabled=false` 플래그로 프로덕션 배포 완료.
 - **`[blocking]` plan-09 완료**: Feedback Synthesizer가 `turn_scores` + `delivery_analysis` 입력으로 5섹션 출력 생성. flag-off 프로덕션 배포 완료.
-- **내부 품질 검수 통과**: 스테이징에서 실제 인터뷰 10건 돌려 Rubric D1~D10 출력 품질 수동 검수 — 차원 누락률 0%, `evidenceQuote` 포함률 ≥95%, 레벨별 점수 분포 정상.
+- **내부 품질 검수 통과**: `./STAGING_QUALITY_CHECKLIST.md` 5개 Gate 전부 pass. 샘플 소스(하이브리드 10건)·라벨 프로토콜(1명 + J3 Judge 교차)·실패 액션 매트릭스는 해당 문서 참조.
 - **FE 리팩터 준비**: `content-tab.tsx`가 Rubric/Synthesizer 기반 렌더링 경로 구현 완료 (flag-off 상태로 코드만 존재).
 
 ## Goal

@@ -1,0 +1,38 @@
+# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# 입력 컨텍스트 → rubric_id 라우팅 규칙.
+# 위→아래 순으로 평가, 첫 match 우선. 어느 규칙에도 맞지 않으면 default.
+#
+# 입력 컨텍스트 필드:
+#   resumeTrack: boolean               (Interview.hasResumeSkeleton())
+#   category: QuestionSetCategory      (CS_FUNDAMENTAL / BEHAVIORAL / RESUME_BASED / LANGUAGE_FRAMEWORK / ...)
+#   feedbackPerspective: FeedbackPerspective (TECHNICAL / BEHAVIORAL / EXPERIENCE)
+#
+# when 절의 값은 단일값 또는 배열. 배열이면 OR 매칭.
+version: 1
+
+rules:
+  - when:
+      resumeTrack: true
+    use: resume-v1
+
+  - when:
+      category: CS_FUNDAMENTAL
+    use: concept-cs-fundamental-v1
+
+  - when:
+      category: [LANGUAGE_FRAMEWORK, UI_FRAMEWORK]
+    use: concept-lang-framework-v1
+
+  - when:
+      category: BEHAVIORAL
+    use: experience-collaboration-v1
+
+  - when:
+      feedbackPerspective: EXPERIENCE
+    use: experience-technical-v1
+
+  - when:
+      category: RESUME_BASED
+    use: resume-v1
+
+default: fallback-generic-v1
