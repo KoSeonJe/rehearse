@@ -128,16 +128,15 @@ CREATE TABLE nonverbal_score (
 );
 ```
 
-### Feature Flag
+### 설정 (application.yml 상수)
 ```yaml
 rehearse:
-  features:
-    nonverbal-rubric:
-      enabled: false                 # default off, dogfooding 후 on
-      context-weights-enabled: true
-      composure-tracking: true
-      fallback-to-raw-analysis: true # 매퍼/필드 부재 시 기존 TimestampFeedback 문자열로 복귀
+  nonverbal-rubric:
+    context-weights-enabled: true
+    composure-tracking: true
 ```
+
+Feature Flag runtime toggle은 사용하지 않는다. `context_weights` 는 설정 파일 상수로 고정. dogfooding 완료 후 `application-prod.yml` 에서 활성화하여 배포.
 
 ### plan-09 Synthesizer 연계
 - 신규 Synthesizer 입력: `NONVERBAL_SCORES_BY_TURN` + `NONVERBAL_AGGREGATE` (세션 평균 + D14 악화 턴 리스트)
@@ -161,8 +160,7 @@ rehearse:
 6. **D14 변화 감지 정확도 ≥80%** (꼬리질문 턴 기준 수동 라벨)
 7. **Lambda 필드 확장 비회귀**: 기존 `TimestampFeedback` 생성 경로 회귀 0
 8. **V28 영속화 + rollback** 로컬 동작
-9. **Feature flag off**: 기존 Verbal/Vision 원본 문자열 경로로 완전 복귀
-10. `progress.md` 11 → Completed
+9. `progress.md` 11 → Completed
 
 ## Out of Scope
 

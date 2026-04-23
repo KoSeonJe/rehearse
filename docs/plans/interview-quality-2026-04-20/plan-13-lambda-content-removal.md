@@ -2,9 +2,9 @@
 
 > 상태: Draft
 > 작성일: 2026-04-22
-> 주차: W7 후반 (plan-08 + plan-09 flag-on cut-over와 동시)
-> 선행 `[blocking]`: plan-08 (Rubric Scorer), plan-09 (Feedback Synthesizer) — 둘 다 flag off 상태로 프로덕션 배포 완료 + 내부 품질 검수 통과
-> 후행: plan-12 (Feature Flag Cleanup)
+> 주차: W7 후반 (plan-08 + plan-09 ECR cut-over와 동시)
+> 선행 `[blocking]`: plan-08 (Rubric Scorer), plan-09 (Feedback Synthesizer) — 둘 다 프로덕션 배포 완료 + STAGING G1~G3 자동 게이트 + MANUAL_AB_PROTOCOL.md 3~5건 수동 비교 통과
+> 후행: 없음 (plan-12 Feature Flag Cleanup 은 2026-04-23 폐기)
 
 ## Why
 
@@ -22,18 +22,18 @@
 - **Feedback Synthesizer (plan-09)**: 두 출처를 **섞지 않고** 합성 — Content 섹션은 `turn_scores`만, Delivery 섹션은 `delivery_analysis` + `vision_analysis`만
 - Lambda 프롬프트 단순화로 토큰·지연 감소, Gemini 품질은 delivery에 집중, Rubric 품질 독립 검증 가능
 
-### 사용자 결정 (2026-04-22 세션)
-- **전환 방식**: 빠른 전환 (plan-08 + plan-09 flag-off 구현 완료 → flag-on과 동시에 Lambda content 블록 제거)
+### 사용자 결정 (2026-04-22 세션, 2026-04-23 갱신)
+- **전환 방식**: 신규 ECR 이미지 배포 + Lambda 함수 버전 업데이트로 단일 cut-over. Feature Flag runtime toggle은 사용하지 않는다.
 - **`verbal` 블록**: 완전 제거 (D3가 흡수)
 - **DB 컬럼**: 바로 drop (V29, 과거 인터뷰 content 탭은 "데이터 없음" 표시 허용)
-- 근거: dual-read 단계 없이도 스테이징에서 내부 샘플 10건 품질 검수로 Rubric 품질을 사전 검증 가능
+- 근거: dual-read 단계 없이도 스테이징에서 MANUAL_AB_PROTOCOL.md 프로토콜(3~5건 수동 diff)로 Rubric 품질 사전 검증 가능. ECR 롤백이 Feature Flag보다 단순하고 일관성 있음.
 
 ## 전제 (Phase 0 선행 필수)
 
-- **`[blocking]` plan-08 완료**: Rubric Scorer가 7개 카테고리 rubric + 10 차원에 대해 `./gradlew test --tests "Rubric*Test"` 전부 통과. `rehearse.features.feedback-rubric.enabled=false` 플래그로 프로덕션 배포 완료.
-- **`[blocking]` plan-09 완료**: Feedback Synthesizer가 `turn_scores` + `delivery_analysis` 입력으로 5섹션 출력 생성. flag-off 프로덕션 배포 완료.
-- **내부 품질 검수 통과**: `./STAGING_QUALITY_CHECKLIST.md` 5개 Gate 전부 pass. 샘플 소스(하이브리드 10건)·라벨 프로토콜(1명 + J3 Judge 교차)·실패 액션 매트릭스는 해당 문서 참조.
-- **FE 리팩터 준비**: `content-tab.tsx`가 Rubric/Synthesizer 기반 렌더링 경로 구현 완료 (flag-off 상태로 코드만 존재).
+- **`[blocking]` plan-08 완료**: Rubric Scorer가 7개 카테고리 rubric + 10 차원에 대해 `./gradlew test --tests "Rubric*Test"` 전부 통과. 단일 경로로 프로덕션 배포 완료 (runtime toggle 없음).
+- **`[blocking]` plan-09 완료**: Feedback Synthesizer가 `turn_scores` + `delivery_analysis` 입력으로 5섹션 출력 생성. 단일 경로로 프로덕션 배포 완료.
+- **내부 품질 검수 통과**: `./STAGING_QUALITY_CHECKLIST.md` G1~G3 자동 게이트 전부 pass + `./MANUAL_AB_PROTOCOL.md` 3~5건 수동 diff 과반 우세.
+- **FE 리팩터 준비**: `content-tab.tsx`가 Rubric/Synthesizer 기반 렌더링 경로 구현 완료.
 
 ## Goal
 
@@ -54,8 +54,7 @@
 - Backend DTO/Entity/Mapper에서 대응 필드 제거
 - FE types/component에서 대응 필드 제거, Rubric/Synthesizer 기반 렌더로 전환
 - DB migration V29: `timestamp_feedback` 컬럼 4개 drop (plan-11의 V28 `nonverbal_score` 생성과 충돌 회피)
-- plan-08 플래그 on 동시 적용 (`feedback-rubric.enabled=true`)
-- plan-09 플래그 on 동시 적용
+- plan-08 / plan-09 는 단일 경로로 배포된 상태 (runtime toggle 없음). plan-13 cut-over 는 ECR 신규 태그 배포로 일원 진행
 
 ### Out
 - Rubric Scorer 자체 구현 (plan-08)
@@ -110,19 +109,12 @@
 | `backend/src/main/resources/db/migration/V29__drop_lambda_content_columns.sql` | 신규. `ALTER TABLE timestamp_feedback DROP COLUMN verbal_comment, DROP COLUMN accuracy_issues, DROP COLUMN coaching_structure, DROP COLUMN coaching_improvement;` (plan-11의 V28 `nonverbal_score` 생성 이후 순서) |
 | `backend/src/main/resources/db/migration/rollback/V29__rollback.sql` | 신규. 컬럼 재생성 SQL (응급 롤백용, 데이터 복구는 불가 명시) |
 
-### Feature Flag (플래그 on)
-
-| 파일 | 작업 |
-|------|------|
-| `backend/src/main/resources/application-prod.yml` | `rehearse.features.feedback-rubric.enabled: true`, `rehearse.features.feedback-synthesizer.enabled: true` |
-| `backend/src/main/resources/application-dev.yml` | 동일 |
-
 ## 상세
 
 ### Cut-over 순서 (단일 PR 또는 짧은 PR chain)
 
 1. **PR-1 (Lambda)**: Gemini 프롬프트/handler 정리. Lambda 단독 배포 → Lambda 출력 JSON에 `verbal`/`technical` 없음 확인.
-2. **PR-2 (Backend)**: `SaveFeedbackRequest` + `TimestampFeedback` + `TimestampFeedbackMapper` + `TimestampFeedbackResponse`에서 content 필드 제거. Rubric/Synthesizer 응답 경로 연결. V29 migration. `feedback-rubric`/`feedback-synthesizer` 플래그 on.
+2. **PR-2 (Backend)**: `SaveFeedbackRequest` + `TimestampFeedback` + `TimestampFeedbackMapper` + `TimestampFeedbackResponse`에서 content 필드 제거. Rubric/Synthesizer 응답 경로 연결. V29 migration. ECR 신규 태그 배포와 동시에 cut-over (runtime toggle 없음).
 3. **PR-3 (Frontend)**: types + content-tab + feedback-panel 수정. 배포.
 4. **PR 순서**: Lambda → BE → FE (CLAUDE.md의 BE/FE 분리 규칙 준수).
 
@@ -142,12 +134,12 @@
 
 본 plan은 **단방향 변경** (Gemini 프롬프트 + DB drop). 완전 롤백은 불가능하지만 위기 시:
 
-1. `feedback-rubric.enabled=false` 플래그 off → Content 탭 공백 (임시)
-2. Lambda 프롬프트는 이전 버전으로 롤백 배포 (신규 인터뷰만 영향)
+1. ECR 이미지 이전 태그 재배포 → Content 탭 공백 (임시, Rubric 미실행 상태)
+2. Lambda 함수는 이전 버전 alias 로 복구 (신규 인터뷰만 영향)
 3. V29 rollback migration 실행 — 컬럼 재생성 (신규 인터뷰 대상으로만 저장 가능, 과거 데이터는 복구 불가)
 4. Backend DTO/Entity 이전 커밋으로 revert
 
-**의사 결정**: 본 cut-over는 "Rubric 품질이 production-ready" 판정 후 진행. 롤백 발생 시 사용자 노출 최소화 (하루 내 re-flag-off + Lambda re-deploy).
+**의사 결정**: 본 cut-over는 "Rubric 품질이 production-ready" 판정 후 진행. 롤백 발생 시 사용자 노출 최소화 (하루 내 ECR 이전 태그 재배포 + Lambda 이전 버전 alias 복구).
 
 ### 검증 가능한 Gemini 프롬프트 구조 (After)
 
@@ -203,7 +195,7 @@ p/n/s. 시각 언급 금지. vocal과 중복 금지. (기존 유지)
 7. **과거 인터뷰 회귀**: 과거 인터뷰 페이지 로드 → Content 탭 "이전 포맷 안내" 배너, Delivery 탭 정상 렌더, 500 에러 0건
 8. **Rubric 실패 시나리오**: 의도적으로 Rubric LLM 실패 유발 → Content 탭 "일시 오류" 배너 + 관리자 재시도 가능, Delivery 탭 정상
 9. **프로덕션 Rubric 품질 SLO**: Cut-over 후 1주간 Rubric 실패율 <1%, 사용자 피드백 페이지 500 에러 <0.1%
-10. **응급 롤백 리허설**: 스테이징에서 플래그 off → Content 탭 공백 배너 확인 → 플래그 on 복구. MTTR <5분.
+10. **응급 롤백 리허설**: 스테이징에서 ECR 이전 태그 재배포 → Content 탭 공백 배너 확인 → 신규 태그 재배포 복구. MTTR <10분.
 11. `progress.md` 13 → Completed
 
 ## Out of Scope (재확인)
@@ -215,8 +207,7 @@ p/n/s. 시각 언급 금지. vocal과 중복 금지. (기존 유지)
 - 과거 인터뷰 Rubric 소급 적용 — 별도 검토 (운영 비용 높음)
 - `verbal_analyzer.py` legacy 경로 **완전 제거** — 별도 PR (본 plan은 content 필드만 정리)
 
-## Exit Criteria (plan-12 에서 삭제)
+## Exit Criteria
 
-- `rehearse.features.feedback-rubric.enabled` 플래그 제거 (기본 상시 on)
-- `rehearse.features.feedback-synthesizer.enabled` 플래그 제거
+- Rubric/Synthesizer는 단일 경로로 항상 실행 (runtime toggle 없음, 배포 단위로 롤백)
 - V29 rollback migration 파일 보관 (archival 목적, 실행 금지)

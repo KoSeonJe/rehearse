@@ -2,8 +2,9 @@
 
 > 상태: Completed
 > 작성일: 2026-04-20
+> 수정일: 2026-04-23 (Feature Flag runtime toggle 섹션 제거 — PR B에서 인프라 철거 예정)
 > 주차: W1 후반 (3-4일)
-> 해결 RC: RC1(AiClient 도메인 결합), RC7(Feature flag runtime), RC6의 JSON 파싱 폴백
+> 해결 RC: RC1(AiClient 도메인 결합), RC6의 JSON 파싱 폴백
 
 ## Why
 
@@ -28,9 +29,8 @@
 | `backend/src/main/java/com/rehearse/api/infra/ai/dto/ChatResponse.java` | 신규 record (content + usage + cache_read + provider + fallback_used) |
 | `backend/src/main/java/com/rehearse/api/infra/ai/dto/ChatMessage.java` | 신규. `role(SYSTEM/USER/ASSISTANT)`, `content`, `cacheControl` |
 | `backend/src/main/java/com/rehearse/api/infra/ai/dto/CachePolicy.java` | 신규. `provider_cache(auto/explicit/none)`, `allow_miss(bool)` |
-| `backend/src/main/java/com/rehearse/api/config/AiFeatureProperties.java` | 신규 `@ConfigurationProperties("rehearse.features")` + `@RefreshScope` — runtime 갱신 지원 |
-| `backend/src/main/resources/application.yml` | `management.endpoints.web.exposure.include` 에 `refresh` 추가 (Actuator) |
-| `backend/build.gradle.kts` | `spring-cloud-starter` (refresh scope만, Config Server 아님) 최소 의존성 추가 |
+
+> **주의 (2026-04-23)**: S2에서 구현된 `AiFeatureProperties` / `@RefreshScope` / `/actuator/refresh` / `spring-cloud-context` 의존성은 PR B에서 철거 예정. `ChatRequest.modelOverride`, `AiResponseParser.parseWithRetry`, `chat(ChatRequest)` 는 유지.
 
 ### 신규 테스트
 | 파일 | 작업 |
@@ -79,17 +79,6 @@ Latency 증가는 수용하되 **max-context-tokens 상한은 동일**하게 적
 2. 스키마 불일치 시 1회 재호출 — 원래 system prompt 뒤에 `"이전 응답은 스키마를 위반했습니다. 다음 필드가 필수: [...]. 다시 생성하세요."` 주입
 3. 2차 실패 시 `AiResponseParseException` 던짐 → 호출측이 기존 경로로 degrade
 
-### Feature Flag runtime 변경 (RC7)
-Spring Cloud Config Server 도입 없이 **`@RefreshScope` + Actuator `/actuator/refresh`** 로 제한적 runtime 변경.
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,refresh
-```
-`POST /actuator/refresh` 호출 시 `@RefreshScope` bean 재생성 → `rehearse.features.*` 값 갱신. 로컬/스테이징에서 서버 재시작 없이 flag 토글 가능.
-
 ### Micrometer 태그 (RC4 선행 일부)
 `chat()` 내부에서 `Timer.builder("rehearse.ai.call.duration").tag("call.type", req.callType()).tag("model", ...).tag("provider", ...).tag("cache.hit", ...).tag("fallback", ...)` 자동 기록.
 
@@ -115,7 +104,6 @@ default QuestionGenerationResponse generateQuestions(QuestionGenerationRequest r
 2. 신규 테스트 3종(AiClientChatTest/ResilientAiClientFallbackTest/AiResponseParserRetryTest) 모두 통과
 3. 기존 `FollowUpService` / `QuestionGenerationService` 호출 경로가 새 `chat()` 경유하도록 내부 리팩토링 — 외부 동작 동일
 4. Micrometer 태그가 `rehearse.ai.call.duration_seconds{call.type="generate_questions",...}` 형태로 노출(로컬 `/actuator/prometheus` 확인)
-5. `curl -X POST localhost:8080/actuator/refresh` 실행 시 `rehearse.features.intent-classifier.enabled` 값 변경이 즉시 반영
-6. modelOverride 테스트: `ChatRequest.modelOverride="gpt-4o"` 시 실제 OpenAI 요청에 해당 model이 들어가는지(WireMock 또는 통합 테스트)
-7. Fallback 시 `ChatResponse.fallbackUsed = true` 반환, `cacheHit = false` 허용
-8. `progress.md` 00b → Completed
+5. modelOverride 테스트: `ChatRequest.modelOverride="gpt-4o"` 시 실제 OpenAI 요청에 해당 model이 들어가는지(WireMock 또는 통합 테스트)
+6. Fallback 시 `ChatResponse.fallbackUsed = true` 반환, `cacheHit = false` 허용
+7. `progress.md` 00b → Completed
