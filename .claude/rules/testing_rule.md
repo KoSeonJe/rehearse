@@ -3,6 +3,17 @@
 Rules for any agent (Claude Code, Codex, Cursor) writing or modifying tests in this repo.
 Drop this file at the project root. Agents read it automatically.
 
+> **Scope & Precedence (2026-04-23 확정)**
+>
+> 이 문서는 **횡단 원칙**(naming, flaky handling, PR red flags, property-based, workflow, 비결정적 snapshot 금지)에 한해 전 영역(BE/FE/Lambda)에 적용된다.
+>
+> **Mock 정책에 한해서는 영역별 전략 문서가 우선**한다. 두 문서가 충돌할 경우 아래 우선순위를 따른다:
+> - **Backend**: `backend/TEST_STRATEGY.md` 우선 (Mockito 기반 Unit 중심, Repository/Finder Mock 허용, Testcontainers 미사용이 현재 정착 패턴)
+> - **Frontend**: 본 문서의 원칙 적용 (HTTP-level fake = `msw` 선호, interface mock 최소화)
+> - **Lambda**: 본 문서 원칙 + 외부 API(OpenAI/Gemini) HTTP-level fake 선호
+>
+> 즉, 본 문서의 "Mocking Rules" 섹션은 **Spring Boot Backend에는 그대로 적용되지 않는다**. BE 작업 시 반드시 `backend/TEST_STRATEGY.md`의 Mock 정책을 따를 것.
+
 ## Core Philosophy
 
 1. Test behavior, not implementation. Pure refactors must not break tests.
