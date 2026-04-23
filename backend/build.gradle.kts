@@ -83,9 +83,6 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
 
-    // Spring Cloud Context (@RefreshScope — Config Server 불필요, Actuator /refresh 만 사용)
-    implementation("org.springframework.cloud:spring-cloud-context:4.1.4")
-
     // Caffeine (in-memory cache for runtime session state)
     implementation("com.github.ben-manes.caffeine:caffeine")
 
