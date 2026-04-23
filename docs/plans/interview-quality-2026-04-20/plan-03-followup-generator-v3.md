@@ -70,20 +70,11 @@ v3는 **`target_claim_idx` 명시 + 관점 선정 로직을 depth_score/evidence
 - Implement: `prompt-engineer` — v2 → v3 프롬프트 diff, few-shot 예시 작성
 - Review: `code-reviewer` — JSON 파싱 방어(기존 SchemaValidator 재사용 여부), null 처리
 
-## Flag Exit Criteria
-
-`rehearse.features.followup-v3` + `answer-analyzer` 는 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
-- 프로덕션 100% 롤아웃 2주 유지
-- v3 human eval 점수 ≥ v2 (plan-10 J1 ≥ 4.0 유지)
-- 레이턴시 p95 ≤ v2 + 200ms
-- 제거 범위: 두 flag 동시 삭제 + **v2 꼬리질문 구현 통째 삭제** + 구버전 프롬프트 파일 삭제 + v2 전용 테스트 정리
-
 ## 검증
 
-1. Before/After 5쌍 수동 비교 문서화(`docs/plans/interview-quality-2026-04-20/ab-test-followup-v3.md`)
+1. Before/After 5쌍 수동 비교 문서화(`eval/manual-ab/{YYYY-MM-DD}-plan-03.md`, MANUAL_AB_PROTOCOL.md 참조)
 2. `target_claim_idx`가 `claims` 범위 내 유효(100%)
 3. `selected_perspective`가 `ASKED_PERSPECTIVES`와 중복 ≤ 5%
-4. plan-10 J1(Follow-up Relevance) ≥ 4.0 / 5.0 (골든셋 happy_path 10개 기준)
+4. Follow-up Relevance 수동 비교(3~5건): v3 꼬리질문이 v2 대비 사용자 답변 claim에 더 정확히 꽂힘 — 과반 이상
 5. 전체 latency(Step A + Step B 합) p95 ≤ +2s 대비 기존
-6. Feature flag off 시 기존 v2 경로 유지 확인
-7. `progress.md` 03 → Completed
+6. `progress.md` 03 → Completed

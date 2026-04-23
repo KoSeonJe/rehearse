@@ -35,7 +35,7 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 | `backend/src/main/java/com/rehearse/api/domain/feedback/session/dto/SessionFeedbackResponse.java` | 신규. 5섹션 DTO (Entity 직접 반환 금지) |
 | `backend/src/main/java/com/rehearse/api/domain/feedback/session/controller/AdminSessionFeedbackController.java` | 신규. `GET /api/admin/interviews/{id}/session-feedback` (FE 연동 전 확인용) |
 | `backend/src/main/java/com/rehearse/api/domain/interview/event/InterviewCompletedEvent.java` | 존재 확인(plan-00a 인벤토리), 없으면 신규. 기존 `FeedbackService` 리스너와 **독립적**인 새 리스너 `SessionFeedbackService.onInterviewCompleted()` 등록 |
-| `backend/src/main/resources/application.yml` | 수정. `rehearse.features.feedback-rubric.synthesizer-model` |
+| `backend/src/main/resources/application.yml` | 수정. `rehearse.feedback-synthesizer.model: gpt-4o-mini` (기본값 고정, Feature Flag 없음) |
 
 ## 상세
 
@@ -102,10 +102,10 @@ plan-08이 턴마다 쌓아준 루브릭 점수를 세션 종료 시 **사용자
 
 ### 모델 선택
 - **Synthesizer는 더 큰 모델 필요** (통합 작문)
-- Primary 옵션: GPT-4o-mini (기본, 코스트 우선) / GPT-4o or Claude Sonnet (품질 우선, flag로 교체 가능)
+- 기본값: GPT-4o-mini (코스트 우선). 품질 부족 확인 시 `application-prod.yml` 에서 `rehearse.feedback-synthesizer.model` 을 `gpt-4o` 또는 `claude-sonnet-*` 로 변경 후 재배포.
+- Feature Flag runtime toggle은 사용하지 않는다. 단일 모델 경로로 고정.
 - temperature: 0.4
 - max_tokens: 2048
-- Feature flag `synthesizer-model: gpt-4o-mini` 로 쉽게 교체
 
 ### Delivery/Vision 통합 원칙 (2026-04-22 개정 — plan-13 연계)
 
@@ -174,8 +174,8 @@ Lambda `handler.py` 는 이미 `failure_reason` / `failure_detail` / `isVerbalCo
 1. 세션 5개 수동 리뷰: 관찰 인용 포함률 100% (모든 strength/gap)
 2. 액션 구체성 ≥ 90% — "더 공부하세요" 계열 0건 (정규식 감지)
 3. 레벨 보정 문구 매 피드백에 등장
-4. plan-10 J3(Feedback Rubric Adherence) ≥ 4.0
-5. Synthesizer 모델 교체(gpt-4o-mini ↔ gpt-4o) 시 품질 차이 수치화 — 비용 대비 선택 기준 문서화
+4. 수동 비교 3~5건 (MANUAL_AB_PROTOCOL.md): 신규 5섹션 피드백이 기존 3줄 포맷 대비 "관찰 인용 포함 + 다음 액션 구체" 항목에서 과반 이상 우세
+5. Synthesizer 모델 교체(gpt-4o-mini → gpt-4o) 시 품질 차이 정성 평가 — 비용 대비 선택 기준 `eval/manual-ab/` 에 기록
 6. 기존 `FeedbackService` 호출 경로 회귀 없음
 7. **Content/Delivery 소스 분리 (2026-04-22 신설)**:
    - 10개 샘플 세션에서 Content 섹션 observation 이 `TURN_SCORES[].evidenceQuote` 에만 매칭 (정규식으로 delivery_analysis 텍스트 포함 여부 확인 — 0건)
