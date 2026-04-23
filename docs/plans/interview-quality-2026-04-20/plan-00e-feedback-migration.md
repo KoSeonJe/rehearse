@@ -79,6 +79,10 @@ InterviewCompletedEvent
   - `session/repository/SessionFeedbackRepository.java`
 - 기존 Feedback 도메인 파일은 건드리지 않음 → 소유권 분리
 
+### 결정 6: 점진 전환 방식 (2026-04-23 갱신)
+
+flag 기반 점진 전환 없이 **신규 스키마는 배포 시 완전 전환**한다. 기존 `FeedbackService` 리스너 경로는 그대로 유지되므로 신규 `SessionFeedbackService` 리스너 추가는 병존이 아닌 추가 계층 도입이다. Runtime feature flag 메커니즘은 2026-04-23 결정으로 전면 폐기 (ECR 이미지 롤백으로 대체).
+
 ## 담당 에이전트
 
 - Implement: `backend-architect` — 도메인 경계 결정 작성

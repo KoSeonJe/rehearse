@@ -70,6 +70,9 @@ public class StandardFollowUpPolicy implements InterviewTurnPolicy {
 ```
 
 ### InterviewTurnPolicyResolver
+
+`interview.type == RESUME_BASED` 조건만으로 단순 분기한다. Feature Flag runtime toggle은 사용하지 않는다.
+
 ```java
 @Component
 @RequiredArgsConstructor
@@ -78,6 +81,8 @@ public class InterviewTurnPolicyResolver {
     private final ResumeTrackPolicy resume;
 
     public InterviewTurnPolicy resolve(Interview interview) {
+        // interview.type == RESUME_BASED(resumeSkeletonId 존재) 조건만으로 분기
+        // Feature Flag 없이 단일 경로로 동작
         return interview.getResumeSkeletonId() != null ? resume : standard;
     }
 }

@@ -4,6 +4,7 @@
 > Source: plan-00a (plan-00b ~ plan-11 각 spec 직접 판독)
 > Status: Completed
 > 경로 기준: 절대 경로 (`/Users/koseonje/dev/devlens/...`)
+> **2026-04-23 개정**: 각 plan 의 `rehearse.features.*` flag 추가 항목 삭제 (Feature Flag 전면 제거 결정). S2 에서 이미 머지된 flag 인프라는 별도 PR B 에서 철거.
 
 ---
 
@@ -65,7 +66,6 @@
 - `/Users/koseonje/dev/devlens/eval/golden-sets/smoke/gs_s03_happy_path.yaml` — smoke 케이스 3
 - `/Users/koseonje/dev/devlens/eval/golden-sets/smoke/gs_s04_clarify.yaml` — smoke 케이스 4 (clarify)
 - `/Users/koseonje/dev/devlens/eval/golden-sets/smoke/gs_s05_clarify.yaml` — smoke 케이스 5 (give_up)
-- `/Users/koseonje/dev/devlens/eval/judges/j1-followup-relevance.txt` — J1 Judge 초안 (plan-10에서 완성)
 - `/Users/koseonje/dev/devlens/eval/scripts/smoke.py` — 골든셋 5개 × J1 실행, 실패 시 exit 1
 - `/Users/koseonje/dev/devlens/eval/README.md` — eval 사용법
 - `/Users/koseonje/dev/devlens/eval/requirements.txt` — openai, anthropic, pyyaml
@@ -106,8 +106,7 @@
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/service/IntentClassifier.java` — 의도 분류 서비스 (AiClient.chat() 사용)
 
 ### 수정
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` — `generateFollowUp()` (line 31) 진입부에 `intentClassifier.classify()` 분기 삽입
-- `/Users/koseonje/dev/devlens/backend/src/main/resources/application.yml` — rehearse.features.intent-classifier.* flag 추가
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` — `generateFollowUp()` (line 31) 진입부에 `intentClassifier.classify()` 분기 삽입 (단일 경로, runtime toggle 없음)
 
 ### ⚠️ 교정 사항
 - plan-01 본문: "InterviewTurnService" 언급 없음 (올바르게 FollowUpService 사용). 다른 plan 참조 시 `InterviewTurnService` → `FollowUpService.generateFollowUp() at line 31` 교정.
@@ -125,7 +124,6 @@
 
 ### 수정
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/runtime/InterviewRuntimeState.java` — (plan-00c 신규 생성 후) 분석 결과 캐시 필드 추가
-- `/Users/koseonje/dev/devlens/backend/src/main/resources/application.yml` — rehearse.features.follow-up-pipeline.step-a-enabled flag 추가
 
 ### ⚠️ 교정 사항
 - plan-02 본문: "InterviewSession 클래스는 실재하지 않음" 주석 올바름. `InterviewSession` → `InterviewRuntimeStateStore` (plan-00c 산출)로 확정.
@@ -164,8 +162,7 @@
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/context/cache/ClaudeCacheAdapter.java` — cache_control: ephemeral 마킹
 
 ### 수정
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/ResilientAiClient.java` — 요청 조립 시 ContextBuilder 결과 사용
-- `/Users/koseonje/dev/devlens/backend/src/main/resources/application.yml` — rehearse.features.context-engineering.* flag 추가
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/ResilientAiClient.java` — 요청 조립 시 ContextBuilder 결과 사용 (단일 경로)
 
 ### ⚠️ 교정 사항
 - 없음
@@ -290,7 +287,7 @@
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/interview/event/InterviewCompletedEvent.java` — 존재 확인 후 없으면 신규 생성
 
 ### 수정
-- `/Users/koseonje/dev/devlens/backend/src/main/resources/application.yml` — rehearse.features.feedback-rubric.synthesizer-model 추가
+- `/Users/koseonje/dev/devlens/backend/src/main/resources/application-prod.yml` — Synthesizer 모델 고정 설정 (gpt-4o-mini, runtime toggle 없음)
 
 ### ⚠️ 교정 사항
 - plan-09 전제: `InterviewCompletedEvent` 존재 여부는 plan-00a INVENTORY 확인 항목 — 현재 인벤토리에서 `event/` 서브패키지 존재 확인됨, 이벤트 클래스 목록은 소스 직접 확인 필요.
@@ -298,27 +295,9 @@
 
 ---
 
-## plan-10 Eval Harness Lite
+## ~~plan-10 Eval Harness Lite~~ — 2026-04-23 폐기
 
-### 신규 생성
-- `/Users/koseonje/dev/devlens/eval/golden-sets/v1/concept/backend/` (디렉토리) — 10개 YAML (happy_path 5 + clarify 2 + give_up 2 + shallow 1)
-- `/Users/koseonje/dev/devlens/eval/golden-sets/v1/experience/backend/` (디렉토리) — 10개 YAML
-- `/Users/koseonje/dev/devlens/eval/golden-sets/v1/resume/backend/` (디렉토리) — 10개 YAML (Resume Track 전용)
-- `/Users/koseonje/dev/devlens/eval/judges/j1-followup-relevance.txt` — J1 Judge 완성본 (plan-00d 초안 → 이 plan에서 완성)
-- `/Users/koseonje/dev/devlens/eval/judges/j2-intent-handling.txt` — J2 Judge (intent_accuracy/response_quality)
-- `/Users/koseonje/dev/devlens/eval/judges/j3-feedback-rubric-adherence.txt` — J3 Judge (has_observations/is_concrete/level_calibration/delivery_separation/category_dimension_fit/cross_category_pattern)
-- `/Users/koseonje/dev/devlens/eval/scripts/run_eval.py` — 골든셋 실행 + Judge 호출 + 리포트 생성
-- `/Users/koseonje/dev/devlens/eval/scripts/measure_judge_reliability.py` — 수동 라벨 vs Judge 일치율 측정
-- `/Users/koseonje/dev/devlens/eval/reports/.gitkeep` — 실행 결과 저장 디렉토리 생성
-- `/Users/koseonje/dev/devlens/eval/requirements.txt` — openai, anthropic, pyyaml (plan-00d와 통합)
-- `/Users/koseonje/dev/devlens/eval/README.md` — 전체 eval 사용법 (plan-00d README 확장)
-
-### 수정
-- 없음
-
-### ⚠️ 교정 사항
-- plan-00d에서 생성한 `eval/judges/j1-followup-relevance.txt`는 초안. plan-10이 완성본으로 덮어씀 — 순서 의존성 주의.
-- CI 자동화 (GitHub Actions) **Out of Scope** — 로컬 수동 실행만.
+Judge LLM (J1/J2/J3) + 골든셋 30 + 수동 라벨 20건 인프라는 전면 삭제. 각 plan PR 품질 회귀 감지는 `MANUAL_AB_PROTOCOL.md` (ECR 2개 병렬 + 수동 diff 3~5건) 로 대체. `eval/golden-sets/`, `eval/judges/`, `eval/scripts/` 신규 생성 계획 전부 폐기. `eval/manual-ab/{YYYY-MM-DD}-{plan-id}.md` 결과 기록만 유지.
 
 ---
 

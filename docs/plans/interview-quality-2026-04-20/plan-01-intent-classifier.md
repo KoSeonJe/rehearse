@@ -14,7 +14,7 @@ TODO 원본의 5-intent(ANSWER/CLARIFY_REQUEST/GIVE_UP/META/OFF_TOPIC) 중 **MET
 ### REMEDIATION 반영 (critic M3)
 META ("시간 얼마 남았어요?") 나 OFF_TOPIC을 ANSWER로 병합했을 때 빈 답변 분석 → 엉뚱한 꼬리질문 발사 리스크가 있음. 이를 막기 위한 **2차 가드**를 plan-02 Answer Analyzer에 명시적으로 둔다:
 - plan-02의 `answer_quality <= 1 AND claims.length == 0` 이면 `recommended_next_action = "CLARIFICATION"` 강제 → plan-03 Step B가 꼬리질문 대신 재설명 경로로.
-- plan-10 골든셋에 META 3개 / OFF_TOPIC 3개 시나리오 포함해 failure case 발견 시 즉시 5-intent로 확장 검토.
+- MANUAL_AB_PROTOCOL.md 수동 비교 세션에 META / OFF_TOPIC 시나리오 포함해 failure case 발견 시 즉시 5-intent로 확장 검토.
 
 ## 생성/수정 파일
 
@@ -28,8 +28,7 @@ META ("시간 얼마 남았어요?") 나 OFF_TOPIC을 ANSWER로 병합했을 때
 | `backend/src/main/java/com/rehearse/api/infra/ai/prompt/GiveUpResponsePromptBuilder.java` | 신규 |
 | `backend/src/main/java/com/rehearse/api/domain/interview/vo/IntentType.java` | 신규 enum (ANSWER/CLARIFY_REQUEST/GIVE_UP) |
 | `backend/src/main/java/com/rehearse/api/domain/interview/service/IntentClassifier.java` | 신규 service. plan-00b의 `AiClient.chat(ChatRequest)` 사용 |
-| `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` | **수정 (기존 클래스 — `InterviewTurnService` 아님)**. `generateFollowUp()` 진입부에 `intentClassifier.classify()` 분기 삽입 |
-| `backend/src/main/resources/application.yml` | 수정. `rehearse.features.intent-classifier.*` flag 추가 |
+| `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` | **수정 (기존 클래스 — `InterviewTurnService` 아님)**. `generateFollowUp()` 진입부에 `intentClassifier.classify()` 분기 삽입. 단일 경로(상시 활성) — runtime toggle 없음 |
 
 ## 상세
 
@@ -45,7 +44,8 @@ META ("시간 얼마 남았어요?") 나 OFF_TOPIC을 ANSWER로 병합했을 때
 ### 분기 라우팅 (의사 코드)
 ```java
 IntentResult intent = intentClassifier.classify(mainQ, userUtterance, recentDialogue);
-if (intent.getConfidence() < flag.getFallbackOnLowConf()) intent.forceAnswer();
+// 신뢰도 임계치는 application.yml 상수로 고정 (Feature Flag 없음)
+if (intent.getConfidence() < intentClassifierProperties.getFallbackOnLowConf()) intent.forceAnswer();
 switch (intent.getType()) {
   case CLARIFY_REQUEST: return clarifyResponseHandler.handle(session);
   case GIVE_UP:         return giveUpHandler.handle(session);
@@ -59,14 +59,14 @@ switch (intent.getType()) {
 - max_tokens: 200
 - Prompt Caching: 시스템 프롬프트 전체 (정적)
 
-### Feature Flag
+### 설정 (application.yml 상수)
 ```yaml
 rehearse:
-  features:
-    intent-classifier:
-      enabled: true
-      fallback-on-low-conf: 0.7
+  intent-classifier:
+    fallback-on-low-conf: 0.7
 ```
+
+Feature Flag runtime toggle은 사용하지 않는다. 기본 활성화 경로로 단일화. 모델 및 설정 변경은 `application.yml` 직접 수정 후 배포.
 
 ## 전제 (Phase 0 선행 필수)
 - plan-00a `IMPACT_MAP.md` 에서 `FollowUpService.generateFollowUp()` 실제 시그니처 확인 후 분기 삽입 위치 확정
@@ -92,21 +92,13 @@ rehearse:
 
 ### 측정
 - Micrometer 태그 `ai.call.chain=turn-pipeline` 으로 3개 호출 묶어 `rehearse.turn.pipeline.duration_seconds` 히스토그램 기록 (plan-00d 계측 인프라 활용)
-- Exit Criteria 각 plan 의 개별 SLA + aggregate SLA 동시 충족 시에만 flag cleanup (plan-12)
+- 각 plan 의 개별 SLA + aggregate SLA 동시 충족 여부를 배포 후 Grafana p95 로 확인
 
 ## 담당 에이전트
 
 - Implement: `backend` — 프롬프트 + Builder + Classifier 서비스 + 분기 라우팅
 - Review: `architect-reviewer` — 분기 레이어링(의도 분류가 follow-up 파이프라인 앞에 올바르게 위치했는지)
 - Review: `code-reviewer` — 기존 `FollowUpService` 공개 API 변경 없음 확인, 3-intent 프롬프트 temperature/few-shot
-
-## Flag Exit Criteria
-
-`rehearse.features.intent-classifier` 는 **release flag**. 다음 조건 충족 시 **plan-12** 에서 제거:
-- 프로덕션 100% 롤아웃 2주 유지
-- Intent 정확도 ≥ 90% 안정 (주간 리포트)
-- OFF_TOPIC / CLARIFY 오분류율 ≤ 3%
-- 제거 범위: flag 필드 + application.yml 블록 + "classifier 없이 돌아가는 폴백 경로"
 
 ## 검증
 
@@ -115,5 +107,4 @@ rehearse:
 3. Intent 정확도 ≥ 90% (20개 기준 18/20 이상)
 4. CLARIFY False Positive ≤ 3% (정상 답변을 CLARIFY로 오분류 ≤ 1/20)
 5. Latency overhead ≤ 500ms (p95)
-6. Feature flag `enabled: false` 시 즉시 기존 경로로 복귀(회귀 없음)
-7. `progress.md` 01 → Completed
+6. `progress.md` 01 → Completed

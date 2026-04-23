@@ -38,8 +38,8 @@
 
 ### RC4. "관측/회귀방어 계층이 W4까지 없다"
 - **증상**: M2(W1-W3 회귀 감지 불가), Missing(APM 메트릭, 턴당 LLM 호출 수 증가 관측)
-- **진단**: Eval Harness(plan-10)가 W4에야 오면 plan-01~07 배포 중에 회귀 발생 시 사용자 컴플레인으로만 감지됨. 프로덕션 LLM 호출 수/지연/실패율도 측정 포인트 없음.
-- **근본 해결**: (a) 기존 통합테스트 커버리지 파악 + 최소 보호선 설정(plan-00a), (b) Eval 인프라의 "smoke test 부분"(골든셋 5개 + Judge 1개)을 W1에 미리 배치해 매 plan 머지 전 빠른 회귀 체크, (c) 신규 LLM 호출 경로에 `Micrometer` 태그 표준(`ai.call.type`, `ai.model`, `ai.cache_hit`) 도입.
+- **진단**: 회귀 발생 시 사용자 컴플레인으로만 감지되는 리스크. 프로덕션 LLM 호출 수/지연/실패율도 측정 포인트 없음.
+- **근본 해결 (2026-04-23 개정)**: (a) 기존 통합테스트 커버리지 파악 + 최소 보호선 설정(plan-00a), (b) 신규 LLM 호출 경로에 `Micrometer` 태그 표준(`ai.call.type`, `ai.model`, `ai.cache_hit`) 도입 (plan-00d), (c) 각 plan PR 머지 전 `MANUAL_AB_PROTOCOL.md` 수동 비교 3~5건 실행. Judge/골든셋 기반 smoke eval 은 폐기.
 - **플랜**: **plan-00d** 신설
 
 ### RC5. "시간 압축이 계획 질을 훼손했다"
@@ -52,10 +52,10 @@
 - **근본 해결**: (a) 3-intent는 유지하되 **ANSWER fallback 경로에 가드 로직** 명시(`answer_quality ≤ 1 AND 질문과 무관` → 재설명 시도), (b) plan-07 프롬프트/JSON 스키마에서 `fact_check_flag` 관련 필드를 명시적으로 삭제하고 "이 필드는 본 스프린트 범위 아님. TODO 원본 06 참조" 주석.
 - **플랜**: plan-01/plan-07 문서 수정
 
-### RC7. "Feature flag runtime 변경 메커니즘 없음"
+### RC7. "Feature flag runtime 변경 메커니즘 없음" — 2026-04-23 재결정
 - **증상**: Missing(Spring Cloud Config 없는데 '즉시 롤백' 주장)
-- **근본 해결**: 이 스프린트에선 **Spring `@RefreshScope` + Actuator `/refresh` 엔드포인트** 만으로 제한적 runtime 변경 지원(Config Server 도입은 별건). 캐시 가능 flag는 모두 `@Value`가 아닌 `@ConfigurationProperties` + `@RefreshScope` bean 경유하도록 규약.
-- **플랜**: plan-00b에 포함
+- **2026-04-23 결정**: runtime flag 메커니즘 자체 폐기. ECR 이미지 태그 재배포 + 세션 스토어 캐시 퍼지로 롤백. S2 에서 구현된 `@RefreshScope` / `AiFeatureProperties` / `/actuator/refresh` / `spring-cloud-context:4.1.4` 의존성은 PR B 에서 철거. `ChatRequest.modelOverride` 는 모델 선택 자체 가치로 유지.
+- **플랜**: 본 RC 는 "의도적 축소" 로 종결. plan-00b 내 Feature Flag 섹션 삭제됨.
 
 ---
 
@@ -88,7 +88,7 @@
 | **plan-07** | (a) `InterviewTurnService` → 실제 진입점 명시. (b) `resume-chain-interrogator.txt` JSON 스키마에서 `fact_check_flag`/`fact_check_note` 삭제 + "Out of scope" 주석. (c) 동시성: `ChainStateTracker`는 request-scoped 또는 `Interview.id` 단위 lock | M4, RC6, Missing(동시성) |
 | **plan-08** | `RubricScore` 영속화를 plan-00c 결정에 위임. DTO 분리(Entity 직접 반환 금지 CLAUDE.md 원칙) 명시 | C2, 규약 |
 | **plan-09** | (a) plan-00e(Feedback Migration) 결정 소비. (b) Verbal/Vision 비동기 완료 대기 전략(polling + timeout → partial feedback 생성). (c) 기존 `FeedbackService` 확장 vs 신규 `SessionFeedbackService` 분리 결정 | M6 |
-| **plan-10** | Judge-Human 일치율 검증용 수동 라벨 20개는 **골든셋 30 중 부분집합**으로 명시(별개 아님) | Minor |
+| ~~**plan-10**~~ | ~~Judge-Human 일치율 검증~~ — **plan-10 전체 폐기 (2026-04-23)**. `MANUAL_AB_PROTOCOL.md` 수동 비교로 대체 | — |
 
 ---
 
@@ -152,10 +152,10 @@ Phase 4 (W7):      08 (Rubric) ──> 09 (Synthesizer) + 10 (Eval Full) [parall
 - [ ] M6. 기존 FeedbackService와의 관계 — plan-00e
 - [ ] Missing: PdfTextExtractor 기존 존재 — plan-05 edit
 - [ ] Missing: APM 메트릭 표준 — plan-00d + 본 문서 "관측 포인트 표준"
-- [ ] Missing: Feature flag runtime 변경 — plan-00b (@RefreshScope)
+- [x] Missing: Feature flag runtime 변경 — **의도적 축소 (2026-04-23)**. ECR 이미지 롤백으로 대체, 관련 코드 PR B 에서 철거
 - [ ] Missing: 동시성 제어 — plan-07 edit (request-scoped / per-interview lock)
 - [ ] Missing: JSON 파싱 실패 폴백 — plan-00b (범용 파서 + retry 정책)
-- [ ] Minor: plan-10 수동 라벨=골든셋 부분집합 — plan-10 edit
+- [x] ~~Minor: plan-10 수동 라벨=골든셋 부분집합~~ — plan-10 전체 폐기 (2026-04-23)
 
 ---
 
@@ -182,7 +182,7 @@ TODO 09(`docs/todo/2026-04-20/09-nonverbal-rubric.md`) 신규 반영. 기술 rub
 
 ## Addendum (2026-04-20 오후) — Rubric Family 재설계
 
-TODO 03 개정판(`docs/todo/2026-04-20/03-m3-feedback-rubric.md`)이 단일 5차원 → **10차원 × 7루브릭 패밀리**로 변경됨. plan-08은 전면 재작성되어 `QuestionSetCategory` + `FeedbackPerspective` + Resume Track 조합을 `_mapping.yaml` 선언적 규칙으로 rubric_id에 매핑. 관련 문서(plan-00a, plan-00c V26, plan-07 D9/D10, plan-09 `SCORES_BY_CATEGORY`, plan-10 J3 `category_dimension_fit`)도 연쇄 업데이트. 상세는 Plan Mode 승인본 Addendum 섹션 참조.
+TODO 03 개정판(`docs/todo/2026-04-20/03-m3-feedback-rubric.md`)이 단일 5차원 → **10차원 × 7루브릭 패밀리**로 변경됨. plan-08은 전면 재작성되어 `QuestionSetCategory` + `FeedbackPerspective` + Resume Track 조합을 `_mapping.yaml` 선언적 규칙으로 rubric_id에 매핑. 관련 문서(plan-00a, plan-00c V26, plan-07 D9/D10, plan-09 `SCORES_BY_CATEGORY`)도 연쇄 업데이트. 상세는 Plan Mode 승인본 Addendum 섹션 참조. (plan-10 J3 `category_dimension_fit` 항목은 2026-04-23 plan-10 폐기로 제거됨)
 
 ---
 
