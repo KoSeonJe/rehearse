@@ -1,11 +1,11 @@
 package com.rehearse.api.domain.questionset.service;
 
-import com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.analysis.exception.AnalysisErrorCode;
-import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.ConvertStatus;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.questionset.exception.AnalysisErrorCode;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
@@ -46,11 +46,8 @@ public class InternalQuestionSetService {
     private final QuestionSetRepository questionSetRepository;
     private final QuestionSetAnalysisRepository analysisRepository;
     private final QuestionAnswerRepository answerRepository;
-    private final QuestionSetFeedbackRepository feedbackRepository;
-    private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
     private final S3Service s3Service;
-    private final TimestampFeedbackMapper timestampFeedbackMapper;
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
     @Transactional
@@ -98,43 +95,6 @@ public class InternalQuestionSetService {
                 .level(interview.getLevel().name())
                 .answers(answers)
                 .build();
-    }
-
-    @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))
-    @Transactional
-    public void saveFeedback(Long questionSetId, SaveFeedbackRequest request) {
-        QuestionSet questionSet = findQuestionSet(questionSetId);
-        QuestionSetAnalysis analysis = findAnalysis(questionSetId);
-
-        QuestionSetFeedback feedback = QuestionSetFeedback.builder()
-                .questionSet(questionSet)
-                .questionSetComment(request.getQuestionSetComment())
-                .build();
-
-        if (request.getTimestampFeedbacks() != null) {
-            for (SaveFeedbackRequest.TimestampFeedbackItem item : request.getTimestampFeedbacks()) {
-                Question question = null;
-                if (item.getQuestionId() != null) {
-                    question = questionRepository.findById(item.getQuestionId())
-                            .orElseGet(() -> {
-                                log.warn("피드백 저장 시 존재하지 않는 questionId={}", item.getQuestionId());
-                                return null;
-                            });
-                }
-
-                TimestampFeedback tf = timestampFeedbackMapper.toEntity(item, question);
-                feedback.addTimestampFeedback(tf);
-            }
-        }
-
-        feedbackRepository.save(feedback);
-        analysis.completeAnalysis(
-                request.isVerbalCompleted(),
-                request.isNonverbalCompleted()
-        );
-
-        log.info("분석 결과 저장 완료: questionSetId={}, verbal={}, nonverbal={}",
-                questionSetId, request.isVerbalCompleted(), request.isNonverbalCompleted());
     }
 
     @Retryable(retryFor = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100))

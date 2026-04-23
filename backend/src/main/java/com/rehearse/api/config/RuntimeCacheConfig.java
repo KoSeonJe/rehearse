@@ -2,7 +2,7 @@ package com.rehearse.api.config;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.rehearse.api.domain.interview.runtime.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import org.springframework.context.annotation.Bean;

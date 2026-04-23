@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.questionset.service;
 
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;

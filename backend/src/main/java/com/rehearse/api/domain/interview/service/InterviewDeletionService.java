@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
