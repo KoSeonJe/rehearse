@@ -2,7 +2,7 @@
 
 > 작성일: 2026-04-22
 > 수정일: 2026-04-23 (A/B 측정 인프라 축소 — G4/G5 및 Judge 기반 라벨링 절차 제거)
-> 적용 시점: plan-08 + plan-09 스테이징 배포 완료 후, plan-13 flag-on cut-over 직전
+> 적용 시점: plan-08 + plan-09 스테이징 배포 완료 후, plan-13 ECR cut-over 직전
 > 참조: `plan-08-rubric-scorer.md`, `plan-09-feedback-synthesizer.md`, `plan-13-lambda-content-removal.md`, `MANUAL_AB_PROTOCOL.md`
 
 plan-13 "신규 ECR 이미지 배포 + Lambda 함수 버전 업데이트" cut-over 전 수동 비교 품질 검수의 구체 정의.

@@ -2,7 +2,7 @@
 
 > 상태: Draft
 > 작성일: 2026-04-20 (2026-04-22 Content/Delivery 소스 분리 개정 반영)
-> 주차: W7 (plan-08과 병렬, plan-13과 flag-on cut-over 동시)
+> 주차: W7 (plan-08과 병렬, plan-13과 ECR cut-over 동시)
 > 원본: `docs/todo/2026-04-20/03-m3-feedback-rubric.md` (종합기 부분)
 > 연계: plan-08 (Rubric Family — content 유일 소스), plan-13 (Lambda Content Removal — delivery 전용 축소)
 

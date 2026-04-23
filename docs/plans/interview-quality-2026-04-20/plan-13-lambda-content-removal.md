@@ -139,7 +139,7 @@
 3. V29 rollback migration 실행 — 컬럼 재생성 (신규 인터뷰 대상으로만 저장 가능, 과거 데이터는 복구 불가)
 4. Backend DTO/Entity 이전 커밋으로 revert
 
-**의사 결정**: 본 cut-over는 "Rubric 품질이 production-ready" 판정 후 진행. 롤백 발생 시 사용자 노출 최소화 (하루 내 re-flag-off + Lambda re-deploy).
+**의사 결정**: 본 cut-over는 "Rubric 품질이 production-ready" 판정 후 진행. 롤백 발생 시 사용자 노출 최소화 (하루 내 ECR 이전 태그 재배포 + Lambda 이전 버전 alias 복구).
 
 ### 검증 가능한 Gemini 프롬프트 구조 (After)
 

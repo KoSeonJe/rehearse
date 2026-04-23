@@ -18,7 +18,7 @@ TODO 03 개정판의 핵심 통찰: **"하나의 5차원 루브릭으로 모든 
 
 현재 Lambda Gemini analyzer가 `verbal` + `technical` 블록을 통해 기술 내용 평가를 수행 중 (`technical.accuracyIssues`, `technical.coaching.{structure,improvement}`, `verbal.{positive,negative,suggestion}`). Gemini는 questionSetCategory, intentType, resumeMode, currentChainLevel, resume 체인 컨텍스트를 받지 않아 레벨/의도 기준 정확성 판정이 원천 불가능하고, Rubric D1~D10 중 D2/D3/D4/D6가 **Gemini 블록과 중복**.
 
-→ **plan-08 Rubric Scorer가 Content(기술 내용) 평가의 유일 소스**로 확정. Lambda `verbal`/`technical` 블록 제거는 **plan-13** 이 담당 (본 plan과 plan-09 flag-on과 동시 cut-over).
+→ **plan-08 Rubric Scorer가 Content(기술 내용) 평가의 유일 소스**로 확정. Lambda `verbal`/`technical` 블록 제거는 **plan-13** 이 담당 (본 plan·plan-09 와 plan-13 의 신규 ECR 이미지 배포를 동시 cut-over).
 
 **본 plan의 범위 확정**: 기술 내용 루브릭(D1~D10)만 담당. 비언어 루브릭(D11~D14)은 **plan-11**, Lambda content 제거는 **plan-13** 에서 분리 처리.
 
@@ -32,7 +32,7 @@ TODO 03 개정판의 핵심 통찰: **"하나의 5차원 루브릭으로 모든 
 
 ## 후속 (연계 plan)
 
-- **plan-13 Lambda Content Removal**: 본 plan flag-on 시점과 동시 cut-over. Lambda `verbal`/`technical` 블록 제거 + `TimestampFeedback` 컬럼 drop (V28). 본 plan은 content 평가 인수, plan-13은 이전 소스 정리를 담당 (분리 이유: 응급 롤백 범위 축소).
+- **plan-13 Lambda Content Removal**: 본 plan 프로덕션 배포 시점과 동시 ECR cut-over. Lambda `verbal`/`technical` 블록 제거 + `TimestampFeedback` 컬럼 drop (V28). 본 plan은 content 평가 인수, plan-13은 이전 소스 정리를 담당 (분리 이유: 응급 롤백 범위 축소).
 - plan-09 Feedback Synthesizer: 본 plan의 `turn_scores`를 content 평가 유일 소스로 받아 5섹션 합성.
 - plan-11 Nonverbal Rubric: 비언어 D11~D14 결정론 매퍼. **본 plan과 독립** (기술/비언어 섞지 말 것).
 
