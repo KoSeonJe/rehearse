@@ -42,14 +42,14 @@
 |----|--------|------|------|
 | **A-F1** | Major | plan-05 Resume Extractor 가 `modelOverride="gpt-4o"` 로 **gpt-4o-mini → gpt-4o 업그레이드** 하드코딩. 사용자 요구 "사용하던 모델 그대로" 위반 | plan-05:58 |
 | **A-F2** | Major | plan-05 fallback 도 `claude-sonnet` 로 명시 (기존 사용 버전과 일치하지만 Haiku 가 아닌 Sonnet 고정). 코스트 정당화 근거 미기재 (월 $500 추정만) | plan-05:58 |
-| **A-F3** | Minor | plan-09 Synthesizer 가 "flag 로 gpt-4o 승격 가능" 옵션 포함. 기본값은 gpt-4o-mini 라 즉시 드리프트는 아니지만 flag 활성 시 모델 변경 발생 | plan-09:87 |
+| **A-F3** | ~~Minor~~ | ~~plan-09 Synthesizer 가 "flag 로 gpt-4o 승격 가능" 옵션 포함~~ — **2026-04-23 자동 해소**. Feature Flag 전면 제거로 flag 경로 자체 소멸. plan-09 단일 모델 고정 | plan-09 |
 | **A-F4** | Minor | 10+개 plan 모두 `modelOverride` 미지정 → application.yml 기본값 사용. 현 스택 유지 확인 | 실측 |
 
 ### A4. 조치 제안
 
-1. **plan-05 교정 (필수)**: `modelOverride="gpt-4o"` 를 **제거** 하거나 `${rehearse.features.resume-extractor.model:gpt-4o-mini}` 형태의 **application.yml 참조**로 변경. 기본값은 `gpt-4o-mini` 유지하고 품질 부족 확인 시 flag 로 ON.
+1. **plan-05 교정 (필수)**: `modelOverride="gpt-4o"` 를 **제거** 하고 `application-prod.yml` 의 고정 설정(`gpt-4o-mini`) 으로 대체. 2026-04-23 Feature Flag 전면 제거로 runtime toggle 경로 없음.
 2. **plan-09 교정 (권장)**: flag 기본값 `false` 명시 + Exit Criteria 에 "flag OFF 상태로도 J3 목표 달성" 조건 추가.
-3. `application-prod.yml` 에 `rehearse.features.*.model` 필드 표준화 → 모든 plan 이 하드코딩 없이 설정 기반 모델 선택.
+3. `application-prod.yml` 에 고정 모델 설정 표준화 → 모든 plan 이 하드코딩 없이 설정 기반 모델 선택 (runtime toggle 없음).
 
 ---
 
@@ -201,7 +201,7 @@ REMEDIATION.md §Root Cause 3 는 "plan 본문 편집은 각 plan 실행 직전 
 
 ### D6. Feature Flag OFF 기본값 회귀 방어
 
-- S2 (00b) 에서 `rehearse.features.*` 기본값 **false** 확인
+- S2 (00b) 에서 `rehearse.features.*` 기본값 **false** 확인 (2026-04-23 Feature Flag 전면 제거 결정 — PR B 에서 철거)
 - 모든 신규 경로는 flag OFF 시 기존 FollowUpService 로직 유지
 - S2 테스트 결과: **643 tests / 0 failures** (baseline 606 → +37 그린)
 
@@ -217,7 +217,7 @@ REMEDIATION.md §Root Cause 3 는 "plan 본문 편집은 각 plan 실행 직전 
 
 | # | Finding | 조치 | 영향 plan |
 |---|---------|------|----------|
-| 1 | **A-F1** gpt-4o 모델 드리프트 | plan-05:58 에서 `modelOverride="gpt-4o"` 제거 → application.yml 기본(`gpt-4o-mini`) 사용 또는 `rehearse.features.resume-extractor.model` flag 경유 | plan-05 |
+| 1 | **A-F1** gpt-4o 모델 드리프트 | plan-05:58 에서 `modelOverride="gpt-4o"` 제거 → application.yml 고정 설정(`gpt-4o-mini`) 사용 (2026-04-23 flag 경유 옵션 폐기) | plan-05 |
 | 2 | **B-F1** 턴당 4회 LLM 호출 aggregate SLA 부재 | 각 plan 에 "누적 p95 ≤ 4s" SLA 명시 | plan-01/02/03/08 |
 | 3 | **C-F1** plan-06 `InterviewSession` 2회 오참조 | plan-06 본문 edit: `InterviewRuntimeState` / V25 로 전환 | plan-06 |
 | 4 | **D-F2** plan-11 필드 3개 Lambda 부재 | plan-11 을 prompt 개편 단계와 분리하거나 enum→수치 fallback 정의 | plan-11 |

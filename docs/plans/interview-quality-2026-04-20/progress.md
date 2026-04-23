@@ -7,9 +7,9 @@
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
-| 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백, @RefreshScope) 근본 해결 (S2, 2026-04-20) |
+| 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
-| 00d | Observability + Eval Smoke `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결 |
+| 00d | Observability `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결. 2026-04-23 Smoke Eval 부분 삭제 → Micrometer/APM 단독 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
 | 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
 
@@ -26,13 +26,24 @@
 | 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06,00f | fact_check_flag 삭제 + 실제 진입점 명시 필요. `ResumeTrackPolicy` 에 `ChainStateTracker` 주입(00f skeleton 활용). **WRAP_UP 모드 + ClockWatcher + Resume Exclusivity Rule 추가 (2026-04-22)** |
 | 08 | Rubric Family Scorer (10차원 × 7 rubric) | W7 | Draft | 02, 00c | **TODO 03 개정반영 — 전면 재작성**. `_dimensions.yaml` 마스터 + `_mapping.yaml` + 7개 rubric YAML. 작업량 1주 → 1~1.5주 |
 | 09 | Feedback Synthesizer (M3 세션 종합) | W7 | Draft | 08, 00e | FEEDBACK_DOMAIN.md 결정 소비 |
-| 10 | Eval Harness (M4 Full) `[parallel:09]` | W7 | Draft | 01~09 | smoke는 00d에서 이미 확보 |
 | 11a | Lambda Nonverbal Schema Prerequisite `[blocking:11]` | W7 초 | Draft | 00a | **신규 (2026-04-21 VERIFICATION_REPORT §D3 대응)**. Gemini 프롬프트 3개 수치 필드 확장(`speed_variance` / `gaze_on_camera_ratio` / `posture_unstable_count`). plan-11 착수 전 필수 |
 | 11 | Nonverbal Rubric (D11~D14 결정론 매퍼) `[parallel:08]` | W7 후 | Draft | 11a, 00a, 00c, 00e, 08 | TODO 09 반영 추가. Lambda Python mapper + backend context_weights. plan-09 선행 |
-| 12 | Feature Flag Cleanup `[post-rollout]` | W8+ | Draft | 01,03,04,07 전면 롤아웃 + 2주 안정 | 5개 release flag + v2 구버전 코드 제거. Flag Debt 방지. 각 flag 별 독립 PR |
-| 13 | Lambda Content Removal `[blocking:08,09 flag-on]` | W7 후 | Draft | 08, 09 flag-off 배포 + 스테이징 품질 검수 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정 |
+| 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
+
+플랜 본체 착수 전, 측정·롤백 인프라가 본체(LLM 품질 개선)보다 복잡해지는 위험을 검토하고 다음 결정 적용.
+
+- **plan-10 Eval Harness Lite 전체 삭제**: 골든셋 30 + Judge 3(J1/J2/J3) + 수동 라벨 20건 + Cohen's κ 검증 인프라를 구축 비용 대비 효용 낮아 폐기
+- **plan-12 Feature Flag Cleanup 전체 삭제**: flag 자체를 없애므로 cleanup 대상도 소멸
+- **plan-00d Smoke Eval 부분 삭제**: `eval/golden-sets/smoke/`, `eval/judges/j1-*`, `eval/scripts/smoke.py` 등 5개 golden + J1 초안 폐기. Micrometer `AiCallMetrics` + `OBSERVABILITY.md` + Runtime State 캐시 메트릭만 유지 → `plan-00d-observability.md` 로 개명
+- **STAGING_QUALITY_CHECKLIST v2 개정**: G4(레벨 밴드) / G5(Judge 일치율) / 10건 라벨링 절차 / J3 교차 검증 전부 삭제. G1~G3 자동 게이트만 유지. 제목 "Cut-over Gate" → "Automated Validation". 정성 비교는 `MANUAL_AB_PROTOCOL.md` 에 위임
+- **`MANUAL_AB_PROTOCOL.md` 신규**: ECR 이미지 2개(before/after) 를 2개 포트(8081/8082) 에 병렬 기동 → 동일 녹화본 3~5건 투입 → JSON diff 수동 비교. 각 plan PR 머지 전 실행
+- **Feature Flag runtime toggle 전면 제거**: plan-01/03/04/05/07/08/09/11/13 전반의 `rehearse.features.*` 언급 삭제. S2(plan-00b) 에서 이미 머지된 `AiFeatureProperties` / `@RefreshScope` / `/actuator/refresh` / `spring-cloud-context` 의존성은 **PR B (`[BE] refactor(ai): Feature Flag runtime toggle 철거`)** 에서 별도 철거. `ChatRequest.modelOverride` 는 모델 선택 자체 가치로 유지. 롤백 수단은 ECR 이미지 태그 + 세션 스토어 캐시 퍼지로 일원화
+- **requirements.md Goal 표 개정**: Judge 기반 지표(J1/J2/J3, Intent Accuracy 등) 를 "수동 비교 판정" 으로 교체. 객관 측정 가능 지표(토큰, 캐시 히트율, 매핑 정확도) 는 유지
+- **이유**: "신버전이 구버전보다 진짜 나아졌는가" 판정은 ECR 2개 병렬 기동 + 수동 diff 3~5건 으로 충분하며, 자동 Judge / runtime flag 는 본체 복잡도 상승 대비 이득이 부족. Grafana APM 은 회귀의 "정량" 감지에 유지
 
 ### 2026-04-22 (plan-13 신규 — Lambda Content Removal / Content·Delivery 책임 경계 확정)
 
@@ -122,9 +133,9 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [ ] M6 Feedback 관계 (00e)
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
 - [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
-- [x] Missing Feature flag runtime (00b) — AiFeatureProperties @RefreshScope + /actuator/refresh (S2)
+- [x] Missing Feature flag runtime — **의도적 제거 (2026-04-23)**. S2 에서 @RefreshScope/AiFeatureProperties 구현 완료됐으나 ECR 이미지 롤백으로 대체 결정 → PR B 에서 철거 예정
 - [x] Missing 동시성 제어 (00c InterviewLockService) — StripedLock 256 자체 구현 (S3)
 - [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)
-- [ ] Minor plan-10 수동 라벨 = 골든셋 부분집합 (plan-10 edit)
+- [x] ~~Minor plan-10 수동 라벨~~ — plan-10 전체 삭제 (2026-04-23)
 - [ ] Addendum 비언어 루브릭 (plan-11) — TODO 09 반영. D11~D14 결정론 매퍼 + context_weights + V28
-- [ ] Flag Cleanup (plan-12) — 5개 release flag + v2 코드 제거. 스프린트 종료 후 트리거
+- [x] ~~Flag Cleanup (plan-12)~~ — flag 자체 제거로 plan-12 폐기 (2026-04-23)

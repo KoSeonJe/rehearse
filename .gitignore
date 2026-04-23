@@ -29,10 +29,9 @@ Thumbs.db
 # === 디자인 검토용 스크린샷 (루트에만 금지 — frontend/public/images 는 허용) ===
 /*.png
 
-# === OMC (세션/상태는 로컬 전용) ===
-**/.omc/sessions/
-**/.omc/state/
-**/.omc/project-memory.json
+# === OMC (전체 로컬 전용) ===
+.omc/
+**/.omc/
 
 # === Claude Code (로컬 전용) ===
 **/.claude/skills/
