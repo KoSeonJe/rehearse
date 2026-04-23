@@ -2,22 +2,16 @@ package com.rehearse.api.domain.questionset.service;
 
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.service.TimestampFeedbackMapper;
-import com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.analysis.exception.AnalysisErrorCode;
-import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
-import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
-import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.ConvertStatus;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.questionset.exception.AnalysisErrorCode;
+import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
-import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
@@ -60,16 +54,7 @@ class InternalQuestionSetServiceTest {
     private QuestionAnswerRepository answerRepository;
 
     @Mock
-    private QuestionSetFeedbackRepository feedbackRepository;
-
-    @Mock
-    private QuestionRepository questionRepository;
-
-    @Mock
     private S3Service s3Service;
-
-    @Mock
-    private TimestampFeedbackMapper timestampFeedbackMapper;
 
     @Nested
     @DisplayName("updateProgress 메서드")
@@ -155,105 +140,6 @@ class InternalQuestionSetServiceTest {
             assertThat(answers.get(0).getStartMs()).isEqualTo(0L);
             assertThat(answers.get(0).getEndMs()).isEqualTo(5000L);
             assertThat(answers.get(0).getQuestion().getId()).isEqualTo(10L);
-        }
-    }
-
-    @Nested
-    @DisplayName("saveFeedback 메서드")
-    class SaveFeedback {
-
-        @Test
-        @DisplayName("saveFeedback: 피드백과 타임스탬프 피드백이 저장되고 상태가 COMPLETED로 변경된다")
-        void saveFeedback_withTimestampFeedbacks_success() {
-            // given
-            QuestionSet questionSet = createQuestionSet(1L);
-            QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
-            Question question = createQuestion(10L);
-            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
-            given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-            given(questionRepository.findById(10L)).willReturn(Optional.of(question));
-            given(feedbackRepository.save(any(QuestionSetFeedback.class)))
-                    .willAnswer(inv -> inv.getArgument(0));
-
-            SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
-            ReflectionTestUtils.setField(item, "questionId", 10L);
-            ReflectionTestUtils.setField(item, "startMs", 0L);
-            ReflectionTestUtils.setField(item, "endMs", 5000L);
-            ReflectionTestUtils.setField(item, "eyeContactLevel", "GOOD");
-            ReflectionTestUtils.setField(item, "postureLevel", "AVERAGE");
-            ReflectionTestUtils.setField(item, "toneConfidenceLevel", "GOOD");
-
-            TimestampFeedback stubTf = TimestampFeedback.builder()
-                    .startMs(0L)
-                    .endMs(5000L)
-                    .isAnalyzed(true)
-                    .build();
-            given(timestampFeedbackMapper.toEntity(eq(item), any())).willReturn(stubTf);
-
-            SaveFeedbackRequest request = new SaveFeedbackRequest();
-            ReflectionTestUtils.setField(request, "questionSetComment", "전반적으로 좋은 답변입니다.");
-            ReflectionTestUtils.setField(request, "timestampFeedbacks", List.of(item));
-            ReflectionTestUtils.setField(request, "verbalCompleted", true);
-            ReflectionTestUtils.setField(request, "nonverbalCompleted", true);
-
-            // when
-            internalQuestionSetService.saveFeedback(1L, request);
-
-            // then
-            assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.COMPLETED);
-            then(feedbackRepository).should().save(any(QuestionSetFeedback.class));
-        }
-
-        @Test
-        @DisplayName("saveFeedback: 타임스탬프 피드백 없이도 정상적으로 저장된다")
-        void saveFeedback_withoutTimestampFeedbacks_success() {
-            // given
-            QuestionSet questionSet = createQuestionSet(1L);
-            QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
-            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
-            given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-            given(feedbackRepository.save(any(QuestionSetFeedback.class)))
-                    .willAnswer(inv -> inv.getArgument(0));
-
-            SaveFeedbackRequest request = new SaveFeedbackRequest();
-            ReflectionTestUtils.setField(request, "questionSetComment", "개선이 필요합니다.");
-            ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
-            ReflectionTestUtils.setField(request, "verbalCompleted", true);
-            ReflectionTestUtils.setField(request, "nonverbalCompleted", false);
-
-            // when
-            internalQuestionSetService.saveFeedback(1L, request);
-
-            // then
-            // verbal=true, nonverbal=false → PARTIAL
-            assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.PARTIAL);
-            then(feedbackRepository).should().save(any(QuestionSetFeedback.class));
-        }
-
-        @Test
-        @DisplayName("saveFeedback: isVerbalCompleted=true, isNonverbalCompleted=false → PARTIAL 상태가 된다")
-        void saveFeedback_verbalOnlyCompleted_statusIsPartial() {
-            // given
-            QuestionSet questionSet = createQuestionSet(1L);
-            QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
-            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
-            given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-            given(feedbackRepository.save(any(QuestionSetFeedback.class)))
-                    .willAnswer(inv -> inv.getArgument(0));
-
-            SaveFeedbackRequest request = new SaveFeedbackRequest();
-            ReflectionTestUtils.setField(request, "questionSetComment", "비언어 분석 실패");
-            ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
-            ReflectionTestUtils.setField(request, "verbalCompleted", true);
-            ReflectionTestUtils.setField(request, "nonverbalCompleted", false);
-
-            // when
-            internalQuestionSetService.saveFeedback(1L, request);
-
-            // then
-            assertThat(analysis.getAnalysisStatus()).isEqualTo(AnalysisStatus.PARTIAL);
-            assertThat(analysis.isVerbalCompleted()).isTrue();
-            assertThat(analysis.isNonverbalCompleted()).isFalse();
         }
     }
 

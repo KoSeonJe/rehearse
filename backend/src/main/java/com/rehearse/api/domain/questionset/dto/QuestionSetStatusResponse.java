@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.questionset.dto;
 
 import com.rehearse.api.domain.file.entity.FileStatus;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.ConvertStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import lombok.Builder;
 import lombok.Getter;
 

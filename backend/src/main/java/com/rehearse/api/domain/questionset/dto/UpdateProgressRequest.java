@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

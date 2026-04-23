@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.domain.interview.generation.pool.entity.QuestionPool;
+import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

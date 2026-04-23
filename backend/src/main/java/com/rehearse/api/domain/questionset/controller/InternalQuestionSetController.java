@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.controller;
 
-import com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.question.dto.AnswersResponse;
 import com.rehearse.api.domain.questionset.dto.UpdateProgressRequest;
@@ -34,16 +34,6 @@ public class InternalQuestionSetController {
             @PathVariable Long questionSetId) {
         AnswersResponse response = internalQuestionSetService.getAnswersResponse(interviewId, questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
-    }
-
-    @PostMapping("/feedback")
-    public ResponseEntity<ApiResponse<Void>> saveFeedback(
-            @PathVariable Long interviewId,
-            @PathVariable Long questionSetId,
-            @Valid @RequestBody SaveFeedbackRequest request) {
-
-        internalQuestionSetService.saveFeedback(questionSetId, request);
-        return ResponseEntity.ok(ApiResponse.ok(null));
     }
 
     @PutMapping("/convert-status")

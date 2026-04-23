@@ -9,6 +9,7 @@ import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.global.common.ApiResponse;
 import com.rehearse.api.global.config.AsyncConfig;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,6 +25,7 @@ import java.util.concurrent.Executor;
 
 @RestController
 @RequestMapping("/api/v1/interviews")
+@RequiredArgsConstructor
 public class InterviewController {
 
     private final InterviewCreationService interviewCreationService;
@@ -32,21 +34,6 @@ public class InterviewController {
     private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
     private final Executor vtExecutor;
-
-    public InterviewController(
-            InterviewCreationService interviewCreationService,
-            InterviewQueryService interviewQueryService,
-            InterviewService interviewService,
-            InterviewDeletionService interviewDeletionService,
-            FollowUpService followUpService,
-            @Qualifier(AsyncConfig.VT_EXECUTOR) Executor vtExecutor) {
-        this.interviewCreationService = interviewCreationService;
-        this.interviewQueryService = interviewQueryService;
-        this.interviewService = interviewService;
-        this.interviewDeletionService = interviewDeletionService;
-        this.followUpService = followUpService;
-        this.vtExecutor = vtExecutor;
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<InterviewResponse>> createInterview(

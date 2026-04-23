@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.questionset.dto;
 
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.question.dto.QuestionDetailResponse;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import lombok.Builder;

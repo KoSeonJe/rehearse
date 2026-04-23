@@ -2,7 +2,7 @@ package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
+import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
 import com.rehearse.api.domain.question.dto.QuestionsWithAnswersResponse;

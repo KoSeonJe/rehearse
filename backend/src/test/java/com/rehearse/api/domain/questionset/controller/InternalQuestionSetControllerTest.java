@@ -129,58 +129,6 @@ class InternalQuestionSetControllerTest {
     }
 
     @Nested
-    @DisplayName("POST /feedback 엔드포인트")
-    class SaveFeedback {
-
-        @Test
-        @DisplayName("피드백 저장 성공 시 200을 반환한다")
-        void saveFeedback_success() throws Exception {
-            // given
-            willDoNothing().given(internalQuestionSetService).saveFeedback(eq(1L), any());
-
-            String requestBody = """
-                    {
-                        "questionSetComment": "전반적으로 좋은 답변입니다.",
-                        "timestampFeedbacks": [
-                            {
-                                "questionId": 10,
-                                "startMs": 0,
-                                "endMs": 5000,
-                                "verbalComment": {"positive": "명확한 설명", "negative": null, "suggestion": null},
-                                "eyeContactLevel": "GOOD",
-                                "postureLevel": "AVERAGE"
-                            }
-                        ]
-                    }
-                    """;
-
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestBody))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.success").value(true));
-        }
-
-        @Test
-        @DisplayName("questionSetComment 누락 시 400을 반환한다")
-        void saveFeedback_missingComment_returns400() throws Exception {
-            // given
-            String requestBody = """
-                    {
-                    }
-                    """;
-
-            // when & then
-            mockMvc.perform(post(BASE_URL + "/feedback", 5L, 1L)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(requestBody))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
-        }
-    }
-
-    @Nested
     @DisplayName("PUT /convert-status 엔드포인트")
     class UpdateConvertStatus {
 

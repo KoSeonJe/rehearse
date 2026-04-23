@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.questionset.entity;
 
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.interview.entity.Interview;

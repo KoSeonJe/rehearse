@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.questionset.entity;
 
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

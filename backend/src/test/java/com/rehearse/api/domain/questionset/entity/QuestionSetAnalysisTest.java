@@ -1,8 +1,5 @@
 package com.rehearse.api.domain.questionset.entity;
 
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
