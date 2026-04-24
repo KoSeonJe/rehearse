@@ -10,8 +10,8 @@
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
 | 00d | Observability `[parallel:00c]` | W2 후 | Completed | 00a | M2+Missing(APM) 해결. `OBSERVABILITY.md` + Timer 6 태그 + Counter 4 종(input/output/cached.read/cached.write) + `micrometer-registry-prometheus` 의존성 (S3c, 2026-04-24). 코드 기반은 S2(#336)+S3(#338) 선행, S3c(#347) 로 완결 |
-| 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
-| 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
+| 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Completed | 00a | M6 해결. `FEEDBACK_DOMAIN.md` 결정 문서 작성 (S3b, 2026-04-24). `InterviewCompletedEvent` 부재 확인 → plan-09 에서 신규 도입으로 교정 |
+| 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Completed | 00a | `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy + `Standard`/`ResumeTrackPolicy`(7턴 skeleton) + Resolver. 663 tests pass (S3b, 2026-04-24). plan-07 선행 unblocked |
 
 ### Phase 1~4 (W3-W7) — 기존 플랜 (전제 인프라 위에서)
 
@@ -31,6 +31,34 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-24 (S3b — plan-00f Interview Turn Policy 추상화 완료)
+
+- **신규 패키지 `domain/interview/policy/`** 5 파일:
+  - `InterviewTrack` enum (`CS`, `LANGUAGE`, `RESUME`)
+  - `InterviewTurnPolicy` 인터페이스
+  - `StandardFollowUpPolicy` — `@Value("${rehearse.interview.policy.standard.max-follow-up-rounds:2}")` 주입, CS/Language 행위 무변경
+  - `ResumeTrackPolicy` — 7턴 하드 상한 skeleton (plan-07 `ChainStateTracker` 주입으로 확장 예정)
+  - `InterviewTurnPolicyResolver` — `Interview.getTrack()` switch 라우팅
+- **`Interview.getTrack()` 파생 메서드** — `interviewTypes.contains(RESUME_BASED)` 시 `RESUME`, 나머지 `CS`. DB 컬럼 추가 0
+- **`FollowUpTransactionHandler` 리팩터** — `MAX_FOLLOWUP_ROUNDS` 상수 + `validateFollowUpRoundLimit()` 삭제. `turnPolicyResolver.resolve(interview).assertCanContinue(...)` 위임
+- **`application.yml`** — `rehearse.interview.policy.standard.max-follow-up-rounds: 2` 블록 추가
+- **테스트 4 건** (신규 3 + 수정 1):
+  - `StandardFollowUpPolicyTest` (6) — 0/1/2/3턴 경계값 + 3 설정 튜닝 검증
+  - `ResumeTrackPolicySkeletonTest` (3) — 6턴 허용 / 7턴 예외
+  - `InterviewTurnPolicyResolverTest` (3) — CS / RESUME_BASED / LANGUAGE_FRAMEWORK 라우팅
+  - `FollowUpTransactionHandlerTest` 수정 — `loadFollowUpContext_maxFollowUpExceeded` 를 policy Mock 기반으로 재작성 (행위 무변경, 동일 에러 code)
+- **실측 교정**: 원 plan `interview.getResumeSkeletonId() != null` 분기는 실체 필드 부재 → `Interview.getTrack()` + `InterviewType.RESUME_BASED` 기반 판정으로 교정
+- **`./gradlew test` 결과**: 663 tests / 0 failures / 0 errors / 0 ignored
+- **plan-07 unblocked**: `ResumeTrackPolicy` skeleton 에 `ChainStateTracker` 주입하면 plan-07 Resume Orchestrator 구현 가능
+
+### 2026-04-24 (S3b — plan-00e Feedback Migration 결정 완료)
+
+- `FEEDBACK_DOMAIN.md` 신규 — 결정 1~6 확정 (병존 / partial-first / Admin API / InterviewCompletedEvent 신규 / 패키지 경로 / flag 없음)
+- **실측 교정**: `InterviewCompletedEvent` 가 현재 코드에 없음(grep 0건) → plan-09 에서 신규 도입 + `InterviewCompletionService.complete()` 에서 `ApplicationEventPublisher` 경유 발행으로 결정 4 갱신
+- **패키지 경로 확정**: aa88a96 리팩터 반영 → `domain/feedback/session/{controller,service,entity,repository,dto}` 서브패키지 신설
+- **Out of Scope**: plan-09 코드 구현은 S9+ 에서. 본 세션은 결정 문서만
+- 후속 세션 (S4) 착수 가능: plan-01 Intent Classifier (단, 00d/00f 선행)
 
 ### 2026-04-24 (S3c — plan-00d 완결 — Counter 4 종 + prometheus registry)
 
@@ -61,7 +89,7 @@
 - **권한 제한**: 로컬 `bootRun` 실행 불가 → 라이브 스냅샷 캡처는 스테이징 배포 후 부록으로 추가 예정 (문서 §검증 스냅샷)
 - **이월**: Counter 3 종(`tokens.input/output/cached`) 실제 구현은 plan-04 Context Engineering PR 에서 `ChatResponse.Usage` 파싱과 함께 권장
 
-
+### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
 
 플랜 본체 착수 전, 측정·롤백 인프라가 본체(LLM 품질 개선)보다 복잡해지는 위험을 검토하고 다음 결정 적용.
 
@@ -159,7 +187,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
-- [ ] M6 Feedback 관계 (00e)
+- [x] M6 Feedback 관계 (00e) — `FEEDBACK_DOMAIN.md` 작성 (S3b, 2026-04-24). 병존 aggregate + partial-first + Admin API + InterviewCompletedEvent 신규 도입 결정
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
 - [x] Missing APM 메트릭 표준 (00d) — Micrometer 태그 6 종(`call.type` / `model` / `provider` / `cache.hit` / `fallback` / `outcome`) + Caffeine 캐시 메트릭 5 종 문서화. 구현은 S2/S3 머지 완료
 - [x] Missing Feature flag runtime — **의도적 제거 (2026-04-23)**. S2 에서 @RefreshScope/AiFeatureProperties 구현 완료됐으나 ECR 이미지 롤백으로 대체 결정 → PR B 에서 철거 예정

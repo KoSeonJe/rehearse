@@ -2,9 +2,12 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.interview.policy.InterviewTurnPolicy;
+import com.rehearse.api.domain.interview.policy.InterviewTurnPolicyResolver;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
+import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
@@ -44,6 +47,12 @@ class FollowUpTransactionHandlerTest {
     @Mock
     private QuestionRepository questionRepository;
 
+    @Mock
+    private InterviewTurnPolicyResolver turnPolicyResolver;
+
+    @Mock
+    private InterviewTurnPolicy turnPolicy;
+
     @Nested
     @DisplayName("loadFollowUpContext 메서드")
     class LoadFollowUpContext {
@@ -57,6 +66,7 @@ class FollowUpTransactionHandlerTest {
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+            given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
             // when
             FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
@@ -78,6 +88,7 @@ class FollowUpTransactionHandlerTest {
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.GUIDE);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+            given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
             // when
             FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
@@ -95,6 +106,7 @@ class FollowUpTransactionHandlerTest {
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, null);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+            given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
             // when
             FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
@@ -137,14 +149,17 @@ class FollowUpTransactionHandlerTest {
         }
 
         @Test
-        @DisplayName("loadFollowUpContext - 예외: 후속질문 라운드 초과")
-        void loadFollowUpContext_maxFollowUpExceeded() {
+        @DisplayName("loadFollowUpContext - 예외: 턴 정책이 MAX_FOLLOWUP_EXCEEDED 를 throw 하면 그대로 전파")
+        void loadFollowUpContext_policyRejects_propagatesException() {
             // given
             Interview interview = createInProgressInterview();
             given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 2);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+            given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
+            willThrow(new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED))
+                    .given(turnPolicy).assertCanContinue(interview, questionSet);
 
             // when & then
             assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))

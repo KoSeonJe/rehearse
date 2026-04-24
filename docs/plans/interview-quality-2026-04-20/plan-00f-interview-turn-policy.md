@@ -1,9 +1,13 @@
 # Plan 00f: Interview Turn Policy Abstraction (Phase 0) `[parallel:00c]`
 
-> 상태: Draft
+> 상태: Completed (2026-04-24, S3b)
+> 산출물: `domain/interview/policy/` 5 파일 + `Interview.getTrack()` + `FollowUpTransactionHandler` 리팩터 + 4 테스트
 > 작성일: 2026-04-21
+> 완료일: 2026-04-24
 > 주차: W2 (plan-00c와 병렬, plan-07 선행)
 > 해결 RC: "턴 최대치(`MAX_FOLLOWUP_ROUNDS=2`)가 Transaction Handler에 하드코딩되어 트랙별 확장 불가"
+>
+> **실측 교정 (2026-04-24)**: 원래 plan 은 `interview.getResumeSkeletonId() != null` 로 라우팅 분기. 실제 `Interview` 엔티티에 `resumeSkeletonId` 필드 부재. → `Interview.getTrack()` 이 `interviewTypes.contains(InterviewType.RESUME_BASED)` 로 RESUME 트랙 판정. Resolver 는 `Interview.getTrack()` switch 로 라우팅.
 
 ## Why
 
