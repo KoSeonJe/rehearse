@@ -17,7 +17,7 @@
 
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
-| 01 | Intent Classifier (M2 축소판) | W3 | Draft | 00a,00b,00d | REMEDIATION 수정 지시 반영 필요 (M3/M4) |
+| 01 | Intent Classifier (**4-intent**) | W3 | Draft | 00a,00b,00d | 2026-04-24 **3-intent → 4-intent 확장** (OFF_TOPIC 분리, META 통합, LLM-free handler). M4 교정 반영됨 |
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
@@ -31,6 +31,18 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-24 (plan-01 4-intent 확장 결정 — 문서 갱신)
+
+- **결정**: `IntentType` 을 3-intent (ANSWER/CLARIFY_REQUEST/GIVE_UP) → **4-intent** (+ **OFF_TOPIC**) 로 확장. META 발화는 OFF_TOPIC 에 통합.
+- **근거**: OFF_TOPIC 을 앞단 L1 에서 직접 분기하면 plan-02 Analyzer(L2) + plan-03 Follow-up(L3) 호출을 완전 생략 → 사용자 path p95 ≤ 500ms. 기존 3-intent 축소안의 "빈 답변 해석 LLM 낭비" 를 근본 제거.
+- **OFF_TOPIC handler 는 LLM 미호출** — 객관·중립 리드인 풀(4개, 겉치레 호응 금지) + 고정 connector `"질문에 대한 답변을 적절히 해주세요."` + 원 mainQuestion 템플릿 조립. 비용 0, 지연 최소, 톤 예측성. `Math.floorMod(Objects.hash(sessionId, turnIndex), pool.size())` 결정적 선택.
+- **턴 소비 정책**: OFF_TOPIC 은 round counter 증가 **안 함**, `currentMainQuestion` 유지. 다음 ANSWER 시 원 질문 + 새 답변 조합으로 정상 L1→L2→L3 파이프라인 동작 → 꼬리질문 원 주제 기반 생성. 연속 3회 OFF_TOPIC 시 GIVE_UP 경로 escalation (`rehearse.intent-classifier.off-topic-consecutive-limit: 3`).
+- **plan-02 Step A 가드 유지**: `claims=[] && answer_quality<=1 ⇒ CLARIFICATION` 을 "L1 분류기 False Negative 안전망" 으로 목적 재정의 (defense in depth). 삭제하지 않음.
+- **갱신 문서**: plan-01, plan-02, REMEDIATION.md, MANUAL_AB_PROTOCOL.md, requirements.md, 본 progress.md (6개).
+- **검증 골든셋**: 20개 → **25개** (OFF_TOPIC 5개 추가 — META 3 / 무관 2). Intent 전체 정확도 ≥ 90%, OFF_TOPIC 자체 정확도 ≥ 80%.
+- **plan-03 은 변경 없음** — `recommended_next_action` 시그널 consume 로직 그대로.
+- **코드 구현은 S4+ 에서** — 본 결정은 문서 전용 갱신.
 
 ### 2026-04-24 (S3b — plan-00f Interview Turn Policy 추상화 완료)
 
@@ -77,7 +89,7 @@
 - **라이브 검증**: `./gradlew bootRun --args='--spring.profiles.active=local --spring.sql.init.mode=never'` 로 실제 기동 → `/actuator/prometheus` HTTP 200 확인. Caffeine 캐시 메트릭 6 종 (`cache_gets_total` / `cache_evictions_total` / `cache_eviction_weight_total` / `cache_puts_total` / `cache_size`) 노출 확인.
 - **문서 오류 수정**: Caffeine 메트릭 실제 이름을 확인해 OBSERVABILITY.md 의 `rehearse_runtime_state_cache_*` 쿼리를 `cache_*{cache="rehearse.runtime.state"}` 로 전면 교체. Micrometer `CaffeineCacheMetrics.monitor()` 의 세 번째 인자는 metric prefix 가 아니라 `cache` 태그 값 — 플랜 문서 초안 가정이 잘못됐음을 실측으로 확정.
 - **AI 메트릭 노출 검증 보류**: 로컬 실 AI 호출(API 키) 없이는 `rehearse_ai_call_*` Lazy 등록 안 됨 → 스테이징 배포 후 실 호출 1 회로 검증 예정 (`OBSERVABILITY.md §검증 스냅샷` 부록 업데이트).
-- **머지 순서 권장**: #346 (00e) → #348 (00f) → #347 (00d S3c).
+- **실제 머지 결과**: #347 (00d S3c) 먼저 머지, #346 (00e) 은 별도 PR 대신 #348 에 cherry-pick 으로 통합 후 close — 최종 develop 에는 #347 + #348 2 개 squash 커밋만 남음. S3 마일스톤(00c/00d/00e/00f) 전부 Completed.
 
 ### 2026-04-24 (S3b — plan-00d Observability 1차 — docs 초안)
 
@@ -184,7 +196,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
 - [x] M2 W1-W3 회귀 방어 (00d) — `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). Grafana/PromQL 쿼리 7 종 + Alert 임계치 5 종 + 배포 회귀 감지 체크리스트
-- [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
+- [ ] M3 4-intent 확장 (OFF_TOPIC 분리, META 통합, LLM-free handler) — plan-01/02 문서 갱신 완료 (2026-04-24), 구현 대기
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
 - [x] M6 Feedback 관계 (00e) — `FEEDBACK_DOMAIN.md` 작성 (S3b, 2026-04-24). 병존 aggregate + partial-first + Admin API + InterviewCompletedEvent 신규 도입 결정

@@ -49,8 +49,8 @@
 
 ### RC6. "축소 결정의 엣지 케이스 분석이 얕았다"
 - **증상**: M3(META/OFF_TOPIC ANSWER 병합이 역효과), plan-07 fact_check_flag 코드-Out of scope 모순
-- **근본 해결**: (a) 3-intent는 유지하되 **ANSWER fallback 경로에 가드 로직** 명시(`answer_quality ≤ 1 AND 질문과 무관` → 재설명 시도), (b) plan-07 프롬프트/JSON 스키마에서 `fact_check_flag` 관련 필드를 명시적으로 삭제하고 "이 필드는 본 스프린트 범위 아님. TODO 원본 06 참조" 주석.
-- **플랜**: plan-01/plan-07 문서 수정
+- **근본 해결 (2026-04-24 갱신)**: (a) **3-intent → 4-intent 로 확장** — OFF_TOPIC 을 별도 분기로 분리, META 는 OFF_TOPIC 에 통합. OFF_TOPIC handler 는 LLM 미사용 템플릿 조립(원 질문 재제시). L1 FN 대비 plan-02 Step A 가드(`answer_quality ≤ 1 AND claims=[]` → CLARIFICATION) 는 안전망으로 유지. (b) plan-07 프롬프트/JSON 스키마에서 `fact_check_flag` 관련 필드를 명시적으로 삭제하고 "이 필드는 본 스프린트 범위 아님. TODO 원본 06 참조" 주석.
+- **플랜**: plan-01/plan-02/plan-07 문서 수정
 
 ### RC7. "Feature flag runtime 변경 메커니즘 없음" — 2026-04-23 재결정
 - **증상**: Missing(Spring Cloud Config 없는데 '즉시 롤백' 주장)
@@ -79,7 +79,7 @@
 |---|---|---|
 | **requirements.md** | 로드맵 4주 → 7주로 갱신, Phase 0 추가 | M1, RC5 |
 | **progress.md** | 14개 태스크(Phase 0 5개 + Phase 1~4 10개)로 갱신 | 위와 동일 |
-| **plan-01** | (a) 수정 대상 `InterviewTurnService` → **`FollowUpService.generateFollowUp()` 앞단** 으로 변경. (b) ANSWER fallback에 META/OFF_TOPIC 가드 로직 추가 | M3, M4 |
+| **plan-01** | (a) 수정 대상 `InterviewTurnService` → **`FollowUpService.generateFollowUp()` 앞단** 으로 변경. (b) **4-intent 확장 (OFF_TOPIC 분리, META 통합, LLM-free handler)** — 2026-04-24 갱신. plan-02 가드는 L1 FN 안전망으로 유지 | M3, M4 |
 | **plan-02** | `InterviewSession` 언급을 실제 aggregate인 **`Interview` 엔티티 + `InterviewRuntimeState`(신규 상태 객체, plan-00c)** 로 변경 | RC3 |
 | **plan-03** | 기존 `FollowUpPromptBuilder` 위치 확인됨. v3 프롬프트 교체 + Step A 분석 주입 로직 구체화 | (경미) |
 | **plan-04** | (a) plan-00b 완료 전제로 재작성. (b) Fallback 캐시 콜드 미스 수용 정책 명시(`max-context-tokens` 상한은 fallback에도 동일 적용). (c) `DialogueCompactor` LLM 호출 코스트를 total 예산에 산정 | M5, Missing(코스트) |
@@ -146,7 +146,7 @@ Phase 4 (W7):      08 (Rubric) ──> 09 (Synthesizer) + 10 (Eval Full) [parall
 - [ ] C3. 호출별 모델 선택 — plan-00b
 - [ ] M1. 타임라인 7주로 재산정 — requirements.md
 - [ ] M2. W1-W3 회귀 방어 — plan-00d
-- [ ] M3. META/OFF_TOPIC 가드 — plan-01 edit
+- [ ] M3. 4-intent 확장 (OFF_TOPIC 분리, META 통합, LLM-free handler) — plan-01 edit 완료 (2026-04-24), 구현 대기
 - [ ] M4. 실제 클래스명 정정 — plan-00a 인벤토리 + plan-01/07/08 edit
 - [ ] M5. Fallback 캐시 콜드 미스 정책 — plan-04 edit + plan-00b
 - [ ] M6. 기존 FeedbackService와의 관계 — plan-00e
