@@ -44,7 +44,7 @@ plan-01~07 배포 중 턴당 LLM 호출 수가 1→3~4 회로 증가한다. APM 
 
 > **메서드 시그니처 메모**: plan-00d 본문 초안의 4-arg `recordChat(callType, model, provider, Supplier)` 는 **구현 단계에서 2-arg `recordChat(callType, Callable<ChatResponse>)`로 확정**. 이유: `ResilientAiClient` fallback 시 primary(OpenAI) → fallback(Claude) 로 `provider`/`model` 이 바뀌므로 **호출 전 pre-tagging 불가**. 응답 후 `ChatResponse.provider()`/`model()` 에서 후추출하는 방식이 정확.
 
-### 3. Runtime State 캐시 (Caffeine) — `rehearse.runtime.state.*`
+### 3. Runtime State 캐시 (Caffeine) — `cache_*{cache="rehearse.runtime.state"}`
 
 구현 위치: `backend/src/main/java/com/rehearse/api/config/RuntimeCacheConfig.java:23`
 
@@ -52,15 +52,16 @@ plan-01~07 배포 중 턴당 LLM 호출 수가 1→3~4 회로 증가한다. APM 
 CaffeineCacheMetrics.monitor(registry, cache, "rehearse.runtime.state");
 ```
 
-노출되는 Prometheus 메트릭 (Micrometer → Prometheus 스네이크 케이스 변환):
+> **주의**: 세 번째 인자 `"rehearse.runtime.state"` 는 Prometheus 메트릭 이름 prefix 가 아니라 **`cache` 태그 값**. Micrometer `CaffeineCacheMetrics` 는 고정 prefix `cache_` 를 사용한다. 실제 노출 형태는 아래 표 (2026-04-24 로컬 `/actuator/prometheus` 라이브 검증 완료).
 
 | Prometheus 메트릭 | 의미 |
 |-------------------|------|
-| `rehearse_runtime_state_cache_hits_total` | 히트 카운트 |
-| `rehearse_runtime_state_cache_misses_total` | 미스 카운트 |
-| `rehearse_runtime_state_cache_evictions_total` | eviction 카운트 (2h idle TTL / max 10,000) |
-| `rehearse_runtime_state_cache_size` | 현재 캐시 엔트리 수 |
-| `rehearse_runtime_state_cache_puts_total` | put 카운트 |
+| `cache_gets_total{cache="rehearse.runtime.state",result="hit"}` | 히트 카운트 |
+| `cache_gets_total{cache="rehearse.runtime.state",result="miss"}` | 미스 카운트 |
+| `cache_evictions_total{cache="rehearse.runtime.state"}` | eviction 카운트 (2h idle TTL / max 10,000) |
+| `cache_eviction_weight_total{cache="rehearse.runtime.state"}` | evict 된 가중치 합계 |
+| `cache_size{cache="rehearse.runtime.state"}` | 현재 캐시 엔트리 수 |
+| `cache_puts_total{cache="rehearse.runtime.state"}` | put 카운트 |
 
 ### 4. Spring Boot 기본 메트릭 (무료)
 
@@ -120,18 +121,15 @@ sum(rate(rehearse_ai_call_tokens_cached_write_total[30m])) by (call_type)
 ### E. Runtime State 캐시 히트율
 
 ```promql
-sum(rate(rehearse_runtime_state_cache_hits_total[5m]))
+sum(rate(cache_gets_total{cache="rehearse.runtime.state",result="hit"}[5m]))
 /
-(
-  sum(rate(rehearse_runtime_state_cache_hits_total[5m]))
-  + sum(rate(rehearse_runtime_state_cache_misses_total[5m]))
-)
+sum(rate(cache_gets_total{cache="rehearse.runtime.state"}[5m]))
 ```
 
 ### F. Runtime State eviction 추이 (세션 만료 패턴)
 
 ```promql
-sum(rate(rehearse_runtime_state_cache_evictions_total[5m]))
+sum(rate(cache_evictions_total{cache="rehearse.runtime.state"}[5m]))
 ```
 
 ### G. 실패율 (outcome = failure)
@@ -189,9 +187,21 @@ curl -s localhost:8080/actuator/prometheus \
 - `rehearse_ai_call_duration_seconds_*` 는 첫 `ResilientAiClient.chat()` 호출 후 노출 (예: `POST /api/interviews/{id}/questions` 1 회 트리거 필요)
 
 **확인 포인트**:
-- `rehearse_ai_call_duration_seconds_bucket{call_type="...",le="..."}` — 히스토그램 버킷 존재
-- `rehearse_ai_call_duration_seconds_count{call_type="...",cache_hit="...",fallback="...",outcome="..."}` — 7 태그 전부 채워짐
-- `rehearse_runtime_state_cache_hits_total` / `_misses_total` / `_evictions_total` / `_size` 4 종 노출
+- `rehearse_ai_call_duration_seconds_bucket{call_type="...",le="..."}` — 히스토그램 버킷 존재 (첫 `ResilientAiClient.chat()` 호출 이후에만 노출 — lazy registration)
+- `rehearse_ai_call_duration_seconds_count{call_type="...",cache_hit="...",fallback="...",outcome="..."}` — 6 태그 전부 채워짐
+- `rehearse_ai_call_tokens_input_total{call_type="...",provider="...",model="..."}` — 토큰 Counter 4 종 (input/output/cached.read/cached.write)
+- `cache_gets_total{cache="rehearse.runtime.state",result="hit"}` + `{result="miss"}` / `cache_evictions_total` / `cache_puts_total` / `cache_size` / `cache_eviction_weight_total` 6 종 노출 (bootRun 직후 자동)
+
+**라이브 검증 스냅샷 (2026-04-24 로컬)**:
+```
+cache_evictions_total{cache="rehearse.runtime.state"} 0.0
+cache_eviction_weight_total{cache="rehearse.runtime.state"} 0.0
+cache_gets_total{cache="rehearse.runtime.state",result="hit"} 0.0
+cache_gets_total{cache="rehearse.runtime.state",result="miss"} 0.0
+cache_puts_total{cache="rehearse.runtime.state"} 0.0
+cache_size{cache="rehearse.runtime.state"} 0.0
+```
+→ `/actuator/prometheus` 200 OK, Caffeine 메트릭 6 종 정상 노출. AI 메트릭은 실 호출 이후 출현 (lazy).
 
 > **Note**: 본 PR 에서는 로컬 bootRun 실행 권한 제한으로 라이브 출력 캡처 미첨부. 코드 상 `AiCallMetrics.java` (Timer + 4 Counter) + `RuntimeCacheConfig.java:23` + `build.gradle.kts` (`micrometer-registry-prometheus` runtimeOnly 의존성) 로 노출이 보장되어 있으며, PR 머지 후 스테이징에서 1 회 curl 스냅샷을 캡처해 본 섹션에 부록으로 추가할 것.
 >

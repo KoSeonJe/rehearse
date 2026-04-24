@@ -46,6 +46,9 @@
 - **의존성 추가**: `backend/build.gradle.kts` 에 `runtimeOnly("io.micrometer:micrometer-registry-prometheus")`. Spring Boot 3.x 는 `spring-boot-starter-actuator` 만으로는 `/actuator/prometheus` 엔드포인트 노출 안 함 → 현재 설정 그대로면 Grafana scraping 전면 실패. **관측 인프라 실작동을 위한 필수 의존성**.
 - **테스트 추가**: `AiCallMetricsTest` 에 5 케이스 추가 — input/output Counter 증가 / cached read·write 분리 / 0 토큰 미등록 / 예외 경로 Counter 미기록 / 복수 호출 누적.
 - **문서 갱신**: `OBSERVABILITY.md` Counter 표 4 종 + PromQL 쿼리 6 종 (provider 별 비용, 캐시 절감률, cache_write 추이) + 의존성 메모. `plan-00d-observability.md` 시그니처·파일 목록·검증 항목 교정.
+- **라이브 검증**: `./gradlew bootRun --args='--spring.profiles.active=local --spring.sql.init.mode=never'` 로 실제 기동 → `/actuator/prometheus` HTTP 200 확인. Caffeine 캐시 메트릭 6 종 (`cache_gets_total` / `cache_evictions_total` / `cache_eviction_weight_total` / `cache_puts_total` / `cache_size`) 노출 확인.
+- **문서 오류 수정**: Caffeine 메트릭 실제 이름을 확인해 OBSERVABILITY.md 의 `rehearse_runtime_state_cache_*` 쿼리를 `cache_*{cache="rehearse.runtime.state"}` 로 전면 교체. Micrometer `CaffeineCacheMetrics.monitor()` 의 세 번째 인자는 metric prefix 가 아니라 `cache` 태그 값 — 플랜 문서 초안 가정이 잘못됐음을 실측으로 확정.
+- **AI 메트릭 노출 검증 보류**: 로컬 실 AI 호출(API 키) 없이는 `rehearse_ai_call_*` Lazy 등록 안 됨 → 스테이징 배포 후 실 호출 1 회로 검증 예정 (`OBSERVABILITY.md §검증 스냅샷` 부록 업데이트).
 - **머지 순서 권장**: #346 (00e) → #348 (00f) → #347 (00d S3c).
 
 ### 2026-04-24 (S3b — plan-00d Observability 1차 — docs 초안)
