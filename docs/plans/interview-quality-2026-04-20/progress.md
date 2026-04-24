@@ -9,7 +9,7 @@
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
-| 00d | Observability `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결. 2026-04-23 Smoke Eval 부분 삭제 → Micrometer/APM 단독 |
+| 00d | Observability `[parallel:00c]` | W2 후 | Completed | 00a | M2+Missing(APM) 해결. `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). 코드는 S2(#336)+S3(#338) 에서 이미 머지. Counter 3 종은 plan-04 연계 추가 권장 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
 | 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
 
@@ -32,7 +32,17 @@
 
 ## 진행 로그
 
-### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
+### 2026-04-24 (S3b — plan-00d Observability 완료)
+
+- `OBSERVABILITY.md` 신규. AI 호출 Timer(`rehearse.ai.call.duration` + 태그 6 종) + Caffeine 캐시 메트릭(`rehearse.runtime.state.*` 5 종) 계약 정의
+- Grafana/PromQL 쿼리 레퍼런스 7 종 (p95/fallback/캐시/토큰/실패율/Runtime State 히트율·eviction)
+- Alert 임계치 5 종 가이드 (실제 Alertmanager 설정은 인프라 별건)
+- 배포 중 회귀 감지 체크리스트 3 단계 (10 분/1 시간/1 일) — plan-01~ 롤아웃 시 공식 레퍼런스
+- **실측 확인**: `application.yml` management 설정 이미 `prometheus` 노출 중. 추가 수정 0
+- **권한 제한**: 로컬 `bootRun` 실행 불가 → 라이브 스냅샷 캡처는 스테이징 배포 후 부록으로 추가 예정 (문서 §검증 스냅샷)
+- **이월**: Counter 3 종(`tokens.input/output/cached`) 실제 구현은 plan-04 Context Engineering PR 에서 `ChatResponse.Usage` 파싱과 함께 권장
+
+
 
 플랜 본체 착수 전, 측정·롤백 인프라가 본체(LLM 품질 개선)보다 복잡해지는 위험을 검토하고 다음 결정 적용.
 
@@ -126,13 +136,13 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [x] C2 DB 영속화/Flyway (00c) — V24~V27 + InterviewRuntimeStateStore + InterviewLockService (S3)
 - [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
-- [ ] M2 W1-W3 회귀 방어 (00d)
+- [x] M2 W1-W3 회귀 방어 (00d) — `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). Grafana/PromQL 쿼리 7 종 + Alert 임계치 5 종 + 배포 회귀 감지 체크리스트
 - [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
 - [ ] M6 Feedback 관계 (00e)
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
-- [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
+- [x] Missing APM 메트릭 표준 (00d) — Micrometer 태그 6 종(`call.type` / `model` / `provider` / `cache.hit` / `fallback` / `outcome`) + Caffeine 캐시 메트릭 5 종 문서화. 구현은 S2/S3 머지 완료
 - [x] Missing Feature flag runtime — **의도적 제거 (2026-04-23)**. S2 에서 @RefreshScope/AiFeatureProperties 구현 완료됐으나 ECR 이미지 롤백으로 대체 결정 → PR B 에서 철거 예정
 - [x] Missing 동시성 제어 (00c InterviewLockService) — StripedLock 256 자체 구현 (S3)
 - [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)

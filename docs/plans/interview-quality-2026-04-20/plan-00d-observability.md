@@ -1,8 +1,10 @@
 # Plan 00d: Observability (Phase 0) `[parallel:00c]`
 
-> 상태: Draft
+> 상태: Completed (2026-04-24, S3b)
+> 산출물: `OBSERVABILITY.md` (쿼리/Alert/회귀 감지 체크리스트)
 > 작성일: 2026-04-20
 > 수정일: 2026-04-23 (Smoke Eval 섹션 전면 삭제 — A/B 측정 인프라 축소 결정. Micrometer/APM 부분만 유지)
+> 완료일: 2026-04-24
 > 주차: W2 후반 (2일)
 > 해결 RC: RC4(W1-W3 회귀 방어 공백 + APM 부재)
 
