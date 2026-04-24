@@ -9,7 +9,7 @@
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
-| 00d | Observability `[parallel:00c]` | W2 후 | Completed | 00a | M2+Missing(APM) 해결. `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). 코드는 S2(#336)+S3(#338) 에서 이미 머지. Counter 3 종은 plan-04 연계 추가 권장 |
+| 00d | Observability `[parallel:00c]` | W2 후 | Completed | 00a | M2+Missing(APM) 해결. `OBSERVABILITY.md` + Timer 6 태그 + Counter 4 종(input/output/cached.read/cached.write) + `micrometer-registry-prometheus` 의존성 (S3c, 2026-04-24). 코드 기반은 S2(#336)+S3(#338) 선행, S3c(#347) 로 완결 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
 | 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
 
@@ -32,7 +32,23 @@
 
 ## 진행 로그
 
-### 2026-04-24 (S3b — plan-00d Observability 완료)
+### 2026-04-24 (S3c — plan-00d 완결 — Counter 4 종 + prometheus registry)
+
+- **시그니처 확정**: plan 본문 초안의 4-arg `recordChat(callType, model, provider, Supplier)` → 실구현 2-arg `recordChat(String, Callable<ChatResponse>)` 로 **실구현 정답** 채택. 근거: `ResilientAiClient` fallback 시 provider/model 은 응답 수신 후 확정 → 호출 전 pre-tagging 불가. `ChatResponse.provider()`/`model()` 후추출이 정확.
+- **토큰 Counter 4 종 구현** (`AiCallMetrics.recordChat()` finally 블록):
+  - `rehearse.ai.call.tokens.input` (Usage.inputTokens)
+  - `rehearse.ai.call.tokens.output` (Usage.outputTokens)
+  - `rehearse.ai.call.tokens.cached.read` (Usage.cacheReadTokens — OpenAI `prompt_tokens_details.cached_tokens` / Claude `cache_read_input_tokens`)
+  - `rehearse.ai.call.tokens.cached.write` (Usage.cacheWriteTokens — Claude `cache_creation_input_tokens`)
+  - 태그: `call.type` / `provider` / `model` (Timer 와 동일 키 → 쿼리 간소화)
+  - 0 토큰은 미등록 — 무의미 시리즈 Prometheus 누적 방지
+  - 예외 경로(outcome=failure)에서는 Counter 미기록 (Timer 만)
+- **의존성 추가**: `backend/build.gradle.kts` 에 `runtimeOnly("io.micrometer:micrometer-registry-prometheus")`. Spring Boot 3.x 는 `spring-boot-starter-actuator` 만으로는 `/actuator/prometheus` 엔드포인트 노출 안 함 → 현재 설정 그대로면 Grafana scraping 전면 실패. **관측 인프라 실작동을 위한 필수 의존성**.
+- **테스트 추가**: `AiCallMetricsTest` 에 5 케이스 추가 — input/output Counter 증가 / cached read·write 분리 / 0 토큰 미등록 / 예외 경로 Counter 미기록 / 복수 호출 누적.
+- **문서 갱신**: `OBSERVABILITY.md` Counter 표 4 종 + PromQL 쿼리 6 종 (provider 별 비용, 캐시 절감률, cache_write 추이) + 의존성 메모. `plan-00d-observability.md` 시그니처·파일 목록·검증 항목 교정.
+- **머지 순서 권장**: #346 (00e) → #348 (00f) → #347 (00d S3c).
+
+### 2026-04-24 (S3b — plan-00d Observability 1차 — docs 초안)
 
 - `OBSERVABILITY.md` 신규. AI 호출 Timer(`rehearse.ai.call.duration` + 태그 6 종) + Caffeine 캐시 메트릭(`rehearse.runtime.state.*` 5 종) 계약 정의
 - Grafana/PromQL 쿼리 레퍼런스 7 종 (p95/fallback/캐시/토큰/실패율/Runtime State 히트율·eviction)

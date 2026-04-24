@@ -28,15 +28,21 @@ plan-01~07 배포 중 턴당 LLM 호출 수가 1→3~4 회로 증가한다. APM 
 | `fallback` | `true` / `false` — primary 실패 후 fallback 동작 여부 | `ChatResponse.fallbackUsed()` |
 | `outcome` | `success` / `failure` | try-catch |
 
-### 2. AI 호출 토큰 Counter (3 종)
+### 2. AI 호출 토큰 Counter (4 종)
 
 | Counter | 태그 | 용도 |
 |---------|-----|------|
-| `rehearse.ai.call.tokens.input` | `call.type` | 입력 토큰 합계 (비용 추정) |
-| `rehearse.ai.call.tokens.output` | `call.type` | 출력 토큰 합계 |
-| `rehearse.ai.call.tokens.cached` | `call.type` | 캐시 히트 토큰 (OpenAI `prompt_tokens_details.cached_tokens`) |
+| `rehearse.ai.call.tokens.input` | `call.type`, `provider`, `model` | 입력 토큰 합계 (비용 추정) |
+| `rehearse.ai.call.tokens.output` | `call.type`, `provider`, `model` | 출력 토큰 합계 |
+| `rehearse.ai.call.tokens.cached.read` | `call.type`, `provider`, `model` | 캐시 히트 토큰 (OpenAI `prompt_tokens_details.cached_tokens` / Claude `cache_read_input_tokens`) |
+| `rehearse.ai.call.tokens.cached.write` | `call.type`, `provider`, `model` | 캐시 쓰기 토큰 (Claude `cache_creation_input_tokens`) — "캐시 준비 비용" 가시화 |
 
-> **참고**: 2026-04-24 현재 `AiCallMetrics.recordChat()` 은 Timer 만 기록한다. Counter 3 종은 plan-00d 본문 스펙. 추가 구현은 plan-00d 수정 PR 또는 plan-04 Context Engineering PR 에서 `ChatResponse.Usage` 파싱과 함께 기록 (현재는 `Usage.empty()` 반환 경우 존재 — S2 HANDOFF.md 미해결 이월 참조).
+- 구현: `AiCallMetrics.recordChat()` 의 finally 블록에서 `ChatResponse.Usage` 4 필드(`inputTokens` / `outputTokens` / `cacheReadTokens` / `cacheWriteTokens`)를 각각 Counter 로 기록.
+- **0 토큰 시 Counter 미등록** — 무의미 시리즈 Prometheus 누적 방지.
+- 예외 경로(outcome=failure)에서는 Counter 기록 안 됨 — Timer 만 기록.
+- 태그 키는 Timer 와 동일 3 종(`call.type`/`provider`/`model`) — Grafana 쿼리 간소화.
+
+> **메서드 시그니처 메모**: plan-00d 본문 초안의 4-arg `recordChat(callType, model, provider, Supplier)` 는 **구현 단계에서 2-arg `recordChat(callType, Callable<ChatResponse>)`로 확정**. 이유: `ResilientAiClient` fallback 시 primary(OpenAI) → fallback(Claude) 로 `provider`/`model` 이 바뀌므로 **호출 전 pre-tagging 불가**. 응답 후 `ChatResponse.provider()`/`model()` 에서 후추출하는 방식이 정확.
 
 ### 3. Runtime State 캐시 (Caffeine) — `rehearse.runtime.state.*`
 
@@ -94,8 +100,21 @@ sum(rate(rehearse_ai_call_duration_seconds_count[5m]))
 ### D. 분당 토큰 사용량 (비용 추정)
 
 ```promql
+# call type 별 분당 입력/출력 토큰
 sum(rate(rehearse_ai_call_tokens_input_total[1m])) by (call_type)
 sum(rate(rehearse_ai_call_tokens_output_total[1m])) by (call_type)
+
+# provider 별 비용 (입력·출력 가중치는 모델 단가에 따라 대시보드에서 곱)
+sum(rate(rehearse_ai_call_tokens_input_total[1m])) by (provider, model)
+sum(rate(rehearse_ai_call_tokens_output_total[1m])) by (provider, model)
+
+# 캐시 절감률 — cache_read / (input - cache_read) 로 실효 절감 토큰 비중 파악
+sum(rate(rehearse_ai_call_tokens_cached_read_total[5m])) by (call_type)
+/
+sum(rate(rehearse_ai_call_tokens_input_total[5m])) by (call_type)
+
+# 캐시 준비(write) 토큰 — 최초 캐시 생성 시만 나타남. 장기 추이로 프롬프트 안정성 확인
+sum(rate(rehearse_ai_call_tokens_cached_write_total[30m])) by (call_type)
 ```
 
 ### E. Runtime State 캐시 히트율
@@ -174,13 +193,15 @@ curl -s localhost:8080/actuator/prometheus \
 - `rehearse_ai_call_duration_seconds_count{call_type="...",cache_hit="...",fallback="...",outcome="..."}` — 7 태그 전부 채워짐
 - `rehearse_runtime_state_cache_hits_total` / `_misses_total` / `_evictions_total` / `_size` 4 종 노출
 
-> **Note**: 본 PR 에서는 로컬 bootRun 실행 권한 제한으로 라이브 출력 캡처 미첨부. 코드 상 `AiCallMetrics.java:41~48` + `RuntimeCacheConfig.java:23` 로 노출이 보장되어 있으며, PR 머지 후 스테이징에서 1 회 curl 스냅샷을 캡처해 본 섹션에 부록으로 추가할 것.
+> **Note**: 본 PR 에서는 로컬 bootRun 실행 권한 제한으로 라이브 출력 캡처 미첨부. 코드 상 `AiCallMetrics.java` (Timer + 4 Counter) + `RuntimeCacheConfig.java:23` + `build.gradle.kts` (`micrometer-registry-prometheus` runtimeOnly 의존성) 로 노출이 보장되어 있으며, PR 머지 후 스테이징에서 1 회 curl 스냅샷을 캡처해 본 섹션에 부록으로 추가할 것.
+>
+> **의존성 메모**: `/actuator/prometheus` 엔드포인트는 `spring-boot-starter-actuator` 만으로는 노출되지 않는다. Prometheus 포맷 노출을 위해 `io.micrometer:micrometer-registry-prometheus` 를 `runtimeOnly` 로 명시해야 한다 (`backend/build.gradle.kts:32`).
 
 ## 향후 확장 (Out of Scope)
 
-- Counter 3 종 (`tokens.input/output/cached`) 실제 구현 — plan-00d 스펙. S2 에서 `AiCallMetrics.recordChat()` 가 Timer 만 기록. 2026-04 현재 `ChatResponse.Usage.empty()` 반환 경로 있음 → plan-04 Context Engineering PR 에서 Usage 파싱과 함께 Counter 기록 추가 권장
 - Grafana 대시보드 JSON — 본 문서 쿼리 기반 대시보드 파일은 인프라 레포에서 별도 관리
 - Alertmanager 룰 YAML — 임계치 가이드 표를 룰 YAML 로 변환하는 작업은 SRE 스프린트 별건
+- 토큰 비용 환산 Gauge — `provider`/`model` 별 단가 테이블을 곱해 달러 환산하는 메트릭은 인프라 레포 Recording Rule 로 처리 권장 (백엔드 하드코딩 금지)
 
 ## 참고
 
