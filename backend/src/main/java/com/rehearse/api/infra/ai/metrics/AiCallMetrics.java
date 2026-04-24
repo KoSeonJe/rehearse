@@ -13,6 +13,10 @@ import java.util.concurrent.Callable;
 public class AiCallMetrics {
 
     public static final String TIMER_NAME = "rehearse.ai.call.duration";
+    public static final String TOKENS_INPUT = "rehearse.ai.call.tokens.input";
+    public static final String TOKENS_OUTPUT = "rehearse.ai.call.tokens.output";
+    public static final String TOKENS_CACHED_READ = "rehearse.ai.call.tokens.cached.read";
+    public static final String TOKENS_CACHED_WRITE = "rehearse.ai.call.tokens.cached.write";
 
     private final MeterRegistry meterRegistry;
 
@@ -23,9 +27,10 @@ public class AiCallMetrics {
         String model = "unknown";
         String cacheHit = "unknown";
         String fallback = "false";
+        ChatResponse response = null;
 
         try {
-            ChatResponse response = callable.call();
+            response = callable.call();
             provider = response.provider();
             model = response.model();
             cacheHit = String.valueOf(response.cacheHit());
@@ -46,6 +51,26 @@ public class AiCallMetrics {
                     .tag("fallback", fallback)
                     .tag("outcome", outcome)
                     .register(meterRegistry));
+            if (response != null && response.usage() != null) {
+                recordTokenUsage(callType, provider, model, response.usage());
+            }
         }
+    }
+
+    private void recordTokenUsage(String callType, String provider, String model, ChatResponse.Usage usage) {
+        incrementCounter(TOKENS_INPUT, callType, provider, model, usage.inputTokens());
+        incrementCounter(TOKENS_OUTPUT, callType, provider, model, usage.outputTokens());
+        incrementCounter(TOKENS_CACHED_READ, callType, provider, model, usage.cacheReadTokens());
+        incrementCounter(TOKENS_CACHED_WRITE, callType, provider, model, usage.cacheWriteTokens());
+    }
+
+    private void incrementCounter(String name, String callType, String provider, String model, int amount) {
+        if (amount <= 0) {
+            return;
+        }
+        meterRegistry.counter(name,
+                "call.type", callType,
+                "provider", provider,
+                "model", model).increment(amount);
     }
 }

@@ -9,7 +9,7 @@
 | 00a | Codebase Inventory `[blocking]` | W1 초 | Completed | — | 실제 클래스/테스트/영향도 맵 — INVENTORY/TEST_BASELINE/IMPACT_MAP 머지 (S1, 2026-04-20) |
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
-| 00d | Observability `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결. 2026-04-23 Smoke Eval 부분 삭제 → Micrometer/APM 단독 |
+| 00d | Observability `[parallel:00c]` | W2 후 | Completed | 00a | M2+Missing(APM) 해결. `OBSERVABILITY.md` + Timer 6 태그 + Counter 4 종(input/output/cached.read/cached.write) + `micrometer-registry-prometheus` 의존성 (S3c, 2026-04-24). 코드 기반은 S2(#336)+S3(#338) 선행, S3c(#347) 로 완결 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Completed | 00a | M6 해결. `FEEDBACK_DOMAIN.md` 결정 문서 작성 (S3b, 2026-04-24). `InterviewCompletedEvent` 부재 확인 → plan-09 에서 신규 도입으로 교정 |
 | 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Completed | 00a | `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy + `Standard`/`ResumeTrackPolicy`(7턴 skeleton) + Resolver. 663 tests pass (S3b, 2026-04-24). plan-07 선행 unblocked |
 
@@ -59,6 +59,35 @@
 - **패키지 경로 확정**: aa88a96 리팩터 반영 → `domain/feedback/session/{controller,service,entity,repository,dto}` 서브패키지 신설
 - **Out of Scope**: plan-09 코드 구현은 S9+ 에서. 본 세션은 결정 문서만
 - 후속 세션 (S4) 착수 가능: plan-01 Intent Classifier (단, 00d/00f 선행)
+
+### 2026-04-24 (S3c — plan-00d 완결 — Counter 4 종 + prometheus registry)
+
+- **시그니처 확정**: plan 본문 초안의 4-arg `recordChat(callType, model, provider, Supplier)` → 실구현 2-arg `recordChat(String, Callable<ChatResponse>)` 로 **실구현 정답** 채택. 근거: `ResilientAiClient` fallback 시 provider/model 은 응답 수신 후 확정 → 호출 전 pre-tagging 불가. `ChatResponse.provider()`/`model()` 후추출이 정확.
+- **토큰 Counter 4 종 구현** (`AiCallMetrics.recordChat()` finally 블록):
+  - `rehearse.ai.call.tokens.input` (Usage.inputTokens)
+  - `rehearse.ai.call.tokens.output` (Usage.outputTokens)
+  - `rehearse.ai.call.tokens.cached.read` (Usage.cacheReadTokens — OpenAI `prompt_tokens_details.cached_tokens` / Claude `cache_read_input_tokens`)
+  - `rehearse.ai.call.tokens.cached.write` (Usage.cacheWriteTokens — Claude `cache_creation_input_tokens`)
+  - 태그: `call.type` / `provider` / `model` (Timer 와 동일 키 → 쿼리 간소화)
+  - 0 토큰은 미등록 — 무의미 시리즈 Prometheus 누적 방지
+  - 예외 경로(outcome=failure)에서는 Counter 미기록 (Timer 만)
+- **의존성 추가**: `backend/build.gradle.kts` 에 `runtimeOnly("io.micrometer:micrometer-registry-prometheus")`. Spring Boot 3.x 는 `spring-boot-starter-actuator` 만으로는 `/actuator/prometheus` 엔드포인트 노출 안 함 → 현재 설정 그대로면 Grafana scraping 전면 실패. **관측 인프라 실작동을 위한 필수 의존성**.
+- **테스트 추가**: `AiCallMetricsTest` 에 5 케이스 추가 — input/output Counter 증가 / cached read·write 분리 / 0 토큰 미등록 / 예외 경로 Counter 미기록 / 복수 호출 누적.
+- **문서 갱신**: `OBSERVABILITY.md` Counter 표 4 종 + PromQL 쿼리 6 종 (provider 별 비용, 캐시 절감률, cache_write 추이) + 의존성 메모. `plan-00d-observability.md` 시그니처·파일 목록·검증 항목 교정.
+- **라이브 검증**: `./gradlew bootRun --args='--spring.profiles.active=local --spring.sql.init.mode=never'` 로 실제 기동 → `/actuator/prometheus` HTTP 200 확인. Caffeine 캐시 메트릭 6 종 (`cache_gets_total` / `cache_evictions_total` / `cache_eviction_weight_total` / `cache_puts_total` / `cache_size`) 노출 확인.
+- **문서 오류 수정**: Caffeine 메트릭 실제 이름을 확인해 OBSERVABILITY.md 의 `rehearse_runtime_state_cache_*` 쿼리를 `cache_*{cache="rehearse.runtime.state"}` 로 전면 교체. Micrometer `CaffeineCacheMetrics.monitor()` 의 세 번째 인자는 metric prefix 가 아니라 `cache` 태그 값 — 플랜 문서 초안 가정이 잘못됐음을 실측으로 확정.
+- **AI 메트릭 노출 검증 보류**: 로컬 실 AI 호출(API 키) 없이는 `rehearse_ai_call_*` Lazy 등록 안 됨 → 스테이징 배포 후 실 호출 1 회로 검증 예정 (`OBSERVABILITY.md §검증 스냅샷` 부록 업데이트).
+- **머지 순서 권장**: #346 (00e) → #348 (00f) → #347 (00d S3c).
+
+### 2026-04-24 (S3b — plan-00d Observability 1차 — docs 초안)
+
+- `OBSERVABILITY.md` 신규. AI 호출 Timer(`rehearse.ai.call.duration` + 태그 6 종) + Caffeine 캐시 메트릭(`rehearse.runtime.state.*` 5 종) 계약 정의
+- Grafana/PromQL 쿼리 레퍼런스 7 종 (p95/fallback/캐시/토큰/실패율/Runtime State 히트율·eviction)
+- Alert 임계치 5 종 가이드 (실제 Alertmanager 설정은 인프라 별건)
+- 배포 중 회귀 감지 체크리스트 3 단계 (10 분/1 시간/1 일) — plan-01~ 롤아웃 시 공식 레퍼런스
+- **실측 확인**: `application.yml` management 설정 이미 `prometheus` 노출 중. 추가 수정 0
+- **권한 제한**: 로컬 `bootRun` 실행 불가 → 라이브 스냅샷 캡처는 스테이징 배포 후 부록으로 추가 예정 (문서 §검증 스냅샷)
+- **이월**: Counter 3 종(`tokens.input/output/cached`) 실제 구현은 plan-04 Context Engineering PR 에서 `ChatResponse.Usage` 파싱과 함께 권장
 
 ### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
 
@@ -154,13 +183,13 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [x] C2 DB 영속화/Flyway (00c) — V24~V27 + InterviewRuntimeStateStore + InterviewLockService (S3)
 - [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
-- [ ] M2 W1-W3 회귀 방어 (00d)
+- [x] M2 W1-W3 회귀 방어 (00d) — `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). Grafana/PromQL 쿼리 7 종 + Alert 임계치 5 종 + 배포 회귀 감지 체크리스트
 - [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
 - [x] M6 Feedback 관계 (00e) — `FEEDBACK_DOMAIN.md` 작성 (S3b, 2026-04-24). 병존 aggregate + partial-first + Admin API + InterviewCompletedEvent 신규 도입 결정
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
-- [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
+- [x] Missing APM 메트릭 표준 (00d) — Micrometer 태그 6 종(`call.type` / `model` / `provider` / `cache.hit` / `fallback` / `outcome`) + Caffeine 캐시 메트릭 5 종 문서화. 구현은 S2/S3 머지 완료
 - [x] Missing Feature flag runtime — **의도적 제거 (2026-04-23)**. S2 에서 @RefreshScope/AiFeatureProperties 구현 완료됐으나 ECR 이미지 롤백으로 대체 결정 → PR B 에서 철거 예정
 - [x] Missing 동시성 제어 (00c InterviewLockService) — StripedLock 256 자체 구현 (S3)
 - [x] Missing JSON 파싱 폴백 (00b) — AiResponseParser.parseWithRetry() 추가 (S2)

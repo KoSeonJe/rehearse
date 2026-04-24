@@ -4,6 +4,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -134,5 +135,93 @@ class AiCallMetricsTest {
 
         assertThat(timer).isNotNull();
         assertThat(timer.count()).isEqualTo(3);
+    }
+
+    private ChatResponse responseWithUsage(ChatResponse.Usage usage) {
+        return new ChatResponse("content", usage, "openai", "gpt-4o-mini", false, false);
+    }
+
+    @Test
+    @DisplayName("토큰 사용량 — input/output Counter 가 Usage 값만큼 증가한다")
+    void recordChat_tokenCounters_incrementByUsage() {
+        ChatResponse.Usage usage = ChatResponse.Usage.of(1200, 340);
+
+        metrics.recordChat("generate_questions", () -> responseWithUsage(usage));
+
+        Counter input = registry.find(AiCallMetrics.TOKENS_INPUT)
+                .tag("call.type", "generate_questions")
+                .tag("provider", "openai")
+                .tag("model", "gpt-4o-mini")
+                .counter();
+        Counter output = registry.find(AiCallMetrics.TOKENS_OUTPUT)
+                .tag("call.type", "generate_questions")
+                .tag("provider", "openai")
+                .tag("model", "gpt-4o-mini")
+                .counter();
+
+        assertThat(input).isNotNull();
+        assertThat(input.count()).isEqualTo(1200.0);
+        assertThat(output).isNotNull();
+        assertThat(output.count()).isEqualTo(340.0);
+    }
+
+    @Test
+    @DisplayName("캐시 read/write 토큰 — 각각 별도 Counter 에 누적된다")
+    void recordChat_cachedTokens_splitReadWrite() {
+        ChatResponse.Usage usage = ChatResponse.Usage.of(800, 200, 500, 300);
+
+        metrics.recordChat("intent_classifier", () -> responseWithUsage(usage));
+
+        Counter cachedRead = registry.find(AiCallMetrics.TOKENS_CACHED_READ)
+                .tag("call.type", "intent_classifier")
+                .counter();
+        Counter cachedWrite = registry.find(AiCallMetrics.TOKENS_CACHED_WRITE)
+                .tag("call.type", "intent_classifier")
+                .counter();
+
+        assertThat(cachedRead).isNotNull();
+        assertThat(cachedRead.count()).isEqualTo(500.0);
+        assertThat(cachedWrite).isNotNull();
+        assertThat(cachedWrite.count()).isEqualTo(300.0);
+    }
+
+    @Test
+    @DisplayName("0 토큰 — Counter 가 등록되지 않는다 (무의미 시리즈 방지)")
+    void recordChat_zeroTokens_counterNotRegistered() {
+        metrics.recordChat("generate_questions",
+                () -> responseWithUsage(ChatResponse.Usage.empty()));
+
+        assertThat(registry.find(AiCallMetrics.TOKENS_INPUT).counter()).isNull();
+        assertThat(registry.find(AiCallMetrics.TOKENS_OUTPUT).counter()).isNull();
+        assertThat(registry.find(AiCallMetrics.TOKENS_CACHED_READ).counter()).isNull();
+        assertThat(registry.find(AiCallMetrics.TOKENS_CACHED_WRITE).counter()).isNull();
+    }
+
+    @Test
+    @DisplayName("예외 경로 — 토큰 Counter 가 기록되지 않는다")
+    void recordChat_exception_noTokenCounter() {
+        assertThatThrownBy(() ->
+                metrics.recordChat("generate_questions",
+                        () -> { throw new BusinessException(AiErrorCode.TIMEOUT); })
+        ).isInstanceOf(BusinessException.class);
+
+        assertThat(registry.find(AiCallMetrics.TOKENS_INPUT).counter()).isNull();
+        assertThat(registry.find(AiCallMetrics.TOKENS_OUTPUT).counter()).isNull();
+    }
+
+    @Test
+    @DisplayName("복수 호출 — 동일 태그 조합 토큰 Counter 가 누적된다")
+    void recordChat_multipleCalls_tokenCountersAccumulate() {
+        Callable<ChatResponse> call = () -> responseWithUsage(ChatResponse.Usage.of(100, 50));
+
+        metrics.recordChat("generate_questions", call);
+        metrics.recordChat("generate_questions", call);
+
+        Counter input = registry.find(AiCallMetrics.TOKENS_INPUT)
+                .tag("call.type", "generate_questions")
+                .counter();
+
+        assertThat(input).isNotNull();
+        assertThat(input.count()).isEqualTo(200.0);
     }
 }
