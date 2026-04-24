@@ -10,7 +10,7 @@
 | 00b | AiClient Generalization `[blocking]` | W1 후 | Completed | 00a | C1+C3+M5+Missing(JSON 폴백) 근본 해결 (S2, 2026-04-20). `@RefreshScope`/`AiFeatureProperties`는 2026-04-23 철거 예정 (PR B) |
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
 | 00d | Observability `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결. 2026-04-23 Smoke Eval 부분 삭제 → Micrometer/APM 단독 |
-| 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
+| 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Completed | 00a | M6 해결. `FEEDBACK_DOMAIN.md` 결정 문서 작성 (S3b, 2026-04-24). `InterviewCompletedEvent` 부재 확인 → plan-09 에서 신규 도입으로 교정 |
 | 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
 
 ### Phase 1~4 (W3-W7) — 기존 플랜 (전제 인프라 위에서)
@@ -31,6 +31,14 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-24 (S3b — plan-00e Feedback Migration 결정 완료)
+
+- `FEEDBACK_DOMAIN.md` 신규 — 결정 1~6 확정 (병존 / partial-first / Admin API / InterviewCompletedEvent 신규 / 패키지 경로 / flag 없음)
+- **실측 교정**: `InterviewCompletedEvent` 가 현재 코드에 없음(grep 0건) → plan-09 에서 신규 도입 + `InterviewCompletionService.complete()` 에서 `ApplicationEventPublisher` 경유 발행으로 결정 4 갱신
+- **패키지 경로 확정**: aa88a96 리팩터 반영 → `domain/feedback/session/{controller,service,entity,repository,dto}` 서브패키지 신설
+- **Out of Scope**: plan-09 코드 구현은 S9+ 에서. 본 세션은 결정 문서만
+- 후속 세션 (S4) 착수 가능: plan-01 Intent Classifier (단, 00d/00f 선행)
 
 ### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
 
@@ -130,7 +138,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
-- [ ] M6 Feedback 관계 (00e)
+- [x] M6 Feedback 관계 (00e) — `FEEDBACK_DOMAIN.md` 작성 (S3b, 2026-04-24). 병존 aggregate + partial-first + Admin API + InterviewCompletedEvent 신규 도입 결정
 - [x] Missing PdfTextExtractor 재사용 — 기존 클래스 확인 (infra/ai/PdfTextExtractor.java, `extract(MultipartFile)`). IMPACT_MAP plan-05 수정 항목으로 기록
 - [ ] Missing APM 메트릭 표준 (00d + REMEDIATION)
 - [x] Missing Feature flag runtime — **의도적 제거 (2026-04-23)**. S2 에서 @RefreshScope/AiFeatureProperties 구현 완료됐으나 ECR 이미지 롤백으로 대체 결정 → PR B 에서 철거 예정
