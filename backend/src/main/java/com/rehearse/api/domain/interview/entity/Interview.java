@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.domain.interview.policy.InterviewTrack;
 import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -122,6 +123,13 @@ public class Interview {
 
     public TechStack getEffectiveTechStack() {
         return techStack != null ? techStack : TechStack.getDefaultForPosition(this.position);
+    }
+
+    public InterviewTrack getTrack() {
+        if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
+            return InterviewTrack.RESUME;
+        }
+        return InterviewTrack.CS;
     }
 
     public void startQuestionGeneration() {

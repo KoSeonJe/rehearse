@@ -4,11 +4,11 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.domain.interview.policy.InterviewTurnPolicyResolver;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -22,11 +22,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FollowUpTransactionHandler {
 
-    private static final int MAX_FOLLOWUP_ROUNDS = 2;
-
     private final InterviewFinder interviewFinder;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
+    private final InterviewTurnPolicyResolver turnPolicyResolver;
 
     @Transactional(readOnly = true)
     public FollowUpContext loadFollowUpContext(Long interviewId, Long userId, Long questionSetId) {
@@ -39,7 +38,7 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        validateFollowUpRoundLimit(questionSet);
+        turnPolicyResolver.resolve(interview).assertCanContinue(interview, questionSet);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
 
@@ -86,13 +85,4 @@ public class FollowUpTransactionHandler {
         return questionRepository.save(followUpQuestion);
     }
 
-    private void validateFollowUpRoundLimit(QuestionSet questionSet) {
-        long followUpCount = questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
-                .count();
-
-        if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
-            throw new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED);
-        }
-    }
 }

@@ -11,7 +11,7 @@
 | 00c | Session State Persistence `[parallel:00b]` | W2 초 | Completed | 00a | C2+Missing(동시성, 메모리) 해결. Flyway V24~V27 (S3, 2026-04-21) |
 | 00d | Observability `[parallel:00c]` | W2 후 | Draft | 00a | M2+Missing(APM) 해결. 2026-04-23 Smoke Eval 부분 삭제 → Micrometer/APM 단독 |
 | 00e | Feedback Migration Strategy `[parallel:00d]` | W2 후 | Draft | 00a | M6 해결. 결정 문서만 |
-| 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Draft | 00a | **신규 (2026-04-21)**. `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy. plan-07 선행 blocker |
+| 00f | Interview Turn Policy Abstraction `[parallel:00c]` | W2 | Completed | 00a | `MAX_FOLLOWUP_ROUNDS=2` 하드코딩 제거 → `InterviewTurnPolicy` Strategy + `Standard`/`ResumeTrackPolicy`(7턴 skeleton) + Resolver. 663 tests pass (S3b, 2026-04-24). plan-07 선행 unblocked |
 
 ### Phase 1~4 (W3-W7) — 기존 플랜 (전제 인프라 위에서)
 
@@ -31,6 +31,26 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-24 (S3b — plan-00f Interview Turn Policy 추상화 완료)
+
+- **신규 패키지 `domain/interview/policy/`** 5 파일:
+  - `InterviewTrack` enum (`CS`, `LANGUAGE`, `RESUME`)
+  - `InterviewTurnPolicy` 인터페이스
+  - `StandardFollowUpPolicy` — `@Value("${rehearse.interview.policy.standard.max-follow-up-rounds:2}")` 주입, CS/Language 행위 무변경
+  - `ResumeTrackPolicy` — 7턴 하드 상한 skeleton (plan-07 `ChainStateTracker` 주입으로 확장 예정)
+  - `InterviewTurnPolicyResolver` — `Interview.getTrack()` switch 라우팅
+- **`Interview.getTrack()` 파생 메서드** — `interviewTypes.contains(RESUME_BASED)` 시 `RESUME`, 나머지 `CS`. DB 컬럼 추가 0
+- **`FollowUpTransactionHandler` 리팩터** — `MAX_FOLLOWUP_ROUNDS` 상수 + `validateFollowUpRoundLimit()` 삭제. `turnPolicyResolver.resolve(interview).assertCanContinue(...)` 위임
+- **`application.yml`** — `rehearse.interview.policy.standard.max-follow-up-rounds: 2` 블록 추가
+- **테스트 4 건** (신규 3 + 수정 1):
+  - `StandardFollowUpPolicyTest` (6) — 0/1/2/3턴 경계값 + 3 설정 튜닝 검증
+  - `ResumeTrackPolicySkeletonTest` (3) — 6턴 허용 / 7턴 예외
+  - `InterviewTurnPolicyResolverTest` (3) — CS / RESUME_BASED / LANGUAGE_FRAMEWORK 라우팅
+  - `FollowUpTransactionHandlerTest` 수정 — `loadFollowUpContext_maxFollowUpExceeded` 를 policy Mock 기반으로 재작성 (행위 무변경, 동일 에러 code)
+- **실측 교정**: 원 plan `interview.getResumeSkeletonId() != null` 분기는 실체 필드 부재 → `Interview.getTrack()` + `InterviewType.RESUME_BASED` 기반 판정으로 교정
+- **`./gradlew test` 결과**: 663 tests / 0 failures / 0 errors / 0 ignored
+- **plan-07 unblocked**: `ResumeTrackPolicy` skeleton 에 `ChainStateTracker` 주입하면 plan-07 Resume Orchestrator 구현 가능
 
 ### 2026-04-23 (A/B 측정 인프라 축소 + Feature Flag 전면 제거)
 
