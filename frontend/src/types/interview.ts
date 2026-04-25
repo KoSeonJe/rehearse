@@ -257,19 +257,30 @@ export interface ApiErrorResponse {
 
 // 후속 질문 관련 타입
 
-export type FollowUpType = 'DEEP_DIVE' | 'CLARIFICATION' | 'CHALLENGE' | 'APPLICATION'
+export type FollowUpType =
+  | 'DEEP_DIVE'
+  | 'CLARIFICATION'
+  | 'CHALLENGE'
+  | 'APPLICATION'
+  | 'OFF_TOPIC_REDIRECT'
+  | 'CLARIFY_REESTABLISH'
+  | 'CLARIFY_FALLBACK'
+  | 'SCAFFOLD'
+  | 'REVEAL_AND_MOVE_ON'
+  | 'GIVE_UP_FALLBACK'
 
 export interface FollowUpExchange {
   question: string
   answer: string
   type: FollowUpType
+  followUpType?: FollowUpType
 }
 
 export interface FollowUpRequest {
   questionSetId: number
   questionContent: string
   answerText?: string
-  previousExchanges?: Array<{ question: string; answer: string }>
+  previousExchanges?: Array<{ question: string; answer: string; followUpType?: FollowUpType }>
 }
 
 export interface FollowUpResponse {
@@ -280,14 +291,11 @@ export interface FollowUpResponse {
   type: FollowUpType
   answerText?: string
   modelAnswer?: string | null
-  /**
-   * AI가 답변 불충분("모르겠다", 공백 등)으로 꼬리질문 생성을 포기한 경우 true.
-   * skip=true일 때 BE는 questionId/question/reason/type/modelAnswer를 null로 내려보내지만,
-   * 이 경우 클라이언트는 해당 응답을 store에 저장하지 않고 즉시 다음 메인 질문으로 진행해야 한다.
-   * 따라서 위 필드들은 skip=false 케이스 기준으로 non-null로 선언되어 있으며, skip 분기 이후에는 접근하지 말 것.
-   */
+  // DB 저장 생략 신호. AI 자체 skip(답변 불충분) + 의도 분기(OFF_TOPIC/CLARIFY/GIVE_UP) 둘 다 true.
   skip: boolean
   skipReason?: string | null
+  // FE 화면 렌더 신호. AI 자체 skip=false / 의도 분기=true. 두 케이스 분리용.
+  presentToUser?: boolean
 }
 
 // 면접 진행 관련 타입

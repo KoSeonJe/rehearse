@@ -207,6 +207,9 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     const { currentQuestionIndex, currentFollowUp, followUpHistory, followUpRound } = get()
     if (!currentFollowUp) return
 
+    // 의도 분기 응답(OFF_TOPIC/CLARIFY/GIVE_UP)은 동일 메인질문 재시도이므로 라운드 미증가
+    const isIntentBranch = currentFollowUp.skip && currentFollowUp.presentToUser === true
+
     const history = new Map(followUpHistory)
     const existing = history.get(currentQuestionIndex) ?? []
     history.set(currentQuestionIndex, [
@@ -215,11 +218,12 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         question: currentFollowUp.question,
         answer: answerText,
         type: currentFollowUp.type,
+        followUpType: currentFollowUp.type,
       },
     ])
     set({
       followUpHistory: history,
-      followUpRound: followUpRound + 1,
+      followUpRound: isIntentBranch ? followUpRound : followUpRound + 1,
       currentFollowUp: null,
     })
   },
