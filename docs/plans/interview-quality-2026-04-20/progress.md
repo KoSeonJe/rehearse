@@ -18,8 +18,8 @@
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
 | 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
-| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Implemented | 01, 00c | P0. 꼬리질문 전제. 코드 + 테스트 완료 (S6, 2026-04-26). FK 마이그레이션은 plan-08 로 이관 |
-| 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Implemented | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). 749 tests pass |
+| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Completed (#353) | 01, 00c | P0. 꼬리질문 전제. 코드 + 테스트 완료 (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC, mergeCommit `be68b0f`). FK 마이그레이션은 plan-08 로 이관 |
+| 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Completed (#353) | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC). 749 tests pass |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
 | 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
 | 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25. **Dynamic Pacing 재설계 (2026-04-22)**: duration 스케일링 폐기, priority 랭킹만 |
@@ -31,6 +31,25 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-26 (S7 — PR #353 머지 + 문서 정합화)
+
+- **PR #353 머지** (`[BE] feat: 답변 분석 단계 분리 + 꼬리질문 작문 정확도 개선`):
+  - `mergedAt=2026-04-25T18:16:33Z`, `mergeCommit=be68b0f`, base=`develop`, squash merge
+  - 749 tests pass / 0 failures (baseline 719 + 신규 ~30)
+- **문서 정합화** (이번 세션):
+  - `plan-02-answer-analyzer.md` 헤더 Completed 전환 + `## 머지 결과` 섹션
+  - `plan-03-followup-generator-v3.md` 동일 처리
+  - 본 progress.md Phase 1~4 표 02/03 행 `Implemented → Completed (#353)`
+  - `HANDOFF.md` S6/S7/S8 Kickoff 섹션 추가 (S5 이후 부재 해소)
+  - `plan-04-context-engineering.md` 헤더 `Draft → In Progress (S8)` + spec 보강
+  - `plan-02` line 1 typo (`gogo# Plan 02:` → `# Plan 02:`) 수정
+- **잔여 게이트** (plan-04 와 무관, 독립 트랙 병렬 진행):
+  - [ ] FE 계약 전달 — `selectedPerspective` echo + `presentToUser` (FE PR)
+  - [ ] LIVE 골든셋 실행 (`LIVE_TEST=true`)
+  - [ ] MANUAL_AB 3~5건 (v2 vs v3)
+  - [ ] 스테이징 Prometheus `rehearse.ai.call.duration_seconds{call.type=~"answer_analyzer|follow_up_generator_v3"}` p95
+- **plan-04 의존성** (00b/00c/00d/01/02/03) 모두 해소 — S8 즉시 착수 (`feat/plan-04-context-engineering` 브랜치, develop = `6ac9c5a` 베이스)
 
 ### 2026-04-26 (S6 — plan-02/03 코드 구현 + 단일 PR 준비)
 

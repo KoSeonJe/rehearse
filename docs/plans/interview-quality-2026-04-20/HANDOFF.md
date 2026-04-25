@@ -127,3 +127,65 @@ interview-quality 실행 계획 S2 재개 — plan-00b AiClient Generalization
 - 범위: PR #1 `[BE] feat(ai): AiClient.chat() 범용 메서드 + @RefreshScope + JSON 파싱 재시도`
 - 선행 확인: `IMPACT_MAP.md` §plan-00b 섹션 + `INVENTORY.md` §1 AI Infrastructure
 - Gate: modelOverride · fallback cache-miss · `/actuator/refresh` 3종 통합 테스트 그린, 기존 3개 도메인 메서드 어댑터 경유 시 회귀 0
+
+---
+
+## Session S6 (2026-04-26) — plan-02 + plan-03 코드 구현 (단일 PR 준비)
+
+### 완료
+- **plan-02 (Answer Analyzer M1 Step A)**: 신규 8종 (`AnswerAnalysis`/`Claim`/`EvidenceStrength`/`Perspective`/`RecommendedNextAction`/`AnswerAnalyzer`/`AnswerAnalyzerPromptBuilder`/프롬프트 템플릿). `InterviewRuntimeState.recordAnalysis/getAnswerAnalysis` 접근자 추가. L1 FN 가드 (`claims=[] AND answer_quality<=1 ⇒ CLARIFICATION`).
+- **plan-03 (Follow-up Generator v3 M1 Step B)**: `GeneratedFollowUp.targetClaimIdx/selectedPerspective` + `FollowUpExchange.selectedPerspective` (FE echo) + `FollowUpResponse.selectedPerspective` echo. `FollowUpService` ANSWER 경로 refactor (STT → AnswerAnalyzer → SKIP cost saver → Step B `chat(ChatRequest)`). 프롬프트 v3 (CONCEPT/EXPERIENCE) ANSWER_ANALYSIS 입력.
+- **테스트**: 749 tests pass / 0 failures (baseline 719 + 신규 ~30)
+- **단일 PR 결정**: plan-02 단독 머지 시 Step A 출력 소비처 부재 → 데드코드. 단일 BE PR 로 합류.
+
+### 관측 스냅샷
+- 브랜치: `feat/answer-analyzer-followup-v3` (squash merge 됨)
+- Counter: 749 tests, 0 failures, 0 ignored
+
+### 다음 세션 (S7) Kickoff
+```
+interview-quality 실행 계획 S7 — PR #353 머지 + 문서 정합화
+```
+- 시작점: PR `[BE] feat: 답변 분석 단계 분리 + 꼬리질문 작문 정확도 개선`
+- 범위: 머지 + plan-02/03/progress/HANDOFF 문서 정합화
+- Gate: develop 머지 / 문서 4종 갱신 / plan-04 의존성 해소 확인
+
+---
+
+## Session S7 (2026-04-26) — PR #353 머지 + 문서 정합화
+
+### 완료
+- **PR #353 머지**: `state=MERGED`, `mergedAt=2026-04-25T18:16:33Z`, `mergeCommit=be68b0f`, base=`develop`
+- **문서 정합화**:
+  - `plan-02-answer-analyzer.md` 헤더 `Draft → Completed (#353)` + `## 머지 결과` 섹션 추가
+  - `plan-03-followup-generator-v3.md` 동일 처리
+  - `progress.md` Phase 1~4 표 02/03 행 `Implemented → Completed (#353)`
+  - `HANDOFF.md` 본 S6/S7/S8 섹션 추가 (S5 이후 부재)
+  - `plan-04-context-engineering.md` 헤더 `Draft → In Progress` + spec 보강 섹션 추가
+- **plan-02 line 1 typo 수정**: `gogo# Plan 02:` → `# Plan 02:`
+
+### 잔여 게이트 (plan-04 와 무관, 독립 트랙 병렬 진행)
+- [ ] FE 계약 전달 — `selectedPerspective` echo + `presentToUser` (FE PR)
+- [ ] LIVE 골든셋 실행 (`LIVE_TEST=true`)
+- [ ] MANUAL_AB 3~5건 (v2 vs v3)
+- [ ] 스테이징 Prometheus `rehearse.ai.call.duration_seconds{call.type=~"answer_analyzer|follow_up_generator_v3"}` p95
+
+### plan-04 진입 조건 (충족 ✓)
+- 의존성 (00b/00c/00d/01/02/03) 모두 해소
+- 인프라 80% 준비 완료 (`ChatMessage.cacheControl`, `ClaudeApiClient.SystemContent.withCaching`, `OpenAiClient.cached_tokens` 파싱, `ResilientAiClient.withAllowMiss` fallback)
+- `infra/ai/context/` 디렉토리만 미존재
+
+### 다음 세션 (S8) Kickoff
+```
+interview-quality 실행 계획 S8 — plan-04 Context Engineering 4-Layer Builder
+```
+- 시작점: `docs/plans/interview-quality-2026-04-20/plan-04-context-engineering.md`
+- 범위: `infra/ai/context/**` 16 클래스 + 테스트 7 + `eval/context/measure_tokens.py`. 5종 caller (`AnswerAnalyzer`/`IntentClassifier`/`FollowUpService`/`ClarifyResponseHandler`/`GiveUpResponseHandler`) 가 `InterviewContextBuilder.build()` 경유로 전환
+- Gate:
+  - 10턴 세션 평균 입력 토큰 ≤ 8,000 (`measure_tokens.py`)
+  - L1 캐시 히트율 ≥ 95% (Claude `cache_read_input_tokens` 메타)
+  - 749 → ~775 tests pass / 0 failures
+  - 회귀 0 (plan-01/02/03 기존 테스트 그린 유지)
+- 브랜치: `feat/plan-04-context-engineering` (origin/develop = `6ac9c5a` 베이스)
+- 단일 BE PR — 제목 `[BE] feat(plan-04): Context Engineering 4-layer Builder + Prompt Caching 표준화`
+

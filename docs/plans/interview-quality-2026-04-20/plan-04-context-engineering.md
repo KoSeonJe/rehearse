@@ -1,6 +1,6 @@
 # Plan 04: Context Engineering 4-layer Builder `[blocking]`
 
-> 상태: Draft
+> 상태: In Progress (S8, 2026-04-26 — `feat/plan-04-context-engineering`)
 > 작성일: 2026-04-20
 > 주차: W3 (Resume Track 선행 필수)
 > 원본: `docs/todo/2026-04-20/07-context-engineering.md`
@@ -74,6 +74,87 @@ rehearse:
 ```
 
 Feature Flag runtime toggle은 사용하지 않는다. 기본 활성화 경로로 단일화. 전면 전환으로 배포.
+
+### Async Compaction 실행 모델 (S8 보강, 2026-04-26)
+
+- 채택: Spring `@Async("compactionExecutor")` + `ThreadPoolTaskExecutor` (core 2 / max 4 / queue 50, `RejectedExecutionHandler.CallerRunsPolicy`)
+- 트리거: `DialogueHistoryLayer.build()` 가 `exchanges.size() > 5 AND compactedSummary.absent` 일 때 비동기 작업 enqueue. **즉시 동기 폴백 없음** — 첫 트리거 턴은 raw recent-window 만 사용
+- 캐시 키: `(interviewId, windowEndIdx)` — 이미 압축된 윈도우는 재호출 안 함
+- 결과 저장: `InterviewRuntimeState.compactedDialogueSummary: ConcurrentHashMap<Long, CompactedSummary>` (신규 필드)
+- 동기 폴백 임계: 직전 비동기 작업이 3턴 동안 미완료(`compactionStartedAt + 3턴 timeout`) → 다음 트리거는 동기 호출. `AiCallMetrics` 의 `mode=sync_fallback` 카운터 증가
+- 비용 산정 (재확인): GPT-4o-mini 1회 ≈ $0.001 (input 2k + output 500), 10턴 세션당 1~2회
+
+### L4 FocusLayer 트리거 룰 (S8 보강, 2026-04-26)
+
+`callType` 별 fragment 매핑:
+
+| callType | Fragment | 토큰 상한 |
+|---|---|---|
+| `intent_classifier` | 직전 turn Q + A 1쌍 | 300 |
+| `answer_analyzer` | 현재 question + 현재 answer + persona depth hint | 800 |
+| `follow_up_generator_v3` | ANSWER_ANALYSIS JSON + asked_perspectives | 1000 |
+| `clarify_response` | 직전 turn Q + persona greeting | 400 |
+| `giveup_response` | 직전 turn Q + persona greeting | 400 |
+| `compaction_summarizer` | 압축 대상 turn 청크 | 1500 (L4 미적용 — Compactor 가 자체 입력) |
+
+- 합산 상한 1500 tokens. 초과 시 `IllegalStateException` (defense in depth)
+- 검증: `TokenEstimator.estimate(fragment) <= 상한` assert
+
+### L2 SessionStateLayer JSON 스키마 (S8 보강, 2026-04-26)
+
+`InterviewRuntimeState` → JSON 매핑:
+
+```json
+{
+  "level": "MID",
+  "current_turn": 4,
+  "covered_claims_recent": ["...", "..."],
+  "active_chain": [101, 102],
+  "asked_perspectives": ["TRADEOFF", "RELIABILITY"]
+}
+```
+
+매핑 규칙:
+- `level` ← `currentLevel` (그대로)
+- `current_turn` ← `playgroundTurns.get()`
+- `covered_claims_recent` ← `coveredClaims` 최근 50개로 트림 (100 초과 시)
+- `active_chain` ← `activeChain` 그대로 (Resume Track 만 의미. 그 외 빈 배열)
+- `asked_perspectives` ← `turnAnalysisCache` 의 `selectedPerspective` 의 distinct (관대 파싱)
+
+상한: 200~500 tokens. `covered_claims_recent` 트림으로 강제. `resumeSkeletonCache` 는 L1 (FixedContextLayer) 에 흡수 — L2 에서 제외.
+
+### eval/context/measure_tokens.py (S8 보강, 2026-04-26)
+
+위치: `eval/context/measure_tokens.py`
+의존: `tiktoken==0.7.0` (Python 3.10+, 별도 venv 권장. backend Java 와 무관)
+
+실행:
+```
+python eval/context/measure_tokens.py \
+  --sessions eval/context/fixtures/*.json \
+  --encoding cl100k_base
+```
+
+입력 fixture (`eval/context/fixtures/session-{1..5}.json`):
+```json
+{
+  "interview_id": 1001,
+  "level": "MID",
+  "track": "STANDARD",
+  "exchanges": [{"q": "...", "a": "...", "selectedPerspective": "..."}]
+}
+```
+
+출력 (stdout):
+```
+session-1.json: total=6800 (L1=4200, L2=420, L3=1500, L4=680)
+session-2.json: total=7100 ...
+---
+avg=6900, max=7300, min=6500 (10턴 5세션)
+PASS (≤ 8000)
+```
+
+Exit code: 0 (PASS) / 1 (avg > 8000 또는 max > 9000).
 
 ## 담당 에이전트
 
