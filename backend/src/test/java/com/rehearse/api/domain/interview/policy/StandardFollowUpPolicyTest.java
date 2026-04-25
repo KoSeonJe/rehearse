@@ -72,6 +72,22 @@ class StandardFollowUpPolicyTest {
     }
 
     @Test
+    @DisplayName("getMaxFollowUpRounds 는 주입된 maxRounds 반환")
+    void getMaxFollowUpRounds_returnsInjectedValue() {
+        assertThat(policy.getMaxFollowUpRounds()).isEqualTo(2);
+        assertThat(new StandardFollowUpPolicy(5).getMaxFollowUpRounds()).isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("isExhausted 는 currentCount >= maxRounds 일 때 true")
+    void isExhausted_atOrAboveMax_returnsTrue() {
+        assertThat(policy.isExhausted(0)).isFalse();
+        assertThat(policy.isExhausted(1)).isFalse();
+        assertThat(policy.isExhausted(2)).isTrue();
+        assertThat(policy.isExhausted(3)).isTrue();
+    }
+
+    @Test
     @DisplayName("max-follow-up-rounds=3 설정으로 주입되면 2턴 상태에서 진행 허용 (튜닝 가능성)")
     void assertCanContinue_withTunedMaxRounds_allowsMoreTurns() {
         StandardFollowUpPolicy tuned = new StandardFollowUpPolicy(3);

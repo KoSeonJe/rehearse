@@ -47,7 +47,7 @@ class ClarifyResponseHandlerTest {
             new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
-            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null);
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null, 2);
 
     private static final String MAIN_QUESTION = "서비스 디스커버리에 대해 설명해주세요.";
     private static final String ANSWER_TEXT = "그게 무슨 뜻인지 모르겠어요.";

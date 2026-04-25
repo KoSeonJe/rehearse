@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.vo.IntentResult;
@@ -62,7 +63,7 @@ class FollowUpServiceIntentBranchTest {
             new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
-            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, ReferenceType.MODEL_ANSWER);
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, ReferenceType.MODEL_ANSWER, 2);
 
     private static final String MAIN_QUESTION = "HashMap의 해시 충돌 해결 방법을 설명해주세요.";
     private static final String ANSWER_TEXT = "체이닝 방식으로 해결합니다.";
@@ -115,13 +116,15 @@ class FollowUpServiceIntentBranchTest {
                     .orderIndex(1)
                     .build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(followUpTransactionHandler.saveFollowUpResult(anyLong(), any(), anyInt())).willReturn(savedQuestion);
+            given(followUpTransactionHandler.saveFollowUpResult(anyLong(), any(), anyInt()))
+                    .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, buildRequest(), AUDIO_FILE);
 
             assertThat(response.isSkip()).isFalse();
             assertThat(response.isPresentToUser()).isTrue();
             assertThat(response.getQuestionId()).isEqualTo(100L);
+            assertThat(response.isFollowUpExhausted()).isFalse();
             then(followUpTransactionHandler).should().saveFollowUpResult(anyLong(), any(), anyInt());
             then(offTopicResponseHandler).should(never()).handle(any(IntentBranchInput.class));
             then(clarifyResponseHandler).should(never()).handle(any(IntentBranchInput.class));

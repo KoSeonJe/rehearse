@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class FollowUpResponse {
 
     private final Long questionId;
@@ -18,6 +18,8 @@ public class FollowUpResponse {
     private final String skipReason;
     // FE 렌더링 신호. AI 자체 skip(답변 불충분)=false / 사용자 안내(OFF_TOPIC/CLARIFY/GIVE_UP)=true.
     private final boolean presentToUser;
+    // BE 정책이 다음 호출 가능 여부를 echo. true 면 FE 가 추가 꼬리질문 호출 안 함.
+    private final boolean followUpExhausted;
 
     public static FollowUpResponse aiSkip(String answerText, String skipReason) {
         return FollowUpResponse.builder()
@@ -25,6 +27,7 @@ public class FollowUpResponse {
                 .skip(true)
                 .skipReason(skipReason)
                 .presentToUser(false)
+                .followUpExhausted(false)
                 .build();
     }
 
@@ -38,6 +41,7 @@ public class FollowUpResponse {
                 .skip(true)
                 .skipReason(payload.skipReason())
                 .presentToUser(true)
+                .followUpExhausted(false)
                 .build();
     }
 

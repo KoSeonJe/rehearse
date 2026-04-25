@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
@@ -38,7 +39,8 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        turnPolicyResolver.resolve(interview).assertCanContinue(interview, questionSet);
+        var policy = turnPolicyResolver.resolve(interview);
+        policy.assertCanContinue(interview, questionSet);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
 
@@ -48,7 +50,8 @@ public class FollowUpTransactionHandler {
                 interview.getLevel(),
                 questionSetId,
                 nextOrderIndex,
-                mainReferenceType
+                mainReferenceType,
+                policy.getMaxFollowUpRounds()
         );
     }
 
@@ -69,7 +72,7 @@ public class FollowUpTransactionHandler {
     }
 
     @Transactional
-    public Question saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int orderIndex) {
+    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int orderIndex) {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
@@ -82,7 +85,12 @@ public class FollowUpTransactionHandler {
                 .build();
 
         questionSet.addQuestion(followUpQuestion);
-        return questionRepository.save(followUpQuestion);
+        Question saved = questionRepository.save(followUpQuestion);
+
+        int newFollowUpCount = (int) questionSet.getQuestions().stream()
+                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
+                .count();
+        return new FollowUpSaveResult(saved, newFollowUpCount);
     }
 
 }

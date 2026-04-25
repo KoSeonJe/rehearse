@@ -8,4 +8,10 @@ public interface InterviewTurnPolicy {
     InterviewTrack getTrack();
 
     void assertCanContinue(Interview interview, QuestionSet questionSet);
+
+    int getMaxFollowUpRounds();
+
+    default boolean isExhausted(int currentFollowUpCount) {
+        return currentFollowUpCount >= getMaxFollowUpRounds();
+    }
 }

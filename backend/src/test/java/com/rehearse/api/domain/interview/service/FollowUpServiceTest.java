@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.vo.IntentResult;
@@ -79,7 +80,7 @@ class FollowUpServiceTest {
         void generateFollowUp_success() {
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, 2);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -98,7 +99,7 @@ class FollowUpServiceTest {
                     .build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
             given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
-                    .willReturn(savedQuestion);
+                    .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             MockMultipartFile audioFile =
                     new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -115,7 +116,42 @@ class FollowUpServiceTest {
             assertThat(response.getReason()).isEqualTo("자료구조 깊이 확인");
             assertThat(response.getType()).isEqualTo("DEEP_DIVE");
             assertThat(response.getAnswerText()).isEqualTo("HashMap은 해시 기반이고 TreeMap은 트리 기반입니다.");
+            assertThat(response.isFollowUpExhausted()).isFalse();
             then(aiClient).should().generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class));
+        }
+
+        @Test
+        @DisplayName("ANSWER 경로 — 누적 카운트가 maxFollowUpRounds 도달 시 followUpExhausted=true")
+        void generateFollowUp_atMaxRounds_returnsExhaustedTrue() {
+            FollowUpContext context = new FollowUpContext(
+                    Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 2,
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, 2);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
+
+            GeneratedFollowUp followUp = new GeneratedFollowUp();
+            ReflectionTestUtils.setField(followUp, "question", "두 번째 꼬리질문");
+            ReflectionTestUtils.setField(followUp, "type", "DEEP_DIVE");
+            ReflectionTestUtils.setField(followUp, "answerText", "답변");
+
+            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
+                    .willReturn(followUp);
+
+            Question savedQuestion = Question.builder()
+                    .questionType(QuestionType.FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
+            ReflectionTestUtils.setField(savedQuestion, "id", 200L);
+            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(2)))
+                    .willReturn(new FollowUpSaveResult(savedQuestion, 2));
+
+            MockMultipartFile audioFile =
+                    new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
+            FollowUpRequest request = new FollowUpRequest();
+            ReflectionTestUtils.setField(request, "questionSetId", 10L);
+            ReflectionTestUtils.setField(request, "questionContent", "메인질문");
+
+            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request, audioFile);
+
+            assertThat(response.isSkip()).isFalse();
+            assertThat(response.isFollowUpExhausted()).isTrue();
         }
 
         @Test
@@ -123,7 +159,7 @@ class FollowUpServiceTest {
         void generateFollowUp_aiSkipped_doesNotSave() {
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, 2);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -157,7 +193,7 @@ class FollowUpServiceTest {
         void generateFollowUp_nonSkipWithNullQuestion_throwsParseFailed() {
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, 2);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -198,7 +234,7 @@ class FollowUpServiceTest {
         void generateFollowUp_audioApiThrowsException_propagates() {
             FollowUpContext context = new FollowUpContext(
                     Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1,
-                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER);
+                    com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, 2);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context);
 
             MockMultipartFile audioFile =
