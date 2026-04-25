@@ -48,7 +48,7 @@ class GiveUpResponseHandlerTest {
             new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
-            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null);
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null, 2);
 
     private static final String MAIN_QUESTION = "B-Tree와 B+Tree의 차이점을 설명해주세요.";
     private static final String ANSWER_TEXT = "모르겠어요, 패스할게요.";

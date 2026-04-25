@@ -24,6 +24,11 @@ public class StandardFollowUpPolicy implements InterviewTurnPolicy {
     }
 
     @Override
+    public int getMaxFollowUpRounds() {
+        return maxRounds;
+    }
+
+    @Override
     public void assertCanContinue(Interview interview, QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
                 .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)

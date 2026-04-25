@@ -30,6 +30,19 @@ class ResumeTrackPolicySkeletonTest {
     }
 
     @Test
+    @DisplayName("getMaxFollowUpRounds 는 HARD_TURN_CAP=7 반환")
+    void getMaxFollowUpRounds_returnsHardCap() {
+        assertThat(policy.getMaxFollowUpRounds()).isEqualTo(7);
+    }
+
+    @Test
+    @DisplayName("isExhausted 는 7회 도달 시 true")
+    void isExhausted_at7_returnsTrue() {
+        assertThat(policy.isExhausted(6)).isFalse();
+        assertThat(policy.isExhausted(7)).isTrue();
+    }
+
+    @Test
     @DisplayName("FOLLOWUP 6개까지는 진행 허용 (skeleton 하드 상한 미도달)")
     void assertCanContinue_belowHardCap_allowed() {
         Interview interview = resumeInterview();

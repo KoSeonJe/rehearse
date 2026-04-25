@@ -18,6 +18,11 @@ public class ResumeTrackPolicy implements InterviewTurnPolicy {
     }
 
     @Override
+    public int getMaxFollowUpRounds() {
+        return HARD_TURN_CAP;
+    }
+
+    @Override
     public void assertCanContinue(Interview interview, QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
                 .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)

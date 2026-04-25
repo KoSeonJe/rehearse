@@ -11,6 +11,7 @@ public record FollowUpContext(
         InterviewLevel level,
         Long questionSetId,
         int nextOrderIndex,
-        ReferenceType mainReferenceType
+        ReferenceType mainReferenceType,
+        int maxFollowUpRounds
 ) {
 }
