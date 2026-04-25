@@ -10,8 +10,6 @@ import type {
   UploadState,
 } from '@/types/interview'
 
-export const MAX_FOLLOWUP_ROUNDS = 2
-
 export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
 
 interface InterviewState {
@@ -36,7 +34,8 @@ interface InterviewState {
 
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
-  followUpRound: number
+  // BE policy.isExhausted echo. true 면 추가 꼬리질문 호출 금지.
+  followUpExhausted: boolean
   followUpTranscriptOffset: number
   isFollowUpLoading: boolean
 
@@ -69,6 +68,7 @@ interface InterviewActions {
   completeInterview: () => void
   setCurrentFollowUp: (followUp: FollowUpResponse | null) => void
   completeFollowUpRound: (answerText: string) => void
+  setFollowUpExhausted: (exhausted: boolean) => void
   resetFollowUpState: () => void
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
@@ -106,7 +106,7 @@ const initialState: InterviewState = {
 
   followUpHistory: new Map(),
   currentFollowUp: null,
-  followUpRound: 0,
+  followUpExhausted: false,
   followUpTranscriptOffset: 0,
   isFollowUpLoading: false,
 
@@ -204,11 +204,8 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
   },
 
   completeFollowUpRound: (answerText) => {
-    const { currentQuestionIndex, currentFollowUp, followUpHistory, followUpRound } = get()
+    const { currentQuestionIndex, currentFollowUp, followUpHistory } = get()
     if (!currentFollowUp) return
-
-    // 의도 분기 응답(OFF_TOPIC/CLARIFY/GIVE_UP)은 동일 메인질문 재시도이므로 라운드 미증가
-    const isIntentBranch = currentFollowUp.skip && currentFollowUp.presentToUser === true
 
     const history = new Map(followUpHistory)
     const existing = history.get(currentQuestionIndex) ?? []
@@ -223,12 +220,17 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     ])
     set({
       followUpHistory: history,
-      followUpRound: isIntentBranch ? followUpRound : followUpRound + 1,
       currentFollowUp: null,
     })
   },
 
-  resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0, followUpTranscriptOffset: 0 }),
+  setFollowUpExhausted: (exhausted) => set({ followUpExhausted: exhausted }),
+
+  resetFollowUpState: () => set({
+    currentFollowUp: null,
+    followUpExhausted: false,
+    followUpTranscriptOffset: 0,
+  }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
@@ -249,7 +251,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         currentQuestionSetIndex: currentQuestionSetIndex + 1,
         followUpHistory: new Map(),
         currentFollowUp: null,
-        followUpRound: 0,
+        followUpExhausted: false,
         followUpTranscriptOffset: 0,
         questionSetRecordingStartTime: null,
       })

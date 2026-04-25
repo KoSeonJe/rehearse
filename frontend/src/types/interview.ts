@@ -296,6 +296,8 @@ export interface FollowUpResponse {
   skipReason?: string | null
   // FE 화면 렌더 신호. AI 자체 skip=false / 의도 분기=true. 두 케이스 분리용.
   presentToUser?: boolean
+  // BE 정책이 다음 호출 가능 여부를 echo. true 면 추가 꼬리질문 호출 안 함.
+  followUpExhausted?: boolean
 }
 
 // 면접 진행 관련 타입

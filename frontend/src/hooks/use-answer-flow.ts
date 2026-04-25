@@ -1,5 +1,5 @@
 import { useCallback, type MutableRefObject } from 'react'
-import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
+import { useInterviewStore } from '@/stores/interview-store'
 import { useFollowUpQuestion } from '@/hooks/use-interviews'
 import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
@@ -88,6 +88,7 @@ export const useAnswerFlow = ({
     stopRecording,
     setCurrentFollowUp,
     completeFollowUpRound,
+    setFollowUpExhausted,
     resetFollowUpState,
     setFollowUpLoading,
     nextQuestion,
@@ -315,9 +316,9 @@ export const useAnswerFlow = ({
     // 후속질문에 대한 답변이었는지 기록 (히스토리 저장은 API 응답 후)
     const wasFollowUp = !!state.currentFollowUp
 
-    // 후속질문 라운드 확인
+    // 후속질문 가능 여부 — BE 정책이 직전 응답에 echo한 followUpExhausted 신호로 게이트.
     const updatedState = useInterviewStore.getState()
-    const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
+    const canDoMoreFollowUps = !updatedState.followUpExhausted
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
     // 현재 질문세트 ID 가져오기 — updatedState 사용으로 클로저 캡처 문제 방지
@@ -365,6 +366,7 @@ export const useAnswerFlow = ({
         }
 
         setCurrentFollowUp(res.data)
+        setFollowUpExhausted(res.data.followUpExhausted ?? false)
 
         // 의도 분기는 DB 저장 안 됐으므로 questionId 없음 — addQuestionToSet 스킵
         if (currentSet && !res.data.skip && res.data.questionId) {
@@ -412,7 +414,7 @@ export const useAnswerFlow = ({
     stopRecording, audioCapture, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
-    setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
+    setFollowUpLoading, setCurrentFollowUp, setFollowUpExhausted, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
     addQuestionToSet, recorder, setQuestionSetRecordingStartTime,
   ])
