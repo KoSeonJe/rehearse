@@ -20,6 +20,8 @@ public class FollowUpResponse {
     private final boolean presentToUser;
     // BE 정책이 다음 호출 가능 여부를 echo. true 면 FE 가 추가 꼬리질문 호출 안 함.
     private final boolean followUpExhausted;
+    // EXPERIENCE 모드에서 Step B 가 선정한 perspective. FE 가 다음 라운드 previousExchanges 에 echo.
+    private final String selectedPerspective;
 
     public static FollowUpResponse aiSkip(String answerText, String skipReason) {
         return FollowUpResponse.builder()

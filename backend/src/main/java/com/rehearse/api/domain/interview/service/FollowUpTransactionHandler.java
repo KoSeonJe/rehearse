@@ -43,16 +43,26 @@ public class FollowUpTransactionHandler {
         policy.assertCanContinue(interview, questionSet);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
+        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
 
         return new FollowUpContext(
                 interview.getPosition(),
                 interview.getEffectiveTechStack(),
                 interview.getLevel(),
                 questionSetId,
+                currentMainQuestionId,
                 nextOrderIndex,
                 mainReferenceType,
                 policy.getMaxFollowUpRounds()
         );
+    }
+
+    private Long resolveCurrentMainQuestionId(QuestionSet questionSet) {
+        return questionSet.getQuestions().stream()
+                .filter(q -> q.getQuestionType() == QuestionType.MAIN)
+                .findFirst()
+                .map(Question::getId)
+                .orElse(null);
     }
 
     /**

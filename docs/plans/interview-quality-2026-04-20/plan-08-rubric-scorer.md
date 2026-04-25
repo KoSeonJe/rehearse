@@ -27,6 +27,7 @@ TODO 03 개정판의 핵심 통찰: **"하나의 5차원 루브릭으로 모든 
 - plan-00a `IMPACT_MAP.md` — 신규 `backend/src/main/resources/rubric/` 디렉토리 및 `domain/feedback/rubric/` 패키지 기록 확인
 - plan-00b `AiClient.chat()` — 채점 호출 (`callType = "rubric_scorer"`)
 - plan-00c `V26 rubric_score` 스키마 — `rubric_id`, `scored_dimensions`, `level_flag` 컬럼 포함하여 확정
+- **plan-02 이월: `V{XX}__alter_rubric_score_turn_fk.sql`** (2026-04-26 결정) — plan-02 spec 의 `rubric_score.turn_id → interview_turn(id) ON DELETE CASCADE` FK 추가 작업을 본 plan 으로 흡수. plan-02 PR 시점에는 `interview_turn` 테이블 자체가 부재하므로 FK 부착 불가. 본 plan 에서 `interview_turn` 테이블 신설 (또는 외부 plan 에서 신설된 후) 시점과 함께 FK 마이그레이션을 V{차순번} 으로 추가
 - plan-02 `AnswerAnalysis` — claims/depth_score/missing_perspectives를 채점 입력으로 재활용
 - plan-07 `ResumeMode` + `ChainStateTracker.currentLevel` — Resume Track 채점 시 mode-aware 규칙 적용
 

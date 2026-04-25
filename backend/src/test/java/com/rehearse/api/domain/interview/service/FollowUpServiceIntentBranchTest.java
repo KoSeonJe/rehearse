@@ -1,5 +1,10 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.Claim;
+import com.rehearse.api.domain.interview.EvidenceStrength;
+import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
@@ -12,8 +17,12 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +54,12 @@ class FollowUpServiceIntentBranchTest {
     private AiClient aiClient;
 
     @Mock
+    private FollowUpPromptBuilder followUpPromptBuilder;
+
+    @Mock
+    private AnswerAnalyzer answerAnalyzer;
+
+    @Mock
     private FollowUpTransactionHandler followUpTransactionHandler;
 
     @Mock
@@ -59,11 +74,13 @@ class FollowUpServiceIntentBranchTest {
     @Mock
     private GiveUpResponseHandler giveUpResponseHandler;
 
+    private AiResponseParser aiResponseParser;
+
     private static final MockMultipartFile AUDIO_FILE =
             new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
-            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, ReferenceType.MODEL_ANSWER, 2);
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 50L, 1, ReferenceType.MODEL_ANSWER, 2);
 
     private static final String MAIN_QUESTION = "HashMap의 해시 충돌 해결 방법을 설명해주세요.";
     private static final String ANSWER_TEXT = "체이닝 방식으로 해결합니다.";
@@ -86,16 +103,21 @@ class FollowUpServiceIntentBranchTest {
 
     @BeforeEach
     void setUp() {
+        aiResponseParser = new AiResponseParser(new ObjectMapper());
+
         lenient().when(offTopicResponseHandler.supports()).thenReturn(IntentType.OFF_TOPIC);
         lenient().when(clarifyResponseHandler.supports()).thenReturn(IntentType.CLARIFY_REQUEST);
         lenient().when(giveUpResponseHandler.supports()).thenReturn(IntentType.GIVE_UP);
 
         followUpService = new FollowUpService(
-                aiClient, followUpTransactionHandler, intentClassifier,
+                aiClient, aiResponseParser, followUpPromptBuilder, answerAnalyzer,
+                followUpTransactionHandler, intentClassifier,
                 List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler));
         ReflectionTestUtils.invokeMethod(followUpService, "registerHandlers");
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);
+        lenient().when(followUpPromptBuilder.buildSystemPrompt(any())).thenReturn("system");
+        lenient().when(followUpPromptBuilder.buildUserPromptWithAnalysis(any(), any(), any())).thenReturn("user");
     }
 
     @Nested
@@ -103,12 +125,28 @@ class FollowUpServiceIntentBranchTest {
     class AnswerBranch {
 
         @Test
-        @DisplayName("ANSWER 의도이면 DB에 저장하고 presentToUser=true인 응답을 반환한다")
+        @DisplayName("ANSWER 의도이면 Step A→Step B 경로로 저장하고 presentToUser=true인 응답을 반환한다")
         void generateFollowUp_answer_savesAndReturnsPresentToUserTrue() {
-            GeneratedFollowUp followUp = buildFollowUp("꼬리질문 텍스트", ANSWER_TEXT);
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class))).willReturn(followUp);
+            GeneratedFollowUp stt = buildFollowUp("ignored", ANSWER_TEXT);
+            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class))).willReturn(stt);
             given(intentClassifier.classify(any(), any(), any()))
                     .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "실질적 답변"));
+            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new AnswerAnalysis(
+                            50L,
+                            List.of(new Claim("c", 3, EvidenceStrength.WEAK, "t")),
+                            List.of(),
+                            List.of(),
+                            3,
+                            RecommendedNextAction.DEEP_DIVE));
+
+            String stepBJson = """
+                    {"skip": false, "answerText": "x", "question": "꼬리질문 텍스트", "ttsQuestion": "꼬리질문 텍스트",
+                     "reason": "r", "type": "DEEP_DIVE", "modelAnswer": "m",
+                     "target_claim_idx": 0, "selected_perspective": null}
+                    """;
+            given(aiClient.chat(any(ChatRequest.class)))
+                    .willReturn(new ChatResponse(stepBJson, ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false));
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP)

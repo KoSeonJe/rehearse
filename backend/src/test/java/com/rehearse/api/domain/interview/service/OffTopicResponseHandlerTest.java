@@ -41,7 +41,7 @@ class OffTopicResponseHandlerTest {
     private IntentClassifierProperties properties;
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
-            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null, 2);
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 50L, 1, null, 2);
 
     private static final String MAIN_QUESTION = "HashMap의 해시 충돌 해결 방법을 설명해주세요.";
     private static final String ANSWER_TEXT = "시간이 얼마나 남았어요?";
