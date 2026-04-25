@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -18,18 +18,29 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ClarifyResponseHandler {
+public class ClarifyResponseHandler implements IntentResponseHandler {
+
+    static final String SKIP_REASON = "CLARIFY_REQUEST";
+    static final String TYPE = "CLARIFY_REESTABLISH";
+    static final String FALLBACK_TYPE = "CLARIFY_FALLBACK";
+    private static final String FALLBACK_PREFIX = "질문이 잘 전달되지 않았을 수 있습니다. 다시 설명드리겠습니다. ";
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final ClarifyResponsePromptBuilder promptBuilder;
 
-    public FollowUpResponse handle(FollowUpContext context, String mainQuestion, String answerText) {
+    @Override
+    public IntentType supports() {
+        return IntentType.CLARIFY_REQUEST;
+    }
+
+    @Override
+    public FollowUpResponse handle(IntentBranchInput input) {
         try {
             ChatRequest chatRequest = ChatRequest.builder()
                     .messages(List.of(
                             ChatMessage.ofCached(ChatMessage.Role.SYSTEM, promptBuilder.buildSystemPrompt()),
-                            ChatMessage.of(ChatMessage.Role.USER, promptBuilder.buildUserPrompt(context, mainQuestion, answerText))
+                            ChatMessage.of(ChatMessage.Role.USER, promptBuilder.buildUserPrompt(input.context(), input.mainQuestion(), input.answerText()))
                     ))
                     .callType("clarify_response")
                     .temperature(0.4)
@@ -43,29 +54,15 @@ public class ClarifyResponseHandler {
 
             log.info("CLARIFY_REQUEST 처리 완료: reason={}", parsed.reason());
 
-            return FollowUpResponse.builder()
-                    .question(parsed.question())
-                    .ttsQuestion(parsed.ttsQuestion())
-                    .reason(parsed.reason())
-                    .type("CLARIFY_REESTABLISH")
-                    .answerText(answerText)
-                    .skip(true)
-                    .skipReason("CLARIFY_REQUEST")
-                    .presentToUser(true)
-                    .build();
-        } catch (Exception e) {
+            return FollowUpResponse.intentBranch(new FollowUpResponse.IntentBranchPayload(
+                    parsed.question(), parsed.ttsQuestion(), parsed.reason(),
+                    TYPE, SKIP_REASON, input.answerText()));
+        } catch (RuntimeException e) {
             log.warn("CLARIFY 응답 생성 실패, 안내 fallback: {}", e.getMessage(), e);
-            String safe = "질문이 잘 전달되지 않았을 수 있습니다. 다시 설명드리겠습니다. " + mainQuestion;
-            return FollowUpResponse.builder()
-                    .question(safe)
-                    .ttsQuestion(safe)
-                    .type("CLARIFY_FALLBACK")
-                    .reason("clarify ai failure fallback")
-                    .answerText(answerText)
-                    .skip(true)
-                    .skipReason("CLARIFY_REQUEST")
-                    .presentToUser(true)
-                    .build();
+            String safe = FALLBACK_PREFIX + input.mainQuestion();
+            return FollowUpResponse.intentBranch(new FollowUpResponse.IntentBranchPayload(
+                    safe, safe, "clarify ai failure fallback",
+                    FALLBACK_TYPE, SKIP_REASON, input.answerText()));
         }
     }
 

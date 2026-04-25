@@ -14,15 +14,39 @@ public class FollowUpResponse {
     private final String type;
     private final String answerText;
     private final String modelAnswer;
-    /**
-     * DB 저장 생략 신호. true이면 이 턴은 Question 레코드 없이 처리된다.
-     * UI 렌더 여부는 {@link #presentToUser}로 판단할 것.
-     */
     private final boolean skip;
     private final String skipReason;
-    /**
-     * FE가 이 응답을 화면에 렌더링해야 하면 true.
-     * AI 자체 skip(답변 불충분) 응답은 false, 사용자에게 돌려줄 안내 메시지(OFF_TOPIC/CLARIFY/GIVE_UP)는 true.
-     */
+    // FE 렌더링 신호. AI 자체 skip(답변 불충분)=false / 사용자 안내(OFF_TOPIC/CLARIFY/GIVE_UP)=true.
     private final boolean presentToUser;
+
+    public static FollowUpResponse aiSkip(String answerText, String skipReason) {
+        return FollowUpResponse.builder()
+                .answerText(answerText)
+                .skip(true)
+                .skipReason(skipReason)
+                .presentToUser(false)
+                .build();
+    }
+
+    public static FollowUpResponse intentBranch(IntentBranchPayload payload) {
+        return FollowUpResponse.builder()
+                .question(payload.question())
+                .ttsQuestion(payload.ttsQuestion())
+                .reason(payload.reason())
+                .type(payload.type())
+                .answerText(payload.answerText())
+                .skip(true)
+                .skipReason(payload.skipReason())
+                .presentToUser(true)
+                .build();
+    }
+
+    public record IntentBranchPayload(
+            String question,
+            String ttsQuestion,
+            String reason,
+            String type,
+            String skipReason,
+            String answerText
+    ) {}
 }

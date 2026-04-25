@@ -50,14 +50,15 @@ public class IntentClassifier {
                 return IntentResult.forceAnswer();
             }
 
-            if (parsed.confidence() < properties.fallbackOnLowConf()) {
+            if (parsed.confidence() < properties.fallbackOnLowConfidence()) {
                 log.info("Intent 분류 신뢰도 낮음 ({}) → forceAnswer fallback", parsed.confidence());
                 return IntentResult.forceAnswer();
             }
 
             return IntentResult.of(intentType, parsed.confidence(), parsed.reasoning());
 
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            // 어떤 실패든 ANSWER 안전 환원: 분류 실패가 사용자 path 차단 금지
             log.warn("Intent 분류 실패, forceAnswer fallback 적용: {}", e.getMessage(), e);
             return IntentResult.forceAnswer();
         }

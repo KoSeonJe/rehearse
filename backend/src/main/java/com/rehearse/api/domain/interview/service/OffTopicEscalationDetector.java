@@ -14,9 +14,7 @@ public class OffTopicEscalationDetector {
         }
         int count = 0;
         for (int i = previousExchanges.size() - 1; i >= 0; i--) {
-            FollowUpExchange ex = previousExchanges.get(i);
-            if (ex.getQuestion() != null
-                    && ex.getQuestion().contains(OffTopicResponseHandler.OFF_TOPIC_CONNECTOR)) {
+            if (isOffTopicTurn(previousExchanges.get(i))) {
                 count++;
             } else {
                 break;
@@ -27,5 +25,15 @@ public class OffTopicEscalationDetector {
 
     public boolean shouldEscalate(int consecutive, int limit) {
         return consecutive + 1 >= limit;
+    }
+
+    // 메타 필드(followUpType) 우선, 없으면 connector 텍스트 매칭으로 fallback
+    private boolean isOffTopicTurn(FollowUpExchange exchange) {
+        if (exchange == null) return false;
+        if (OffTopicMarker.FOLLOW_UP_TYPE.equals(exchange.getFollowUpType())) {
+            return true;
+        }
+        return exchange.getQuestion() != null
+                && exchange.getQuestion().contains(OffTopicMarker.CONNECTOR);
     }
 }

@@ -47,7 +47,9 @@ rehearse:
       standard:
         max-follow-up-rounds: 2
   intent-classifier:
-    fallback-on-low-conf: 0.7
+    # 분류기 confidence 가 임계 미만이면 ANSWER 로 fallback (False Negative 안전망)
+    fallback-on-low-confidence: 0.7
+    # 동일 세션 OFF_TOPIC 연속 발화 N회 도달 시 GIVE_UP escalation
     off-topic-consecutive-limit: 3
 
 management:

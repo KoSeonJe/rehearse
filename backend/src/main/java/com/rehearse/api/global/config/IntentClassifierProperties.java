@@ -9,6 +9,6 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "rehearse.intent-classifier")
 @Validated
 public record IntentClassifierProperties(
-        @DecimalMin("0.0") @DecimalMax("1.0") double fallbackOnLowConf,
+        @DecimalMin("0.0") @DecimalMax("1.0") double fallbackOnLowConfidence,
         @Min(1) int offTopicConsecutiveLimit
 ) {}

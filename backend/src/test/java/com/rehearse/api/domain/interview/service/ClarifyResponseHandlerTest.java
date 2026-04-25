@@ -4,6 +4,8 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
@@ -16,10 +18,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ClarifyResponseHandler - CLARIFY_REQUEST 처리")
@@ -46,11 +52,14 @@ class ClarifyResponseHandlerTest {
     private static final String MAIN_QUESTION = "서비스 디스커버리에 대해 설명해주세요.";
     private static final String ANSWER_TEXT = "그게 무슨 뜻인지 모르겠어요.";
 
+    private static final IntentBranchInput INPUT = new IntentBranchInput(
+            1L, CONTEXT, MAIN_QUESTION, ANSWER_TEXT, 0, List.of());
+
     @BeforeEach
     void setUp() {
-        given(promptBuilder.buildSystemPrompt()).willReturn("system-prompt");
-        given(promptBuilder.buildUserPrompt(any(), any(), any())).willReturn("user-prompt");
-        given(aiClient.chat(any(ChatRequest.class))).willReturn(DUMMY_RESPONSE);
+        lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system-prompt");
+        lenient().when(promptBuilder.buildUserPrompt(any(), any(), any())).thenReturn("user-prompt");
+        lenient().when(aiClient.chat(any(ChatRequest.class))).thenReturn(DUMMY_RESPONSE);
     }
 
     @Test
@@ -58,12 +67,12 @@ class ClarifyResponseHandlerTest {
     void handle_mapsAiResponseToFollowUpResponse() {
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
                 .willReturn(new ClarifyResponseHandler.ClarifyAiResponse(
-                        "서비스 디스커버리란 마이크로서비스 간 위치를 동적으로 찾는 메커니즘입니다. 힌트: Eureka나 Consul 같은 레지스트리를 생각해보세요.",
-                        "서비스 디스커버리란 마이크로서비스 간 위치를 동적으로 찾는 메커니즘입니다. 힌트 유레카나 콘술 같은 레지스트리를 생각해보세요.",
+                        "서비스 디스커버리란 마이크로서비스 간 위치를 동적으로 찾는 메커니즘입니다.",
+                        "서비스 디스커버리란 마이크로서비스 간 위치를 동적으로 찾는 메커니즘입니다.",
                         "응시자가 용어 자체를 모름"
                 ));
 
-        FollowUpResponse response = handler.handle(CONTEXT, MAIN_QUESTION, ANSWER_TEXT);
+        FollowUpResponse response = handler.handle(INPUT);
 
         assertThat(response.getQuestion()).contains("서비스 디스커버리란");
         assertThat(response.getTtsQuestion()).contains("서비스 디스커버리란");
@@ -72,15 +81,16 @@ class ClarifyResponseHandlerTest {
     }
 
     @Test
-    @DisplayName("skip=true, skipReason=CLARIFY_REQUEST로 설정된다")
+    @DisplayName("skip=true, skipReason=CLARIFY_REQUEST, presentToUser=true")
     void handle_skipFieldsAreSet() {
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
                 .willReturn(new ClarifyResponseHandler.ClarifyAiResponse("질문 재설명", "질문 재설명", "재설명 이유"));
 
-        FollowUpResponse response = handler.handle(CONTEXT, MAIN_QUESTION, ANSWER_TEXT);
+        FollowUpResponse response = handler.handle(INPUT);
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("CLARIFY_REQUEST");
+        assertThat(response.isPresentToUser()).isTrue();
     }
 
     @Test
@@ -89,20 +99,27 @@ class ClarifyResponseHandlerTest {
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
                 .willReturn(new ClarifyResponseHandler.ClarifyAiResponse("재설명", "재설명", "이유"));
 
-        FollowUpResponse response = handler.handle(CONTEXT, MAIN_QUESTION, ANSWER_TEXT);
+        FollowUpResponse response = handler.handle(INPUT);
 
         assertThat(response.getAnswerText()).isEqualTo(ANSWER_TEXT);
     }
 
     @Test
-    @DisplayName("questionId와 modelAnswer는 null이다")
-    void handle_questionIdAndModelAnswerAreNull() {
+    @DisplayName("LLM 호출 중 RuntimeException이 나면 fallback 응답으로 복구한다")
+    void handle_llmFailure_returnsFallback() {
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
-                .willReturn(new ClarifyResponseHandler.ClarifyAiResponse("재설명", "재설명", "이유"));
+                .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 실패"));
 
-        FollowUpResponse response = handler.handle(CONTEXT, MAIN_QUESTION, ANSWER_TEXT);
+        FollowUpResponse response = handler.handle(INPUT);
 
-        assertThat(response.getQuestionId()).isNull();
-        assertThat(response.getModelAnswer()).isNull();
+        assertThat(response.getType()).isEqualTo("CLARIFY_FALLBACK");
+        assertThat(response.getQuestion()).contains(MAIN_QUESTION);
+        assertThat(response.getSkipReason()).isEqualTo("CLARIFY_REQUEST");
+    }
+
+    @Test
+    @DisplayName("supports() 는 IntentType.CLARIFY_REQUEST 를 반환한다")
+    void supports_returnsClarifyRequest() {
+        assertThat(handler.supports()).isEqualTo(IntentType.CLARIFY_REQUEST);
     }
 }

@@ -30,5 +30,10 @@ public class FollowUpRequest {
     public static class FollowUpExchange {
         private String question;
         private String answer;
+        private String followUpType;
+
+        public FollowUpExchange(String question, String answer) {
+            this(question, answer, null);
+        }
     }
 }

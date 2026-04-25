@@ -15,7 +15,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -32,7 +31,6 @@ import static org.mockito.Mockito.lenient;
 @DisplayName("IntentClassifier - 발화 의도 분류")
 class IntentClassifierTest {
 
-    @InjectMocks
     private IntentClassifier intentClassifier;
 
     @Mock
@@ -44,17 +42,16 @@ class IntentClassifierTest {
     @Mock
     private IntentClassifierPromptBuilder promptBuilder;
 
-    @Mock
-    private IntentClassifierProperties properties;
+    private final IntentClassifierProperties properties = new IntentClassifierProperties(0.7, 3);
 
     private static final ChatResponse DUMMY_RESPONSE =
             new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
 
     @BeforeEach
     void setUp() {
+        intentClassifier = new IntentClassifier(aiClient, aiResponseParser, promptBuilder, properties);
         lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system-prompt");
         lenient().when(promptBuilder.buildUserPrompt(any(), any(), any())).thenReturn("user-prompt");
-        lenient().when(properties.fallbackOnLowConf()).thenReturn(0.7);
         lenient().when(aiClient.chat(any(ChatRequest.class))).thenReturn(DUMMY_RESPONSE);
     }
 
@@ -150,7 +147,7 @@ class IntentClassifierTest {
     class FallbackBehavior {
 
         @Test
-        @DisplayName("신뢰도가 fallbackOnLowConf 미만이면 forceAnswer를 반환한다")
+        @DisplayName("신뢰도가 fallbackOnLowConfidence 미만이면 forceAnswer를 반환한다")
         void classify_lowConfidence_returnsForceAnswer() {
             givenParsedIntent("OFF_TOPIC", 0.5, "불확실");
 
@@ -163,7 +160,7 @@ class IntentClassifierTest {
         }
 
         @Test
-        @DisplayName("신뢰도가 fallbackOnLowConf와 정확히 같으면 정상 분류한다")
+        @DisplayName("신뢰도가 fallbackOnLowConfidence와 정확히 같으면 정상 분류한다")
         void classify_confidenceExactlyAtThreshold_classifiesNormally() {
             givenParsedIntent("GIVE_UP", 0.7, "임계값 정확히 일치");
 
