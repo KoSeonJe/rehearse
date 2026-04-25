@@ -5,6 +5,7 @@ import static org.springframework.transaction.annotation.Propagation.*;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
@@ -77,13 +78,14 @@ public class FollowUpService {
             throw new BusinessException(AiErrorCode.PARSE_FAILED);
         }
 
-        Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
+        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
                 context.questionSetId(), followUp, context.nextOrderIndex());
+        boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
-        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
-                id, request.getQuestionSetId(), savedQuestion.getId(), followUp.getType());
+        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}, exhausted={}",
+                id, request.getQuestionSetId(), saveResult.question().getId(), followUp.getType(), exhausted);
 
-        return buildAnswerResponse(followUp, savedQuestion);
+        return buildAnswerResponse(followUp, saveResult.question(), exhausted);
     }
 
     private FollowUpResponse dispatchIntentBranch(
@@ -101,7 +103,7 @@ public class FollowUpService {
         return handler.handle(input);
     }
 
-    private FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion) {
+    private FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
                 .question(followUp.getQuestion())
@@ -112,6 +114,7 @@ public class FollowUpService {
                 .modelAnswer(savedQuestion.getModelAnswer())
                 .skip(false)
                 .presentToUser(true)
+                .followUpExhausted(exhausted)
                 .build();
     }
 }

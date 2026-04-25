@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.policy.InterviewTurnPolicy;
 import com.rehearse.api.domain.interview.policy.InterviewTurnPolicyResolver;
@@ -67,6 +68,7 @@ class FollowUpTransactionHandlerTest {
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
+            given(turnPolicy.getMaxFollowUpRounds()).willReturn(2);
 
             // when
             FollowUpContext context = handler.loadFollowUpContext(1L, 1L, 10L);
@@ -77,6 +79,7 @@ class FollowUpTransactionHandlerTest {
             assertThat(context.questionSetId()).isEqualTo(10L);
             assertThat(context.nextOrderIndex()).isEqualTo(1);
             assertThat(context.mainReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+            assertThat(context.maxFollowUpRounds()).isEqualTo(2);
         }
 
         @Test
@@ -196,12 +199,33 @@ class FollowUpTransactionHandlerTest {
             given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
 
             // when
-            Question result = handler.saveFollowUpResult(10L, followUp, 1);
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 1);
 
             // then
-            assertThat(result.getId()).isEqualTo(100L);
-            assertThat(result.getQuestionText()).isEqualTo("해시 충돌 해결 방법은?");
+            assertThat(result.question().getId()).isEqualTo(100L);
+            assertThat(result.question().getQuestionText()).isEqualTo("해시 충돌 해결 방법은?");
+            assertThat(result.newFollowUpCount()).isEqualTo(1);
             then(questionRepository).should().save(any(Question.class));
+        }
+
+        @Test
+        @DisplayName("saveFollowUpResult - 기존 followUp 1개가 있던 세트에 추가하면 newFollowUpCount=2")
+        void saveFollowUpResult_increments_newFollowUpCount() {
+            Interview interview = createInProgressInterview();
+            QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 1);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+            GeneratedFollowUp followUp = new GeneratedFollowUp();
+            ReflectionTestUtils.setField(followUp, "question", "두 번째 꼬리질문");
+
+            Question savedQuestion = Question.builder()
+                    .questionType(QuestionType.FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
+            ReflectionTestUtils.setField(savedQuestion, "id", 200L);
+            given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
+
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 2);
+
+            assertThat(result.newFollowUpCount()).isEqualTo(2);
         }
     }
 
