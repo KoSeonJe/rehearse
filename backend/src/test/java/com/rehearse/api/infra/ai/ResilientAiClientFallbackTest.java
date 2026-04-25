@@ -9,6 +9,7 @@ import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
+import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -57,7 +58,8 @@ class ResilientAiClientFallbackTest {
 
     @BeforeEach
     void setUp() {
-        AiCallMetrics noopMetrics = new AiCallMetrics(new SimpleMeterRegistry());
+        SimpleMeterRegistry reg = new SimpleMeterRegistry();
+        AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
         resilientAiClient = new ResilientAiClient(
                 openAiClient, claudeApiClient, sttService, noopMetrics,
                 mock(QuestionGenerationAdapter.class), mock(FollowUpGenerationAdapter.class));

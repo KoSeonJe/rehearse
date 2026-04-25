@@ -18,11 +18,14 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -34,6 +37,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -54,9 +58,6 @@ class FollowUpServiceIntentBranchTest {
     private AiClient aiClient;
 
     @Mock
-    private FollowUpPromptBuilder followUpPromptBuilder;
-
-    @Mock
     private AnswerAnalyzer answerAnalyzer;
 
     @Mock
@@ -74,6 +75,9 @@ class FollowUpServiceIntentBranchTest {
     @Mock
     private GiveUpResponseHandler giveUpResponseHandler;
 
+    @Mock
+    private InterviewContextBuilder contextBuilder;
+
     private AiResponseParser aiResponseParser;
 
     private static final MockMultipartFile AUDIO_FILE =
@@ -84,6 +88,13 @@ class FollowUpServiceIntentBranchTest {
 
     private static final String MAIN_QUESTION = "HashMap의 해시 충돌 해결 방법을 설명해주세요.";
     private static final String ANSWER_TEXT = "체이닝 방식으로 해결합니다.";
+
+    private static final BuiltContext STUB_CONTEXT = new BuiltContext(
+            List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, "system"),
+                    ChatMessage.of(ChatMessage.Role.USER, "user")),
+            100,
+            Map.of("L1", 80, "L4", 20, "total", 100)
+    );
 
     private FollowUpRequest buildRequest() {
         FollowUpRequest request = new FollowUpRequest();
@@ -110,14 +121,14 @@ class FollowUpServiceIntentBranchTest {
         lenient().when(giveUpResponseHandler.supports()).thenReturn(IntentType.GIVE_UP);
 
         followUpService = new FollowUpService(
-                aiClient, aiResponseParser, followUpPromptBuilder, answerAnalyzer,
+                aiClient, aiResponseParser, answerAnalyzer,
                 followUpTransactionHandler, intentClassifier,
-                List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler));
+                List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler),
+                contextBuilder);
         ReflectionTestUtils.invokeMethod(followUpService, "registerHandlers");
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);
-        lenient().when(followUpPromptBuilder.buildSystemPrompt(any())).thenReturn("system");
-        lenient().when(followUpPromptBuilder.buildUserPromptWithAnalysis(any(), any(), any())).thenReturn("user");
+        lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
     }
 
     @Nested

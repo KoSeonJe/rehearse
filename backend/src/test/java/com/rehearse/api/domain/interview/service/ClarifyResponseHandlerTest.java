@@ -4,23 +4,29 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.prompt.ClarifyResponsePromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,9 +37,6 @@ import static org.mockito.Mockito.lenient;
 @DisplayName("ClarifyResponseHandler - CLARIFY_REQUEST 처리")
 class ClarifyResponseHandlerTest {
 
-    @InjectMocks
-    private ClarifyResponseHandler handler;
-
     @Mock
     private AiClient aiClient;
 
@@ -41,10 +44,22 @@ class ClarifyResponseHandlerTest {
     private AiResponseParser aiResponseParser;
 
     @Mock
-    private ClarifyResponsePromptBuilder promptBuilder;
+    private InterviewContextBuilder contextBuilder;
+
+    @Mock
+    private InterviewRuntimeStateStore runtimeStateStore;
+
+    private ClarifyResponseHandler handler;
 
     private static final ChatResponse DUMMY_RESPONSE =
             new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
+
+    private static final BuiltContext STUB_CONTEXT = new BuiltContext(
+            List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, "system"),
+                    ChatMessage.of(ChatMessage.Role.USER, "user")),
+            50,
+            Map.of("L1", 40, "L4", 10, "total", 50)
+    );
 
     private static final FollowUpContext CONTEXT = new FollowUpContext(
             Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 50L, 1, null, 2);
@@ -57,9 +72,10 @@ class ClarifyResponseHandlerTest {
 
     @BeforeEach
     void setUp() {
-        lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system-prompt");
-        lenient().when(promptBuilder.buildUserPrompt(any(), any(), any())).thenReturn("user-prompt");
+        handler = new ClarifyResponseHandler(aiClient, aiResponseParser, contextBuilder, runtimeStateStore);
+        lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
         lenient().when(aiClient.chat(any(ChatRequest.class))).thenReturn(DUMMY_RESPONSE);
+        lenient().when(runtimeStateStore.get(any())).thenThrow(new IllegalStateException("not found"));
     }
 
     @Test
@@ -121,5 +137,20 @@ class ClarifyResponseHandlerTest {
     @DisplayName("supports() 는 IntentType.CLARIFY_REQUEST 를 반환한다")
     void supports_returnsClarifyRequest() {
         assertThat(handler.supports()).isEqualTo(IntentType.CLARIFY_REQUEST);
+    }
+
+    @Test
+    @DisplayName("contextBuilder가 clarify_response callType과 올바른 focusHints로 호출된다")
+    void handle_contextBuilder_invokedWithClarifyCallType() {
+        given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                .willReturn(new ClarifyResponseHandler.ClarifyAiResponse("재설명", "재설명", "이유"));
+        ArgumentCaptor<ContextBuildRequest> captor = ArgumentCaptor.forClass(ContextBuildRequest.class);
+        given(contextBuilder.build(captor.capture())).willReturn(STUB_CONTEXT);
+
+        handler.handle(INPUT);
+
+        assertThat(captor.getValue().callType()).isEqualTo("clarify_response");
+        assertThat(captor.getValue().focusHints()).containsKey("mainQuestion");
+        assertThat(captor.getValue().focusHints()).containsKey("userUtterance");
     }
 }

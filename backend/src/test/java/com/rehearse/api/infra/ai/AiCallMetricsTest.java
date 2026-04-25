@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
@@ -31,7 +32,7 @@ class AiCallMetricsTest {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        metrics = new AiCallMetrics(registry);
+        metrics = new AiCallMetrics(registry, new ContextEngineeringMetrics(registry));
     }
 
     private ChatResponse successResponse(String provider, String model, boolean cacheHit, boolean fallback) {

@@ -1,0 +1,64 @@
+{
+  "interview_id": 1002,
+  "level": "MID",
+  "track": "STANDARD",
+  "call_type": "follow_up_generator_v3",
+  "exchanges": [
+    {
+      "q": "데이터베이스 인덱스를 설명하고, 어떤 경우에 인덱스를 추가해야 하는지 말씀해주세요.",
+      "a": "인덱스는 데이터 조회 속도를 높이기 위한 자료구조입니다. B-Tree 구조로 대부분 구현되며, WHERE 절 조건이나 JOIN 키, ORDER BY 컬럼에 인덱스를 추가하면 효과적입니다. 단 쓰기 성능이 낮아지는 트레이드오프가 있습니다.",
+      "selectedPerspective": "TRADEOFF"
+    },
+    {
+      "q": "복합 인덱스 설계 시 컬럼 순서가 중요한 이유는 무엇인가요?",
+      "a": "선두 컬럼부터 순서대로 인덱스를 탐색하기 때문에 카디널리티가 높은 컬럼을 앞에 두는 것이 일반적입니다. 하지만 실제로는 쿼리 패턴에 따라 달라질 수 있습니다.",
+      "selectedPerspective": "MAINTAINABILITY"
+    },
+    {
+      "q": "인덱스 풀 스캔과 테이블 풀 스캔의 차이를 설명해주세요.",
+      "a": "인덱스 풀 스캔은 인덱스 트리만 전체 순회하므로 테이블 풀 스캔보다 읽는 데이터 양이 적습니다. 다만 커버링 인덱스가 아니면 테이블 랜덤 I/O가 추가로 발생합니다.",
+      "selectedPerspective": "SCALABILITY"
+    },
+    {
+      "q": "N+1 쿼리 문제가 무엇인지, 어떻게 해결하셨나요?",
+      "a": "연관 엔티티를 루프마다 개별 쿼리로 조회하면 N+1 문제가 발생합니다. JPA에서는 fetch join이나 @EntityGraph로 해결합니다. 단 페이징과 함께 쓸 수 없는 경우 @BatchSize를 활용했습니다.",
+      "selectedPerspective": "RELIABILITY"
+    },
+    {
+      "q": "트랜잭션 격리 수준 중 REPEATABLE READ와 SERIALIZABLE의 차이를 설명해주세요.",
+      "a": "REPEATABLE READ는 같은 트랜잭션에서 같은 행을 여러 번 읽어도 동일한 값을 보장합니다. SERIALIZABLE은 팬텀 리드까지 방지하지만 성능 비용이 큽니다. MySQL InnoDB의 기본 격리 수준은 REPEATABLE READ이고 갭 락으로 팬텀 리드를 어느 정도 방지합니다.",
+      "selectedPerspective": "TRADEOFF"
+    },
+    {
+      "q": "데드락이 발생하는 조건과 방지 방법을 설명해주세요.",
+      "a": "데드락은 두 트랜잭션이 서로가 가진 락을 기다릴 때 발생합니다. 락 획득 순서를 일관되게 유지하거나, 타임아웃을 설정하거나, 낙관적 락을 사용해 방지합니다.",
+      "selectedPerspective": "RELIABILITY"
+    },
+    {
+      "q": "쿼리 실행 계획을 어떻게 분석하시나요?",
+      "a": "EXPLAIN 명령으로 실행 계획을 확인합니다. type 컬럼에서 ALL이면 풀 스캔, index, range, ref, const 순으로 효율이 올라갑니다. Extra 컬럼의 Using filesort, Using temporary가 나오면 최적화를 검토합니다.",
+      "selectedPerspective": "TESTING"
+    },
+    {
+      "q": "파티셔닝과 샤딩의 차이를 설명해주세요.",
+      "a": "파티셔닝은 하나의 테이블을 논리적 또는 물리적으로 분할하는 것이고, 샤딩은 데이터를 여러 데이터베이스 서버에 분산하는 것입니다. 샤딩은 수평 확장을 가능하게 하지만 분산 트랜잭션 처리가 복잡해집니다.",
+      "selectedPerspective": "SCALABILITY"
+    },
+    {
+      "q": "읽기/쓰기 분리(Read Replica) 패턴을 적용하셨나요? 주의사항은 무엇인가요?",
+      "a": "프로젝트에서 Spring의 AbstractRoutingDataSource로 읽기는 레플리카, 쓰기는 마스터로 라우팅했습니다. 복제 지연으로 인한 스테일 리드가 주요 주의사항이며, 강일관성이 필요한 경우에는 마스터에서 읽도록 처리했습니다.",
+      "selectedPerspective": "RELIABILITY"
+    },
+    {
+      "q": "쿼리 캐시 사용 시 고려해야 할 점은 무엇인가요?",
+      "a": "캐시 무효화 타이밍이 중요합니다. 데이터 변경 시 캐시를 갱신하지 않으면 스테일 데이터가 서빙됩니다. TTL 기반 만료와 명시적 무효화를 조합해 사용합니다. MySQL 쿼리 캐시는 8.0에서 제거되었습니다.",
+      "selectedPerspective": "MAINTAINABILITY"
+    }
+  ],
+  "covered_claims": [
+    "B-Tree 인덱스는 조회 성능을 높이지만 쓰기 성능을 낮춘다",
+    "N+1 문제는 fetch join 또는 @BatchSize로 해결한다",
+    "Read Replica 패턴 적용 시 복제 지연을 고려해야 한다"
+  ],
+  "active_chain": []
+}

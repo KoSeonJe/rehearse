@@ -1,5 +1,6 @@
 package com.rehearse.api.infra.ai.metrics;
 
+import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -19,6 +20,7 @@ public class AiCallMetrics {
     public static final String TOKENS_CACHED_WRITE = "rehearse.ai.call.tokens.cached.write";
 
     private final MeterRegistry meterRegistry;
+    private final ContextEngineeringMetrics contextMetrics;
 
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -62,6 +64,7 @@ public class AiCallMetrics {
         incrementCounter(TOKENS_OUTPUT, callType, provider, model, usage.outputTokens());
         incrementCounter(TOKENS_CACHED_READ, callType, provider, model, usage.cacheReadTokens());
         incrementCounter(TOKENS_CACHED_WRITE, callType, provider, model, usage.cacheWriteTokens());
+        contextMetrics.recordCacheHit(provider, usage.cacheReadTokens(), usage.cacheWriteTokens());
     }
 
     private void incrementCounter(String name, String callType, String provider, String model, int amount) {

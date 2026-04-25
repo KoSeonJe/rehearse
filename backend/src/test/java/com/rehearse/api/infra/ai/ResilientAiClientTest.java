@@ -9,6 +9,7 @@ import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
+import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -64,7 +65,8 @@ class ResilientAiClientTest {
     }
 
     private ResilientAiClient resilientClient(OpenAiClient oa, ClaudeApiClient ca, SttService stt) {
-        AiCallMetrics noopMetrics = new AiCallMetrics(new SimpleMeterRegistry());
+        SimpleMeterRegistry reg = new SimpleMeterRegistry();
+        AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
         return new ResilientAiClient(oa, ca, stt, noopMetrics, questionAdapter, followUpAdapter);
     }
 

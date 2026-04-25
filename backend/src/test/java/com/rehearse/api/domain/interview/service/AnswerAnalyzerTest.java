@@ -13,24 +13,29 @@ import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.prompt.AnswerAnalyzerPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AnswerAnalyzer - 답변 분석 Step A")
@@ -40,22 +45,28 @@ class AnswerAnalyzerTest {
     private AiClient aiClient;
 
     @Mock
-    private AnswerAnalyzerPromptBuilder promptBuilder;
+    private InterviewContextBuilder contextBuilder;
 
     private AiResponseParser parser;
     private Cache<Long, InterviewRuntimeState> cache;
     private InterviewRuntimeStateStore runtimeStateStore;
     private AnswerAnalyzer analyzer;
 
+    private static final BuiltContext STUB_CONTEXT = new BuiltContext(
+            List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, "system"),
+                    ChatMessage.of(ChatMessage.Role.USER, "user")),
+            100,
+            Map.of("L1", 80, "L4", 20, "total", 100)
+    );
+
     @BeforeEach
     void setUp() {
         parser = new AiResponseParser(new ObjectMapper());
         cache = Caffeine.newBuilder().<Long, InterviewRuntimeState>build();
         runtimeStateStore = new InterviewRuntimeStateStore(cache);
-        analyzer = new AnswerAnalyzer(aiClient, parser, promptBuilder, runtimeStateStore);
+        analyzer = new AnswerAnalyzer(aiClient, parser, contextBuilder, runtimeStateStore);
 
-        lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system");
-        lenient().when(promptBuilder.buildUserPrompt(any(), any(), any(), any())).thenReturn("user");
+        lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
     }
 
     private InterviewRuntimeState seedState(Long interviewId) {
@@ -221,5 +232,33 @@ class AnswerAnalyzerTest {
                 .isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> analyzer.analyze(1L, null, "Q", ReferenceType.MODEL_ANSWER, "A", List.of()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("contextBuilder_invoked_with_answer_analyzer_callType_and_correct_focusHints")
+    void contextBuilder_invoked_with_answer_analyzer_callType_and_correct_focusHints() {
+        seedState(7L);
+        String json = """
+                {
+                  "turn_id": 0,
+                  "claims": [{"text":"a","depth_score":2,"evidence_strength":"WEAK","topic_tag":"t"}],
+                  "missing_perspectives": [],
+                  "unstated_assumptions": [],
+                  "answer_quality": 3,
+                  "recommended_next_action": "DEEP_DIVE"
+                }
+                """;
+        given(aiClient.chat(any(ChatRequest.class))).willReturn(jsonResponse(json));
+
+        ArgumentCaptor<ContextBuildRequest> captor = ArgumentCaptor.forClass(ContextBuildRequest.class);
+        given(contextBuilder.build(captor.capture())).willReturn(STUB_CONTEXT);
+
+        analyzer.analyze(7L, 700L, "GC 설명", ReferenceType.MODEL_ANSWER, "답변", List.of());
+
+        ContextBuildRequest captured = captor.getValue();
+        assertThat(captured.callType()).isEqualTo("answer_analyzer");
+        assertThat(captured.focusHints()).containsKey("mainQuestion");
+        assertThat(captured.focusHints()).containsKey("userAnswer");
+        assertThat(captured.focusHints()).containsKey("personaDepthHint");
     }
 }

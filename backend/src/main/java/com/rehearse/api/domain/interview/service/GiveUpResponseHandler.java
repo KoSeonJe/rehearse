@@ -1,19 +1,23 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
-import com.rehearse.api.infra.ai.prompt.GiveUpResponsePromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -26,7 +30,8 @@ public class GiveUpResponseHandler implements IntentResponseHandler {
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final GiveUpResponsePromptBuilder promptBuilder;
+    private final InterviewContextBuilder contextBuilder;
+    private final InterviewRuntimeStateStore runtimeStateStore;
 
     @Override
     public IntentType supports() {
@@ -36,11 +41,22 @@ public class GiveUpResponseHandler implements IntentResponseHandler {
     @Override
     public FollowUpResponse handle(IntentBranchInput input) {
         try {
+            Map<String, Object> runtimeStateMap = resolveRuntimeStateMap(input.interviewId());
+
+            BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                    "giveup_response",
+                    runtimeStateMap,
+                    input.previousExchanges() != null ? input.previousExchanges() : List.of(),
+                    Map.of(
+                            "mainQuestion", input.mainQuestion() != null ? input.mainQuestion() : "",
+                            "userUtterance", input.answerText() != null ? input.answerText() : "",
+                            "personaDepthHint", resolvePersonaHint(input)
+                    ),
+                    null
+            ));
+
             ChatRequest chatRequest = ChatRequest.builder()
-                    .messages(List.of(
-                            ChatMessage.ofCached(ChatMessage.Role.SYSTEM, promptBuilder.buildSystemPrompt()),
-                            ChatMessage.of(ChatMessage.Role.USER, promptBuilder.buildUserPrompt(input.context(), input.mainQuestion(), input.answerText()))
-                    ))
+                    .messages(built.messages())
                     .callType("giveup_response")
                     .temperature(0.4)
                     .maxTokens(500)
@@ -63,6 +79,25 @@ public class GiveUpResponseHandler implements IntentResponseHandler {
                     safe, safe, "giveup ai failure fallback",
                     FALLBACK_TYPE, SKIP_REASON, input.answerText()));
         }
+    }
+
+    private Map<String, Object> resolveRuntimeStateMap(Long interviewId) {
+        if (interviewId == null) {
+            return Map.of();
+        }
+        try {
+            InterviewRuntimeState state = runtimeStateStore.get(interviewId);
+            return Map.of("interviewRuntimeState", state, "interviewId", interviewId);
+        } catch (IllegalStateException e) {
+            return Map.of();
+        }
+    }
+
+    private static String resolvePersonaHint(IntentBranchInput input) {
+        if (input.context() == null) {
+            return "(없음)";
+        }
+        return input.context().level().name() + " | " + input.context().position().name();
     }
 
     record GiveUpAiResponse(String question, String ttsQuestion, String reason, String type) {}

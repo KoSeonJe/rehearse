@@ -16,14 +16,16 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.context.AnswerAnalysisJsonRenderer;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,11 +51,11 @@ public class FollowUpService {
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final FollowUpPromptBuilder followUpPromptBuilder;
     private final AnswerAnalyzer answerAnalyzer;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final IntentClassifier intentClassifier;
     private final List<IntentResponseHandler> intentResponseHandlers;
+    private final InterviewContextBuilder contextBuilder;
 
     private final Map<IntentType, IntentResponseHandler> handlerByIntent = new EnumMap<>(IntentType.class);
 
@@ -140,12 +142,23 @@ public class FollowUpService {
             AnswerAnalysis analysis,
             List<Perspective> askedPerspectives
     ) {
+        String answerAnalysisJson = AnswerAnalysisJsonRenderer.render(analysis, askedPerspectives);
+
+        BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                STEP_B_CALL_TYPE,
+                Map.of(),
+                req.previousExchanges() != null ? req.previousExchanges() : List.of(),
+                Map.of(
+                        "answerAnalysisJson", answerAnalysisJson,
+                        "askedPerspectives", askedPerspectives.stream()
+                                .map(Enum::name)
+                                .collect(java.util.stream.Collectors.joining(", "))
+                ),
+                null
+        ));
+
         ChatRequest chatRequest = ChatRequest.builder()
-                .messages(List.of(
-                        ChatMessage.ofCached(ChatMessage.Role.SYSTEM, followUpPromptBuilder.buildSystemPrompt(req)),
-                        ChatMessage.of(ChatMessage.Role.USER,
-                                followUpPromptBuilder.buildUserPromptWithAnalysis(req, analysis, askedPerspectives))
-                ))
+                .messages(built.messages())
                 .callType(STEP_B_CALL_TYPE)
                 .temperature(STEP_B_TEMPERATURE)
                 .maxTokens(STEP_B_MAX_TOKENS)
