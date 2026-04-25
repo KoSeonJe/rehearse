@@ -10,6 +10,7 @@ public record FollowUpContext(
         TechStack effectiveTechStack,
         InterviewLevel level,
         Long questionSetId,
+        Long currentMainQuestionId,
         int nextOrderIndex,
         ReferenceType mainReferenceType,
         int maxFollowUpRounds

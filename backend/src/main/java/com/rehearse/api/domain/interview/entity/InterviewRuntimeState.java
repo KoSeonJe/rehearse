@@ -1,8 +1,11 @@
 package com.rehearse.api.domain.interview.entity;
 
+import com.rehearse.api.domain.interview.AnswerAnalysis;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -26,5 +29,22 @@ public class InterviewRuntimeState {
         turnAnalysisCache = new ConcurrentHashMap<>();
         this.currentLevel = currentLevel;
         this.resumeSkeletonCache = resumeSkeletonCache;
+    }
+
+    public void recordAnalysis(Long turnId, TurnAnalysis analysis) {
+        if (turnId == null || analysis == null) {
+            throw new IllegalArgumentException("turnId/analysis 는 null 일 수 없습니다.");
+        }
+        turnAnalysisCache.put(turnId, analysis);
+    }
+
+    public Optional<AnswerAnalysis> getAnswerAnalysis(Long turnId) {
+        if (turnId == null) {
+            return Optional.empty();
+        }
+        TurnAnalysis cached = turnAnalysisCache.get(turnId);
+        return cached instanceof AnswerAnalysis answerAnalysis
+                ? Optional.of(answerAnalysis)
+                : Optional.empty();
     }
 }

@@ -1,5 +1,8 @@
 package com.rehearse.api.infra.ai.prompt;
 
+import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.Claim;
+import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
@@ -14,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -80,6 +85,56 @@ public class FollowUpPromptBuilder {
 
     public String buildUserPrompt(FollowUpGenerationRequest req) {
         return buildUserPromptInternal(req, req.answerText(), "새 후속 질문을 생성하세요.");
+    }
+
+    /**
+     * Step A 분석 결과를 포함한 user prompt 생성 (v3 Step B 전용).
+     * target_claim_idx 선정과 perspective 선정에 사용할 구조화 입력을 명시 직렬화한다.
+     */
+    public String buildUserPromptWithAnalysis(
+            FollowUpGenerationRequest req,
+            AnswerAnalysis analysis,
+            List<Perspective> askedPerspectives
+    ) {
+        StringBuilder sb = new StringBuilder(buildUserPromptInternal(req, req.answerText(),
+                "아래 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요."));
+        sb.append("\n\nANSWER_ANALYSIS:\n");
+        sb.append(formatClaims(analysis.claims()));
+        sb.append("- missing_perspectives: ").append(formatPerspectives(analysis.missingPerspectives())).append("\n");
+        sb.append("- unstated_assumptions: ").append(formatStrings(analysis.unstatedAssumptions())).append("\n");
+        sb.append("- recommended_next_action: ").append(analysis.recommendedNextAction().name()).append("\n");
+        sb.append("- asked_perspectives: ").append(formatPerspectives(askedPerspectives)).append("\n");
+        return sb.toString();
+    }
+
+    private static String formatClaims(List<Claim> claims) {
+        if (claims == null || claims.isEmpty()) {
+            return "- claims: (없음)\n";
+        }
+        StringBuilder sb = new StringBuilder("- claims:\n");
+        for (int i = 0; i < claims.size(); i++) {
+            Claim c = claims.get(i);
+            sb.append("  [").append(i).append("] text=\"").append(c.text())
+              .append("\" depth_score=").append(c.depthScore())
+              .append(" evidence_strength=").append(c.evidenceStrength().name())
+              .append(" topic_tag=").append(c.topicTag() == null ? "(없음)" : c.topicTag())
+              .append("\n");
+        }
+        return sb.toString();
+    }
+
+    private static String formatPerspectives(List<Perspective> perspectives) {
+        if (perspectives == null || perspectives.isEmpty()) {
+            return "(없음)";
+        }
+        return perspectives.stream().map(Enum::name).collect(Collectors.joining(", "));
+    }
+
+    private static String formatStrings(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "(없음)";
+        }
+        return values.stream().collect(Collectors.joining(" | "));
     }
 
     private String buildUserPromptInternal(FollowUpGenerationRequest req, String answerSection, String instruction) {

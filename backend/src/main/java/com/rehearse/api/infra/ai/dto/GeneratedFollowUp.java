@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,12 @@ public class GeneratedFollowUp {
     private String modelAnswer;
     private String answerText;
 
+    @JsonProperty("target_claim_idx")
+    private Integer targetClaimIdx;
+
+    @JsonProperty("selected_perspective")
+    private String selectedPerspective;
+
     /** AI가 답변 불충분으로 후속질문 생성을 건너뛰도록 신호한 경우 true. */
     public boolean isSkipped() {
         return Boolean.TRUE.equals(skip);
@@ -34,6 +41,8 @@ public class GeneratedFollowUp {
         copy.type = this.type;
         copy.modelAnswer = this.modelAnswer;
         copy.answerText = answerText;
+        copy.targetClaimIdx = this.targetClaimIdx;
+        copy.selectedPerspective = this.selectedPerspective;
         return copy;
     }
 }

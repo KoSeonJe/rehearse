@@ -18,8 +18,8 @@
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
 | 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
-| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
-| 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
+| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Implemented | 01, 00c | P0. 꼬리질문 전제. 코드 + 테스트 완료 (S6, 2026-04-26). FK 마이그레이션은 plan-08 로 이관 |
+| 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Implemented | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). 749 tests pass |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
 | 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
 | 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25. **Dynamic Pacing 재설계 (2026-04-22)**: duration 스케일링 폐기, priority 랭킹만 |
@@ -31,6 +31,43 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-26 (S6 — plan-02/03 코드 구현 + 단일 PR 준비)
+
+- **plan-02 코드 구현 완료** (브랜치 `feat/plan-02-answer-analyzer`, 16 files, +892/-2 머지 전):
+  - `AnswerAnalysis` (`implements TurnAnalysis`) + `Claim` + `EvidenceStrength`/`Perspective`/`RecommendedNextAction` enum 분리
+  - `AnswerAnalyzer` 서비스: `AiClient.chat()` callType=`answer_analyzer`, temp 0.2, max 800, JSON_OBJECT
+  - L1 FN 가드: `claims=[] AND answer_quality<=1 → CLARIFICATION` 강제
+  - `InterviewRuntimeState.recordAnalysis/getAnswerAnalysis` 접근자 (instanceof 안전 캐스팅)
+  - 프롬프트 템플릿 `follow-up-step-a-analyzer.txt`: 보안 규칙 + delimiter + 4 few-shot
+  - `application.yml`: `rehearse.answer-analyzer.enabled: true`
+  - 테스트 4 클래스 (record 검증 + 캐시 접근 + L1 가드 + 프롬프트 빌더)
+- **plan-03 코드 구현 완료** (동일 브랜치 추가 커밋):
+  - `GeneratedFollowUp` + `targetClaimIdx`/`selectedPerspective` (snake_case Jackson 매핑)
+  - `FollowUpExchange.selectedPerspective` (옵션 A) + `FollowUpResponse.selectedPerspective` echo
+  - `FollowUpContext.currentMainQuestionId` (`FollowUpTransactionHandler` 에서 MAIN question id 도출)
+  - `FollowUpPromptBuilder.buildUserPromptWithAnalysis` — ANSWER_ANALYSIS 블록 직렬화 (claims/missing_perspectives/unstated_assumptions/recommended_next_action/asked_perspectives)
+  - `follow-up-concept.txt` v3: ANSWER_ANALYSIS 입력 명세 + target_claim_idx 우선순위 + JSON 스키마 확장 (CONCEPT 모드 selected_perspective=null 강제)
+  - `follow-up-experience.txt` v3: ANSWER_ANALYSIS + selected_perspective 7-enum 우선순위 + asked_perspectives 중복 금지
+  - `FollowUpService` ANSWER 경로 refactor: STT 재사용 → AnswerAnalyzer.analyze → SKIP 권고 시 cost saver → `aiClient.chat(ChatRequest)` Step B → parseOrRetry → save. callType=`follow_up_generator_v3`, temp 0.6, max 1024, JSON_OBJECT
+  - askedPerspectives 추출: `previousExchanges.selectedPerspective` 관대 파싱 + distinct
+- **plan-02 V{XX} FK migration → plan-08 이관**: `interview_turn` 테이블 부재로 본 PR 범위 외. plan-08 `전제` 섹션에 흡수, plan-02 spec 본문 취소선 처리
+- **테스트 결과**: 749 tests pass / 0 failures (baseline 719 + 신규 ~30). `FollowUpServiceTest` 7 시나리오 + `FollowUpServiceIntentBranchTest` ANSWER 경로 Step A/B mock 추가 + 핸들러 3 테스트 FollowUpContext 시그니처 갱신
+- **잔여 게이트**:
+  - [ ] FE 계약 전달 — `FollowUpRequest.FollowUpExchange.selectedPerspective` 입력 + `FollowUpResponse.selectedPerspective` echo 사용
+  - [ ] LIVE 골든셋 (Step A depth_score ±1 / target_claim_idx 범위 / selected_perspective 중복)
+  - [ ] MANUAL_AB 3~5 건 (v2 vs v3 claim 타겟팅 정확도)
+  - [ ] 스테이징 Prometheus `rehearse.ai.call.duration_seconds{call.type=~"answer_analyzer|follow_up_generator_v3"}` p95 확인
+
+### 2026-04-25 (S5 — plan-02/03 단일 PR 착수 — 문서 정합화)
+
+- **전략**: plan-02 (Answer Analyzer M1 Step A) + plan-03 (Follow-up Generator v3 M1 Step B) 단일 BE PR 머지. plan-02 단독 머지 시 Step A 출력 소비처 부재 → 데드코드. 실행계획 사용자 인계 plan ([Plan02 + Plan03 단일 PR 실행계획])
+- **plan-02 문서 patch (3건)**:
+  - 경로 정정: `domain/interview/runtime/InterviewRuntimeState.java` → `domain/interview/entity/InterviewRuntimeState.java` (실측 위치)
+  - `AnswerAnalysis implements TurnAnalysis` 명시 (마커 인터페이스 기존 존재, plan-08 Rubric 과 캐시 키 통합 의도)
+  - `InterviewRuntimeState.recordAnalysis()/getAnswerAnalysis()` 메서드 추가를 본 PR 범위로 명시 (`turnAnalysisCache` 필드는 plan-00c 에서 이미 존재, 본 PR 은 접근자만 추가)
+- **plan-03 GeneratedFollowUp 위치 확인**: `infra/ai/dto/GeneratedFollowUp.java` 일치, patch 불필요
+- **다음**: plan-02 코드 구현 → plan-03 코드 구현 → 통합 테스트 → 리뷰 → 단일 PR
 
 ### 2026-04-25 (S4 — plan-01 Phase A 구현 완료)
 
