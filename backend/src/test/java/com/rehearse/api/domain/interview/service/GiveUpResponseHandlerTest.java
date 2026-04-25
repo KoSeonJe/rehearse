@@ -1,0 +1,157 @@
+package com.rehearse.api.domain.interview.service;
+
+import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.prompt.GiveUpResponsePromptBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("GiveUpResponseHandler - GIVE_UP 처리")
+class GiveUpResponseHandlerTest {
+
+    @InjectMocks
+    private GiveUpResponseHandler handler;
+
+    @Mock
+    private AiClient aiClient;
+
+    @Mock
+    private AiResponseParser aiResponseParser;
+
+    @Mock
+    private GiveUpResponsePromptBuilder promptBuilder;
+
+    private static final ChatResponse DUMMY_RESPONSE =
+            new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
+
+    private static final FollowUpContext CONTEXT = new FollowUpContext(
+            Position.BACKEND, null, InterviewLevel.JUNIOR, 10L, 1, null);
+
+    private static final String MAIN_QUESTION = "B-Tree와 B+Tree의 차이점을 설명해주세요.";
+    private static final String ANSWER_TEXT = "모르겠어요, 패스할게요.";
+
+    private static final IntentBranchInput INPUT = new IntentBranchInput(
+            1L, CONTEXT, MAIN_QUESTION, ANSWER_TEXT, 0, List.of());
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system-prompt");
+        lenient().when(promptBuilder.buildUserPrompt(any(), any(), any())).thenReturn("user-prompt");
+        lenient().when(aiClient.chat(any(ChatRequest.class))).thenReturn(DUMMY_RESPONSE);
+    }
+
+    @Nested
+    @DisplayName("SCAFFOLD 모드")
+    class ScaffoldMode {
+
+        @Test
+        @DisplayName("LLM이 SCAFFOLD를 선택하면 type=SCAFFOLD인 FollowUpResponse를 반환한다")
+        void handle_scaffold_returnsScaffoldType() {
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                    .willReturn(new GiveUpResponseHandler.GiveUpAiResponse(
+                            "힌트를 드릴게요 — B-Tree는 모든 노드에 데이터를 저장하지만 B+Tree는 리프에만 저장합니다.",
+                            "힌트를 드릴게요 비트리는 모든 노드에 데이터를 저장하지만 비플러스트리는 리프에만 저장합니다.",
+                            "단순 힌트로 답변 가능해 보임",
+                            "SCAFFOLD"
+                    ));
+
+            FollowUpResponse response = handler.handle(INPUT);
+
+            assertThat(response.getType()).isEqualTo("SCAFFOLD");
+            assertThat(response.getQuestion()).contains("힌트를 드릴게요");
+        }
+    }
+
+    @Nested
+    @DisplayName("REVEAL_AND_MOVE_ON 모드")
+    class RevealAndMoveOnMode {
+
+        @Test
+        @DisplayName("LLM이 REVEAL_AND_MOVE_ON을 선택하면 type=REVEAL_AND_MOVE_ON인 FollowUpResponse를 반환한다")
+        void handle_revealAndMoveOn_returnsRevealType() {
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                    .willReturn(new GiveUpResponseHandler.GiveUpAiResponse(
+                            "B+Tree는 모든 데이터를 리프 노드에 저장하고 리프끼리 연결되어 범위 검색에 유리합니다.",
+                            "비플러스트리는 모든 데이터를 리프 노드에 저장하고 리프끼리 연결되어 범위 검색에 유리합니다.",
+                            "개념 자체를 모르는 상태",
+                            "REVEAL_AND_MOVE_ON"
+                    ));
+
+            FollowUpResponse response = handler.handle(INPUT);
+
+            assertThat(response.getType()).isEqualTo("REVEAL_AND_MOVE_ON");
+            assertThat(response.getQuestion()).contains("B+Tree");
+        }
+    }
+
+    @Nested
+    @DisplayName("공통 응답 필드 검증")
+    class CommonFields {
+
+        @Test
+        @DisplayName("skip=true, skipReason=GIVE_UP, presentToUser=true")
+        void handle_skipFieldsAreSet() {
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                    .willReturn(new GiveUpResponseHandler.GiveUpAiResponse("응답", "응답", "이유", "SCAFFOLD"));
+
+            FollowUpResponse response = handler.handle(INPUT);
+
+            assertThat(response.isSkip()).isTrue();
+            assertThat(response.getSkipReason()).isEqualTo("GIVE_UP");
+            assertThat(response.isPresentToUser()).isTrue();
+        }
+
+        @Test
+        @DisplayName("answerText가 전달받은 값 그대로 유지된다")
+        void handle_answerTextIsPreserved() {
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                    .willReturn(new GiveUpResponseHandler.GiveUpAiResponse("응답", "응답", "이유", "SCAFFOLD"));
+
+            FollowUpResponse response = handler.handle(INPUT);
+
+            assertThat(response.getAnswerText()).isEqualTo(ANSWER_TEXT);
+        }
+
+        @Test
+        @DisplayName("LLM 호출이 RuntimeException 으로 실패하면 fallback 응답을 반환한다")
+        void handle_llmFailure_returnsFallback() {
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any()))
+                    .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 실패"));
+
+            FollowUpResponse response = handler.handle(INPUT);
+
+            assertThat(response.getType()).isEqualTo("GIVE_UP_FALLBACK");
+            assertThat(response.getSkipReason()).isEqualTo("GIVE_UP");
+            assertThat(response.getQuestion()).contains(MAIN_QUESTION);
+        }
+    }
+
+    @Test
+    @DisplayName("supports() 는 IntentType.GIVE_UP 을 반환한다")
+    void supports_returnsGiveUp() {
+        assertThat(handler.supports()).isEqualTo(IntentType.GIVE_UP);
+    }
+}

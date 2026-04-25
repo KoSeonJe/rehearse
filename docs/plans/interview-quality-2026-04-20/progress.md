@@ -17,7 +17,7 @@
 
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
-| 01 | Intent Classifier (M2 축소판) | W3 | Draft | 00a,00b,00d | REMEDIATION 수정 지시 반영 필요 (M3/M4) |
+| 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
@@ -31,6 +31,54 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-25 (S4 — plan-01 Phase A 구현 완료)
+
+- **전략**: plan-01 + plan-02 + plan-03 단일 PR 머지 목표. Phase A (L1 post-hoc) → 리뷰·검증 → Phase B (L2/L3 통합) 순차 진행. 실행계획 `~/.claude/plans/plan01-compressed-lark.md`
+- **STT 처리 결정**: post-hoc 채택 (사용자 결정). `generateFollowUpWithAudio` 결과의 `answerText` 로 intent classify → OFF_TOPIC/CLARIFY/GIVE_UP 이면 생성된 follow-up 버리고 handler 응답 덮어씀. Trade-off: OFF_TOPIC SLA `≤500ms + LLM 0회` 는 미달성 (GPT-4o-audio 호출 1회 이미 발생) — spec 에 기재됨. 구조 개편은 별도 plan 으로 이월
+- **OFF_TOPIC 연속 감지**: `FollowUpRequest.previousExchanges` 재활용. `FollowUpExchange.followUpType` 메타필드 우선 사용, `OffTopicMarker.CONNECTOR` 텍스트 매칭은 backward-compat fallback. `OffTopicEscalationDetector` 컴포넌트로 분리 (지식 응집). FE 가 `followUpType=OFF_TOPIC_REDIRECT` 를 다음 턴 `previousExchanges` 에 채워주면 정확한 카운팅 보장
+- **구현 파일** (신규 19 + 수정 5):
+  - VO: `domain/interview/vo/IntentType` (4-intent enum), `IntentResult` (record + `forceAnswer()` fallback 플래그 + `of()` 정상 팩토리)
+  - Config: `global/config/IntentClassifierProperties` (`@ConfigurationProperties` + `@Validated` + record, `fallback-on-low-confidence:0.7` / `off-topic-consecutive-limit:3`). `RehearseApiApplication` 에 `@ConfigurationPropertiesScan("com.rehearse.api.global.config")` 로 자동 스캔
+  - Prompt: `infra/ai/prompt/{IntentClassifier,ClarifyResponse,GiveUpResponse}PromptBuilder` + `resources/prompts/template/{intent-classifier,clarify-response,giveup-response}.txt`. **보안 규칙** 섹션 + `<<<USER_UTTERANCE>>>` / `<<<MAIN_QUESTION>>>` / `<<<PREVIOUS_TURN>>>` delimiter 로 prompt injection boundary 확보. few-shot: ANSWER 4 / CLARIFY 2 / GIVE_UP 3 / OFF_TOPIC 2 + ANSWER negative (`"잘 모르지만 ~ 같아요"` → ANSWER)
+  - Service: `domain/interview/service/{IntentClassifier, OffTopicResponseHandler, ClarifyResponseHandler, GiveUpResponseHandler, OffTopicEscalationDetector}` 모두 `IntentResponseHandler` 인터페이스 구현 + `IntentBranchInput` record 통합 입력. Classifier 는 `AiClient.chat()` 경유 (callType="intent_classifier", temperature=0.1, maxTokens=200, JSON_OBJECT). `IntentClassificationResponse.intent: String` + `parseIntent()` 로 대/소문자·하이픈 관대 처리. confidence < 0.7 또는 파싱 실패·`Exception` → `forceAnswer` fallback. Clarify/GiveUp 은 `RuntimeException` 만 catch (InterruptedException 미삼킴), 실패 시 안전 fallback (`CLARIFY_FALLBACK`/`GIVE_UP_FALLBACK` 고정 메시지)
+  - OffTopicResponseHandler: LLM 없음. 리드인 풀 4개 + 고정 connector + `Math.floorMod(Long.hashCode(interviewId ^ turnIndex*31), 4)` 명시 산식. OFF_TOPIC 연속 escalation 결정도 핸들러 내부에서 처리 (GiveUpResponseHandler 위임)
+  - OffTopicMarker: `CONNECTOR`/`FOLLOW_UP_TYPE`/`SKIP_REASON` 상수 별도 클래스로 분리 (Handler ↔ Detector 양방향 결합 제거)
+  - FollowUpService: `IntentResponseHandler` Strategy `Map<IntentType, Handler>` 자동 등록(`@PostConstruct`) → `dispatchIntentBranch` 가 한 줄 dispatch. PR #348 `InterviewTurnPolicy` 패턴과 일관. ANSWER 는 그대로 기존 저장 경로
+  - DTO: `FollowUpResponse.presentToUser: boolean` 신규 + `aiSkip()`/`intentBranch(payload)` 정적 팩토리 추출 (빌드 중복 5→1). `FollowUpExchange.followUpType` 필드 추가 (escalation 메타 카운팅용, optional). **FE 계약 변경 필요 — Phase A 머지 전 FE 팀 전달**
+- **리뷰 피드백 반영** (architect-reviewer + code-reviewer 병렬 — 각 조건부 승인, Blocker 4 + High 2 + Medium 5 해결):
+  - Blocker 1: `presentToUser` 계약 추가
+  - Blocker 2: prompt injection delimiter + 시스템 보안 규칙 (3 builder 전부)
+  - Blocker 3: LIVE 골든셋 단일 집계 `accuracy >= 0.90` 로 flaky 예방
+  - Blocker 4: IntentType String 수신 + 관대한 파싱 (대소문자·하이픈 허용)
+  - High 1: `generateFollowUp()` 메서드 추출
+  - High 2: `OffTopicEscalationDetector` 컴포넌트 분리
+  - Medium: `@ConfigurationProperties` 승격 + `global/config` 이동 + `@Validated`, `IntentResult.fallback` 플래그, `catch(RuntimeException)` 좁히기 + stacktrace, Clarify/GiveUp graceful fallback, GIVE_UP few-shot 3개 + negative 1개 보강, FollowUpService Phase 라벨 주석 제거
+- **테스트**: 706 → 719 (+13 신규). 0 failures / 0 errors / 1 skipped (LIVE 골든셋 `@EnabledIfEnvironmentVariable("LIVE_TEST","true")` 정상 skip)
+- **잔여 Phase A 게이트**:
+  - [ ] 로컬 bootRun 4분기 수동 curl 검증 (OpenAI API 키 필요)
+  - [ ] 스테이징 배포 후 Prometheus `rehearse.ai.call.duration_seconds{call.type="intent_classifier"}` p95 확인
+  - [ ] LIVE 골든셋 실행 (`LIVE_TEST=true ./gradlew test --tests IntentClassifierGoldenSetLiveTest`, accuracy ≥ 0.90)
+  - [ ] MANUAL_AB_PROTOCOL 3~5건 (OFF_TOPIC 2 + META 1 포함)
+  - [ ] FE 팀에 `presentToUser` 계약 전달
+- **Phase B 진입 조건**: 위 5건 전원 통과 후 plan-02 Answer Analyzer + plan-03 Follow-up Generator v3 구현 착수 (동일 PR)
+- **이월 이슈 (Phase B 후보)**:
+  - `FollowUpExchange.skipReason` 필드 왕복 계약 (현재 marker 문자열 감지)
+  - `FollowUpResponseType` enum 도입 (type 문자열 정리)
+  - 3 PromptBuilder 템플릿 로드 공통화 (L2/L3 추가 시점)
+  - STT 분리 구조 개편 (OFF_TOPIC 진정한 ≤500ms SLA 복구)
+
+### 2026-04-24 (plan-01 4-intent 확장 결정 — 문서 갱신)
+
+- **결정**: `IntentType` 을 3-intent (ANSWER/CLARIFY_REQUEST/GIVE_UP) → **4-intent** (+ **OFF_TOPIC**) 로 확장. META 발화는 OFF_TOPIC 에 통합.
+- **근거**: OFF_TOPIC 을 앞단 L1 에서 직접 분기하면 plan-02 Analyzer(L2) + plan-03 Follow-up(L3) 호출을 완전 생략 → 사용자 path p95 ≤ 500ms. 기존 3-intent 축소안의 "빈 답변 해석 LLM 낭비" 를 근본 제거.
+- **OFF_TOPIC handler 는 LLM 미호출** — 객관·중립 리드인 풀(4개, 겉치레 호응 금지) + 고정 connector `"질문에 대한 답변을 적절히 해주세요."` + 원 mainQuestion 템플릿 조립. 비용 0, 지연 최소, 톤 예측성. `Math.floorMod(Objects.hash(sessionId, turnIndex), pool.size())` 결정적 선택.
+- **턴 소비 정책**: OFF_TOPIC 은 round counter 증가 **안 함**, `currentMainQuestion` 유지. 다음 ANSWER 시 원 질문 + 새 답변 조합으로 정상 L1→L2→L3 파이프라인 동작 → 꼬리질문 원 주제 기반 생성. 연속 3회 OFF_TOPIC 시 GIVE_UP 경로 escalation (`rehearse.intent-classifier.off-topic-consecutive-limit: 3`).
+- **plan-02 Step A 가드 유지**: `claims=[] && answer_quality<=1 ⇒ CLARIFICATION` 을 "L1 분류기 False Negative 안전망" 으로 목적 재정의 (defense in depth). 삭제하지 않음.
+- **갱신 문서**: plan-01, plan-02, REMEDIATION.md, MANUAL_AB_PROTOCOL.md, requirements.md, 본 progress.md (6개).
+- **검증 골든셋**: 20개 → **25개** (OFF_TOPIC 5개 추가 — META 3 / 무관 2). Intent 전체 정확도 ≥ 90%, OFF_TOPIC 자체 정확도 ≥ 80%.
+- **plan-03 은 변경 없음** — `recommended_next_action` 시그널 consume 로직 그대로.
+- **코드 구현은 S4+ 에서** — 본 결정은 문서 전용 갱신.
 
 ### 2026-04-24 (S3b — plan-00f Interview Turn Policy 추상화 완료)
 
@@ -77,7 +125,7 @@
 - **라이브 검증**: `./gradlew bootRun --args='--spring.profiles.active=local --spring.sql.init.mode=never'` 로 실제 기동 → `/actuator/prometheus` HTTP 200 확인. Caffeine 캐시 메트릭 6 종 (`cache_gets_total` / `cache_evictions_total` / `cache_eviction_weight_total` / `cache_puts_total` / `cache_size`) 노출 확인.
 - **문서 오류 수정**: Caffeine 메트릭 실제 이름을 확인해 OBSERVABILITY.md 의 `rehearse_runtime_state_cache_*` 쿼리를 `cache_*{cache="rehearse.runtime.state"}` 로 전면 교체. Micrometer `CaffeineCacheMetrics.monitor()` 의 세 번째 인자는 metric prefix 가 아니라 `cache` 태그 값 — 플랜 문서 초안 가정이 잘못됐음을 실측으로 확정.
 - **AI 메트릭 노출 검증 보류**: 로컬 실 AI 호출(API 키) 없이는 `rehearse_ai_call_*` Lazy 등록 안 됨 → 스테이징 배포 후 실 호출 1 회로 검증 예정 (`OBSERVABILITY.md §검증 스냅샷` 부록 업데이트).
-- **머지 순서 권장**: #346 (00e) → #348 (00f) → #347 (00d S3c).
+- **실제 머지 결과**: #347 (00d S3c) 먼저 머지, #346 (00e) 은 별도 PR 대신 #348 에 cherry-pick 으로 통합 후 close — 최종 develop 에는 #347 + #348 2 개 squash 커밋만 남음. S3 마일스톤(00c/00d/00e/00f) 전부 Completed.
 
 ### 2026-04-24 (S3b — plan-00d Observability 1차 — docs 초안)
 
@@ -184,7 +232,7 @@ VERIFICATION_REPORT.md 작성 후 Critical/Major 문서 교정 적용:
 - [x] C3 호출별 모델 선택 (00b) — ChatRequest.modelOverride 지원 (S2)
 - [ ] M1 7주 재산정 (이 문서)
 - [x] M2 W1-W3 회귀 방어 (00d) — `OBSERVABILITY.md` 작성 (S3b, 2026-04-24). Grafana/PromQL 쿼리 7 종 + Alert 임계치 5 종 + 배포 회귀 감지 체크리스트
-- [ ] M3 META/OFF_TOPIC 가드 (plan-01 edit)
+- [ ] M3 4-intent 확장 (OFF_TOPIC 분리, META 통합, LLM-free handler) — plan-01/02 문서 갱신 완료 (2026-04-24), 구현 대기
 - [x] M4 실제 클래스명 정정 — plan-00a 인벤토리 완료 (S1). plan-01/07/08 본문 edit은 각 plan 실행 직전 해당 PR에 포함 (IMPACT_MAP 교정 사항 참조)
 - [x] M5 Fallback 캐시 정책 (00b) — ResilientAiClient.fallbackChat() allowMiss=true 자동 적용 (S2)
 - [x] M6 Feedback 관계 (00e) — `FEEDBACK_DOMAIN.md` 작성 (S3b, 2026-04-24). 병존 aggregate + partial-first + Admin API + InterviewCompletedEvent 신규 도입 결정

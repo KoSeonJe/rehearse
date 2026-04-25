@@ -14,7 +14,39 @@ public class FollowUpResponse {
     private final String type;
     private final String answerText;
     private final String modelAnswer;
-    /** AI가 답변 불충분으로 후속질문 생성을 건너뛴 경우 true. true일 때 questionId/question/reason/type/modelAnswer는 null. */
     private final boolean skip;
     private final String skipReason;
+    // FE 렌더링 신호. AI 자체 skip(답변 불충분)=false / 사용자 안내(OFF_TOPIC/CLARIFY/GIVE_UP)=true.
+    private final boolean presentToUser;
+
+    public static FollowUpResponse aiSkip(String answerText, String skipReason) {
+        return FollowUpResponse.builder()
+                .answerText(answerText)
+                .skip(true)
+                .skipReason(skipReason)
+                .presentToUser(false)
+                .build();
+    }
+
+    public static FollowUpResponse intentBranch(IntentBranchPayload payload) {
+        return FollowUpResponse.builder()
+                .question(payload.question())
+                .ttsQuestion(payload.ttsQuestion())
+                .reason(payload.reason())
+                .type(payload.type())
+                .answerText(payload.answerText())
+                .skip(true)
+                .skipReason(payload.skipReason())
+                .presentToUser(true)
+                .build();
+    }
+
+    public record IntentBranchPayload(
+            String question,
+            String ttsQuestion,
+            String reason,
+            String type,
+            String skipReason,
+            String answerText
+    ) {}
 }

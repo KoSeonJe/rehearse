@@ -23,6 +23,9 @@
   - LANGUAGE_FRAMEWORK × 1
   - RESUME_BASED × 1~2
   - BEHAVIORAL × 1
+- **plan-01 (Intent Classifier) 머지 전 추가 커버**: 4-intent 분기 검증용 세션
+  - ANSWER 주 세션에 **OFF_TOPIC 발화 삽입** (META 형 "시간 얼마 남았어요?" + 무관 발화 "배고프네요" 각 1회 이상) — L1 분류기가 OFF_TOPIC 분기로 라우팅하고 handler 가 원 질문 재제시 응답을 내는지 확인
+  - CLARIFY_REQUEST, GIVE_UP 분기 각 1회씩 수동 유도
 
 ---
 
@@ -39,7 +42,8 @@
 
 - 신버전 꼬리질문이 구버전 대비 "사용자 답변 claim 에 더 정확히 꽂힌다" 가 3~5건 중 과반 이상
 - 신버전 피드백이 구버전 대비 "관찰 인용 포함 + 다음 액션 구체" 가 과반 이상
-- 지연/비용은 Grafana `rehearse_ai_call_duration_seconds` p95 로 별도 확인
+- **OFF_TOPIC 분기** (plan-01 이후): handler 응답이 "리드인 + 원 질문 재제시" 형태 유지, 꼬리질문 생성 0건. `followUpType = "OFF_TOPIC_REDIRECT"` 로그 태그 확인
+- 지연/비용은 Grafana `rehearse_ai_call_duration_seconds` p95 로 별도 확인 (OFF_TOPIC 분기는 LLM 1회만 — L1 Intent Classifier)
 - 회귀 의심 시 PR 반려 → 원인 분석 → 재실행
 
 ---

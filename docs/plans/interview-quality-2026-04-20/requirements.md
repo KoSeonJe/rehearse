@@ -54,7 +54,7 @@ Rehearse의 핵심 LLM 파이프라인(질문 생성 / 꼬리질문 생성 / 피
   - 사실 검증 flag (이력서 vs 답변 모순 탐지) → 정밀도 관리 부담, MVP 이후
   - LoRA 파인튜닝 준비 → 6개월 후 데이터 축적 뒤 재평가
   - Verbal/Vision(Gemini) 구조 변경 → `prompt-improvement-2026-04` Lane 3-5에서 별도 진행 중
-  - META/OFF_TOPIC intent 세분화 → ANSWER로 병합하여 fallback 단순화
+  - (2026-04-24 갱신) META/OFF_TOPIC intent 처리: **4-intent 로 확장** — OFF_TOPIC 을 별도 분기로 분리, META 는 OFF_TOPIC 에 통합. OFF_TOPIC handler 는 LLM 미호출 템플릿(객관적 리드인 + 원 질문 재제시) → 사용자 path p95 ≤ 500ms. 5-intent 로 분리하지는 않음 (META 발생률 낮음 + OFF_TOPIC 과 동일한 응답 방식)
   - 5차원 루브릭 중 `recovery_from_gaps` → intent=GIVE_UP 턴에만 조건부
 
 ## 아키텍처 / 설계
