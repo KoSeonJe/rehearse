@@ -17,7 +17,7 @@
 
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
-| 01 | Intent Classifier (**4-intent**) | W3 | Draft | 00a,00b,00d | 2026-04-24 **3-intent → 4-intent 확장** (OFF_TOPIC 분리, META 통합, LLM-free handler). M4 교정 반영됨 |
+| 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Draft | 01, 00c | P0. 꼬리질문 전제 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Draft | 02 계약 | P0. v2 프롬프트 재활용 |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
@@ -31,6 +31,41 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-25 (S4 — plan-01 Phase A 구현 완료)
+
+- **전략**: plan-01 + plan-02 + plan-03 단일 PR 머지 목표. Phase A (L1 post-hoc) → 리뷰·검증 → Phase B (L2/L3 통합) 순차 진행. 실행계획 `~/.claude/plans/plan01-compressed-lark.md`
+- **STT 처리 결정**: post-hoc 채택 (사용자 결정). `generateFollowUpWithAudio` 결과의 `answerText` 로 intent classify → OFF_TOPIC/CLARIFY/GIVE_UP 이면 생성된 follow-up 버리고 handler 응답 덮어씀. Trade-off: OFF_TOPIC SLA `≤500ms + LLM 0회` 는 미달성 (GPT-4o-audio 호출 1회 이미 발생) — spec 에 기재됨. 구조 개편은 별도 plan 으로 이월
+- **OFF_TOPIC 연속 감지**: `FollowUpRequest.previousExchanges` 재활용. `OffTopicResponseHandler.OFF_TOPIC_CONNECTOR` 문자열 marker contains 기반. `OffTopicEscalationDetector` 컴포넌트로 분리 (지식 응집). FE 계약 변경 (`FollowUpExchange.skipReason` 필드 왕복) 은 Phase B 로 이월
+- **구현 파일** (신규 19 + 수정 5):
+  - VO: `domain/interview/vo/IntentType` (4-intent enum), `IntentResult` (record + `forceAnswer()` fallback 플래그 + `of()` 정상 팩토리)
+  - Config: `global/config/IntentClassifierProperties` (`@ConfigurationProperties` + `@Validated` + record, `fallback-on-low-conf:0.7` / `off-topic-consecutive-limit:3`). `RehearseApiApplication` 에 `@EnableConfigurationProperties` 등록
+  - Prompt: `infra/ai/prompt/{IntentClassifier,ClarifyResponse,GiveUpResponse}PromptBuilder` + `resources/prompts/template/{intent-classifier,clarify-response,giveup-response}.txt`. **보안 규칙** 섹션 + `<<<USER_UTTERANCE>>>` / `<<<MAIN_QUESTION>>>` / `<<<PREVIOUS_TURN>>>` delimiter 로 prompt injection boundary 확보. few-shot: ANSWER 4 / CLARIFY 2 / GIVE_UP 3 / OFF_TOPIC 2 + ANSWER negative (`"잘 모르지만 ~ 같아요"` → ANSWER)
+  - Service: `domain/interview/service/{IntentClassifier, OffTopicResponseHandler, ClarifyResponseHandler, GiveUpResponseHandler, OffTopicEscalationDetector}`. Classifier 는 `AiClient.chat()` 경유 (callType="intent_classifier", temperature=0.1, maxTokens=200, JSON_OBJECT). `IntentClassificationResponse.intent: String` + `parseIntent()` 로 대/소문자·하이픈 관대 처리. confidence < 0.7 또는 파싱 실패·RuntimeException → `forceAnswer` fallback. Clarify/GiveUp 도 AI 실패 시 안전 fallback (`CLARIFY_FALLBACK`/`GIVE_UP_FALLBACK` 고정 메시지)
+  - OffTopicResponseHandler: LLM 없음. 리드인 풀 4개 + 고정 connector + `Math.floorMod(Objects.hash(interviewId, turnIndex), 4)` 결정적 선택
+  - FollowUpService: `generateFollowUp()` 82→45라인 리팩토 (`handleAiSkip`/`branchByIntent`/`buildAnswerResponse` 추출). post-hoc intent classify 후 4-way switch. ANSWER 는 Optional.empty() 로 기존 경로 계속. OFF_TOPIC 분기에서 Detector 로 연속 카운트 → 임계(3) 도달 시 GIVE_UP escalation
+  - DTO: `FollowUpResponse.presentToUser: boolean` 신규. AI 자체 skip 응답 false / handler 3종 + ANSWER 정상 true. `skip` 의미를 "DB 저장 생략 신호" 로 javadoc 명확화. **FE 계약 변경 필요 — Phase A 머지 전 FE 팀 전달**
+- **리뷰 피드백 반영** (architect-reviewer + code-reviewer 병렬 — 각 조건부 승인, Blocker 4 + High 2 + Medium 5 해결):
+  - Blocker 1: `presentToUser` 계약 추가
+  - Blocker 2: prompt injection delimiter + 시스템 보안 규칙 (3 builder 전부)
+  - Blocker 3: LIVE 골든셋 단일 집계 `accuracy >= 0.90` 로 flaky 예방
+  - Blocker 4: IntentType String 수신 + 관대한 파싱 (대소문자·하이픈 허용)
+  - High 1: `generateFollowUp()` 메서드 추출
+  - High 2: `OffTopicEscalationDetector` 컴포넌트 분리
+  - Medium: `@ConfigurationProperties` 승격 + `global/config` 이동 + `@Validated`, `IntentResult.fallback` 플래그, `catch(RuntimeException)` 좁히기 + stacktrace, Clarify/GiveUp graceful fallback, GIVE_UP few-shot 3개 + negative 1개 보강, FollowUpService Phase 라벨 주석 제거
+- **테스트**: 706 → 719 (+13 신규). 0 failures / 0 errors / 1 skipped (LIVE 골든셋 `@EnabledIfEnvironmentVariable("LIVE_TEST","true")` 정상 skip)
+- **잔여 Phase A 게이트**:
+  - [ ] 로컬 bootRun 4분기 수동 curl 검증 (OpenAI API 키 필요)
+  - [ ] 스테이징 배포 후 Prometheus `rehearse.ai.call.duration_seconds{call.type="intent_classifier"}` p95 확인
+  - [ ] LIVE 골든셋 실행 (`LIVE_TEST=true ./gradlew test --tests IntentClassifierGoldenSetLiveTest`, accuracy ≥ 0.90)
+  - [ ] MANUAL_AB_PROTOCOL 3~5건 (OFF_TOPIC 2 + META 1 포함)
+  - [ ] FE 팀에 `presentToUser` 계약 전달
+- **Phase B 진입 조건**: 위 5건 전원 통과 후 plan-02 Answer Analyzer + plan-03 Follow-up Generator v3 구현 착수 (동일 PR)
+- **이월 이슈 (Phase B 후보)**:
+  - `FollowUpExchange.skipReason` 필드 왕복 계약 (현재 marker 문자열 감지)
+  - `FollowUpResponseType` enum 도입 (type 문자열 정리)
+  - 3 PromptBuilder 템플릿 로드 공통화 (L2/L3 추가 시점)
+  - STT 분리 구조 개편 (OFF_TOPIC 진정한 ≤500ms SLA 복구)
 
 ### 2026-04-24 (plan-01 4-intent 확장 결정 — 문서 갱신)
 

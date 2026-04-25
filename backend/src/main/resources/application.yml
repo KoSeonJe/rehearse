@@ -46,6 +46,9 @@ rehearse:
     policy:
       standard:
         max-follow-up-rounds: 2
+  intent-classifier:
+    fallback-on-low-conf: 0.7
+    off-topic-consecutive-limit: 3
 
 management:
   endpoints:

@@ -1,16 +1,20 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.global.config.IntentClassifierProperties;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.vo.IntentResult;
+import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,6 +29,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FollowUpService - 꼬리질문 생성")
@@ -38,6 +43,34 @@ class FollowUpServiceTest {
 
     @Mock
     private FollowUpTransactionHandler followUpTransactionHandler;
+
+    @Mock
+    private IntentClassifier intentClassifier;
+
+    @Mock
+    private IntentClassifierProperties intentClassifierProperties;
+
+    @Mock
+    private OffTopicResponseHandler offTopicResponseHandler;
+
+    @Mock
+    private ClarifyResponseHandler clarifyResponseHandler;
+
+    @Mock
+    private GiveUpResponseHandler giveUpResponseHandler;
+
+    @Mock
+    private OffTopicEscalationDetector offTopicEscalationDetector;
+
+    @BeforeEach
+    void setUp() {
+        // 기존 테스트는 ANSWER 분기를 검증 — IntentClassifier가 항상 ANSWER를 반환하도록 설정
+        lenient().when(intentClassifier.classify(any(), any(), any()))
+                .thenReturn(IntentResult.of(IntentType.ANSWER, 1.0, "test default"));
+        lenient().when(intentClassifierProperties.offTopicConsecutiveLimit()).thenReturn(3);
+        lenient().when(offTopicEscalationDetector.countRecentConsecutive(any())).thenReturn(0);
+        lenient().when(offTopicEscalationDetector.shouldEscalate(anyInt(), anyInt())).thenReturn(false);
+    }
 
     @Nested
     @DisplayName("generateFollowUp 메서드")
