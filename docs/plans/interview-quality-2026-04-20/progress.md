@@ -32,6 +32,16 @@
 
 ## 진행 로그
 
+### 2026-04-25 (S5 — plan-02/03 단일 PR 착수 — 문서 정합화)
+
+- **전략**: plan-02 (Answer Analyzer M1 Step A) + plan-03 (Follow-up Generator v3 M1 Step B) 단일 BE PR 머지. plan-02 단독 머지 시 Step A 출력 소비처 부재 → 데드코드. 실행계획 사용자 인계 plan ([Plan02 + Plan03 단일 PR 실행계획])
+- **plan-02 문서 patch (3건)**:
+  - 경로 정정: `domain/interview/runtime/InterviewRuntimeState.java` → `domain/interview/entity/InterviewRuntimeState.java` (실측 위치)
+  - `AnswerAnalysis implements TurnAnalysis` 명시 (마커 인터페이스 기존 존재, plan-08 Rubric 과 캐시 키 통합 의도)
+  - `InterviewRuntimeState.recordAnalysis()/getAnswerAnalysis()` 메서드 추가를 본 PR 범위로 명시 (`turnAnalysisCache` 필드는 plan-00c 에서 이미 존재, 본 PR 은 접근자만 추가)
+- **plan-03 GeneratedFollowUp 위치 확인**: `infra/ai/dto/GeneratedFollowUp.java` 일치, patch 불필요
+- **다음**: plan-02 코드 구현 → plan-03 코드 구현 → 통합 테스트 → 리뷰 → 단일 PR
+
 ### 2026-04-25 (S4 — plan-01 Phase A 구현 완료)
 
 - **전략**: plan-01 + plan-02 + plan-03 단일 PR 머지 목표. Phase A (L1 post-hoc) → 리뷰·검증 → Phase B (L2/L3 통합) 순차 진행. 실행계획 `~/.claude/plans/plan01-compressed-lark.md`

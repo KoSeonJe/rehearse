@@ -51,6 +51,9 @@ rehearse:
     fallback-on-low-confidence: 0.7
     # 동일 세션 OFF_TOPIC 연속 발화 N회 도달 시 GIVE_UP escalation
     off-topic-consecutive-limit: 3
+  answer-analyzer:
+    # plan-02 Step A. 기본 ON, runtime toggle 없음 (Feature Flag 철거 정책)
+    enabled: true
 
 management:
   endpoints:
