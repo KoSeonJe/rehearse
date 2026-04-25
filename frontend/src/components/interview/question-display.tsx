@@ -16,6 +16,12 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
   CLARIFICATION: '명확화',
   CHALLENGE: '반론',
   APPLICATION: '적용',
+  OFF_TOPIC_REDIRECT: '재안내',
+  CLARIFY_REESTABLISH: '재설명',
+  CLARIFY_FALLBACK: '재설명',
+  SCAFFOLD: '힌트',
+  REVEAL_AND_MOVE_ON: '정답 공개',
+  GIVE_UP_FALLBACK: '안내',
 }
 
 export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {

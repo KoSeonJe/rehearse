@@ -335,6 +335,7 @@ export const useAnswerFlow = ({
         const previousExchanges = history.map((e) => ({
           question: e.question,
           answer: e.answer,
+          followUpType: e.followUpType ?? e.type,
         }))
 
         const res = await followUpMutation.mutateAsync({
@@ -354,11 +355,10 @@ export const useAnswerFlow = ({
           completeFollowUpRound(res.data.answerText || answerText)
         }
 
-        // AI가 답변 불충분으로 꼬리질문 생성을 포기한 경우
-        // - store에 꼬리질문을 저장하지 않음 (questionId/question이 null일 수 있음)
-        // - 자연스러운 전환 멘트로 다음 메인 질문 진행
-        // - 같은 메인 질문에 대해 재요청하지 않음 (무한 루프 방지)
-        if (res.data.skip) {
+        // skip 분기 — presentToUser 로 두 케이스 구분:
+        //   1) AI 자체 skip (답변 불충분): skip=true, presentToUser 없음/false → 다음 메인 질문
+        //   2) 의도 분기 응답 (OFF_TOPIC/CLARIFY/GIVE_UP): skip=true, presentToUser=true → 화면 표시 + TTS, 라운드 미증가
+        if (res.data.skip && res.data.presentToUser !== true) {
           resetFollowUpState()
           transitionToNext(isLastQuestion, /* useSkipPhrase */ true)
           return
@@ -366,8 +366,8 @@ export const useAnswerFlow = ({
 
         setCurrentFollowUp(res.data)
 
-        // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
-        if (currentSet && res.data.questionId) {
+        // 의도 분기는 DB 저장 안 됐으므로 questionId 없음 — addQuestionToSet 스킵
+        if (currentSet && !res.data.skip && res.data.questionId) {
           addQuestionToSet(updatedState.currentQuestionSetIndex, {
             id: res.data.questionId,
             questionType: 'FOLLOWUP',
