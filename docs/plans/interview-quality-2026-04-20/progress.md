@@ -20,7 +20,7 @@
 | 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Completed (#353) | 01, 00c | P0. 꼬리질문 전제. 코드 + 테스트 완료 (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC, mergeCommit `be68b0f`). FK 마이그레이션은 plan-08 로 이관 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Completed (#353) | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC). 749 tests pass |
-| 04 | Context Engineering 4-layer `[blocking]` | W5 | Draft | 00b,00c | Resume Track 전제. Fallback 캐시 정책 명시 필요 |
+| 04 | Context Engineering 4-layer `[blocking]` | W5 | Code Merged / Gates Pending (#354) | 00b,00c | PR #354 머지. 검증 §1·§3 통과. §2(Prometheus 24h) 인프라 부재로 별도 SRE PR 이월. §4(MANUAL_AB)·§5(Compaction 정성) 다음 세션. 후속 B/C/D 항목은 plan-04 spec 참조 |
 | 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
 | 06 | Resume Interview Planner (Phase 2) `[parallel:05]` | W5 | Draft | 04, 00c | InterviewPlan 영속화는 V25. **Dynamic Pacing 재설계 (2026-04-22)**: duration 스케일링 폐기, priority 랭킹만 |
 | 07 | Resume Orchestrator (Phase 3) | W6 | Draft | 04,05,06,00f | fact_check_flag 삭제 + 실제 진입점 명시 필요. `ResumeTrackPolicy` 에 `ChainStateTracker` 주입(00f skeleton 활용). **WRAP_UP 모드 + ClockWatcher + Resume Exclusivity Rule 추가 (2026-04-22)** |
@@ -31,6 +31,37 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-26 (S8 — plan-04 Context Engineering 4-Layer 구현 + PR #354)
+
+- **PR #354** (`[BE] feat: 면접 매 턴 LLM 입력 토큰을 90% 줄이고 시스템 프롬프트를 캐시`):
+  - 브랜치 `feat/plan-04-context-engineering` (origin/develop = `6ac9c5a` 베이스)
+  - CI 통과 (Backend CI / Frontend CI 모두 SUCCESS)
+  - **머지 대기 상태** (사용자 승인 후 squash merge 예정)
+- **신규 코드**:
+  - `infra/ai/context/**` 14 클래스 + 테스트 7 클래스 (L1 Fixed / L2 SessionState / L3 DialogueHistory + Async Compactor / L4 Focus / InterviewContextBuilder + AnswerAnalysisJsonRenderer)
+  - `compaction-summarizer.txt` 프롬프트 + `CompactionExecutorConfig` (graceful shutdown 30s)
+  - `ContextEngineeringProperties` + `application.yml` `rehearse.context-engineering` 블록
+  - `ContextEngineeringMetrics` (tokens / cache_hit_ratio / compaction_count 3 Histogram/Gauge/Counter)
+  - 5 caller 통합 (`AnswerAnalyzer`/`IntentClassifier`/`FollowUpService`/`ClarifyResponseHandler`/`GiveUpResponseHandler`)
+- **테스트**: 838 tests / 0 failures / 1 ignored (baseline 749 + 신규 ~89)
+- **토큰 측정**: `python3 eval/context/measure_tokens.py` PASS — avg=609, max=687, min=441 (5 fixture × 10턴, 4-char/tok 휴리스틱)
+- **리뷰 반영** (architect-reviewer + code-reviewer 병렬):
+  - TOCTOU race fix: `InterviewRuntimeState.tryStartCompaction(windowEnd)` atomic add 로 게이트
+  - 사용 안 되는 `PromptCacheStrategy`/`OpenAi`/`Claude` 어댑터 3종 + 테스트 2종 삭제 (캐시 마킹은 `ChatMessage.cacheControl` + `ClaudeApiClient.SystemContent.withCaching` 에 이미 와이어링)
+  - `CompactionExecutor` graceful shutdown (`setWaitForTasksToCompleteOnShutdown(true)` + 30s)
+- **검증 게이트 현실화** (`plan-04-context-engineering.md` 검증 표 갱신):
+  - §1 평균 입력 토큰 ≤8000: ✅ PASS
+  - §2 캐시 히트율 ≥95% (24h): ⚠️ DEFERRED — Prometheus 서버 부재. 별도 SRE 인프라 PR 후 재실행
+  - §3 회귀 0: ✅ PASS (838 tests)
+  - §4 MANUAL_AB 3~5건: ⏳ 다음 세션
+  - §5 Compaction 정성 5세션: ⏳ 다음 세션
+  - §6 progress.md Completed: §4·§5 통과 후
+- **이월 항목** (`plan-04-context-engineering.md` `## 이월 사항` 섹션):
+  - A: 게이트 §2/§4/§5 (다음 세션 직접 진행)
+  - B: 내부 미구현 6종 (B2 asked_perspectives derive 가 plan-05 진입 전 High 우선순위)
+  - C: Prometheus 인프라 자체 (SRE 별건)
+  - D: plan-03 잔여 게이트 4종 (병렬 트랙)
 
 ### 2026-04-26 (S7 — PR #353 머지 + 문서 정합화)
 

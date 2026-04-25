@@ -189,3 +189,56 @@ interview-quality 실행 계획 S8 — plan-04 Context Engineering 4-Layer Build
 - 브랜치: `feat/plan-04-context-engineering` (origin/develop = `6ac9c5a` 베이스)
 - 단일 BE PR — 제목 `[BE] feat(plan-04): Context Engineering 4-layer Builder + Prompt Caching 표준화`
 
+---
+
+## Session S8 (2026-04-26) — plan-04 코드 구현 + PR #354 머지 대기
+
+### 완료
+- **신규 코드 (Tasks 1~7)**:
+  - L1 `FixedContextLayer` (callType 5종 skeleton + GLOBAL_CORE 보안 규칙)
+  - L2 `SessionStateLayer` + `SessionStateSnapshot` record + `InterviewRuntimeState.toSessionStateSnapshot()`
+  - L3 `DialogueHistoryLayer` (5턴 슬라이딩 윈도우) + `DialogueCompactor` `@Async("compactionExecutor")` + `CompactionExecutorConfig` (core 2/max 4/queue 50/CallerRunsPolicy/30s shutdown)
+  - L4 `FocusLayer` (callType 6종 dispatch with token cap)
+  - `InterviewContextBuilder` 진입점 + `ContextBuildRequest`/`BuiltContext` records + `ContextEngineeringProperties` (`@Validated` cross-field check)
+  - `ContextEngineeringMetrics` (tokens Histogram + cache_hit_ratio Gauge + compaction_count Counter)
+  - `compaction-summarizer.txt` (5-key JSON: covered_topics/user_claims_made/chain_progress_history/perspectives_asked/notable_moments + 보안 규칙 + 2 few-shot)
+  - 5 caller refactor (`AnswerAnalyzer:54`/`IntentClassifier:34`/`FollowUpService:147`/`ClarifyResponseHandler:47`/`GiveUpResponseHandler:46`)
+- **리뷰 반영** (architect + code 병렬):
+  - DialogueCompactor TOCTOU race fix (`tryStartCompaction(windowEnd)` atomic)
+  - vestigial `PromptCacheStrategy`/`OpenAi`/`Claude` 어댑터 3종 + 테스트 2종 삭제
+  - `CompactionExecutor` graceful shutdown
+- **테스트**: 838 / 0 failures / 1 ignored
+- **토큰 측정**: avg=609, max=687, min=441 (5 fixture × 10턴, PASS ≤8000)
+- **PR #354**: CI 그린, 머지 대기 (사용자 승인 후 squash merge)
+
+### 검증 게이트 현실화
+plan-04 spec `## 검증` 표 갱신 — Prometheus 서버 부재 (OBSERVABILITY.md `Out of Scope`)로 §2(24h 캐시 히트율) 게이트 별도 SRE 인프라 PR 후 재실행.
+
+### 잔여 게이트 (다음 세션 S9에서)
+- A1. 로컬/EC2 `/actuator/prometheus` 단발 캡처 → `rehearse_ai_context_cache_hit_ratio` > 0
+- A2. MANUAL_AB 3~5건 (OpenAI vs Claude 동일 세션, `MANUAL_AB_PROTOCOL.md`)
+- A3. Compaction 정성 5세션 (6턴 이상 진행, covered_topics 누락 0건)
+- A4. progress.md 04 → Completed + HANDOFF S9 완료 entry
+
+### 이월 (별도 spec, plan-05 진입 전 우선순위 결정 필요)
+- **B2 (High)** L2 `asked_perspectives` derive — Resume Track 입력 품질 직접 영향
+- B1 L3 동기 compaction fallback
+- B3 `max-context-tokens: 8000` 초과 시 강제 compaction
+- B4 TokenEstimator 한국어 정확도 (jtokkit)
+- B5 `focusHints` sealed-interface
+- B6 orphan 4 prompt builders 삭제
+- C1/C2 Prometheus + Grafana + Alertmanager (SRE 별건)
+- D1~D4 plan-03 잔여 (FE 계약 / LIVE 골든셋 / MANUAL_AB v2/v3 / 스테이징 p95)
+
+### 다음 세션 (S9) Kickoff
+```
+interview-quality 실행 계획 S9 — plan-04 Gate 통과 + plan-05 (Resume Extractor) 착수 결정
+```
+- 사전: PR #354 develop 머지 확인 (없으면 `gh pr merge 354 --squash --delete-branch` 또는 GitHub UI)
+- Step 1: A1 단발 캡처 — 로컬 `./gradlew bootRun` + 면접 1세션 10턴 직접 진행 → `curl localhost:8080/actuator/prometheus | grep rehearse_ai_context`
+- Step 2: A2 MANUAL_AB 3~5건 — `eval/manual-ab/2026-04-2X-plan-04.md` 작성
+- Step 3: A3 Compaction 정성 5세션 — 6턴+ 시나리오 직접 트리거, 결과 캡처
+- Step 4: progress.md 04 `Completed (#354)` + HANDOFF S9 완료 entry
+- Step 5: B2 (asked_perspectives derive) 별도 spec 작성 후 plan-05 진입 결정
+- 참조: `plan-04-context-engineering.md` `## 이월 사항`
+

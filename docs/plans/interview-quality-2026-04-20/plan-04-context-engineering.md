@@ -163,9 +163,39 @@ Exit code: 0 (PASS) / 1 (avg > 8000 또는 max > 9000).
 
 ## 검증
 
-1. 10턴 세션 평균 입력 토큰 ≤ 8,000 (측정 스크립트 `eval/context/measure_tokens.py`)
-2. L1 캐시 히트율 ≥ 95% (Claude `cache_read_input_tokens` 메타데이터 기준)
-3. 기존 plan-01/02/03 호출이 새 ContextBuilder로 전환된 뒤 회귀 없음 (`./gradlew test`)
-4. OpenAI vs Claude 동일 세션에서 출력 유사도 수동 비교 — 3~5건 세션 정성 확인 (MANUAL_AB_PROTOCOL.md 참조)
-5. Compaction 결과가 핵심 claim(covered_topics) 누락 없는지 5개 세션 수동 리뷰
-6. `progress.md` 04 → Completed
+| # | 항목 | 상태 | 결과 / 이월 사유 |
+|---|---|---|---|
+| 1 | 10턴 세션 평균 입력 토큰 ≤ 8,000 (`eval/context/measure_tokens.py`) | ✅ PASS | avg=609, max=687, min=441 (5 fixture, 4-char/tok 휴리스틱). 한국어 정확도 ±50% — 게이트 §4 통과 후 jtokkit 도입 검토 |
+| 2 | L1 캐시 히트율 ≥ 95% (Claude `cache_read_input_tokens` 메타) | ⚠️ **DEFERRED** | Prometheus 서버 부재 (인프라 미구축, OBSERVABILITY.md `Out of Scope`). 대안: 로컬/EC2 단발 `curl /actuator/prometheus` 1~2회 캡처로 캐시 히트 동작만 확인. **24h 시계열 게이트는 별도 SRE 인프라 PR 후 재실행** |
+| 3 | 회귀 0 (`./gradlew test`) | ✅ PASS | 838 tests / 0 failures / 1 ignored (PR #354) |
+| 4 | OpenAI vs Claude 동일 세션 정성 비교 3~5건 (`MANUAL_AB_PROTOCOL.md`) | ⏳ TODO | 다음 세션에서 수행. 코드 머지 후 스테이징 배포 + 면접 직접 진행 필요 |
+| 5 | Compaction 정확도 5세션 수동 리뷰 (covered_topics 누락 0건) | ⏳ TODO | 다음 세션. 5턴 초과 시나리오 직접 트리거 필요 |
+| 6 | `progress.md` 04 → Completed | ⏳ TODO | §4, §5 통과 + §2 단발 캡처 후 전환 |
+
+## 이월 사항 (다음 세션 / 별도 spec)
+
+### A. plan-04 게이트 잔여 (다음 세션에서 수행)
+- A1. 로컬/EC2 `/actuator/prometheus` 단발 캡처 → `rehearse_ai_context_cache_hit_ratio` 0보다 큰 값 확인
+- A2. MANUAL_AB 3~5건 — OpenAI primary vs Claude fallback 동일 세션 출력
+- A3. Compaction 정성 리뷰 5세션 — 6턴 이상 진행 후 `compactedDialogueSummary` 결과의 `covered_topics` 누락 여부
+
+### B. plan-04 내부 미구현 (별도 spec, plan-05 진입 전 우선순위 결정 필요)
+
+| 항목 | 영향 | 우선순위 |
+|---|---|---|
+| B1. L3 동기 compaction fallback (3턴 초과 → sync 전환 + `mode=sync_fallback` 메트릭) | 압축 큐 saturation 시 stale summary 위험 | Medium |
+| B2. L2 `asked_perspectives` derive (현재 빈 리스트) | Resume Track plan-05~07 입력 품질에 직접 영향 | **High — plan-05 진입 전 권장** |
+| B3. `max-context-tokens: 8000` 초과 시 강제 compaction (현재 warn log only) | 토큰 폭발 방어 부재 | Medium |
+| B4. TokenEstimator 한국어 정확도 (jtokkit 도입) | 토큰 cap 검증 정확도 ±50% → ±10% | Low |
+| B5. `ContextBuildRequest.focusHints` sealed-interface 리팩 | 5 caller 의 stringly-typed key 정리 | Low |
+| B6. Orphan 4 prompt builders (Intent/Answer/Clarify/GiveUp) 삭제 | 데드코드 정리 | Low |
+
+### C. 인프라 (별도 SRE PR)
+- C1. Prometheus 서버 + Grafana 대시보드 (OBSERVABILITY.md 쿼리 기반) — plan-04 §2 게이트 24h 측정 가능 인프라
+- C2. Alertmanager 룰 (캐시 히트율 < 0.5 / latency p95 > 8s 등)
+
+### D. plan-03 잔여 게이트 (무관 트랙, 병렬)
+- FE `selectedPerspective` echo + `presentToUser` 계약 전달 (FE PR)
+- LIVE 골든셋 (`LIVE_TEST=true`)
+- plan-02/03 MANUAL_AB
+- 스테이징 p95 (`answer_analyzer` / `follow_up_generator_v3`)
