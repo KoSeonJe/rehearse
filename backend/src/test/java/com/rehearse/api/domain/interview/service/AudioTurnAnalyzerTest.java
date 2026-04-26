@@ -15,6 +15,7 @@ import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import com.rehearse.api.infra.ai.prompt.AudioTurnAnalyzerPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -155,9 +156,9 @@ class AudioTurnAnalyzerTest {
     }
 
     @Test
-    @DisplayName("audio chat 실패(SERVICE_UNAVAILABLE) → TextFallback 위임 + 카운터 증가")
+    @DisplayName("audio chat 실패(AudioChatFallbackRequiredException) → TextFallback 위임 + 카운터 증가")
     void analyze_audioChatFailed_delegatesToTextFallback() {
-        willThrow(new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE))
+        willThrow(new AudioChatFallbackRequiredException("audio chat 인프라 오류"))
                 .given(aiClient).chatWithAudio(any(ChatRequest.class), any());
 
         TurnAnalysisResult fallback = new TurnAnalysisResult(

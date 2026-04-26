@@ -6,6 +6,7 @@ import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.extern.slf4j.Slf4j;
@@ -73,11 +74,12 @@ public class ResilientAiClient extends AbstractAiClient {
         return aiCallMetrics.recordChat(request.callType(), () -> doChatWithAudio(request, audio));
     }
 
-    // Audio chat 은 OpenAI 만 지원. Claude fallback 은 caller(AudioTurnAnalyzer)가
-    // STT + text-only 경로로 별도 처리한다.
+    // Audio chat 은 OpenAI 만 지원. retryable 인프라 오류 발생 시
+    // AudioChatFallbackRequiredException 으로 변환해 caller 가 STT + text-only 경로로 전환하도록 신호한다.
+    // non-retryable 오류(CLIENT_ERROR / PARSE_FAILED)는 그대로 BusinessException 재던짐.
     private ChatResponse doChatWithAudio(ChatRequest request, MultipartFile audio) {
         if (openAiClient == null) {
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            throw new AudioChatFallbackRequiredException("OpenAI 미설정 — audio chat 불가");
         }
         try {
             return openAiClient.chatWithAudio(request, audio);
@@ -85,11 +87,11 @@ public class ResilientAiClient extends AbstractAiClient {
             if (isNonRetryableError(e)) {
                 throw e;
             }
-            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            log.warn("[AI Audio] OpenAI audio chat 실패 → fallback 신호: callType={}, {}", request.callType(), e.getMessage());
+            throw new AudioChatFallbackRequiredException("audio chat 인프라 오류: " + e.getMessage(), e);
         } catch (RestClientException | RetryableApiException e) {
-            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            log.warn("[AI Audio] OpenAI audio chat 실패 → fallback 신호: callType={}, {}", request.callType(), e.getMessage());
+            throw new AudioChatFallbackRequiredException("audio chat 네트워크 오류: " + e.getMessage(), e);
         }
     }
 

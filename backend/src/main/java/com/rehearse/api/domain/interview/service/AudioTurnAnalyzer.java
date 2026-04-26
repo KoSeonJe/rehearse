@@ -14,6 +14,7 @@ import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import com.rehearse.api.infra.ai.prompt.AudioTurnAnalyzerPromptBuilder;
 import lombok.RequiredArgsConstructor;
@@ -52,12 +53,8 @@ public class AudioTurnAnalyzer {
         try {
             TurnAnalysisResult viaAudio = analyzeViaAudioChat(audioFile, mainQuestion, questionReferenceType, askedPerspectives);
             return commit(interviewId, turnId, viaAudio);
-        } catch (BusinessException e) {
-            if (!AiErrorCode.triggersAudioFallback(e.getCode())) {
-                throw e;
-            }
-            log.warn("[AudioTurnAnalyzer] audio chat 실패 → text-only fallback. interviewId={}, code={}",
-                    interviewId, e.getCode());
+        } catch (AudioChatFallbackRequiredException e) {
+            log.warn("[AudioTurnAnalyzer] audio chat 실패 → text-only fallback. interviewId={}", interviewId);
             aiCallMetrics.incrementFollowUpSkip("audio_chat_fallback_to_stt");
             // fallback 경로: TextFallback 의 AnswerAnalyzer 가 내부적으로 가드+캐시 처리하므로 commit() bypass.
             return textFallbackTurnAnalyzer.analyze(
