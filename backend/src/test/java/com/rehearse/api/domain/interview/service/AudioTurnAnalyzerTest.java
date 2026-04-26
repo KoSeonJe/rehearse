@@ -3,7 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
-import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentResult;

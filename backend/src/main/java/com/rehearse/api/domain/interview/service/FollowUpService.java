@@ -10,7 +10,7 @@ import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
-import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentType;
