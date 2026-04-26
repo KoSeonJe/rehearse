@@ -26,8 +26,8 @@ public class InterviewQueryService {
         return InterviewResponse.from(interview, questionSets);
     }
 
-    public InterviewResponse getInterviewByPublicId(String publicId) {
-        Interview interview = interviewFinder.findByPublicId(publicId);
+    public InterviewResponse getInterviewByPublicId(String publicId, Long userId) {
+        Interview interview = interviewFinder.findByPublicIdAndValidateOwner(publicId, userId);
         List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(interview.getId());
         return InterviewResponse.from(interview, questionSets);
     }

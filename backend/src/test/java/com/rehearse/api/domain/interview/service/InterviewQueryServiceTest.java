@@ -72,6 +72,41 @@ class InterviewQueryServiceTest {
         }
     }
 
+    @Nested
+    @DisplayName("getInterviewByPublicId 메서드")
+    class GetInterviewByPublicId {
+
+        @Test
+        @DisplayName("본인 publicId 조회 성공")
+        void getInterviewByPublicId_owner_success() {
+            Interview interview = createMockInterview();
+            String publicId = "test-public-uuid";
+            ReflectionTestUtils.setField(interview, "publicId", publicId);
+            given(interviewFinder.findByPublicIdAndValidateOwner(publicId, 1L)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+
+            InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId, 1L);
+
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getInterviewTypes()).containsExactly(InterviewType.CS_FUNDAMENTAL);
+        }
+
+        @Test
+        @DisplayName("타 유저 publicId 조회 시 FORBIDDEN 예외")
+        void getInterviewByPublicId_otherUser_forbidden() {
+            String publicId = "test-public-uuid";
+            given(interviewFinder.findByPublicIdAndValidateOwner(publicId, 2L))
+                    .willThrow(new BusinessException(HttpStatus.FORBIDDEN, "INTERVIEW_008", "면접 세션 접근 권한이 없습니다."));
+
+            assertThatThrownBy(() -> interviewQueryService.getInterviewByPublicId(publicId, 2L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_008");
+                    });
+        }
+    }
+
     private Interview createMockInterview() {
         Interview interview = Interview.builder()
                 .position(Position.BACKEND)

@@ -21,9 +21,11 @@ public interface InterviewRepository extends JpaRepository<Interview, Long> {
 
     List<Interview> findByStatus(InterviewStatus status);
 
-    Optional<Interview> findByPublicId(String publicId);
+    @EntityGraph(attributePaths = {"interviewTypes", "csSubTopics"})
+    @Query("SELECT i FROM Interview i WHERE i.publicId = :publicId")
+    Optional<Interview> findByPublicId(@Param("publicId") String publicId);
 
-    @Query(value = "SELECT i FROM Interview i WHERE i.userId = :userId ORDER BY i.createdAt DESC",
+    @Query(value = "SELECT i FROM Interview i WHERE i.userId = :userId ORDER BY i.createdAt DESC, i.id DESC",
             countQuery = "SELECT COUNT(i) FROM Interview i WHERE i.userId = :userId")
     Page<Interview> findAllByUserId(@Param("userId") Long userId, Pageable pageable);
 
