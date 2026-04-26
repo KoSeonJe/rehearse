@@ -171,21 +171,26 @@
 
 ## plan-05 Resume Extractor
 
+> ⚠️ **2026-04-27 갱신 (plan-04 머지 ee67201 반영 + B3 캐시 통합 결정)**
+
 ### 신규 생성
 - `/Users/koseonje/dev/devlens/backend/src/main/resources/prompts/template/resume/resume-extractor.txt` — Phase 1 추출 프롬프트
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/prompt/ResumeExtractorPromptBuilder.java` — 추출 프롬프트 빌더
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/ResumeIngestionService.java` — PDF 텍스트 정규화 + 언어 감지 + 섹션 분리
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/ResumeExtractionService.java` — 텍스트 → Skeleton 변환
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeSkeleton.java` — Skeleton record
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeSkeleton.java` — Skeleton record, **`implements CachedResumeSkeleton`** (plan-00c `entity/CachedResumeSkeleton` 인터페이스, `fileHash()` 구현 필수)
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/domain/Project.java` — 프로젝트 도메인
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeClaim.java` — resume 전용 claim (plan-02 Claim과 분리)
 - `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/domain/InterrogationChain.java` — L1 WHAT→L2 HOW→L3 WHY_MECH→L4 TRADEOFF 4단계 체인
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/domain/resume/ResumeSkeletonCache.java` — 세션 스코프 캐시 (2h TTL)
 
 ### 수정
-- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/PdfTextExtractor.java` — 정규화 파이프라인 추가 (RemoveControlChars/CollapseWhitespace/FixKoreanTokenBreaks/RemoveHeaderFooter/ExtractByColumn)
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/PdfTextExtractor.java` — 정규화 파이프라인 추가 (RemoveControlChars/CollapseWhitespace/FixKoreanTokenBreaks/RemoveHeaderFooter/ExtractByColumn). PDFBox 3.0.4 `setSortByPosition(true)` 로 2단 컬럼 지원, 추가 의존성 불필요.
+- `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/context/layer/FixedContextLayer.java` — `SKELETON_BY_CALL_TYPE` Map 에 `"resume_extractor"` 엔트리 추가 (L1 system block 렌더링 경로 확보)
 
-### ⚠️ 교정 사항
+### ⚠️ 교정 사항 (갱신)
+- **`ResumeSkeletonCache` 별도 신설 안 함** (2026-04-27 B3 결정): `InterviewRuntimeState.resumeSkeletonCache` 필드 (`CachedResumeSkeleton` 인터페이스) 가 이미 plan-00c 에서 존재. `ResumeSkeleton implements CachedResumeSkeleton` 구현으로 기존 `InterviewRuntimeStateStore` (Caffeine 2h TTL) 재사용. TTL/Eviction/Lock/Metrics 일원화.
+- **ContextBuildRequest 주입 경로 확정**: `callType="resume_extractor"` → `InterviewContextBuilder.build(ContextBuildRequest)` → `FixedContextLayer.build()` → `SKELETON_BY_CALL_TYPE.getOrDefault("resume_extractor", DEFAULT_SKELETON)` → `ChatMessage.ofCached(SYSTEM, fixedBlock)` (L1 캐시 마킹). `BuiltContext` 반환 (`messages`, `tokenEstimate`, `perLayerTokens`).
+- **PDF 라이브러리**: `org.apache.pdfbox:pdfbox:3.0.4` (build.gradle.kts L73). 추가 의존성 불필요.
 - plan-05 본문: `PdfTextExtractor.java` → **기존 클래스 수정** (신규 생성 아님). 경로: `/Users/koseonje/dev/devlens/backend/src/main/java/com/rehearse/api/infra/ai/PdfTextExtractor.java`
 
 ---

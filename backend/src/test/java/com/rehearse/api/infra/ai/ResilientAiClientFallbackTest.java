@@ -8,18 +8,22 @@ import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.lang.Nullable;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -175,5 +179,72 @@ class ResilientAiClientFallbackTest {
                         .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
 
         verify(claudeApiClient, never()).chat(any());
+    }
+
+    @Nested
+    @DisplayName("chatWithAudio — 분기 케이스")
+    class ChatWithAudio {
+
+        private final MultipartFile audio =
+                new MockMultipartFile("audio", "test.webm", "audio/webm", new byte[]{1, 2, 3});
+
+        private ChatResponse audioOkResponse() {
+            return new ChatResponse("분석 결과", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini-audio-preview", false, false);
+        }
+
+        @Test
+        @DisplayName("SERVICE_UNAVAILABLE 오류 발생 시 audio fallback 신호를 전달한다")
+        void chatWithAudio_throwsFallbackException_whenOpenAiClientFailsWithRetryableError() {
+            when(openAiClient.chatWithAudio(any(), any()))
+                    .thenThrow(new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE));
+
+            assertThatThrownBy(() -> resilientAiClient.chatWithAudio(baseRequest, audio))
+                    .isInstanceOf(AudioChatFallbackRequiredException.class);
+        }
+
+        @Test
+        @DisplayName("CLIENT_ERROR 오류 발생 시 audio fallback 신호를 전달한다 (회귀 가드)")
+        void chatWithAudio_throwsFallbackException_whenOpenAiClientFailsWithClientError() {
+            when(openAiClient.chatWithAudio(any(), any()))
+                    .thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
+
+            assertThatThrownBy(() -> resilientAiClient.chatWithAudio(baseRequest, audio))
+                    .isInstanceOf(AudioChatFallbackRequiredException.class);
+        }
+
+        @Test
+        @DisplayName("PARSE_FAILED 오류 발생 시 fallback 신호 없이 그대로 전파한다")
+        void chatWithAudio_propagatesBusinessException_whenOpenAiClientFailsWithParseFailed() {
+            when(openAiClient.chatWithAudio(any(), any()))
+                    .thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
+
+            assertThatThrownBy(() -> resilientAiClient.chatWithAudio(baseRequest, audio))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
+        }
+
+        @Test
+        @DisplayName("네트워크 오류 발생 시 audio fallback 신호를 전달한다")
+        void chatWithAudio_throwsFallbackException_whenOpenAiClientThrowsRestClientException() {
+            when(openAiClient.chatWithAudio(any(), any()))
+                    .thenThrow(new RetryableApiException("연결 타임아웃"));
+
+            assertThatThrownBy(() -> resilientAiClient.chatWithAudio(baseRequest, audio))
+                    .isInstanceOf(AudioChatFallbackRequiredException.class);
+        }
+
+        @Test
+        @DisplayName("OpenAI 미설정 시 audio fallback 신호를 전달한다")
+        void chatWithAudio_throwsFallbackException_whenOpenAiClientIsNull() {
+            SimpleMeterRegistry reg = new SimpleMeterRegistry();
+            AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
+            ResilientAiClient clientWithoutOpenAi = new ResilientAiClient(
+                    null, claudeApiClient, sttService, noopMetrics,
+                    mock(QuestionGenerationAdapter.class), mock(FollowUpGenerationAdapter.class));
+
+            assertThatThrownBy(() -> clientWithoutOpenAi.chatWithAudio(baseRequest, audio))
+                    .isInstanceOf(AudioChatFallbackRequiredException.class);
+        }
     }
 }

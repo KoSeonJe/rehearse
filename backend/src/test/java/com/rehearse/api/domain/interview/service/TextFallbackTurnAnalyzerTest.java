@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.Claim;
 import com.rehearse.api.domain.interview.EvidenceStrength;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
-import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;

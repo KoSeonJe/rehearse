@@ -6,6 +6,7 @@ import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.extern.slf4j.Slf4j;
@@ -73,23 +74,24 @@ public class ResilientAiClient extends AbstractAiClient {
         return aiCallMetrics.recordChat(request.callType(), () -> doChatWithAudio(request, audio));
     }
 
-    // Audio chat 은 OpenAI 만 지원. Claude fallback 은 caller(AudioTurnAnalyzer)가
-    // STT + text-only 경로로 별도 처리한다.
+    // Audio chat 은 OpenAI 만 지원. PARSE_FAILED 는 응답 구조 결함이므로 rethrow.
+    // 그 외 BusinessException (CLIENT_ERROR 포함) 과 네트워크 오류는 fallback 신호로 변환해
+    // caller(AudioTurnAnalyzer) 가 STT + text-only 경로로 전환하도록 한다.
     private ChatResponse doChatWithAudio(ChatRequest request, MultipartFile audio) {
         if (openAiClient == null) {
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            throw new AudioChatFallbackRequiredException("OpenAI 미설정 — audio chat 불가");
         }
         try {
             return openAiClient.chatWithAudio(request, audio);
         } catch (BusinessException e) {
-            if (isNonRetryableError(e)) {
+            if (isResponseDefect(e)) {
                 throw e;
             }
-            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            log.warn("[AI Audio] OpenAI audio chat 실패 → fallback: callType={}, code={}", request.callType(), e.getCode());
+            throw new AudioChatFallbackRequiredException("audio chat 인프라 오류: " + e.getMessage(), e);
         } catch (RestClientException | RetryableApiException e) {
-            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
-            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+            log.warn("[AI Audio] OpenAI audio chat 실패 → fallback: callType={}, {}", request.callType(), e.getMessage());
+            throw new AudioChatFallbackRequiredException("audio chat 네트워크 오류: " + e.getMessage(), e);
         }
     }
 
@@ -111,6 +113,18 @@ public class ResilientAiClient extends AbstractAiClient {
             log.warn("[AI Fallback] OpenAI chat 실패 → Claude 전환: callType={}, {}", request.callType(), e.getMessage());
             return fallbackChat(request);
         }
+    }
+
+    // CLIENT_ERROR / PARSE_FAILED — Claude 에 보내도 동일 실패하므로 text-only fallback 생략.
+    private boolean isNonRetryableError(BusinessException e) {
+        return AiErrorCode.CLIENT_ERROR.getCode().equals(e.getCode())
+                || AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());
+    }
+
+    // PARSE_FAILED 만 rethrow — 응답 구조 결함은 audio fallback 경로로 보내도 재현될 가능성이 높음.
+    // CLIENT_ERROR 등 나머지는 인프라 일시 오류로 간주해 STT fallback 으로 유도한다.
+    private boolean isResponseDefect(BusinessException e) {
+        return AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());
     }
 
     private ChatResponse fallbackChat(ChatRequest request) {
@@ -136,9 +150,4 @@ public class ResilientAiClient extends AbstractAiClient {
         }
     }
 
-    // 요청 자체 문제(CLIENT_ERROR / PARSE_FAILED)는 Claude 로 보내도 동일 실패 → fallback 생략.
-    private boolean isNonRetryableError(BusinessException e) {
-        return AiErrorCode.CLIENT_ERROR.getCode().equals(e.getCode())
-                || AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());
-    }
 }

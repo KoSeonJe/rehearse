@@ -33,6 +33,24 @@
 
 ## 진행 로그
 
+### 2026-04-27 (S10 — plan-05 선행 spec 갱신 + audio chat P1 정리)
+
+- plan-15 머지 후 P1 3건 정리 (별도 PR `refactor/audio-chat-resilience-cleanup`):
+  - `ResilientAiClient.chatWithAudio` fallback 분기 인프라 일원화 (caller `AudioTurnAnalyzer` 단순화)
+  - `TurnAnalysisResult` `dto/` → `vo/` 이동 (도메인 VO 위치 일관성)
+  - `OpenAiClient` chat/audio body 빌딩 중복 제거
+- plan-05 선행 작업:
+  - plan-04 머지 (#354 ee67201) 반영해 plan-05 §"검증 5" 실 클래스명 + 메서드 시그니처 갱신
+    - `InterviewContextBuilder.build(ContextBuildRequest)` → `FixedContextLayer.build()` → `SKELETON_BY_CALL_TYPE.getOrDefault("resume_extractor")` 경로 확정
+    - `ContextBuildRequest` 필드 구조 (callType/runtimeState/exchanges/focusHints/providerHint) 확인
+    - `BuiltContext` 반환 구조 (messages/tokenEstimate/perLayerTokens) 확인
+  - `ResumeSkeletonCache` 신설 안 함 결정 — `InterviewRuntimeStateStore` 재사용 (plan-05 §"저장 정책" 반영)
+    - `InterviewRuntimeState.resumeSkeletonCache` 필드(`CachedResumeSkeleton` 인터페이스) 이미 존재 확인
+    - `ResumeSkeleton implements CachedResumeSkeleton` 구현으로 기존 Caffeine 2h TTL 캐시 재사용
+  - PDF 라이브러리 확인: `PDFBox 3.0.4` (build.gradle.kts L73), 추가 의존성 불필요, `setSortByPosition(true)` 로 2단 컬럼 지원
+  - plan-05 §"생성/수정 파일" 갱신: `ResumeSkeletonCache.java` → `FixedContextLayer.java` 수정으로 교체
+  - IMPACT_MAP.md plan-05 항목 갱신 (동일 내용 반영)
+
 ### 2026-04-27 (S9 — Audio Turn Analyzer 통합 (4-call → 2-call) — plan-15 + PR #358 머지 + 후속 리팩토링)
 
 - **PR #358** (`[BE] feat: 면접 한 턴을 단일 audio 호출로 분석해 응답 시간·실패율 단축`):

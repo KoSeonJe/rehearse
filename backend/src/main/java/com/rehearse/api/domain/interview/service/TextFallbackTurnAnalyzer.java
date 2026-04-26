@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;

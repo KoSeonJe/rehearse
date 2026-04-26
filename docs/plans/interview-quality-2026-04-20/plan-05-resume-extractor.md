@@ -22,17 +22,20 @@
 | `backend/src/main/java/com/rehearse/api/infra/ai/PdfTextExtractor.java` | **수정 (기존 클래스 — 신규 아님)**. 정규화 파이프라인(RemoveControlChars/CollapseWhitespace/FixKoreanTokenBreaks/RemoveHeaderFooter/ExtractByColumn) 추가 |
 | `backend/src/main/java/com/rehearse/api/domain/resume/ResumeIngestionService.java` | 신규. `PdfTextExtractor` 호출 + 언어 감지 + 섹션 분리 |
 | `backend/src/main/java/com/rehearse/api/domain/resume/ResumeExtractionService.java` | 신규. 텍스트 → Skeleton |
-| `backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeSkeleton.java` | 신규 record |
+| `backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeSkeleton.java` | 신규 record — `implements CachedResumeSkeleton` (plan-00c 인터페이스, fileHash() 구현) |
 | `backend/src/main/java/com/rehearse/api/domain/resume/domain/Project.java` | 신규 |
 | `backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeClaim.java` | 신규 (plan-02의 `Claim`과 분리) |
 | `backend/src/main/java/com/rehearse/api/domain/resume/domain/InterrogationChain.java` | 신규 (L1 WHAT → L2 HOW → L3 WHY_MECH → L4 TRADEOFF) |
-| `backend/src/main/java/com/rehearse/api/domain/resume/ResumeSkeletonCache.java` | 신규. 세션 스코프 캐시 (2h TTL) |
+| `backend/src/main/java/com/rehearse/api/infra/ai/context/layer/FixedContextLayer.java` | **수정**. `SKELETON_BY_CALL_TYPE` Map 에 `"resume_extractor"` 엔트리 추가 |
 
 ## 상세
 
 ### Phase 0 (Ingestion) 정규화 파이프라인
-- `RemoveControlChars` → `CollapseWhitespace` → `FixKoreanTokenBreaks` → `RemoveHeaderFooter` → `ExtractByColumn` (2단)
-- PDF 라이브러리: PDFBox 또는 Tika (기존 의존성 재사용 확인)
+
+PDF 라이브러리: 현재 `org.apache.pdfbox:pdfbox:3.0.4` 사용 중 (build.gradle.kts L73). 추가 의존성 불필요. 2단 컬럼 추출은 `PDFTextStripper.setSortByPosition(true)` API 로 지원 가능 — 별도 라이브러리 추가 없이 ExtractByColumn 파이프라인 구현 가능.
+
+- `RemoveControlChars` → `CollapseWhitespace` → `FixKoreanTokenBreaks` → `RemoveHeaderFooter` → `ExtractByColumn` (2단, `setSortByPosition(true)` 활용)
+- 현재 `PdfTextExtractor.extract()` 는 단순 `PDFTextStripper.getText()` + 5000자 트림만 수행. 정규화 파이프라인 추가 시 `MAX_TEXT_LENGTH` 트림 위치도 파이프라인 말단으로 이동 필요.
 
 ### Phase 1 (Extraction) 출력 스키마
 ```json
@@ -67,15 +70,34 @@
 - 조회 우선순위: 캐시(L4) → DB(L2) → 추출(신규)
 
 ### 저장 정책
+
+**결정 (2026-04-27, B3): `ResumeSkeletonCache` 별도 신설 안 함 — `InterviewRuntimeStateStore` 재사용.**
+
+`InterviewRuntimeState` 에는 이미 `CachedResumeSkeleton resumeSkeletonCache` 필드가 존재 (plan-00c 구현, `entity/CachedResumeSkeleton` 인터페이스). `ResumeSkeleton` record 가 이 인터페이스를 구현(`implements CachedResumeSkeleton`)하면 추가 캐시 추상화 없이 기존 Caffeine 2h TTL 캐시를 그대로 사용할 수 있다.
+
+이유:
+- TTL/Eviction/Metrics 정책 일원화 — Caffeine 캐시 설정 1곳에서만 관리
+- `InterviewLockService` 동시성 락 동일 경로 재사용
+- 세션 종료 시 `InterviewRuntimeStateStore.evict(interviewId)` 하나로 일괄 evict
+- 캐시 추상화 중복 회피 (`ResumeSkeletonCache` 신설 시 Caffeine 캐시 2개 병존)
+
+구현 시 예상 흐름:
 ```java
-ResumeSkeleton sk = resumeSkeletonCache
-    .get(sessionId, fileHash)
+// ResumeExtractionService (또는 상위 진입점 서비스) 내부
+ResumeSkeleton sk = Optional.ofNullable(
+        (ResumeSkeleton) runtimeStateStore.get(interviewId).getResumeSkeleton())
+    .or(() -> resumeSkeletonRepository.findByInterviewId(interviewId)
+            .map(entity -> ResumeSkeleton.fromEntity(entity)))
     .orElseGet(() -> {
         ResumeSkeleton extracted = extractionService.extract(ingestedText);
-        resumeSkeletonCache.putWithTTL(sessionId, fileHash, extracted, Duration.ofHours(2));
+        runtimeStateStore.update(interviewId,
+            state -> state.setResumeSkeleton(extracted));  // setter 또는 withResumeSkeleton
+        resumeSkeletonRepository.save(ResumeSkeleton.toEntity(extracted, interviewId));
         return extracted;
     });
 ```
+
+주의: `InterviewRuntimeState.resumeSkeletonCache` 필드가 현재 생성자에서 외부 주입(`CachedResumeSkeleton resumeSkeletonCache` 파라미터)으로만 세팅됨. 본 구현 PR 에서 `setResumeSkeleton(ResumeSkeleton)` mutator 를 `InterviewRuntimeState` 에 추가하거나, `runtimeStateStore.update()` 의 `Consumer<InterviewRuntimeState>` 람다로 내부 필드를 직접 변경하는 방식으로 해결.
 
 ## 담당 에이전트
 
@@ -89,6 +111,10 @@ ResumeSkeleton sk = resumeSkeletonCache
 2. Expected claim 커버리지 ≥ 90% (수동 라벨 대비)
 3. Implicit CS topic precision ≥ 80% (confidence ≥ 0.6 항목 기준)
 4. 각 `InterrogationChain`이 반드시 4단계 보유
-5. 추출 결과가 plan-04 `FixedContextLayer`에 주입 가능(L1 XML 렌더링 통합 테스트)
-6. 세션 종료 후 2시간 경과 시 캐시 evict 확인
+5. **추출 결과가 plan-04 `FixedContextLayer`에 주입 가능 (2026-04-27 갱신 — plan-04 머지 ee67201 반영)**
+   - 주입 경로: `ContextBuildRequest(callType="resume_extractor", runtimeState, exchanges, focusHints, providerHint)` → `InterviewContextBuilder.build(req)` → `FixedContextLayer.build(req)` 에서 `SKELETON_BY_CALL_TYPE.getOrDefault("resume_extractor", DEFAULT_SKELETON)` 로 L1 시스템 블록 렌더링.
+   - 통합 테스트 시나리오: `InterviewContextBuilder` 빈 직접 호출, `callType="resume_extractor"` 로 `ContextBuildRequest` 생성, `BuiltContext.messages()` 의 첫 번째 `ChatMessage` (SYSTEM role, `cacheControl=true`) 내용에 resume_extractor 역할 skeleton 포함 여부 assert.
+   - `FixedContextLayer.SKELETON_BY_CALL_TYPE` 에 `"resume_extractor"` 엔트리 추가(본 plan PR 범위) 후 `DEFAULT_SKELETON` fallback 으로 떨어지지 않는지 검증.
+   - `BuiltContext.perLayerTokens().get("L1")` > 0 이고 total ≤ 8000 (plan-04 token budget) assert.
+6. 세션 종료 후 `InterviewRuntimeStateStore.evict(interviewId)` 호출 시 캐시 evict 확인 (`InterviewRuntimeState.resumeSkeletonCache` null 또는 store.get() `IllegalStateException`)
 7. `progress.md` 05 → Completed
