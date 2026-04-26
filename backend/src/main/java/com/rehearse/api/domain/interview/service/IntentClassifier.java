@@ -6,16 +6,18 @@ import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
-import com.rehearse.api.infra.ai.prompt.IntentClassifierPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -24,16 +26,24 @@ public class IntentClassifier {
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final IntentClassifierPromptBuilder promptBuilder;
+    private final InterviewContextBuilder contextBuilder;
     private final IntentClassifierProperties properties;
 
     public IntentResult classify(String mainQuestion, String answerText, List<FollowUpExchange> previousExchanges) {
         try {
+            BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                    "intent_classifier",
+                    Map.of(),
+                    previousExchanges != null ? previousExchanges : List.of(),
+                    Map.of(
+                            "mainQuestion", mainQuestion != null ? mainQuestion : "",
+                            "userUtterance", answerText != null ? answerText : ""
+                    ),
+                    null
+            ));
+
             ChatRequest chatRequest = ChatRequest.builder()
-                    .messages(List.of(
-                            ChatMessage.ofCached(ChatMessage.Role.SYSTEM, promptBuilder.buildSystemPrompt()),
-                            ChatMessage.of(ChatMessage.Role.USER, promptBuilder.buildUserPrompt(mainQuestion, answerText, previousExchanges))
-                    ))
+                    .messages(built.messages())
                     .callType("intent_classifier")
                     .temperature(0.1)
                     .maxTokens(200)

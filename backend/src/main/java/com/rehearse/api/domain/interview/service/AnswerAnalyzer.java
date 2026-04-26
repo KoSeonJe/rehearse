@@ -3,20 +3,23 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
-import com.rehearse.api.infra.ai.prompt.AnswerAnalyzerPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -29,7 +32,7 @@ public class AnswerAnalyzer {
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final AnswerAnalyzerPromptBuilder promptBuilder;
+    private final InterviewContextBuilder contextBuilder;
     private final InterviewRuntimeStateStore runtimeStateStore;
 
     public AnswerAnalysis analyze(
@@ -44,12 +47,24 @@ public class AnswerAnalyzer {
             throw new IllegalArgumentException("interviewId/turnId 는 null 일 수 없습니다.");
         }
 
+        InterviewRuntimeState runtimeState = runtimeStateStore.get(interviewId);
+        String personaDepthHint = toReferenceLabel(questionReferenceType);
+        String askedPerspectivesStr = formatPerspectives(askedPerspectives);
+
+        BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                CALL_TYPE,
+                Map.of("interviewRuntimeState", runtimeState, "interviewId", interviewId),
+                List.of(),
+                Map.of(
+                        "mainQuestion", mainQuestion != null ? mainQuestion : "",
+                        "userAnswer", userAnswer != null ? userAnswer : "",
+                        "personaDepthHint", personaDepthHint + " | ASKED_PERSPECTIVES: " + askedPerspectivesStr
+                ),
+                null
+        ));
+
         ChatRequest chatRequest = ChatRequest.builder()
-                .messages(List.of(
-                        ChatMessage.ofCached(ChatMessage.Role.SYSTEM, promptBuilder.buildSystemPrompt()),
-                        ChatMessage.of(ChatMessage.Role.USER,
-                                promptBuilder.buildUserPrompt(mainQuestion, questionReferenceType, userAnswer, askedPerspectives))
-                ))
+                .messages(built.messages())
                 .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
@@ -80,5 +95,24 @@ public class AnswerAnalyzer {
             return analysis.withRecommendedNextAction(RecommendedNextAction.CLARIFICATION);
         }
         return analysis;
+    }
+
+    private static String toReferenceLabel(ReferenceType refType) {
+        if (refType == null) {
+            return "CONCEPT";
+        }
+        return switch (refType) {
+            case GUIDE -> "EXPERIENCE";
+            case MODEL_ANSWER -> "CONCEPT";
+        };
+    }
+
+    private static String formatPerspectives(List<Perspective> askedPerspectives) {
+        if (askedPerspectives == null || askedPerspectives.isEmpty()) {
+            return "(없음)";
+        }
+        return askedPerspectives.stream()
+                .map(Enum::name)
+                .collect(java.util.stream.Collectors.joining(", "));
     }
 }

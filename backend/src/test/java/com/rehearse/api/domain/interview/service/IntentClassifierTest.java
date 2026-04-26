@@ -7,19 +7,24 @@ import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.prompt.IntentClassifierPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,18 +45,24 @@ class IntentClassifierTest {
     private AiResponseParser aiResponseParser;
 
     @Mock
-    private IntentClassifierPromptBuilder promptBuilder;
+    private InterviewContextBuilder contextBuilder;
 
     private final IntentClassifierProperties properties = new IntentClassifierProperties(0.7, 3);
 
     private static final ChatResponse DUMMY_RESPONSE =
             new ChatResponse("{}", ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
 
+    private static final BuiltContext STUB_CONTEXT = new BuiltContext(
+            List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, "system"),
+                    ChatMessage.of(ChatMessage.Role.USER, "user")),
+            50,
+            Map.of("L1", 40, "L4", 10, "total", 50)
+    );
+
     @BeforeEach
     void setUp() {
-        intentClassifier = new IntentClassifier(aiClient, aiResponseParser, promptBuilder, properties);
-        lenient().when(promptBuilder.buildSystemPrompt()).thenReturn("system-prompt");
-        lenient().when(promptBuilder.buildUserPrompt(any(), any(), any())).thenReturn("user-prompt");
+        intentClassifier = new IntentClassifier(aiClient, aiResponseParser, contextBuilder, properties);
+        lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
         lenient().when(aiClient.chat(any(ChatRequest.class))).thenReturn(DUMMY_RESPONSE);
     }
 
@@ -140,6 +151,20 @@ class IntentClassifierTest {
             assertThat(result.fallback()).isTrue();
             assertThat(result.confidence()).isEqualTo(0.0);
         }
+
+        @Test
+        @DisplayName("contextBuilder가 intent_classifier callType으로 호출된다")
+        void classify_contextBuilder_invokedWithIntentClassifierCallType() {
+            givenParsedIntent("ANSWER", 0.95, "답변");
+            ArgumentCaptor<ContextBuildRequest> captor = ArgumentCaptor.forClass(ContextBuildRequest.class);
+            given(contextBuilder.build(captor.capture())).willReturn(STUB_CONTEXT);
+
+            intentClassifier.classify("질문", "답변", null);
+
+            assertThat(captor.getValue().callType()).isEqualTo("intent_classifier");
+            assertThat(captor.getValue().focusHints()).containsKey("mainQuestion");
+            assertThat(captor.getValue().focusHints()).containsKey("userUtterance");
+        }
     }
 
     @Nested
@@ -201,7 +226,6 @@ class IntentClassifierTest {
             List<FollowUpExchange> exchanges = List.of(
                     new FollowUpExchange("이전 질문", "이전 답변")
             );
-            given(promptBuilder.buildUserPrompt(any(), any(), eq(exchanges))).willReturn("user-prompt-with-exchanges");
             givenParsedIntent("ANSWER", 0.88, "답변 시도");
 
             IntentResult result = intentClassifier.classify("질문", "답변", exchanges);

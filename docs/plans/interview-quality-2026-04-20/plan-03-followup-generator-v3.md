@@ -1,6 +1,6 @@
 # Plan 03: Follow-up Generator v3 (M1 Step B) `[parallel:02]`
 
-> 상태: Draft
+> 상태: Completed (PR #353, 2026-04-25, mergeCommit `be68b0f`)
 > 작성일: 2026-04-20
 > 주차: W2
 > 원본: `docs/todo/2026-04-20/02-m1-followup-pipeline.md` (Step B 부분)
@@ -78,3 +78,33 @@ v3는 **`target_claim_idx` 명시 + 관점 선정 로직을 depth_score/evidence
 4. Follow-up Relevance 수동 비교(3~5건): v3 꼬리질문이 v2 대비 사용자 답변 claim에 더 정확히 꽂힘 — 과반 이상
 5. 전체 latency(Step A + Step B 합) p95 ≤ +2s 대비 기존
 6. `progress.md` 03 → Completed
+
+## 머지 결과 (PR #353, 2026-04-25, mergeCommit `be68b0f`)
+
+### 신규/수정 DTO
+- `backend/src/main/java/com/rehearse/api/infra/ai/dto/GeneratedFollowUp.java` — `targetClaimIdx`, `selectedPerspective` 필드 추가 (snake_case Jackson 매핑)
+- `backend/src/main/java/com/rehearse/api/domain/interview/dto/FollowUpRequest.FollowUpExchange` — `selectedPerspective` 옵션 A 필드 추가 (FE echo)
+- `backend/src/main/java/com/rehearse/api/domain/interview/dto/FollowUpResponse` — `selectedPerspective` echo 필드 추가
+- `FollowUpContext.currentMainQuestionId` 필드 추가 (`FollowUpTransactionHandler` 에서 MAIN question id 도출)
+
+### 수정 서비스/프롬프트
+- `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` — ANSWER 경로 refactor: STT 재사용 → `AnswerAnalyzer.analyze` → SKIP 권고 시 cost saver → `aiClient.chat(ChatRequest)` Step B → parseOrRetry → save. callType=`follow_up_generator_v3`, temp 0.6, max 1024, JSON_OBJECT
+- `backend/src/main/java/com/rehearse/api/infra/ai/prompt/FollowUpPromptBuilder.java` — `buildUserPromptWithAnalysis()` 추가. ANSWER_ANALYSIS 블록 직렬화 (claims/missing_perspectives/unstated_assumptions/recommended_next_action/asked_perspectives)
+- `backend/src/main/resources/prompts/template/follow-up-concept.txt` v3 — ANSWER_ANALYSIS 입력 명세 + target_claim_idx 우선순위 + JSON 스키마 확장 (CONCEPT 모드 selected_perspective=null 강제)
+- `backend/src/main/resources/prompts/template/follow-up-experience.txt` v3 — ANSWER_ANALYSIS + selected_perspective 7-enum 우선순위 + asked_perspectives 중복 금지
+
+### askedPerspectives 추출
+`previousExchanges.selectedPerspective` 관대 파싱 + distinct.
+
+### 테스트
+- `FollowUpServiceTest` 7 시나리오
+- `FollowUpServiceIntentBranchTest` ANSWER 경로 Step A/B mock 추가
+- 핸들러 3 테스트 FollowUpContext 시그니처 갱신
+- 749 tests pass / 0 failures
+
+### 잔여 게이트 (S7 시점, plan-04 와 병렬 진행)
+- [ ] FE 계약 전달 — `FollowUpRequest.FollowUpExchange.selectedPerspective` 입력 + `FollowUpResponse.selectedPerspective` echo 사용
+- [ ] LIVE 골든셋 (Step A depth_score ±1 / target_claim_idx 범위 / selected_perspective 중복)
+- [ ] MANUAL_AB 3~5 건 (v2 vs v3 claim 타겟팅 정확도)
+- [ ] 스테이징 Prometheus `rehearse.ai.call.duration_seconds{call.type=~"answer_analyzer|follow_up_generator_v3"}` p95
+

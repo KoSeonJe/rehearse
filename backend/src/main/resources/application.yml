@@ -54,6 +54,12 @@ rehearse:
   answer-analyzer:
     # plan-02 Step A. 기본 ON, runtime toggle 없음 (Feature Flag 철거 정책)
     enabled: true
+  context-engineering:
+    l1-caching: true
+    l3-compaction-threshold: 5
+    l3-recent-window: 5
+    l4-just-in-time: true
+    max-context-tokens: 8000
 
 management:
   endpoints:

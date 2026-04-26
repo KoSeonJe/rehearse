@@ -1,7 +1,7 @@
 
-gogo# Plan 02: Answer Analyzer (M1 Step A) `[parallel:03]`
+# Plan 02: Answer Analyzer (M1 Step A) `[parallel:03]`
 
-> 상태: Draft
+> 상태: Completed (PR #353, 2026-04-25, mergeCommit `be68b0f`)
 > 작성일: 2026-04-20
 > 주차: W2
 > 원본: `docs/todo/2026-04-20/02-m1-followup-pipeline.md` (Step A 부분)
@@ -82,3 +82,29 @@ plan-01 이 4-intent (ANSWER/CLARIFY_REQUEST/GIVE_UP/OFF_TOPIC) 로 확장됐고
 4. p95 latency ≤ 1.5s
 5. plan-03(Step B)와 JSON 계약 호환 통합 테스트
 6. `progress.md` 02 → Completed
+
+## 머지 결과 (PR #353, 2026-04-25, mergeCommit `be68b0f`)
+
+### 신규 파일
+- `backend/src/main/java/com/rehearse/api/domain/interview/AnswerAnalysis.java` — record + `implements TurnAnalysis` (마커)
+- `backend/src/main/java/com/rehearse/api/domain/interview/Claim.java` — text/depth_score/evidence_strength/topic_tag
+- `backend/src/main/java/com/rehearse/api/domain/interview/EvidenceStrength.java` — enum (STRONG/WEAK/ASSUMED)
+- `backend/src/main/java/com/rehearse/api/domain/interview/Perspective.java` — enum 7종 (TRADEOFF/MAINTAINABILITY/RELIABILITY/SCALABILITY/TESTING/COLLABORATION/USER_IMPACT)
+- `backend/src/main/java/com/rehearse/api/domain/interview/RecommendedNextAction.java` — enum (DEEP_DIVE/CLARIFICATION/CHALLENGE/APPLICATION/SKIP)
+- `backend/src/main/java/com/rehearse/api/domain/interview/service/AnswerAnalyzer.java` — `aiClient.chat()` 호출. callType=`answer_analyzer`, temp 0.2, max 800, JSON_OBJECT
+- `backend/src/main/java/com/rehearse/api/infra/ai/prompt/AnswerAnalyzerPromptBuilder.java`
+- `backend/src/main/resources/prompts/template/follow-up-step-a-analyzer.txt` — 보안 규칙 + delimiter + 4 few-shot
+
+### 수정 파일
+- `backend/src/main/java/com/rehearse/api/domain/interview/entity/InterviewRuntimeState.java` — `recordAnalysis(Long, TurnAnalysis)` + `getAnswerAnalysis(Long)` 접근자 (instanceof 안전 캐스팅)
+- `backend/src/main/resources/application.yml` — `rehearse.answer-analyzer.enabled: true`
+
+### L1 FN 가드
+`claims=[] AND answer_quality<=1 → recommended_next_action="CLARIFICATION"` 강제 (defense in depth)
+
+### 테스트
+4 클래스 신규 (record 검증 + 캐시 접근 + L1 가드 + 프롬프트 빌더). 749 tests pass / 0 failures (baseline 719 + 신규 ~30).
+
+### 이관
+- ~~Flyway `V{XX}__alter_rubric_score_turn_fk.sql`~~: `interview_turn` 테이블 부재 → plan-08 전제로 흡수
+

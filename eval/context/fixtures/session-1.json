@@ -1,0 +1,64 @@
+{
+  "interview_id": 1001,
+  "level": "JUNIOR",
+  "track": "STANDARD",
+  "call_type": "follow_up_generator_v3",
+  "exchanges": [
+    {
+      "q": "JVM의 가비지 컬렉션 동작 원리를 설명해주세요.",
+      "a": "가비지 컬렉터는 더 이상 참조되지 않는 객체를 메모리에서 해제합니다. GC가 실행되면 STW(Stop-The-World)가 발생해 애플리케이션이 잠시 멈춥니다.",
+      "selectedPerspective": "TRADEOFF"
+    },
+    {
+      "q": "Minor GC와 Major GC의 차이점은 무엇인가요?",
+      "a": "Minor GC는 Young Generation에서 발생하고, Major GC는 Old Generation에서 발생합니다. Minor GC가 더 자주 발생하고 빠릅니다.",
+      "selectedPerspective": "RELIABILITY"
+    },
+    {
+      "q": "G1GC를 사용해본 경험이 있나요? 특징은 무엇인가요?",
+      "a": "G1GC는 힙을 Region으로 나누어 관리합니다. CMS GC의 단편화 문제를 해결했고, 예측 가능한 STW 시간을 제공합니다. Java 9부터 기본 GC입니다.",
+      "selectedPerspective": "SCALABILITY"
+    },
+    {
+      "q": "메모리 누수가 발생하는 주요 원인을 설명해주세요.",
+      "a": "static 필드에 객체를 계속 추가하거나, 리스너를 해제하지 않으면 메모리 누수가 발생합니다. 또한 ThreadLocal을 정리하지 않는 경우도 있습니다.",
+      "selectedPerspective": "MAINTAINABILITY"
+    },
+    {
+      "q": "JVM 힙 메모리 구조에서 Young Generation이 왜 필요한가요?",
+      "a": "대부분의 객체는 짧게 살다 죽는다는 Weak Generational Hypothesis에 기반합니다. Young Generation을 따로 두면 오래된 객체와 새 객체를 효율적으로 분리 관리할 수 있습니다.",
+      "selectedPerspective": "TRADEOFF"
+    },
+    {
+      "q": "GC 튜닝을 해본 경험이 있나요?",
+      "a": "경험은 없지만 -Xms, -Xmx로 힙 크기를 설정하고, GC 로그를 분석해서 튜닝하는 방법이 있다고 알고 있습니다.",
+      "selectedPerspective": "TESTING"
+    },
+    {
+      "q": "finalize() 메서드 사용이 권장되지 않는 이유는 무엇인가요?",
+      "a": "finalize()는 GC가 객체를 수거할 때 호출되는데, 호출 시점이 불확실하고 성능 문제를 유발합니다. Java 9에서 deprecated 되었고, try-with-resources를 대신 사용합니다.",
+      "selectedPerspective": "RELIABILITY"
+    },
+    {
+      "q": "WeakReference와 SoftReference의 차이를 설명해주세요.",
+      "a": "WeakReference는 GC가 발생하면 바로 수거됩니다. SoftReference는 메모리가 부족할 때만 수거됩니다. 캐시 구현에 SoftReference를 활용합니다.",
+      "selectedPerspective": "MAINTAINABILITY"
+    },
+    {
+      "q": "OutOfMemoryError가 발생했을 때 어떻게 디버깅하나요?",
+      "a": "heap dump를 분석합니다. -XX:+HeapDumpOnOutOfMemoryError 옵션으로 자동 덤프를 설정하고, Eclipse MAT 같은 도구로 분석합니다.",
+      "selectedPerspective": "TRADEOFF"
+    },
+    {
+      "q": "Survivor Space가 두 개인 이유는 무엇인가요?",
+      "a": "객체를 복사하면서 단편화를 없애기 위해서입니다. Eden에서 살아남은 객체를 From Survivor에서 To Survivor로 번갈아 복사하면서 압축 효과를 얻습니다.",
+      "selectedPerspective": "SCALABILITY"
+    }
+  ],
+  "covered_claims": [
+    "GC는 참조되지 않는 객체를 해제한다",
+    "Minor GC는 Young Generation, Major GC는 Old Generation에서 발생한다",
+    "G1GC는 힙을 Region으로 나누어 단편화를 해결한다"
+  ],
+  "active_chain": []
+}
