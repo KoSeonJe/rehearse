@@ -17,8 +17,8 @@
 
 | # | 태스크 | 주차 | 상태 | 의존성 | 비고 |
 |---|--------|------|------|--------|------|
-| 01 | Intent Classifier (**4-intent**) | W3 | Phase A Implemented | 00a,00b,00d | 2026-04-24 4-intent 확장 + 2026-04-25 Phase A 구현 완료 (L1 classifier + 3 handler + post-hoc 분기). 리뷰 피드백 11건 반영. 719 tests pass. Phase B (L2/L3) 대기 |
-| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | Completed (#353) | 01, 00c | P0. 꼬리질문 전제. 코드 + 테스트 완료 (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC, mergeCommit `be68b0f`). FK 마이그레이션은 plan-08 로 이관 |
+| 01 | Intent Classifier (**4-intent**) | W3 | **Superseded by plan-15** (S9, 2026-04-27) | 00a,00b,00d | 2026-04-25 Phase A 구현 완료 후 dev 실측 confidence 0.0 매번 발생 → plan-15 audio chat 통합으로 대체. 클래스는 Claude fallback 경로 유지. Phase B 폐기 |
+| 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | **Superseded by plan-15** (S9, 2026-04-27) | 01, 00c | PR #353 머지 (`be68b0f`) 후 dev 실측 Claim 파싱 502 60% / latency 3.3s SLA 위반 → plan-15 통합. 클래스는 Claude fallback 경로 유지 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Completed (#353) | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC). 749 tests pass |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Code Merged / Gates Pending (#354) | 00b,00c | PR #354 머지. 검증 §1·§3 통과. §2(Prometheus 24h) 인프라 부재로 별도 SRE PR 이월. §4(MANUAL_AB)·§5(Compaction 정성) 다음 세션. 후속 B/C/D 항목은 plan-04 spec 참조 |
 | 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
@@ -31,6 +31,22 @@
 | 13 | Lambda Content Removal `[blocking:08,09]` | W7 후 | Draft | 08, 09 배포 + STAGING G1~G3 + MANUAL_AB_PROTOCOL 3~5건 통과 | **신규 (2026-04-22)**. Lambda `verbal`/`technical` 블록 제거, `TimestampFeedback` 컬럼 4개 drop (V29 — plan-11 V28 이후 순서), Rubric/Synthesizer를 Content 유일 소스로 확정. Content/Delivery 책임 경계 확정. 2026-04-23 flag-on 대신 ECR 단일 cut-over 로 갱신 |
 
 ## 진행 로그
+
+### 2026-04-27 (S9 — Audio Turn Analyzer 통합 (4-call → 2-call) — plan-15 신규)
+
+- **dev 실측 진단** (2026-04-26 docker logs + actuator/prometheus, 면접 1세션 5턴):
+  - 후속질문 0건. 502 AI_005 3건 (`Claim` deserialize 실패: AI 가 string 배열 반환), skip 2건 (Step B 자체 판단)
+  - IntentClassifier confidence 0.0 매번 → forceAnswer fallback (분류기 무력화)
+  - Latency 실측: intent_classifier 1.2s / answer_analyzer **3.3s** (SLA 1.5s 위반) / generate_followup 4.2s / **endpoint 200 avg 6.07s** (Aggregate SLA 4s 위반) / endpoint 502 16s
+- **근본 원인**: 4-call 직렬 (`STT+무의미한 Step B v1` + `IntentClassifier` + `AnswerAnalyzer` + `Step B v3`) — plan-01:64-77 의 "STT 분리 비용" 가정을 audio chat 통합으로 무효화
+- **plan-15 신규** (`docs/plans/interview-quality-2026-04-20/plan-15-audio-turn-analyzer.md`):
+  - Primary: `gpt-4o-mini-audio-preview` 단일 호출로 transcribe + intent + answer_analysis 통합 (`response_format = json_schema strict`)
+  - Fallback (Claude audio 미지원): 기존 `IntentClassifier` + `AnswerAnalyzer` 직렬 호출 (단순화 안)
+  - Step B v3 그대로 유지 (4단계 → 1단계만 신규)
+  - Step B 프롬프트 skip 룰 엄격화 (`follow-up-concept.txt`/`follow-up-experience.txt`) 동봉
+- **plan-01/02 status header 업데이트**: `Superseded by plan-15` 명시. 클래스는 Claude fallback 경로에서 유지
+- **브랜치**: `feat/audio-turn-analyzer` (develop 분기)
+- **목표**: endpoint 200 avg ≤ 5500ms, 502 0건, skip rate < 20%
 
 ### 2026-04-26 (S8 — plan-04 Context Engineering 4-Layer 구현 + PR #354)
 

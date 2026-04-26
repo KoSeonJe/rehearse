@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Fallback 전략:
@@ -65,6 +66,31 @@ public class ResilientAiClient extends AbstractAiClient {
     @Override
     public ChatResponse chat(ChatRequest request) {
         return aiCallMetrics.recordChat(request.callType(), () -> doChat(request));
+    }
+
+    @Override
+    public ChatResponse chatWithAudio(ChatRequest request, MultipartFile audio) {
+        return aiCallMetrics.recordChat(request.callType(), () -> doChatWithAudio(request, audio));
+    }
+
+    // Audio chat 은 OpenAI 만 지원. Claude fallback 은 caller(AudioTurnAnalyzer)가
+    // STT + text-only 경로로 별도 처리한다.
+    private ChatResponse doChatWithAudio(ChatRequest request, MultipartFile audio) {
+        if (openAiClient == null) {
+            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+        }
+        try {
+            return openAiClient.chatWithAudio(request, audio);
+        } catch (BusinessException e) {
+            if (isNonRetryableError(e)) {
+                throw e;
+            }
+            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
+            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+        } catch (RestClientException | RetryableApiException e) {
+            log.warn("[AI Audio] OpenAI audio chat 실패: callType={}, {}", request.callType(), e.getMessage());
+            throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
+        }
     }
 
     private ChatResponse doChat(ChatRequest request) {

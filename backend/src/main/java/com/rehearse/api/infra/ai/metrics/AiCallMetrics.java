@@ -18,9 +18,14 @@ public class AiCallMetrics {
     public static final String TOKENS_OUTPUT = "rehearse.ai.call.tokens.output";
     public static final String TOKENS_CACHED_READ = "rehearse.ai.call.tokens.cached.read";
     public static final String TOKENS_CACHED_WRITE = "rehearse.ai.call.tokens.cached.write";
+    public static final String FOLLOWUP_SKIP_TOTAL = "rehearse.followup.skip.total";
 
     private final MeterRegistry meterRegistry;
     private final ContextEngineeringMetrics contextMetrics;
+
+    public void incrementFollowUpSkip(String reason) {
+        meterRegistry.counter(FOLLOWUP_SKIP_TOTAL, "reason", reason).increment();
+    }
 
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {
         Timer.Sample sample = Timer.start(meterRegistry);

@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.Claim;
 import com.rehearse.api.domain.interview.EvidenceStrength;
@@ -10,25 +9,20 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
+import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.context.BuiltContext;
-import com.rehearse.api.infra.ai.context.ContextBuildRequest;
-import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,7 +35,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -49,65 +42,35 @@ import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("FollowUpService - 꼬리질문 생성 (Step A → Step B v3)")
+@DisplayName("FollowUpService - 꼬리질문 생성 (AudioTurnAnalyzer + Step B v3)")
 class FollowUpServiceTest {
 
     private FollowUpService followUpService;
 
     @Mock
-    private AiClient aiClient;
+    private AudioTurnAnalyzer audioTurnAnalyzer;
 
     @Mock
-    private AnswerAnalyzer answerAnalyzer;
+    private FollowUpQuestionWriter followUpQuestionWriter;
+
+    @Mock
+    private IntentDispatcher intentDispatcher;
 
     @Mock
     private FollowUpTransactionHandler followUpTransactionHandler;
 
     @Mock
-    private IntentClassifier intentClassifier;
-
-    @Mock
-    private OffTopicResponseHandler offTopicResponseHandler;
-
-    @Mock
-    private ClarifyResponseHandler clarifyResponseHandler;
-
-    @Mock
-    private GiveUpResponseHandler giveUpResponseHandler;
-
-    @Mock
-    private InterviewContextBuilder contextBuilder;
-
-    @Mock
     private InterviewRuntimeStateStore runtimeStateStore;
 
-    private AiResponseParser aiResponseParser;
-
-    private static final BuiltContext STUB_CONTEXT = new BuiltContext(
-            List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, "system"),
-                    ChatMessage.of(ChatMessage.Role.USER, "user")),
-            100,
-            Map.of("L1", 80, "L4", 20, "total", 100)
-    );
+    @Mock
+    private AiCallMetrics aiCallMetrics;
 
     @BeforeEach
     void setUp() {
-        aiResponseParser = new AiResponseParser(new ObjectMapper());
-
-        lenient().when(offTopicResponseHandler.supports()).thenReturn(IntentType.OFF_TOPIC);
-        lenient().when(clarifyResponseHandler.supports()).thenReturn(IntentType.CLARIFY_REQUEST);
-        lenient().when(giveUpResponseHandler.supports()).thenReturn(IntentType.GIVE_UP);
-
         followUpService = new FollowUpService(
-                aiClient, aiResponseParser, answerAnalyzer,
-                followUpTransactionHandler, intentClassifier,
-                List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler),
-                contextBuilder, runtimeStateStore);
-        ReflectionTestUtils.invokeMethod(followUpService, "registerHandlers");
+                audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
+                followUpTransactionHandler, runtimeStateStore, aiCallMetrics);
 
-        lenient().when(intentClassifier.classify(any(), any(), any()))
-                .thenReturn(IntentResult.of(IntentType.ANSWER, 1.0, "test default"));
-        lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));
     }
@@ -118,13 +81,6 @@ class FollowUpServiceTest {
                 com.rehearse.api.domain.question.entity.ReferenceType.MODEL_ANSWER, maxFollowUpRounds);
     }
 
-    private static GeneratedFollowUp sttFollowUp(String answerText) {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(f, "answerText", answerText);
-        ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
-        return f;
-    }
-
     private static AnswerAnalysis analysisOf(RecommendedNextAction action) {
         return new AnswerAnalysis(
                 50L,
@@ -132,12 +88,39 @@ class FollowUpServiceTest {
                 List.of(Perspective.RELIABILITY),
                 List.of("가정"),
                 3,
-                action
-        );
+                action);
     }
 
-    private static ChatResponse jsonChatResponse(String json) {
-        return new ChatResponse(json, ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
+    private static TurnAnalysisResult turn(IntentType intentType, String answerText, AnswerAnalysis analysis) {
+        return new TurnAnalysisResult(answerText, IntentResult.of(intentType, 0.95, "test"), analysis);
+    }
+
+    private static GeneratedFollowUp stepBQuestion(String question) {
+        GeneratedFollowUp f = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(f, "question", question);
+        ReflectionTestUtils.setField(f, "ttsQuestion", question);
+        ReflectionTestUtils.setField(f, "reason", "r");
+        ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
+        ReflectionTestUtils.setField(f, "modelAnswer", "m");
+        ReflectionTestUtils.setField(f, "answerText", "x");
+        ReflectionTestUtils.setField(f, "selectedPerspective", "RELIABILITY");
+        ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
+        return f;
+    }
+
+    private static GeneratedFollowUp stepBSkip(String reason) {
+        GeneratedFollowUp f = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(f, "skip", Boolean.TRUE);
+        ReflectionTestUtils.setField(f, "skipReason", reason);
+        return f;
+    }
+
+    private static GeneratedFollowUp stepBBlankQuestion() {
+        GeneratedFollowUp f = new GeneratedFollowUp();
+        ReflectionTestUtils.setField(f, "question", "  ");
+        ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
+        ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
+        return f;
     }
 
     private static MockMultipartFile audio() {
@@ -156,29 +139,14 @@ class FollowUpServiceTest {
     class GenerateFollowUp {
 
         @Test
-        @DisplayName("ANSWER 경로 — Step A 분석 + Step B 작문 결과로 응답 OVERRIDE")
-        void generateFollowUp_answerPath_overridesWithStepBOutput() {
+        @DisplayName("ANSWER 경로 — Step B 결과로 응답 빌드")
+        void generateFollowUp_answerPath_buildsFromStepB() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                    .willReturn(sttFollowUp("HashMap 은 해시 기반입니다."));
-            given(answerAnalyzer.analyze(eq(1L), eq(50L), any(), any(), any(), any()))
-                    .willReturn(analysisOf(RecommendedNextAction.DEEP_DIVE));
-
-            String stepBJson = """
-                    {
-                      "skip": false,
-                      "skipReason": null,
-                      "answerText": "ignored — overridden by req.answerText()",
-                      "target_claim_idx": 0,
-                      "selected_perspective": "RELIABILITY",
-                      "question": "Step B 가 만든 꼬리질문",
-                      "ttsQuestion": "Step B 가 만든 꼬리질문",
-                      "reason": "depth_score 3 claim 의 RELIABILITY 관점 확장",
-                      "type": "DEEP_DIVE",
-                      "modelAnswer": "모범답변"
-                    }
-                    """;
-            given(aiClient.chat(any(ChatRequest.class))).willReturn(jsonChatResponse(stepBJson));
+            given(audioTurnAnalyzer.analyze(eq(1L), eq(50L), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "HashMap 은 해시 기반입니다.",
+                            analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
+                    .willReturn(stepBQuestion("Step B 가 만든 꼬리질문"));
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
@@ -191,28 +159,18 @@ class FollowUpServiceTest {
             assertThat(response.getQuestionId()).isEqualTo(100L);
             assertThat(response.getQuestion()).isEqualTo("Step B 가 만든 꼬리질문");
             assertThat(response.getType()).isEqualTo("DEEP_DIVE");
-            assertThat(response.getAnswerText()).isEqualTo("HashMap 은 해시 기반입니다.");
             assertThat(response.getSelectedPerspective()).isEqualTo("RELIABILITY");
             assertThat(response.isFollowUpExhausted()).isFalse();
-            then(answerAnalyzer).should().analyze(eq(1L), eq(50L), any(), any(), any(), any());
-            then(aiClient).should().chat(any(ChatRequest.class));
+            then(followUpQuestionWriter).should().write(any(), any(), any());
         }
 
         @Test
         @DisplayName("ANSWER 경로 — 누적 카운트가 maxFollowUpRounds 도달 시 followUpExhausted=true")
         void generateFollowUp_atMaxRounds_returnsExhaustedTrue() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(2, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                    .willReturn(sttFollowUp("답변"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(analysisOf(RecommendedNextAction.DEEP_DIVE));
-
-            String stepBJson = """
-                    {"skip": false, "answerText": "x", "question": "Q2", "ttsQuestion": "Q2",
-                     "reason": "r", "type": "DEEP_DIVE", "modelAnswer": "m",
-                     "target_claim_idx": 0, "selected_perspective": null}
-                    """;
-            given(aiClient.chat(any(ChatRequest.class))).willReturn(jsonChatResponse(stepBJson));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("Q2"));
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
@@ -227,59 +185,28 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("STT 단계에서 AI 가 skip=true 를 반환하면 Step A/B 호출 없이 skip 응답")
-        void generateFollowUp_sttSkipped_doesNotCallStepAB() {
-            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "skip", Boolean.TRUE);
-            ReflectionTestUtils.setField(followUp, "skipReason", "답변이 '잘 모르겠다'로 불충분함");
-            ReflectionTestUtils.setField(followUp, "answerText", "잘 모르겠습니다.");
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class))).willReturn(followUp);
-
-            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
-
-            assertThat(response.isSkip()).isTrue();
-            assertThat(response.getSkipReason()).isEqualTo("답변이 '잘 모르겠다'로 불충분함");
-            assertThat(response.getQuestionId()).isNull();
-            assertThat(response.getAnswerText()).isEqualTo("잘 모르겠습니다.");
-            then(answerAnalyzer).should(never()).analyze(any(), any(), any(), any(), any(), any());
-            then(aiClient).should(never()).chat(any(ChatRequest.class));
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class), anyInt());
-        }
-
-        @Test
-        @DisplayName("Step A 가 SKIP 권고 시 Step B 호출 없이 analyzer_recommend_skip 으로 응답")
+        @DisplayName("Analyzer SKIP 권고 시 Step B 미호출 + analyzer_recommend_skip")
         void generateFollowUp_analyzerRecommendsSkip_skipsStepB() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                    .willReturn(sttFollowUp("충분히 깊은 답변"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(analysisOf(RecommendedNextAction.SKIP));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
             assertThat(response.isSkip()).isTrue();
             assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
             assertThat(response.getAnswerText()).isEqualTo("충분히 깊은 답변");
-            then(aiClient).should(never()).chat(any(ChatRequest.class));
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class), anyInt());
+            then(followUpQuestionWriter).shouldHaveNoInteractions();
+            then(aiCallMetrics).should().incrementFollowUpSkip("analyzer_skip");
         }
 
         @Test
         @DisplayName("Step B 응답이 skip=false 인데 question 이 비어 있으면 PARSE_FAILED")
         void generateFollowUp_stepBNonSkipWithBlankQuestion_throwsParseFailed() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                    .willReturn(sttFollowUp("답변"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(analysisOf(RecommendedNextAction.DEEP_DIVE));
-
-            String stepBJson = """
-                    {"skip": false, "answerText": "x", "question": "  ", "type": "DEEP_DIVE",
-                     "target_claim_idx": 0, "selected_perspective": null}
-                    """;
-            given(aiClient.chat(any(ChatRequest.class))).willReturn(jsonChatResponse(stepBJson));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBBlankQuestion());
 
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
                     .isInstanceOf(BusinessException.class)
@@ -288,34 +215,18 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("Step B JSON 파싱이 1차 실패해도 parseOrRetry 가 재호출로 복구하면 정상 저장")
-        void generateFollowUp_stepBParseRetry_recovers() {
+        @DisplayName("Step B 자체 skip 반환 시 step_b_skip 카운터 증가 + skip 응답")
+        void generateFollowUp_stepBSelfSkip_incrementsCounter() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
-                    .willReturn(sttFollowUp("답변"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(analysisOf(RecommendedNextAction.DEEP_DIVE));
-
-            String invalid = "이건 JSON 이 아닙니다";
-            String valid = """
-                    {"skip": false, "answerText": "x", "question": "복구된 Q", "ttsQuestion": "복구된 Q",
-                     "reason": "r", "type": "DEEP_DIVE", "modelAnswer": "m",
-                     "target_claim_idx": 0, "selected_perspective": "TRADEOFF"}
-                    """;
-            given(aiClient.chat(any(ChatRequest.class)))
-                    .willReturn(jsonChatResponse(invalid))
-                    .willReturn(jsonChatResponse(valid));
-
-            Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP).questionText("복구된 Q").orderIndex(1).build();
-            ReflectionTestUtils.setField(savedQuestion, "id", 300L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
-                    .willReturn(new FollowUpSaveResult(savedQuestion, 1));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
-            assertThat(response.getQuestion()).isEqualTo("복구된 Q");
-            assertThat(response.getSelectedPerspective()).isEqualTo("TRADEOFF");
+            assertThat(response.isSkip()).isTrue();
+            assertThat(response.getSkipReason()).isEqualTo("답변이 main_question 과 무관");
+            then(aiCallMetrics).should().incrementFollowUpSkip("step_b_skip");
         }
 
         @Test
@@ -327,10 +238,10 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("STT 호출 중 예외 발생 시 그대로 전파")
-        void generateFollowUp_audioApiThrowsException_propagates() {
+        @DisplayName("AudioTurnAnalyzer 호출 중 예외 발생 시 그대로 전파")
+        void generateFollowUp_audioAnalyzerThrowsException_propagates() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(aiClient.generateFollowUpWithAudio(any(), any(FollowUpGenerationRequest.class)))
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
                     .willThrow(new BusinessException(HttpStatus.BAD_GATEWAY, "AI_005", "AI 서비스를 사용할 수 없습니다."));
 
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))

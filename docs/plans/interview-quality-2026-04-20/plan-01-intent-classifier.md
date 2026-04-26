@@ -1,9 +1,12 @@
 # Plan 01: Intent Classifier (4-intent)
 
-> 상태: Draft
+> 상태: **Superseded by plan-15 (Audio Turn Analyzer)** (2026-04-27)
+> 이전 상태: Phase A Implemented (2026-04-25)
 > 작성일: 2026-04-20 (2026-04-24 4-intent 로 확장)
 > 주차: W1
 > 원본: `docs/todo/2026-04-20/01-m2-intent-classifier.md`
+
+> **2026-04-27 supersede 사유**: dev 면접 1세션 5턴에서 confidence 0.0 매번 발생 (forceAnswer fallback 으로 분류기 무력화) + 4-call 직렬 latency 위반. plan-15 가 audio chat 단일 호출로 STT + intent + answer_analysis 통합. 본 클래스(`IntentClassifier`)는 **Claude fallback 경로에서만 호출** — 코드는 유지.
 
 ## Why
 
