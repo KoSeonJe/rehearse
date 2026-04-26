@@ -35,6 +35,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -181,6 +182,41 @@ class InterviewControllerTest {
             mockMvc.perform(get("/api/v1/interviews/999"))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("INTERVIEW_001"));
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/v1/interviews/by-public-id/{publicId}")
+    class GetInterviewByPublicId {
+
+        @Test
+        @DisplayName("본인 publicId 조회 성공 (200)")
+        void getInterviewByPublicId_owner_success() throws Exception {
+            InterviewResponse response = createMockInterviewResponse();
+            given(interviewQueryService.getInterviewByPublicId(eq("test-uuid"), eq(1L))).willReturn(response);
+
+            mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.id").value(1));
+        }
+
+        @Test
+        @DisplayName("타 유저 publicId 조회 시 403")
+        void getInterviewByPublicId_otherUser_forbidden() throws Exception {
+            given(interviewQueryService.getInterviewByPublicId(eq("test-uuid"), eq(1L)))
+                    .willThrow(new BusinessException(HttpStatus.FORBIDDEN, "INTERVIEW_008", "접근 권한이 없습니다."));
+
+            mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid"))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_008"));
+        }
+
+        @Test
+        @DisplayName("비로그인 publicId 조회 시 401")
+        void getInterviewByPublicId_unauthenticated_unauthorized() throws Exception {
+            mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid").with(anonymous()))
+                    .andExpect(status().isUnauthorized());
         }
     }
 

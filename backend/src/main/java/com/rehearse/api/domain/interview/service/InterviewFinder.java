@@ -28,4 +28,10 @@ public class InterviewFinder {
         return interviewRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
     }
+
+    public Interview findByPublicIdAndValidateOwner(String publicId, Long userId) {
+        Interview interview = findByPublicId(publicId);
+        interview.validateOwner(userId);
+        return interview;
+    }
 }

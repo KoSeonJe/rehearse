@@ -70,8 +70,10 @@ public class InterviewController {
     }
 
     @GetMapping("/by-public-id/{publicId}")
-    public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(@PathVariable String publicId) {
-        InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId);
+    public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable String publicId) {
+        InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
