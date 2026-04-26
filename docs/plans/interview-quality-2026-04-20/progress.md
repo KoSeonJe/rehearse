@@ -19,6 +19,7 @@
 |---|--------|------|------|--------|------|
 | 01 | Intent Classifier (**4-intent**) | W3 | **Superseded by plan-15** (S9, 2026-04-27) | 00a,00b,00d | 2026-04-25 Phase A 구현 완료 후 dev 실측 confidence 0.0 매번 발생 → plan-15 audio chat 통합으로 대체. 클래스는 Claude fallback 경로 유지. Phase B 폐기 |
 | 02 | Answer Analyzer (M1 Step A) `[parallel:03]` | W4 | **Superseded by plan-15** (S9, 2026-04-27) | 01, 00c | PR #353 머지 (`be68b0f`) 후 dev 실측 Claim 파싱 502 60% / latency 3.3s SLA 위반 → plan-15 통합. 클래스는 Claude fallback 경로 유지 |
+| 15 | Audio Turn Analyzer (4-call → 2-call) `[blocking]` | W4 | **Code Merged / Gates Pending** (#358) | 01, 02 | PR #358 머지 (`a5c06ee`, 2026-04-27). 868 tests / 0 fail. dev 검증 게이트(502 0건 / 200 avg ≤5500ms / skip rate <20% / STT 정확도) 다음 세션 |
 | 03 | Follow-up Generator v3 (M1 Step B) `[parallel:02]` | W4 | Completed (#353) | 02 계약 | P0. Step A → Step B 결합. ANSWER 경로 refactor + selectedPerspective echo + target_claim_idx (S6, 2026-04-26). PR #353 머지 (S7, 2026-04-25 18:16 UTC). 749 tests pass |
 | 04 | Context Engineering 4-layer `[blocking]` | W5 | Code Merged / Gates Pending (#354) | 00b,00c | PR #354 머지. 검증 §1·§3 통과. §2(Prometheus 24h) 인프라 부재로 별도 SRE PR 이월. §4(MANUAL_AB)·§5(Compaction 정성) 다음 세션. 후속 B/C/D 항목은 plan-04 spec 참조 |
 | 05 | Resume Extractor (Phase 1) `[parallel:06]` | W5 | Draft | 04, 00b | GPT-4o 호출은 00b의 modelOverride 사용. Dynamic Pacing: duration 무관 최대 추출 (2026-04-22) |
@@ -32,8 +33,13 @@
 
 ## 진행 로그
 
-### 2026-04-27 (S9 — Audio Turn Analyzer 통합 (4-call → 2-call) — plan-15 신규)
+### 2026-04-27 (S9 — Audio Turn Analyzer 통합 (4-call → 2-call) — plan-15 + PR #358 머지 + 후속 리팩토링)
 
+- **PR #358** (`[BE] feat: 면접 한 턴을 단일 audio 호출로 분석해 응답 시간·실패율 단축`):
+  - 브랜치 `feat/audio-turn-analyzer` (develop 분기)
+  - **머지 완료**: 2026-04-27, mergeCommit `a5c06ee`, base=develop, squash + delete-branch
+  - **deploy-dev.yml**: run `24964656303` queued → 진행 중. 다음 세션 첫 명령: `gh run view 24964656303 --json status,conclusion`
+  - CI 통과 (Backend CI 1m13s / Frontend CI 5s)
 - **dev 실측 진단** (2026-04-26 docker logs + actuator/prometheus, 면접 1세션 5턴):
   - 후속질문 0건. 502 AI_005 3건 (`Claim` deserialize 실패: AI 가 string 배열 반환), skip 2건 (Step B 자체 판단)
   - IntentClassifier confidence 0.0 매번 → forceAnswer fallback (분류기 무력화)
@@ -45,8 +51,24 @@
   - Step B v3 그대로 유지 (4단계 → 1단계만 신규)
   - Step B 프롬프트 skip 룰 엄격화 (`follow-up-concept.txt`/`follow-up-experience.txt`) 동봉
 - **plan-01/02 status header 업데이트**: `Superseded by plan-15` 명시. 클래스는 Claude fallback 경로에서 유지
-- **브랜치**: `feat/audio-turn-analyzer` (develop 분기)
-- **목표**: endpoint 200 avg ≤ 5500ms, 502 0건, skip rate < 20%
+- **신규 코드** (PR #358 안 commit `086b9b2` + `a9e955d` + `b2c605e`):
+  - 도메인: `AnswerAnalysis.empty(turnId)` + `applyL1FalseNegativeGuard(intent)` 메서드, `AskedPerspectives` VO, `AiErrorCode.triggersAudioFallback()`
+  - 신규 빈: `AudioTurnAnalyzer` (audio chat 단일 호출), `TextFallbackTurnAnalyzer` (STT + IntentClassifier + AnswerAnalyzer 직렬), `FollowUpQuestionWriter` (Step B 작문 책임), `IntentDispatcher` (handler 라우팅 + 미등록 throw)
+  - infra: `AiClient.chatWithAudio`, `OpenAiClient` audio model 호출, `application.yml` audio-model 설정
+  - 프롬프트: `audio-turn-analyzer.txt` 신규, `follow-up-concept/experience.txt` skip 룰 엄격화
+- **post-impl 리뷰 P0 반영**: L1 FN 가드 이중 적용 차단(fallback epilogue bypass), audio 파일 크기 가드(10MB), parseOrRetry → parseJsonResponse(audio 컨텍스트 보존), fallback 진입 카운터 추가, TurnAnalysisResult 누락 필드 안전 채움
+- **후속 리팩토링** (commit `a9e955d`, `b2c605e`): AudioTurnAnalyzer 183→110줄 / FollowUpService 235→130줄. 책임 분리 + 도메인 메서드 추출. 단위 테스트 3종 신규
+- **테스트**: 868 tests / 0 failures / 1 skipped (baseline 838 + 신규 30)
+- **검증 게이트** (dev 배포 후 직접 진행 — 다음 세션):
+  - `http_server_requests_seconds{uri=".../follow-up",status="502"}` count = **0**
+  - 200 응답 avg ≤ **5500ms** (현재 6.07s → 목표)
+  - skip rate < **20%** (현재 100%)
+  - `rehearse_followup_skip_total{reason="audio_chat_fallback_to_stt"}` 비율 (낮을수록 audio 모델 정상)
+  - 한국어 STT 정확도 정성 평가 (5세션). 미달 시 `gpt-4o-audio-preview` (full) 모델 변경 검토
+- **이월 항목 (P1, 별도 PR)**:
+  - ResilientAiClient.chatWithAudio 비대칭 추상화 — 인프라 레벨 fallback (caller 부담 제거)
+  - TurnAnalysisResult 위치 정리 (`dto/` → `vo/`)
+  - OpenAiClient chatWithAudio 코드 중복 정리 (legacy `generateFollowUpWithAudio` 와의 통합)
 
 ### 2026-04-26 (S8 — plan-04 Context Engineering 4-Layer 구현 + PR #354)
 

@@ -175,11 +175,34 @@ System prompt (보안 + 역할 + 분류 규칙 + few-shot) 1500~2000 토큰 → 
 
 | # | 항목 | 상태 |
 |---|------|------|
-| 1 | 회귀 0 (`./gradlew test`) | ⏳ TODO |
-| 2 | 신규 `AudioTurnAnalyzerTest` Mock 기반 단위 테스트 — 통합 응답 파싱, intent 4분기, L1 FN 가드 | ⏳ TODO |
-| 3 | `FollowUpServiceTest` 갱신 — 신규 흐름 (audio analyzer + Step B v3) | ⏳ TODO |
-| 4 | dev EC2 배포 후 면접 5턴 진행: 502 0건, skip rate < 20%, endpoint 200 avg ≤ 5500ms | ⏳ TODO (수동) |
-| 5 | `progress.md` S9 entry 추가 + plan-15 status → Completed | ⏳ TODO |
+| 1 | 회귀 0 (`./gradlew test`) | ✅ PASS — 868 tests / 0 failures / 1 skipped |
+| 2 | 신규 `AudioTurnAnalyzerTest` Mock 기반 단위 테스트 — 통합 응답 파싱, intent 4분기, L1 FN 가드 | ✅ PASS — 7 케이스 |
+| 3 | `FollowUpServiceTest` 갱신 — 신규 흐름 (audio analyzer + Step B v3) | ✅ PASS |
+| 4 | dev EC2 배포 후 면접 5턴 진행: 502 0건, skip rate < 20%, endpoint 200 avg ≤ 5500ms | ⏳ TODO (수동, deploy-dev run 24964656303 후) |
+| 5 | `progress.md` S9 entry 추가 + plan-15 status → Code Merged | ✅ 본 commit 에서 갱신 |
+
+## 머지 결과 (PR #358, 2026-04-27, mergeCommit `a5c06ee`)
+
+### 핵심 commit
+- `086b9b2` — feat: 면접 한 턴을 단일 audio 호출로 분석해 응답 시간·실패율 단축
+- `a9e955d` — refactor: 면접 한 턴 처리 서비스 책임 분리 + 도메인 메서드 추출
+- `b2c605e` — refactor: FollowUpStepBGenerator → FollowUpQuestionWriter 도메인 네이밍
+
+### 신규 도메인 / 서비스
+- `AnswerAnalysis.empty(turnId)`, `applyL1FalseNegativeGuard(intent)` — record 책임화
+- `AskedPerspectives` VO — exchanges → Perspective list 캡슐화
+- `AiErrorCode.triggersAudioFallback()` — fallback 트리거 enum 책임
+- `AudioTurnAnalyzer` (audio chat 단일 호출) / `TextFallbackTurnAnalyzer` (STT+text-only) / `FollowUpQuestionWriter` (Step B 작문) / `IntentDispatcher` (handler 라우팅)
+
+### post-impl 리뷰 P0 반영
+- L1 FN 가드 이중 적용 차단 (fallback epilogue bypass)
+- audio 파일 크기 가드 (10MB)
+- parseOrRetry → parseJsonResponse (audio 컨텍스트 보존)
+- fallback 진입 카운터 (`audio_chat_fallback_to_stt`)
+- TurnAnalysisResult 누락 필드 안전 채움 (intent != ANSWER 케이스 502 방어)
+
+### Latency 예상치 변경
+이전 plan 표 기준: audio_turn_analyzer 5500ms + Step B 4200ms = endpoint 200 avg ≤ 5500ms (early skip 비율 포함). dev 실측 후 갱신 필요.
 
 ## 이월 사항 / Out of Scope
 
