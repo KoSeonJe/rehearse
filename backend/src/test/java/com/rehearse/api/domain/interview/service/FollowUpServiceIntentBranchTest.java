@@ -17,6 +17,8 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
@@ -78,6 +80,9 @@ class FollowUpServiceIntentBranchTest {
     @Mock
     private InterviewContextBuilder contextBuilder;
 
+    @Mock
+    private InterviewRuntimeStateStore runtimeStateStore;
+
     private AiResponseParser aiResponseParser;
 
     private static final MockMultipartFile AUDIO_FILE =
@@ -124,11 +129,13 @@ class FollowUpServiceIntentBranchTest {
                 aiClient, aiResponseParser, answerAnalyzer,
                 followUpTransactionHandler, intentClassifier,
                 List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler),
-                contextBuilder);
+                contextBuilder, runtimeStateStore);
         ReflectionTestUtils.invokeMethod(followUpService, "registerHandlers");
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);
         lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
+        lenient().when(runtimeStateStore.getOrInit(any(), any()))
+                .thenReturn(new InterviewRuntimeState("JUNIOR", null));
     }
 
     @Nested

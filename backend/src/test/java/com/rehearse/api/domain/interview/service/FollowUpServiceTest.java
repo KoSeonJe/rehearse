@@ -18,6 +18,8 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
@@ -76,6 +78,9 @@ class FollowUpServiceTest {
     @Mock
     private InterviewContextBuilder contextBuilder;
 
+    @Mock
+    private InterviewRuntimeStateStore runtimeStateStore;
+
     private AiResponseParser aiResponseParser;
 
     private static final BuiltContext STUB_CONTEXT = new BuiltContext(
@@ -97,12 +102,14 @@ class FollowUpServiceTest {
                 aiClient, aiResponseParser, answerAnalyzer,
                 followUpTransactionHandler, intentClassifier,
                 List.of(offTopicResponseHandler, clarifyResponseHandler, giveUpResponseHandler),
-                contextBuilder);
+                contextBuilder, runtimeStateStore);
         ReflectionTestUtils.invokeMethod(followUpService, "registerHandlers");
 
         lenient().when(intentClassifier.classify(any(), any(), any()))
                 .thenReturn(IntentResult.of(IntentType.ANSWER, 1.0, "test default"));
         lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);
+        lenient().when(runtimeStateStore.getOrInit(any(), any()))
+                .thenReturn(new InterviewRuntimeState("JUNIOR", null));
     }
 
     private static FollowUpContext context(int nextOrderIndex, int maxFollowUpRounds) {
