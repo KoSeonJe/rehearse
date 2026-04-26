@@ -37,7 +37,8 @@
 - **PR #354** (`[BE] feat: 면접 매 턴 LLM 입력 토큰을 90% 줄이고 시스템 프롬프트를 캐시`):
   - 브랜치 `feat/plan-04-context-engineering` (origin/develop = `6ac9c5a` 베이스)
   - CI 통과 (Backend CI / Frontend CI 모두 SUCCESS)
-  - **머지 대기 상태** (사용자 승인 후 squash merge 예정)
+  - **머지 완료**: 2026-04-26 02:58 UTC, mergeCommit `ee67201`, base=`develop`, squash + delete-branch
+  - **deploy-dev.yml**: run `24946779778` 진행 중 (세션 종료 시점). 다음 세션 첫 명령: `gh run view 24946779778 --json status,conclusion`
 - **신규 코드**:
   - `infra/ai/context/**` 14 클래스 + 테스트 7 클래스 (L1 Fixed / L2 SessionState / L3 DialogueHistory + Async Compactor / L4 Focus / InterviewContextBuilder + AnswerAnalysisJsonRenderer)
   - `compaction-summarizer.txt` 프롬프트 + `CompactionExecutorConfig` (graceful shutdown 30s)
