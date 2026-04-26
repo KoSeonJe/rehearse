@@ -15,6 +15,8 @@ public interface AiClient {
 
     ChatResponse chat(ChatRequest request);
 
+    ChatResponse chatWithAudio(ChatRequest request, MultipartFile audio);
+
     List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request);
 
     GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request);

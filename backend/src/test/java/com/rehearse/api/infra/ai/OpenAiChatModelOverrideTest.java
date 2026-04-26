@@ -73,6 +73,7 @@ class OpenAiChatModelOverrideTest {
                 parser,
                 "test-api-key",
                 "gpt-4o-mini",  // 기본 모델
+                "gpt-4o-mini-audio-preview",  // audio 모델
                 baseUrl
         );
     }

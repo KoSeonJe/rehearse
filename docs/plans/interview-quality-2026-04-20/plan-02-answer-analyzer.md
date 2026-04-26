@@ -1,10 +1,13 @@
 
 # Plan 02: Answer Analyzer (M1 Step A) `[parallel:03]`
 
-> 상태: Completed (PR #353, 2026-04-25, mergeCommit `be68b0f`)
+> 상태: **Superseded by plan-15 (Audio Turn Analyzer)** (2026-04-27)
+> 이전 상태: Completed (PR #353, 2026-04-25, mergeCommit `be68b0f`)
 > 작성일: 2026-04-20
 > 주차: W2
 > 원본: `docs/todo/2026-04-20/02-m1-followup-pipeline.md` (Step A 부분)
+
+> **2026-04-27 supersede 사유**: dev 실측 결과 `Claim` deserialize 실패율 60% (502 AI_005) + answer_analyzer 단독 latency 3.3s 로 Step A SLA 1.5s 위반. plan-15 가 audio chat 단일 호출로 통합 → JSON_OBJECT → `json_schema strict` 전환으로 502 영구 차단. 본 클래스(`AnswerAnalyzer`)는 **Claude fallback 경로에서만 호출** — 코드는 유지.
 
 ## Why
 

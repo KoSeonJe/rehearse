@@ -11,8 +11,8 @@ import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
+import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.global.exception.BusinessException;
@@ -28,6 +28,7 @@ import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,12 +54,12 @@ public class FollowUpService {
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final AnswerAnalyzer answerAnalyzer;
+    private final AudioTurnAnalyzer audioTurnAnalyzer;
     private final FollowUpTransactionHandler followUpTransactionHandler;
-    private final IntentClassifier intentClassifier;
     private final List<IntentResponseHandler> intentResponseHandlers;
     private final InterviewContextBuilder contextBuilder;
     private final InterviewRuntimeStateStore runtimeStateStore;
+    private final AiCallMetrics aiCallMetrics;
 
     private final Map<IntentType, IntentResponseHandler> handlerByIntent = new EnumMap<>(IntentType.class);
 
@@ -76,38 +77,30 @@ public class FollowUpService {
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
         runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
 
-        FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
-                context.position(), context.effectiveTechStack(), context.level(),
-                request.getQuestionContent(), null, request.getNonVerbalSummary(),
-                request.getPreviousExchanges(), context.mainReferenceType());
-        GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
-
-        if (followUp.isSkipped()) {
-            log.info("후속 질문 스킵: interviewId={}, questionSetId={}, reason={}",
-                    id, request.getQuestionSetId(), followUp.getSkipReason());
-            return FollowUpResponse.aiSkip(followUp.getAnswerText(), followUp.getSkipReason());
-        }
-
-        String answerText = followUp.getAnswerText();
-        IntentResult intent = intentClassifier.classify(
-                request.getQuestionContent(), answerText, request.getPreviousExchanges());
-
-        if (intent.type() != IntentType.ANSWER) {
-            return dispatchIntentBranch(intent.type(), id, context, request, answerText);
-        }
-
         List<Perspective> askedPerspectives = extractAskedPerspectives(request.getPreviousExchanges());
-        AnswerAnalysis analysis = answerAnalyzer.analyze(
+        TurnAnalysisResult turn = audioTurnAnalyzer.analyze(
                 id,
                 resolveTurnId(context),
+                audioFile,
                 request.getQuestionContent(),
                 context.mainReferenceType(),
-                answerText,
                 askedPerspectives
         );
 
+        String answerText = turn.answerText();
+
+        if (turn.intent().type() != IntentType.ANSWER) {
+            log.info("[FollowUp] intent != ANSWER 분기: interviewId={}, questionSetId={}, intent={}, confidence={}",
+                    id, request.getQuestionSetId(), turn.intent().type(), turn.intent().confidence());
+            aiCallMetrics.incrementFollowUpSkip("intent_" + turn.intent().type().name().toLowerCase());
+            return dispatchIntentBranch(turn.intent().type(), id, context, request, answerText);
+        }
+
+        AnswerAnalysis analysis = turn.answerAnalysis();
         if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
-            log.info("Step A 가 SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}", id, request.getQuestionSetId());
+            log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
             return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
         }
 
@@ -120,6 +113,7 @@ public class FollowUpService {
         if (stepBFollowUp.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
                     id, request.getQuestionSetId(), stepBFollowUp.getSkipReason());
+            aiCallMetrics.incrementFollowUpSkip("step_b_skip");
             return FollowUpResponse.aiSkip(answerText, stepBFollowUp.getSkipReason());
         }
 

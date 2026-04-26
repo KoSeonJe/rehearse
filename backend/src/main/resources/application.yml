@@ -41,6 +41,9 @@ app:
   admin:
     password: ${ADMIN_PASSWORD}
 
+openai:
+  audio-model: ${OPENAI_AUDIO_MODEL:gpt-4o-mini-audio-preview}
+
 rehearse:
   interview:
     policy:
