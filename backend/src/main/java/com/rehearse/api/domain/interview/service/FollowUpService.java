@@ -6,6 +6,8 @@ import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
@@ -56,6 +58,7 @@ public class FollowUpService {
     private final IntentClassifier intentClassifier;
     private final List<IntentResponseHandler> intentResponseHandlers;
     private final InterviewContextBuilder contextBuilder;
+    private final InterviewRuntimeStateStore runtimeStateStore;
 
     private final Map<IntentType, IntentResponseHandler> handlerByIntent = new EnumMap<>(IntentType.class);
 
@@ -71,6 +74,7 @@ public class FollowUpService {
         }
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
+        runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
 
         FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
                 context.position(), context.effectiveTechStack(), context.level(),

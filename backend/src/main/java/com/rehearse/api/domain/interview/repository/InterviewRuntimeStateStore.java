@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Component
 public class InterviewRuntimeStateStore {
@@ -13,6 +14,12 @@ public class InterviewRuntimeStateStore {
 
     public InterviewRuntimeStateStore(Cache<Long, InterviewRuntimeState> cache) {
         this.cache = cache;
+    }
+
+    // 첫 진입 시 init, 재진입 시 기존 상태 반환. computeIfAbsent 가 atomic 이라
+    // 동시 호출 시 supplier 1회만 실행. plan-00c 가 명세했으나 미구현으로 남았던 API.
+    public InterviewRuntimeState getOrInit(Long interviewId, Supplier<InterviewRuntimeState> initializer) {
+        return cache.asMap().computeIfAbsent(interviewId, id -> initializer.get());
     }
 
     public InterviewRuntimeState get(Long interviewId) {
