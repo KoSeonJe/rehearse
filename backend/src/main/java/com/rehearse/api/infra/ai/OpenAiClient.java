@@ -42,6 +42,8 @@ public class OpenAiClient {
     private static final int MAX_RETRY_ATTEMPTS = 2;
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
+    private static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
+
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
     private final FollowUpPromptBuilder followUpPromptBuilder;
@@ -77,57 +79,17 @@ public class OpenAiClient {
 
     @RateLimiter(name = "openai-api")
     public ChatResponse chat(ChatRequest req) {
-        String resolvedModel = (req.modelOverride() != null && !req.modelOverride().isBlank())
-                ? req.modelOverride()
-                : model;
-
+        String resolvedModel = resolveModel(req, model);
         int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
-        Double resolvedTemperature = req.temperature();
 
-        List<Map<String, Object>> messages = new ArrayList<>();
-        for (ChatMessage msg : req.messages()) {
-            Map<String, Object> entry = new HashMap<>();
-            entry.put("role", msg.roleLowercase());
-            entry.put("content", msg.content());
-            messages.add(entry);
-        }
+        List<Map<String, Object>> messages = toMessages(req.messages());
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", resolvedModel);
-        requestBody.put("messages", messages);
-        requestBody.put("max_tokens", resolvedMaxTokens);
-        if (resolvedTemperature != null) {
-            requestBody.put("temperature", resolvedTemperature);
-        }
-        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
-            requestBody.put("response_format", Map.of("type", "json_object"));
-        }
+        Map<String, Object> requestBody = buildRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
 
         String apiLabel = "OpenAI API [" + req.callType() + "]";
         OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
-
-        int inputTokens = 0;
-        int outputTokens = 0;
-        int cachedTokens = 0;
-        if (openAiResponse.getUsage() != null) {
-            inputTokens = openAiResponse.getUsage().getPromptTokens();
-            outputTokens = openAiResponse.getUsage().getCompletionTokens();
-            cachedTokens = openAiResponse.getUsage().getCachedTokens();
-        }
-        boolean cacheHit = cachedTokens > 0;
-
-        String content = openAiResponse.getChoices().get(0).getMessage().getContent();
-        return new ChatResponse(
-                content,
-                ChatResponse.Usage.of(inputTokens, outputTokens, cachedTokens, 0),
-                "openai",
-                resolvedModel,
-                cacheHit,
-                false
-        );
+        return toChatResponse(openAiResponse, resolvedModel);
     }
-
-    private static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
 
     @RateLimiter(name = "openai-api")
     public ChatResponse chatWithAudio(ChatRequest req, MultipartFile audioFile) {
@@ -138,23 +100,15 @@ public class OpenAiClient {
             log.warn("[OpenAI Audio Chat] 파일 크기 초과: size={} bytes, max={}", audioFile.getSize(), MAX_AUDIO_BYTES);
             throw new BusinessException(AiErrorCode.CLIENT_ERROR);
         }
-        String resolvedModel = (req.modelOverride() != null && !req.modelOverride().isBlank())
-                ? req.modelOverride()
-                : audioModel;
-        int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
-        Double resolvedTemperature = req.temperature();
 
-        String audioBase64;
-        try {
-            audioBase64 = Base64.getEncoder().encodeToString(audioFile.getBytes());
-        } catch (IOException e) {
-            log.error("[OpenAI Audio Chat] 오디오 파일 읽기 실패: {}", e.getMessage());
-            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
-        }
+        String resolvedModel = resolveModel(req, audioModel);
+        int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
+
+        String audioBase64 = encodeAudioToBase64(audioFile);
         String audioFormat = resolveAudioFormat(audioFile.getOriginalFilename());
 
-        List<Map<String, Object>> messages = new ArrayList<>();
         StringBuilder userText = new StringBuilder();
+        List<Map<String, Object>> messages = new ArrayList<>();
         for (ChatMessage msg : req.messages()) {
             if (msg.role() == ChatMessage.Role.USER) {
                 if (userText.length() > 0) {
@@ -168,44 +122,13 @@ public class OpenAiClient {
                 messages.add(entry);
             }
         }
-        messages.add(Map.of("role", "user", "content", List.of(
-                Map.of("type", "text", "text", userText.toString()),
-                Map.of("type", "input_audio", "input_audio",
-                        Map.of("data", audioBase64, "format", audioFormat))
-        )));
+        messages.add(buildAudioUserContent(userText.toString(), audioBase64, audioFormat));
 
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("model", resolvedModel);
-        requestBody.put("messages", messages);
-        requestBody.put("max_tokens", resolvedMaxTokens);
-        if (resolvedTemperature != null) {
-            requestBody.put("temperature", resolvedTemperature);
-        }
-        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
-            requestBody.put("response_format", Map.of("type", "json_object"));
-        }
+        Map<String, Object> requestBody = buildRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
 
         String apiLabel = "OpenAI Audio Chat [" + req.callType() + "]";
         OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
-
-        int inputTokens = 0;
-        int outputTokens = 0;
-        int cachedTokens = 0;
-        if (openAiResponse.getUsage() != null) {
-            inputTokens = openAiResponse.getUsage().getPromptTokens();
-            outputTokens = openAiResponse.getUsage().getCompletionTokens();
-            cachedTokens = openAiResponse.getUsage().getCachedTokens();
-        }
-        boolean cacheHit = cachedTokens > 0;
-        String content = openAiResponse.getChoices().get(0).getMessage().getContent();
-        return new ChatResponse(
-                content,
-                ChatResponse.Usage.of(inputTokens, outputTokens, cachedTokens, 0),
-                "openai",
-                resolvedModel,
-                cacheHit,
-                false
-        );
+        return toChatResponse(openAiResponse, resolvedModel);
     }
 
     @RateLimiter(name = "openai-api")
@@ -237,18 +160,87 @@ public class OpenAiClient {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPromptForAudio(request);
 
-        String audioBase64;
-        try {
-            audioBase64 = Base64.getEncoder().encodeToString(audioFile.getBytes());
-        } catch (IOException e) {
-            log.error("[OpenAI Audio API] 오디오 파일 읽기 실패: {}", e.getMessage());
-            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
-        }
-
+        String audioBase64 = encodeAudioToBase64(audioFile);
         String audioFormat = resolveAudioFormat(audioFile.getOriginalFilename());
 
         String text = callOpenAiAudioApi(systemPrompt, userPrompt, audioBase64, audioFormat);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
+    }
+
+    // --- private helpers ---
+
+    private String resolveModel(ChatRequest req, String defaultModel) {
+        return (req.modelOverride() != null && !req.modelOverride().isBlank())
+                ? req.modelOverride()
+                : defaultModel;
+    }
+
+    private List<Map<String, Object>> toMessages(List<ChatMessage> chatMessages) {
+        List<Map<String, Object>> messages = new ArrayList<>();
+        for (ChatMessage msg : chatMessages) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("role", msg.roleLowercase());
+            entry.put("content", msg.content());
+            messages.add(entry);
+        }
+        return messages;
+    }
+
+    private String encodeAudioToBase64(MultipartFile audioFile) {
+        if (audioFile.getSize() > MAX_AUDIO_BYTES) {
+            log.warn("[OpenAI] 오디오 파일 크기 초과: size={} bytes, max={}", audioFile.getSize(), MAX_AUDIO_BYTES);
+            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+        }
+        try {
+            return Base64.getEncoder().encodeToString(audioFile.getBytes());
+        } catch (IOException e) {
+            log.error("[OpenAI] 오디오 파일 읽기 실패: {}", e.getMessage());
+            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+        }
+    }
+
+    private Map<String, Object> buildAudioUserContent(String userText, String audioBase64, String audioFormat) {
+        return Map.of("role", "user", "content", List.of(
+                Map.of("type", "text", "text", userText),
+                Map.of("type", "input_audio", "input_audio",
+                        Map.of("data", audioBase64, "format", audioFormat))
+        ));
+    }
+
+    private Map<String, Object> buildRequestBody(
+            String resolvedModel, List<Map<String, Object>> messages, int maxTokens, ChatRequest req) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("model", resolvedModel);
+        body.put("messages", messages);
+        body.put("max_tokens", maxTokens);
+        if (req.temperature() != null) {
+            body.put("temperature", req.temperature());
+        }
+        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
+            body.put("response_format", Map.of("type", "json_object"));
+        }
+        return body;
+    }
+
+    private ChatResponse toChatResponse(OpenAiResponse openAiResponse, String resolvedModel) {
+        int inputTokens = 0;
+        int outputTokens = 0;
+        int cachedTokens = 0;
+        if (openAiResponse.getUsage() != null) {
+            inputTokens = openAiResponse.getUsage().getPromptTokens();
+            outputTokens = openAiResponse.getUsage().getCompletionTokens();
+            cachedTokens = openAiResponse.getUsage().getCachedTokens();
+        }
+        boolean cacheHit = cachedTokens > 0;
+        String content = openAiResponse.getChoices().get(0).getMessage().getContent();
+        return new ChatResponse(
+                content,
+                ChatResponse.Usage.of(inputTokens, outputTokens, cachedTokens, 0),
+                "openai",
+                resolvedModel,
+                cacheHit,
+                false
+        );
     }
 
     private String resolveAudioFormat(String filename) {
@@ -288,14 +280,10 @@ public class OpenAiClient {
 
     private String callOpenAiAudioApi(String systemPrompt, String userPrompt, String audioBase64, String audioFormat) {
         Object requestBody = Map.of(
-                "model", "gpt-4o-mini-audio-preview",
+                "model", audioModel,
                 "messages", List.of(
                         Map.of("role", "system", "content", systemPrompt),
-                        Map.of("role", "user", "content", List.of(
-                                Map.of("type", "text", "text", userPrompt),
-                                Map.of("type", "input_audio", "input_audio",
-                                        Map.of("data", audioBase64, "format", audioFormat))
-                        ))
+                        buildAudioUserContent(userPrompt, audioBase64, audioFormat)
                 ),
                 "max_tokens", MAX_TOKENS_FOLLOW_UP,
                 "temperature", TEMPERATURE_FOLLOW_UP
