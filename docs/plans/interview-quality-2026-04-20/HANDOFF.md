@@ -234,7 +234,10 @@ plan-04 spec `## 검증` 표 갱신 — Prometheus 서버 부재 (OBSERVABILITY.
 ```
 interview-quality 실행 계획 S9 — plan-04 Gate 통과 + plan-05 (Resume Extractor) 착수 결정
 ```
-- 사전: PR #354 develop 머지 확인 (없으면 `gh pr merge 354 --squash --delete-branch` 또는 GitHub UI)
+- **사전 (S8 종료 시점 상태)**:
+  - PR #354 머지 완료 (mergeCommit `ee67201`, 2026-04-26 02:58 UTC)
+  - deploy-dev.yml run `24946779778` IN PROGRESS — 세션 시작 시 `gh run view 24946779778 --json status,conclusion` 으로 결과 확인
+  - 직전 deploy (#353) FAIL 원인: SSH timeout (인프라 transient). 본 deploy 도 실패 시 `gh run rerun 24946779778` 또는 새 commit push 로 재트리거
 - Step 1: A1 단발 캡처 — 로컬 `./gradlew bootRun` + 면접 1세션 10턴 직접 진행 → `curl localhost:8080/actuator/prometheus | grep rehearse_ai_context`
 - Step 2: A2 MANUAL_AB 3~5건 — `eval/manual-ab/2026-04-2X-plan-04.md` 작성
 - Step 3: A3 Compaction 정성 5세션 — 6턴+ 시나리오 직접 트리거, 결과 캡처
