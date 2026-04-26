@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rehearse.api.domain.interview.entity.TurnAnalysis;
+import com.rehearse.api.domain.interview.vo.IntentType;
 
 import java.util.List;
 
@@ -44,5 +45,23 @@ public record AnswerAnalysis(
 
     public AnswerAnalysis withTurnId(long newTurnId) {
         return new AnswerAnalysis(newTurnId, claims, missingPerspectives, unstatedAssumptions, answerQuality, recommendedNextAction);
+    }
+
+    public static AnswerAnalysis empty(long turnId) {
+        return new AnswerAnalysis(turnId, List.of(), List.of(), List.of(), 1, RecommendedNextAction.CLARIFICATION);
+    }
+
+    // L1 분류기가 OFF_TOPIC/CLARIFY 를 ANSWER 로 놓친 False Negative 안전망.
+    // claims=[] AND quality≤1 + 비-CLARIFICATION 권고 → CLARIFICATION 으로 강제.
+    public AnswerAnalysis applyL1FalseNegativeGuard(IntentType intentType) {
+        if (intentType != IntentType.ANSWER) {
+            return this;
+        }
+        boolean noClaims = claims.isEmpty();
+        boolean lowQuality = answerQuality <= 1;
+        if (noClaims && lowQuality && recommendedNextAction != RecommendedNextAction.CLARIFICATION) {
+            return withRecommendedNextAction(RecommendedNextAction.CLARIFICATION);
+        }
+        return this;
     }
 }

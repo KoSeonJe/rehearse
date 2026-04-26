@@ -2,19 +2,16 @@ package com.rehearse.api.domain.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Claim;
-import com.rehearse.api.domain.interview.EvidenceStrength;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
-import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.SttService;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
@@ -38,10 +35,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AudioTurnAnalyzer - 통합 분석 (audio chat + L1 FN guard + Claude fallback)")
+@DisplayName("AudioTurnAnalyzer - 통합 분석 (audio chat + L1 FN guard + fallback 위임)")
 class AudioTurnAnalyzerTest {
 
     @Mock
@@ -51,13 +47,7 @@ class AudioTurnAnalyzerTest {
     private InterviewRuntimeStateStore runtimeStateStore;
 
     @Mock
-    private SttService sttService;
-
-    @Mock
-    private IntentClassifier intentClassifier;
-
-    @Mock
-    private AnswerAnalyzer answerAnalyzer;
+    private TextFallbackTurnAnalyzer textFallbackTurnAnalyzer;
 
     @Mock
     private AiCallMetrics aiCallMetrics;
@@ -75,9 +65,8 @@ class AudioTurnAnalyzerTest {
 
         audioTurnAnalyzer = new AudioTurnAnalyzer(
                 aiClient, parser, promptBuilder, runtimeStateStore,
-                sttService, intentClassifier, answerAnalyzer, aiCallMetrics);
+                textFallbackTurnAnalyzer, aiCallMetrics);
 
-        // runtimeStateStore.update 는 void — mutator 호출 verify 만.
         lenient().doAnswer(invocation -> null)
                 .when(runtimeStateStore)
                 .update(any(), any());
@@ -106,7 +95,7 @@ class AudioTurnAnalyzerTest {
         given(aiClient.chatWithAudio(any(ChatRequest.class), any())).willReturn(jsonResponse(json));
 
         TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "JVM GC 설명", ReferenceType.MODEL_ANSWER, List.of());
+                1L, 50L, AUDIO, "JVM GC 설명", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.answerText()).isEqualTo("JVM 힙은 Young/Old 세대로 분리됩니다.");
         assertThat(result.intent().type()).isEqualTo(IntentType.ANSWER);
@@ -135,7 +124,7 @@ class AudioTurnAnalyzerTest {
         given(aiClient.chatWithAudio(any(ChatRequest.class), any())).willReturn(jsonResponse(json));
 
         TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "TCP 3-way handshake", ReferenceType.MODEL_ANSWER, List.of());
+                1L, 50L, AUDIO, "TCP 3-way handshake", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.answerAnalysis().recommendedNextAction()).isEqualTo(RecommendedNextAction.CLARIFICATION);
     }
@@ -159,62 +148,54 @@ class AudioTurnAnalyzerTest {
         given(aiClient.chatWithAudio(any(ChatRequest.class), any())).willReturn(jsonResponse(json));
 
         TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "HashMap 충돌", ReferenceType.MODEL_ANSWER, List.of());
+                1L, 50L, AUDIO, "HashMap 충돌", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.intent().type()).isEqualTo(IntentType.OFF_TOPIC);
         assertThat(result.answerAnalysis().recommendedNextAction()).isEqualTo(RecommendedNextAction.CLARIFICATION);
     }
 
     @Test
-    @DisplayName("audio chat 실패(SERVICE_UNAVAILABLE) → text-only fallback (STT + IntentClassifier + AnswerAnalyzer)")
-    void analyze_audioChatFailed_fallsBackToTextOnly() {
+    @DisplayName("audio chat 실패(SERVICE_UNAVAILABLE) → TextFallback 위임 + 카운터 증가")
+    void analyze_audioChatFailed_delegatesToTextFallback() {
         willThrow(new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE))
                 .given(aiClient).chatWithAudio(any(ChatRequest.class), any());
 
-        given(sttService.transcribe(any())).willReturn("페이징 설명");
-        given(intentClassifier.classify(any(), any(), any()))
-                .willReturn(IntentResult.of(IntentType.ANSWER, 0.9, "fallback"));
-        given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                .willReturn(new AnswerAnalysis(
-                        50L,
-                        List.of(new Claim("페이징 정의", 2, EvidenceStrength.WEAK, "memory")),
-                        List.of(),
-                        List.of(),
-                        2,
-                        RecommendedNextAction.DEEP_DIVE));
+        TurnAnalysisResult fallback = new TurnAnalysisResult(
+                "페이징 설명",
+                IntentResult.of(IntentType.ANSWER, 0.9, "fallback"),
+                new AnswerAnalysis(50L, List.of(), List.of(), List.of(), 2, RecommendedNextAction.DEEP_DIVE));
+        given(textFallbackTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
+                .willReturn(fallback);
 
         TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "페이징?", ReferenceType.MODEL_ANSWER, List.of());
+                1L, 50L, AUDIO, "페이징?", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.answerText()).isEqualTo("페이징 설명");
         assertThat(result.intent().type()).isEqualTo(IntentType.ANSWER);
-        assertThat(result.answerAnalysis().recommendedNextAction()).isEqualTo(RecommendedNextAction.DEEP_DIVE);
-        then(sttService).should().transcribe(any());
+        then(textFallbackTurnAnalyzer).should().analyze(any(), any(), any(), any(), any(), any());
+        then(aiCallMetrics).should().incrementFollowUpSkip("audio_chat_fallback_to_stt");
+        // commit() 은 fallback 경로에서 bypass 되어야 함 — runtimeStateStore.update 미호출
+        then(runtimeStateStore).shouldHaveNoInteractions();
     }
 
     @Test
-    @DisplayName("audio chat 실패 + intent != ANSWER fallback → AnswerAnalyzer 호출 안 함")
-    void analyze_audioFailedAndIntentNotAnswer_skipsAnswerAnalyzerInFallback() {
-        willThrow(new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE))
+    @DisplayName("PARSE_FAILED 같은 비-인프라 오류는 fallback 트리거 X — 그대로 전파")
+    void analyze_parseFailed_doesNotTriggerFallback() {
+        willThrow(new BusinessException(AiErrorCode.PARSE_FAILED))
                 .given(aiClient).chatWithAudio(any(ChatRequest.class), any());
 
-        given(sttService.transcribe(any())).willReturn("시간 얼마나 남았어요?");
-        given(intentClassifier.classify(any(), any(), any()))
-                .willReturn(IntentResult.of(IntentType.OFF_TOPIC, 0.99, "메타 발화"));
-
-        TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "HashMap 충돌", ReferenceType.MODEL_ANSWER, List.of());
-
-        assertThat(result.intent().type()).isEqualTo(IntentType.OFF_TOPIC);
-        assertThat(result.answerAnalysis().claims()).isEmpty();
-        then(answerAnalyzer).should(never()).analyze(any(), any(), any(), any(), any(), any());
+        assertThatThrownBy(() -> audioTurnAnalyzer.analyze(
+                1L, 50L, AUDIO, "질문", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty()))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("AI_005"));
+        then(textFallbackTurnAnalyzer).shouldHaveNoInteractions();
     }
 
     @Test
     @DisplayName("audio file null → INTERVIEW_006")
     void analyze_nullAudio_throwsInterview006() {
         assertThatThrownBy(() -> audioTurnAnalyzer.analyze(
-                1L, 50L, null, "질문", ReferenceType.MODEL_ANSWER, List.of()))
+                1L, 50L, null, "질문", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty()))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_006"));
     }
@@ -223,7 +204,7 @@ class AudioTurnAnalyzerTest {
     @DisplayName("interviewId null → IllegalArgumentException")
     void analyze_nullInterviewId_throws() {
         assertThatThrownBy(() -> audioTurnAnalyzer.analyze(
-                null, 50L, AUDIO, "질문", ReferenceType.MODEL_ANSWER, List.of()))
+                null, 50L, AUDIO, "질문", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

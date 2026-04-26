@@ -3,7 +3,6 @@ package com.rehearse.api.domain.interview.service;
 import static org.springframework.transaction.annotation.Propagation.*;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
@@ -13,34 +12,19 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.dto.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.context.AnswerAnalysisJsonRenderer;
-import com.rehearse.api.infra.ai.context.BuiltContext;
-import com.rehearse.api.infra.ai.context.ContextBuildRequest;
-import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -48,25 +32,12 @@ import java.util.Optional;
 @Transactional(readOnly = true)
 public class FollowUpService {
 
-    private static final String STEP_B_CALL_TYPE = "follow_up_generator_v3";
-    private static final double STEP_B_TEMPERATURE = 0.6;
-    private static final int STEP_B_MAX_TOKENS = 1024;
-
-    private final AiClient aiClient;
-    private final AiResponseParser aiResponseParser;
     private final AudioTurnAnalyzer audioTurnAnalyzer;
+    private final FollowUpStepBGenerator stepBGenerator;
+    private final IntentDispatcher intentDispatcher;
     private final FollowUpTransactionHandler followUpTransactionHandler;
-    private final List<IntentResponseHandler> intentResponseHandlers;
-    private final InterviewContextBuilder contextBuilder;
     private final InterviewRuntimeStateStore runtimeStateStore;
     private final AiCallMetrics aiCallMetrics;
-
-    private final Map<IntentType, IntentResponseHandler> handlerByIntent = new EnumMap<>(IntentType.class);
-
-    @PostConstruct
-    void registerHandlers() {
-        intentResponseHandlers.forEach(h -> handlerByIntent.put(h.supports(), h));
-    }
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -77,96 +48,81 @@ public class FollowUpService {
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
         runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
 
-        List<Perspective> askedPerspectives = extractAskedPerspectives(request.getPreviousExchanges());
+        AskedPerspectives askedPerspectives = AskedPerspectives.from(request.getPreviousExchanges());
         TurnAnalysisResult turn = audioTurnAnalyzer.analyze(
-                id,
-                resolveTurnId(context),
-                audioFile,
-                request.getQuestionContent(),
-                context.mainReferenceType(),
-                askedPerspectives
-        );
-
-        String answerText = turn.answerText();
+                id, resolveTurnId(context), audioFile,
+                request.getQuestionContent(), context.mainReferenceType(), askedPerspectives);
 
         if (turn.intent().type() != IntentType.ANSWER) {
-            log.info("[FollowUp] intent != ANSWER 분기: interviewId={}, questionSetId={}, intent={}, confidence={}",
-                    id, request.getQuestionSetId(), turn.intent().type(), turn.intent().confidence());
-            aiCallMetrics.incrementFollowUpSkip("intent_" + turn.intent().type().name().toLowerCase());
-            return dispatchIntentBranch(turn.intent().type(), id, context, request, answerText);
+            return handleNonAnswerIntent(id, context, request, turn);
         }
+        if (turn.answerAnalysis().recommendedNextAction() == RecommendedNextAction.SKIP) {
+            return handleAnalyzerSkip(id, request, turn);
+        }
+        return generateAndSaveFollowUp(id, context, request, turn, askedPerspectives);
+    }
 
+    private FollowUpResponse handleNonAnswerIntent(
+            Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn
+    ) {
+        IntentType intentType = turn.intent().type();
+        log.info("[FollowUp] intent != ANSWER 분기: interviewId={}, questionSetId={}, intent={}, confidence={}",
+                id, request.getQuestionSetId(), intentType, turn.intent().confidence());
+        aiCallMetrics.incrementFollowUpSkip("intent_" + intentType.name().toLowerCase());
+
+        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+        IntentBranchInput input = new IntentBranchInput(
+                id, context, request.getQuestionContent(), turn.answerText(),
+                turnIndex, request.getPreviousExchanges());
+        return intentDispatcher.dispatch(intentType, input);
+    }
+
+    private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpRequest request, TurnAnalysisResult turn) {
+        log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
+                id, request.getQuestionSetId());
+        aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
+        return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
+    }
+
+    private FollowUpResponse generateAndSaveFollowUp(
+            Long id, FollowUpContext context, FollowUpRequest request,
+            TurnAnalysisResult turn, AskedPerspectives askedPerspectives
+    ) {
+        String answerText = turn.answerText();
         AnswerAnalysis analysis = turn.answerAnalysis();
-        if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
-            log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
-                    id, request.getQuestionSetId());
-            aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
-            return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
-        }
 
         FollowUpGenerationRequest stepBReq = new FollowUpGenerationRequest(
                 context.position(), context.effectiveTechStack(), context.level(),
                 request.getQuestionContent(), answerText, request.getNonVerbalSummary(),
                 request.getPreviousExchanges(), context.mainReferenceType());
-        GeneratedFollowUp stepBFollowUp = generateStepBFollowUp(stepBReq, analysis, askedPerspectives);
+        GeneratedFollowUp stepB = stepBGenerator.generate(stepBReq, analysis, askedPerspectives);
 
-        if (stepBFollowUp.isSkipped()) {
+        if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
-                    id, request.getQuestionSetId(), stepBFollowUp.getSkipReason());
+                    id, request.getQuestionSetId(), stepB.getSkipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
-            return FollowUpResponse.aiSkip(answerText, stepBFollowUp.getSkipReason());
+            return FollowUpResponse.aiSkip(answerText, stepB.getSkipReason());
         }
-
-        if (stepBFollowUp.getQuestion() == null || stepBFollowUp.getQuestion().isBlank()) {
-            log.warn("Step B 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
-                    id, request.getQuestionSetId());
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
+        ensureQuestionPresent(id, request.getQuestionSetId(), stepB);
 
         FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
-                context.questionSetId(), stepBFollowUp, context.nextOrderIndex());
+                context.questionSetId(), stepB, context.nextOrderIndex());
         boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
         log.info("REALTIME 후속 질문 생성 완료(v3): interviewId={}, questionSetId={}, questionId={}, type={}, perspective={}, targetClaim={}, exhausted={}",
                 id, request.getQuestionSetId(), saveResult.question().getId(),
-                stepBFollowUp.getType(), stepBFollowUp.getSelectedPerspective(),
-                stepBFollowUp.getTargetClaimIdx(), exhausted);
+                stepB.getType(), stepB.getSelectedPerspective(),
+                stepB.getTargetClaimIdx(), exhausted);
 
-        return buildAnswerResponse(stepBFollowUp, saveResult.question(), exhausted);
+        return buildAnswerResponse(stepB, saveResult.question(), exhausted);
     }
 
-    private GeneratedFollowUp generateStepBFollowUp(
-            FollowUpGenerationRequest req,
-            AnswerAnalysis analysis,
-            List<Perspective> askedPerspectives
-    ) {
-        String answerAnalysisJson = AnswerAnalysisJsonRenderer.render(analysis, askedPerspectives);
-
-        BuiltContext built = contextBuilder.build(new ContextBuildRequest(
-                STEP_B_CALL_TYPE,
-                Map.of(),
-                req.previousExchanges() != null ? req.previousExchanges() : List.of(),
-                Map.of(
-                        "answerAnalysisJson", answerAnalysisJson,
-                        "askedPerspectives", askedPerspectives.stream()
-                                .map(Enum::name)
-                                .collect(java.util.stream.Collectors.joining(", "))
-                ),
-                null
-        ));
-
-        ChatRequest chatRequest = ChatRequest.builder()
-                .messages(built.messages())
-                .callType(STEP_B_CALL_TYPE)
-                .temperature(STEP_B_TEMPERATURE)
-                .maxTokens(STEP_B_MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
-                .build();
-
-        ChatResponse response = aiClient.chat(chatRequest);
-        GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
-                response, GeneratedFollowUp.class, aiClient, chatRequest);
-        return parsed.withAnswerText(req.answerText());
+    private static void ensureQuestionPresent(Long id, Long questionSetId, GeneratedFollowUp stepB) {
+        if (stepB.getQuestion() == null || stepB.getQuestion().isBlank()) {
+            log.warn("Step B 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
+                    id, questionSetId);
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
     }
 
     private static Long resolveTurnId(FollowUpContext context) {
@@ -176,47 +132,7 @@ public class FollowUpService {
         return (long) context.nextOrderIndex();
     }
 
-    private static List<Perspective> extractAskedPerspectives(List<FollowUpRequest.FollowUpExchange> exchanges) {
-        if (exchanges == null || exchanges.isEmpty()) {
-            return List.of();
-        }
-        return exchanges.stream()
-                .map(FollowUpRequest.FollowUpExchange::getSelectedPerspective)
-                .filter(Objects::nonNull)
-                .map(FollowUpService::safeParsePerspective)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .distinct()
-                .toList();
-    }
-
-    private static Optional<Perspective> safeParsePerspective(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Perspective.valueOf(raw.trim().toUpperCase()));
-        } catch (IllegalArgumentException ignored) {
-            return Optional.empty();
-        }
-    }
-
-    private FollowUpResponse dispatchIntentBranch(
-            IntentType intentType, Long interviewId,
-            FollowUpContext context, FollowUpRequest request, String answerText) {
-        IntentResponseHandler handler = handlerByIntent.get(intentType);
-        if (handler == null) {
-            log.warn("등록된 IntentResponseHandler 없음: intent={}, ANSWER 경로로 fallback", intentType);
-            return null;
-        }
-        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-        IntentBranchInput input = new IntentBranchInput(
-                interviewId, context, request.getQuestionContent(), answerText,
-                turnIndex, request.getPreviousExchanges());
-        return handler.handle(input);
-    }
-
-    private FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
+    private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
                 .question(followUp.getQuestion())

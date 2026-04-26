@@ -18,4 +18,19 @@ public enum AiErrorCode implements ErrorCode {
     private final HttpStatus status;
     private final String code;
     private final String message;
+
+    // audio chat 실패 시 STT + 텍스트 경로로 fallback 진입할 만큼의 인프라성 오류만 true.
+    // PARSE_FAILED 등 응답 자체 결함은 fallback 해도 동일하게 실패 → false.
+    public boolean triggersAudioFallback() {
+        return this == SERVICE_UNAVAILABLE || this == CLIENT_ERROR;
+    }
+
+    public static boolean triggersAudioFallback(String code) {
+        for (AiErrorCode value : values()) {
+            if (value.code.equals(code)) {
+                return value.triggersAudioFallback();
+            }
+        }
+        return false;
+    }
 }
