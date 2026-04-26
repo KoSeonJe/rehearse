@@ -156,7 +156,7 @@ class AudioTurnAnalyzerTest {
     }
 
     @Test
-    @DisplayName("audio chat 실패(AudioChatFallbackRequiredException) → TextFallback 위임 + 카운터 증가")
+    @DisplayName("audio chat 인프라 오류 → TextFallback 위임 + 카운터 증가")
     void analyze_audioChatFailed_delegatesToTextFallback() {
         willThrow(new AudioChatFallbackRequiredException("audio chat 인프라 오류"))
                 .given(aiClient).chatWithAudio(any(ChatRequest.class), any());
