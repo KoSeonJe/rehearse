@@ -53,7 +53,7 @@ class FollowUpServiceIntentBranchTest {
     private AudioTurnAnalyzer audioTurnAnalyzer;
 
     @Mock
-    private FollowUpStepBGenerator stepBGenerator;
+    private FollowUpQuestionWriter followUpQuestionWriter;
 
     @Mock
     private IntentDispatcher intentDispatcher;
@@ -104,7 +104,7 @@ class FollowUpServiceIntentBranchTest {
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
-                audioTurnAnalyzer, stepBGenerator, intentDispatcher,
+                audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics);
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);
@@ -128,7 +128,7 @@ class FollowUpServiceIntentBranchTest {
             ReflectionTestUtils.setField(stepB, "type", "DEEP_DIVE");
             ReflectionTestUtils.setField(stepB, "skip", Boolean.FALSE);
             ReflectionTestUtils.setField(stepB, "answerText", "x");
-            given(stepBGenerator.generate(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
+            given(followUpQuestionWriter.write(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
                     .willReturn(stepB);
 
             Question savedQuestion = Question.builder()
@@ -169,7 +169,7 @@ class FollowUpServiceIntentBranchTest {
             assertThat(response.getSkipReason()).isEqualTo("OFF_TOPIC");
             assertThat(response.isPresentToUser()).isTrue();
             then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(), anyInt());
-            then(stepBGenerator).shouldHaveNoInteractions();
+            then(followUpQuestionWriter).shouldHaveNoInteractions();
             then(aiCallMetrics).should().incrementFollowUpSkip("intent_off_topic");
         }
 
@@ -187,7 +187,7 @@ class FollowUpServiceIntentBranchTest {
 
             assertThat(response.getSkipReason()).isEqualTo("CLARIFY_REQUEST");
             then(intentDispatcher).should().dispatch(any(), any());
-            then(stepBGenerator).shouldHaveNoInteractions();
+            then(followUpQuestionWriter).shouldHaveNoInteractions();
         }
 
         @Test

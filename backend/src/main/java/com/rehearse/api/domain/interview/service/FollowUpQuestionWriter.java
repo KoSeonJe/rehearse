@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FollowUpStepBGenerator {
+public class FollowUpQuestionWriter {
 
     private static final String CALL_TYPE = "follow_up_generator_v3";
     private static final double TEMPERATURE = 0.6;
@@ -34,7 +34,7 @@ public class FollowUpStepBGenerator {
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
 
-    public GeneratedFollowUp generate(
+    public GeneratedFollowUp write(
             FollowUpGenerationRequest req,
             AnswerAnalysis analysis,
             AskedPerspectives askedPerspectives

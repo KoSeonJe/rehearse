@@ -51,7 +51,7 @@ class FollowUpServiceTest {
     private AudioTurnAnalyzer audioTurnAnalyzer;
 
     @Mock
-    private FollowUpStepBGenerator stepBGenerator;
+    private FollowUpQuestionWriter followUpQuestionWriter;
 
     @Mock
     private IntentDispatcher intentDispatcher;
@@ -68,7 +68,7 @@ class FollowUpServiceTest {
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
-                audioTurnAnalyzer, stepBGenerator, intentDispatcher,
+                audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
@@ -145,7 +145,7 @@ class FollowUpServiceTest {
             given(audioTurnAnalyzer.analyze(eq(1L), eq(50L), any(), any(), any(), any(AskedPerspectives.class)))
                     .willReturn(turn(IntentType.ANSWER, "HashMap 은 해시 기반입니다.",
                             analysisOf(RecommendedNextAction.DEEP_DIVE)));
-            given(stepBGenerator.generate(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
+            given(followUpQuestionWriter.write(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
                     .willReturn(stepBQuestion("Step B 가 만든 꼬리질문"));
 
             Question savedQuestion = Question.builder()
@@ -161,7 +161,7 @@ class FollowUpServiceTest {
             assertThat(response.getType()).isEqualTo("DEEP_DIVE");
             assertThat(response.getSelectedPerspective()).isEqualTo("RELIABILITY");
             assertThat(response.isFollowUpExhausted()).isFalse();
-            then(stepBGenerator).should().generate(any(), any(), any());
+            then(followUpQuestionWriter).should().write(any(), any(), any());
         }
 
         @Test
@@ -170,7 +170,7 @@ class FollowUpServiceTest {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(2, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
                     .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
-            given(stepBGenerator.generate(any(), any(), any())).willReturn(stepBQuestion("Q2"));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("Q2"));
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
@@ -196,7 +196,7 @@ class FollowUpServiceTest {
             assertThat(response.isSkip()).isTrue();
             assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
             assertThat(response.getAnswerText()).isEqualTo("충분히 깊은 답변");
-            then(stepBGenerator).shouldHaveNoInteractions();
+            then(followUpQuestionWriter).shouldHaveNoInteractions();
             then(aiCallMetrics).should().incrementFollowUpSkip("analyzer_skip");
         }
 
@@ -206,7 +206,7 @@ class FollowUpServiceTest {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
                     .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
-            given(stepBGenerator.generate(any(), any(), any())).willReturn(stepBBlankQuestion());
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBBlankQuestion());
 
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
                     .isInstanceOf(BusinessException.class)
@@ -220,7 +220,7 @@ class FollowUpServiceTest {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
                     .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
-            given(stepBGenerator.generate(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 

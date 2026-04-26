@@ -33,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FollowUpService {
 
     private final AudioTurnAnalyzer audioTurnAnalyzer;
-    private final FollowUpStepBGenerator stepBGenerator;
+    private final FollowUpQuestionWriter followUpQuestionWriter;
     private final IntentDispatcher intentDispatcher;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final InterviewRuntimeStateStore runtimeStateStore;
@@ -95,7 +95,7 @@ public class FollowUpService {
                 context.position(), context.effectiveTechStack(), context.level(),
                 request.getQuestionContent(), answerText, request.getNonVerbalSummary(),
                 request.getPreviousExchanges(), context.mainReferenceType());
-        GeneratedFollowUp stepB = stepBGenerator.generate(stepBReq, analysis, askedPerspectives);
+        GeneratedFollowUp stepB = followUpQuestionWriter.write(stepBReq, analysis, askedPerspectives);
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
