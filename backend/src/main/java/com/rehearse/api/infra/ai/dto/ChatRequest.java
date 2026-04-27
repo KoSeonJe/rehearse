@@ -34,10 +34,22 @@ public record ChatRequest(
     }
 
     public ChatRequest withSchemaRetryHint(String violation) {
-        String hint = "이전 응답이 JSON 스키마를 위반했습니다: " + violation
-                + ". 동일 요청을 올바른 JSON 객체로만 다시 생성하세요.";
+        return withSchemaRetryHint(violation, null);
+    }
+
+    public ChatRequest withSchemaRetryHint(String violation, String schemaExample) {
+        StringBuilder hint = new StringBuilder("이전 응답이 JSON 스키마를 위반했습니다: ")
+                .append(violation)
+                .append(".");
+        if (schemaExample != null && !schemaExample.isBlank()) {
+            hint.append("\n반드시 아래 형태의 JSON 객체로 응답하세요. 배열 안 항목 타입(객체 vs 문자열)을 절대 바꾸지 마세요.\n```json\n")
+                .append(schemaExample.strip())
+                .append("\n```");
+        } else {
+            hint.append(" 동일 요청을 올바른 JSON 객체로만 다시 생성하세요.");
+        }
         List<ChatMessage> newMessages = new ArrayList<>(messages);
-        newMessages.add(ChatMessage.of(ChatMessage.Role.USER, hint));
+        newMessages.add(ChatMessage.of(ChatMessage.Role.USER, hint.toString()));
         return new ChatRequest(List.copyOf(newMessages), modelOverride, temperature, maxTokens,
                 cachePolicy, responseFormat, callType);
     }

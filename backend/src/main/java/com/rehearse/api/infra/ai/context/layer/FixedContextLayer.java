@@ -2,8 +2,13 @@ package com.rehearse.api.infra.ai.context.layer;
 
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -14,8 +19,11 @@ import java.util.Map;
  * 공통 코어는 5개 프롬프트 빌더에서 반복되는 페르소나·보안·구분자 규칙을 추출한 것이며,
  * callType 별 skeleton 이 뒤에 덧붙여진다.
  */
+@Slf4j
 @Component
 public class FixedContextLayer implements ContextLayer {
+
+    private static final String ANSWER_ANALYZER_TEMPLATE_PATH = "/prompts/template/answer-analyzer.txt";
 
     // ---- 공통 코어 (5개 빌더 공통 추출) ----
     private static final String GLOBAL_CORE = """
@@ -36,7 +44,8 @@ public class FixedContextLayer implements ContextLayer {
             """;
 
     // ---- callType 별 skeleton ----
-    private static final Map<String, String> SKELETON_BY_CALL_TYPE = Map.of(
+    // answer_analyzer 는 init() 에서 외부 .txt 로 대체된다 (claims 객체 스키마 강제 위해 분량 큼).
+    private final Map<String, String> skeletonByCallType = new HashMap<>(Map.of(
 
             "intent_classifier", """
                     ## 역할
@@ -47,8 +56,6 @@ public class FixedContextLayer implements ContextLayer {
             "answer_analyzer", """
                     ## 역할
                     당신은 응시자 답변을 구조화 분석하는 분석기입니다.
-                    꼬리질문 생성기(Step B)가 이 결과를 입력으로 받아 다음 질문을 결정합니다.
-                    분석 항목: claims, missing_perspectives, unstated_assumptions, answer_quality, recommended_next_action
                     """,
 
             "follow_up_generator_v3", """
@@ -71,21 +78,34 @@ public class FixedContextLayer implements ContextLayer {
                     응시자가 포기 의사를 밝혔을 때 SCAFFOLD 또는 REVEAL_AND_MOVE_ON 모드를 선택합니다.
                     모드 선택 기준: 힌트 한 개로 답변 가능하면 SCAFFOLD, 그 외 REVEAL_AND_MOVE_ON.
                     """
-    );
+    ));
 
     private static final String DEFAULT_SKELETON = """
             ## 역할
             당신은 한국어 개발자 기술 면접 AI 컴포넌트입니다.
             """;
 
+    @PostConstruct
+    void init() {
+        try (InputStream stream = getClass().getResourceAsStream(ANSWER_ANALYZER_TEMPLATE_PATH)) {
+            if (stream == null) {
+                throw new IllegalStateException(ANSWER_ANALYZER_TEMPLATE_PATH + " 템플릿 파일을 찾을 수 없습니다.");
+            }
+            skeletonByCallType.put("answer_analyzer", new String(stream.readAllBytes()));
+            log.info("answer_analyzer 프롬프트 템플릿 로드 완료");
+        } catch (IOException e) {
+            throw new IllegalStateException(ANSWER_ANALYZER_TEMPLATE_PATH + " 템플릿 로드 실패", e);
+        }
+    }
+
     @Override
     public List<ChatMessage> build(ContextBuildRequest req) {
-        String skeleton = SKELETON_BY_CALL_TYPE.getOrDefault(req.callType(), DEFAULT_SKELETON);
+        String skeleton = skeletonByCallType.getOrDefault(req.callType(), DEFAULT_SKELETON);
         String fixedBlock = GLOBAL_CORE + "\n" + skeleton;
         return List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, fixedBlock));
     }
 
     public Map<String, String> skeletonByCallType() {
-        return SKELETON_BY_CALL_TYPE;
+        return Map.copyOf(skeletonByCallType);
     }
 }

@@ -62,7 +62,10 @@ class AudioTurnAnalyzerTest {
     void setUp() {
         AudioTurnAnalyzerPromptBuilder promptBuilder = new AudioTurnAnalyzerPromptBuilder();
         ReflectionTestUtils.invokeMethod(promptBuilder, "init");
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
+        AiResponseParser parser = new AiResponseParser(
+                new ObjectMapper(),
+                new com.rehearse.api.infra.ai.SchemaExampleRegistry(),
+                aiCallMetrics);
 
         audioTurnAnalyzer = new AudioTurnAnalyzer(
                 aiClient, parser, promptBuilder, runtimeStateStore,

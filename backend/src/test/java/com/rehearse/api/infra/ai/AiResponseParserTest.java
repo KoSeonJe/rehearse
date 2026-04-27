@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +20,10 @@ class AiResponseParserTest {
 
     @BeforeEach
     void setUp() {
-        parser = new AiResponseParser(new ObjectMapper());
+        parser = new AiResponseParser(
+                new ObjectMapper(),
+                new SchemaExampleRegistry(),
+                org.mockito.Mockito.mock(AiCallMetrics.class));
     }
 
     @Nested

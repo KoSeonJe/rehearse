@@ -19,6 +19,7 @@ class FixedContextLayerTest {
     @BeforeEach
     void setUp() {
         layer = new FixedContextLayer();
+        layer.init();
         estimator = new TokenEstimator();
     }
 
