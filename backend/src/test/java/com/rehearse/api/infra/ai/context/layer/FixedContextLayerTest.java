@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.context.layer;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.context.layer.SkeletonCallType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -155,5 +156,38 @@ class FixedContextLayerTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).content()).contains("보안 규칙");
+    }
+
+    @Test
+    @DisplayName("resume_extractor callType은 추출기 skeleton을 포함한다")
+    void build_containsResumeExtractorSkeleton_whenResumeExtractorCallType() {
+        ContextBuildRequest req = new ContextBuildRequest(
+                "resume_extractor", null, null, null, null);
+
+        List<ChatMessage> result = layer.build(req);
+        String content = result.get(0).content();
+
+        assertThat(content).contains("추출기");
+        assertThat(content).contains("implicit_cs_topics");
+        assertThat(content).contains("WHAT");
+        assertThat(content).contains("TRADEOFF");
+    }
+
+    @Test
+    @DisplayName("SkeletonCallType enum 모든 값에 대해 L1 블록이 올바르게 구성된다")
+    void build_producesValidBlock_forAllSkeletonCallTypes() {
+        for (SkeletonCallType callType : SkeletonCallType.values()) {
+            ContextBuildRequest req = new ContextBuildRequest(
+                    callType.value(), null, null, null, null);
+
+            List<ChatMessage> result = layer.build(req);
+
+            assertThat(result)
+                    .as("callType=%s 는 단일 SYSTEM 메시지를 반환해야 함", callType)
+                    .hasSize(1);
+            assertThat(result.get(0).content())
+                    .as("callType=%s 는 공통 보안 규칙을 포함해야 함", callType)
+                    .contains("보안 규칙");
+        }
     }
 }

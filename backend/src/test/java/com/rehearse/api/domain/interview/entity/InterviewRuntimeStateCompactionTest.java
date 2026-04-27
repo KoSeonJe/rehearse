@@ -15,8 +15,7 @@ class InterviewRuntimeStateCompactionTest {
 
     @BeforeEach
     void setUp() {
-        CachedResumeSkeleton skeleton = () -> "hash";
-        state = new InterviewRuntimeState("MID", skeleton);
+        state = new InterviewRuntimeState("MID", null);
     }
 
     @Test

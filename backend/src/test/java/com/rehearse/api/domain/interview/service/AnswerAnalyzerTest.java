@@ -7,8 +7,8 @@ import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.EvidenceStrength;
 import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
-import com.rehearse.api.domain.interview.entity.CachedResumeSkeleton;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
@@ -70,7 +70,7 @@ class AnswerAnalyzerTest {
     }
 
     private InterviewRuntimeState seedState(Long interviewId) {
-        CachedResumeSkeleton skeleton = () -> "hash-" + interviewId;
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash-" + interviewId, ResumeSkeleton.CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
         cache.put(interviewId, state);
         return state;
