@@ -84,12 +84,11 @@ class InterviewPlanTest {
     }
 
     @Test
-    @DisplayName("totalProjects 와 projectPlans 크기가 다르면 예외가 발생한다")
-    void interviewPlan_totalProjects_불일치_reject() {
-        List<ProjectPlan> plans = List.of(createProjectPlan("p1", 1));
-        assertThatThrownBy(() -> new InterviewPlan("plan_abc", 30, plans))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("totalProjects 와 projectPlans 크기가 일치하지 않습니다");
+    @DisplayName("totalProjects 는 projectPlans 크기에서 자동 도출된다")
+    void interviewPlan_totalProjects_derived_from_size() {
+        List<ProjectPlan> plans = List.of(createProjectPlan("p1", 1), createProjectPlan("p2", 2));
+        InterviewPlan plan = new InterviewPlan("plan_abc", 30, plans);
+        assertThat(plan.totalProjects()).isEqualTo(2);
     }
 
     @Test
