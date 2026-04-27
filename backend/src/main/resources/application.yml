@@ -63,6 +63,10 @@ rehearse:
     l3-recent-window: 5
     l4-just-in-time: true
     max-context-tokens: 8000
+  resume-planner:
+    model: ${RESUME_PLANNER_MODEL:gpt-4o-mini}
+    temperature: 0.3
+    max-tokens: 2048
 
 management:
   endpoints:

@@ -9,17 +9,22 @@ public record ChainRef(
         List<Integer> levelsToCover
 ) {
 
+    public static final String SEPARATOR = "::";
+
     private static final int MIN_LEVEL = 1;
     private static final int MAX_LEVEL = 4;
     private static final int MIN_PRIORITY = 1;
+
+    public static String synthesizeChainId(String projectId, String topic) {
+        return projectId + SEPARATOR + topic;
+    }
 
     public ChainRef {
         if (chainId == null || chainId.isBlank()) {
             throw new IllegalArgumentException("chainId 는 필수입니다.");
         }
-        // Planner 가 생성하는 합성키 "${projectId}::${topic}" 형식 강제
-        if (!chainId.contains("::")) {
-            throw new IllegalArgumentException("chainId 는 '::' 구분자를 포함한 합성키여야 합니다. chainId=" + chainId);
+        if (!chainId.contains(SEPARATOR)) {
+            throw new IllegalArgumentException("chainId 는 '" + SEPARATOR + "' 구분자를 포함한 합성키여야 합니다. chainId=" + chainId);
         }
         if (topic == null || topic.isBlank()) {
             throw new IllegalArgumentException("topic 은 필수입니다.");

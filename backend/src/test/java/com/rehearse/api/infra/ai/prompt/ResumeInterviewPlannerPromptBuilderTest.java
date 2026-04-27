@@ -15,7 +15,7 @@ class ResumeInterviewPlannerPromptBuilderTest {
 
     @BeforeEach
     void setUp() {
-        builder = new ResumeInterviewPlannerPromptBuilder();
+        builder = new ResumeInterviewPlannerPromptBuilder("gpt-4o-mini", 0.3, 2048);
         builder.init();
     }
 

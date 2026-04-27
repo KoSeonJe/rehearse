@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -16,11 +17,22 @@ import org.springframework.stereotype.Component;
 public class ResumeInterviewPlannerPromptBuilder {
 
     private static final String TEMPLATE_PATH = "/prompts/template/resume/resume-interview-planner.txt";
-    private static final String MODEL_OVERRIDE = "gpt-4o-mini";
-    private static final double TEMPERATURE = 0.3;
-    private static final int MAX_TOKENS = 2048;
+
+    private final String modelOverride;
+    private final double temperature;
+    private final int maxTokens;
 
     private String userPromptTemplate;
+
+    public ResumeInterviewPlannerPromptBuilder(
+            @Value("${rehearse.resume-planner.model:gpt-4o-mini}") String modelOverride,
+            @Value("${rehearse.resume-planner.temperature:0.3}") double temperature,
+            @Value("${rehearse.resume-planner.max-tokens:2048}") int maxTokens
+    ) {
+        this.modelOverride = modelOverride;
+        this.temperature = temperature;
+        this.maxTokens = maxTokens;
+    }
 
     @PostConstruct
     void init() {
@@ -32,7 +44,7 @@ public class ResumeInterviewPlannerPromptBuilder {
         } catch (IOException e) {
             throw new IllegalStateException(TEMPLATE_PATH + " 템플릿 로드 실패", e);
         }
-        log.info("Resume Interview Planner 프롬프트 템플릿 로드 완료");
+        log.info("Resume Interview Planner 프롬프트 템플릿 로드 완료 model={}", modelOverride);
     }
 
     public ChatRequest build(String skeletonJson, int durationMin, String userLevel, String callType) {
@@ -43,9 +55,9 @@ public class ResumeInterviewPlannerPromptBuilder {
 
         return ChatRequest.builder()
                 .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, userMessage)))
-                .modelOverride(MODEL_OVERRIDE)
-                .temperature(TEMPERATURE)
-                .maxTokens(MAX_TOKENS)
+                .modelOverride(modelOverride)
+                .temperature(temperature)
+                .maxTokens(maxTokens)
                 .responseFormat(ResponseFormat.JSON_OBJECT)
                 .callType(callType)
                 .build();
