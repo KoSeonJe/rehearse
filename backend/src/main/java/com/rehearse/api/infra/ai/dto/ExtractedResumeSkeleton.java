@@ -7,10 +7,6 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-/**
- * LLM이 반환하는 이력서 추출 JSON을 역직렬화하는 DTO.
- * 도메인 레코드(ResumeSkeleton)로의 변환은 ResumeExtractionService 에서 담당.
- */
 @Getter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)

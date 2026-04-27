@@ -46,7 +46,6 @@ class ResumeExtractionServiceTest {
     @Test
     @DisplayName("extract_returns_resume_skeleton_when_llm_response_is_valid")
     void extract_returns_resume_skeleton_when_llm_response_is_valid() {
-        // given
         String resumeText = "Java 백엔드 개발자";
         String fileHash = "abc123";
 
@@ -56,10 +55,8 @@ class ResumeExtractionServiceTest {
         given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
                 .willReturn(mockExtractedSkeleton());
 
-        // when
         ResumeSkeleton result = service.extract(resumeText, fileHash);
 
-        // then
         assertThat(result).isNotNull();
         assertThat(result.fileHash()).isEqualTo(fileHash);
         assertThat(result.resumeId()).isEqualTo("r_test1234");
@@ -71,17 +68,14 @@ class ResumeExtractionServiceTest {
     @Test
     @DisplayName("extract_uses_resume_extractor_call_type_for_ai_request")
     void extract_uses_resume_extractor_call_type_for_ai_request() {
-        // given
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
         given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
                 .willReturn(mockExtractedSkeleton());
 
-        // when
         service.extract("이력서 내용", "hash");
 
-        // then
         then(aiClient).should().chat(
                 argThat(req -> "resume_extractor".equals(req.callType()))
         );
@@ -90,7 +84,6 @@ class ResumeExtractionServiceTest {
     @Test
     @DisplayName("extract_filters_implicit_cs_topics_below_confidence_threshold")
     void extract_filters_implicit_cs_topics_below_confidence_threshold() {
-        // given
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
@@ -99,10 +92,8 @@ class ResumeExtractionServiceTest {
         given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
                 .willReturn(rawWithLowConfidence);
 
-        // when
         ResumeSkeleton result = service.extract("이력서", "hash");
 
-        // then — confidence 0.2는 0.3 미만이므로 필터링됨
         assertThat(result.projects()).hasSize(1);
         assertThat(result.projects().get(0).implicitCsTopics()).isEmpty();
     }
@@ -110,7 +101,6 @@ class ResumeExtractionServiceTest {
     @Test
     @DisplayName("extract_defaults_candidate_level_to_junior_when_llm_returns_unknown_value")
     void extract_defaults_candidate_level_to_junior_when_llm_returns_unknown_value() {
-        // given
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
@@ -119,32 +109,26 @@ class ResumeExtractionServiceTest {
         given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
                 .willReturn(rawWithUnknownLevel);
 
-        // when
         ResumeSkeleton result = service.extract("이력서", "hash");
 
-        // then
         assertThat(result.candidateLevel()).isEqualTo(CandidateLevel.JUNIOR);
     }
 
     @Test
     @DisplayName("extract_maps_priority_map_from_llm_response")
     void extract_maps_priority_map_from_llm_response() {
-        // given
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
         given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
                 .willReturn(mockExtractedSkeleton());
 
-        // when
         ResumeSkeleton result = service.extract("이력서", "hash");
 
-        // then
         assertThat(result.interrogationPriorityMap()).containsKey("high");
         assertThat(result.interrogationPriorityMap().get("high")).contains("p1_c1");
     }
 
-    // ---- helpers ----
 
     private ChatResponse mockChatResponse() {
         return new ChatResponse("{}", null, "openai", "gpt-4o-mini", false, false);

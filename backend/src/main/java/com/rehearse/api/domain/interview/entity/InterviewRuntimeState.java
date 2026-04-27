@@ -29,7 +29,6 @@ public class InterviewRuntimeState {
     private final String currentLevel;
     private final AtomicInteger playgroundTurns;
     private final Map<Long, TurnAnalysis> turnAnalysisCache;
-    // Non-final: 세션 시작 후 이력서 추출이 완료되면 RuntimeStateStore.update()로 갱신됨.
     private volatile ResumeSkeleton resumeSkeletonCache;
 
     // Keyed by windowEnd index (exclusive upper bound of the older-turns window that was compacted).

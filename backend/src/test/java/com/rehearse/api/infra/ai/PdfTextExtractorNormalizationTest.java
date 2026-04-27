@@ -38,7 +38,6 @@ class PdfTextExtractorNormalizationTest {
     @Test
     @DisplayName("fixKoreanTokenBreaks_merges_split_jamo_characters")
     void fixKoreanTokenBreaks_merges_split_jamo_characters() {
-        // PDFBox가 자모(초성/중성/종성)를 분리 추출할 때 공백이 삽입되는 케이스
         String input = "ㄱ ㄴ ㄷ";
         String result = extractor.normalize(input);
         assertThat(result).contains("ㄱㄴㄷ");
@@ -47,7 +46,6 @@ class PdfTextExtractorNormalizationTest {
     @Test
     @DisplayName("fixKoreanTokenBreaks_converges_within_three_iterations")
     void fixKoreanTokenBreaks_converges_within_three_iterations() {
-        // 최악의 경우(3단 체인 자모 깨짐)도 3회 이내 수렴
         String input = "ㄱ ㄴ ㄷ ㄹ ㅁ";
         String result = extractor.normalize(input);
         assertThat(result).isNotNull();

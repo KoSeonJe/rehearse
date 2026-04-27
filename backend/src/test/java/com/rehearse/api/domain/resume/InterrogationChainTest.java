@@ -86,7 +86,6 @@ class InterrogationChainTest {
     @Test
     @DisplayName("throws_when_size_is_not_four_and_has_extra_valid_types")
     void throws_when_size_is_not_four_and_has_extra_valid_types() {
-        // TRADEOFF 누락 + 다른 타입 추가 불가능 → size가 달라도 4종 세트 아니면 예외
         assertThatThrownBy(() -> new InterrogationChain("topic", 0.9, List.of(
                 new ChainStep(1, StepType.WHAT, "Q1"),
                 new ChainStep(2, StepType.HOW, "Q2"),

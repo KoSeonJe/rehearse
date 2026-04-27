@@ -72,8 +72,7 @@ class PdfTextExtractorValidationTest {
     @Test
     @DisplayName("extract_throws_when_magic_bytes_are_invalid")
     void extract_throws_when_magic_bytes_are_invalid() {
-        // content-type은 PDF이지만 실제 내용은 PDF가 아닌 파일
-        byte[] fakeBytes = {0x50, 0x4B, 0x03, 0x04, 0x00}; // ZIP magic bytes
+        byte[] fakeBytes = {0x50, 0x4B, 0x03, 0x04, 0x00};
         MockMultipartFile fakeFile = new MockMultipartFile(
                 "resume", "fake.pdf", "application/pdf", fakeBytes
         );

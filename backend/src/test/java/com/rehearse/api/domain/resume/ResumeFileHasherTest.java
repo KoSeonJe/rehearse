@@ -15,7 +15,6 @@ class ResumeFileHasherTest {
     @DisplayName("hash_returns_known_sha256_hex_for_given_input")
     void hash_returns_known_sha256_hex_for_given_input() {
         byte[] input = "hello".getBytes();
-        // SHA-256("hello") = 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824
         String expected = "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824";
 
         String result = hasher.hash(input);

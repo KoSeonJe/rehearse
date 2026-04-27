@@ -20,7 +20,6 @@ public class ResumeSkeletonCache {
                 return cached;
             }
         } catch (IllegalStateException e) {
-            // 세션 미초기화 상태 — 캐시 없음으로 처리
         }
         return null;
     }
@@ -29,7 +28,6 @@ public class ResumeSkeletonCache {
         try {
             runtimeStateStore.update(interviewId, state -> state.setResumeSkeleton(skeleton));
         } catch (IllegalStateException e) {
-            // RuntimeState 미초기화 시 캐시 갱신 스킵 — 다음 세션 진입 시 DB 히트로 재로드
             log.warn("RuntimeState 미초기화로 캐시 갱신 스킵: interviewId={}", interviewId);
         }
     }

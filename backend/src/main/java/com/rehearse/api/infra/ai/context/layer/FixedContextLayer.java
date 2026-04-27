@@ -14,10 +14,6 @@ import org.springframework.stereotype.Component;
 /**
  * L1: 세션 전체에서 불변인 시스템 블록. cache_control=true 마킹으로
  * Claude ephemeral 캐시 및 OpenAI automatic prompt caching 을 모두 활성화.
- *
- * 공통 코어는 5개 프롬프트 빌더에서 반복되는 페르소나·보안·구분자 규칙을 추출한 것이며,
- * callType 별 skeleton 이 뒤에 덧붙여진다. answer_analyzer 는 분량이 커서 외부
- * .txt 파일을 init() 에서 로드해 enum 정의를 덮는다.
  */
 @Slf4j
 @Component

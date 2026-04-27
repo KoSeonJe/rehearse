@@ -41,7 +41,6 @@ public class ResumeSkeletonStore {
         try {
             skeletonRepository.save(entity);
         } catch (DataIntegrityViolationException e) {
-            // 동시 요청에 의한 중복 저장 시 DB에서 재조회 (stampede 방어)
             log.warn("이력서 중복 저장 감지, DB 재조회: interviewId={}", interviewId);
             skeletonRepository.findByInterviewId(interviewId)
                     .orElseThrow(() -> new BusinessException(AiErrorCode.PARSE_FAILED));

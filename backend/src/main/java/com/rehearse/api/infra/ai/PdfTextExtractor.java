@@ -18,15 +18,12 @@ public class PdfTextExtractor {
 
     private static final int MAX_TEXT_LENGTH = 5000;
     private static final long MAX_FILE_SIZE = 5_242_880L;
-    // 대부분의 경우 1-2회 내 수렴하므로 3회로 상한을 둠
     private static final int KOREAN_FIX_MAX_ITERATIONS = 3;
 
     private static final Pattern HEADER_FOOTER_PATTERN = Pattern.compile(
             "(?m)^[ \\t]*(?:\\d+[ \\t]*|(?:https?://|www\\.)\\S+|\\d{4}[-./]\\d{2}[-./]\\d{2})[ \\t]*$"
     );
 
-    // PDFBox가 자모 글자 사이에 공백을 삽입하는 경우 복원.
-    // 완성형 한글(AC00-D7A3) 사이의 공백은 의미 있는 어절 경계일 수 있으므로 건드리지 않는다.
     private static final Pattern BROKEN_KOREAN_PATTERN = Pattern.compile(
             "([\\u3131-\\u318E\\u3165-\\u318F]) ([\\u3131-\\u318E\\u3165-\\u318F\\uAC00-\\uD7A3])"
     );
@@ -85,7 +82,6 @@ public class PdfTextExtractor {
         }
     }
 
-    // 2단 컬럼 레이아웃을 올바른 읽기 순서로 추출하기 위해 setSortByPosition(true) 사용
     private String extractWithColumnOrder(PDDocument document) throws IOException {
         PDFTextStripper stripper = new PDFTextStripper();
         stripper.setSortByPosition(true);
