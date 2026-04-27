@@ -19,12 +19,17 @@ public class AiCallMetrics {
     public static final String TOKENS_CACHED_READ = "rehearse.ai.call.tokens.cached.read";
     public static final String TOKENS_CACHED_WRITE = "rehearse.ai.call.tokens.cached.write";
     public static final String FOLLOWUP_SKIP_TOTAL = "rehearse.followup.skip.total";
+    public static final String PARSE_FAIL_TOTAL = "rehearse.ai.parse.fail.total";
 
     private final MeterRegistry meterRegistry;
     private final ContextEngineeringMetrics contextMetrics;
 
     public void incrementFollowUpSkip(String reason) {
         meterRegistry.counter(FOLLOWUP_SKIP_TOTAL, "reason", reason).increment();
+    }
+
+    public void incrementParseFail(String callType, String stage) {
+        meterRegistry.counter(PARSE_FAIL_TOTAL, "call.type", callType, "stage", stage).increment();
     }
 
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {
