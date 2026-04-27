@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.service.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
 import org.junit.jupiter.api.DisplayName;
@@ -107,7 +108,7 @@ class InterviewCreationServiceTest {
             CreateInterviewRequest request = new CreateInterviewRequest();
             ReflectionTestUtils.setField(request, "position", Position.BACKEND);
             ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
-            ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
+            ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.RESUME_BASED));
             ReflectionTestUtils.setField(request, "durationMinutes", 30);
 
             MockMultipartFile resumeFile = new MockMultipartFile(
@@ -123,6 +124,157 @@ class InterviewCreationServiceTest {
 
             then(interviewRepository).shouldHaveNoInteractions();
             then(eventPublisher).shouldHaveNoInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("Resume Exclusivity 규칙 (4 케이스)")
+    class ResumeExclusivity {
+
+        @Test
+        @DisplayName("resumeFile + types={CS_FUNDAMENTAL, RESUME_BASED} → 400 RESUME_EXCLUSIVITY_VIOLATION")
+        void createInterview_resumeFile_mixedTypes_throwsExclusivityViolation() {
+            // given
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes",
+                    List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.RESUME_BASED));
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            MockMultipartFile resumeFile = new MockMultipartFile(
+                    "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
+
+            // when & then
+            assertThatThrownBy(() -> interviewCreationService.createInterview(1L, request, resumeFile))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                        assertThat(be.getCode()).isEqualTo(ResumeErrorCode.RESUME_EXCLUSIVITY_VIOLATION.getCode());
+                    });
+
+            then(interviewRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("resumeFile + types={RESUME_BASED} 단독 → 200 정상 생성")
+        void createInterview_resumeFile_resumeBasedOnly_success() {
+            // given
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.RESUME_BASED));
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            MockMultipartFile resumeFile = new MockMultipartFile(
+                    "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
+
+            given(pdfTextExtractor.extract(any())).willReturn("이력서 내용");
+            given(interviewRepository.save(any(Interview.class)))
+                    .willAnswer(invocation -> {
+                        Interview interview = invocation.getArgument(0);
+                        ReflectionTestUtils.setField(interview, "id", 2L);
+                        return interview;
+                    });
+
+            // when
+            InterviewResponse response = interviewCreationService.createInterview(1L, request, resumeFile);
+
+            // then
+            assertThat(response.getId()).isEqualTo(2L);
+            then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
+        }
+
+        @Test
+        @DisplayName("resumeFile=null + types={RESUME_BASED} → 400 RESUME_REQUIRED_FOR_RESUME_BASED")
+        void createInterview_noFile_resumeBased_throwsRequired() {
+            // given
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.RESUME_BASED));
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            // when & then
+            assertThatThrownBy(() -> interviewCreationService.createInterview(1L, request, null))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                        assertThat(be.getCode()).isEqualTo(ResumeErrorCode.RESUME_REQUIRED_FOR_RESUME_BASED.getCode());
+                    });
+
+            then(interviewRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("resumeFile=null + types={CS_FUNDAMENTAL, BEHAVIORAL} → 200 (일반 혼합 허용)")
+        void createInterview_noFile_normalMixedTypes_success() {
+            // given
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes",
+                    List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL));
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            given(interviewRepository.save(any(Interview.class)))
+                    .willAnswer(invocation -> {
+                        Interview interview = invocation.getArgument(0);
+                        ReflectionTestUtils.setField(interview, "id", 3L);
+                        return interview;
+                    });
+
+            // when
+            InterviewResponse response = interviewCreationService.createInterview(1L, request, null);
+
+            // then
+            assertThat(response.getId()).isEqualTo(3L);
+            then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
+        }
+
+        @Test
+        @DisplayName("interviewTypes=빈 리스트 + resumeFile=null → 400 INTERVIEW_010")
+        void createInterview_emptyTypes_throwsInvalidInterviewTypes() {
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes", List.of());
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            assertThatThrownBy(() -> interviewCreationService.createInterview(1L, request, null))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_010");
+                    });
+
+            then(interviewRepository).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("interviewTypes=빈 리스트 + resumeFile=첨부 → 400 INTERVIEW_010 (파일 있어도 타입 없으면 거부)")
+        void createInterview_emptyTypesWithFile_throwsInvalidInterviewTypes() {
+            CreateInterviewRequest request = new CreateInterviewRequest();
+            ReflectionTestUtils.setField(request, "position", Position.BACKEND);
+            ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
+            ReflectionTestUtils.setField(request, "interviewTypes", List.of());
+            ReflectionTestUtils.setField(request, "durationMinutes", 30);
+
+            MockMultipartFile resumeFile = new MockMultipartFile(
+                    "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
+
+            assertThatThrownBy(() -> interviewCreationService.createInterview(1L, request, resumeFile))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_010");
+                    });
+
+            then(interviewRepository).shouldHaveNoInteractions();
         }
     }
 }

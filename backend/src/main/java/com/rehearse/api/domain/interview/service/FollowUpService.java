@@ -5,7 +5,9 @@ import static org.springframework.transaction.annotation.Propagation.*;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
@@ -15,6 +17,14 @@ import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.resume.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.domain.InterviewPlan;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
+import com.rehearse.api.domain.resume.service.InterviewPlanStore;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -38,6 +48,12 @@ public class FollowUpService {
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final InterviewRuntimeStateStore runtimeStateStore;
     private final AiCallMetrics aiCallMetrics;
+    private final ResumeInterviewOrchestrator resumeOrchestrator;
+    private final ResumeSkeletonStore resumeSkeletonStore;
+    private final InterviewPlanStore interviewPlanStore;
+    private final ResumeSkeletonCache resumeSkeletonCache;
+    private final InterviewPlanCache interviewPlanCache;
+    private final InterviewFinder interviewFinder;
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -46,7 +62,11 @@ public class FollowUpService {
         }
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
-        runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
+        InterviewRuntimeState state = runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
+
+        if (isResumeTrack(id, state)) {
+            return delegateToResumeOrchestrator(id, request);
+        }
 
         AskedPerspectives askedPerspectives = AskedPerspectives.from(request.getPreviousExchanges());
         TurnAnalysisResult turn = audioTurnAnalyzer.analyze(
@@ -146,5 +166,46 @@ public class FollowUpService {
                 .followUpExhausted(exhausted)
                 .selectedPerspective(followUp.getSelectedPerspective())
                 .build();
+    }
+
+    private boolean isResumeTrack(Long interviewId, InterviewRuntimeState state) {
+        if (state == null) {
+            return false;
+        }
+        if (state.getResumeSkeletonCache() != null) {
+            return true;
+        }
+        // Caffeine evict 후 재초기화된 state는 skeleton=null → Interview 엔티티로 1차 판정
+        Interview interview = interviewFinder.findById(interviewId);
+        if (!interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
+            return false;
+        }
+        // resume 트랙: skeleton 재로드 후 state에 다시 캐시
+        resumeSkeletonStore.findByInterviewId(interviewId).ifPresent(skeleton ->
+                runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(skeleton))
+        );
+        return true;
+    }
+
+    private FollowUpResponse delegateToResumeOrchestrator(Long interviewId, FollowUpRequest request) {
+        InterviewRuntimeState state = runtimeStateStore.get(interviewId);
+        ResumeSkeleton skeleton = state.getResumeSkeletonCache();
+
+        InterviewPlan plan = state.getInterviewPlanCache();
+        if (plan == null) {
+            plan = interviewPlanStore.findByInterviewId(interviewId)
+                    .orElseThrow(() -> new BusinessException(ResumeErrorCode.PLAN_NOT_FOUND));
+            InterviewPlan finalPlan = plan;
+            runtimeStateStore.update(interviewId, s -> s.setInterviewPlan(finalPlan));
+        }
+
+        Interview interview = interviewFinder.findById(interviewId);
+        int durationMinutes = interview.getDurationMinutes();
+
+        return resumeOrchestrator.processUserTurn(
+                interviewId, durationMinutes,
+                request.getQuestionContent(), request.getAnswerText(),
+                request.getPreviousExchanges(), skeleton, plan
+        );
     }
 }

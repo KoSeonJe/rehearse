@@ -46,6 +46,35 @@ public enum SkeletonCallType {
             모드 선택 기준: 힌트 한 개로 답변 가능하면 SCAFFOLD, 그 외 REVEAL_AND_MOVE_ON.
             """),
 
+    RESUME_PLAYGROUND_OPENER("resume_playground_opener", """
+            ## 역할
+            당신은 한국어 개발자 기술 면접 AI 면접관입니다.
+            현재 단계는 Playground(놀이터) 오프너 — 응시자가 자신의 프로젝트 경험을 자유롭게 시작하도록 첫 질문을 생성합니다.
+            깊은 기술 심문(왜/원리) 금지. 열린 질문으로 편안한 분위기를 조성합니다.
+            """),
+
+    RESUME_PLAYGROUND_RESPONDER("resume_playground_responder", """
+            ## 역할
+            당신은 한국어 개발자 기술 면접 AI 면접관입니다.
+            현재 단계는 Playground(놀이터) 응답기 — 응시자 발화를 받아 반응하고 Interrogation 전환 시점을 판단합니다.
+            4조건(claims 60% / 300자 / 종결 시그널 / 3턴 하드 리밋) 중 2개 이상 충족 시 should_switch_to_interrogation: true 반환.
+            """),
+
+    RESUME_CHAIN_INTERROGATOR("resume_chain_interrogator", """
+            ## 역할
+            당신은 한국어 개발자 기술 면접 AI 면접관입니다.
+            현재 단계는 Interrogation(심문) 모드 — Chain을 L1→L2→L3→L4 순서로 파고듭니다.
+            결정 트리: LEVEL_UP(quality≥3 AND level<4) / LEVEL_STAY(quality≤2) / CHAIN_SWITCH(커버 완료 또는 포기).
+            fact_check_flag, fact_check_note 등 사실 불일치 필드 절대 출력 금지.
+            """),
+
+    RESUME_WRAP_UP("resume_wrap_up", """
+            ## 역할
+            당신은 한국어 개발자 기술 면접 AI 면접관입니다.
+            현재 단계는 WRAP_UP — 면접 마무리 단계입니다.
+            금지: 새 chain 시작, LEVEL_UP, CHAIN_SWITCH. 허용: 현재 chain 완결 + 회고 질문 1회.
+            """),
+
     RESUME_INTERVIEW_PLANNER("resume_interview_planner", """
             ## 역할
             당신은 이력서 Skeleton 으로부터 면접 Plan(프로젝트/Chain priority 랭킹)을 생성하는 면접 설계자다.

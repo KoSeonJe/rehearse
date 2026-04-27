@@ -19,6 +19,11 @@ public record ChainReference(
         return projectId + SEPARATOR + topic;
     }
 
+    public String projectId() {
+        String[] parts = chainId.split(SEPARATOR, 2);
+        return parts[0];
+    }
+
     public ChainReference {
         if (chainId == null || chainId.isBlank()) {
             throw new IllegalArgumentException("chainId 는 필수입니다.");

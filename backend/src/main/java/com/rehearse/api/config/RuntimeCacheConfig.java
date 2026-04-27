@@ -8,10 +8,16 @@ import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Clock;
 import java.time.Duration;
 
 @Configuration
 public class RuntimeCacheConfig {
+
+    @Bean
+    public Clock systemClock() {
+        return Clock.systemDefaultZone();
+    }
 
     @Bean
     public Cache<Long, InterviewRuntimeState> interviewRuntimeStateCache(MeterRegistry registry) {

@@ -10,8 +10,10 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
@@ -22,6 +24,13 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.domain.resume.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.domain.InterviewPlan;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.service.InterviewPlanStore;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,11 +44,15 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("FollowUpService - 꼬리질문 생성 (AudioTurnAnalyzer + Step B v3)")
@@ -65,14 +78,39 @@ class FollowUpServiceTest {
     @Mock
     private AiCallMetrics aiCallMetrics;
 
+    @Mock
+    private ResumeInterviewOrchestrator resumeOrchestrator;
+
+    @Mock
+    private ResumeSkeletonStore resumeSkeletonStore;
+
+    @Mock
+    private InterviewPlanStore interviewPlanStore;
+
+    @Mock
+    private ResumeSkeletonCache resumeSkeletonCache;
+
+    @Mock
+    private InterviewPlanCache interviewPlanCache;
+
+    @Mock
+    private InterviewFinder interviewFinder;
+
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
-                followUpTransactionHandler, runtimeStateStore, aiCallMetrics);
+                followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
+                resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
+                resumeSkeletonCache, interviewPlanCache, interviewFinder);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));
+
+        // CS 트랙 기본 stub: skeleton=null 경로에서 interviewFinder 호출 시 CS interview 반환
+        Interview csDefault = mock(Interview.class);
+        lenient().when(csDefault.getInterviewTypes()).thenReturn(Set.of(InterviewType.CS_FUNDAMENTAL));
+        lenient().when(interviewFinder.findById(any())).thenReturn(csDefault);
     }
 
     private static FollowUpContext context(int nextOrderIndex, int maxFollowUpRounds) {
@@ -262,6 +300,106 @@ class FollowUpServiceTest {
                         assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
                         assertThat(be.getCode()).isEqualTo("INTERVIEW_003");
                     });
+        }
+    }
+
+    @Nested
+    @DisplayName("Resume 트랙 라우팅")
+    class ResumeTrackRouting {
+
+        @Test
+        @DisplayName("skeleton 캐시가 있으면 resumeOrchestrator 로 위임한다 — CS 경로 미호출")
+        void generateFollowUp_resumeTrack_skeleton_cached_delegatesToOrchestrator() {
+            ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
+            InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", skeleton);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
+            given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
+            given(runtimeStateStore.get(1L)).willReturn(resumeState);
+
+            // skeleton 캐시 hit → isResumeTrack에서 getInterviewTypes 미호출, getDurationMinutes만 사용
+            Interview interview = mock(Interview.class);
+            given(interview.getDurationMinutes()).willReturn(30);
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            InterviewPlan plan = mock(InterviewPlan.class);
+            given(interviewPlanStore.findByInterviewId(1L)).willReturn(Optional.of(plan));
+
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+                    .willReturn(FollowUpResponse.builder().question("이력서 질문").presentToUser(true).build());
+
+            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            assertThat(response.getQuestion()).isEqualTo("이력서 질문");
+            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any());
+            then(audioTurnAnalyzer).shouldHaveNoInteractions();
+            then(followUpQuestionWriter).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("skeleton 캐시 miss → RESUME_BASED 타입 면접이면 skeleton 재로드 후 위임한다")
+        void generateFollowUp_resumeTrack_cacheMiss_reloadsSkeletonAndDelegates() {
+            InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", null);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
+            given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
+            given(runtimeStateStore.get(1L)).willReturn(resumeState);
+
+            Interview interview = stubResumeInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
+            given(resumeSkeletonStore.findByInterviewId(1L)).willReturn(Optional.of(skeleton));
+
+            InterviewPlan plan = mock(InterviewPlan.class);
+            given(interviewPlanStore.findByInterviewId(1L)).willReturn(Optional.of(plan));
+
+            willAnswer(inv -> {
+                java.util.function.Consumer<InterviewRuntimeState> mutator = inv.getArgument(1);
+                mutator.accept(resumeState);
+                return null;
+            }).given(runtimeStateStore).update(eq(1L), any());
+
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+                    .willReturn(FollowUpResponse.builder().question("재로드 후 이력서 질문").presentToUser(true).build());
+
+            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            assertThat(response.getQuestion()).isEqualTo("재로드 후 이력서 질문");
+            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any());
+            then(audioTurnAnalyzer).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("skeleton 캐시 miss + CS 타입 면접 → CS 경로로 처리된다")
+        void generateFollowUp_csTrack_cacheMiss_routesToCsPath() {
+            InterviewRuntimeState csState = new InterviewRuntimeState("JUNIOR", null);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(runtimeStateStore.getOrInit(any(), any())).willReturn(csState);
+
+            Interview csInterview = mock(Interview.class);
+            given(csInterview.getInterviewTypes()).willReturn(Set.of(InterviewType.CS_FUNDAMENTAL));
+            given(interviewFinder.findById(1L)).willReturn(csInterview);
+
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "CS 답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("CS 꼬리질문"));
+
+            Question savedQuestion = Question.builder()
+                    .questionType(QuestionType.FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
+            ReflectionTestUtils.setField(savedQuestion, "id", 99L);
+            given(followUpTransactionHandler.saveFollowUpResult(any(), any(), anyInt()))
+                    .willReturn(new FollowUpSaveResult(savedQuestion, 1));
+
+            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            assertThat(response.getQuestion()).isEqualTo("CS 꼬리질문");
+            then(resumeOrchestrator).shouldHaveNoInteractions();
+        }
+
+        private Interview stubResumeInterview() {
+            Interview interview = mock(Interview.class);
+            given(interview.getInterviewTypes()).willReturn(Set.of(InterviewType.RESUME_BASED));
+            given(interview.getDurationMinutes()).willReturn(30);
+            return interview;
         }
     }
 }
