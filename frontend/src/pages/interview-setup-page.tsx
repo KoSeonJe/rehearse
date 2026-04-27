@@ -74,6 +74,7 @@ export const InterviewSetupPage = () => {
             resumeFile={setup.resumeFile}
             dragOver={setup.dragOver}
             isLoading={setup.isLoading}
+            isOtherTypesDisabled={setup.isOtherTypesDisabled}
             fileInputRef={setup.fileInputRef}
             onTypeToggle={setup.handleTypeToggle}
             onCsSubTopicToggle={setup.handleCsSubTopicToggle}

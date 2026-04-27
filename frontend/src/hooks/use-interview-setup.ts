@@ -84,6 +84,8 @@ export const useInterviewSetup = () => {
     setDurationMinutes(minutes)
   }, [])
 
+  const isOtherTypesDisabled = interviewTypes.includes('RESUME_BASED')
+
   const handleTypeToggle = useCallback((type: InterviewType) => {
     setInterviewTypes((prev) => {
       if (prev.includes(type)) {
@@ -95,6 +97,18 @@ export const useInterviewSetup = () => {
         }
         return next
       }
+
+      // RESUME_BASED 활성화: 기존 선택 모두 해제하고 단독 선택
+      if (type === 'RESUME_BASED') {
+        setCsSubTopics([])
+        return ['RESUME_BASED']
+      }
+
+      // 다른 타입 선택 시 RESUME_BASED가 이미 활성화면 토글 차단
+      if (prev.includes('RESUME_BASED')) {
+        return prev
+      }
+
       return [...prev, type]
     })
   }, [])
@@ -192,6 +206,7 @@ export const useInterviewSetup = () => {
     dragOver,
     isLoading,
     isSubmitStep,
+    isOtherTypesDisabled,
     totalSteps: TOTAL_STEPS,
     canNext,
     handleNext,
