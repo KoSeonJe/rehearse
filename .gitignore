@@ -77,14 +77,8 @@ lambda/**/*.zip
 !.claude/skills/shadcn/**
 .claude.local.md
 
-# === 부하테스트 ===
-docs/plans/virtual-thread-migration/k6-reports/
-docs/plans/virtual-thread-migration/load-test-plan-v2.md
-docs/plans/virtual-thread-migration/load-test-results-v2.md
-
-# === 미완성 계획 문서 ===
-docs/plans/partial-failure-retry/
-docs/plans/sprint-2/
+# === 계획 문서 (개인 작업 노트, 레포 추적 안 함) ===
+docs/plans/
 
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/
