@@ -61,7 +61,10 @@ class AnswerAnalyzerTest {
 
     @BeforeEach
     void setUp() {
-        parser = new AiResponseParser(new ObjectMapper());
+        parser = new AiResponseParser(
+                new ObjectMapper(),
+                new com.rehearse.api.infra.ai.SchemaExampleRegistry(),
+                org.mockito.Mockito.mock(com.rehearse.api.infra.ai.metrics.AiCallMetrics.class));
         cache = Caffeine.newBuilder().<Long, InterviewRuntimeState>build();
         runtimeStateStore = new InterviewRuntimeStateStore(cache);
         analyzer = new AnswerAnalyzer(aiClient, parser, contextBuilder, runtimeStateStore);

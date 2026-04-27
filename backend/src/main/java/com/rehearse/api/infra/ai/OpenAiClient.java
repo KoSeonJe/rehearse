@@ -124,7 +124,7 @@ public class OpenAiClient {
         }
         messages.add(buildAudioUserContent(userText.toString(), audioBase64, audioFormat));
 
-        Map<String, Object> requestBody = buildRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
+        Map<String, Object> requestBody = buildAudioRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
 
         String apiLabel = "OpenAI Audio Chat [" + req.callType() + "]";
         OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
@@ -207,7 +207,23 @@ public class OpenAiClient {
         ));
     }
 
-    private Map<String, Object> buildRequestBody(
+    static Map<String, Object> buildRequestBody(
+            String resolvedModel, List<Map<String, Object>> messages, int maxTokens, ChatRequest req) {
+        Map<String, Object> body = baseRequestBody(resolvedModel, messages, maxTokens, req);
+        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
+            body.put("response_format", Map.of("type", "json_object"));
+        }
+        return body;
+    }
+
+    // gpt-4o-*-audio-preview 는 response_format=json_object 파라미터를 거부한다 (400 BAD_REQUEST).
+    // JSON 강제는 system prompt 의 출력 규칙으로 보장한다.
+    static Map<String, Object> buildAudioRequestBody(
+            String resolvedModel, List<Map<String, Object>> messages, int maxTokens, ChatRequest req) {
+        return baseRequestBody(resolvedModel, messages, maxTokens, req);
+    }
+
+    private static Map<String, Object> baseRequestBody(
             String resolvedModel, List<Map<String, Object>> messages, int maxTokens, ChatRequest req) {
         Map<String, Object> body = new HashMap<>();
         body.put("model", resolvedModel);
@@ -215,9 +231,6 @@ public class OpenAiClient {
         body.put("max_tokens", maxTokens);
         if (req.temperature() != null) {
             body.put("temperature", req.temperature());
-        }
-        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
-            body.put("response_format", Map.of("type", "json_object"));
         }
         return body;
     }
