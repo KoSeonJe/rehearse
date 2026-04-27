@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class InterviewRuntimeState {
     private final AtomicInteger playgroundTurns;
     private final Map<Long, TurnAnalysis> turnAnalysisCache;
     private volatile ResumeSkeleton resumeSkeletonCache;
+    private volatile InterviewPlan interviewPlanCache;
 
     // Keyed by windowEnd index (exclusive upper bound of the older-turns window that was compacted).
     // windowEnd = exchanges.size() - RECENT_WINDOW, i.e. the count of turns fed to the compactor.
@@ -50,6 +52,10 @@ public class InterviewRuntimeState {
 
     public void setResumeSkeleton(ResumeSkeleton skeleton) {
         this.resumeSkeletonCache = skeleton;
+    }
+
+    public void setInterviewPlan(InterviewPlan plan) {
+        this.interviewPlanCache = plan;
     }
 
     public boolean addCoveredClaim(String claim) {

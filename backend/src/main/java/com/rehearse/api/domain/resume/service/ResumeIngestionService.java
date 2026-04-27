@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.resume.service;
 
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
