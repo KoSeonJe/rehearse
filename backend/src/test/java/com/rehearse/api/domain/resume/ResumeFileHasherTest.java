@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.resume;
 
+import com.rehearse.api.domain.resume.service.ResumeFileHasher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

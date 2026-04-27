@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.repository;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -134,7 +135,7 @@ class InterviewRuntimeStateStoreTest {
     }
 
     private InterviewRuntimeState newState(String level) {
-        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash-" + level, ResumeSkeleton.CandidateLevel.MID, "backend", List.of(), null);
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash-" + level, CandidateLevel.MID, "backend", List.of(), null);
         return new InterviewRuntimeState(level, skeleton);
     }
 }

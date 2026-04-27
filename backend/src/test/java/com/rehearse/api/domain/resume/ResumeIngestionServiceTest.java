@@ -1,5 +1,11 @@
 package com.rehearse.api.domain.resume;
 
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.service.ResumeExtractionService;
+import com.rehearse.api.domain.resume.service.ResumeFileHasher;
+import com.rehearse.api.domain.resume.service.ResumeIngestionService;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
@@ -183,7 +189,7 @@ class ResumeIngestionServiceTest {
         return new ResumeSkeleton(
                 "r_test",
                 fileHash,
-                ResumeSkeleton.CandidateLevel.JUNIOR,
+                CandidateLevel.JUNIOR,
                 "backend",
                 List.of(),
                 Map.of()

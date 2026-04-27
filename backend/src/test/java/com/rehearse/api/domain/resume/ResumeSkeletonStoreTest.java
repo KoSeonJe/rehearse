@@ -2,6 +2,8 @@ package com.rehearse.api.domain.resume;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
@@ -117,7 +119,7 @@ class ResumeSkeletonStoreTest {
         return new ResumeSkeleton(
                 "r_test",
                 fileHash,
-                ResumeSkeleton.CandidateLevel.JUNIOR,
+                CandidateLevel.JUNIOR,
                 "backend",
                 List.of(),
                 Map.of()

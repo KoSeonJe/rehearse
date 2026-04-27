@@ -14,12 +14,6 @@ public record ResumeSkeleton(
         Map<String, List<String>> interrogationPriorityMap
 ) {
 
-    public enum CandidateLevel {
-        JUNIOR,
-        MID,
-        SENIOR
-    }
-
     public List<String> priorityIds(String priority) {
         if (interrogationPriorityMap == null) {
             return List.of();

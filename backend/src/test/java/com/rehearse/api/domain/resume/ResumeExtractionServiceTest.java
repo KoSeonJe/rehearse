@@ -1,6 +1,8 @@
 package com.rehearse.api.domain.resume;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.service.ResumeExtractionService;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -61,7 +63,7 @@ class ResumeExtractionServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.fileHash()).isEqualTo(fileHash);
         assertThat(result.resumeId()).isEqualTo("r_test1234");
-        assertThat(result.candidateLevel()).isEqualTo(ResumeSkeleton.CandidateLevel.MID);
+        assertThat(result.candidateLevel()).isEqualTo(CandidateLevel.MID);
         assertThat(result.targetDomain()).isEqualTo("backend");
         assertThat(result.projects()).hasSize(1);
     }
@@ -121,7 +123,7 @@ class ResumeExtractionServiceTest {
         ResumeSkeleton result = service.extract("이력서", "hash");
 
         // then
-        assertThat(result.candidateLevel()).isEqualTo(ResumeSkeleton.CandidateLevel.JUNIOR);
+        assertThat(result.candidateLevel()).isEqualTo(CandidateLevel.JUNIOR);
     }
 
     @Test

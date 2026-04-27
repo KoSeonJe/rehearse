@@ -2,6 +2,8 @@ package com.rehearse.api.domain.resume;
 
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -107,7 +109,7 @@ class ResumeSkeletonCacheTest {
         return new ResumeSkeleton(
                 "r_test",
                 fileHash,
-                ResumeSkeleton.CandidateLevel.JUNIOR,
+                CandidateLevel.JUNIOR,
                 "backend",
                 List.of(),
                 Map.of()

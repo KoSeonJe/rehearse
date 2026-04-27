@@ -13,7 +13,7 @@ public record Project(
         implicitCsTopics = implicitCsTopics == null ? List.of() : List.copyOf(implicitCsTopics);
     }
 
-    public List<ResumeClaim> claimsByPriority(ResumeClaim.Priority priority) {
+    public List<ResumeClaim> claimsByPriority(Priority priority) {
         return claims.stream()
                 .filter(c -> c.priority() == priority)
                 .toList();

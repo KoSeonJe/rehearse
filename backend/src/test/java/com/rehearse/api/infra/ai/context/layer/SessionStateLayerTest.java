@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai.context.layer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
@@ -37,7 +38,7 @@ class SessionStateLayerTest {
     }
 
     private InterviewRuntimeState freshState(String level) {
-        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", ResumeSkeleton.CandidateLevel.MID, "backend", List.of(), null);
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         return new InterviewRuntimeState(level, skeleton);
     }
 

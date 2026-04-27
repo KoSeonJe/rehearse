@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
