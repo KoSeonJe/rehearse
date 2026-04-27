@@ -1,9 +1,12 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.resume.ChainStateTracker;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
+import com.rehearse.api.domain.resume.domain.ResumeMode;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
@@ -40,6 +43,11 @@ public class InterviewRuntimeState {
     // Guards against duplicate async compaction submissions for the same windowEnd.
     private final Set<Integer> compactionInFlight = ConcurrentHashMap.newKeySet();
 
+    private volatile Instant startedAt;
+    private volatile ResumeMode resumeMode = ResumeMode.PLAYGROUND;
+    private final ChainStateTracker chainStateTracker = new ChainStateTracker();
+    private final AtomicInteger playgroundCumulativeLength = new AtomicInteger(0);
+
     public InterviewRuntimeState(String currentLevel, ResumeSkeleton resumeSkeletonCache) {
         coveredClaims = new ConcurrentLinkedDeque<>();
         coveredClaimsSet = ConcurrentHashMap.newKeySet();
@@ -56,6 +64,22 @@ public class InterviewRuntimeState {
 
     public void setInterviewPlan(InterviewPlan plan) {
         this.interviewPlanCache = plan;
+    }
+
+    public void setStartedAt(Instant startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    public int addPlaygroundAnswerLength(int length) {
+        return playgroundCumulativeLength.addAndGet(length);
+    }
+
+    public int getPlaygroundCumulativeLength() {
+        return playgroundCumulativeLength.get();
+    }
+
+    public void transitionTo(ResumeMode newMode) {
+        this.resumeMode = newMode;
     }
 
     public boolean addCoveredClaim(String claim) {

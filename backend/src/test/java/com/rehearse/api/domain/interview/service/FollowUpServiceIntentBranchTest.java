@@ -9,8 +9,10 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
@@ -21,6 +23,11 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.domain.resume.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.service.InterviewPlanStore;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +48,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
@@ -66,6 +74,24 @@ class FollowUpServiceIntentBranchTest {
 
     @Mock
     private AiCallMetrics aiCallMetrics;
+
+    @Mock
+    private ResumeInterviewOrchestrator resumeOrchestrator;
+
+    @Mock
+    private ResumeSkeletonStore resumeSkeletonStore;
+
+    @Mock
+    private InterviewPlanStore interviewPlanStore;
+
+    @Mock
+    private ResumeSkeletonCache resumeSkeletonCache;
+
+    @Mock
+    private InterviewPlanCache interviewPlanCache;
+
+    @Mock
+    private InterviewFinder interviewFinder;
 
     private static final MockMultipartFile AUDIO_FILE =
             new MockMultipartFile("audio", "audio.webm", "audio/webm", new byte[]{1, 2, 3});
@@ -105,11 +131,18 @@ class FollowUpServiceIntentBranchTest {
     void setUp() {
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
-                followUpTransactionHandler, runtimeStateStore, aiCallMetrics);
+                followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
+                resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
+                resumeSkeletonCache, interviewPlanCache, interviewFinder);
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));
+
+        // skeleton=null 경로에서 interviewFinder 호출 시 CS interview 반환
+        Interview csDefault = mock(Interview.class);
+        lenient().when(csDefault.getInterviewTypes()).thenReturn(java.util.Set.of(InterviewType.CS_FUNDAMENTAL));
+        lenient().when(interviewFinder.findById(any())).thenReturn(csDefault);
     }
 
     @Nested

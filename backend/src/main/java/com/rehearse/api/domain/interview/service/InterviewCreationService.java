@@ -3,9 +3,11 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.CreateInterviewRequest;
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.service.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -29,6 +32,8 @@ public class InterviewCreationService {
 
     @Transactional
     public InterviewResponse createInterview(Long userId, CreateInterviewRequest request, MultipartFile resumeFile) {
+        validateResumeExclusivity(request.getInterviewTypes(), resumeFile);
+
         String resumeText = null;
         if (resumeFile != null && !resumeFile.isEmpty()) {
             resumeText = pdfTextExtractor.extract(resumeFile);
@@ -68,5 +73,26 @@ public class InterviewCreationService {
                 saved.getId(), saved.getPosition(), saved.getLevel(), saved.getInterviewTypes());
 
         return InterviewResponse.from(saved, Collections.emptyList());
+    }
+
+    private void validateResumeExclusivity(List<InterviewType> interviewTypes, MultipartFile resumeFile) {
+        if (interviewTypes == null || interviewTypes.isEmpty()) {
+            throw new BusinessException(InterviewErrorCode.INVALID_INTERVIEW_TYPES);
+        }
+
+        boolean hasResumeBased = interviewTypes.contains(InterviewType.RESUME_BASED);
+        boolean hasResumeFile = resumeFile != null && !resumeFile.isEmpty();
+
+        if (hasResumeBased && interviewTypes.size() > 1) {
+            throw new BusinessException(ResumeErrorCode.RESUME_EXCLUSIVITY_VIOLATION);
+        }
+
+        if (hasResumeBased && !hasResumeFile) {
+            throw new BusinessException(ResumeErrorCode.RESUME_REQUIRED_FOR_RESUME_BASED);
+        }
+
+        if (!hasResumeBased && hasResumeFile) {
+            throw new BusinessException(ResumeErrorCode.RESUME_EXCLUSIVITY_VIOLATION);
+        }
     }
 }
