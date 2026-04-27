@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume.service;
+package com.rehearse.api.domain.resume.cache;
 
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;

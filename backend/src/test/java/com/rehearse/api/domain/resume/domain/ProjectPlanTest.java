@@ -15,7 +15,7 @@ class ProjectPlanTest {
     }
 
     private static InterrogationPhase interrogationPhase() {
-        ChainRef primary = new ChainRef("p1::캐시", "캐시", 1, List.of(1, 2));
+        ChainReference primary = new ChainReference("p1::캐시", "캐시", 1, List.of(1, 2));
         return new InterrogationPhase(List.of(primary), List.of());
     }
 

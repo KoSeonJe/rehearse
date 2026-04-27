@@ -4,7 +4,7 @@ import com.rehearse.api.domain.resume.domain.CandidateLevel;
 import com.rehearse.api.domain.resume.service.ResumeExtractionService;
 import com.rehearse.api.domain.resume.service.ResumeFileHasher;
 import com.rehearse.api.domain.resume.service.ResumeIngestionService;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;

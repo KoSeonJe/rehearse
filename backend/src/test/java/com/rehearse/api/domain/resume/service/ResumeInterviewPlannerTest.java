@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -12,7 +12,7 @@ import static org.mockito.BDDMockito.willThrow;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ChainRef;
+import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.ChainStep;
 import com.rehearse.api.domain.resume.domain.ClaimType;
 import com.rehearse.api.domain.resume.domain.InterrogationChain;
@@ -142,10 +142,10 @@ class ResumeInterviewPlannerTest {
     }
 
     private InterviewPlan createFixturePlan(int durationMin) {
-        ChainRef chain = new ChainRef("p1::Redis", "Redis", 1, List.of(1, 2));
+        ChainReference chain = new ChainReference("p1::Redis", "Redis", 1, List.of(1, 2));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         PlaygroundPhase playground = new PlaygroundPhase("opener", List.of("p1_c1"));
         ProjectPlan project = new ProjectPlan("p1", "Project A", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", durationMin, 1, List.of(project));
+        return new InterviewPlan("plan_test", durationMin, List.of(project));
     }
 }

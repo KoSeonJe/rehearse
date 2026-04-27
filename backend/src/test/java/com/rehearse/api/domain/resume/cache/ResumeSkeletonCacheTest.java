@@ -1,9 +1,9 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.cache;
 
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonCache;
+import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

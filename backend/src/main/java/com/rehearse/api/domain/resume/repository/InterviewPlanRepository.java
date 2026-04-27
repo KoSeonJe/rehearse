@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.resume.repository;
 
-import com.rehearse.api.domain.resume.entity.InterviewPlanEntity;
+import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface InterviewPlanRepository extends JpaRepository<InterviewPlanEntity, Long> {
+public interface InterviewPlanRepository extends JpaRepository<InterviewPlan, Long> {
 
-    Optional<InterviewPlanEntity> findByInterviewId(Long interviewId);
+    Optional<InterviewPlan> findByInterviewId(Long interviewId);
 }

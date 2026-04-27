@@ -1,11 +1,11 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ChainRef;
+import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.ChainStep;
 import com.rehearse.api.domain.resume.domain.ClaimType;
 import com.rehearse.api.domain.resume.domain.InterrogationChain;
@@ -43,8 +43,8 @@ class ResumeInterviewPlanValidatorTest {
     void validate_passes_when_chain_and_claim_match_skeleton() {
         InterviewPlan plan = createPlan(
                 List.of("p1_c1"),
-                ChainRef.synthesizeChainId("p1", "Redis"),
-                ChainRef.synthesizeChainId("p1", "JPA")
+                ChainReference.synthesizeChainId("p1", "Redis"),
+                ChainReference.synthesizeChainId("p1", "JPA")
         );
 
         assertThatCode(() -> validator.validate(skeleton, plan)).doesNotThrowAnyException();
@@ -55,8 +55,8 @@ class ResumeInterviewPlanValidatorTest {
     void validate_throws_orphan_chain_when_chain_not_in_skeleton() {
         InterviewPlan plan = createPlan(
                 List.of("p1_c1"),
-                ChainRef.synthesizeChainId("p1", "NonExistent"),
-                ChainRef.synthesizeChainId("p1", "JPA")
+                ChainReference.synthesizeChainId("p1", "NonExistent"),
+                ChainReference.synthesizeChainId("p1", "JPA")
         );
 
         assertThatThrownBy(() -> validator.validate(skeleton, plan))
@@ -70,8 +70,8 @@ class ResumeInterviewPlanValidatorTest {
     void validate_throws_orphan_claim_when_claim_not_in_project() {
         InterviewPlan plan = createPlan(
                 List.of("p1_c1", "p1_c_unknown"),
-                ChainRef.synthesizeChainId("p1", "Redis"),
-                ChainRef.synthesizeChainId("p1", "JPA")
+                ChainReference.synthesizeChainId("p1", "Redis"),
+                ChainReference.synthesizeChainId("p1", "JPA")
         );
 
         assertThatThrownBy(() -> validator.validate(skeleton, plan))
@@ -85,8 +85,8 @@ class ResumeInterviewPlanValidatorTest {
     void validate_allows_empty_claim_coverage() {
         InterviewPlan plan = createPlan(
                 List.of(),
-                ChainRef.synthesizeChainId("p1", "Redis"),
-                ChainRef.synthesizeChainId("p1", "JPA")
+                ChainReference.synthesizeChainId("p1", "Redis"),
+                ChainReference.synthesizeChainId("p1", "JPA")
         );
 
         assertThatCode(() -> validator.validate(skeleton, plan)).doesNotThrowAnyException();
@@ -111,11 +111,11 @@ class ResumeInterviewPlanValidatorTest {
     }
 
     private InterviewPlan createPlan(List<String> claimCoverage, String primaryChainId, String backupChainId) {
-        ChainRef primary = new ChainRef(primaryChainId, "Redis", 1, List.of(1, 2));
-        ChainRef backup = new ChainRef(backupChainId, "JPA", 2, List.of(1, 2));
+        ChainReference primary = new ChainReference(primaryChainId, "Redis", 1, List.of(1, 2));
+        ChainReference backup = new ChainReference(backupChainId, "JPA", 2, List.of(1, 2));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(primary), List.of(backup));
         PlaygroundPhase playground = new PlaygroundPhase("opener", claimCoverage);
         ProjectPlan project = new ProjectPlan("p1", "Project A", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", 30, 1, List.of(project));
+        return new InterviewPlan("plan_test", 30, List.of(project));
     }
 }

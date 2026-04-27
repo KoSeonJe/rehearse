@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

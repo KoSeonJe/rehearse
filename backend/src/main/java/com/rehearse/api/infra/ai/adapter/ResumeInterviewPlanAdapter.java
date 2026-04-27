@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai.adapter;
 
-import com.rehearse.api.domain.resume.domain.ChainRef;
+import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.InterrogationPhase;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
@@ -57,7 +57,6 @@ public class ResumeInterviewPlanAdapter {
         return new InterviewPlan(
                 raw.sessionPlanId(),
                 durationMin,
-                projectPlans.size(),
                 projectPlans
         );
     }
@@ -96,23 +95,23 @@ public class ResumeInterviewPlanAdapter {
             throw new BusinessException(ResumePlannerErrorCode.INVALID_PLAN);
         }
         return new InterrogationPhase(
-                mapChainRefs(raw.primaryChains()),
-                mapChainRefs(raw.backupChains())
+                mapChainReferenceerences(raw.primaryChains()),
+                mapChainReferenceerences(raw.backupChains())
         );
     }
 
-    private List<ChainRef> mapChainRefs(List<GeneratedChainRef> raws) {
+    private List<ChainReference> mapChainReferenceerences(List<GeneratedChainRef> raws) {
         if (raws == null) {
             return List.of();
         }
         return raws.stream()
                 .sorted(Comparator.comparingInt(GeneratedChainRef::priority))
-                .map(this::mapChainRef)
+                .map(this::mapChainReference)
                 .toList();
     }
 
-    private ChainRef mapChainRef(GeneratedChainRef raw) {
-        return new ChainRef(
+    private ChainReference mapChainReference(GeneratedChainRef raw) {
+        return new ChainReference(
                 raw.chainId(),
                 raw.topic(),
                 raw.priority(),

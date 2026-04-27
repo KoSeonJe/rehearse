@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume.service;
+package com.rehearse.api.domain.resume.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,7 +10,7 @@ import static org.mockito.BDDMockito.willThrow;
 
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.resume.domain.ChainRef;
+import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.InterrogationPhase;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
@@ -93,10 +93,10 @@ class InterviewPlanCacheTest {
     }
 
     private InterviewPlan createFixturePlan() {
-        ChainRef chain = new ChainRef("p1::Redis", "Redis", 1, List.of(1, 2, 3, 4));
+        ChainReference chain = new ChainReference("p1::Redis", "Redis", 1, List.of(1, 2, 3, 4));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         PlaygroundPhase playground = new PlaygroundPhase("프로젝트를 소개해주세요.", List.of("p1_c1"));
         ProjectPlan projectPlan = new ProjectPlan("p1", "Project Alpha", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", 30, 1, List.of(projectPlan));
+        return new InterviewPlan("plan_test", 30, List.of(projectPlan));
     }
 }

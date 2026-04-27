@@ -3,8 +3,8 @@ package com.rehearse.api.domain.resume.domain;
 import java.util.List;
 
 public record InterrogationPhase(
-        List<ChainRef> primaryChains,
-        List<ChainRef> backupChains
+        List<ChainReference> primaryChains,
+        List<ChainReference> backupChains
 ) {
 
     public InterrogationPhase {
@@ -23,7 +23,7 @@ public record InterrogationPhase(
         backupChains = List.copyOf(backupChains);
     }
 
-    private static void validateAscendingPriority(List<ChainRef> chains, String fieldName) {
+    private static void validateAscendingPriority(List<ChainReference> chains, String fieldName) {
         for (int i = 1; i < chains.size(); i++) {
             if (chains.get(i).priority() <= chains.get(i - 1).priority()) {
                 throw new IllegalArgumentException(

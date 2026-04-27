@@ -1,6 +1,6 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.resume.domain.ChainRef;
+import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import com.rehearse.api.domain.resume.domain.Project;
 import com.rehearse.api.domain.resume.domain.ProjectPlan;
@@ -23,7 +23,7 @@ public class ResumeInterviewPlanValidator {
         Map<String, Set<String>> claimIdsByProject = collectClaimIdsByProject(skeleton);
 
         for (ProjectPlan projectPlan : plan.projectPlans()) {
-            validateChainRefs(projectPlan, chainIds);
+            validateChainReferences(projectPlan, chainIds);
             validateClaimCoverage(projectPlan, claimIdsByProject);
         }
     }
@@ -31,7 +31,7 @@ public class ResumeInterviewPlanValidator {
     private Set<String> collectChainIds(ResumeSkeleton skeleton) {
         return skeleton.projects().stream()
                 .flatMap(p -> p.implicitCsTopics().stream()
-                        .map(chain -> ChainRef.synthesizeChainId(p.projectId(), chain.topic())))
+                        .map(chain -> ChainReference.synthesizeChainId(p.projectId(), chain.topic())))
                 .collect(Collectors.toSet());
     }
 
@@ -43,12 +43,12 @@ public class ResumeInterviewPlanValidator {
                 ));
     }
 
-    private void validateChainRefs(ProjectPlan projectPlan, Set<String> chainIds) {
+    private void validateChainReferences(ProjectPlan projectPlan, Set<String> chainIds) {
         projectPlan.interrogationPhase().primaryChains().forEach(c -> assertChainExists(c, chainIds));
         projectPlan.interrogationPhase().backupChains().forEach(c -> assertChainExists(c, chainIds));
     }
 
-    private void assertChainExists(ChainRef chain, Set<String> chainIds) {
+    private void assertChainExists(ChainReference chain, Set<String> chainIds) {
         if (!chainIds.contains(chain.chainId())) {
             log.error("Plan에 Skeleton에 없는 chain_id 참조: chainId={}", chain.chainId());
             throw new BusinessException(ResumePlannerErrorCode.ORPHAN_CHAIN);

@@ -2,7 +2,7 @@ package com.rehearse.api.domain.resume.domain;
 
 import java.util.List;
 
-public record ChainRef(
+public record ChainReference(
         String chainId,
         String topic,
         int priority,
@@ -19,7 +19,7 @@ public record ChainRef(
         return projectId + SEPARATOR + topic;
     }
 
-    public ChainRef {
+    public ChainReference {
         if (chainId == null || chainId.isBlank()) {
             throw new IllegalArgumentException("chainId 는 필수입니다.");
         }
