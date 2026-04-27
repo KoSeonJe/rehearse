@@ -245,3 +245,107 @@ interview-quality 실행 계획 S9 — plan-04 Gate 통과 + plan-05 (Resume Ext
 - Step 5: B2 (asked_perspectives derive) 별도 spec 작성 후 plan-05 진입 결정
 - 참조: `plan-04-context-engineering.md` `## 이월 사항`
 
+---
+
+## Session S11 (2026-04-27) — plan-05 Resume Extractor 구현 + 리뷰 fix + 리팩토링 (PR 준비)
+
+### 완료
+- **신규 파일 (Production)**:
+  - `backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeSkeleton.java` — record + invariant
+  - `backend/src/main/java/com/rehearse/api/domain/resume/domain/Project.java` — compact constructor null 방어 + List.copyOf
+  - `backend/src/main/java/com/rehearse/api/domain/resume/domain/InterrogationChain.java` — compact constructor 4단(WHAT/HOW/WHY_MECH/TRADEOFF) invariant 강제
+  - `backend/src/main/java/com/rehearse/api/domain/resume/domain/ResumeClaim.java`
+  - `backend/src/main/java/com/rehearse/api/domain/resume/entity/ResumeSkeletonEntity.java` — V24 매핑
+  - `backend/src/main/java/com/rehearse/api/domain/resume/repository/ResumeSkeletonRepository.java`
+  - `backend/src/main/java/com/rehearse/api/domain/resume/exception/ResumeErrorCode.java` — RESUME_001~005
+  - `backend/src/main/java/com/rehearse/api/domain/resume/ResumeExtractionService.java` — LLM 호출 + 파싱
+  - `backend/src/main/java/com/rehearse/api/domain/resume/ResumeIngestionService.java` — 코디네이터 (73 LOC)
+  - `backend/src/main/java/com/rehearse/api/domain/resume/ResumeFileHasher.java` — SHA-256 (원본 PDF 바이트)
+  - `backend/src/main/java/com/rehearse/api/domain/resume/ResumeSkeletonStore.java` — DB read/write + JSON 직렬화
+  - `backend/src/main/java/com/rehearse/api/domain/resume/ResumeSkeletonCache.java` — InterviewRuntimeStateStore wrapping
+  - `backend/src/main/java/com/rehearse/api/infra/ai/dto/ExtractedResumeSkeleton.java` — LLM JSON DTO
+  - `backend/src/main/java/com/rehearse/api/infra/ai/prompt/ResumeExtractorPromptBuilder.java`
+  - `backend/src/main/java/com/rehearse/api/infra/ai/context/layer/SkeletonCallType.java` — enum (R3 리팩토링)
+  - `backend/src/main/resources/prompts/template/resume/resume-extractor.txt`
+  - `backend/src/main/resources/db/migration/V28__add_unique_to_resume_skeleton.sql` — interview_id UNIQUE 제약
+- **수정 파일 (Production)**:
+  - `backend/src/main/java/com/rehearse/api/infra/ai/PdfTextExtractor.java` — 5-step 정규화 파이프라인 + 파일 검증 (size/MIME/magic byte) + fixKoreanTokenBreaks 3-pass cap + normalize package-private + PII 로깅 제거
+  - `backend/src/main/java/com/rehearse/api/infra/ai/context/layer/FixedContextLayer.java` — SkeletonCallType enum 기반으로 lookup 변경, `resume_extractor` 엔트리 포함
+  - `backend/src/main/java/com/rehearse/api/domain/interview/entity/InterviewRuntimeState.java` — `resumeSkeletonCache` 타입 `CachedResumeSkeleton` → `ResumeSkeleton` 으로 좁힘. mutator 추가
+- **삭제 파일**:
+  - `backend/src/main/java/com/rehearse/api/domain/interview/entity/CachedResumeSkeleton.java` — 인터페이스 YAGNI 제거 (구현체 1개)
+- **신규/수정 테스트**: 16 파일, +84 tests (868 → 952 / 0 failures)
+  - Resume 도메인: `InterrogationChainTest`, `ResumeExtractionServiceTest`, `ResumeIngestionServiceTest`, `ResumeFileHasherTest`, `ResumeSkeletonStoreTest`, `ResumeSkeletonCacheTest`
+  - Infra: `PdfTextExtractorNormalizationTest` (Reflection 제거 → package-private 직접 호출), `PdfTextExtractorValidationTest`, `ResumeExtractorPromptBuilderTest`, `SkeletonCallTypeTest`
+  - 기존 테스트 5개 (`SessionStateLayerTest`, `DialogueHistoryLayerTest`, `InterviewRuntimeStateStoreTest`, `InterviewRuntimeStateSnapshotTest`, `AnswerAnalyzerTest`, `InterviewRuntimeStateAnalysisTest`, `InterviewRuntimeStateCompactionTest`, `DialogueCompactorTest`, `FixedContextLayerTest`) — `CachedResumeSkeleton` 람다 → `ResumeSkeleton` 인스턴스로 마이그레이션
+
+### 리뷰 사이클
+1. **1차 구현** (backend agent): 28 신규 테스트, 896 total
+2. **3개 리뷰 병렬** (architect-reviewer / code-reviewer / test-engineer):
+   - Critical: PDF 검증 부재(DoS), 트랜잭션 안 LLM 호출(커넥션 풀), fixKoreanTokenBreaks O(n²) 가능성
+   - High: 정규화 텍스트 기반 SHA-256(캐시 충돌), UNIQUE 제약 부재(stampede), InterrogationChain anemic, PII 로깅, 빈 텍스트 LLM 호출, Reflection 테스트
+3. **머지 전 필수 fix 9건 적용** (backend agent): 910 tests
+4. **defer 항목 + 클린코드 리팩토링** (backend agent):
+   - R1 SRP 분해: ResumeIngestionService(140 LOC) → 73 LOC + Hasher / Store / Cache 3 컴포넌트
+   - R2 CachedResumeSkeleton 인터페이스 제거 (YAGNI/ISP)
+   - R3 SkeletonCallType enum 도입 (FixedContextLayer)
+   - R4 WHAT 주석 제거 + 매직 넘버 상수화 + parseClaimType/Priority/StepType enum static factory 통합
+   - R2 적용 후 5 테스트 파일 람다 컴파일 실패 → ResumeSkeleton 인스턴스로 fix
+5. 최종: **952 tests / 0 failures**
+
+### 핵심 설계 결정
+- **SHA-256 키**: 원본 PDF 바이트 기반 (정규화 텍스트 X) — 캐시 키 충돌 방지
+- **트랜잭션 경계**: `ResumeIngestionService.ingest()` 자체는 비-트랜잭션 코디네이터, `ResumeSkeletonStore.findByInterviewIdAndFileHash` (readOnly), `ResumeSkeletonStore.save` (write) 만 짧은 트랜잭션. LLM 호출은 트랜잭션 밖
+- **interview-id UNIQUE + DataIntegrityViolationException catch**: 동시 요청 stampede 시 중복 row 차단 + 재조회 폴백
+- **InterrogationChain invariant**: compact constructor 에서 4 StepType (WHAT/HOW/WHY_MECH/TRADEOFF) 정확히 1번씩 강제 → plan-05 spec 검증 항목 #4 가 도메인 레벨에서 보장
+- **interview ← resume 단방향 의존**: `InterviewRuntimeState` 가 `ResumeSkeleton` 직접 참조 (CachedResumeSkeleton 인터페이스 제거)
+- **빈/짧은 텍스트(< 50자) 차단**: PDF 추출 결과 부적합 시 `RESUME_005` 예외 → LLM 환각 방지
+- **PDF 검증**: 5MB cap / `application/pdf` MIME / `%PDF` magic byte → DoS 방어
+
+### Defer (Plan-05 PR 외 별도 follow-up — 우선순위 낮음)
+- ChatRequest.callType String → enum 전환 (현재는 `SkeletonCallType` 만 enum, `ChatRequest.callType` 자체는 String. 호환성 유지 위해 별도 PR)
+- `FixedContextLayer.skeletonByCallType()` getter 패키지 프라이빗화
+- 프롬프트 hard cap (projects ≤ 5, claims ≤ 10) 텍스트 추가
+- `target_domain` String → enum (`TargetDomain`)
+- jqwik property-based test (정규화 idempotency 등) — `build.gradle.kts` 의존성 추가 필요
+- ResumeIngestionService 통합 테스트 (캐시→DB→LLM 우선순위) — Spring Boot Test slice 검토
+
+### 미해결 / 이월 (S8 잔여 누적 + S11 신규)
+- **S8 → S11 누적**:
+  - A1~A4 plan-04 검증 게이트 (Prometheus / MANUAL_AB / Compaction 정성) — SRE 인프라 PR 후 별도 세션
+  - B2 (High) L2 `asked_perspectives` derive — Resume Track 입력 품질
+  - B1, B3, B4, B5, B6, C1, C2, D1~D4 (S8 HANDOFF 참고)
+- **S11 신규**: 위 Defer 항목
+
+### PR
+- 브랜치: `feat/resume-extractor` (develop 베이스)
+- 제목: `[BE] feat: plan-05 Resume Extractor — Skeleton 추출 파이프라인`
+- 변경 요약: 신규 17 파일 + 수정 11 파일 + 삭제 1 파일, +84 tests, V28 마이그레이션
+
+### 다음 세션 (S12) Kickoff
+```
+interview-quality 실행 계획 S12 — plan-05 PR 머지 + plan-06 Resume Interview Planner 착수
+```
+- **사전 (S11 종료 시점 상태)**:
+  - PR `feat/resume-extractor` 생성 완료, CI 진행 중
+  - dev 배포 trigger 는 머지 후 자동
+- **Phase 2 (plan-06 Resume Interview Planner)**:
+  - 마스터 플랜: `/Users/koseonje/.claude/plans/plan-05-06-07-joyful-stallman.md`
+  - spec: `docs/plans/interview-quality-2026-04-20/plan-06-resume-interview-planner.md`
+  - 신규 파일 ~5: `ResumeInterviewPlanner`, `InterviewPlan`, `ProjectPlan`, `ResumeInterviewPlannerPromptBuilder`, `resume-interview-planner.txt`
+  - 수정: `InterviewRuntimeState` (InterviewPlan 필드 추가 — S11 변경 후 rebase 필요)
+  - V25 마이그레이션 이미 존재 (S0 plan-00c 산출물)
+  - **Dynamic Pacing 준수**: `allocated_time_min`, `max_turns`, `estimated_duration_min` 필드 부재
+  - 검증: Skeleton fixture 10건 → Plan 100% 생성, primary_chains orphan zero
+  - 리뷰: `architect-reviewer` (Plan 모델 일관성), `code-reviewer`
+- **Phase 3 (plan-07) 사전 메모**:
+  - BE: Orchestrator FSM (Playground / Interrogation / WrapUp) + ClockWatcher + Resume Exclusivity Rule
+  - FE: `use-interview-setup.ts` + `step-interview-type.tsx` (RESUME_BASED 단독 선택 UX)
+  - 충돌 zone (S11 적용 후): `InterviewRuntimeState` (이미 변경됨), `FixedContextLayer` (이미 SkeletonCallType enum 사용 중) → plan-07 에서 `interrogator` / `playground_responder` / `wrap_up` callType 추가만 enum 에 끼워 넣으면 됨
+- **참조**:
+  - 마스터 플랜: `/Users/koseonje/.claude/plans/plan-05-06-07-joyful-stallman.md`
+  - plan-05 spec: `docs/plans/interview-quality-2026-04-20/plan-05-resume-extractor.md`
+  - plan-06 spec: `docs/plans/interview-quality-2026-04-20/plan-06-resume-interview-planner.md`
+  - plan-07 spec: `docs/plans/interview-quality-2026-04-20/plan-07-resume-orchestrator.md`
+  - progress.md S11 entry (PR 머지 후 갱신)
+

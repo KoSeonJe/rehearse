@@ -21,8 +21,7 @@ class InterviewRuntimeStateAnalysisTest {
 
     @BeforeEach
     void setUp() {
-        CachedResumeSkeleton skeleton = () -> "hash";
-        state = new InterviewRuntimeState("MID", skeleton);
+        state = new InterviewRuntimeState("MID", null);
     }
 
     private AnswerAnalysis sampleAnalysis(long turnId) {

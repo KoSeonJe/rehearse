@@ -1,6 +1,8 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.interview.Claim;
 import com.rehearse.api.domain.interview.EvidenceStrength;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
@@ -15,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class InterviewRuntimeStateSnapshotTest {
 
     private InterviewRuntimeState freshState(String level) {
-        CachedResumeSkeleton skeleton = () -> "hash";
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         return new InterviewRuntimeState(level, skeleton);
     }
 

@@ -1,8 +1,9 @@
 package com.rehearse.api.infra.ai.context.layer;
 
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
-import com.rehearse.api.domain.interview.entity.CachedResumeSkeleton;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.global.config.ContextEngineeringProperties;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.compaction.DialogueCompactor;
@@ -56,7 +57,7 @@ class DialogueHistoryLayerTest {
     }
 
     private InterviewRuntimeState freshState() {
-        CachedResumeSkeleton skeleton = () -> "hash";
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         return new InterviewRuntimeState("MID", skeleton);
     }
 

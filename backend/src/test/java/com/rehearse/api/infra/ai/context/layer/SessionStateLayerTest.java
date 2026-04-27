@@ -1,8 +1,9 @@
 package com.rehearse.api.infra.ai.context.layer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.interview.entity.CachedResumeSkeleton;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -36,7 +38,7 @@ class SessionStateLayerTest {
     }
 
     private InterviewRuntimeState freshState(String level) {
-        CachedResumeSkeleton skeleton = () -> "hash";
+        ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         return new InterviewRuntimeState(level, skeleton);
     }
 

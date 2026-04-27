@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 
 import java.util.ArrayList;
 import java.util.Deque;
@@ -28,7 +29,7 @@ public class InterviewRuntimeState {
     private final String currentLevel;
     private final AtomicInteger playgroundTurns;
     private final Map<Long, TurnAnalysis> turnAnalysisCache;
-    private final CachedResumeSkeleton resumeSkeletonCache;
+    private volatile ResumeSkeleton resumeSkeletonCache;
 
     // Keyed by windowEnd index (exclusive upper bound of the older-turns window that was compacted).
     // windowEnd = exchanges.size() - RECENT_WINDOW, i.e. the count of turns fed to the compactor.
@@ -37,7 +38,7 @@ public class InterviewRuntimeState {
     // Guards against duplicate async compaction submissions for the same windowEnd.
     private final Set<Integer> compactionInFlight = ConcurrentHashMap.newKeySet();
 
-    public InterviewRuntimeState(String currentLevel, CachedResumeSkeleton resumeSkeletonCache) {
+    public InterviewRuntimeState(String currentLevel, ResumeSkeleton resumeSkeletonCache) {
         coveredClaims = new ConcurrentLinkedDeque<>();
         coveredClaimsSet = ConcurrentHashMap.newKeySet();
         activeChain = new CopyOnWriteArrayList<>();
@@ -45,6 +46,10 @@ public class InterviewRuntimeState {
         turnAnalysisCache = new ConcurrentHashMap<>();
         this.currentLevel = currentLevel;
         this.resumeSkeletonCache = resumeSkeletonCache;
+    }
+
+    public void setResumeSkeleton(ResumeSkeleton skeleton) {
+        this.resumeSkeletonCache = skeleton;
     }
 
     public boolean addCoveredClaim(String claim) {
