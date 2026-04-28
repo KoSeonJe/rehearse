@@ -21,6 +21,7 @@ public class AiCallMetrics {
     public static final String FOLLOWUP_SKIP_TOTAL = "rehearse.followup.skip.total";
     public static final String PARSE_FAIL_TOTAL = "rehearse.ai.parse.fail.total";
     public static final String RUBRIC_FAILURE_TOTAL = "rehearse.ai.rubric.failures";
+    public static final String SYNTHESIZER_FAILURE_TOTAL = "rehearse.ai.synthesizer.failures";
 
     private final MeterRegistry meterRegistry;
     private final ContextEngineeringMetrics contextMetrics;
@@ -35,6 +36,10 @@ public class AiCallMetrics {
 
     public void incrementRubricFailure(String reason) {
         meterRegistry.counter(RUBRIC_FAILURE_TOTAL, "reason", reason).increment();
+    }
+
+    public void incrementSynthesizerFailure(String reason) {
+        meterRegistry.counter(SYNTHESIZER_FAILURE_TOTAL, "reason", reason).increment();
     }
 
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {

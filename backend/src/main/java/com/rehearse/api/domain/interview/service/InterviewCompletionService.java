@@ -2,16 +2,19 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +24,7 @@ public class InterviewCompletionService {
 
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Scheduled(fixedDelay = 30_000)
     @Transactional
@@ -48,6 +52,8 @@ public class InterviewCompletionService {
 
                 log.info("면접 완료 처리: interviewId={}, completed={}, partial={}, skipped={}",
                         interviewId, summary.completed, summary.partial, summary.skipped);
+
+                eventPublisher.publishEvent(new InterviewCompletedEvent(interviewId, LocalDateTime.now()));
             }
         }
     }

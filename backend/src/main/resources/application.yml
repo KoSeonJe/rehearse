@@ -87,6 +87,11 @@ rehearse:
     family-version: v1
     fallback-rubric: fallback-generic-v1
     mode-aware: true
+  feedback-synthesizer:
+    model: ${FEEDBACK_SYNTHESIZER_MODEL:gpt-4o-mini}
+    temperature: 0.3
+    max-tokens: 2048
+    delivery-timeout-minutes: 10
 
 management:
   endpoints:

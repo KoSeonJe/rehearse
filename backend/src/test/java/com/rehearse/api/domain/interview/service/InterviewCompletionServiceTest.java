@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -36,6 +37,9 @@ class InterviewCompletionServiceTest {
 
     @Mock
     private QuestionSetRepository questionSetRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Nested
     @DisplayName("checkAndCompleteInterviews 메서드")
