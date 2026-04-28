@@ -108,7 +108,7 @@ public class ResumeInterviewOrchestrator {
             case WRAP_UP -> wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true);
         };
 
-        publishResumeTurnCompletedEvent(interviewId, turnIndex, analysis, intent, currentMode, currentChainLevel, skeleton);
+        publishResumeTurnCompletedEvent(interviewId, turnIndex, analysis, intent, currentMode, currentChainLevel, skeleton, answerText);
 
         return response;
     }
@@ -142,14 +142,14 @@ public class ResumeInterviewOrchestrator {
     private void publishResumeTurnCompletedEvent(
             Long interviewId, long turnIndex, AnswerAnalysis analysis,
             IntentResult intent, ResumeMode currentMode, int currentChainLevel,
-            ResumeSkeleton skeleton
+            ResumeSkeleton skeleton, String userAnswer
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
             TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
                     interviewId, turnIndex, interview.getUserId(),
                     null, null,
-                    analysis != null ? "" : "",
+                    userAnswer != null ? userAnswer : "",
                     analysis, intent.type(), interview.getLevel(),
                     currentMode, currentChainLevel, skeleton
             );

@@ -68,4 +68,17 @@ public class Question {
     public void assignQuestionSet(QuestionSet questionSet) {
         this.questionSet = questionSet;
     }
+
+    /**
+     * Resume Track용 stub — LLM 동적 생성 질문은 DB에 저장되지 않음.
+     * RubricLoader.resolveFor()는 resumeTrack=true 우선으로 매핑하므로 questionText/feedbackPerspective만 참조.
+     */
+    public static Question stubForResumeTrack() {
+        Question stub = new Question();
+        stub.questionType = QuestionType.MAIN;
+        stub.questionText = "";
+        stub.feedbackPerspective = FeedbackPerspective.TECHNICAL;
+        stub.orderIndex = 0;
+        return stub;
+    }
 }

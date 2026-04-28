@@ -15,8 +15,12 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
 server:
   port: 8080
+  shutdown: graceful
   tomcat:
     max-connections: 8192
     accept-count: 100

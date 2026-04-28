@@ -188,15 +188,26 @@ public class RubricScorerPromptBuilder {
         if (!dimensionsToScore.contains("D10") || currentChainLevel == null) {
             return "";
         }
-        int d10Score = switch (currentChainLevel) {
-            case 1 -> 1;
-            case 2, 3 -> 2;
-            default -> 3;
-        };
+        int d10Score = D10ChainScoreMapper.scoreFor(currentChainLevel);
         return "## D10 Chain Depth Override\n" +
                 "The system has determined that the candidate reached chain level " + currentChainLevel +
                 " in this session. Therefore D10 score MUST be " + d10Score + ". " +
                 "Do not re-evaluate D10 from the answer text — use the provided value.\n";
+    }
+
+    /**
+     * chain level → D10 score 매핑 규칙:
+     * level 1 → score 1 (표면 답변), level 2~3 → score 2 (심화), level 4+ → score 3 (전문가)
+     */
+    static final class D10ChainScoreMapper {
+        private static final int LEVEL_SURFACE_MAX = 1;
+        private static final int LEVEL_DEEP_MAX = 3;
+
+        static int scoreFor(int chainLevel) {
+            if (chainLevel <= LEVEL_SURFACE_MAX) return 1;
+            if (chainLevel <= LEVEL_DEEP_MAX) return 2;
+            return 3;
+        }
     }
 
     private String formatLevel(InterviewLevel level) {

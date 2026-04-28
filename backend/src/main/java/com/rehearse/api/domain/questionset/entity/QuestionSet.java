@@ -90,6 +90,18 @@ public class QuestionSet {
         question.assignQuestionSet(this);
     }
 
+    /**
+     * Resume Track용 stub — questionSetId가 없는 경우 rubric resolution은 resumeMode 우선이므로
+     * category만 RESUME_BASED로 설정하면 충분.
+     */
+    public static QuestionSet stubForResumeTrack(Interview interview) {
+        QuestionSet stub = new QuestionSet();
+        stub.interview = interview;
+        stub.category = QuestionSetCategory.RESUME_BASED;
+        stub.orderIndex = 0;
+        return stub;
+    }
+
     public void assignFileMetadata(FileMetadata fileMetadata) {
         this.fileMetadata = fileMetadata;
     }

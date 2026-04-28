@@ -45,9 +45,19 @@ public class RubricLoader {
                 log.debug("Rubric 로드 완료: rubricId={}", rubric.rubricId());
             }
 
+            validateDefaultRubricPresent(mappingResult.defaultRubricId());
+
             log.info("RubricLoader 초기화 완료: dimensions={}, rubrics={}", dimensions.size(), rubrics.size());
         } catch (IOException e) {
             throw new IllegalStateException("Rubric YAML 로딩 실패", e);
+        }
+    }
+
+    private void validateDefaultRubricPresent(String defaultRubricId) {
+        if (!rubrics.containsKey(defaultRubricId)) {
+            throw new IllegalStateException(
+                    "YAML 구조 오류: _mapping.yaml의 default rubricId='" + defaultRubricId +
+                    "'에 해당하는 rubric 파일이 없습니다. 로드된 rubricId=" + rubrics.keySet());
         }
     }
 
@@ -59,10 +69,11 @@ public class RubricLoader {
         RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);
         String rubricId = family.resolve(ctx);
 
-        Rubric resolved = rubrics.getOrDefault(rubricId, rubrics.get("fallback-generic-v1"));
+        Rubric resolved = rubrics.get(rubricId);
         if (resolved == null) {
-            log.warn("fallback-generic-v1 도 없음 — 첫 번째 rubric 반환: interviewId={}", interview.getId());
-            return rubrics.values().iterator().next();
+            throw new IllegalStateException(
+                    "YAML 구조 오류: resolve된 rubricId='" + rubricId + "'에 해당하는 rubric이 없습니다. " +
+                    "로드된 rubricId=" + rubrics.keySet());
         }
         return resolved;
     }
@@ -138,8 +149,16 @@ public class RubricLoader {
         List<MappingRule> rules = new ArrayList<>();
         if (rawRules != null) {
             for (Map<String, Object> rawRule : rawRules) {
-                Map<String, Object> when = (Map<String, Object>) rawRule.get("when");
+                Object whenRaw = rawRule.get("when");
+                if (!(whenRaw instanceof Map)) {
+                    throw new IllegalStateException("YAML 구조 오류: _mapping.yaml rule에 'when' 맵이 없습니다: " + rawRule);
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> when = (Map<String, Object>) whenRaw;
                 String use = (String) rawRule.get("use");
+                if (use == null || use.isBlank()) {
+                    throw new IllegalStateException("YAML 구조 오류: _mapping.yaml rule에 'use' 값이 없습니다: " + rawRule);
+                }
 
                 Boolean resumeTrack = null;
                 List<String> categories = null;

@@ -2,7 +2,6 @@ package com.rehearse.api.domain.feedback.rubric;
 
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Map;
@@ -134,6 +134,73 @@ class RubricScoringEventListenerTest {
                     .willThrow(new RuntimeException("DB 오류"));
 
             assertThatNoException().isThrownBy(() -> listener.on(event));
+        }
+    }
+
+    @Nested
+    @DisplayName("race condition idempotent (B2/B14)")
+    class RaceConditionIdempotent {
+
+        @Test
+        @DisplayName("DataIntegrityViolationException 발생 시 silent skip — 예외 전파 안 함")
+        void on_dataIntegrityViolation_silentSkip() {
+            TurnCompletedEvent event = createEvent(1L, 5L);
+            given(rubricScoreStore.findExisting(1L, 5L)).willReturn(Optional.empty());
+
+            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            com.rehearse.api.domain.question.entity.Question question = createQuestion();
+            given(questionRepository.findById(10L)).willReturn(Optional.of(question));
+
+            com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
+            given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
+
+            RubricScore score = new RubricScore("resume-v1",
+                    List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
+            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(score);
+            given(rubricScoreStore.save(1L, 5L, score))
+                    .willThrow(new DataIntegrityViolationException("uk_rubric_interview_turn violation"));
+            given(rubricScoreStore.findExisting(1L, 5L))
+                    .willReturn(Optional.empty())
+                    .willReturn(Optional.of(mockExistingEntity()));
+
+            assertThatNoException().isThrownBy(() -> listener.on(event));
+        }
+    }
+
+    @Nested
+    @DisplayName("Resume Track null questionId (B1)")
+    class ResumeTrackNullQuestionId {
+
+        @Test
+        @DisplayName("questionId=null인 Resume Track 이벤트도 채점 수행")
+        void on_resumeTrack_nullQuestionId_scoresWithStub() {
+            TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
+                    1L, 0L, 1L,
+                    null, null,
+                    "답변 텍스트",
+                    new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3,
+                            com.rehearse.api.domain.interview.RecommendedNextAction.DEEP_DIVE),
+                    IntentType.ANSWER, InterviewLevel.MID,
+                    com.rehearse.api.domain.resume.domain.ResumeMode.INTERROGATION, 2, null
+            );
+            given(rubricScoreStore.findExisting(1L, 0L)).willReturn(Optional.empty());
+
+            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            RubricScore score = new RubricScore("resume-v1",
+                    List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
+            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(score);
+
+            listener.on(event);
+
+            then(rubricScoreStore).should().save(1L, 0L, score);
+            then(questionRepository).shouldHaveNoInteractions();
+            then(questionSetRepository).shouldHaveNoInteractions();
         }
     }
 
