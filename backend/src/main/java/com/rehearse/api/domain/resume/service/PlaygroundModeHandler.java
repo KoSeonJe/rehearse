@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
@@ -9,6 +9,8 @@ import com.rehearse.api.domain.resume.domain.Project;
 import com.rehearse.api.domain.resume.domain.ProjectPlan;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
 import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
@@ -98,7 +100,7 @@ public class PlaygroundModeHandler {
         return skeleton.projects().stream()
                 .filter(p -> projectId.equals(p.projectId()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("프로젝트를 찾을 수 없습니다: projectId=" + projectId));
+                .orElseThrow(() -> new BusinessException(ResumeErrorCode.PROJECT_NOT_FOUND_IN_SKELETON));
     }
 
     private FollowUpResponse buildResponse(String question, String ttsQuestion, String reason, boolean transitioned) {

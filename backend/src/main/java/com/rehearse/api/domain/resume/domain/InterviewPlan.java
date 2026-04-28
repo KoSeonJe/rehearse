@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.resume.domain;
 
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
+import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
@@ -69,7 +71,7 @@ public class InterviewPlan {
             throw new IllegalArgumentException("interviewId 는 필수입니다.");
         }
         if (this.interviewId != null) {
-            throw new IllegalStateException("이미 interview 에 할당된 plan 입니다. interviewId=" + this.interviewId);
+            throw new BusinessException(ResumeErrorCode.INTERVIEW_PLAN_ALREADY_ASSIGNED);
         }
         this.interviewId = interviewId;
     }

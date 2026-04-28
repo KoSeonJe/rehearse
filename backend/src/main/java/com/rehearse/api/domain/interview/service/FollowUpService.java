@@ -17,7 +17,7 @@ import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.vo.AskedPerspectives;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.resume.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
 import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;

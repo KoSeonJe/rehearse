@@ -23,7 +23,7 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.domain.resume.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
 import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
 import com.rehearse.api.domain.resume.service.InterviewPlanStore;
