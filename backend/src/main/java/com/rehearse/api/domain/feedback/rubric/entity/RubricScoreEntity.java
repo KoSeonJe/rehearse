@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.entity;
 
-import com.rehearse.api.domain.feedback.rubric.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.global.util.DimensionScoreMapConverter;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

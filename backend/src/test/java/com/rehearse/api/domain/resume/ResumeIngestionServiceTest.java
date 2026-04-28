@@ -1,12 +1,12 @@
 package com.rehearse.api.domain.resume;
 
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.service.ResumeExtractionService;
-import com.rehearse.api.domain.resume.service.ResumeFileHasher;
+import com.rehearse.api.global.util.FileHasher;
 import com.rehearse.api.domain.resume.service.ResumeIngestionService;
-import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
@@ -44,13 +44,13 @@ class ResumeIngestionServiceTest {
     private ResumeExtractionService extractionService;
 
     @Mock
-    private ResumeFileHasher fileHasher;
+    private FileHasher fileHasher;
 
     @Mock
-    private ResumeSkeletonStore skeletonStore;
+    private ResumeSkeletonPersister skeletonStore;
 
     @Mock
-    private ResumeSkeletonCache skeletonCache;
+    private ResumeSkeletonRuntimeCache skeletonCache;
 
     private static final byte[] VALID_PDF_BYTES = {
             '%', 'P', 'D', 'F', '-', '1', '.', '4'

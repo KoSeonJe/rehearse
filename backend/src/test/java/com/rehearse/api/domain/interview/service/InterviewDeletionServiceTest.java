@@ -62,7 +62,7 @@ class InterviewDeletionServiceTest {
         void deleteInterview_success() {
             // given
             Interview interview = createMockInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                     .willReturn(Collections.emptyList());
 
@@ -86,7 +86,7 @@ class InterviewDeletionServiceTest {
             QuestionSet questionSet = mock(QuestionSet.class);
             List<QuestionSet> questionSets = List.of(questionSet);
 
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L)).willReturn(questionSets);
 
             // when
@@ -108,7 +108,7 @@ class InterviewDeletionServiceTest {
             Interview interview = createMockInterview();
             ReflectionTestUtils.setField(interview, "status",
                     com.rehearse.api.domain.interview.entity.InterviewStatus.COMPLETED);
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                     .willReturn(Collections.emptyList());
 
@@ -129,6 +129,7 @@ class InterviewDeletionServiceTest {
                 .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
+        ReflectionTestUtils.setField(interview, "userId", 1L);
         return interview;
     }
 }

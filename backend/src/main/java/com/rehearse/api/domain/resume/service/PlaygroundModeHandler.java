@@ -1,14 +1,14 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
-import com.rehearse.api.domain.resume.domain.Project;
-import com.rehearse.api.domain.resume.domain.ProjectPlan;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.Project;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;

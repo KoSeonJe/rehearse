@@ -3,7 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.CreateInterviewRequest;
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.interview.service.event.QuestionGenerationRequestedEvent;
+import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;

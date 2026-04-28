@@ -1,7 +1,8 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

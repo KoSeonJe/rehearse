@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.interview.entity.OffTopicMarkers;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import org.springframework.stereotype.Component;
 
@@ -30,10 +31,10 @@ public class OffTopicEscalationDetector {
     // 메타 필드(followUpType) 우선, 없으면 connector 텍스트 매칭으로 fallback
     private boolean isOffTopicTurn(FollowUpExchange exchange) {
         if (exchange == null) return false;
-        if (OffTopicMarker.FOLLOW_UP_TYPE.equals(exchange.getFollowUpType())) {
+        if (OffTopicMarkers.FOLLOW_UP_TYPE.equals(exchange.getFollowUpType())) {
             return true;
         }
         return exchange.getQuestion() != null
-                && exchange.getQuestion().contains(OffTopicMarker.CONNECTOR);
+                && exchange.getQuestion().contains(OffTopicMarkers.CONNECTOR);
     }
 }

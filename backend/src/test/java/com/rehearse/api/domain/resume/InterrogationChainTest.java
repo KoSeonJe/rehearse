@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.resume;
 
-import com.rehearse.api.domain.resume.domain.InterrogationChain;
-import com.rehearse.api.domain.resume.domain.ChainStep;
-import com.rehearse.api.domain.resume.domain.StepType;
+import com.rehearse.api.domain.resume.entity.InterrogationChain;
+import com.rehearse.api.domain.resume.entity.ChainStep;
+import com.rehearse.api.domain.resume.entity.StepType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

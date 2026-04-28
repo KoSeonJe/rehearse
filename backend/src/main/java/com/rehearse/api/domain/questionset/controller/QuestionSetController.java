@@ -33,7 +33,7 @@ public class QuestionSetController {
             @PathVariable Long questionSetId,
             @Valid @RequestBody SaveAnswersRequest request) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         questionSetService.saveAnswers(questionSetId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(null));
     }
@@ -45,7 +45,7 @@ public class QuestionSetController {
             @PathVariable Long questionSetId,
             @Valid @RequestBody UploadUrlRequest request) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         UploadUrlResponse response = questionSetService.generateUploadUrl(interviewId, questionSetId, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -56,7 +56,7 @@ public class QuestionSetController {
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         QuestionSetStatusResponse response = questionSetService.getStatus(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -67,7 +67,7 @@ public class QuestionSetController {
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         QuestionSetFeedbackResponse response = questionSetService.getFeedback(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -78,7 +78,7 @@ public class QuestionSetController {
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
@@ -89,7 +89,7 @@ public class QuestionSetController {
             @PathVariable Long interviewId,
             @PathVariable Long questionSetId) {
 
-        interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        interviewFinder.findById(interviewId).validateOwner(userId);
         internalQuestionSetService.retryAnalysis(questionSetId);
         return ResponseEntity.ok(ApiResponse.ok(null));
     }

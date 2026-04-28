@@ -2,7 +2,7 @@ package com.rehearse.api.global.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.rehearse.api.domain.feedback.rubric.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 

@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.vo.AskedPerspectives;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.entity.AskedPerspectives;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -37,7 +37,7 @@ public class AudioTurnAnalyzer {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final AudioTurnAnalyzerPromptBuilder promptBuilder;
-    private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewRuntimeStateCache runtimeStateStore;
     private final TextFallbackTurnAnalyzer textFallbackTurnAnalyzer;
     private final AiCallMetrics aiCallMetrics;
 

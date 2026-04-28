@@ -1,7 +1,7 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
-import com.rehearse.api.domain.resume.domain.Project;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;

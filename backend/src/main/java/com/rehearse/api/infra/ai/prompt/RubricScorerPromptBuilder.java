@@ -1,14 +1,14 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.feedback.rubric.DimensionRef;
-import com.rehearse.api.domain.feedback.rubric.Rubric;
-import com.rehearse.api.domain.feedback.rubric.RubricDimension;
-import com.rehearse.api.domain.feedback.rubric.RubricLoader;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
+import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
+import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;

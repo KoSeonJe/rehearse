@@ -2,8 +2,8 @@ package com.rehearse.api.infra.ai.context.layer;
 
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.global.config.ContextEngineeringProperties;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.compaction.DialogueCompactor;

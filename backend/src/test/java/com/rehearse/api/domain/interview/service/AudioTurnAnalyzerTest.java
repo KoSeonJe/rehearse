@@ -1,13 +1,13 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
-import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.vo.AskedPerspectives;
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.entity.AskedPerspectives;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -45,7 +45,7 @@ class AudioTurnAnalyzerTest {
     private AiClient aiClient;
 
     @Mock
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
 
     @Mock
     private TextFallbackTurnAnalyzer textFallbackTurnAnalyzer;

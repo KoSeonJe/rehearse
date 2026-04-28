@@ -1,22 +1,23 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
-import com.rehearse.api.domain.interview.service.IntentClassifier;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
-import com.rehearse.api.domain.interview.service.IntentBranchInput;
+import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.resume.entity.ChainStateTracker;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,14 +36,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResumeInterviewOrchestrator {
 
-    private final IntentClassifier intentClassifier;
-    private final AnswerAnalyzer answerAnalyzer;
+    private final TurnAnalysisPipeline turnAnalysisPipeline;
     private final IntentDispatcher intentDispatcher;
     private final PlaygroundModeHandler playgroundHandler;
     private final InterrogationModeHandler interrogationHandler;
     private final WrapUpModeHandler wrapUpHandler;
     private final ClockWatcher clockWatcher;
-    private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewRuntimeStateCache runtimeStateStore;
     private final InterviewFinder interviewFinder;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -60,20 +60,17 @@ public class ResumeInterviewOrchestrator {
     ) {
         clockWatcher.markStart(interviewId);
 
-        IntentResult intent = intentClassifier.classify(questionContent, answerText, previousExchanges);
+        long turnIndex = previousExchanges != null ? previousExchanges.size() : 0;
+        TurnAnalysisResult turnResult = turnAnalysisPipeline.analyze(
+                interviewId, turnIndex, questionContent, answerText, previousExchanges);
+
+        IntentResult intent = turnResult.intent();
         if (intent.type() != IntentType.ANSWER) {
             log.info("[ResumeOrchestrator] non-answer intent: interviewId={}, intent={}", interviewId, intent.type());
             return handleNonAnswerIntent(interviewId, questionContent, answerText, intent, previousExchanges);
         }
 
-        AnswerAnalysis analysis = answerAnalyzer.analyze(
-                interviewId,
-                (long) (previousExchanges != null ? previousExchanges.size() : 0),
-                questionContent,
-                null,
-                answerText,
-                List.of()
-        );
+        AnswerAnalysis analysis = turnResult.answerAnalysis();
 
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
 
@@ -98,7 +95,6 @@ public class ResumeInterviewOrchestrator {
             }
         }
 
-        long turnIndex = previousExchanges != null ? previousExchanges.size() : 0;
         ChainStateTracker chainTracker = state.getChainStateTracker();
         int currentChainLevel = chainTracker != null ? chainTracker.getCurrentLevel() : 1;
 

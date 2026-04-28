@@ -1,10 +1,11 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
+import com.rehearse.api.global.util.FileHasher;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,9 +21,9 @@ public class ResumeIngestionService {
 
     private final PdfTextExtractor pdfTextExtractor;
     private final ResumeExtractionService extractionService;
-    private final ResumeFileHasher fileHasher;
-    private final ResumeSkeletonStore skeletonStore;
-    private final ResumeSkeletonCache skeletonCache;
+    private final FileHasher fileHasher;
+    private final ResumeSkeletonPersister skeletonStore;
+    private final ResumeSkeletonRuntimeCache skeletonCache;
 
     public ResumeSkeleton ingest(Long interviewId, MultipartFile resumeFile) {
         byte[] fileBytes = readFileBytes(resumeFile);

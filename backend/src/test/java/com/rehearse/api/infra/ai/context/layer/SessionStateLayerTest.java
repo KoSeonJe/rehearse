@@ -2,8 +2,8 @@ package com.rehearse.api.infra.ai.context.layer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;

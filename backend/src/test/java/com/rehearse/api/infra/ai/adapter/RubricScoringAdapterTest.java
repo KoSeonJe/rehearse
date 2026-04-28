@@ -1,8 +1,8 @@
 package com.rehearse.api.infra.ai.adapter;
 
-import com.rehearse.api.domain.feedback.rubric.DimensionRef;
-import com.rehearse.api.domain.feedback.rubric.Rubric;
-import com.rehearse.api.domain.feedback.rubric.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
+import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatMessage;

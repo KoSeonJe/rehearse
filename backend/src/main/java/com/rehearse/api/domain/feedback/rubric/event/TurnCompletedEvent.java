@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.feedback.rubric.event;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.vo.IntentType;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import org.springframework.lang.Nullable;
 
 public record TurnCompletedEvent(

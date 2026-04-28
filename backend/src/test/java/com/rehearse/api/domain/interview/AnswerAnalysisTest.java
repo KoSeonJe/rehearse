@@ -1,5 +1,10 @@
 package com.rehearse.api.domain.interview;
 
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.EvidenceStrength;
+import com.rehearse.api.domain.interview.entity.Claim;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +24,7 @@ import static org.mockito.BDDMockito.*;
 class ClockWatcherTest {
 
     @Mock
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
 
     private InterviewRuntimeState state;
 

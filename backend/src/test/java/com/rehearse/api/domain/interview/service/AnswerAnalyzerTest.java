@@ -3,14 +3,14 @@ package com.rehearse.api.domain.interview.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.EvidenceStrength;
-import com.rehearse.api.domain.interview.Perspective;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.EvidenceStrength;
+import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -50,7 +50,7 @@ class AnswerAnalyzerTest {
 
     private AiResponseParser parser;
     private Cache<Long, InterviewRuntimeState> cache;
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
     private AnswerAnalyzer analyzer;
 
     private static final BuiltContext STUB_CONTEXT = new BuiltContext(
@@ -67,7 +67,7 @@ class AnswerAnalyzerTest {
                 new com.rehearse.api.infra.ai.SchemaExampleRegistry(),
                 org.mockito.Mockito.mock(com.rehearse.api.infra.ai.metrics.AiCallMetrics.class));
         cache = Caffeine.newBuilder().<Long, InterviewRuntimeState>build();
-        runtimeStateStore = new InterviewRuntimeStateStore(cache);
+        runtimeStateStore = new InterviewRuntimeStateCache(cache);
         analyzer = new AnswerAnalyzer(aiClient, parser, contextBuilder, runtimeStateStore);
 
         lenient().when(contextBuilder.build(any(ContextBuildRequest.class))).thenReturn(STUB_CONTEXT);

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
