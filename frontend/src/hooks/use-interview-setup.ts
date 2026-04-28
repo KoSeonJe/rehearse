@@ -41,7 +41,7 @@ export const useInterviewSetup = () => {
       case 1:
         return position !== null
       case 2:
-        return true
+        return techStack !== null
       case 3:
         return level !== null
       case 4:
@@ -51,7 +51,25 @@ export const useInterviewSetup = () => {
         if (interviewTypes.includes('RESUME_BASED') && !resumeFile) return false
         return true
     }
-  }, [position, level, durationMinutes, interviewTypes, resumeFile])
+  }, [position, techStack, level, durationMinutes, interviewTypes, resumeFile])
+
+  const disabledHint = useCallback((step: Step): string => {
+    switch (step) {
+      case 1:
+        return '직무를 먼저 선택해주세요'
+      case 2:
+        return '기술 스택을 선택해주세요'
+      case 3:
+        return '경력 수준을 선택해주세요'
+      case 4:
+        return '면접 시간을 선택해주세요'
+      case 5:
+        if (interviewTypes.includes('RESUME_BASED') && !resumeFile) {
+          return '이력서 PDF를 업로드해주세요'
+        }
+        return '면접 유형을 하나 이상 선택해주세요'
+    }
+  }, [interviewTypes, resumeFile])
 
   const isSubmitStep = currentStep === TOTAL_STEPS
 
@@ -209,6 +227,7 @@ export const useInterviewSetup = () => {
     isOtherTypesDisabled,
     totalSteps: TOTAL_STEPS,
     canNext,
+    disabledHint,
     handleNext,
     handlePrev,
     handlePositionSelect,

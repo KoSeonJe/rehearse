@@ -102,6 +102,39 @@ describe('useInterviewSetup — RESUME_BASED 단독 선택 규칙', () => {
     expect(result.current.isOtherTypesDisabled).toBe(false)
   })
 
+  it('Step 2 는 techStack 이 선택되어야만 다음 진행이 허용된다', () => {
+    const { result } = renderHook(() => useInterviewSetup())
+
+    act(() => {
+      result.current.handlePositionSelect('BACKEND')
+    })
+    expect(result.current.canNext(2)).toBe(true)
+
+    act(() => {
+      result.current.handleTechStackSelect(null)
+    })
+    expect(result.current.canNext(2)).toBe(false)
+    expect(result.current.disabledHint(2)).toBe('기술 스택을 선택해주세요')
+  })
+
+  it('RESUME_BASED 선택 후 파일 미업로드 시 disabledHint 가 파일 안내로 분기한다', () => {
+    const { result } = renderHook(() => useInterviewSetup())
+
+    act(() => {
+      result.current.handleTypeToggle('RESUME_BASED')
+    })
+
+    expect(result.current.canNext(5)).toBe(false)
+    expect(result.current.disabledHint(5)).toBe('이력서 PDF를 업로드해주세요')
+  })
+
+  it('Step 5 면접 유형 미선택 시 기본 hint 가 노출된다', () => {
+    const { result } = renderHook(() => useInterviewSetup())
+
+    expect(result.current.canNext(5)).toBe(false)
+    expect(result.current.disabledHint(5)).toBe('면접 유형을 하나 이상 선택해주세요')
+  })
+
   it('RESUME_BASED 선택 시 기존 CS 세부 주제가 초기화된다', () => {
     const { result } = renderHook(() => useInterviewSetup())
 
