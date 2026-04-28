@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.resume;
+package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.resume.domain.ChainReference;
 import com.rehearse.api.domain.resume.domain.InterrogationPhase;
