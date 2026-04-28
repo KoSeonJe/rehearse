@@ -1,6 +1,10 @@
 package com.rehearse.api.domain.questionset.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
@@ -16,6 +20,7 @@ import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.global.security.config.SecurityConfig;
 import com.rehearse.api.global.support.WithMockUserId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,6 +31,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -60,6 +66,18 @@ class QuestionSetControllerTest {
 
     @MockitoBean
     private InterviewFinder interviewFinder;
+
+    @BeforeEach
+    void stubInterviewFinder() {
+        Interview interview = Interview.builder()
+                .position(Position.BACKEND)
+                .level(InterviewLevel.JUNIOR)
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                .durationMinutes(30)
+                .build();
+        ReflectionTestUtils.setField(interview, "userId", 1L);
+        given(interviewFinder.findById(anyLong())).willReturn(interview);
+    }
 
     @Nested
     @DisplayName("POST /answers")

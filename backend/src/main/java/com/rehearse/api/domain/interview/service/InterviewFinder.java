@@ -18,20 +18,8 @@ public class InterviewFinder {
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
     }
 
-    public Interview findByIdAndValidateOwner(Long id, Long userId) {
-        Interview interview = findById(id);
-        interview.validateOwner(userId);
-        return interview;
-    }
-
     public Interview findByPublicId(String publicId) {
         return interviewRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
-    }
-
-    public Interview findByPublicIdAndValidateOwner(String publicId, Long userId) {
-        Interview interview = findByPublicId(publicId);
-        interview.validateOwner(userId);
-        return interview;
     }
 }

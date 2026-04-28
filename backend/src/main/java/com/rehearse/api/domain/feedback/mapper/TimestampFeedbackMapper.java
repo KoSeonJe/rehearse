@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.service;
+package com.rehearse.api.domain.feedback.mapper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

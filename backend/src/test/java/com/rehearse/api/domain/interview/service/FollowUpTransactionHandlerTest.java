@@ -63,7 +63,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_success() {
             // given
             Interview interview = createInProgressInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
@@ -87,7 +87,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_resumeQuestion_carriesGuideReferenceType() {
             // given
             Interview interview = createInProgressInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.GUIDE);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
@@ -105,7 +105,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_nullReferenceType_fallsBackToModelAnswer() {
             // given
             Interview interview = createInProgressInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, null);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
@@ -123,7 +123,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_notInProgress() {
             // given
             Interview interview = createMockInterview(); // READY 상태
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             // when & then
             assertThatThrownBy(() -> handler.loadFollowUpContext(1L, 1L, 10L))
@@ -139,7 +139,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_questionSetNotFound() {
             // given
             Interview interview = createInProgressInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
 
             // when & then
@@ -156,7 +156,7 @@ class FollowUpTransactionHandlerTest {
         void loadFollowUpContext_policyRejects_propagatesException() {
             // given
             Interview interview = createInProgressInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 2);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
@@ -237,6 +237,7 @@ class FollowUpTransactionHandlerTest {
                 .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
+        ReflectionTestUtils.setField(interview, "userId", 1L);
         return interview;
     }
 

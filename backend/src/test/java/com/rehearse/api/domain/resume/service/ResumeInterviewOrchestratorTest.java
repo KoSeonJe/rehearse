@@ -8,16 +8,15 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
-import com.rehearse.api.domain.interview.service.IntentBranchInput;
-import com.rehearse.api.domain.interview.service.IntentClassifier;
-import com.rehearse.api.domain.interview.service.IntentDispatcher;
-import com.rehearse.api.domain.interview.service.InterviewFinder;
-import org.springframework.context.ApplicationEventPublisher;
 import com.rehearse.api.domain.interview.entity.IntentResult;
 import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.service.IntentBranchInput;
+import com.rehearse.api.domain.interview.service.IntentDispatcher;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.InterrogationPhase;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -34,6 +33,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -52,9 +52,7 @@ class ResumeInterviewOrchestratorTest {
     private ResumeInterviewOrchestrator orchestrator;
 
     @Mock
-    private IntentClassifier intentClassifier;
-    @Mock
-    private AnswerAnalyzer answerAnalyzer;
+    private TurnAnalysisPipeline turnAnalysisPipeline;
     @Mock
     private IntentDispatcher intentDispatcher;
     @Mock
@@ -100,10 +98,10 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("intent=ANSWER 이면 현재 mode 핸들러로 라우팅된다")
         void processUserTurn_answer_routesToModeHandler() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "answer"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(createAnalysis());
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
@@ -119,8 +117,10 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("intent=CLARIFY_REQUEST 이면 intentDispatcher 로 단축되고 question 을 반환한다")
         void processUserTurn_clarify_dispatchesToIntentDispatcher() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.CLARIFY_REQUEST, 0.9, "clarify"));
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("이 질문이 무슨 뜻인가요?",
+                            IntentResult.of(IntentType.CLARIFY_REQUEST, 0.9, "clarify"),
+                            AnswerAnalysis.empty(0L)));
             given(intentDispatcher.dispatch(eq(IntentType.CLARIFY_REQUEST), any()))
                     .willReturn(FollowUpResponse.builder().question("재설명 질문").build());
 
@@ -128,14 +128,15 @@ class ResumeInterviewOrchestratorTest {
 
             assertThat(response.getQuestion()).isEqualTo("재설명 질문");
             then(intentDispatcher).should().dispatch(eq(IntentType.CLARIFY_REQUEST), any());
-            then(answerAnalyzer).shouldHaveNoInteractions();
         }
 
         @Test
         @DisplayName("intent=GIVE_UP 이면 intentDispatcher 로 단축되고 followUpExhausted=false 를 반환한다")
         void processUserTurn_giveUp_dispatchesToIntentDispatcher() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.GIVE_UP, 0.92, "giveup"));
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("모르겠습니다",
+                            IntentResult.of(IntentType.GIVE_UP, 0.92, "giveup"),
+                            AnswerAnalysis.empty(0L)));
             given(intentDispatcher.dispatch(eq(IntentType.GIVE_UP), any()))
                     .willReturn(FollowUpResponse.builder().question("힌트 제공").followUpExhausted(false).build());
 
@@ -153,10 +154,10 @@ class ResumeInterviewOrchestratorTest {
 
         @BeforeEach
         void wrapUpSetUp() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.9, "answer"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(createAnalysis());
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
+                            createAnalysis()));
         }
 
         @Test
@@ -195,10 +196,10 @@ class ResumeInterviewOrchestratorTest {
         @DisplayName("mode=INTERROGATION 이면 interrogationHandler 로 라우팅된다")
         void processUserTurn_interrogationMode_routesToInterrogationHandler() {
             state.transitionTo(ResumeMode.INTERROGATION);
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.9, "answer"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(createAnalysis());
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
+                            createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any()))
                     .willReturn(FollowUpResponse.builder().question("L2 질문").build());
@@ -241,10 +242,10 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("processUserTurn 후 발행된 이벤트의 userAnswer, resumeMode, currentChainLevel이 올바르게 채워진다")
         void processUserTurn_publishes_event_with_correct_payload() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "answer"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(createAnalysis());
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("사용자답변텍스트",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
@@ -274,10 +275,10 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("interviewFinder 예외 시 event 발행 실패해도 응답은 정상 반환된다")
         void processUserTurn_eventPublishFailure_doesNotBlockResponse() {
-            given(intentClassifier.classify(any(), any(), any()))
-                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "answer"));
-            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
-                    .willReturn(createAnalysis());
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(

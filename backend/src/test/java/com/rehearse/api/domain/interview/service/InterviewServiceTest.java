@@ -60,7 +60,7 @@ class InterviewServiceTest {
             // given
             Interview interview = createMockInterview();
             interview.completeQuestionGeneration();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             UpdateStatusRequest request = new UpdateStatusRequest();
             ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
@@ -78,7 +78,7 @@ class InterviewServiceTest {
         void updateStatus_questionGenerationNotCompleted() {
             // given
             Interview interview = createMockInterview(); // PENDING 상태
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             UpdateStatusRequest request = new UpdateStatusRequest();
             ReflectionTestUtils.setField(request, "status", InterviewStatus.IN_PROGRESS);
@@ -96,7 +96,7 @@ class InterviewServiceTest {
         @DisplayName("존재하지 않는 면접 세션 상태 변경 시 BusinessException이 발생한다")
         void updateStatus_notFound() {
             // given
-            given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
+            given(interviewFinder.findById(999L))
                     .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
             UpdateStatusRequest request = new UpdateStatusRequest();
@@ -118,7 +118,7 @@ class InterviewServiceTest {
             // given
             Interview interview = createMockInterview();
             interview.completeQuestionGeneration();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             UpdateStatusRequest request = new UpdateStatusRequest();
             ReflectionTestUtils.setField(request, "status", InterviewStatus.COMPLETED);
@@ -144,7 +144,7 @@ class InterviewServiceTest {
             // given
             Interview interview = createMockInterview();
             interview.failQuestionGeneration("Claude API timeout");
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
 
             // when
@@ -161,7 +161,7 @@ class InterviewServiceTest {
         void retryQuestionGeneration_notFailed() {
             // given
             Interview interview = createMockInterview(); // PENDING
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
 
             // when & then
             assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L, 1L))
@@ -181,6 +181,7 @@ class InterviewServiceTest {
                 .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
+        ReflectionTestUtils.setField(interview, "userId", 1L);
         return interview;
     }
 

@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.service;
+package com.rehearse.api.domain.feedback.mapper;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;

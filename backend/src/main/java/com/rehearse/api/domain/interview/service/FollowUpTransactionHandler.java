@@ -30,7 +30,8 @@ public class FollowUpTransactionHandler {
 
     @Transactional(readOnly = true)
     public FollowUpContext loadFollowUpContext(Long interviewId, Long userId, Long questionSetId) {
-        Interview interview = interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        Interview interview = interviewFinder.findById(interviewId);
+        interview.validateOwner(userId);
 
         if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);

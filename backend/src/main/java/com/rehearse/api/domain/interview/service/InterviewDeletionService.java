@@ -28,7 +28,8 @@ public class InterviewDeletionService {
 
     @Transactional
     public void deleteInterview(Long id, Long userId) {
-        Interview interview = interviewFinder.findByIdAndValidateOwner(id, userId);
+        Interview interview = interviewFinder.findById(id);
+        interview.validateOwner(userId);
 
         // 하위 엔티티부터 명시적 삭제 (FK 제약조건 위반 방지)
         questionAnswerRepository.deleteAllByInterviewId(id);
