@@ -1,4 +1,4 @@
-# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# status: ACTIVE
 # 입력 컨텍스트 → rubric_id 라우팅 규칙.
 # 위→아래 순으로 평가, 첫 match 우선. 어느 규칙에도 맞지 않으면 default.
 #

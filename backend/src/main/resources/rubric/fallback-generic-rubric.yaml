@@ -1,4 +1,4 @@
-# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# status: ACTIVE
 # 매핑 실패 시 기본 루브릭. _mapping.yaml 의 default 귀결.
 # 대상 카테고리 (전용 rubric 미보유): SYSTEM_DESIGN / INFRA_CICD / CLOUD /
 #                                     DATA_PIPELINE / SQL_MODELING /

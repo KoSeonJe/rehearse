@@ -20,6 +20,7 @@ public class AiCallMetrics {
     public static final String TOKENS_CACHED_WRITE = "rehearse.ai.call.tokens.cached.write";
     public static final String FOLLOWUP_SKIP_TOTAL = "rehearse.followup.skip.total";
     public static final String PARSE_FAIL_TOTAL = "rehearse.ai.parse.fail.total";
+    public static final String RUBRIC_FAILURE_TOTAL = "rehearse.ai.rubric.failures";
 
     private final MeterRegistry meterRegistry;
     private final ContextEngineeringMetrics contextMetrics;
@@ -30,6 +31,10 @@ public class AiCallMetrics {
 
     public void incrementParseFail(String callType, String stage) {
         meterRegistry.counter(PARSE_FAIL_TOTAL, "call.type", callType, "stage", stage).increment();
+    }
+
+    public void incrementRubricFailure(String reason) {
+        meterRegistry.counter(RUBRIC_FAILURE_TOTAL, "reason", reason).increment();
     }
 
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {

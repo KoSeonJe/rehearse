@@ -2,6 +2,7 @@ package com.rehearse.api.domain.interview.service;
 
 import static org.springframework.transaction.annotation.Propagation.*;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
@@ -32,6 +33,7 @@ import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -54,6 +56,7 @@ public class FollowUpService {
     private final ResumeSkeletonCache resumeSkeletonCache;
     private final InterviewPlanCache interviewPlanCache;
     private final InterviewFinder interviewFinder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -134,7 +137,27 @@ public class FollowUpService {
                 stepB.getType(), stepB.getSelectedPerspective(),
                 stepB.getTargetClaimIdx(), exhausted);
 
+        publishTurnCompletedEvent(id, context, turn, saveResult.question().getId());
+
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
+    }
+
+    private void publishTurnCompletedEvent(Long interviewId, FollowUpContext context,
+                                            TurnAnalysisResult turn, Long questionId) {
+        try {
+            int turnIndex = context.nextOrderIndex() - 1;
+            Interview interview = interviewFinder.findById(interviewId);
+            TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
+                    interviewId, (long) turnIndex, interview.getUserId(),
+                    questionId, context.questionSetId(),
+                    turn.answerText(), turn.answerAnalysis(),
+                    turn.intent().type(), context.level()
+            );
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.warn("TurnCompletedEvent 발행 실패 — 턴 진행 차단하지 않음: interviewId={}, reason={}",
+                    interviewId, e.getMessage());
+        }
     }
 
     private static void ensureQuestionPresent(Long id, Long questionSetId, GeneratedFollowUp stepB) {

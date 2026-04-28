@@ -1,14 +1,21 @@
 package com.rehearse.api.domain.resume.service;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
 import com.rehearse.api.domain.interview.service.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentClassifier;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
+import org.springframework.context.ApplicationEventPublisher;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.resume.domain.ChainReference;
@@ -23,6 +30,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,6 +67,10 @@ class ResumeInterviewOrchestratorTest {
     private ClockWatcher clockWatcher;
     @Mock
     private InterviewRuntimeStateStore runtimeStateStore;
+    @Mock
+    private InterviewFinder interviewFinder;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
@@ -219,6 +231,65 @@ class ResumeInterviewOrchestratorTest {
             assertThat(response.isPresentToUser()).isTrue();
             then(clockWatcher).should().markStart(1L);
             then(playgroundHandler).should().handleOpener(eq(1L), any(), eq(skeleton), eq(plan));
+        }
+    }
+
+    @Nested
+    @DisplayName("TurnCompletedEvent payload")
+    class TurnCompletedEventPayload {
+
+        @Test
+        @DisplayName("processUserTurn 후 발행된 이벤트의 userAnswer, resumeMode, currentChainLevel이 올바르게 채워진다")
+        void processUserTurn_publishes_event_with_correct_payload() {
+            given(intentClassifier.classify(any(), any(), any()))
+                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "answer"));
+            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
+                    .willReturn(createAnalysis());
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false));
+
+            Interview interview = Interview.builder()
+                    .userId(99L)
+                    .position(Position.BACKEND)
+                    .level(InterviewLevel.MID)
+                    .interviewTypes(List.of(InterviewType.RESUME_BASED))
+                    .durationMinutes(30)
+                    .build();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            orchestrator.processUserTurn(1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan);
+
+            ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
+            then(eventPublisher).should().publishEvent(captor.capture());
+
+            TurnCompletedEvent captured = captor.getValue();
+            assertThat(captured.userAnswer()).isEqualTo("사용자답변텍스트");
+            assertThat(captured.resumeMode()).isEqualTo(ResumeMode.PLAYGROUND);
+            assertThat(captured.currentChainLevel()).isNotNull();
+            assertThat(captured.interviewId()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("interviewFinder 예외 시 event 발행 실패해도 응답은 정상 반환된다")
+        void processUserTurn_eventPublishFailure_doesNotBlockResponse() {
+            given(intentClassifier.classify(any(), any(), any()))
+                    .willReturn(IntentResult.of(IntentType.ANSWER, 0.95, "answer"));
+            given(answerAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
+                    .willReturn(createAnalysis());
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false));
+            given(interviewFinder.findById(anyLong()))
+                    .willThrow(new RuntimeException("DB 오류"));
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan);
+
+            assertThat(response.getQuestion()).isEqualTo("Q");
+            then(eventPublisher).shouldHaveNoInteractions();
         }
     }
 
