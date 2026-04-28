@@ -37,7 +37,7 @@ public abstract class AbstractResumeJsonPromptBuilder {
         this.maxTokens = maxTokens;
     }
 
-    protected <T> T executeJson(String callType, Map<String, String> variables, Class<T> resultClass) {
+    protected <T> T executeJson(String callType, Map<String, Object> variables, Class<T> resultClass) {
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 callType,
                 Map.of(),
