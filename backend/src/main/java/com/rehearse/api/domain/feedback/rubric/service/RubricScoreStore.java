@@ -1,5 +1,6 @@
-package com.rehearse.api.domain.feedback.rubric;
+package com.rehearse.api.domain.feedback.rubric.service;
 
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import lombok.RequiredArgsConstructor;

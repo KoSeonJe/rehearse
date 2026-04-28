@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.dto;
 
-import com.rehearse.api.domain.feedback.rubric.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
 import lombok.Builder;
 import lombok.Getter;

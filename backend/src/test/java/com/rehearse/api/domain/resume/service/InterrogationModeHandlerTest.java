@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.resume.entity.ChainReference;

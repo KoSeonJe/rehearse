@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;

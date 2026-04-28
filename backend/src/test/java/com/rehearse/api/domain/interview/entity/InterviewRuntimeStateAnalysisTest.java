@@ -1,9 +1,9 @@
 package com.rehearse.api.domain.interview.entity;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Claim;
-import com.rehearse.api.domain.interview.EvidenceStrength;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.Claim;
+import com.rehearse.api.domain.interview.entity.EvidenceStrength;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

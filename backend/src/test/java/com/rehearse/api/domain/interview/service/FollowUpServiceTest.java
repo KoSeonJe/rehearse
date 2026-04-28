@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Claim;
-import com.rehearse.api.domain.interview.EvidenceStrength;
-import com.rehearse.api.domain.interview.Perspective;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.Claim;
+import com.rehearse.api.domain.interview.entity.EvidenceStrength;
+import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;

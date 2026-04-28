@@ -1,5 +1,6 @@
-package com.rehearse.api.domain.feedback.rubric;
+package com.rehearse.api.domain.feedback.rubric.service;
 
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;

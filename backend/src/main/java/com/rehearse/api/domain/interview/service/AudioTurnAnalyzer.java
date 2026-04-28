@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;

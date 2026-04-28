@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.event;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;

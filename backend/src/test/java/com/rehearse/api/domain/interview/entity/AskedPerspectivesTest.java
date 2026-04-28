@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.entity;
 
-import com.rehearse.api.domain.interview.Perspective;
+import com.rehearse.api.domain.interview.entity.Perspective;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

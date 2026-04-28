@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.interview;
+package com.rehearse.api.domain.interview.entity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;

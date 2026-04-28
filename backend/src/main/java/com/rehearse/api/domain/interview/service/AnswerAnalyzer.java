@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Perspective;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;

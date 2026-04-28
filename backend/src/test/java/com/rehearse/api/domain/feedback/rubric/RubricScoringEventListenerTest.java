@@ -1,9 +1,15 @@
 package com.rehearse.api.domain.feedback.rubric;
 
+import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScoreStore;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.IntentType;
 import org.junit.jupiter.api.DisplayName;
@@ -182,9 +188,9 @@ class RubricScoringEventListenerTest {
                     null, null,
                     "답변 텍스트",
                     new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3,
-                            com.rehearse.api.domain.interview.RecommendedNextAction.DEEP_DIVE),
+                            RecommendedNextAction.DEEP_DIVE),
                     IntentType.ANSWER, InterviewLevel.MID,
-                    com.rehearse.api.domain.resume.entity.ResumeMode.INTERROGATION, 2, null
+                    ResumeMode.INTERROGATION, 2, null
             );
             given(rubricScoreStore.findExisting(1L, 0L)).willReturn(Optional.empty());
 

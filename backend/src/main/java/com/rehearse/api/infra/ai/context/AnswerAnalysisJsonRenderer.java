@@ -1,8 +1,8 @@
 package com.rehearse.api.infra.ai.context;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.Claim;
-import com.rehearse.api.domain.interview.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.Claim;
+import com.rehearse.api.domain.interview.entity.Perspective;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
@@ -13,7 +13,7 @@ import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.service.IntentBranchInput;
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;

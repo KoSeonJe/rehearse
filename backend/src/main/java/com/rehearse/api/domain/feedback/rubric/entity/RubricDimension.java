@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.rubric;
+package com.rehearse.api.domain.feedback.rubric.entity;
 
 import java.util.Map;
 

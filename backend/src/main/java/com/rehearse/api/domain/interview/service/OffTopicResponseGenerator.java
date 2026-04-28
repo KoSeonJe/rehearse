@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.OffTopicMarkers;
 import org.springframework.stereotype.Component;

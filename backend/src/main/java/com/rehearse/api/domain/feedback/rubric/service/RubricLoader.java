@@ -1,8 +1,12 @@
-package com.rehearse.api.domain.feedback.rubric;
+package com.rehearse.api.domain.feedback.rubric.service;
 
+import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
-import com.rehearse.api.domain.feedback.rubric.RubricFamily.MappingRule;
-import com.rehearse.api.domain.feedback.rubric.RubricFamily.RubricResolutionContext;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.MappingRule;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.RubricResolutionContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;

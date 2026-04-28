@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.interview;
+package com.rehearse.api.domain.interview.entity;
 
 public enum RecommendedNextAction {
     DEEP_DIVE,

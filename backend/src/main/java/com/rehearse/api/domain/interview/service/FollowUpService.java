@@ -1,10 +1,11 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import static org.springframework.transaction.annotation.Propagation.*;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.interview.RecommendedNextAction;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;

@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.IntentResult;
 import com.rehearse.api.domain.interview.entity.IntentType;

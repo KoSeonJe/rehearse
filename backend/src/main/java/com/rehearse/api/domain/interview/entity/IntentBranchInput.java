@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.interview.service;
+package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;

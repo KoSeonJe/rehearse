@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -12,7 +12,7 @@ import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
-import com.rehearse.api.domain.interview.service.IntentBranchInput;
+import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;

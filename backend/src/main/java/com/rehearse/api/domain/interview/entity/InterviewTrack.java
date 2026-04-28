@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.interview.service;
+package com.rehearse.api.domain.interview.entity;
 
 public enum InterviewTrack {
     CS,

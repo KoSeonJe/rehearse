@@ -1,5 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric;
 
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
+import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import org.junit.jupiter.api.DisplayName;

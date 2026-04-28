@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.domain.interview.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;

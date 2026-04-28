@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.Perspective;
+import com.rehearse.api.domain.interview.entity.Perspective;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
