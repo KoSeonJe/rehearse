@@ -1,10 +1,10 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.resume.service.ChainStateTracker;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ChainStateTracker;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 
 import java.time.Instant;
 import java.util.ArrayList;

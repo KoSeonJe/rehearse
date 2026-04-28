@@ -5,7 +5,7 @@ import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -184,7 +184,7 @@ class RubricScoringEventListenerTest {
                     new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3,
                             com.rehearse.api.domain.interview.RecommendedNextAction.DEEP_DIVE),
                     IntentType.ANSWER, InterviewLevel.MID,
-                    com.rehearse.api.domain.resume.domain.ResumeMode.INTERROGATION, 2, null
+                    com.rehearse.api.domain.resume.entity.ResumeMode.INTERROGATION, 2, null
             );
             given(rubricScoreStore.findExisting(1L, 0L)).willReturn(Optional.empty());
 

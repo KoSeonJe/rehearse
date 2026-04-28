@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.interview.Claim;
 import com.rehearse.api.domain.interview.EvidenceStrength;
 import com.rehearse.api.domain.interview.RecommendedNextAction;

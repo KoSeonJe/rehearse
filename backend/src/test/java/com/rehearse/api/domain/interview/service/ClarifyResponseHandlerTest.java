@@ -4,8 +4,8 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -47,7 +47,7 @@ class ClarifyResponseHandlerTest {
     private InterviewContextBuilder contextBuilder;
 
     @Mock
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
 
     private ClarifyResponseHandler handler;
 

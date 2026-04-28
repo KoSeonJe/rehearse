@@ -1,14 +1,14 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.resume.domain.CandidateLevel;
-import com.rehearse.api.domain.resume.domain.ChainStep;
-import com.rehearse.api.domain.resume.domain.ClaimType;
-import com.rehearse.api.domain.resume.domain.InterrogationChain;
-import com.rehearse.api.domain.resume.domain.Priority;
-import com.rehearse.api.domain.resume.domain.Project;
-import com.rehearse.api.domain.resume.domain.ResumeClaim;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.StepType;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.ChainStep;
+import com.rehearse.api.domain.resume.entity.ClaimType;
+import com.rehearse.api.domain.resume.entity.InterrogationChain;
+import com.rehearse.api.domain.resume.entity.Priority;
+import com.rehearse.api.domain.resume.entity.Project;
+import com.rehearse.api.domain.resume.entity.ResumeClaim;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.StepType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.layer.SkeletonCallType;

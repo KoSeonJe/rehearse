@@ -2,8 +2,8 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.global.config.IntentClassifierProperties;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;

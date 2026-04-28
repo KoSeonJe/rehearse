@@ -8,26 +8,26 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
-import com.rehearse.api.domain.interview.vo.TurnAnalysisResult;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.vo.AskedPerspectives;
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.entity.AskedPerspectives;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
-import com.rehearse.api.domain.resume.cache.InterviewPlanCache;
-import com.rehearse.api.domain.resume.cache.ResumeSkeletonCache;
-import com.rehearse.api.domain.resume.service.InterviewPlanStore;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonStore;
+import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
+import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -70,7 +70,7 @@ class FollowUpServiceIntentBranchTest {
     private FollowUpTransactionHandler followUpTransactionHandler;
 
     @Mock
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
 
     @Mock
     private AiCallMetrics aiCallMetrics;
@@ -79,16 +79,16 @@ class FollowUpServiceIntentBranchTest {
     private ResumeInterviewOrchestrator resumeOrchestrator;
 
     @Mock
-    private ResumeSkeletonStore resumeSkeletonStore;
+    private ResumeSkeletonPersister resumeSkeletonStore;
 
     @Mock
-    private InterviewPlanStore interviewPlanStore;
+    private InterviewPlanPersister interviewPlanStore;
 
     @Mock
-    private ResumeSkeletonCache resumeSkeletonCache;
+    private ResumeSkeletonRuntimeCache resumeSkeletonCache;
 
     @Mock
-    private InterviewPlanCache interviewPlanCache;
+    private InterviewPlanRuntimeCache interviewPlanCache;
 
     @Mock
     private InterviewFinder interviewFinder;

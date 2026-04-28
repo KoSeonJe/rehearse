@@ -1,10 +1,10 @@
 package com.rehearse.api.infra.ai.adapter;
 
-import com.rehearse.api.domain.resume.domain.ChainReference;
-import com.rehearse.api.domain.resume.domain.InterrogationPhase;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
-import com.rehearse.api.domain.resume.domain.ProjectPlan;
+import com.rehearse.api.domain.resume.entity.ChainReference;
+import com.rehearse.api.domain.resume.entity.InterrogationPhase;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric;
 
-import com.rehearse.api.domain.interview.vo.IntentType;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

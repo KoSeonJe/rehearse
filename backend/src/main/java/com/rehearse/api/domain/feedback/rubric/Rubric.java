@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.feedback.rubric;
 
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.vo.IntentType;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 
 import java.util.List;
 import java.util.Map;

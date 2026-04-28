@@ -2,8 +2,8 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
@@ -31,7 +31,7 @@ public class GiveUpResponseHandler implements IntentResponseHandler {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
-    private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewRuntimeStateCache runtimeStateStore;
 
     @Override
     public IntentType supports() {

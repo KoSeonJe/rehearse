@@ -8,7 +8,7 @@ import com.rehearse.api.domain.interview.dto.UpdateStatusResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
-import com.rehearse.api.domain.interview.service.event.QuestionGenerationRequestedEvent;
+import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;

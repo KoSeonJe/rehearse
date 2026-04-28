@@ -3,7 +3,7 @@ package com.rehearse.api.domain.interview;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rehearse.api.domain.interview.entity.TurnAnalysis;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentType;
 
 import java.util.List;
 

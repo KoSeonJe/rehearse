@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.OffTopicMarkers;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.global.config.IntentClassifierProperties;
 import org.junit.jupiter.api.BeforeEach;
@@ -95,7 +96,7 @@ class OffTopicResponseHandlerTest {
         void handle_connectorIsFixed() {
             FollowUpResponse response = handler.handle(buildInput(1L, 0));
 
-            assertThat(response.getQuestion()).contains(OffTopicMarker.CONNECTOR);
+            assertThat(response.getQuestion()).contains(OffTopicMarkers.CONNECTOR);
         }
 
         @Test
@@ -111,7 +112,7 @@ class OffTopicResponseHandlerTest {
         void handle_typeIsOffTopicRedirect() {
             FollowUpResponse response = handler.handle(buildInput(1L, 0));
 
-            assertThat(response.getType()).isEqualTo(OffTopicMarker.FOLLOW_UP_TYPE);
+            assertThat(response.getType()).isEqualTo(OffTopicMarkers.FOLLOW_UP_TYPE);
         }
 
         @Test
@@ -168,7 +169,7 @@ class OffTopicResponseHandlerTest {
         void handle_shouldNotEscalate_buildsRedirect() {
             FollowUpResponse response = handler.handle(buildInput(1L, 5));
 
-            assertThat(response.getType()).isEqualTo(OffTopicMarker.FOLLOW_UP_TYPE);
+            assertThat(response.getType()).isEqualTo(OffTopicMarkers.FOLLOW_UP_TYPE);
             then(giveUpResponseHandler).should(never()).handle(any(IntentBranchInput.class));
         }
     }
@@ -180,7 +181,7 @@ class OffTopicResponseHandlerTest {
         @Test
         @DisplayName("supports() 는 IntentType.OFF_TOPIC 을 반환한다")
         void supports_returnsOffTopic() {
-            assertThat(handler.supports()).isEqualTo(com.rehearse.api.domain.interview.vo.IntentType.OFF_TOPIC);
+            assertThat(handler.supports()).isEqualTo(com.rehearse.api.domain.interview.entity.IntentType.OFF_TOPIC);
         }
     }
 }

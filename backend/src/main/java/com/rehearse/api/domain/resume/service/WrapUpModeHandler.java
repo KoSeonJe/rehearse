@@ -3,6 +3,7 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import lombok.RequiredArgsConstructor;

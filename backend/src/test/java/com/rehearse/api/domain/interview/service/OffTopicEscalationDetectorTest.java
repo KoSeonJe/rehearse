@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.OffTopicMarkers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,11 +14,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OffTopicEscalationDetectorTest {
 
     private final OffTopicEscalationDetector detector = new OffTopicEscalationDetector();
-    private static final String CONNECTOR = OffTopicMarker.CONNECTOR;
+    private static final String CONNECTOR = OffTopicMarkers.CONNECTOR;
     private static final String MAIN_Q = "HashMap 충돌을 설명해주세요.";
 
     private FollowUpExchange offTopicByMeta() {
-        return new FollowUpExchange("정상 텍스트", "잡담", OffTopicMarker.FOLLOW_UP_TYPE);
+        return new FollowUpExchange("정상 텍스트", "잡담", OffTopicMarkers.FOLLOW_UP_TYPE);
     }
 
     private FollowUpExchange offTopicByLegacyText() {

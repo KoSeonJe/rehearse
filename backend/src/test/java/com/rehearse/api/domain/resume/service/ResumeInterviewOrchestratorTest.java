@@ -9,22 +9,22 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
 import com.rehearse.api.domain.interview.service.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentClassifier;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import org.springframework.context.ApplicationEventPublisher;
-import com.rehearse.api.domain.interview.vo.IntentResult;
-import com.rehearse.api.domain.interview.vo.IntentType;
-import com.rehearse.api.domain.resume.domain.ChainReference;
-import com.rehearse.api.domain.resume.domain.InterrogationPhase;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
-import com.rehearse.api.domain.resume.domain.ProjectPlan;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
-import com.rehearse.api.domain.resume.domain.ResumeMode;
+import com.rehearse.api.domain.interview.entity.IntentResult;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.resume.entity.ChainReference;
+import com.rehearse.api.domain.resume.entity.InterrogationPhase;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -66,7 +66,7 @@ class ResumeInterviewOrchestratorTest {
     @Mock
     private ClockWatcher clockWatcher;
     @Mock
-    private InterviewRuntimeStateStore runtimeStateStore;
+    private InterviewRuntimeStateCache runtimeStateStore;
     @Mock
     private InterviewFinder interviewFinder;
     @Mock

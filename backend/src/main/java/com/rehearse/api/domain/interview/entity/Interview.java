@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.policy.InterviewTrack;
+import com.rehearse.api.domain.interview.service.InterviewTrack;
 import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ import java.time.temporal.ChronoUnit;
 @RequiredArgsConstructor
 public class ClockWatcher {
 
-    private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewRuntimeStateCache runtimeStateStore;
     private final Clock clock;
 
     public void markStart(Long interviewId) {

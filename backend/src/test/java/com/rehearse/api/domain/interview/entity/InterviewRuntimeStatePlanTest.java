@@ -2,11 +2,11 @@ package com.rehearse.api.domain.interview.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.rehearse.api.domain.resume.domain.ChainReference;
-import com.rehearse.api.domain.resume.domain.InterrogationPhase;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.PlaygroundPhase;
-import com.rehearse.api.domain.resume.domain.ProjectPlan;
+import com.rehearse.api.domain.resume.entity.ChainReference;
+import com.rehearse.api.domain.resume.entity.InterrogationPhase;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class InterviewRuntimeStatePlanTest {
     }
 
     @Test
-    @DisplayName("setInterviewPlan_후_getInterviewPlanCache_일관성")
+    @DisplayName("setInterviewPlan_후_getInterviewPlanRuntimeCache_일관성")
     void get_interview_plan_cache_returns_set_plan() {
         InterviewRuntimeState state = new InterviewRuntimeState("JUNIOR", null);
         InterviewPlan plan = createFixturePlan();

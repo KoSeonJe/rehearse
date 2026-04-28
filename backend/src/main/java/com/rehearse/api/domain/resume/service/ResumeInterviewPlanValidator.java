@@ -1,11 +1,11 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.resume.domain.ChainReference;
-import com.rehearse.api.domain.resume.domain.InterviewPlan;
-import com.rehearse.api.domain.resume.domain.Project;
-import com.rehearse.api.domain.resume.domain.ProjectPlan;
-import com.rehearse.api.domain.resume.domain.ResumeClaim;
-import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ChainReference;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.Project;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.rehearse.api.domain.resume.entity.ResumeClaim;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import java.util.Map;

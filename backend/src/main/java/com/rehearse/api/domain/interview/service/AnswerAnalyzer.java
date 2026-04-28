@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.Perspective;
 import com.rehearse.api.domain.interview.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -33,7 +33,7 @@ public class AnswerAnalyzer {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
-    private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewRuntimeStateCache runtimeStateStore;
 
     public AnswerAnalysis analyze(
             Long interviewId,

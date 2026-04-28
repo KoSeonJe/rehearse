@@ -1,7 +1,8 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
-import com.rehearse.api.domain.interview.vo.IntentType;
+import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.interview.entity.OffTopicMarkers;
 import com.rehearse.api.global.config.IntentClassifierProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class OffTopicResponseHandler implements IntentResponseHandler {
 
-    public static final String OFF_TOPIC_CONNECTOR = OffTopicMarker.CONNECTOR;
+    public static final String OFF_TOPIC_CONNECTOR = OffTopicMarkers.CONNECTOR;
 
     private static final List<String> LEAD_IN_POOL = List.of(
             "방금 답변은 질문 주제에서 벗어난 것 같습니다.",
@@ -48,14 +49,14 @@ public class OffTopicResponseHandler implements IntentResponseHandler {
                 Long.hashCode(input.interviewId() ^ ((long) input.turnIndex() * 31L)),
                 LEAD_IN_POOL.size());
         String leadIn = LEAD_IN_POOL.get(idx);
-        String combined = leadIn + " " + OffTopicMarker.CONNECTOR + " " + input.mainQuestion();
+        String combined = leadIn + " " + OffTopicMarkers.CONNECTOR + " " + input.mainQuestion();
 
         return FollowUpResponse.intentBranch(new FollowUpResponse.IntentBranchPayload(
                 combined,
                 combined,
                 "사용자 발화가 질문 범위 밖",
-                OffTopicMarker.FOLLOW_UP_TYPE,
-                OffTopicMarker.SKIP_REASON,
+                OffTopicMarkers.FOLLOW_UP_TYPE,
+                OffTopicMarkers.SKIP_REASON,
                 input.answerText()
         ));
     }
