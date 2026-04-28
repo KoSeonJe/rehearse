@@ -258,6 +258,21 @@ private final InterviewFinder interviewFinder;
 | Cross-entity orchestration | Service |
 | External system calls | Service (delegated to infra) |
 
+### Service 계층 세분화
+
+같은 `service/` 디렉토리 안에 두 종류의 클래스가 공존한다. 클래스명으로 구분한다.
+
+| 종류 | 기준 | 클래스명 접미사 | 예시 |
+|------|------|----------------|------|
+| 애플리케이션 Service | use case 진입점. `@Service` + `@Transactional`, 외부 협력 OK | `*Service`, `*QueryService` | `InterviewService`, `InterviewQueryService` |
+| 도메인 Service (rare) | 순수 비즈니스 규칙. 트랜잭션 X, 외부 협력 X. Entity 메서드로 충분하지 않을 때만 | `*Policy`, `*Calculator`, `*Classifier` | `StandardFollowUpPolicy`, `IntentClassifier` |
+| 공유 조회 컴포넌트 | 여러 Service에서 재사용하는 조회 + 예외 변환. `@Component` | `*Finder` | `InterviewFinder` |
+| DB 저장 컴포넌트 | 복잡한 영속화 로직 캡슐화. `@Component` + `@Transactional` | `*Persister` | `ResumeSkeletonPersister` |
+| 인메모리 캐시 래퍼 | Caffeine 등 로컬 캐시 읽기/쓰기. `@Component` | `*RuntimeCache` | `InterviewRuntimeStateCache` |
+
+**Strategy 패턴**: interface + 구현체 여럿 → 모두 `service/` 안에 위치.
+별도 `policy/` 패키지 생성 금지.
+
 ---
 
 ## 6. DTO Patterns
