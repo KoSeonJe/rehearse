@@ -90,6 +90,7 @@ export const InterviewSetupPage = () => {
           currentStep={setup.currentStep}
           isSubmitStep={setup.isSubmitStep}
           canNext={setup.canNext(setup.currentStep)}
+          getDisabledHint={setup.disabledHint}
           isLoading={setup.isLoading}
           serverError={setup.serverError}
           onNext={setup.handleNext}
