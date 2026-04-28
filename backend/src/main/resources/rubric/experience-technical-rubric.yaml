@@ -1,4 +1,4 @@
-# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# status: ACTIVE
 # 기술 경험 질문 평가 루브릭. FeedbackPerspective=EXPERIENCE 일 때 적용.
 # domain 무관 (backend/frontend/fullstack/devops/data 공통).
 # CARL 구조 + 본인 기여 구체성 + Learnings 가 핵심.

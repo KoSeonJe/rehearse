@@ -1,4 +1,4 @@
-# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# status: ACTIVE
 # 이력서 기반 Resume Track 질문 평가 루브릭. domain 무관.
 # mode-aware per_turn_rules: PLAYGROUND / INTERROGATION / WRAP_UP (plan-07)
 # 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L525-554 + plan-08 L194-217 + plan-07 WRAP_UP 개정

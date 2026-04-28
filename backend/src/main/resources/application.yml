@@ -75,6 +75,14 @@ rehearse:
     chain-max-depth: 4
     wrap-up-threshold-min: 2
     hard-timeout-min: 10
+  rubric-scorer:
+    model: ${RUBRIC_SCORER_MODEL:gpt-4o-mini}
+    temperature: 0.2
+    max-tokens: 1536
+  feedback-rubric:
+    family-version: v1
+    fallback-rubric: fallback-generic-v1
+    mode-aware: true
 
 management:
   endpoints:

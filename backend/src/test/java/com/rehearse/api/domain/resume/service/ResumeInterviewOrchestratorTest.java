@@ -9,6 +9,8 @@ import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
 import com.rehearse.api.domain.interview.service.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentClassifier;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
+import org.springframework.context.ApplicationEventPublisher;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.resume.domain.ChainReference;
@@ -59,6 +61,10 @@ class ResumeInterviewOrchestratorTest {
     private ClockWatcher clockWatcher;
     @Mock
     private InterviewRuntimeStateStore runtimeStateStore;
+    @Mock
+    private InterviewFinder interviewFinder;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;

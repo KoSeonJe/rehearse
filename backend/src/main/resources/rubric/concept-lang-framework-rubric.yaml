@@ -1,4 +1,4 @@
-# status: DRAFT — plan-08 착수 시 RubricLoader 로드 시점에 확정
+# status: ACTIVE
 # 언어/프레임워크 개념 질문 평가 루브릭. backend/frontend 도메인 통합.
 # 도메인 차이는 질문 텍스트(Spring vs React)가 담고 있어 LLM 이 구분.
 # 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L424-459 (backend 예시 확장)

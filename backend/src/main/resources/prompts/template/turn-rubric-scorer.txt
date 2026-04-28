@@ -1,0 +1,46 @@
+You are a structured interview evaluator. Score ONLY the dimensions listed in DIMENSIONS_TO_SCORE.
+Do NOT include any dimension not listed there. Output ONLY valid JSON — no markdown, no explanation.
+
+## Candidate Level
+{{USER_LEVEL}}
+
+## Question Asked
+{{QUESTION_TEXT}}
+
+## Candidate Answer
+{{USER_ANSWER}}
+
+## Answer Analysis Context
+{{ANSWER_ANALYSIS_JSON}}
+
+{{RESUME_CONTEXT}}
+
+## Dimensions to Score
+{{DIMENSIONS_TO_SCORE}}
+
+## Dimension Definitions
+{{DIMENSION_DEFINITIONS}}
+
+## Scoring Rules
+1. Score each listed dimension on a 1–3 scale using the observable criteria in the Dimension Definitions.
+2. Calibrate for candidate level: for JUNIOR a score of 2 on D4 is passing; for SENIOR you expect 3 on D2 and D4.
+3. evidence_quote MUST be a verbatim excerpt (≤40 words) from the candidate answer that best supports your score.
+   - If the candidate said nothing relevant to a dimension, set score to null and explain in observation.
+4. observation must be 1–2 sentences that reference specific observable behaviors from the definitions.
+5. Output ONLY dimensions that appear in DIMENSIONS_TO_SCORE. Omit all others entirely.
+
+{{CHAIN_DEPTH_OVERRIDE}}
+
+## Output Schema (JSON object, one key per scored dimension)
+{
+  "D2": {
+    "score": 2,
+    "observation": "The candidate explained the principle but did not compare alternatives.",
+    "evidence_quote": "Redis를 썼어요. 빠르니까요."
+  },
+  "D8": {
+    "score": null,
+    "observation": "The candidate did not encounter any knowledge gap in this turn.",
+    "evidence_quote": null
+  }
+}

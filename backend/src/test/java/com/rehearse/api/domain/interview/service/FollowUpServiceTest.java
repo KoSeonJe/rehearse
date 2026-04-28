@@ -96,13 +96,17 @@ class FollowUpServiceTest {
     @Mock
     private InterviewFinder interviewFinder;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, interviewFinder);
+                resumeSkeletonCache, interviewPlanCache, interviewFinder,
+                eventPublisher);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));

@@ -1,14 +1,17 @@
 package com.rehearse.api.domain.resume.service;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.repository.InterviewRuntimeStateStore;
 import com.rehearse.api.domain.interview.service.AnswerAnalyzer;
 import com.rehearse.api.domain.interview.service.IntentClassifier;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.IntentBranchInput;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.interview.vo.IntentResult;
 import com.rehearse.api.domain.interview.vo.IntentType;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
@@ -17,6 +20,7 @@ import com.rehearse.api.domain.resume.domain.ResumeMode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,6 +43,8 @@ public class ResumeInterviewOrchestrator {
     private final WrapUpModeHandler wrapUpHandler;
     private final ClockWatcher clockWatcher;
     private final InterviewRuntimeStateStore runtimeStateStore;
+    private final InterviewFinder interviewFinder;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${rehearse.resume-track.wrap-up-threshold-min:2}")
     private long wrapUpThresholdMin;
@@ -92,11 +98,19 @@ public class ResumeInterviewOrchestrator {
             }
         }
 
-        return switch (currentMode) {
+        long turnIndex = previousExchanges != null ? previousExchanges.size() : 0;
+        ChainStateTracker chainTracker = state.getChainStateTracker();
+        int currentChainLevel = chainTracker != null ? chainTracker.getCurrentLevel() : 1;
+
+        FollowUpResponse response = switch (currentMode) {
             case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan);
             case INTERROGATION -> interrogationHandler.handle(interviewId, state, answerText, analysis, plan);
             case WRAP_UP -> wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true);
         };
+
+        publishResumeTurnCompletedEvent(interviewId, turnIndex, analysis, intent, currentMode, currentChainLevel, skeleton);
+
+        return response;
     }
 
     public FollowUpResponse startSession(
@@ -123,6 +137,27 @@ public class ResumeInterviewOrchestrator {
             return interrogationHandler.handle(interviewId, refreshed, null, null, plan);
         }
         return result.response();
+    }
+
+    private void publishResumeTurnCompletedEvent(
+            Long interviewId, long turnIndex, AnswerAnalysis analysis,
+            IntentResult intent, ResumeMode currentMode, int currentChainLevel,
+            ResumeSkeleton skeleton
+    ) {
+        try {
+            Interview interview = interviewFinder.findById(interviewId);
+            TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
+                    interviewId, turnIndex, interview.getUserId(),
+                    null, null,
+                    analysis != null ? "" : "",
+                    analysis, intent.type(), interview.getLevel(),
+                    currentMode, currentChainLevel, skeleton
+            );
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.warn("Resume TurnCompletedEvent 발행 실패 — 턴 진행 차단하지 않음: interviewId={}, reason={}",
+                    interviewId, e.getMessage());
+        }
     }
 
     private FollowUpResponse handleNonAnswerIntent(
