@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.AnswerAnalysis;
-import com.rehearse.api.domain.resume.ChainStateTracker;
+import com.rehearse.api.domain.resume.service.ChainStateTracker;
 import com.rehearse.api.domain.resume.domain.InterviewPlan;
 import com.rehearse.api.domain.resume.domain.ResumeMode;
 import com.rehearse.api.domain.resume.domain.ResumeSkeleton;
