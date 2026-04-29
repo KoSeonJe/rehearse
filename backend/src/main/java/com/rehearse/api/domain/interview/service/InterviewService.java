@@ -75,6 +75,7 @@ public class InterviewService {
                 new ArrayList<>(interview.getInterviewTypes()),
                 new ArrayList<>(interview.getCsSubTopics()),
                 null,
+                null,
                 interview.getDurationMinutes(),
                 interview.getTechStack()
         ));

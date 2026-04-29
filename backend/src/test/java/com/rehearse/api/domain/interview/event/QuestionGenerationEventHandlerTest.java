@@ -41,7 +41,7 @@ class QuestionGenerationEventHandlerTest {
                 InterviewLevel.JUNIOR,
                 List.of(InterviewType.CS_FUNDAMENTAL),
                 List.of(),
-                null, 30,
+                null, null, 30,
                 TechStack.JAVA_SPRING);
     }
 
@@ -62,7 +62,7 @@ class QuestionGenerationEventHandlerTest {
             then(questionGenerationService).should().generateQuestions(
                     eq(1L), eq(1L), eq(Position.BACKEND), eq(InterviewLevel.JUNIOR),
                     eq(List.of(InterviewType.CS_FUNDAMENTAL)), eq(List.of()),
-                    isNull(), eq(30), eq(TechStack.JAVA_SPRING));
+                    isNull(), isNull(), eq(30), eq(TechStack.JAVA_SPRING));
         }
 
         @Test
@@ -75,7 +75,7 @@ class QuestionGenerationEventHandlerTest {
                     InterviewLevel.SENIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL),
                     List.of("OS", "Network"),
-                    "이력서 내용", 45,
+                    "이력서 내용", "hash-42", 45,
                     TechStack.REACT_TS);
 
             // when
@@ -86,7 +86,7 @@ class QuestionGenerationEventHandlerTest {
                     eq(42L), eq(99L), eq(Position.FRONTEND), eq(InterviewLevel.SENIOR),
                     eq(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL)),
                     eq(List.of("OS", "Network")),
-                    eq("이력서 내용"), eq(45), eq(TechStack.REACT_TS));
+                    eq("이력서 내용"), eq("hash-42"), eq(45), eq(TechStack.REACT_TS));
         }
     }
 
@@ -102,7 +102,7 @@ class QuestionGenerationEventHandlerTest {
             RuntimeException cause = new RuntimeException("AI 서비스 오류");
             RuntimeException wrapper = new RuntimeException("래핑된 예외", cause);
             willThrow(wrapper).given(questionGenerationService).generateQuestions(
-                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any());
+                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);
@@ -119,7 +119,7 @@ class QuestionGenerationEventHandlerTest {
             RuntimeException cause = new RuntimeException("원인 메시지");
             RuntimeException wrapper = new RuntimeException("래퍼 메시지", cause);
             willThrow(wrapper).given(questionGenerationService).generateQuestions(
-                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any());
+                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);
@@ -135,7 +135,7 @@ class QuestionGenerationEventHandlerTest {
             QuestionGenerationRequestedEvent event = createEvent(1L, 1L);
             RuntimeException noCauseException = new RuntimeException("직접 오류 메시지");
             willThrow(noCauseException).given(questionGenerationService).generateQuestions(
-                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any());
+                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);
@@ -151,7 +151,7 @@ class QuestionGenerationEventHandlerTest {
             QuestionGenerationRequestedEvent event = createEvent(1L, 1L);
             RuntimeException nullMessageException = new RuntimeException((String) null);
             willThrow(nullMessageException).given(questionGenerationService).generateQuestions(
-                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any());
+                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);
@@ -166,7 +166,7 @@ class QuestionGenerationEventHandlerTest {
             // given
             QuestionGenerationRequestedEvent event = createEvent(1L, 1L);
             willThrow(new RuntimeException("서비스 오류")).given(questionGenerationService).generateQuestions(
-                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any());
+                    anyLong(), anyLong(), any(), any(), anyList(), anyList(), any(), any(), any(), any());
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);

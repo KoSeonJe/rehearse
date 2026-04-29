@@ -12,6 +12,7 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.service.QuestionGenerationService;
 import com.rehearse.api.domain.question.service.QuestionGenerationTransactionHandler;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -45,6 +46,9 @@ class QuestionGenerationServiceTest {
 
     @Mock
     private FreshQuestionProvider freshProvider;
+
+    @Mock
+    private ResumePlanPreparationService resumePlanPreparationService;
 
     // virtualExecutor는 final 필드이므로 실제 virtual thread executor를 그대로 사용.
     // generateQuestions()는 내부에서 .join()으로 블로킹하므로 테스트는 결정론적으로 동작한다.
@@ -123,6 +127,45 @@ class QuestionGenerationServiceTest {
 
             // then
             then(cacheableProvider).should(never()).provide(any(), any(), any(), any(), any(), anyInt(), any());
+        }
+
+        @Test
+        @DisplayName("RESUME_BASED 질문 생성 전 skeleton과 plan을 준비한다")
+        void resumeBased_preparesSkeletonAndPlanBeforeFreshProvider() {
+            // given
+            List<InterviewType> types = List.of(InterviewType.RESUME_BASED);
+            GeneratedQuestion gq = makeGeneratedQuestion("이력서 질문", "RESUME", "GUIDE");
+            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
+                    .willReturn(List.of(gq));
+
+            // when
+            questionGenerationService.generateQuestions(
+                    1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
+                    types, List.of(), "Java 백엔드 개발자. ".repeat(10), "hash-1",
+                    30, TechStack.JAVA_SPRING);
+
+            // then
+            org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(resumePlanPreparationService, freshProvider);
+            inOrder.verify(resumePlanPreparationService).prepare(1L, "hash-1", "Java 백엔드 개발자. ".repeat(10), 30);
+            inOrder.verify(freshProvider).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("CS/BEHAVIORAL 질문 생성은 resume plan 준비를 호출하지 않는다")
+        void nonResumeTypes_doNotPrepareResumePlan() {
+            // given
+            List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL);
+            QuestionPool pool = makePool("CS 질문", "MODEL_ANSWER");
+            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
+                    .willReturn(List.of(pool));
+
+            // when
+            questionGenerationService.generateQuestions(
+                    1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
+                    types, List.of(), null, null, 30, TechStack.JAVA_SPRING);
+
+            // then
+            then(resumePlanPreparationService).shouldHaveNoInteractions();
         }
     }
 

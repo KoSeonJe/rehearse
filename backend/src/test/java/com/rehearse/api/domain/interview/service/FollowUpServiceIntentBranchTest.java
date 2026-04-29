@@ -27,6 +27,7 @@ import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,6 +92,9 @@ class FollowUpServiceIntentBranchTest {
     private InterviewPlanRuntimeCache interviewPlanCache;
 
     @Mock
+    private ResumeInterviewPlanner resumeInterviewPlanner;
+
+    @Mock
     private InterviewFinder interviewFinder;
 
     private static final MockMultipartFile AUDIO_FILE =
@@ -136,7 +140,7 @@ class FollowUpServiceIntentBranchTest {
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, interviewFinder,
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
                 eventPublisher);
 
         lenient().when(followUpTransactionHandler.loadFollowUpContext(anyLong(), anyLong(), anyLong())).thenReturn(CONTEXT);

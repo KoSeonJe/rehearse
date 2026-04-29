@@ -9,7 +9,9 @@ import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.util.FileHasher;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,6 +30,7 @@ public class InterviewCreationService {
 
     private final InterviewRepository interviewRepository;
     private final PdfTextExtractor pdfTextExtractor;
+    private final FileHasher fileHasher;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
@@ -35,7 +38,9 @@ public class InterviewCreationService {
         validateResumeExclusivity(request.getInterviewTypes(), resumeFile);
 
         String resumeText = null;
+        String resumeFileHash = null;
         if (resumeFile != null && !resumeFile.isEmpty()) {
+            resumeFileHash = fileHasher.hash(readFileBytes(resumeFile));
             resumeText = pdfTextExtractor.extract(resumeFile);
         }
 
@@ -65,6 +70,7 @@ public class InterviewCreationService {
                 request.getInterviewTypes(),
                 request.getCsSubTopics(),
                 resumeText,
+                resumeFileHash,
                 request.getDurationMinutes(),
                 request.getTechStack()
         ));
@@ -93,6 +99,14 @@ public class InterviewCreationService {
 
         if (!hasResumeBased && hasResumeFile) {
             throw new BusinessException(ResumeErrorCode.RESUME_EXCLUSIVITY_VIOLATION);
+        }
+    }
+
+    private byte[] readFileBytes(MultipartFile resumeFile) {
+        try {
+            return resumeFile.getBytes();
+        } catch (IOException e) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
         }
     }
 }

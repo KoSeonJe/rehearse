@@ -26,6 +26,7 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
@@ -56,6 +57,7 @@ public class FollowUpService {
     private final InterviewPlanPersister interviewPlanStore;
     private final ResumeSkeletonRuntimeCache resumeSkeletonCache;
     private final InterviewPlanRuntimeCache interviewPlanCache;
+    private final ResumeInterviewPlanner resumeInterviewPlanner;
     private final InterviewFinder interviewFinder;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -204,7 +206,6 @@ public class FollowUpService {
         if (!interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
             return false;
         }
-        // resume 트랙: skeleton 재로드 후 state에 다시 캐시
         resumeSkeletonStore.findByInterviewId(interviewId).ifPresent(skeleton ->
                 runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(skeleton))
         );
@@ -213,23 +214,47 @@ public class FollowUpService {
 
     private FollowUpResponse delegateToResumeOrchestrator(Long interviewId, FollowUpRequest request) {
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
-        ResumeSkeleton skeleton = state.getResumeSkeletonCache();
-
-        InterviewPlan plan = state.getInterviewPlanCache();
-        if (plan == null) {
-            plan = interviewPlanStore.findByInterviewId(interviewId)
-                    .orElseThrow(() -> new BusinessException(ResumeErrorCode.PLAN_NOT_FOUND));
-            InterviewPlan finalPlan = plan;
-            runtimeStateStore.update(interviewId, s -> s.setInterviewPlan(finalPlan));
-        }
+        ResumeSkeleton skeleton = resolveResumeSkeleton(interviewId, state);
 
         Interview interview = interviewFinder.findById(interviewId);
         int durationMinutes = interview.getDurationMinutes();
+        InterviewPlan plan = resolveInterviewPlan(interviewId, skeleton, durationMinutes);
 
         return resumeOrchestrator.processUserTurn(
                 interviewId, durationMinutes,
                 request.getQuestionContent(), request.getAnswerText(),
                 request.getPreviousExchanges(), skeleton, plan
         );
+    }
+
+    private ResumeSkeleton resolveResumeSkeleton(Long interviewId, InterviewRuntimeState state) {
+        if (state == null) {
+            throw new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY);
+        }
+        ResumeSkeleton skeleton = state.getResumeSkeletonCache();
+        if (skeleton != null) {
+            return skeleton;
+        }
+
+        skeleton = resumeSkeletonStore.findByInterviewId(interviewId)
+                .orElseThrow(() -> new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY));
+        ResumeSkeleton finalSkeleton = skeleton;
+        runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(finalSkeleton));
+        return skeleton;
+    }
+
+    private InterviewPlan resolveInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
+        InterviewPlan plan = interviewPlanCache.read(interviewId);
+        if (plan != null) {
+            return plan;
+        }
+
+        plan = interviewPlanStore.findByInterviewId(interviewId).orElse(null);
+        if (plan == null) {
+            plan = resumeInterviewPlanner.plan(skeleton, durationMinutes);
+            interviewPlanStore.save(interviewId, plan);
+        }
+        interviewPlanCache.write(interviewId, plan);
+        return plan;
     }
 }

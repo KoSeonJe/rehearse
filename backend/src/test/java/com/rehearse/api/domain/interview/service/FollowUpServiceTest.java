@@ -30,6 +30,7 @@ import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,6 +95,9 @@ class FollowUpServiceTest {
     private InterviewPlanRuntimeCache interviewPlanCache;
 
     @Mock
+    private ResumeInterviewPlanner resumeInterviewPlanner;
+
+    @Mock
     private InterviewFinder interviewFinder;
 
     @Mock
@@ -105,7 +109,7 @@ class FollowUpServiceTest {
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, interviewFinder,
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
                 eventPublisher);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
@@ -346,8 +350,11 @@ class FollowUpServiceTest {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
             given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
             given(runtimeStateStore.get(1L)).willReturn(resumeState);
+            given(runtimeStateStore.get(1L)).willReturn(resumeState);
 
-            Interview interview = stubResumeInterview();
+            Interview interview = mock(Interview.class);
+            given(interview.getInterviewTypes()).willReturn(Set.of(InterviewType.RESUME_BASED));
+            given(interview.getDurationMinutes()).willReturn(30);
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
@@ -370,6 +377,67 @@ class FollowUpServiceTest {
             assertThat(response.getQuestion()).isEqualTo("재로드 후 이력서 질문");
             then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any());
             then(audioTurnAnalyzer).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("plan 캐시/DB miss + skeleton DB hit이면 plan을 재생성하고 위임한다")
+        void generateFollowUp_resumeTrack_planMissing_regeneratesPlanFromSkeleton() {
+            InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", null);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
+            given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
+            given(runtimeStateStore.get(1L)).willReturn(resumeState);
+
+            Interview interview = mock(Interview.class);
+            given(interview.getInterviewTypes()).willReturn(Set.of(InterviewType.RESUME_BASED));
+            given(interview.getDurationMinutes()).willReturn(30);
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
+            given(resumeSkeletonStore.findByInterviewId(1L)).willReturn(Optional.of(skeleton));
+            given(interviewPlanStore.findByInterviewId(1L)).willReturn(Optional.empty());
+
+            InterviewPlan regenerated = mock(InterviewPlan.class);
+            given(resumeInterviewPlanner.plan(skeleton, 30)).willReturn(regenerated);
+
+            willAnswer(inv -> {
+                java.util.function.Consumer<InterviewRuntimeState> mutator = inv.getArgument(1);
+                mutator.accept(resumeState);
+                return null;
+            }).given(runtimeStateStore).update(eq(1L), any());
+
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+                    .willReturn(FollowUpResponse.builder().question("복구된 plan 질문").presentToUser(true).build());
+
+            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            assertThat(response.getQuestion()).isEqualTo("복구된 plan 질문");
+            then(interviewPlanStore).should().save(1L, regenerated);
+            then(resumeOrchestrator).should().processUserTurn(
+                    eq(1L), eq(30), any(), any(), any(), eq(skeleton), eq(regenerated));
+        }
+
+        @Test
+        @DisplayName("RESUME_BASED 면접인데 skeleton도 없으면 409 준비 미완료 예외를 반환한다")
+        void generateFollowUp_resumeTrack_skeletonMissing_returnsConflict() {
+            InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", null);
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
+            given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
+            given(runtimeStateStore.get(1L)).willReturn(resumeState);
+
+            Interview interview = mock(Interview.class);
+            given(interview.getInterviewTypes()).willReturn(Set.of(InterviewType.RESUME_BASED));
+            given(interviewFinder.findById(1L)).willReturn(interview);
+            given(resumeSkeletonStore.findByInterviewId(1L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                        assertThat(be.getCode()).isNotEqualTo("RESUME_008");
+                    });
+
+            then(resumeOrchestrator).shouldHaveNoInteractions();
         }
 
         @Test

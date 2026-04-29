@@ -12,6 +12,7 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import jakarta.annotation.PreDestroy;
@@ -32,15 +33,18 @@ public class QuestionGenerationService {
     private final QuestionGenerationTransactionHandler transactionHandler;
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
+    private final ResumePlanPreparationService resumePlanPreparationService;
     private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public QuestionGenerationService(
             QuestionGenerationTransactionHandler transactionHandler,
             CacheableQuestionProvider cacheableProvider,
-            FreshQuestionProvider freshProvider) {
+            FreshQuestionProvider freshProvider,
+            ResumePlanPreparationService resumePlanPreparationService) {
         this.transactionHandler = transactionHandler;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
+        this.resumePlanPreparationService = resumePlanPreparationService;
     }
 
     @PreDestroy
@@ -52,9 +56,21 @@ public class QuestionGenerationService {
                                   InterviewLevel level, List<InterviewType> interviewTypes,
                                   List<String> csSubTopics, String resumeText,
                                   Integer durationMinutes, TechStack techStack) {
+        generateQuestions(interviewId, userId, position, level, interviewTypes, csSubTopics,
+                resumeText, null, durationMinutes, techStack);
+    }
+
+    public void generateQuestions(Long interviewId, Long userId, Position position,
+                                  InterviewLevel level, List<InterviewType> interviewTypes,
+                                  List<String> csSubTopics, String resumeText, String resumeFileHash,
+                                  Integer durationMinutes, TechStack techStack) {
 
         // Phase A: 상태 전환 (별도 트랜잭션 — 외부 Bean 호출로 프록시 적용)
         transactionHandler.startGeneration(interviewId);
+
+        if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
+            resumePlanPreparationService.prepare(interviewId, resumeFileHash, resumeText, durationMinutes);
+        }
 
         // 유형별 질문 수 배분 및 CACHEABLE / FRESH 분류
         int totalCount = QuestionCountCalculator.calculate(durationMinutes, interviewTypes.size());

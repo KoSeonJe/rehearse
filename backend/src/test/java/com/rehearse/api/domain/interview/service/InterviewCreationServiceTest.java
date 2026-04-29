@@ -7,6 +7,7 @@ import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.global.util.FileHasher;
 import com.rehearse.api.infra.ai.PdfTextExtractor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,6 +38,9 @@ class InterviewCreationServiceTest {
 
     @Mock
     private PdfTextExtractor pdfTextExtractor;
+
+    @Mock
+    private FileHasher fileHasher;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -116,6 +120,7 @@ class InterviewCreationServiceTest {
 
             given(pdfTextExtractor.extract(any()))
                     .willThrow(new RuntimeException("PDF 파싱 실패"));
+            given(fileHasher.hash(any())).willReturn("resume-hash");
 
             // when & then
             assertThatThrownBy(() -> interviewCreationService.createInterview(1L, request, resumeFile))
@@ -171,6 +176,7 @@ class InterviewCreationServiceTest {
                     "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
 
             given(pdfTextExtractor.extract(any())).willReturn("이력서 내용");
+            given(fileHasher.hash(any())).willReturn("resume-hash");
             given(interviewRepository.save(any(Interview.class)))
                     .willAnswer(invocation -> {
                         Interview interview = invocation.getArgument(0);
@@ -183,7 +189,10 @@ class InterviewCreationServiceTest {
 
             // then
             assertThat(response.getId()).isEqualTo(2L);
-            then(eventPublisher).should().publishEvent(any(QuestionGenerationRequestedEvent.class));
+            org.mockito.ArgumentCaptor<QuestionGenerationRequestedEvent> eventCaptor =
+                    org.mockito.ArgumentCaptor.forClass(QuestionGenerationRequestedEvent.class);
+            then(eventPublisher).should().publishEvent(eventCaptor.capture());
+            assertThat(eventCaptor.getValue().getResumeFileHash()).isEqualTo("resume-hash");
         }
 
         @Test

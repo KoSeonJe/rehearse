@@ -50,6 +50,30 @@ public class ResumeIngestionService {
         return extractAndPersist(interviewId, normalizedText, fileHash);
     }
 
+    public ResumeSkeleton ingestExtractedText(Long interviewId, String normalizedText, String fileHash) {
+        validateExtractedText(normalizedText);
+        if (fileHash == null || fileHash.isBlank()) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
+        }
+
+        ResumeSkeleton cached = skeletonCache.read(interviewId, fileHash);
+        if (cached != null) {
+            log.info("이력서 캐시 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
+            return cached;
+        }
+
+        ResumeSkeleton fromDb = skeletonStore.findByInterviewId(interviewId)
+                .filter(s -> fileHash.equals(s.fileHash()))
+                .orElse(null);
+        if (fromDb != null) {
+            log.info("이력서 DB 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
+            skeletonCache.write(interviewId, fromDb);
+            return fromDb;
+        }
+
+        return extractAndPersist(interviewId, normalizedText, fileHash);
+    }
+
     private byte[] readFileBytes(MultipartFile resumeFile) {
         try {
             return resumeFile.getBytes();

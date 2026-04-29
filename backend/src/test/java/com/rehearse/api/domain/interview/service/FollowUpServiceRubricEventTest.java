@@ -20,6 +20,7 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -62,6 +63,7 @@ class FollowUpServiceRubricEventTest {
     @Mock private InterviewPlanPersister interviewPlanStore;
     @Mock private ResumeSkeletonRuntimeCache resumeSkeletonCache;
     @Mock private InterviewPlanRuntimeCache interviewPlanCache;
+    @Mock private ResumeInterviewPlanner resumeInterviewPlanner;
     @Mock private InterviewFinder interviewFinder;
     @Mock private ApplicationEventPublisher eventPublisher;
 
@@ -71,7 +73,7 @@ class FollowUpServiceRubricEventTest {
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, interviewFinder,
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
                 eventPublisher);
 
         InterviewRuntimeState state = new InterviewRuntimeState("MID", null);

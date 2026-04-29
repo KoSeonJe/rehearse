@@ -17,7 +17,8 @@ public enum ResumeErrorCode implements ErrorCode {
     RESUME_REQUIRED_FOR_RESUME_BASED(HttpStatus.BAD_REQUEST, "RESUME_007", "RESUME_BASED 면접 유형을 선택하려면 이력서 파일을 첨부해야 합니다."),
     PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "RESUME_008", "면접 플랜을 찾을 수 없습니다."),
     PROJECT_NOT_FOUND_IN_SKELETON(HttpStatus.INTERNAL_SERVER_ERROR, "RESUME_009", "Skeleton에서 projectId 에 해당하는 프로젝트를 찾을 수 없습니다."),
-    INTERVIEW_PLAN_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "RESUME_010", "이미 interview 에 할당된 plan 입니다.");
+    INTERVIEW_PLAN_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "RESUME_010", "이미 interview 에 할당된 plan 입니다."),
+    RESUME_PLAN_NOT_READY(HttpStatus.CONFLICT, "RESUME_011", "이력서 분석/면접 플랜 준비가 완료되지 않았습니다.");
 
     private final HttpStatus status;
     private final String code;
