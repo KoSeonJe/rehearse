@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @NoArgsConstructor
@@ -57,6 +58,20 @@ public class SaveFeedbackRequest {
         private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
         private String coachingStructure;
         private String coachingImprovement;
+
+        private NonverbalScore nonverbalScore;
+        private String difficulty;
+        private String resumeMode;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class NonverbalScore {
+        private Integer d11;
+        private Integer d12;
+        private Integer d13;
+        private Integer d14;
+        private Map<String, Object> rawSignals;
     }
 
     @Getter

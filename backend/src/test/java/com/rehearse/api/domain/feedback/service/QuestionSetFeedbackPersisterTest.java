@@ -2,6 +2,7 @@ package com.rehearse.api.domain.feedback.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
@@ -33,6 +34,9 @@ class QuestionSetFeedbackPersisterTest {
 
     @Mock
     private TimestampFeedbackBatch timestampFeedbackBatch;
+
+    @Mock
+    private NonverbalScorePersister nonverbalScorePersister;
 
     @Test
     @DisplayName("persist_saves_feedback_with_comment_from_request")
@@ -82,6 +86,23 @@ class QuestionSetFeedbackPersisterTest {
         // then
         assertThat(captor.getValue().getQuestionSetComment()).isEqualTo("저장 확인");
         then(feedbackRepository).should().save(any(QuestionSetFeedback.class));
+    }
+
+    @Test
+    @DisplayName("persist_delegates_nonverbal_score_persistence_after_feedback_save")
+    void persist_delegates_nonverbalScorePersistence() {
+        // given
+        QuestionSet questionSet = createQuestionSet(3L);
+        SaveFeedbackRequest request = createRequest("비언어 점수 포함", true, true);
+        given(feedbackRepository.save(any(QuestionSetFeedback.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        QuestionSetFeedback result = persister.persist(questionSet, request);
+
+        // then
+        then(nonverbalScorePersister).should()
+                .persistAll(questionSet, result, request.getTimestampFeedbacks());
     }
 
     // ----------------------------------------------------------------

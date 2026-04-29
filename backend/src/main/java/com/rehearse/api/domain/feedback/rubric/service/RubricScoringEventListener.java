@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
@@ -49,7 +49,7 @@ public class RubricScoringEventListener {
             Question question = resolveQuestion(event);
             QuestionSet questionSet = resolveQuestionSet(event, interview);
 
-            RubricScore score = rubricScorer.score(
+            RubricScoringResult score = rubricScorer.score(
                     question, questionSet, interview,
                     event.userAnswer(), event.analysis(),
                     event.intent(), event.resumeMode(),
@@ -89,7 +89,7 @@ public class RubricScoringEventListener {
                 .orElseThrow(() -> new IllegalStateException("QuestionSet not found: " + event.questionSetId()));
     }
 
-    private void saveIdempotent(Long interviewId, Long turnIndex, RubricScore score) {
+    private void saveIdempotent(Long interviewId, Long turnIndex, RubricScoringResult score) {
         try {
             rubricScoreStore.save(interviewId, turnIndex, score);
             log.info("RubricScore 저장 완료: interviewId={}, turnId={}, rubricId={}, scored={}",

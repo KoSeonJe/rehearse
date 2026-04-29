@@ -1,0 +1,42 @@
+# status: ACTIVE
+version: 1
+context_weights_id: nonverbal-cw-v1
+
+weights:
+  default:
+    multiplier: 1.0
+    composure_enabled: true
+
+  category:
+    CS_FUNDAMENTAL:
+      multiplier: 0.8
+      composure_enabled: true
+    LANGUAGE_FRAMEWORK:
+      multiplier: 0.8
+      composure_enabled: true
+    UI_FRAMEWORK:
+      multiplier: 0.8
+      composure_enabled: true
+    BEHAVIORAL:
+      multiplier: 1.2
+      composure_enabled: true
+
+  track_mode:
+    RESUME_BASED:
+      INTERROGATION:
+        multiplier: 1.3
+        composure_enabled: true
+      PLAYGROUND:
+        multiplier: 0.9
+        composure_enabled: false
+
+  difficulty:
+    easy:
+      multiplier: 1.0
+      composure_enabled: false
+    medium:
+      multiplier: 1.0
+      composure_enabled: true
+    hard:
+      multiplier: 1.1
+      composure_enabled: true
