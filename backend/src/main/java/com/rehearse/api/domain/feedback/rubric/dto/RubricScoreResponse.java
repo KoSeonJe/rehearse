@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric.dto;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,7 +20,7 @@ public class RubricScoreResponse {
     private final String levelFlag;
     private final LocalDateTime createdAt;
 
-    public static RubricScoreResponse from(RubricScoreEntity entity) {
+    public static RubricScoreResponse from(RubricScore entity) {
         return RubricScoreResponse.builder()
                 .id(entity.getId())
                 .interviewId(entity.getInterviewId())

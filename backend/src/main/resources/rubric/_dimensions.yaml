@@ -258,3 +258,103 @@ dimensions:
           - 선택 근거와 대안 비교까지 도달
           - '~대신 ~을 택한 이유를 복수 관점에서 서술'
           - 운영/확장성 관점 포함
+
+  D11:
+    id: fluency
+    name: Fluency
+    description: 필러 워드가 답변 전달을 방해하지 않는가
+    scope: nonverbal
+    category: nonverbal
+    data_source: lambda.nonverbalScore.d11
+    measurement: verbal.filler_word_count
+    scoring:
+      1:
+        label: 필러가 잦음
+        observable:
+          - 필러 워드 6회 이상
+          - 답변 흐름이 반복적으로 끊김
+      2:
+        label: 일부 필러 존재
+        observable:
+          - 필러 워드 3~5회
+          - 핵심 전달은 가능하지만 간헐적으로 흔들림
+      3:
+        label: 유창함
+        observable:
+          - 필러 워드 2회 이하
+          - 답변 흐름이 안정적으로 이어짐
+
+  D12:
+    id: confidence_tone
+    name: Confidence Tone
+    description: 톤과 발화 속도 변동이 자신감 있게 유지되는가
+    scope: nonverbal
+    category: nonverbal
+    data_source: lambda.nonverbalScore.d12
+    measurement: verbal.tone_label + verbal.speedVariance
+    scoring:
+      1:
+        label: 자신감 부족
+        observable:
+          - 톤이 HESITANT
+          - 발화 속도 분산 0.30 이상
+      2:
+        label: 보통
+        observable:
+          - 톤 또는 속도 안정성이 일부 흔들림
+          - 답변 전달은 가능하지만 확신이 약함
+      3:
+        label: 자신감 있음
+        observable:
+          - 톤이 CONFIDENT 또는 PROFESSIONAL
+          - 발화 속도 분산 0.15 미만
+
+  D13:
+    id: eye_contact_posture
+    name: Eye Contact & Posture
+    description: 시선과 자세가 안정적으로 유지되는가
+    scope: nonverbal
+    category: nonverbal
+    data_source: lambda.nonverbalScore.d13
+    measurement: vision.gazeOnCameraRatio + vision.postureUnstableCount
+    scoring:
+      1:
+        label: 불안정
+        observable:
+          - 카메라 응시 비율 0.30 미만
+          - 자세 불안정 횟수 5회 초과
+      2:
+        label: 보통
+        observable:
+          - 시선 또는 자세가 일부 흔들림
+          - 전반적인 전달은 유지됨
+      3:
+        label: 안정적
+        observable:
+          - 카메라 응시 비율 0.70 초과
+          - 자세 불안정 횟수 2회 이하
+
+  D14:
+    id: composure
+    name: Composure
+    description: 난이도가 올라가도 비언어 전달 안정성을 유지하는가
+    scope: nonverbal
+    category: nonverbal
+    data_source: lambda.nonverbalScore.d14
+    measurement: D11/D12/D13 previous-turn comparison when difficulty >= medium
+    scoring:
+      1:
+        label: 안정성 크게 저하
+        observable:
+          - 이전 턴 대비 D11~D13 중 2개 이상 하락
+          - 난이도 상승 시 전달 안정성이 뚜렷하게 무너짐
+      2:
+        label: 일부 저하
+        observable:
+          - 이전 턴 대비 D11~D13 중 1개 하락
+          - 압박 상황에서 일부 신호만 흔들림
+      3:
+        label: 안정성 유지
+        observable:
+          - 이전 턴 대비 하락 차원 없음
+          - 압박 상황에서도 전달 안정성 유지

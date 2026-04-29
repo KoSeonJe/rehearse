@@ -2,7 +2,7 @@ package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -60,7 +60,7 @@ class RubricScoringAdapterTest {
             given(responseParser.extractJson("content")).willReturn(json);
 
             Rubric rubric = createRubric("test-v1", List.of("D2"));
-            RubricScore result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
 
             assertThat(result.scoredDimensions()).containsExactly("D2");
             assertThat(result.dimensionScores().get("D2").score()).isEqualTo(2);
@@ -81,7 +81,7 @@ class RubricScoringAdapterTest {
             given(responseParser.extractJson("content")).willReturn(json);
 
             Rubric rubric = createRubric("test-v1", List.of("D2"));
-            RubricScore result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
 
             assertThat(result.scoredDimensions()).doesNotContain("D2");
             assertThat(result.dimensionScores().get("D2").score()).isNull();
@@ -96,7 +96,7 @@ class RubricScoringAdapterTest {
             given(responseParser.extractJson("content")).willReturn(json);
 
             Rubric rubric = createRubric("test-v1", List.of("D3"));
-            RubricScore result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D3"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D3"));
 
             assertThat(result.scoredDimensions()).doesNotContain("D3");
             assertThat(result.dimensionScores().get("D3").score()).isNull();
@@ -123,7 +123,7 @@ class RubricScoringAdapterTest {
             given(responseParser.extractJson("retry")).willReturn(retryJson);
 
             Rubric rubric = createRubric("test-v1", List.of("D2"));
-            RubricScore result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric, List.of("D2"));
 
             assertThat(result.scoredDimensions()).doesNotContain("D2");
             assertThat(result.dimensionScores().get("D2").score()).isNull();

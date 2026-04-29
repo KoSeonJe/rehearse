@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
@@ -20,7 +20,7 @@ public class SessionFeedbackInputAssembler {
 
     public SessionFeedbackInput assemble(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
-        List<RubricScoreEntity> scoreEntities = rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
+        List<RubricScore> scoreEntities = rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
 
         List<TurnScoreView> turnScores = scoreEntities.stream()
                 .map(this::toTurnScoreView)
@@ -64,7 +64,7 @@ public class SessionFeedbackInputAssembler {
         );
     }
 
-    private TurnScoreView toTurnScoreView(RubricScoreEntity entity) {
+    private TurnScoreView toTurnScoreView(RubricScore entity) {
         Map<String, DimensionScore> scores = entity.getScoresJson();
         boolean failed = scores == null || scores.isEmpty();
 
@@ -116,9 +116,9 @@ public class SessionFeedbackInputAssembler {
         return result;
     }
 
-    private List<String> extractAppliedRubrics(List<RubricScoreEntity> entities) {
+    private List<String> extractAppliedRubrics(List<RubricScore> entities) {
         return entities.stream()
-                .map(RubricScoreEntity::getRubricId)
+                .map(RubricScore::getRubricId)
                 .distinct()
                 .toList();
     }

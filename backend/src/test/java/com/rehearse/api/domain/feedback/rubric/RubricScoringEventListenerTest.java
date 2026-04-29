@@ -6,7 +6,7 @@ import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
 import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
@@ -93,7 +93,7 @@ class RubricScoringEventListenerTest {
             com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
-            RubricScore score = new RubricScore("concept-cs-fundamental-v1",
+            RubricScoringResult score = new RubricScoringResult("concept-cs-fundamental-v1",
                     List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(score);
@@ -119,7 +119,7 @@ class RubricScoringEventListenerTest {
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
-                    .willReturn(RubricScore.empty("resume-v1"));
+                    .willReturn(RubricScoringResult.empty("resume-v1"));
 
             listener.on(event);
 
@@ -162,7 +162,7 @@ class RubricScoringEventListenerTest {
             com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
-            RubricScore score = new RubricScore("resume-v1",
+            RubricScoringResult score = new RubricScoringResult("resume-v1",
                     List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(score);
@@ -197,7 +197,7 @@ class RubricScoringEventListenerTest {
             com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
-            RubricScore score = new RubricScore("resume-v1",
+            RubricScoringResult score = new RubricScoringResult("resume-v1",
                     List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(score);
@@ -221,8 +221,8 @@ class RubricScoringEventListenerTest {
         );
     }
 
-    private RubricScoreEntity mockExistingEntity() {
-        return RubricScoreEntity.builder()
+    private RubricScore mockExistingEntity() {
+        return RubricScore.builder()
                 .interviewId(1L)
                 .turnId(0L)
                 .rubricId("concept-cs-fundamental-v1")

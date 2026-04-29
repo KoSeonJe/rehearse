@@ -14,6 +14,7 @@ public class AnswerResponse {
     private final String questionText;
     private final String modelAnswer;
     private final String feedbackPerspective;
+    private final String difficulty;
     private final long startMs;
     private final long endMs;
 
@@ -30,6 +31,7 @@ public class AnswerResponse {
                 .questionText(question.getQuestionText())
                 .modelAnswer(question.getModelAnswer())
                 .feedbackPerspective(perspective)
+                .difficulty("easy")
                 .startMs(answer.getStartMs())
                 .endMs(answer.getEndMs())
                 .build();

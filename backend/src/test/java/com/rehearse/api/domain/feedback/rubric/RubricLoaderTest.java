@@ -147,11 +147,13 @@ class RubricLoaderTest {
     }
 
     @Test
-    @DisplayName("D1~D10 차원 모두 로드됨")
-    void getAllDimensions_allTenLoaded() {
+    @DisplayName("D1~D14 차원 모두 로드됨")
+    void getAllDimensions_allFourteenLoaded() {
         var dimensions = rubricLoader.getAllDimensions();
 
-        assertThat(dimensions).containsKeys("D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10");
+        assertThat(dimensions).containsKeys(
+                "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10",
+                "D11", "D12", "D13", "D14");
     }
 
     @Test
@@ -162,6 +164,15 @@ class RubricLoaderTest {
         assertThat(d2).isNotNull();
         assertThat(d2.name()).isEqualTo("Technical Depth");
         assertThat(d2.scoring()).containsKeys(1, 2, 3);
+    }
+
+    @Test
+    @DisplayName("D11~D14는 비언어 채점 차원으로 로드됨")
+    void getAllDimensions_nonverbalDimensionsLoaded() {
+        assertThat(rubricLoader.getDimension("D11").name()).isEqualTo("Fluency");
+        assertThat(rubricLoader.getDimension("D12").name()).isEqualTo("Confidence Tone");
+        assertThat(rubricLoader.getDimension("D13").name()).isEqualTo("Eye Contact & Posture");
+        assertThat(rubricLoader.getDimension("D14").name()).isEqualTo("Composure");
     }
 
     private QuestionSet buildQuestionSet(QuestionSetCategory category) {

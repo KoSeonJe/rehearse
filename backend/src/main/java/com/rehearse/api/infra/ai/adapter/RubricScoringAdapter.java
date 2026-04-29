@@ -2,7 +2,7 @@ package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
@@ -27,7 +27,7 @@ public class RubricScoringAdapter {
     private final AiResponseParser responseParser;
     private final ObjectMapper objectMapper;
 
-    public RubricScore adapt(AiClient client, ChatRequest request, Rubric rubric, List<String> dimensionsToScore) {
+    public RubricScoringResult adapt(AiClient client, ChatRequest request, Rubric rubric, List<String> dimensionsToScore) {
         ChatResponse response = client.chat(request);
         return parseRubricScore(response, client, request, rubric, dimensionsToScore);
     }
@@ -35,7 +35,7 @@ public class RubricScoringAdapter {
     private static final int SCORE_MIN = 1;
     private static final int SCORE_MAX = 3;
 
-    private RubricScore parseRubricScore(
+    private RubricScoringResult parseRubricScore(
             ChatResponse response, AiClient client, ChatRequest request,
             Rubric rubric, List<String> dimensionsToScore
     ) {
@@ -70,7 +70,7 @@ public class RubricScoringAdapter {
                 .anyMatch(ds -> ds != null && ds.score() != null && ds.evidenceQuote() == null);
     }
 
-    private RubricScore retryForEvidenceQuote(
+    private RubricScoringResult retryForEvidenceQuote(
             AiClient client, ChatRequest request, Rubric rubric, List<String> dimensionsToScore
     ) {
         try {
@@ -134,7 +134,7 @@ public class RubricScoringAdapter {
         return score;
     }
 
-    private RubricScore buildRubricScore(
+    private RubricScoringResult buildRubricScore(
             String rubricId, List<String> dimensionsToScore, Map<String, DimensionScore> scores
     ) {
         List<String> scored = new ArrayList<>();
@@ -144,15 +144,15 @@ public class RubricScoringAdapter {
                 scored.add(dim);
             }
         }
-        return new RubricScore(rubricId, List.copyOf(scored), Map.copyOf(scores), null);
+        return new RubricScoringResult(rubricId, List.copyOf(scored), Map.copyOf(scores), null);
     }
 
-    private RubricScore buildFallbackScore(String rubricId, List<String> dimensionsToScore, String reason) {
+    private RubricScoringResult buildFallbackScore(String rubricId, List<String> dimensionsToScore, String reason) {
         Map<String, DimensionScore> fallback = new HashMap<>();
         for (String dim : dimensionsToScore) {
             fallback.put(dim, DimensionScore.notApplicable(reason));
         }
-        return new RubricScore(rubricId, List.of(), Map.copyOf(fallback), null);
+        return new RubricScoringResult(rubricId, List.of(), Map.copyOf(fallback), null);
     }
 
     private String buildSchemaExample(List<String> dimensionsToScore) {

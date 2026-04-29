@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
@@ -31,7 +31,7 @@ public class RubricScorer {
     private final RubricScoringAdapter adapter;
     private final AiClient aiClient;
 
-    public RubricScore score(
+    public RubricScoringResult score(
             Question question,
             QuestionSet questionSet,
             Interview interview,
@@ -48,7 +48,7 @@ public class RubricScorer {
         if (dimensionsToScore.isEmpty()) {
             log.debug("채점 차원 없음 — empty RubricScore 반환: rubricId={}, intent={}, resumeMode={}",
                     rubric.rubricId(), intent, resumeMode);
-            return RubricScore.empty(rubric.rubricId());
+            return RubricScoringResult.empty(rubric.rubricId());
         }
 
         InterviewLevel userLevel = interview.getLevel();
