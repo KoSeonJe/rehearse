@@ -42,6 +42,11 @@ class TestCoerceClampedFloat:
         from handler import _coerce_clamped_float
         assert _coerce_clamped_float(1, 0.0, 1.0, default=0.5) == 1.0
 
+    def test_bool_returns_default(self):
+        from handler import _coerce_clamped_float
+        assert _coerce_clamped_float(True, 0.0, 1.0, default=0.5) == 0.5
+        assert _coerce_clamped_float(False, 0.0, 1.0, default=0.5) == 0.5
+
 
 class TestCoerceClampedInt:
     def test_normal_value(self):
@@ -67,6 +72,11 @@ class TestCoerceClampedInt:
     def test_float_string_coerced(self):
         from handler import _coerce_clamped_int
         assert _coerce_clamped_int("3.7", 0, 100, default=0) == 3
+
+    def test_bool_returns_default(self):
+        from handler import _coerce_clamped_int
+        assert _coerce_clamped_int(True, 0, 100, default=0) == 0
+        assert _coerce_clamped_int(False, 0, 100, default=0) == 0
 
 
 class TestClassifyErrorSchemaMissing:

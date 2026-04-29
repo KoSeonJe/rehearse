@@ -262,7 +262,7 @@ def _run_gemini_pipeline(
             fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
             fb["emotionLabel"] = vocal.get("emotionLabel")
             fb["speedVariance"] = _coerce_clamped_float(
-                vocal.get("speedVariance"), 0.0, 1.0, default=0.5
+                vocal.get("speedVariance"), 0.0, 1.0, default=0.5, field="vocal.speedVariance"
             )
             fb["vocalComment"] = _comment_block(vocal)
             fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
@@ -277,10 +277,10 @@ def _run_gemini_pipeline(
             fb["postureLevel"] = vision.get("postureLevel")
             fb["expressionLabel"] = vision.get("expressionLabel")
             fb["gazeOnCameraRatio"] = _coerce_clamped_float(
-                vision.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5
+                vision.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5, field="vision.gazeOnCameraRatio"
             )
             fb["postureUnstableCount"] = _coerce_clamped_int(
-                vision.get("postureUnstableCount"), 0, 100, default=0
+                vision.get("postureUnstableCount"), 0, 100, default=0, field="vision.postureUnstableCount"
             )
             fb["nonverbalComment"] = _comment_block(vision)
 
@@ -379,7 +379,7 @@ def _build_timestamp_feedbacks(
             fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
             fb["emotionLabel"] = ""
             fb["speedVariance"] = _coerce_clamped_float(
-                verbal.get("speed_variance"), 0.0, 1.0, default=0.5
+                verbal.get("speed_variance"), 0.0, 1.0, default=0.5, field="verbal.speed_variance"
             )
             fb["vocalComment"] = None
             fb["accuracyIssues"] = "[]"
@@ -393,10 +393,10 @@ def _build_timestamp_feedbacks(
             fb["postureLevel"] = vision_result.get("postureLevel")
             fb["expressionLabel"] = vision_result.get("expressionLabel")
             fb["gazeOnCameraRatio"] = _coerce_clamped_float(
-                vision_result.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5
+                vision_result.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5, field="vision.gazeOnCameraRatio"
             )
             fb["postureUnstableCount"] = _coerce_clamped_int(
-                vision_result.get("postureUnstableCount"), 0, 100, default=0
+                vision_result.get("postureUnstableCount"), 0, 100, default=0, field="vision.postureUnstableCount"
             )
             fb["nonverbalComment"] = _comment_block(vision_result)
 
@@ -568,28 +568,43 @@ def _classify_error(e: Exception) -> str:
     return "INTERNAL_ERROR"
 
 
-def _coerce_clamped_float(value, lo: float, hi: float, default: float) -> float:
-    """plan-11a: 신규 수치 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
-    if value is None:
+def _coerce_clamped_float(value, lo: float, hi: float, default: float, *, field: str = "") -> float:
+    """신규 수치 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
+    if value is None or isinstance(value, bool):
+        if field:
+            print(f"[Analysis][Schema] missing field={field} → default={default}")
         return default
     try:
         v = float(value)
     except (TypeError, ValueError):
+        if field:
+            print(f"[Analysis][Schema] invalid field={field} value={value!r} → default={default}")
         return default
     if v != v:  # NaN
+        if field:
+            print(f"[Analysis][Schema] NaN field={field} → default={default}")
         return default
     return max(lo, min(hi, v))
 
 
-def _coerce_clamped_int(value, lo: int, hi: int, default: int) -> int:
-    """plan-11a: 신규 정수 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
-    if value is None:
+def _coerce_clamped_int(value, lo: int, hi: int, default: int, *, field: str = "") -> int:
+    """신규 정수 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
+    if value is None or isinstance(value, bool):
+        if field:
+            print(f"[Analysis][Schema] missing field={field} → default={default}")
         return default
     try:
         v = int(value)
     except (TypeError, ValueError):
         try:
-            v = int(float(value))
+            f = float(value)
         except (TypeError, ValueError):
+            if field:
+                print(f"[Analysis][Schema] invalid field={field} value={value!r} → default={default}")
             return default
+        if f != f:  # NaN
+            if field:
+                print(f"[Analysis][Schema] NaN field={field} → default={default}")
+            return default
+        v = int(f)
     return max(lo, min(hi, v))
