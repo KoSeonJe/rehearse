@@ -195,12 +195,26 @@ Every `.omc/plans/` spec must include a **"Why"** section before implementation 
 - Actively use custom sub-agents defined in `.claude/agents/`
 - **Prefer custom agents over built-in agents** (they are optimized for this project's context)
 - Key agents:
-  - **Architecture review**: `architect-reviewer` (Opus) — architectural consistency, SOLID, layering
   - **Code review**: `code-reviewer` (Opus) — security, performance, tech debt, comprehensive review
   - **FE implementation**: `frontend` / `frontend-developer` — logic, state management, components
   - **BE implementation**: `backend` / `backend-architect` — API, business logic, DB schema
+  - **Release/Ops 위임 (Sonnet)**: `release-ops` — progress.md 갱신, 진행 로그/핸드오프 문서 작성, `/create-pr` 호출, `/lambda-deploy` 실행, AWS 환경변수 적용 등 정해진 절차 수행
   - **Others**: `designer`, `qa`, `devops`, `test-engineer`, `debugger`, etc.
 - Run multiple agents **in parallel** for complex tasks to maximize efficiency
+
+### Mandatory Delegation — Release/Ops 작업 (Required)
+
+다음 작업은 **반드시 `release-ops` 에이전트(Sonnet) 에 위임**한다. 메인 세션(Opus) 이 직접 수행하지 않는다 — 비용 차이가 크고 사고 부담이 없는 정형 절차이기 때문.
+
+- `docs/plans/**/progress.md` 의 행 상태 변경 / 진행 로그 항목 추가
+- `docs/todo/<날짜>/*.md` 핸드오프 문서 작성·갱신
+- `/create-pr` 스킬을 통한 PR 생성 (커밋·푸시 포함)
+- `gh pr merge --squash` 머지 (사용자 사전 승인 시)
+- `/lambda-deploy` 스킬 실행 + smoke 검증
+- AWS Lambda 환경변수 / 구성 변경 (`update-function-configuration --cli-input-json`)
+- 단순 `git checkout` / `git pull` 같은 머지 후 동기화
+
+위 작업이 등장하면 **메인 컨텍스트 절약 + 비용 절감** 을 위해 즉시 `Agent(subagent_type=release-ops, ...)` 호출. 결과만 받아서 사용자에게 보고.
 
 ### Agent Assignment in Plan Mode (Required)
 
@@ -216,7 +230,7 @@ Example:
 ```
 ## Task 1: Interview Creation API
 - Implement: `backend` — API endpoints + service logic
-- Review: `architect-reviewer` — layering, SOLID
+- Review: `code-reviewer` — code quality, layering, SOLID
 
 ## Task 2: Setup Wizard UI
 - Implement: `frontend` — components + state management
@@ -231,14 +245,14 @@ Example:
 
 모든 서브 에이전트는 **작업 착수 전** 담당 영역의 컨벤션 문서를 `Read` 도구로 직접 로드한 뒤 구현한다. 이는 에이전트 자체 프롬프트(`.claude/agents/*.md`)에도 강제되어 있지만, 에이전트 호출 프롬프트에도 반드시 아래 파일들을 명시한다.
 
-**Backend 작업 (backend / backend-architect / debugger / architect-reviewer)**:
+**Backend 작업 (backend / backend-architect / debugger)**:
 - `backend/CONVENTIONS.md`, `backend/CODING_GUIDE.md`, `backend/TEST_STRATEGY.md`
 
 **Frontend 작업 (frontend / frontend-developer / designer / debugger)**:
 - `frontend/CONVENTIONS.md`, `frontend/CODING_GUIDE.md`
 - `DESIGN.md`, `.claude/rules/frontend-design-rules.md`
 
-**리뷰/테스트 에이전트 (code-reviewer / architect-reviewer / test-engineer / qa)**:
+**리뷰/테스트 에이전트 (code-reviewer / test-engineer / qa)**:
 - 대상 코드 영역의 BE/FE 컨벤션 + `CLAUDE.md` (루트)
 
 **공통 필수 룰 (재확인용 요약)**:
