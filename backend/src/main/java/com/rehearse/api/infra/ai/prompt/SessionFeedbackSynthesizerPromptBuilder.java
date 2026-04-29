@@ -71,7 +71,7 @@ public class SessionFeedbackSynthesizerPromptBuilder {
                 .replace("{{APPLIED_RUBRICS}}", serialize(input.appliedRubrics()))
                 .replace("{{DELIVERY_ANALYSIS_JSON}}", nullSafe(input.deliveryAnalysis()))
                 .replace("{{VISION_ANALYSIS_JSON}}", nullSafe(input.visionAnalysis()))
-                .replace("{{NONVERBAL_AGGREGATE_JSON}}", nullSafe(input.nonverbalAggregate()));
+                .replace("{{NONVERBAL_AGGREGATE_JSON}}", nonverbalAggregateJson(input));
     }
 
     private String serialize(Object obj) {
@@ -86,5 +86,12 @@ public class SessionFeedbackSynthesizerPromptBuilder {
 
     private String nullSafe(String value) {
         return value != null ? value : "null";
+    }
+
+    private String nonverbalAggregateJson(SessionFeedbackInput input) {
+        if (input.nonverbalAggregate() != null) {
+            return serialize(input.nonverbalAggregate());
+        }
+        return nullSafe(input.legacyNonverbalAggregateJson());
     }
 }

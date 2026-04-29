@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
@@ -44,8 +42,6 @@ class SessionFeedbackInputAssemblerTest {
     @Mock
     private InterviewFinder interviewFinder;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
     private Interview mockInterview;
 
     @BeforeEach
@@ -54,7 +50,6 @@ class SessionFeedbackInputAssemblerTest {
                 rubricScoreRepository,
                 nonverbalScoreRepository,
                 interviewFinder,
-                objectMapper,
                 new NonverbalImprovementActionsLoader()
         );
         mockInterview = Interview.builder()
@@ -130,8 +125,26 @@ class SessionFeedbackInputAssemblerTest {
     }
 
     @Test
+    @DisplayName("sessionMetadata는 타입 있는 record로 생성된다")
+    void assemble_createsTypedSessionMetadata() {
+        Long interviewId = 20L;
+
+        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
+                .willReturn(List.of());
+
+        SessionFeedbackInput input = assembler.assemble(interviewId);
+
+        assertThat(input.sessionMetadata().position()).isEqualTo("BACKEND");
+        assertThat(input.sessionMetadata().level()).isEqualTo("MID");
+        assertThat(input.sessionMetadata().interviewTypes()).containsExactly("CS_FUNDAMENTAL");
+        assertThat(input.sessionMetadata().totalTurns()).isZero();
+        assertThat(input.sessionMetadata().durationMinutes()).isEqualTo(30);
+    }
+
+    @Test
     @DisplayName("DB nonverbal_score가 있으면 D11~D14 aggregate와 최저 차원 개선 액션을 Delivery 입력으로 사용한다")
-    void assembleWithDelivery_usesDbNonverbalScoresForAggregate() throws Exception {
+    void assembleWithDelivery_usesDbNonverbalScoresForTypedAggregate() {
         Long interviewId = 3L;
         RubricScore contentScore = RubricScore.builder()
                 .interviewId(interviewId)
@@ -174,20 +187,20 @@ class SessionFeedbackInputAssemblerTest {
                 "{\"legacy\":\"aggregate\"}"
         );
 
-        JsonNode aggregate = objectMapper.readTree(input.nonverbalAggregate());
+        SessionFeedbackInput.NonverbalDeliveryAggregate aggregate = input.nonverbalAggregate();
 
-        assertThat(aggregate.get("source").asText()).isEqualTo("nonverbal_score");
-        assertThat(aggregate.get("legacyAggregate").get("legacy").asText()).isEqualTo("aggregate");
-        assertThat(aggregate.get("turns")).hasSize(2);
-        assertThat(aggregate.get("turns").get(0).get("turnId").asLong()).isEqualTo(1L);
-        assertThat(aggregate.get("turns").get(0).get("scores").get("D13").asInt()).isEqualTo(1);
-        assertThat(aggregate.get("turns").get(0).get("contextMultiplier").asDouble()).isEqualTo(1.1);
-        assertThat(aggregate.get("averageScores").get("D11").asDouble()).isEqualTo(2.0);
-        assertThat(aggregate.get("averageScores").get("D13").asDouble()).isEqualTo(1.0);
-        assertThat(aggregate.get("lowestDimension").get("dimension").asText()).isEqualTo("D13");
-        assertThat(aggregate.get("lowestDimension").get("averageScore").asDouble()).isEqualTo(1.0);
-        assertThat(aggregate.get("recommendedActions").get(0).get("dimension").asText()).isEqualTo("D13");
-        assertThat(aggregate.get("recommendedActions").get(0).get("actions").get(0).asText())
+        assertThat(aggregate.source()).isEqualTo("nonverbal_score");
+        assertThat(input.legacyNonverbalAggregateJson()).isNull();
+        assertThat(aggregate.turns()).hasSize(2);
+        assertThat(aggregate.turns().getFirst().turnId()).isEqualTo(1L);
+        assertThat(aggregate.turns().getFirst().scores()).containsEntry("D13", 1);
+        assertThat(aggregate.turns().getFirst().contextMultiplier()).isEqualTo(1.1);
+        assertThat(aggregate.averageScores()).containsEntry("D11", 2.0);
+        assertThat(aggregate.averageScores()).containsEntry("D13", 1.0);
+        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("D13");
+        assertThat(aggregate.lowestDimension().averageScore()).isEqualTo(1.0);
+        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("D13");
+        assertThat(aggregate.recommendedActions().getFirst().actions().getFirst())
                 .contains("카메라를 보고 말하기");
     }
 
@@ -210,6 +223,7 @@ class SessionFeedbackInputAssemblerTest {
                 legacyAggregate
         );
 
-        assertThat(input.nonverbalAggregate()).isEqualTo(legacyAggregate);
+        assertThat(input.nonverbalAggregate()).isNull();
+        assertThat(input.legacyNonverbalAggregateJson()).isEqualTo(legacyAggregate);
     }
 }

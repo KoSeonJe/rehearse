@@ -1,8 +1,5 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
@@ -26,7 +23,6 @@ public class SessionFeedbackInputAssembler {
     private final RubricScoreRepository rubricScoreRepository;
     private final NonverbalScoreRepository nonverbalScoreRepository;
     private final InterviewFinder interviewFinder;
-    private final ObjectMapper objectMapper;
     private final NonverbalImprovementActionsLoader nonverbalImprovementActionsLoader;
 
     public SessionFeedbackInput assemble(Long interviewId) {
@@ -44,13 +40,14 @@ public class SessionFeedbackInputAssembler {
         Map<String, Map<String, Double>> scoresByCategory = buildScoresByCategory(okTurns);
         List<String> appliedRubrics = extractAppliedRubrics(scoreEntities);
         String coverage = buildCoverage(turnScores);
-        Object sessionMetadata = buildSessionMetadata(interview, scoreEntities.size());
+        SessionFeedbackInput.SessionMetadata sessionMetadata = buildSessionMetadata(interview, scoreEntities.size());
 
         return new SessionFeedbackInput(
                 sessionMetadata,
                 turnScores,
                 scoresByCategory,
                 appliedRubrics,
+                null,
                 null,
                 null,
                 null,
@@ -62,7 +59,9 @@ public class SessionFeedbackInputAssembler {
     public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
                                                       String visionAnalysis, String nonverbalAggregate) {
         SessionFeedbackInput base = assemble(interviewId);
-        String resolvedNonverbalAggregate = buildNonverbalAggregate(interviewId, nonverbalAggregate);
+        SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
+                buildNonverbalAggregate(interviewId);
+        String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
         return new SessionFeedbackInput(
                 base.sessionMetadata(),
                 base.turnScores(),
@@ -71,52 +70,49 @@ public class SessionFeedbackInputAssembler {
                 deliveryAnalysis,
                 visionAnalysis,
                 resolvedNonverbalAggregate,
+                legacyNonverbalAggregateJson,
                 base.coverage(),
                 base.userLevel()
         );
     }
 
-    private String buildNonverbalAggregate(Long interviewId, String fallbackAggregate) {
+    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(Long interviewId) {
         List<NonverbalScore> scores = nonverbalScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
         if (scores.isEmpty()) {
-            return fallbackAggregate;
+            return null;
         }
 
         Map<String, Double> averageScores = buildNonverbalAverageScores(scores);
-        LowestDimension lowestDimension = findLowestDimension(averageScores);
+        SessionFeedbackInput.LowestDimension lowestDimension = findLowestDimension(averageScores);
 
-        Map<String, Object> aggregate = new LinkedHashMap<>();
-        aggregate.put("source", "nonverbal_score");
-        aggregate.put("turns", scores.stream().map(this::toNonverbalTurn).toList());
-        aggregate.put("averageScores", averageScores);
-        aggregate.put("lowestDimension", lowestDimension.toMap());
-        aggregate.put("averageContextMultiplier", averageContextMultiplier(scores));
-        aggregate.put("recommendedActions", List.of(Map.of(
-                "dimension", lowestDimension.dimension(),
-                "actions", nonverbalImprovementActionsLoader.resolve(
+        return new SessionFeedbackInput.NonverbalDeliveryAggregate(
+                "nonverbal_score",
+                scores.stream().map(this::toNonverbalTurn).toList(),
+                averageScores,
+                lowestDimension,
+                averageContextMultiplier(scores),
+                List.of(new SessionFeedbackInput.RecommendedAction(
                         lowestDimension.dimension(),
-                        lowestDimension.averageScore()
-                )
-        )));
-        Object legacyAggregate = parseJsonOrRaw(fallbackAggregate);
-        if (legacyAggregate != null) {
-            aggregate.put("legacyAggregate", legacyAggregate);
-        }
-        return writeJson(aggregate);
+                        nonverbalImprovementActionsLoader.resolve(
+                                lowestDimension.dimension(),
+                                lowestDimension.averageScore()
+                        )
+                ))
+        );
     }
 
-    private Map<String, Object> toNonverbalTurn(NonverbalScore score) {
-        Map<String, Object> turn = new LinkedHashMap<>();
+    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(NonverbalScore score) {
         Map<String, Integer> dimensionScores = new LinkedHashMap<>();
         dimensionScores.put("D11", score.getFluencyScore());
         dimensionScores.put("D12", score.getToneScore());
         dimensionScores.put("D13", score.getPostureScore());
         dimensionScores.put("D14", score.getComposureScore());
 
-        turn.put("turnId", score.getTurnId());
-        turn.put("scores", dimensionScores);
-        turn.put("contextMultiplier", toDouble(score.getContextMultiplier()));
-        return turn;
+        return new SessionFeedbackInput.NonverbalTurnAggregate(
+                score.getTurnId(),
+                dimensionScores,
+                toDouble(score.getContextMultiplier())
+        );
     }
 
     private Map<String, Double> buildNonverbalAverageScores(List<NonverbalScore> scores) {
@@ -128,11 +124,11 @@ public class SessionFeedbackInputAssembler {
         return averages;
     }
 
-    private LowestDimension findLowestDimension(Map<String, Double> averages) {
+    private SessionFeedbackInput.LowestDimension findLowestDimension(Map<String, Double> averages) {
         return averages.entrySet().stream()
                 .min(Map.Entry.comparingByValue())
-                .map(entry -> new LowestDimension(entry.getKey(), entry.getValue()))
-                .orElse(new LowestDimension("D11", 0.0));
+                .map(entry -> new SessionFeedbackInput.LowestDimension(entry.getKey(), entry.getValue()))
+                .orElse(new SessionFeedbackInput.LowestDimension("D11", 0.0));
     }
 
     private double average(List<Integer> scores) {
@@ -164,26 +160,6 @@ public class SessionFeedbackInputAssembler {
 
     private double round2(double value) {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
-    }
-
-    private Object parseJsonOrRaw(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        try {
-            JsonNode node = objectMapper.readTree(value);
-            return node;
-        } catch (JsonProcessingException e) {
-            return value;
-        }
-    }
-
-    private String writeJson(Object value) {
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("SessionFeedback nonverbal aggregate 직렬화 실패", e);
-        }
     }
 
     private TurnScoreView toTurnScoreView(RubricScore entity) {
@@ -256,26 +232,16 @@ public class SessionFeedbackInputAssembler {
         return ok + "/" + turnScores.size() + " turns scored";
     }
 
-    private Object buildSessionMetadata(Interview interview, int totalTurns) {
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("interviewId", interview.getId());
-        metadata.put("position", interview.getPosition() != null ? interview.getPosition().name() : "UNKNOWN");
-        metadata.put("level", interview.getLevel() != null ? interview.getLevel().name() : "MID");
-        metadata.put("interviewTypes", interview.getInterviewTypes().stream()
-                .map(Enum::name)
-                .toList());
-        metadata.put("totalTurns", totalTurns);
-        metadata.put("durationMinutes", interview.getDurationMinutes() != null ? interview.getDurationMinutes() : 0);
-        return metadata;
-    }
-
-    private record LowestDimension(String dimension, double averageScore) {
-
-        private Map<String, Object> toMap() {
-            return Map.of(
-                    "dimension", dimension,
-                    "averageScore", averageScore
-            );
-        }
+    private SessionFeedbackInput.SessionMetadata buildSessionMetadata(Interview interview, int totalTurns) {
+        return new SessionFeedbackInput.SessionMetadata(
+                interview.getId(),
+                interview.getPosition() != null ? interview.getPosition().name() : "UNKNOWN",
+                interview.getLevel() != null ? interview.getLevel().name() : "MID",
+                interview.getInterviewTypes().stream()
+                        .map(Enum::name)
+                        .toList(),
+                totalTurns,
+                interview.getDurationMinutes() != null ? interview.getDurationMinutes() : 0
+        );
     }
 }
