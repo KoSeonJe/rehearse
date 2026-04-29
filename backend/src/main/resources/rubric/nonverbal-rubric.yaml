@@ -1,0 +1,40 @@
+# status: ACTIVE
+version: 1
+rubric_id: nonverbal-v1
+description: Deterministic delivery rubric for D11-D14 nonverbal interview signals.
+
+uses_dimensions:
+  - ref: D11
+    weight: 0.25
+  - ref: D12
+    weight: 0.25
+  - ref: D13
+    weight: 0.25
+  - ref: D14
+    weight: 0.25
+    conditional: difficulty >= medium
+
+per_turn_rules:
+  default:
+    - D11
+    - D12
+    - D13
+  medium_or_hard:
+    - D11
+    - D12
+    - D13
+    - D14
+
+level_expectations:
+  easy:
+    must_reach_2: [D11, D12, D13]
+    must_reach_3: []
+    must_reach_1: []
+  medium:
+    must_reach_2: [D11, D12, D13, D14]
+    must_reach_3: []
+    must_reach_1: []
+  hard:
+    must_reach_2: [D11, D12, D13, D14]
+    must_reach_3: [D14]
+    must_reach_1: []
