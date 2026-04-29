@@ -21,8 +21,25 @@ from analyzers.gemini_analyzer import analyze_answer_audio
 from analyzers.stt_analyzer import transcribe_chunked
 from analyzers.vision_analyzer import analyze_frames
 from analyzers.verbal_analyzer import analyze_verbal
+from analyzers.nonverbal_rubric_mapper import NonverbalRubricMapper
+
+_RUBRIC_MAPPER = NonverbalRubricMapper()
 
 WORK_DIR = "/tmp/analysis"
+
+
+def _build_nonverbal_score(
+    verbal_dict: dict,
+    vision_dict: dict,
+    prev_score: dict | None,
+    difficulty: str,
+) -> dict:
+    return _RUBRIC_MAPPER.score_turn(
+        verbal=verbal_dict,
+        vision=vision_dict,
+        prev=prev_score,
+        meta={"difficulty": difficulty},
+    )
 
 
 def lambda_handler(event, context):
@@ -238,6 +255,7 @@ def _run_gemini_pipeline(
 
     # 피드백 조립
     timestamp_feedbacks = []
+    prev_score: dict | None = None
     for i, answer in enumerate(answers):
         gemini = gemini_results[i]
         vision = vision_results[i]
@@ -285,6 +303,22 @@ def _run_gemini_pipeline(
             fb["nonverbalComment"] = _comment_block(vision)
 
         fb["overallComment"] = _comment_block(gemini.get("overall")) if gemini else None
+
+        score = _build_nonverbal_score(
+            verbal_dict={
+                "filler_word_count": fb.get("fillerWordCount", 0),
+                "tone_label": _level_to_tone_label(fb.get("toneConfidenceLevel")),
+                "speedVariance": fb.get("speedVariance", 0.5),
+            },
+            vision_dict={
+                "gazeOnCameraRatio": fb.get("gazeOnCameraRatio", 0.5),
+                "postureUnstableCount": fb.get("postureUnstableCount", 0),
+            },
+            prev_score=prev_score,
+            difficulty=answer.get("difficulty", "easy"),
+        )
+        fb["nonverbalScore"] = score
+        prev_score = score
         timestamp_feedbacks.append(fb)
 
     return timestamp_feedbacks, verbal_ok, nonverbal_ok
@@ -339,6 +373,7 @@ def _build_timestamp_feedbacks(
     feedbacks = []
     stt_text = stt_result["full_text"] if stt_result else ""
     stt_segments = stt_result["segments"] if stt_result else []
+    prev_score: dict | None = None
 
     for answer in answers:
         start_ms = answer["startMs"]
@@ -402,6 +437,22 @@ def _build_timestamp_feedbacks(
 
         fb["overallComment"] = None
 
+        score = _build_nonverbal_score(
+            verbal_dict={
+                "filler_word_count": fb.get("fillerWordCount", 0),
+                "tone_label": (verbal or {}).get("tone_label", "PROFESSIONAL"),
+                "speedVariance": fb.get("speedVariance", 0.5),
+            },
+            vision_dict={
+                "gazeOnCameraRatio": fb.get("gazeOnCameraRatio", 0.5),
+                "postureUnstableCount": fb.get("postureUnstableCount", 0),
+            },
+            prev_score=prev_score,
+            difficulty=answer.get("difficulty", "easy"),
+        )
+        fb["nonverbalScore"] = score
+        prev_score = score
+
         feedbacks.append(fb)
 
     return feedbacks
@@ -436,6 +487,15 @@ def _compute_overall(feedbacks: list[dict]) -> str:
 
     comment = "전반적으로 " + ", ".join(parts) + "되었습니다."
     return comment
+
+
+def _level_to_tone_label(level: str | None) -> str:
+    """toneConfidenceLevel(GOOD/AVERAGE/NEEDS_IMPROVEMENT) → tone_label for D12 매퍼."""
+    if level == "GOOD":
+        return "CONFIDENT"
+    if level == "NEEDS_IMPROVEMENT":
+        return "HESITANT"
+    return "PROFESSIONAL"
 
 
 def _tone_label_to_level(tone_label: str | None) -> str:
