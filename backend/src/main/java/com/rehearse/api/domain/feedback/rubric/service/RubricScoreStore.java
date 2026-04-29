@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +18,13 @@ public class RubricScoreStore {
     private final RubricScoreRepository rubricScoreRepository;
 
     @Transactional(readOnly = true)
-    public Optional<RubricScoreEntity> findExisting(Long interviewId, Long turnId) {
+    public Optional<RubricScore> findExisting(Long interviewId, Long turnId) {
         return rubricScoreRepository.findFirstByInterviewIdAndTurnId(interviewId, turnId);
     }
 
     @Transactional
-    public RubricScoreEntity save(Long interviewId, Long turnId, RubricScore rubricScore) {
-        RubricScoreEntity entity = RubricScoreEntity.builder()
+    public RubricScore save(Long interviewId, Long turnId, RubricScoringResult rubricScore) {
+        RubricScore entity = RubricScore.builder()
                 .interviewId(interviewId)
                 .turnId(turnId)
                 .rubricId(rubricScore.rubricId())

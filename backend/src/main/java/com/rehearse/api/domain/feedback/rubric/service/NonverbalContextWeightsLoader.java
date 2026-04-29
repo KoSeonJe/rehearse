@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.rubric.nonverbal;
+package com.rehearse.api.domain.feedback.rubric.service;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.core.io.Resource;

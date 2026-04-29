@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
@@ -109,7 +109,7 @@ class RubricScorerTest {
             Rubric rubric = createResumeRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "잘 모르겠어요",
                     analysis, IntentType.CLARIFY_REQUEST, ResumeMode.INTERROGATION, 2, null
             );
@@ -132,10 +132,10 @@ class RubricScorerTest {
             given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D8")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(List.of("D8"))))
-                    .willReturn(new RubricScore("resume-v1", List.of("D8"),
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("D8"),
                             Map.of("D8", DimensionScore.of(2, "모른다고 인정했음", "잘 모르겠어요")), null));
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "잘 모르겠습니다",
                     analysis, IntentType.GIVE_UP, ResumeMode.INTERROGATION, 2, null
             );
@@ -157,10 +157,10 @@ class RubricScorerTest {
             given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D6")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(List.of("D6"))))
-                    .willReturn(new RubricScore("resume-v1", List.of("D6"),
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("D6"),
                             Map.of("D6", DimensionScore.of(3, "구체적 수치 제시", "TPS 10000")), null));
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "TPS 10000을 달성했습니다",
                     analysis, IntentType.ANSWER, ResumeMode.PLAYGROUND, 1, null
             );
@@ -178,13 +178,13 @@ class RubricScorerTest {
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
-                    .willReturn(new RubricScore("resume-v1", expectedDims,
+                    .willReturn(new RubricScoringResult("resume-v1", expectedDims,
                             Map.of("D2", DimensionScore.of(2, "설명", "evidence"),
                                    "D3", DimensionScore.of(2, "설명", "evidence"),
                                    "D9", DimensionScore.of(3, "설명", "evidence"),
                                    "D10", DimensionScore.of(2, "설명", "evidence")), null));
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "상세한 답변",
                     analysis, IntentType.ANSWER, ResumeMode.INTERROGATION, 2, null
             );
@@ -201,10 +201,10 @@ class RubricScorerTest {
             given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D10")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(List.of("D10"))))
-                    .willReturn(new RubricScore("resume-v1", List.of("D10"),
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("D10"),
                             Map.of("D10", DimensionScore.of(3, "L4까지 도달", "트레이드오프 비교")), null));
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "회고 답변",
                     analysis, IntentType.ANSWER, ResumeMode.WRAP_UP, 4, null
             );
@@ -227,13 +227,13 @@ class RubricScorerTest {
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
-                    .willReturn(new RubricScore("concept-cs-fundamental-v1", expectedDims,
+                    .willReturn(new RubricScoringResult("concept-cs-fundamental-v1", expectedDims,
                             Map.of("D2", DimensionScore.of(2, "설명", "ev"),
                                    "D3", DimensionScore.of(2, "설명", "ev"),
                                    "D4", DimensionScore.of(3, "정확", "ev"),
                                    "D8", DimensionScore.of(2, "인정", "ev")), null));
 
-            RubricScore result = rubricScorer.score(
+            RubricScoringResult result = rubricScorer.score(
                     question, questionSet, standardInterview, "상세한 기술 답변",
                     analysis, IntentType.ANSWER, null, null, null
             );

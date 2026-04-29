@@ -1,6 +1,6 @@
-package com.rehearse.api.domain.feedback.rubric.nonverbal.entity;
+package com.rehearse.api.domain.feedback.rubric.entity;
 
-import com.rehearse.api.domain.feedback.rubric.nonverbal.NonverbalTurnScore;
+import com.rehearse.api.domain.feedback.rubric.service.NonverbalTurnScore;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
-public class NonverbalScoreEntity {
+public class NonverbalScore {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -58,9 +58,9 @@ public class NonverbalScoreEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public NonverbalScoreEntity(Long interviewId, Long turnId, Integer d11Fluency, Integer d12Tone,
-                                Integer d13Posture, Integer d14Composure, String rawSignals,
-                                BigDecimal contextMultiplier) {
+    public NonverbalScore(Long interviewId, Long turnId, Integer d11Fluency, Integer d12Tone,
+                          Integer d13Posture, Integer d14Composure, String rawSignals,
+                          BigDecimal contextMultiplier) {
         this.interviewId = interviewId;
         this.turnId = turnId;
         this.d11Fluency = d11Fluency;
@@ -71,9 +71,9 @@ public class NonverbalScoreEntity {
         this.contextMultiplier = contextMultiplier;
     }
 
-    public static NonverbalScoreEntity from(Long interviewId, Long turnId, NonverbalTurnScore score,
-                                            String rawSignalsJson) {
-        return NonverbalScoreEntity.builder()
+    public static NonverbalScore from(Long interviewId, Long turnId, NonverbalTurnScore score,
+                                      String rawSignalsJson) {
+        return NonverbalScore.builder()
                 .interviewId(interviewId)
                 .turnId(turnId)
                 .d11Fluency(score.d11Fluency())

@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.session;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInputAssembler;
@@ -55,7 +55,7 @@ class SessionFeedbackInputAssemblerTest {
     void assemble_mapsEmptyScoresToFailedStatus() {
         Long interviewId = 1L;
 
-        RubricScoreEntity okEntity = RubricScoreEntity.builder()
+        RubricScore okEntity = RubricScore.builder()
                 .interviewId(interviewId)
                 .turnId(1L)
                 .rubricId("cs-v1")
@@ -63,7 +63,7 @@ class SessionFeedbackInputAssemblerTest {
                 .levelFlag("MID")
                 .build();
 
-        RubricScoreEntity failedEntity = RubricScoreEntity.builder()
+        RubricScore failedEntity = RubricScore.builder()
                 .interviewId(interviewId)
                 .turnId(2L)
                 .rubricId("cs-v1")
@@ -95,7 +95,7 @@ class SessionFeedbackInputAssemblerTest {
     void assemble_allOkTurns_returnsAllTurnsScoredCoverage() {
         Long interviewId = 2L;
 
-        RubricScoreEntity entity = RubricScoreEntity.builder()
+        RubricScore entity = RubricScore.builder()
                 .interviewId(interviewId)
                 .turnId(1L)
                 .rubricId("cs-v1")

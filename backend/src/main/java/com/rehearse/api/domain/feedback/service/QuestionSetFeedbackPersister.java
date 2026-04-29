@@ -2,7 +2,7 @@ package com.rehearse.api.domain.feedback.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
-import com.rehearse.api.domain.feedback.rubric.nonverbal.NonverbalScorePersister;
+import com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import lombok.RequiredArgsConstructor;

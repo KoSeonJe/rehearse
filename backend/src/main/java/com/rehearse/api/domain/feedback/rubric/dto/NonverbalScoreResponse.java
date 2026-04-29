@@ -1,6 +1,6 @@
-package com.rehearse.api.domain.feedback.rubric.nonverbal.dto;
+package com.rehearse.api.domain.feedback.rubric.dto;
 
-import com.rehearse.api.domain.feedback.rubric.nonverbal.entity.NonverbalScoreEntity;
+import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -20,7 +20,7 @@ public class NonverbalScoreResponse {
     private final String rawSignals;
     private final BigDecimal contextMultiplier;
 
-    public static NonverbalScoreResponse from(NonverbalScoreEntity entity) {
+    public static NonverbalScoreResponse from(NonverbalScore entity) {
         return NonverbalScoreResponse.builder()
                 .id(entity.getId())
                 .interviewId(entity.getInterviewId())

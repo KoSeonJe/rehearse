@@ -1,12 +1,12 @@
-package com.rehearse.api.domain.feedback.rubric.nonverbal;
+package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.rubric.nonverbal.entity.NonverbalScoreEntity;
-import com.rehearse.api.domain.feedback.rubric.nonverbal.repository.NonverbalScoreRepository;
+import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
+import com.rehearse.api.domain.feedback.rubric.repository.NonverbalScoreRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
@@ -64,7 +64,7 @@ public class NonverbalScorePersister {
             return;
         }
 
-        nonverbalScoreRepository.save(NonverbalScoreEntity.from(
+        nonverbalScoreRepository.save(NonverbalScore.from(
                 interview.getId(),
                 timestampFeedback.getId(),
                 score,

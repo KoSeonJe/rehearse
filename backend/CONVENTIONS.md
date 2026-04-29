@@ -62,7 +62,7 @@ com.rehearse.api/
 
 - 기본: 도메인 명사 (`Interview`, `Question`, `User`)
 - **예외**: 동일 패키지에 record VO와 JPA Entity가 충돌할 때만 `*Entity` 접미사 허용
-  - 예: `RubricScore` (record VO) + `RubricScoreEntity` (JPA)
+  - 예: `ExampleScore` (record VO) + `ExampleScoreEntity` (JPA)
 - 임의 `Entity` 접미사 추가 금지 — 충돌 회피 목적 외 사용 X
 
 ### 런타임 캐시 vs 영속 저장소 네이밍

@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.rubric.nonverbal;
+package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import org.junit.jupiter.api.DisplayName;
