@@ -35,17 +35,17 @@ public class NonverbalScore {
     @Column(name = "turn_id", nullable = false)
     private Long turnId;
 
-    @Column(name = "d11_fluency")
-    private Integer d11Fluency;
+    @Column(name = "fluency_score")
+    private Integer fluencyScore;
 
-    @Column(name = "d12_tone")
-    private Integer d12Tone;
+    @Column(name = "tone_score")
+    private Integer toneScore;
 
-    @Column(name = "d13_posture")
-    private Integer d13Posture;
+    @Column(name = "posture_score")
+    private Integer postureScore;
 
-    @Column(name = "d14_composure")
-    private Integer d14Composure;
+    @Column(name = "composure_score")
+    private Integer composureScore;
 
     @Column(name = "raw_signals", nullable = false, columnDefinition = "JSON")
     private String rawSignals;
@@ -58,15 +58,15 @@ public class NonverbalScore {
     private LocalDateTime createdAt;
 
     @Builder
-    public NonverbalScore(Long interviewId, Long turnId, Integer d11Fluency, Integer d12Tone,
-                          Integer d13Posture, Integer d14Composure, String rawSignals,
+    public NonverbalScore(Long interviewId, Long turnId, Integer fluencyScore, Integer toneScore,
+                          Integer postureScore, Integer composureScore, String rawSignals,
                           BigDecimal contextMultiplier) {
         this.interviewId = interviewId;
         this.turnId = turnId;
-        this.d11Fluency = d11Fluency;
-        this.d12Tone = d12Tone;
-        this.d13Posture = d13Posture;
-        this.d14Composure = d14Composure;
+        this.fluencyScore = fluencyScore;
+        this.toneScore = toneScore;
+        this.postureScore = postureScore;
+        this.composureScore = composureScore;
         this.rawSignals = rawSignals;
         this.contextMultiplier = contextMultiplier;
     }
@@ -76,10 +76,10 @@ public class NonverbalScore {
         return NonverbalScore.builder()
                 .interviewId(interviewId)
                 .turnId(turnId)
-                .d11Fluency(score.d11Fluency())
-                .d12Tone(score.d12Tone())
-                .d13Posture(score.d13Posture())
-                .d14Composure(score.d14Composure())
+                .fluencyScore(score.d11Fluency())
+                .toneScore(score.d12Tone())
+                .postureScore(score.d13Posture())
+                .composureScore(score.d14Composure())
                 .rawSignals(rawSignalsJson)
                 .contextMultiplier(BigDecimal.valueOf(score.contextMultiplier()))
                 .build();
