@@ -45,6 +45,7 @@ _FALLBACK_ANSWER = {
         "speechPace": "적절",
         "toneConfidenceLevel": "AVERAGE",
         "emotionLabel": "평온",
+        "speedVariance": 0.5,
         "positive": "",
         "negative": "",
         "suggestion": "",
@@ -125,6 +126,8 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면�
 
 **일관성 제약**: emotionLabel=자신감 → toneConfidenceLevel은 GOOD/AVERAGE만 허용 (NEEDS_IMPROVEMENT 금지). emotionLabel=긴장/불안 → NEEDS_IMPROVEMENT/AVERAGE만 허용 (GOOD 금지).
 
+**speedVariance**: 발화 속도의 분산 정도 (float, 0.0~1.0). 0.0=시종일관 일정한 페이스, 1.0=매우 불안정(빠름/느림 급변, 주저함, 말더듬 다수). 텍스트에 복창 금지 (수치 필드 전용).
+
 → enum 판정 근거가 된 관찰을 positive 또는 negative에 반드시 포함.
 
 ### 3. verbal — 답변 내용 전달력
@@ -182,6 +185,7 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면�
     "speechPace": "빠름|적절|느림",
     "toneConfidenceLevel": "GOOD|AVERAGE|NEEDS_IMPROVEMENT",
     "emotionLabel": "자신감|긴장|평온|불안",
+    "speedVariance": 0.0,
     "positive": "...", "negative": "...", "suggestion": "..."
   }},
   "verbal": {{ "positive": "...", "negative": "...", "suggestion": "..." }},
@@ -199,7 +203,7 @@ _ANSWER_USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 {model_answer_line}</user_data>
 
 ## 응답 형식 (반드시 아래 JSON 스키마로만 응답)
-{{"transcript":"","vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","positive":"","negative":"","suggestion":""}},"verbal":{{"positive":"","negative":"","suggestion":""}},"technical":{{"accuracyIssues":[],"coaching":{{"structure":"","improvement":""}}}},"attitude":{{"positive":"","negative":"","suggestion":""}},"overall":{{"positive":"","negative":"","suggestion":""}}}}"""
+{{"transcript":"","vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","speedVariance":0.0,"positive":"","negative":"","suggestion":""}},"verbal":{{"positive":"","negative":"","suggestion":""}},"technical":{{"accuracyIssues":[],"coaching":{{"structure":"","improvement":""}}}},"attitude":{{"positive":"","negative":"","suggestion":""}},"overall":{{"positive":"","negative":"","suggestion":""}}}}"""
 
 
 
