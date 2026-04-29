@@ -261,6 +261,9 @@ def _run_gemini_pipeline(
             fb["speechPace"] = vocal.get("speechPace")
             fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
             fb["emotionLabel"] = vocal.get("emotionLabel")
+            fb["speedVariance"] = _coerce_clamped_float(
+                vocal.get("speedVariance"), 0.0, 1.0, default=0.5
+            )
             fb["vocalComment"] = _comment_block(vocal)
             fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
             fb["coachingStructure"] = technical.get("coaching", {}).get("structure", "")
@@ -273,6 +276,12 @@ def _run_gemini_pipeline(
             fb["eyeContactLevel"] = vision.get("eyeContactLevel")
             fb["postureLevel"] = vision.get("postureLevel")
             fb["expressionLabel"] = vision.get("expressionLabel")
+            fb["gazeOnCameraRatio"] = _coerce_clamped_float(
+                vision.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5
+            )
+            fb["postureUnstableCount"] = _coerce_clamped_int(
+                vision.get("postureUnstableCount"), 0, 100, default=0
+            )
             fb["nonverbalComment"] = _comment_block(vision)
 
         fb["overallComment"] = _comment_block(gemini.get("overall")) if gemini else None
@@ -369,6 +378,9 @@ def _build_timestamp_feedbacks(
             fb["speechPace"] = ""
             fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
             fb["emotionLabel"] = ""
+            fb["speedVariance"] = _coerce_clamped_float(
+                verbal.get("speed_variance"), 0.0, 1.0, default=0.5
+            )
             fb["vocalComment"] = None
             fb["accuracyIssues"] = "[]"
             fb["coachingStructure"] = ""
@@ -380,6 +392,12 @@ def _build_timestamp_feedbacks(
             fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
             fb["postureLevel"] = vision_result.get("postureLevel")
             fb["expressionLabel"] = vision_result.get("expressionLabel")
+            fb["gazeOnCameraRatio"] = _coerce_clamped_float(
+                vision_result.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5
+            )
+            fb["postureUnstableCount"] = _coerce_clamped_int(
+                vision_result.get("postureUnstableCount"), 0, 100, default=0
+            )
             fb["nonverbalComment"] = _comment_block(vision_result)
 
         fb["overallComment"] = None
@@ -537,6 +555,8 @@ def _classify_error(e: Exception) -> str:
     error_str = str(e).lower()
     if isinstance(e, TimeoutError) or 'timeout' in error_str:
         return "TIMEOUT"
+    if 'schema_missing_fields' in error_str:
+        return "SCHEMA_MISSING_FIELDS"
     if 'openai' in error_str or '429' in error_str or '503' in error_str:
         return "API_ERROR"
     if 'gemini' in error_str or 'google' in error_str:
@@ -546,3 +566,30 @@ def _classify_error(e: Exception) -> str:
     if 'vision' in error_str or 'frame' in error_str:
         return "VISION_ERROR"
     return "INTERNAL_ERROR"
+
+
+def _coerce_clamped_float(value, lo: float, hi: float, default: float) -> float:
+    """plan-11a: 신규 수치 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
+    if value is None:
+        return default
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return default
+    if v != v:  # NaN
+        return default
+    return max(lo, min(hi, v))
+
+
+def _coerce_clamped_int(value, lo: int, hi: int, default: int) -> int:
+    """plan-11a: 신규 정수 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
+    if value is None:
+        return default
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        try:
+            v = int(float(value))
+        except (TypeError, ValueError):
+            return default
+    return max(lo, min(hi, v))

@@ -92,6 +92,10 @@ _SYSTEM_PROMPT = KOREAN_INSTRUCTION + """당신은 개발자 면접관 관점에
 - GOOD: 얼굴이 일관되게 정면 근처
 - AVERAGE: 그 외
 
+### 수치 필드 (텍스트 복창 금지, 내부 판정용)
+- gazeOnCameraRatio (float, 0.0~1.0): 영상 전체 프레임 중 눈동자가 카메라(화면 상단 중앙)를 향한 비율. 시선 이탈(바닥/천장/좌우)은 제외.
+- postureUnstableCount (int, 0~N): 몸이 흔들리거나 자세가 급격히 바뀐 순간의 개수. 기준은 상반신 각도가 >15° 변화한 지점.
+
 → enum을 정했으면 그 판정 근거 관찰을 positive 또는 negative에 반드시 포함.
 
 ## 서술 규칙 + 자기검증
@@ -134,6 +138,8 @@ suggestion은 [동작 동사] + [구체 부위/시점]. 예: "답변 시작 전 
   "eyeContactLevel": "GOOD|AVERAGE|NEEDS_IMPROVEMENT",
   "postureLevel": "GOOD|AVERAGE|NEEDS_IMPROVEMENT",
   "expressionLabel": "CONFIDENT|ENGAGED|NEUTRAL|NERVOUS|UNCERTAIN",
+  "gazeOnCameraRatio": 0.0,
+  "postureUnstableCount": 0,
   "positive": "[부위 관찰] + [인상] 한 문장",
   "negative": "[부위 관찰] + [인상] 한 문장",
   "suggestion": "[동작] + [부위·시점] 한 문장"
@@ -156,6 +162,8 @@ _FALLBACK = {
     "eyeContactLevel": "AVERAGE",
     "postureLevel": "AVERAGE",
     "expressionLabel": "NEUTRAL",
+    "gazeOnCameraRatio": 0.5,
+    "postureUnstableCount": 0,
     # 중립 폴백: 분석 실패 경로이므로 긍정/부정 판정 없이 중립 서술만.
     "positive": "자세와 표정 분석에 필요한 데이터가 일부 확인됐습니다.",
     "negative": "프레임 품질 또는 분량 제약으로 자세·표정 세부 평가가 제한됐습니다.",
@@ -278,9 +286,33 @@ def _validate_result(result: dict) -> dict:
         if result.get("expressionLabel") in valid_labels
         else "NEUTRAL"
     )
+    validated["gazeOnCameraRatio"] = _clamp_float(
+        result.get("gazeOnCameraRatio"), 0.0, 1.0, _FALLBACK["gazeOnCameraRatio"]
+    )
+    validated["postureUnstableCount"] = _clamp_int(
+        result.get("postureUnstableCount"), 0, 100, _FALLBACK["postureUnstableCount"]
+    )
     for key in ("positive", "negative", "suggestion"):
         validated[key] = result.get(key) or _FALLBACK[key]
     return validated
+
+
+def _clamp_float(value, lo: float, hi: float, default: float) -> float:
+    try:
+        v = float(value)
+    except (TypeError, ValueError):
+        return default
+    if v != v:  # NaN
+        return default
+    return max(lo, min(hi, v))
+
+
+def _clamp_int(value, lo: int, hi: int, default: int) -> int:
+    try:
+        v = int(value)
+    except (TypeError, ValueError):
+        return default
+    return max(lo, min(hi, v))
 
 
 def _has_gaze_mention(result: dict) -> bool:

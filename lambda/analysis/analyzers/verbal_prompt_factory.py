@@ -11,8 +11,8 @@ Signature 불변:
 - build_system_prompt(position, tech_stack, feedback_perspective=None)
 - build_user_prompt(position, tech_stack, level, question, transcript, model_answer=None)
 
-JSON 출력 키 불변 (tone_comment 1개 제거):
-- filler_word_count, tone_label, comment, attitude_comment
+JSON 출력 키 (plan-11a v2 — speed_variance 추가):
+- filler_word_count, tone_label, comment, attitude_comment, speed_variance
 """
 from __future__ import annotations
 
@@ -75,9 +75,10 @@ SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """{persona} 면접 답변의 언어적 �
 - tone_label ∈ {{PROFESSIONAL|CASUAL|HESITANT|CONFIDENT|VERBOSE}}
 - comment: 3줄 "✓ 잘한 점 / △ 보완할 점 / → 개선 방법" (기술 용어 정확성/오용, 답변 간결성, 전달 명확성 포함)
 - attitude_comment: 3줄 "✓ 긍정 / △ 부정 / → 개선" (구체적 표현·어투 근거 필수)
+- speed_variance: 발화 속도의 분산 정도. 0.0=시종일관 일정, 1.0=매우 불안정(빠름/느림 변동 큼). 주저함/말더듬 포함 (float)
 
 JSON만 응답:
-{{"filler_word_count":0,"tone_label":"","comment":"","attitude_comment":""}}"""
+{{"filler_word_count":0,"tone_label":"","comment":"","attitude_comment":"","speed_variance":0.0}}"""
 
 USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 질문: {question}
