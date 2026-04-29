@@ -29,10 +29,15 @@ class SessionFeedbackParserTest {
 
     private SessionFeedbackInput emptyInput() {
         return new SessionFeedbackInput(
-                Map.of(), Collections.emptyList(), Collections.emptyMap(),
-                Collections.emptyList(), null, null, null,
+                metadata(), Collections.emptyList(), Collections.emptyMap(),
+                Collections.emptyList(), null, null, null, null,
                 "all turns scored", InterviewLevel.MID
         );
+    }
+
+    private SessionFeedbackInput.SessionMetadata metadata() {
+        return new SessionFeedbackInput.SessionMetadata(
+                1L, "BACKEND", "MID", List.of("CS_FUNDAMENTAL"), 0, 30);
     }
 
     private SessionFeedbackInput inputWithCategories(String... categories) {
@@ -41,8 +46,8 @@ class SessionFeedbackParserTest {
             scores.put(cat, Map.of("D1", 2.5));
         }
         return new SessionFeedbackInput(
-                Map.of(), Collections.emptyList(), scores,
-                Collections.emptyList(), null, null, null,
+                metadata(), Collections.emptyList(), scores,
+                Collections.emptyList(), null, null, null, null,
                 "all turns scored", InterviewLevel.MID
         );
     }
@@ -188,8 +193,8 @@ class SessionFeedbackParserTest {
     @DisplayName("delivery 섹션에 D1 차원 코드 포함 시 예외 발생 (단어 경계 매칭)")
     void parse_throwsException_when_delivery_contains_dimension_code() {
         SessionFeedbackInput inputWithDelivery = new SessionFeedbackInput(
-                Map.of(), Collections.emptyList(), Collections.emptyMap(),
-                Collections.emptyList(), "빠른 말투", null, null,
+                metadata(), Collections.emptyList(), Collections.emptyMap(),
+                Collections.emptyList(), "빠른 말투", null, null, null,
                 "all turns scored", InterviewLevel.MID
         );
         String json = """
@@ -210,8 +215,8 @@ class SessionFeedbackParserTest {
     @DisplayName("delivery 섹션에 XD1 같은 부분 문자열은 차원 코드로 오탐하지 않는다")
     void parse_does_not_false_positive_on_partial_dimension_match() {
         SessionFeedbackInput inputWithDelivery = new SessionFeedbackInput(
-                Map.of(), Collections.emptyList(), Collections.emptyMap(),
-                Collections.emptyList(), "빠른 말투", null, null,
+                metadata(), Collections.emptyList(), Collections.emptyMap(),
+                Collections.emptyList(), "빠른 말투", null, null, null,
                 "all turns scored", InterviewLevel.MID
         );
         String json = """
@@ -225,5 +230,64 @@ class SessionFeedbackParserTest {
                 """;
         assertThatCode(() -> parser.parse(json, inputWithDelivery))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("nonverbalAggregate만 있어도 delivery 섹션이 누락되면 예외 발생")
+    void parse_throwsException_when_nonverbalAggregate_exists_but_delivery_missing() {
+        SessionFeedbackInput inputWithNonverbalAggregate = inputWithNonverbalAggregate();
+        String json = """
+                {
+                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "delivery": null,
+                  "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
+                }
+                """;
+
+        assertThatThrownBy(() -> parser.parse(json, inputWithNonverbalAggregate))
+                .isInstanceOf(SessionFeedbackParseException.class)
+                .hasMessageContaining("section=delivery");
+    }
+
+    @Test
+    @DisplayName("nonverbalAggregate만 있어도 delivery 섹션의 D11~D14 내부 차원 코드 노출은 예외 발생")
+    void parse_throwsException_when_nonverbalOnlyDeliveryContainsDimensionCode() {
+        SessionFeedbackInput inputWithNonverbalAggregate = inputWithNonverbalAggregate();
+        String json = """
+                {
+                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "delivery": {"filler_words":"양호","tone_pattern":"D13이 낮음","action":"카메라 보기"},
+                  "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
+                }
+                """;
+
+        assertThatThrownBy(() -> parser.parse(json, inputWithNonverbalAggregate))
+                .isInstanceOf(SessionFeedbackParseException.class)
+                .hasMessageContaining("section=delivery Rubric 차원 코드");
+    }
+
+    private SessionFeedbackInput inputWithNonverbalAggregate() {
+        return new SessionFeedbackInput(
+                metadata(), Collections.emptyList(), Collections.emptyMap(),
+                Collections.emptyList(), null, null,
+                new SessionFeedbackInput.NonverbalDeliveryAggregate(
+                        "nonverbal_score",
+                        List.of(new SessionFeedbackInput.NonverbalTurnAggregate(
+                                1L, Map.of("D11", 2, "D12", 3, "D13", 1, "D14", 2), 1.0
+                        )),
+                        Map.of("D11", 2.0, "D12", 3.0, "D13", 1.0, "D14", 2.0),
+                        new SessionFeedbackInput.LowestDimension("D13", 1.0),
+                        1.0,
+                        List.of(new SessionFeedbackInput.RecommendedAction(
+                                "D13", List.of("카메라를 보고 말하기")
+                        ))
+                ),
+                null,
+                "all turns scored", InterviewLevel.MID
+        );
     }
 }

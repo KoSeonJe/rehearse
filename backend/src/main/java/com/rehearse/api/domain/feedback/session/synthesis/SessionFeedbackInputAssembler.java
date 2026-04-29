@@ -1,13 +1,18 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.repository.NonverbalScoreRepository;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
+import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,7 +21,9 @@ import java.util.stream.Collectors;
 public class SessionFeedbackInputAssembler {
 
     private final RubricScoreRepository rubricScoreRepository;
+    private final NonverbalScoreRepository nonverbalScoreRepository;
     private final InterviewFinder interviewFinder;
+    private final NonverbalImprovementActionsLoader nonverbalImprovementActionsLoader;
 
     public SessionFeedbackInput assemble(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
@@ -33,13 +40,14 @@ public class SessionFeedbackInputAssembler {
         Map<String, Map<String, Double>> scoresByCategory = buildScoresByCategory(okTurns);
         List<String> appliedRubrics = extractAppliedRubrics(scoreEntities);
         String coverage = buildCoverage(turnScores);
-        Object sessionMetadata = buildSessionMetadata(interview, scoreEntities.size());
+        SessionFeedbackInput.SessionMetadata sessionMetadata = buildSessionMetadata(interview, scoreEntities.size());
 
         return new SessionFeedbackInput(
                 sessionMetadata,
                 turnScores,
                 scoresByCategory,
                 appliedRubrics,
+                null,
                 null,
                 null,
                 null,
@@ -51,6 +59,9 @@ public class SessionFeedbackInputAssembler {
     public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
                                                       String visionAnalysis, String nonverbalAggregate) {
         SessionFeedbackInput base = assemble(interviewId);
+        SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
+                buildNonverbalAggregate(interviewId);
+        String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
         return new SessionFeedbackInput(
                 base.sessionMetadata(),
                 base.turnScores(),
@@ -58,10 +69,97 @@ public class SessionFeedbackInputAssembler {
                 base.appliedRubrics(),
                 deliveryAnalysis,
                 visionAnalysis,
-                nonverbalAggregate,
+                resolvedNonverbalAggregate,
+                legacyNonverbalAggregateJson,
                 base.coverage(),
                 base.userLevel()
         );
+    }
+
+    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(Long interviewId) {
+        List<NonverbalScore> scores = nonverbalScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
+        if (scores.isEmpty()) {
+            return null;
+        }
+
+        Map<String, Double> averageScores = buildNonverbalAverageScores(scores);
+        SessionFeedbackInput.LowestDimension lowestDimension = findLowestDimension(averageScores);
+
+        return new SessionFeedbackInput.NonverbalDeliveryAggregate(
+                "nonverbal_score",
+                scores.stream().map(this::toNonverbalTurn).toList(),
+                averageScores,
+                lowestDimension,
+                averageContextMultiplier(scores),
+                List.of(new SessionFeedbackInput.RecommendedAction(
+                        lowestDimension.dimension(),
+                        nonverbalImprovementActionsLoader.resolve(
+                                lowestDimension.dimension(),
+                                lowestDimension.averageScore()
+                        )
+                ))
+        );
+    }
+
+    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(NonverbalScore score) {
+        Map<String, Integer> dimensionScores = new LinkedHashMap<>();
+        dimensionScores.put("D11", score.getFluencyScore());
+        dimensionScores.put("D12", score.getToneScore());
+        dimensionScores.put("D13", score.getPostureScore());
+        dimensionScores.put("D14", score.getComposureScore());
+
+        return new SessionFeedbackInput.NonverbalTurnAggregate(
+                score.getTurnId(),
+                dimensionScores,
+                toDouble(score.getContextMultiplier())
+        );
+    }
+
+    private Map<String, Double> buildNonverbalAverageScores(List<NonverbalScore> scores) {
+        Map<String, Double> averages = new LinkedHashMap<>();
+        averages.put("D11", average(scores.stream().map(NonverbalScore::getFluencyScore).toList()));
+        averages.put("D12", average(scores.stream().map(NonverbalScore::getToneScore).toList()));
+        averages.put("D13", average(scores.stream().map(NonverbalScore::getPostureScore).toList()));
+        averages.put("D14", average(scores.stream().map(NonverbalScore::getComposureScore).toList()));
+        return averages;
+    }
+
+    private SessionFeedbackInput.LowestDimension findLowestDimension(Map<String, Double> averages) {
+        return averages.entrySet().stream()
+                .min(Map.Entry.comparingByValue())
+                .map(entry -> new SessionFeedbackInput.LowestDimension(entry.getKey(), entry.getValue()))
+                .orElse(new SessionFeedbackInput.LowestDimension("D11", 0.0));
+    }
+
+    private double average(List<Integer> scores) {
+        double value = scores.stream()
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0.0);
+        return round1(value);
+    }
+
+    private double averageContextMultiplier(List<NonverbalScore> scores) {
+        double value = scores.stream()
+                .map(NonverbalScore::getContextMultiplier)
+                .filter(Objects::nonNull)
+                .mapToDouble(BigDecimal::doubleValue)
+                .average()
+                .orElse(1.0);
+        return round2(value);
+    }
+
+    private double toDouble(BigDecimal value) {
+        return value == null ? 1.0 : value.doubleValue();
+    }
+
+    private double round1(double value) {
+        return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    private double round2(double value) {
+        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
     private TurnScoreView toTurnScoreView(RubricScore entity) {
@@ -134,16 +232,16 @@ public class SessionFeedbackInputAssembler {
         return ok + "/" + turnScores.size() + " turns scored";
     }
 
-    private Object buildSessionMetadata(Interview interview, int totalTurns) {
-        Map<String, Object> metadata = new LinkedHashMap<>();
-        metadata.put("interviewId", interview.getId());
-        metadata.put("position", interview.getPosition() != null ? interview.getPosition().name() : "UNKNOWN");
-        metadata.put("level", interview.getLevel() != null ? interview.getLevel().name() : "MID");
-        metadata.put("interviewTypes", interview.getInterviewTypes().stream()
-                .map(Enum::name)
-                .toList());
-        metadata.put("totalTurns", totalTurns);
-        metadata.put("durationMinutes", interview.getDurationMinutes() != null ? interview.getDurationMinutes() : 0);
-        return metadata;
+    private SessionFeedbackInput.SessionMetadata buildSessionMetadata(Interview interview, int totalTurns) {
+        return new SessionFeedbackInput.SessionMetadata(
+                interview.getId(),
+                interview.getPosition() != null ? interview.getPosition().name() : "UNKNOWN",
+                interview.getLevel() != null ? interview.getLevel().name() : "MID",
+                interview.getInterviewTypes().stream()
+                        .map(Enum::name)
+                        .toList(),
+                totalTurns,
+                interview.getDurationMinutes() != null ? interview.getDurationMinutes() : 0
+        );
     }
 }

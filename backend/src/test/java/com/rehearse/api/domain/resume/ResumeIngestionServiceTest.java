@@ -163,6 +163,25 @@ class ResumeIngestionServiceTest {
     }
 
     @Test
+    @DisplayName("ingestExtractedText_uses_existing_normalized_text_and_file_hash")
+    void ingestExtractedText_usesExistingNormalizedTextAndFileHash() {
+        String longText = "Java 백엔드 개발자. ".repeat(10);
+        ResumeSkeleton skeleton = createMockSkeleton(TEST_HASH);
+
+        given(skeletonCache.read(1L, TEST_HASH)).willReturn(null);
+        given(skeletonStore.findByInterviewId(1L)).willReturn(Optional.empty());
+        given(extractionService.extract(longText, TEST_HASH)).willReturn(skeleton);
+
+        ResumeSkeleton result = service.ingestExtractedText(1L, longText, TEST_HASH);
+
+        assertThat(result).isEqualTo(skeleton);
+        then(pdfTextExtractor).shouldHaveNoInteractions();
+        then(fileHasher).shouldHaveNoInteractions();
+        then(skeletonStore).should().save(1L, skeleton);
+        then(skeletonCache).should().write(1L, skeleton);
+    }
+
+    @Test
     @DisplayName("ingest_skips_llm_call_when_db_hit_but_hash_mismatch")
     void ingest_skips_llm_call_when_db_hit_but_hash_mismatch() {
         String longText = "Java 백엔드 개발자. ".repeat(10);

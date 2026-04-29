@@ -25,7 +25,8 @@ public class QuestionGenerationEventHandler {
             questionGenerationService.generateQuestions(
                     event.getInterviewId(), event.getUserId(), event.getPosition(), event.getLevel(),
                     event.getInterviewTypes(), event.getCsSubTopics(),
-                    event.getResumeText(), event.getDurationMinutes(), event.getTechStack());
+                    event.getResumeText(), event.getResumeFileHash(),
+                    event.getDurationMinutes(), event.getTechStack());
         } catch (Exception e) {
             log.error("질문 생성 비동기 작업 실패: interviewId={}", event.getInterviewId(), e);
             String reason = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();

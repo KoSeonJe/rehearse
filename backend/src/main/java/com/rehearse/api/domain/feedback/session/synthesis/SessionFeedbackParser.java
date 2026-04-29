@@ -70,10 +70,9 @@ public class SessionFeedbackParser {
         if (payload.weekPlan() == null || payload.weekPlan().isEmpty()) {
             throw new SessionFeedbackParseException("section=week_plan 누락 또는 빈 배열");
         }
-        // delivery는 input에 delivery/vision 데이터가 없을 때만 null 허용
-        if (payload.delivery() == null
-                && (input.deliveryAnalysis() != null || input.visionAnalysis() != null)) {
-            throw new SessionFeedbackParseException("section=delivery 누락 (delivery/vision 입력 존재)");
+        // delivery는 input에 delivery/vision/nonverbal 데이터가 없을 때만 null 허용
+        if (payload.delivery() == null && hasDeliveryInput(input)) {
+            throw new SessionFeedbackParseException("section=delivery 누락 (delivery/vision/nonverbal 입력 존재)");
         }
     }
 
@@ -88,17 +87,8 @@ public class SessionFeedbackParser {
     }
 
     private void validateContentDeliverySourceSeparation(SessionFeedbackPayload payload, SessionFeedbackInput input) {
-        if (input.deliveryAnalysis() == null && input.visionAnalysis() == null) {
-            return;
-        }
-
         String deliveryText = buildDeliverySourceText(input);
-        if (deliveryText.isBlank()) {
-            return;
-        }
-
-        String contentText = buildContentObservationText(payload);
-        if (hasSignificantOverlap(contentText, deliveryText)) {
+        if (!deliveryText.isBlank() && hasSignificantOverlap(buildContentObservationText(payload), deliveryText)) {
             log.warn("Content 섹션에 Delivery 소스 텍스트 교차 참조 감지 — 재시도 필요");
             throw new SessionFeedbackParseException("section=content/delivery 소스 교차 참조 위반");
         }
@@ -180,6 +170,13 @@ public class SessionFeedbackParser {
         if (input.deliveryAnalysis() != null) sb.append(input.deliveryAnalysis()).append(" ");
         if (input.visionAnalysis() != null) sb.append(input.visionAnalysis());
         return sb.toString();
+    }
+
+    private boolean hasDeliveryInput(SessionFeedbackInput input) {
+        return input.deliveryAnalysis() != null
+                || input.visionAnalysis() != null
+                || input.nonverbalAggregate() != null
+                || input.legacyNonverbalAggregateJson() != null;
     }
 
     private boolean hasSignificantOverlap(String contentText, String deliveryText) {
