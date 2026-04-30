@@ -1,15 +1,12 @@
 package com.rehearse.api.domain.feedback.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.List;
 
 @Getter
 @Builder
@@ -25,7 +22,6 @@ public class TimestampFeedbackResponse {
     private final long startMs;
     private final long endMs;
     private final String transcript;
-    private final ContentFeedback content;
     private final DeliveryFeedback delivery;
     private final CommentBlock overallComment;
     @JsonProperty("isAnalyzed")
@@ -38,28 +34,6 @@ public class TimestampFeedbackResponse {
         private final String positive;
         private final String negative;
         private final String suggestion;
-    }
-
-    @Getter
-    @Builder
-    public static class ContentFeedback {
-        private final CommentBlock verbalComment;
-        private final List<AccuracyIssue> accuracyIssues;
-        private final CoachingResponse coaching;
-    }
-
-    @Getter
-    @Builder
-    public static class AccuracyIssue {
-        private final String claim;
-        private final String correction;
-    }
-
-    @Getter
-    @Builder
-    public static class CoachingResponse {
-        private final String structure;
-        private final String improvement;
     }
 
     @Getter
@@ -93,19 +67,6 @@ public class TimestampFeedbackResponse {
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
         Question question = feedback.getQuestion();
 
-        List<AccuracyIssue> accuracyIssues = parseAccuracyIssues(feedback.getAccuracyIssues());
-
-        CoachingResponse coaching = CoachingResponse.builder()
-                .structure(feedback.getCoachingStructure())
-                .improvement(feedback.getCoachingImprovement())
-                .build();
-
-        ContentFeedback content = ContentFeedback.builder()
-                .verbalComment(parseCommentBlock(feedback.getVerbalComment()))
-                .accuracyIssues(accuracyIssues)
-                .coaching(coaching)
-                .build();
-
         NonverbalFeedback nonverbal = NonverbalFeedback.builder()
                 .eyeContactLevel(feedback.getEyeContactLevel())
                 .postureLevel(feedback.getPostureLevel())
@@ -137,7 +98,6 @@ public class TimestampFeedbackResponse {
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
-                .content(content)
                 .delivery(delivery)
                 .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
@@ -154,14 +114,4 @@ public class TimestampFeedbackResponse {
         }
     }
 
-    private static List<AccuracyIssue> parseAccuracyIssues(String json) {
-        if (json == null || json.isBlank()) {
-            return List.of();
-        }
-        try {
-            return OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
-        } catch (Exception e) {
-            return List.of();
-        }
-    }
 }

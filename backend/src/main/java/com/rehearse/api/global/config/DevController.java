@@ -188,7 +188,6 @@ public class DevController {
                     Map.entry("startMs", answer.getStartMs()),
                     Map.entry("endMs", answer.getEndMs()),
                     Map.entry("transcript", "[DEV] 시뮬레이션된 음성 인식 결과입니다. 실제 Lambda에서는 Whisper STT가 처리합니다."),
-                    Map.entry("verbalComment", commentBlock),
                     Map.entry("nonverbalComment", commentBlock),
                     Map.entry("overallComment", commentBlock),
                     Map.entry("vocalComment", commentBlock),
@@ -199,10 +198,7 @@ public class DevController {
                     Map.entry("emotionLabel", "자신감"),
                     Map.entry("eyeContactLevel", "GOOD"),
                     Map.entry("postureLevel", "GOOD"),
-                    Map.entry("expressionLabel", "CONFIDENT"),
-                    Map.entry("accuracyIssues", "[]"),
-                    Map.entry("coachingStructure", "개념→원리→적용 순서로 구조화했습니다."),
-                    Map.entry("coachingImprovement", "실무 경험을 추가하면 더 깊이 있는 답변이 됩니다.")
+                    Map.entry("expressionLabel", "CONFIDENT")
             ));
         }
 

@@ -38,7 +38,7 @@ public record ReviewBookmarkListItem(
                 question != null ? question.getQuestionText() : null,
                 question != null ? question.getModelAnswer() : null,
                 tsf.getTranscript(),
-                tsf.getCoachingImprovement(),
+                null,
                 questionSet != null ? questionSet.getCategory().name() : null,
                 interview != null ? interview.getPosition().name() : null,
                 interview != null ? interview.getPositionDetail() : null,

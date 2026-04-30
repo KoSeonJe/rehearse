@@ -3,6 +3,7 @@ package com.rehearse.api.domain.feedback.dto;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import java.util.Map;
 
 @Getter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SaveFeedbackRequest {
 
     @NotBlank(message = "코멘트는 필수입니다.")
@@ -28,14 +30,13 @@ public class SaveFeedbackRequest {
 
     @Getter
     @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TimestampFeedbackItem {
         private Long questionId;
         @NotNull private Long startMs;
         @NotNull private Long endMs;
         private String transcript;
 
-        // feedback-v3: ✓△→ 단일 String → 정형 객체
-        private CommentBlock verbalComment;
         private CommentBlock nonverbalComment;
         private CommentBlock overallComment;
         private CommentBlock vocalComment;
@@ -53,11 +54,6 @@ public class SaveFeedbackRequest {
         private List<String> fillerWords;
         private String speechPace;
         private String emotionLabel;
-
-        // 기술 피드백
-        private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
-        private String coachingStructure;
-        private String coachingImprovement;
 
         private NonverbalScore nonverbalScore;
         private String difficulty;

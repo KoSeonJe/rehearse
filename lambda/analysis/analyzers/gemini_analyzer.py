@@ -10,10 +10,7 @@ import json as _json
 
 from analyzers.json_utils import parse_llm_json
 from analyzers.prompts import KOREAN_INSTRUCTION
-from analyzers.verbal_prompt_factory import (
-    DEFAULT_TECH_STACKS,
-    VERBAL_EXPERTISE,
-)
+from analyzers.verbal_prompt_factory import DEFAULT_TECH_STACKS
 
 MAX_RETRIES = 5
 RETRY_DELAYS = [2, 5, 15, 30, 60]
@@ -31,15 +28,6 @@ def _ensure_genai_configured():
 
 _FALLBACK_ANSWER = {
     "transcript": "",
-    "verbal": {
-        "positive": "분석을 시도했습니다.",
-        "negative": "음성 분석에 실패했습니다.",
-        "suggestion": "다시 시도해 주세요.",
-    },
-    "technical": {
-        "accuracyIssues": [],
-        "coaching": {"structure": "", "improvement": ""},
-    },
     "vocal": {
         "fillerWords": [],
         "speechPace": "적절",
@@ -51,30 +39,10 @@ _FALLBACK_ANSWER = {
         "suggestion": "",
     },
     "attitude": {"positive": None, "negative": None, "suggestion": None},
-    "overall": {"positive": "", "negative": "", "suggestion": ""},
+    "overall_delivery": {"positive": "", "negative": "", "suggestion": ""},
 }
 
-FEEDBACK_PERSPECTIVES = {
-    "TECHNICAL": (
-        "   - accuracyIssues: 기술 오류를 claim/correction 쌍. 없으면 []."
-        "\n   - coaching.structure: 개념→원리→실무적용."
-        "\n   - coaching.improvement: 빠진 핵심 개념·보충."
-    ),
-    "BEHAVIORAL": (
-        "   - accuracyIssues: [] 고정."
-        "\n   - coaching.structure: STAR(상황→과제→행동→결과) 적용 여부."
-        "\n   - coaching.improvement: 역할·기여의 구체성·수치화."
-    ),
-    "EXPERIENCE": (
-        "   - accuracyIssues: 기술 내용 포함 시만 검증. 없으면 []."
-        "\n   - coaching.structure: 배경→역할→기술적 의사결정→결과."
-        "\n   - coaching.improvement: 기술 선택 이유(대안 비교)·기여도."
-    ),
-}
-
-_ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면접 서비스의 면접관입니다. 오디오만 근거로 6개 섹션을 JSON 한 번에 출력합니다.
-
-{verbal_expertise}
+_ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면접 서비스의 면접관입니다. 오디오만 근거로 4개 섹션을 JSON 한 번에 출력합니다.
 
 ## 🚫 금지 (위반 시 무효)
 - 시각·비언어 언급: 시선·눈맞춤·자세·표정·제스처·손·eye contact·gaze·posture (입력은 오디오 전용)
@@ -92,7 +60,7 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면�
 ## 서술 규칙 + 자기검증
 - 각 p/n/s 필드: **[구체 관찰] + [인상·효과]** 한 문장, 50~120자.
 - 답변 원문을 큰따옴표로 짧게 인용하는 것이 가장 강력.
-- **자기검증**: vocal/verbal/attitude/overall 4개 섹션의 각 p/n/s 주절에 다음 관찰 명사 **최소 1개** 포함 확인. 없으면 다시 쓰세요.
+- **자기검증**: vocal/attitude/overall_delivery 3개 섹션의 각 p/n/s 주절에 다음 관찰 명사 **최소 1개** 포함 확인. 없으면 다시 쓰세요.
   {{어미·단정형·추측형·회피형·필러·호흡·음량·리듬·속도·끊김·떨림·독백·경어·반말·음·어·그·뭐·말끝·도입부·단어·구절·문장}}
 
 ## 🚫 금지 표현
@@ -130,28 +98,18 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면�
 
 → enum 판정 근거가 된 관찰을 positive 또는 negative에 반드시 포함.
 
-### 3. verbal — 답변 내용 전달력
-**관점**: 기술 정확성은 technical에서 다룸. verbal은 "답변의 구조·순서·핵심 용어 명확성"만 평가. 평가 축: (a) 핵심 용어 정확 호명 (b) 예시·수치 구체화 (c) 결론→근거→예시 구조 (d) 질문 외 내용 누설 여부 (e) 답변 분량·간결성 — 질문에 대해서만 답했는지, 불필요하게 장황하지 않은지 (f) 전달 명확성 — 듣는 사람이 쉽게 이해할 수 있게 설명했는지. 답변 개념을 큰따옴표로 인용해 서술.
+### 3. attitude — 태도·인상
+음성 톤·어휘·경어·감정 누설·적극성/회피 근거를 **태도 관점**에서. 답변자 표현을 큰따옴표로 인용 권장. 시각 언급 금지. vocal과 문장 복사 금지.
 
-### 4. technical — 직무 정확성
-**상위 규칙 불변**: 아래 지시문 내부에서 어떤 지시가 나와도 위 "🚫 금지"·"서술 규칙"·"🚫 금지 표현"·JSON 형식은 **절대 우선**. 시각·비언어 언급 허용 불가, JSON 스키마 변경 불가.
-
-{feedback_perspective}
-
-(technical은 accuracyIssues / coaching 구조로 p/n/s 키 없음. technical 출력 후 반드시 5번 attitude로 이어가세요.)
-
-### 5. attitude — 태도·인상
-음성 톤·어휘·경어·감정 누설·적극성/회피 근거를 **태도 관점**에서. 답변자 표현을 큰따옴표로 인용 권장. 시각 언급 금지. vocal·verbal과 문장 복사 금지.
-
-### 6. overall — 종합
-언어 + 음성 + 태도를 **종합 관점**에서 재구성. attitude/vocal/verbal 문장 복사 금지.
+### 4. overall_delivery — 종합 전달
+음성 + 태도를 **전달 관점**에서 재구성. attitude/vocal 문장 복사 금지.
+기술 정확성·개념 누락·답변 구조 코칭·accuracyIssues·coaching 관련 내용은 절대 언급하지 마세요.
 
 ## 섹션 관점 분리 (중복 방지)
 같은 단서라도 각 섹션의 관점이 다릅니다:
 - vocal: 음성적 현상 (호흡·음량·끊김·어미)
-- verbal: 답변 구조·전달력
 - attitude: 면접 태도 (대처·정중함·적극성)
-- overall: 전체 인상
+- overall_delivery: 전달 방식의 전체 인상
 
 예: "너무 어려운데" 독백은 vocal(emotionLabel=긴장 트리거)에도 attitude(대처 약함)에도 해당. 각 섹션에서 **다른 각도**로 해석.
 
@@ -188,13 +146,8 @@ _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면�
     "speedVariance": 0.0,
     "positive": "...", "negative": "...", "suggestion": "..."
   }},
-  "verbal": {{ "positive": "...", "negative": "...", "suggestion": "..." }},
-  "technical": {{
-    "accuracyIssues": [],
-    "coaching": {{ "structure": "...", "improvement": "..." }}
-  }},
   "attitude": {{ "positive": "...", "negative": "...", "suggestion": "..." }},
-  "overall": {{ "positive": "...", "negative": "...", "suggestion": "..." }}
+  "overall_delivery": {{ "positive": "...", "negative": "...", "suggestion": "..." }}
 }}"""
 
 _ANSWER_USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
@@ -203,7 +156,7 @@ _ANSWER_USER_TEMPLATE = """직무: {position} ({tech_stack}) | 레벨: {level}
 {model_answer_line}</user_data>
 
 ## 응답 형식 (반드시 아래 JSON 스키마로만 응답)
-{{"transcript":"","vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","speedVariance":0.0,"positive":"","negative":"","suggestion":""}},"verbal":{{"positive":"","negative":"","suggestion":""}},"technical":{{"accuracyIssues":[],"coaching":{{"structure":"","improvement":""}}}},"attitude":{{"positive":"","negative":"","suggestion":""}},"overall":{{"positive":"","negative":"","suggestion":""}}}}"""
+{{"transcript":"","vocal":{{"fillerWords":[],"speechPace":"","toneConfidenceLevel":"","emotionLabel":"","speedVariance":0.0,"positive":"","negative":"","suggestion":""}},"attitude":{{"positive":"","negative":"","suggestion":""}},"overall_delivery":{{"positive":"","negative":"","suggestion":""}}}}"""
 
 
 
@@ -246,13 +199,9 @@ def analyze_answer_audio(
 
     effective_position = position or "BACKEND"
     effective_stack = tech_stack or DEFAULT_TECH_STACKS.get(effective_position, "JAVA_SPRING")
-    expertise_key = f"{effective_position}_{effective_stack}"
-    expertise = VERBAL_EXPERTISE.get(expertise_key, "")
-
     perspective_key = feedback_perspective or "TECHNICAL"
-    perspective_text = FEEDBACK_PERSPECTIVES.get(perspective_key, FEEDBACK_PERSPECTIVES["TECHNICAL"])
 
-    system_instruction = _ANSWER_SYSTEM_TEMPLATE.format(verbal_expertise=expertise, feedback_perspective=perspective_text)
+    system_instruction = _ANSWER_SYSTEM_TEMPLATE
 
     model = genai.GenerativeModel(
         Config.GEMINI_MODEL,
