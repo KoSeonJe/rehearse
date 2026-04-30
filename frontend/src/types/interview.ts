@@ -163,6 +163,19 @@ export interface DeliveryFeedback {
   attitudeComment: CommentBlock | null
 }
 
+export interface TechnicalDimensionFeedback {
+  dimension: string
+  score: number | null
+  observation: string | null
+  evidenceQuote: string | null
+}
+
+export interface TechnicalFeedback {
+  rubricId: string
+  levelFlag: string | null
+  dimensions: TechnicalDimensionFeedback[]
+}
+
 export interface TimestampFeedback {
   id: number
   questionId: number | null
@@ -173,6 +186,7 @@ export interface TimestampFeedback {
   endMs: number
   transcript: string | null
   delivery: DeliveryFeedback | null
+  technicalFeedback: TechnicalFeedback | null
   overallComment: CommentBlock | null
   isAnalyzed: boolean
 }
