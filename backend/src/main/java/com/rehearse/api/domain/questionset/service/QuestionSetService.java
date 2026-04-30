@@ -6,6 +6,8 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisReposit
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
@@ -31,6 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -43,6 +47,7 @@ public class QuestionSetService {
     private final QuestionRepository questionRepository;
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
+    private final RubricScoreRepository rubricScoreRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
     private final S3KeyGenerator s3KeyGenerator;
@@ -134,7 +139,20 @@ public class QuestionSetService {
             fallbackUrl = s3Service.generateGetPresignedUrl(file.getS3Key());
         }
 
-        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl);
+        Map<Long, RubricScore> rubricScoreByTurnId = rubricScoreByTurnId(questionSet);
+        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl, rubricScoreByTurnId);
+    }
+
+    private Map<Long, RubricScore> rubricScoreByTurnId(QuestionSet questionSet) {
+        if (questionSet.getInterview() == null || questionSet.getInterview().getId() == null) {
+            return Map.of();
+        }
+        return rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(questionSet.getInterview().getId()).stream()
+                .collect(Collectors.toMap(
+                        RubricScore::getTurnId,
+                        score -> score,
+                        (left, ignored) -> left
+                ));
     }
 
     public QuestionsWithAnswersResponse getQuestionsWithAnswers(Long questionSetId) {

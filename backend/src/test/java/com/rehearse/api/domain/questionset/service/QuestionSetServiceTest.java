@@ -5,11 +5,19 @@ import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
+import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.dto.QuestionsWithAnswersResponse;
 import com.rehearse.api.domain.question.dto.SaveAnswersRequest;
 import com.rehearse.api.domain.question.entity.Question;
@@ -37,6 +45,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -63,6 +72,9 @@ class QuestionSetServiceTest {
 
     @Mock
     private QuestionSetFeedbackRepository feedbackRepository;
+
+    @Mock
+    private RubricScoreRepository rubricScoreRepository;
 
     @Mock
     private FileMetadataRepository fileMetadataRepository;
@@ -276,6 +288,87 @@ class QuestionSetServiceTest {
             assertThat(response.getQuestionSetComment()).isEqualTo("전반적으로 좋은 답변입니다.");
             assertThat(response.getStreamingUrl()).isEqualTo("https://s3.example.com/streaming");
             assertThat(response.getFallbackUrl()).isEqualTo("https://s3.example.com/fallback");
+        }
+
+        @Test
+        @DisplayName("getFeedback: 답변 카드에 같은 turn_id의 기술 루브릭 피드백을 포함한다")
+        void getFeedback_includesTechnicalFeedbackPerTimestamp() {
+            // given
+            Interview interview = Interview.builder()
+                    .userId(1L)
+                    .position(Position.BACKEND)
+                    .level(InterviewLevel.MID)
+                    .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                    .durationMinutes(30)
+                    .build();
+            ReflectionTestUtils.setField(interview, "id", 99L);
+
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(questionSet, "id", 1L);
+
+            Question question = Question.builder()
+                    .questionType(QuestionType.MAIN)
+                    .questionText("Java의 GC 동작 원리를 설명하세요.")
+                    .modelAnswer("Generational GC 기반으로 동작합니다.")
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(question, "id", 10L);
+
+            TimestampFeedback timestampFeedback = TimestampFeedback.builder()
+                    .question(question)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .transcript("GC는 young 영역과 old 영역을 나눠 관리합니다.")
+                    .isAnalyzed(true)
+                    .build();
+
+            QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                    .questionSet(questionSet)
+                    .questionSetComment("전반적으로 좋은 답변입니다.")
+                    .build();
+            ReflectionTestUtils.setField(feedback, "id", 50L);
+            feedback.addTimestampFeedback(timestampFeedback);
+
+            RubricScore rubricScore = RubricScore.builder()
+                    .interviewId(99L)
+                    .turnId(0L)
+                    .rubricId("cs-v1")
+                    .scoresJson(Map.of(
+                            "D4", DimensionScore.of(
+                                    3,
+                                    "세대별 GC 구조를 언급해 개념 정확도가 좋습니다.",
+                                    "young 영역과 old 영역을 나눠 관리"
+                            )
+                    ))
+                    .levelFlag("MID_EXPECTATION_MET")
+                    .build();
+
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.of(feedback));
+            given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(99L))
+                    .willReturn(List.of(rubricScore));
+
+            // when
+            QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
+
+            // then
+            assertThat(response.getTimestampFeedbacks()).hasSize(1);
+            var technicalFeedback = response.getTimestampFeedbacks().getFirst().getTechnicalFeedback();
+            assertThat(technicalFeedback).isNotNull();
+            assertThat(technicalFeedback.getRubricId()).isEqualTo("cs-v1");
+            assertThat(technicalFeedback.getLevelFlag()).isEqualTo("MID_EXPECTATION_MET");
+            assertThat(technicalFeedback.getDimensions()).hasSize(1);
+            assertThat(technicalFeedback.getDimensions().getFirst().getDimension()).isEqualTo("D4");
+            assertThat(technicalFeedback.getDimensions().getFirst().getScore()).isEqualTo(3);
+            assertThat(technicalFeedback.getDimensions().getFirst().getObservation())
+                    .isEqualTo("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.");
+            assertThat(technicalFeedback.getDimensions().getFirst().getEvidenceQuote())
+                    .isEqualTo("young 영역과 old 영역을 나눠 관리");
         }
 
         @Test

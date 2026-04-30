@@ -2,11 +2,17 @@ package com.rehearse.api.domain.feedback.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -23,6 +29,7 @@ public class TimestampFeedbackResponse {
     private final long endMs;
     private final String transcript;
     private final DeliveryFeedback delivery;
+    private final TechnicalFeedback technicalFeedback;
     private final CommentBlock overallComment;
     @JsonProperty("isAnalyzed")
     private final boolean isAnalyzed;
@@ -64,7 +71,28 @@ public class TimestampFeedbackResponse {
         private final CommentBlock vocalComment;
     }
 
+    @Getter
+    @Builder
+    public static class TechnicalFeedback {
+        private final String rubricId;
+        private final String levelFlag;
+        private final List<TechnicalDimensionFeedback> dimensions;
+    }
+
+    @Getter
+    @Builder
+    public static class TechnicalDimensionFeedback {
+        private final String dimension;
+        private final Integer score;
+        private final String observation;
+        private final String evidenceQuote;
+    }
+
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
+        return from(feedback, null);
+    }
+
+    public static TimestampFeedbackResponse from(TimestampFeedback feedback, RubricScore rubricScore) {
         Question question = feedback.getQuestion();
 
         NonverbalFeedback nonverbal = NonverbalFeedback.builder()
@@ -99,6 +127,7 @@ public class TimestampFeedbackResponse {
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
                 .delivery(delivery)
+                .technicalFeedback(toTechnicalFeedback(rubricScore))
                 .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
@@ -114,4 +143,29 @@ public class TimestampFeedbackResponse {
         }
     }
 
+    private static TechnicalFeedback toTechnicalFeedback(RubricScore rubricScore) {
+        if (rubricScore == null || rubricScore.getScoresJson() == null || rubricScore.getScoresJson().isEmpty()) {
+            return null;
+        }
+
+        List<TechnicalDimensionFeedback> dimensions = rubricScore.getScoresJson().entrySet().stream()
+                .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
+                .map(entry -> toTechnicalDimension(entry.getKey(), entry.getValue()))
+                .toList();
+
+        return TechnicalFeedback.builder()
+                .rubricId(rubricScore.getRubricId())
+                .levelFlag(rubricScore.getLevelFlag())
+                .dimensions(dimensions)
+                .build();
+    }
+
+    private static TechnicalDimensionFeedback toTechnicalDimension(String dimension, DimensionScore score) {
+        return TechnicalDimensionFeedback.builder()
+                .dimension(dimension)
+                .score(score != null ? score.score() : null)
+                .observation(score != null ? score.observation() : null)
+                .evidenceQuote(score != null ? score.evidenceQuote() : null)
+                .build();
+    }
 }
