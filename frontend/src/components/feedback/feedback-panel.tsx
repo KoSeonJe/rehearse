@@ -160,7 +160,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
         </TabsList>
 
         <TabsContent value="content" className="mt-0">
-          <ContentTab content={feedback.content} />
+          <ContentTab />
         </TabsContent>
         <TabsContent value="delivery" className="mt-0">
           <DeliveryTab delivery={feedback.delivery} />
