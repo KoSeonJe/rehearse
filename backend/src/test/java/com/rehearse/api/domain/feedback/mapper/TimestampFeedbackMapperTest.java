@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -64,6 +65,47 @@ class TimestampFeedbackMapperTest {
             assertThat(result.getQuestion()).isNull();
             assertThat(result.getStartMs()).isZero();
             assertThat(result.getEndMs()).isEqualTo(3000L);
+        }
+
+        @Test
+        @DisplayName("plan-13 legacy Lambda content fields are ignored")
+        void toEntity_legacyLambdaContentFields_ignoresContent() throws Exception {
+            // given
+            String json = """
+                    {
+                      "questionSetComment": "음성 전달 분석 완료",
+                      "isVerbalCompleted": true,
+                      "isNonverbalCompleted": true,
+                      "timestampFeedbacks": [
+                        {
+                          "startMs": 0,
+                          "endMs": 1000,
+                          "transcript": "캐시를 먼저 확인합니다",
+                          "verbalComment": {"positive": "legacy"},
+                          "accuracyIssues": "[{\\"claim\\":\\"x\\",\\"correction\\":\\"y\\"}]",
+                          "coachingStructure": "legacy structure",
+                          "coachingImprovement": "legacy improvement",
+                          "fillerWordCount": 0
+                        }
+                      ]
+                    }
+                    """;
+            ObjectMapper objectMapper = new ObjectMapper();
+            SaveFeedbackRequest request = objectMapper.readValue(json, SaveFeedbackRequest.class);
+
+            // when
+            TimestampFeedback result = mapper.toEntity(request.getTimestampFeedbacks().getFirst(), null);
+
+            // then
+            assertThat(result.getTranscript()).isEqualTo("캐시를 먼저 확인합니다");
+            assertThat(Arrays.stream(TimestampFeedback.class.getDeclaredFields())
+                    .map(field -> field.getName()))
+                    .doesNotContain(
+                            "verbalComment",
+                            "accuracyIssues",
+                            "coachingStructure",
+                            "coachingImprovement"
+                    );
         }
     }
 

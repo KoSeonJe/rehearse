@@ -24,7 +24,6 @@ public class TimestampFeedbackMapper {
                 .startMs(item.getStartMs())
                 .endMs(item.getEndMs())
                 .transcript(item.getTranscript())
-                .verbalComment(serializeCommentBlock(item.getVerbalComment()))
                 .fillerWordCount(item.getFillerWordCount())
                 .eyeContactLevel(item.getEyeContactLevel())
                 .postureLevel(item.getPostureLevel())
@@ -37,9 +36,6 @@ public class TimestampFeedbackMapper {
                 .toneConfidenceLevel(item.getToneConfidenceLevel())
                 .emotionLabel(item.getEmotionLabel())
                 .vocalComment(serializeCommentBlock(item.getVocalComment()))
-                .accuracyIssues(item.getAccuracyIssues())
-                .coachingStructure(item.getCoachingStructure())
-                .coachingImprovement(item.getCoachingImprovement())
                 .attitudeComment(serializeCommentBlock(item.getAttitudeComment()))
                 .build();
     }

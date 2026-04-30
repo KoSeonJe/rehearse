@@ -34,9 +34,6 @@ public class TimestampFeedback {
     @Column(columnDefinition = "TEXT")
     private String transcript;
 
-    @Column(columnDefinition = "TEXT")
-    private String verbalComment;
-
     private Integer fillerWordCount;
 
     @Column(length = 20)
@@ -73,33 +70,22 @@ public class TimestampFeedback {
     private String vocalComment;
 
     @Column(columnDefinition = "TEXT")
-    private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
-
-    @Column(length = 500)
-    private String coachingStructure;
-
-    @Column(length = 500)
-    private String coachingImprovement;
-
-    @Column(columnDefinition = "TEXT")
     private String attitudeComment;
 
     @Builder
     public TimestampFeedback(Question question, long startMs, long endMs,
-                             String transcript, String verbalComment,
+                             String transcript,
                              Integer fillerWordCount,
                              String eyeContactLevel, String postureLevel,
                              String expressionLabel, String nonverbalComment, String overallComment,
                              boolean isAnalyzed,
                              String fillerWords, String speechPace, String toneConfidenceLevel,
                              String emotionLabel, String vocalComment,
-                             String accuracyIssues, String coachingStructure, String coachingImprovement,
                              String attitudeComment) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
         this.transcript = transcript;
-        this.verbalComment = verbalComment;
         this.fillerWordCount = fillerWordCount;
         this.eyeContactLevel = eyeContactLevel;
         this.postureLevel = postureLevel;
@@ -112,9 +98,6 @@ public class TimestampFeedback {
         this.toneConfidenceLevel = toneConfidenceLevel;
         this.emotionLabel = emotionLabel;
         this.vocalComment = vocalComment;
-        this.accuracyIssues = accuracyIssues;
-        this.coachingStructure = coachingStructure;
-        this.coachingImprovement = coachingImprovement;
         this.attitudeComment = attitudeComment;
     }
 

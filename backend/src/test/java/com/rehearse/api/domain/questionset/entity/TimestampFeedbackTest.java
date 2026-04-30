@@ -49,7 +49,6 @@ class TimestampFeedbackTest {
                     .startMs(1000L)
                     .endMs(6000L)
                     .transcript("Spring AOP는 관점 지향 프로그래밍으로...")
-                    .verbalComment("{\"comment\":\"좋은 설명입니다\"}")
                     .fillerWordCount(3)
                     .eyeContactLevel("GOOD")
                     .postureLevel("AVERAGE")
@@ -62,9 +61,6 @@ class TimestampFeedbackTest {
                     .toneConfidenceLevel("GOOD")
                     .emotionLabel("자신감")
                     .vocalComment("목소리 톤이 안정적입니다.")
-                    .accuracyIssues("[{\"claim\":\"AOP는 디자인 패턴\",\"correction\":\"프로그래밍 패러다임\"}]")
-                    .coachingStructure("서론-본론-결론 구조를 갖추었습니다.")
-                    .coachingImprovement("구체적인 예시를 추가하면 좋겠습니다.")
                     .attitudeComment("적극적인 태도가 좋습니다.")
                     .build();
 
@@ -73,7 +69,6 @@ class TimestampFeedbackTest {
             assertThat(feedback.getStartMs()).isEqualTo(1000L);
             assertThat(feedback.getEndMs()).isEqualTo(6000L);
             assertThat(feedback.getTranscript()).isEqualTo("Spring AOP는 관점 지향 프로그래밍으로...");
-            assertThat(feedback.getVerbalComment()).isEqualTo("{\"comment\":\"좋은 설명입니다\"}");
             assertThat(feedback.getFillerWordCount()).isEqualTo(3);
             assertThat(feedback.getEyeContactLevel()).isEqualTo("GOOD");
             assertThat(feedback.getPostureLevel()).isEqualTo("AVERAGE");
@@ -86,9 +81,6 @@ class TimestampFeedbackTest {
             assertThat(feedback.getToneConfidenceLevel()).isEqualTo("GOOD");
             assertThat(feedback.getEmotionLabel()).isEqualTo("자신감");
             assertThat(feedback.getVocalComment()).isEqualTo("목소리 톤이 안정적입니다.");
-            assertThat(feedback.getAccuracyIssues()).contains("AOP는 디자인 패턴");
-            assertThat(feedback.getCoachingStructure()).isEqualTo("서론-본론-결론 구조를 갖추었습니다.");
-            assertThat(feedback.getCoachingImprovement()).isEqualTo("구체적인 예시를 추가하면 좋겠습니다.");
             assertThat(feedback.getAttitudeComment()).isEqualTo("적극적인 태도가 좋습니다.");
         }
     }

@@ -4,10 +4,24 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("TimestampFeedbackResponse - 댓글 블록 파싱")
 class TimestampFeedbackResponseTest {
+
+    @Test
+    @DisplayName("plan-13 timestamp response no longer exposes Lambda content")
+    void timestampResponse_doesNotExposeLambdaContent() {
+        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredFields())
+                .map(field -> field.getName()))
+                .doesNotContain("content");
+
+        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredClasses())
+                .map(Class::getSimpleName))
+                .doesNotContain("ContentFeedback", "AccuracyIssue", "CoachingResponse");
+    }
 
     @Nested
     @DisplayName("parseCommentBlock 메서드")
