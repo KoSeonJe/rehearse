@@ -142,7 +142,10 @@ def _run_pipeline(parsed, bucket: str, key: str) -> dict:
                 skip_analyzing_update=True,
             )
             # 레거시 폴백은 이미 ANALYZING 상태이므로 중복 호출 스킵
-            verbal_ok = any(f.get("verbalComment") is not None for f in timestamp_feedbacks)
+            verbal_ok = any(
+                f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment")
+                for f in timestamp_feedbacks
+            )
             nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
     else:
         # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
@@ -153,7 +156,10 @@ def _run_pipeline(parsed, bucket: str, key: str) -> dict:
             interview_id, question_set_id,
             position=position, tech_stack=tech_stack, level=level,
         )
-        verbal_ok = any(f.get("verbalComment") is not None for f in timestamp_feedbacks)
+        verbal_ok = any(
+            f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment")
+            for f in timestamp_feedbacks
+        )
         nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
 
     update_progress(interview_id, question_set_id, "FINALIZING")
@@ -269,10 +275,7 @@ def _run_gemini_pipeline(
         }
 
         if gemini:
-            verbal = gemini.get("verbal", {})
             vocal = gemini.get("vocal", {})
-            technical = gemini.get("technical", {})
-            fb["verbalComment"] = _comment_block(verbal)
             filler_list = vocal.get("fillerWords", [])
             fb["fillerWords"] = filler_list
             fb["fillerWordCount"] = len(filler_list) if isinstance(filler_list, list) else 0
@@ -283,9 +286,6 @@ def _run_gemini_pipeline(
                 vocal.get("speedVariance"), 0.0, 1.0, default=0.5, field="vocal.speedVariance"
             )
             fb["vocalComment"] = _comment_block(vocal)
-            fb["accuracyIssues"] = json.dumps(technical.get("accuracyIssues", []), ensure_ascii=False)
-            fb["coachingStructure"] = technical.get("coaching", {}).get("structure", "")
-            fb["coachingImprovement"] = technical.get("coaching", {}).get("improvement", "")
 
             attitude = gemini.get("attitude", {})
             fb["attitudeComment"] = _comment_block(attitude)
@@ -302,7 +302,7 @@ def _run_gemini_pipeline(
             )
             fb["nonverbalComment"] = _comment_block(vision)
 
-        fb["overallComment"] = _comment_block(gemini.get("overall")) if gemini else None
+        fb["overallComment"] = _comment_block(gemini.get("overall_delivery")) if gemini else None
 
         score = _build_nonverbal_score(
             verbal_dict={
@@ -405,9 +405,6 @@ def _build_timestamp_feedbacks(
         }
 
         if verbal:
-            # 레거시 verbal_analyzer는 ✓△→ string을 반환 → CommentBlock 객체로 래핑
-            # (BE는 CommentBlock POJO로 역직렬화하므로 string을 그대로 보내면 400)
-            fb["verbalComment"] = _legacy_string_to_block(verbal.get("comment"))
             fb["fillerWordCount"] = verbal.get("filler_word_count", 0)
             fb["fillerWords"] = []
             fb["speechPace"] = ""
@@ -417,9 +414,6 @@ def _build_timestamp_feedbacks(
                 verbal.get("speed_variance"), 0.0, 1.0, default=0.5, field="verbal.speed_variance"
             )
             fb["vocalComment"] = None
-            fb["accuracyIssues"] = "[]"
-            fb["coachingStructure"] = ""
-            fb["coachingImprovement"] = ""
 
             fb["attitudeComment"] = _legacy_string_to_block(verbal.get("attitude_comment"))
 
@@ -472,13 +466,13 @@ def _extract_transcript_for_range(
 
 def _compute_overall(feedbacks: list[dict]) -> str:
     """라벨 기반 종합 코멘트를 생성한다."""
-    verbal_count = sum(1 for f in feedbacks if f.get("verbalComment"))
+    verbal_count = sum(1 for f in feedbacks if f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment"))
     nonverbal_count = sum(1 for f in feedbacks if f.get("eyeContactLevel"))
     total = len(feedbacks)
 
     parts = []
     if verbal_count:
-        parts.append(f"언어 분석 {verbal_count}/{total}개 완료")
+        parts.append(f"음성 전달 분석 {verbal_count}/{total}개 완료")
     if nonverbal_count:
         parts.append(f"비언어 분석 {nonverbal_count}/{total}개 완료")
 

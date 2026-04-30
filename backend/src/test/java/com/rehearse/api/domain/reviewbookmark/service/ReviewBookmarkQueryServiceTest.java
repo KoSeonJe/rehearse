@@ -199,7 +199,6 @@ class ReviewBookmarkQueryServiceTest {
                 .startMs(0L)
                 .endMs(5000L)
                 .transcript("안녕하세요.")
-                .coachingImprovement("더 자세히 설명하세요.")
                 .isAnalyzed(true)
                 .build();
         ReflectionTestUtils.setField(tsf, "id", bookmarkId * 10);
