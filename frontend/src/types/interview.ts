@@ -129,16 +129,6 @@ export interface QuestionsWithAnswersResponse {
 
 export type FeedbackLevel = 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT'
 
-export interface AccuracyIssue {
-  claim: string
-  correction: string
-}
-
-export interface CoachingResponse {
-  structure: string | null
-  improvement: string | null
-}
-
 export interface CommentBlock {
   positive: string | null
   negative: string | null
@@ -149,12 +139,6 @@ export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boo
   if (block === null || block === undefined) return true
   const fields = [block.positive, block.negative, block.suggestion]
   return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
-}
-
-export interface ContentFeedback {
-  verbalComment: CommentBlock | null
-  accuracyIssues: AccuracyIssue[]
-  coaching: CoachingResponse | null
 }
 
 export interface NonverbalFeedback {
@@ -188,7 +172,6 @@ export interface TimestampFeedback {
   startMs: number
   endMs: number
   transcript: string | null
-  content: ContentFeedback | null
   delivery: DeliveryFeedback | null
   overallComment: CommentBlock | null
   isAnalyzed: boolean
