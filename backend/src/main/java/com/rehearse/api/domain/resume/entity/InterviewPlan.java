@@ -35,6 +35,10 @@ public class InterviewPlan {
     @Column(name = "session_plan_id", nullable = false)
     private String sessionPlanId;
 
+    /**
+     * 세션 전체 시간 힌트(분). 플랜 크기 컷오프가 아니라 진행 중 WRAP_UP 전환 판단 기준으로만 사용된다.
+     * LLM 플래너는 이 값과 관계없이 전체 프로젝트 priority map을 생성한다.
+     */
     @Column(name = "duration_hint_min", nullable = false)
     private int durationHintMin;
 
