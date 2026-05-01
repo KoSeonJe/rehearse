@@ -89,7 +89,7 @@ public enum SkeletonCallType {
             - 출력은 JSON 객체 하나만. 첫 문자 '{', 마지막 문자 '}'. 코드펜스/설명/접두사 금지.
 
             ## 출력 허용 키 (allowlist, 정확히 이 키만)
-            최상위(4): session_plan_id, duration_hint_min, total_projects, project_plans
+            최상위(3): session_plan_id, total_projects, project_plans
             project_plans[](5): project_id, project_name, priority, playground_phase, interrogation_phase
             playground_phase(2): opener_question, expected_claims_coverage
             interrogation_phase(2): primary_chains, backup_chains

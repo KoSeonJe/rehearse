@@ -30,12 +30,12 @@ class NonverbalRubricScorerTest {
 
         NonverbalTurnScore result = scorer.score(score, "BEHAVIORAL", null, null, "medium");
 
-        assertThat(result.d11Fluency()).isEqualTo(3);
-        assertThat(result.d12Tone()).isEqualTo(2);
-        assertThat(result.d13Posture()).isEqualTo(1);
-        assertThat(result.d14Composure()).isEqualTo(2);
+        assertThat(result.fluency()).isEqualTo(3);
+        assertThat(result.confidenceTone()).isEqualTo(2);
+        assertThat(result.eyeContactPosture()).isEqualTo(1);
+        assertThat(result.composure()).isEqualTo(2);
         assertThat(result.contextMultiplier()).isEqualTo(1.2);
-        assertThat(result.rawSignals()).containsEntry("d11", 3);
+        assertThat(result.rawSignals()).containsEntry("fluency", 3);
     }
 
     @Test
@@ -48,7 +48,7 @@ class NonverbalRubricScorerTest {
 
         NonverbalTurnScore result = scorer.score(score, "RESUME_BASED", "RESUME_BASED", "PLAYGROUND", "hard");
 
-        assertThat(result.d14Composure()).isNull();
+        assertThat(result.composure()).isNull();
         assertThat(result.contextMultiplier()).isEqualTo(0.9);
     }
 
@@ -64,11 +64,11 @@ class NonverbalRubricScorerTest {
 
     private SaveFeedbackRequest.NonverbalScore createScore(Integer d11, Integer d12, Integer d13, Integer d14) {
         SaveFeedbackRequest.NonverbalScore score = new SaveFeedbackRequest.NonverbalScore();
-        ReflectionTestUtils.setField(score, "d11", d11);
-        ReflectionTestUtils.setField(score, "d12", d12);
-        ReflectionTestUtils.setField(score, "d13", d13);
-        ReflectionTestUtils.setField(score, "d14", d14);
-        ReflectionTestUtils.setField(score, "rawSignals", Map.of("d11", d11, "d12", d12, "d13", d13));
+        ReflectionTestUtils.setField(score, "fluency", d11);
+        ReflectionTestUtils.setField(score, "confidenceTone", d12);
+        ReflectionTestUtils.setField(score, "eyeContactPosture", d13);
+        ReflectionTestUtils.setField(score, "composure", d14);
+        ReflectionTestUtils.setField(score, "rawSignals", Map.of("fluency", d11, "confidence_tone", d12, "eye_contact_posture", d13));
         return score;
     }
 }

@@ -8,27 +8,27 @@ applies_to:
   - category: CS_FUNDAMENTAL
 
 uses_dimensions:
-  - ref: D2   # Technical Depth
+  - ref: technical_depth
     weight: 0.30
-  - ref: D3   # Reasoning Communication
+  - ref: reasoning_communication
     weight: 0.25
-  - ref: D4   # Conceptual Accuracy
+  - ref: conceptual_accuracy
     weight: 0.30
-  - ref: D8   # Recovery from Gaps
+  - ref: recovery_from_gaps
     weight: 0.15
 
 per_turn_rules:
   on_intent_clarify: []
-  on_intent_give_up: [D8]
-  on_intent_answer:  [D2, D3, D4, D8]
+  on_intent_give_up: [recovery_from_gaps]
+  on_intent_answer:  [technical_depth, reasoning_communication, conceptual_accuracy, recovery_from_gaps]
 
 level_expectations:
   junior:
-    must_reach_2: [D4]
+    must_reach_2: [conceptual_accuracy]
     must_reach_1: all
   mid:
     must_reach_2: all
-    must_reach_3: [D4]
+    must_reach_3: [conceptual_accuracy]
   senior:
-    must_reach_3: [D2, D4]
+    must_reach_3: [technical_depth, conceptual_accuracy]
     must_reach_2: all

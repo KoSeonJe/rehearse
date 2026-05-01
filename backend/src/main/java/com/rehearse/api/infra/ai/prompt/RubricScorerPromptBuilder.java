@@ -167,10 +167,10 @@ public class RubricScorerPromptBuilder {
     }
 
     private String buildResumeContext(ResumeSkeleton resumeSkeleton, List<String> dimensionsToScore) {
-        if (!dimensionsToScore.contains("D9") || resumeSkeleton == null) {
+        if (!dimensionsToScore.contains("factual_consistency") || resumeSkeleton == null) {
             return "";
         }
-        StringBuilder sb = new StringBuilder("## Resume Skeleton Context (for D9 Factual Consistency)\n");
+        StringBuilder sb = new StringBuilder("## Resume Skeleton Context (for factual_consistency Factual Consistency)\n");
         if (resumeSkeleton.projects() != null) {
             for (var project : resumeSkeleton.projects()) {
                 sb.append("### Project: ").append(project.projectId()).append("\n");
@@ -185,14 +185,14 @@ public class RubricScorerPromptBuilder {
     }
 
     private String buildChainDepthOverride(Integer currentChainLevel, List<String> dimensionsToScore) {
-        if (!dimensionsToScore.contains("D10") || currentChainLevel == null) {
+        if (!dimensionsToScore.contains("chain_depth") || currentChainLevel == null) {
             return "";
         }
-        int d10Score = D10ChainScoreMapper.scoreFor(currentChainLevel);
-        return "## D10 Chain Depth Override\n" +
+        int chainDepthScore = D10ChainScoreMapper.scoreFor(currentChainLevel);
+        return "## chain_depth Chain Depth Override\n" +
                 "The system has determined that the candidate reached chain level " + currentChainLevel +
-                " in this session. Therefore D10 score MUST be " + d10Score + ". " +
-                "Do not re-evaluate D10 from the answer text — use the provided value.\n";
+                " in this session. Therefore chain_depth score MUST be " + chainDepthScore + ". " +
+                "Do not re-evaluate chain_depth from the answer text — use the provided value.\n";
     }
 
     /**

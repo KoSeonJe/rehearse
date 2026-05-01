@@ -7,7 +7,6 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GeneratedInterviewPlan(
         @JsonProperty("session_plan_id") String sessionPlanId,
-        @JsonProperty("duration_hint_min") int durationHintMin,
         @JsonProperty("total_projects") int totalProjects,
         @JsonProperty("project_plans") List<GeneratedProjectPlan> projectPlans
 ) {

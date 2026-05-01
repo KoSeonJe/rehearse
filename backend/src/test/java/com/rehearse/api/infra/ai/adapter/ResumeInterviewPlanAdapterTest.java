@@ -58,7 +58,7 @@ class ResumeInterviewPlanAdapterTest {
     @DisplayName("execute_정상매핑_priority_오름차순_when_unsorted_input")
     void execute_sorts_project_plans_by_priority_ascending() {
         GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
-                "plan_test", 30, 2,
+                "plan_test", 2,
                 List.of(
                         project("p2", 2, "p2::Kafka"),
                         project("p1", 1, "p1::Redis")
@@ -75,22 +75,10 @@ class ResumeInterviewPlanAdapterTest {
     }
 
     @Test
-    @DisplayName("execute_duration_hint_강제덮어쓰기_when_llm_returns_different")
-    void execute_overrides_duration_hint_when_llm_returns_different_value() {
-        GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
-                "plan_test", 99, 1, List.of(project("p1", 1, "p1::Redis")));
-        given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
-
-        InterviewPlan result = adapter.execute(request, 30);
-
-        assertThat(result.durationHintMin()).isEqualTo(30);
-    }
-
-    @Test
     @DisplayName("execute_INVALID_PLAN_when_chain_id_missing_separator")
     void execute_throws_invalid_plan_when_chain_id_missing_separator() {
         GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
-                "plan_test", 30, 1, List.of(project("p1", 1, "no-separator")));
+                "plan_test", 1, List.of(project("p1", 1, "no-separator")));
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
 
         assertThatThrownBy(() -> adapter.execute(request, 30))
@@ -105,7 +93,7 @@ class ResumeInterviewPlanAdapterTest {
         GeneratedChainRef chain = new GeneratedChainRef("p1::Redis", "Redis", 1, List.of(1, 2));
         GeneratedInterrogationPhase interrogation = new GeneratedInterrogationPhase(List.of(chain), List.of());
         GeneratedProjectPlan plan = new GeneratedProjectPlan("p1", "Alpha", 1, null, interrogation);
-        GeneratedInterviewPlan raw = new GeneratedInterviewPlan("plan_test", 30, 1, List.of(plan));
+        GeneratedInterviewPlan raw = new GeneratedInterviewPlan("plan_test", 1, List.of(plan));
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
 
         assertThatThrownBy(() -> adapter.execute(request, 30))
@@ -117,7 +105,7 @@ class ResumeInterviewPlanAdapterTest {
     @Test
     @DisplayName("execute_INVALID_PLAN_when_project_plans_null")
     void execute_throws_invalid_plan_when_project_plans_null() {
-        GeneratedInterviewPlan raw = new GeneratedInterviewPlan("plan_test", 30, 0, null);
+        GeneratedInterviewPlan raw = new GeneratedInterviewPlan("plan_test", 0, null);
         given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
 
         assertThatThrownBy(() -> adapter.execute(request, 30))

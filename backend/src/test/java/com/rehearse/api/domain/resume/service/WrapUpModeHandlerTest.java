@@ -31,11 +31,16 @@ class WrapUpModeHandlerTest {
     @Mock
     private ResumeWrapUpPromptBuilder promptBuilder;
 
+    @Mock
+    private ResumeQuestionPersister questionPersister;
+
     private InterviewRuntimeState state;
 
     @BeforeEach
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
+        given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+                .willReturn(1L);
     }
 
     @Nested
@@ -48,12 +53,12 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("가장 어려웠던 부분이 뭐였나요?", "가장 어려웠던 부분이 뭐였나요?", "이유", true, false));
 
-            FollowUpResponse response = handler.handle(1L, state, "답변", createAnalysis(), 3L, true);
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 3L, true);
 
-            assertThat(response.getQuestion()).isEqualTo("가장 어려웠던 부분이 뭐였나요?");
-            assertThat(response.getType()).isEqualTo("RESUME_WRAP_UP");
-            assertThat(response.isSkip()).isFalse();
-            assertThat(response.isPresentToUser()).isTrue();
+            assertThat(result.response().getQuestion()).isEqualTo("가장 어려웠던 부분이 뭐였나요?");
+            assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
+            assertThat(result.response().isSkip()).isFalse();
+            assertThat(result.response().isPresentToUser()).isTrue();
         }
 
         @Test
@@ -62,9 +67,9 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마지막 한 마디", "마지막 한 마디", "이유", true, true));
 
-            FollowUpResponse response = handler.handle(1L, state, "답변", createAnalysis(), 1L, true);
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 1L, true);
 
-            assertThat(response.isFollowUpExhausted()).isTrue();
+            assertThat(result.response().isFollowUpExhausted()).isTrue();
         }
 
         @Test
@@ -73,9 +78,9 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("질문", "질문", "이유", true, false));
 
-            FollowUpResponse response = handler.handle(1L, state, "답변", createAnalysis(), 0L, true);
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 0L, true);
 
-            assertThat(response.isFollowUpExhausted()).isTrue();
+            assertThat(result.response().isFollowUpExhausted()).isTrue();
         }
 
         @Test
@@ -84,9 +89,9 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마무리 질문", "마무리 질문", "이유", true, false));
 
-            FollowUpResponse response = handler.handle(1L, state, "답변", createAnalysis(), 2L, true);
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 2L, true);
 
-            assertThat(response.getType()).isEqualTo("RESUME_WRAP_UP");
+            assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
             assertThat(state.getChainStateTracker().hasActiveChain()).isFalse();
         }
     }

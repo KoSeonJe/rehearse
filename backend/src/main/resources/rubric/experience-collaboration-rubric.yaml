@@ -8,26 +8,26 @@ applies_to:
   - category: BEHAVIORAL
 
 uses_dimensions:
-  - ref: D1   # Problem Framing
+  - ref: problem_framing
     weight: 0.15
-  - ref: D3   # Reasoning Communication
+  - ref: reasoning_communication
     weight: 0.20
-  - ref: D6   # Experience Concreteness
+  - ref: experience_concreteness
     weight: 0.30
-  - ref: D7   # Collaboration Awareness (핵심)
+  - ref: collaboration_awareness
     weight: 0.35
 
 per_turn_rules:
   on_intent_clarify: []
   on_intent_give_up: []                   # 협업 질문은 "모른다" 보다 상황 재구성을 기대
-  on_intent_answer:  [D1, D3, D6, D7]
+  on_intent_answer:  [problem_framing, reasoning_communication, experience_concreteness, collaboration_awareness]
 
 level_expectations:
   junior:
-    must_reach_2: [D6, D7]
+    must_reach_2: [experience_concreteness, collaboration_awareness]
     must_reach_1: all
   mid:
     must_reach_2: all
-    must_reach_3: [D7]
+    must_reach_3: [collaboration_awareness]
   senior:
-    must_reach_3: [D6, D7]   # 다관점 이해 + 구체적 기여 필수
+    must_reach_3: [experience_concreteness, collaboration_awareness]   # 다관점 이해 + 구체적 기여 필수

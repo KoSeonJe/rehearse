@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class RubricTest {
 
     private static final List<DimensionRef> ALL_DIMS = List.of(
-            new DimensionRef("D2", 0.25),
-            new DimensionRef("D3", 0.15),
-            new DimensionRef("D6", 0.20),
-            new DimensionRef("D9", 0.20),
-            new DimensionRef("D10", 0.20)
+            new DimensionRef("technical_depth", 0.25),
+            new DimensionRef("reasoning_communication", 0.15),
+            new DimensionRef("experience_concreteness", 0.20),
+            new DimensionRef("factual_consistency", 0.20),
+            new DimensionRef("chain_depth", 0.20)
     );
 
     @Nested
@@ -59,12 +59,12 @@ class RubricTest {
         @DisplayName("GIVE_UP intent → 해당 차원만 반환")
         void give_up_returns_only_d8() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_intent_give_up", List.of("D8")
+                    "on_intent_give_up", List.of("recovery_from_gaps")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.GIVE_UP, null);
 
-            assertThat(result).containsExactly("D8");
+            assertThat(result).containsExactly("recovery_from_gaps");
         }
 
         @Test
@@ -86,48 +86,48 @@ class RubricTest {
         @DisplayName("PLAYGROUND mode → on_playground_mode 차원 반환")
         void playground_mode_returns_correct_dims() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_playground_mode", List.of("D6")
+                    "on_playground_mode", List.of("experience_concreteness")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.PLAYGROUND);
 
-            assertThat(result).containsExactly("D6");
+            assertThat(result).containsExactly("experience_concreteness");
         }
 
         @Test
         @DisplayName("INTERROGATION mode → on_interrogation_mode 차원 반환")
         void interrogation_mode_returns_correct_dims() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_interrogation_mode", List.of("D2", "D3", "D9", "D10")
+                    "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.INTERROGATION);
 
-            assertThat(result).containsExactlyInAnyOrder("D2", "D3", "D9", "D10");
+            assertThat(result).containsExactlyInAnyOrder("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth");
         }
 
         @Test
         @DisplayName("WRAP_UP mode → on_wrap_up_mode 차원 반환")
         void wrap_up_mode_returns_correct_dims() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_wrap_up_mode", List.of("D10")
+                    "on_wrap_up_mode", List.of("chain_depth")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.WRAP_UP);
 
-            assertThat(result).containsExactly("D10");
+            assertThat(result).containsExactly("chain_depth");
         }
 
         @Test
         @DisplayName("resumeMode에 해당 키 없으면 on_intent_answer fallback")
         void resume_mode_missing_key_falls_back_to_intent_answer() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_intent_answer", List.of("D2", "D3")
+                    "on_intent_answer", List.of("technical_depth", "reasoning_communication")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.PLAYGROUND);
 
-            assertThat(result).containsExactly("D2", "D3");
+            assertThat(result).containsExactly("technical_depth", "reasoning_communication");
         }
     }
 
@@ -139,12 +139,12 @@ class RubricTest {
         @DisplayName("ANSWER intent, resumeMode null → on_intent_answer 반환")
         void answer_no_mode_uses_intent_answer() {
             Rubric rubric = rubricWith(Map.of(
-                    "on_intent_answer", List.of("D2", "D3", "D4")
+                    "on_intent_answer", List.of("technical_depth", "reasoning_communication", "conceptual_accuracy")
             ));
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, null);
 
-            assertThat(result).containsExactly("D2", "D3", "D4");
+            assertThat(result).containsExactly("technical_depth", "reasoning_communication", "conceptual_accuracy");
         }
 
         @Test
@@ -154,7 +154,7 @@ class RubricTest {
 
             List<String> result = rubric.selectDimensions(IntentType.ANSWER, null);
 
-            assertThat(result).containsExactlyInAnyOrder("D2", "D3", "D6", "D9", "D10");
+            assertThat(result).containsExactlyInAnyOrder("technical_depth", "reasoning_communication", "experience_concreteness", "factual_consistency", "chain_depth");
         }
     }
 

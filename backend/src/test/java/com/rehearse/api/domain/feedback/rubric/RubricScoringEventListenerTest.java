@@ -1,17 +1,28 @@
 package com.rehearse.api.domain.feedback.rubric;
 
-import com.rehearse.api.domain.resume.entity.ResumeMode;
-import com.rehearse.api.domain.feedback.rubric.service.RubricScoreStore;
-import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
-import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener;
+import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener;
+import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,7 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -28,6 +39,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -43,54 +56,36 @@ class RubricScoringEventListenerTest {
     private RubricScorer rubricScorer;
 
     @Mock
-    private RubricScoreStore rubricScoreStore;
+    private QuestionScorePersister questionScorePersister;
 
     @Mock
-    private com.rehearse.api.domain.interview.service.InterviewFinder interviewFinder;
+    private InterviewFinder interviewFinder;
 
     @Mock
-    private com.rehearse.api.domain.question.repository.QuestionRepository questionRepository;
+    private QuestionRepository questionRepository;
 
     @Mock
-    private com.rehearse.api.domain.questionset.repository.QuestionSetRepository questionSetRepository;
+    private QuestionSetRepository questionSetRepository;
 
     @Mock
-    private com.rehearse.api.infra.ai.metrics.AiCallMetrics aiCallMetrics;
-
-    @Nested
-    @DisplayName("idempotent guard")
-    class IdempotentGuard {
-
-        @Test
-        @DisplayName("동일 turnId로 이미 row 존재하면 채점 skip")
-        void on_duplicateTurn_skipScoring() {
-            TurnCompletedEvent event = createEvent(1L, 0L);
-            given(rubricScoreStore.findExisting(1L, 0L))
-                    .willReturn(Optional.of(mockExistingEntity()));
-
-            listener.on(event);
-
-            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
-        }
-    }
+    private AiCallMetrics aiCallMetrics;
 
     @Nested
     @DisplayName("정상 처리")
     class NormalProcess {
 
         @Test
-        @DisplayName("Row 없을 때 채점 후 저장")
+        @DisplayName("Row 없을 때 채점 후 QuestionScorePersister.saveRubric() 호출")
         void on_newTurn_scoresAndSaves() {
             TurnCompletedEvent event = createEvent(1L, 1L);
-            given(rubricScoreStore.findExisting(1L, 1L)).willReturn(Optional.empty());
 
-            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
+            Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
-            com.rehearse.api.domain.question.entity.Question question = createQuestion();
+            Question question = createQuestionWithId(10L);
             given(questionRepository.findById(10L)).willReturn(Optional.of(question));
 
-            com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
+            QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
             RubricScoringResult score = new RubricScoringResult("concept-cs-fundamental-v1",
@@ -100,22 +95,25 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScoreStore).should().save(1L, 1L, score);
+            then(questionScorePersister).should().saveRubric(
+                    eq(10L), eq(1L),
+                    eq("concept-cs-fundamental-v1"), eq(null), eq("TECHNICAL"),
+                    any()
+            );
         }
 
         @Test
-        @DisplayName("RubricScore empty면 저장 안 함")
+        @DisplayName("RubricScore empty면 saveRubric() 호출 안 함")
         void on_emptyScore_noSave() {
             TurnCompletedEvent event = createEvent(1L, 2L);
-            given(rubricScoreStore.findExisting(1L, 2L)).willReturn(Optional.empty());
 
-            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
+            Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
-            com.rehearse.api.domain.question.entity.Question question = createQuestion();
+            Question question = createQuestionWithId(10L);
             given(questionRepository.findById(10L)).willReturn(Optional.of(question));
 
-            com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
+            QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
@@ -123,7 +121,7 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScoreStore).should(never()).save(anyLong(), anyLong(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
         }
     }
 
@@ -135,42 +133,8 @@ class RubricScoringEventListenerTest {
         @DisplayName("채점 예외 발생 시 예외 전파하지 않음")
         void on_scoringException_doesNotThrow() {
             TurnCompletedEvent event = createEvent(1L, 3L);
-            given(rubricScoreStore.findExisting(1L, 3L)).willReturn(Optional.empty());
             given(interviewFinder.findById(anyLong()))
                     .willThrow(new RuntimeException("DB 오류"));
-
-            assertThatNoException().isThrownBy(() -> listener.on(event));
-        }
-    }
-
-    @Nested
-    @DisplayName("race condition idempotent (B2/B14)")
-    class RaceConditionIdempotent {
-
-        @Test
-        @DisplayName("DataIntegrityViolationException 발생 시 silent skip — 예외 전파 안 함")
-        void on_dataIntegrityViolation_silentSkip() {
-            TurnCompletedEvent event = createEvent(1L, 5L);
-            given(rubricScoreStore.findExisting(1L, 5L)).willReturn(Optional.empty());
-
-            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
-            given(interviewFinder.findById(1L)).willReturn(interview);
-
-            com.rehearse.api.domain.question.entity.Question question = createQuestion();
-            given(questionRepository.findById(10L)).willReturn(Optional.of(question));
-
-            com.rehearse.api.domain.questionset.entity.QuestionSet questionSet = createQuestionSet(interview);
-            given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
-
-            RubricScoringResult score = new RubricScoringResult("resume-v1",
-                    List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
-                    .willReturn(score);
-            given(rubricScoreStore.save(1L, 5L, score))
-                    .willThrow(new DataIntegrityViolationException("uk_rubric_interview_turn violation"));
-            given(rubricScoreStore.findExisting(1L, 5L))
-                    .willReturn(Optional.empty())
-                    .willReturn(Optional.of(mockExistingEntity()));
 
             assertThatNoException().isThrownBy(() -> listener.on(event));
         }
@@ -181,8 +145,8 @@ class RubricScoringEventListenerTest {
     class ResumeTrackNullQuestionId {
 
         @Test
-        @DisplayName("questionId=null인 Resume Track 이벤트도 채점 수행")
-        void on_resumeTrack_nullQuestionId_scoresWithStub() {
+        @DisplayName("questionId=null인 Resume Track 이벤트는 채점 스킵된다")
+        void on_resumeTrack_nullQuestionId_skipsScoring() {
             TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
                     1L, 0L, 1L,
                     null, null,
@@ -192,21 +156,41 @@ class RubricScoringEventListenerTest {
                     IntentType.ANSWER, InterviewLevel.MID,
                     ResumeMode.INTERROGATION, 2, null
             );
-            given(rubricScoreStore.findExisting(1L, 0L)).willReturn(Optional.empty());
 
-            com.rehearse.api.domain.interview.entity.Interview interview = createInterview();
+            Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
-
-            RubricScoringResult score = new RubricScoringResult("resume-v1",
-                    List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
-                    .willReturn(score);
 
             listener.on(event);
 
-            then(rubricScoreStore).should().save(1L, 0L, score);
-            then(questionRepository).shouldHaveNoInteractions();
-            then(questionSetRepository).shouldHaveNoInteractions();
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("stub question (questionId null)")
+    class StubQuestion {
+
+        @Test
+        @DisplayName("DB에서 조회된 question의 id가 null이면 저장 스킵")
+        void on_questionIdNull_skipsScoring() {
+            TurnCompletedEvent event = createEvent(1L, 4L);
+
+            Interview interview = createInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            // id가 없는 question (builder로 생성 시 id=null)
+            Question stubQuestion = Question.builder()
+                    .questionType(QuestionType.MAIN)
+                    .questionText("stub")
+                    .orderIndex(0)
+                    .build();
+            given(questionRepository.findById(10L)).willReturn(Optional.of(stubQuestion));
+
+            listener.on(event);
+
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
         }
     }
 
@@ -221,39 +205,31 @@ class RubricScoringEventListenerTest {
         );
     }
 
-    private RubricScore mockExistingEntity() {
-        return RubricScore.builder()
-                .interviewId(1L)
-                .turnId(0L)
-                .rubricId("concept-cs-fundamental-v1")
-                .scoresJson(Map.of())
+    private Question createQuestionWithId(Long id) {
+        Question question = Question.builder()
+                .questionType(QuestionType.MAIN)
+                .questionText("테스트 질문")
+                .feedbackPerspective(FeedbackPerspective.TECHNICAL)
+                .orderIndex(0)
                 .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        return question;
     }
 
-    private com.rehearse.api.domain.interview.entity.Interview createInterview() {
-        return com.rehearse.api.domain.interview.entity.Interview.builder()
+    private Interview createInterview() {
+        return Interview.builder()
                 .userId(1L)
-                .position(com.rehearse.api.domain.interview.entity.Position.BACKEND)
+                .position(Position.BACKEND)
                 .level(InterviewLevel.MID)
-                .interviewTypes(List.of(com.rehearse.api.domain.interview.entity.InterviewType.CS_FUNDAMENTAL))
+                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
                 .durationMinutes(30)
                 .build();
     }
 
-    private com.rehearse.api.domain.question.entity.Question createQuestion() {
-        return com.rehearse.api.domain.question.entity.Question.builder()
-                .questionType(com.rehearse.api.domain.question.entity.QuestionType.MAIN)
-                .questionText("테스트 질문")
-                .feedbackPerspective(com.rehearse.api.domain.feedback.entity.FeedbackPerspective.TECHNICAL)
-                .orderIndex(0)
-                .build();
-    }
-
-    private com.rehearse.api.domain.questionset.entity.QuestionSet createQuestionSet(
-            com.rehearse.api.domain.interview.entity.Interview interview) {
-        return com.rehearse.api.domain.questionset.entity.QuestionSet.builder()
+    private QuestionSet createQuestionSet(Interview interview) {
+        return QuestionSet.builder()
                 .interview(interview)
-                .category(com.rehearse.api.domain.questionset.entity.QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
     }

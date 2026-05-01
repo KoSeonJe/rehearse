@@ -3,10 +3,10 @@ package com.rehearse.api.domain.feedback.rubric.service;
 import java.util.Map;
 
 public record NonverbalTurnScore(
-        Integer d11Fluency,
-        Integer d12Tone,
-        Integer d13Posture,
-        Integer d14Composure,
+        Integer fluency,
+        Integer confidenceTone,
+        Integer eyeContactPosture,
+        Integer composure,
         Map<String, Object> rawSignals,
         double contextMultiplier
 ) {
@@ -16,6 +16,6 @@ public record NonverbalTurnScore(
     }
 
     public boolean hasAnyScore() {
-        return d11Fluency != null || d12Tone != null || d13Posture != null || d14Composure != null;
+        return fluency != null || confidenceTone != null || eyeContactPosture != null || composure != null;
     }
 }

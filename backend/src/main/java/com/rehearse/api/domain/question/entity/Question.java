@@ -50,6 +50,15 @@ public class Question {
     @JoinColumn(name = "question_pool_id")
     private QuestionPool questionPool;
 
+    @Column(length = 128)
+    private String chainId;
+
+    @Column(length = 16)
+    private String chainStepType;
+
+    @Column(length = 64)
+    private String projectId;
+
     @Builder
     public Question(QuestionType questionType, String questionText,
                     String ttsText, String modelAnswer, ReferenceType referenceType,
@@ -65,14 +74,32 @@ public class Question {
         this.questionPool = questionPool;
     }
 
+    public static Question resume(QuestionSet questionSet, QuestionType type,
+                                   String questionText, int orderIndex,
+                                   String chainId, String chainStepType, String projectId) {
+        if (type == QuestionType.MAIN || type == QuestionType.FOLLOWUP) {
+            throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
+        }
+        Question q = new Question();
+        q.questionSet = questionSet;
+        q.questionType = type;
+        q.questionText = questionText;
+        q.orderIndex = orderIndex;
+        q.chainId = chainId;
+        q.chainStepType = chainStepType;
+        q.projectId = projectId;
+        return q;
+    }
+
     public void assignQuestionSet(QuestionSet questionSet) {
         this.questionSet = questionSet;
     }
 
     /**
-     * Resume Track용 stub — LLM 동적 생성 질문은 DB에 저장되지 않음.
-     * RubricLoader.resolveFor()는 resumeTrack=true 우선으로 매핑하므로 questionText/feedbackPerspective만 참조.
+     * Resume Track용 stub — questionId가 null인 이벤트의 하위호환성 유지용.
+     * ResumeQuestionPersister 전환 완료 후 제거 예정.
      */
+    @Deprecated
     public static Question stubForResumeTrack() {
         Question stub = new Question();
         stub.questionType = QuestionType.MAIN;

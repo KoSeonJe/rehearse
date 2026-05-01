@@ -10,15 +10,15 @@ applies_to:
   - category: RESUME_BASED
 
 uses_dimensions:
-  - ref: D2   # Technical Depth
+  - ref: technical_depth
     weight: 0.25
-  - ref: D3   # Reasoning Communication
+  - ref: reasoning_communication
     weight: 0.15
-  - ref: D6   # Experience Concreteness
+  - ref: experience_concreteness
     weight: 0.20
-  - ref: D9   # Factual Consistency (핵심)
+  - ref: factual_consistency   # 핵심
     weight: 0.20
-  - ref: D10  # Chain Depth (핵심)
+  - ref: chain_depth           # 핵심
     weight: 0.20
 
 # mode-aware: ResumeMode 에 따라 차원 선택
@@ -28,17 +28,17 @@ uses_dimensions:
 # on_intent_* 는 모드와 독립 적용
 per_turn_rules:
   on_intent_clarify: []
-  on_intent_give_up: [D8]
-  on_playground_mode:    [D6]
-  on_interrogation_mode: [D2, D3, D9, D10]
-  on_wrap_up_mode:       [D10]
+  on_intent_give_up: [recovery_from_gaps]
+  on_playground_mode:    [experience_concreteness]
+  on_interrogation_mode: [technical_depth, reasoning_communication, factual_consistency, chain_depth]
+  on_wrap_up_mode:       [chain_depth]
 
 level_expectations:
   junior:
-    must_reach_2: [D9]
+    must_reach_2: [factual_consistency]
     must_reach_1: all
   mid:
-    must_reach_3: [D9]           # 사실 일치는 필수
+    must_reach_3: [factual_consistency]     # 사실 일치는 필수
     must_reach_2: all
   senior:
-    must_reach_3: [D9, D2, D10]  # 사실 + 깊이 + 체인 모두
+    must_reach_3: [factual_consistency, technical_depth, chain_depth]  # 사실 + 깊이 + 체인 모두

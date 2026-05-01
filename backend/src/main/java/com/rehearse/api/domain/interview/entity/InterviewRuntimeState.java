@@ -47,6 +47,7 @@ public class InterviewRuntimeState {
     private volatile ResumeMode resumeMode = ResumeMode.PLAYGROUND;
     private final ChainStateTracker chainStateTracker = new ChainStateTracker();
     private final AtomicInteger playgroundCumulativeLength = new AtomicInteger(0);
+    private final AtomicInteger resumeOrderCounter = new AtomicInteger(0);
 
     public InterviewRuntimeState(String currentLevel, ResumeSkeleton resumeSkeletonCache) {
         coveredClaims = new ConcurrentLinkedDeque<>();
@@ -68,6 +69,10 @@ public class InterviewRuntimeState {
 
     public void setStartedAt(Instant startedAt) {
         this.startedAt = startedAt;
+    }
+
+    public int nextResumeOrderIndex() {
+        return resumeOrderCounter.getAndIncrement();
     }
 
     public int addPlaygroundAnswerLength(int length) {
