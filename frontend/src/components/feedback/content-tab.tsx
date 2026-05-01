@@ -40,7 +40,7 @@ const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
           >
             <div className="flex items-center justify-between gap-3">
               <span className="font-tabular text-[12px] font-semibold text-gray-500">
-                {dimension.dimensionLabel ?? dimension.dimension}
+                {dimension.dimension}
               </span>
               <span className="font-tabular text-[13px] font-bold text-gray-900">
                 {formatScore(dimension.score)}
