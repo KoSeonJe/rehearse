@@ -89,7 +89,7 @@ class RubricScoringEventListenerTest {
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
             RubricScoringResult score = new RubricScoringResult("concept-cs-fundamental-v1",
-                    List.of("D2"), Map.of("D2", DimensionScore.of(2, "설명", "ev")), null);
+                    List.of("technical_depth"), Map.of("technical_depth", DimensionScore.of(2, "설명", "ev")), null);
             given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(score);
 

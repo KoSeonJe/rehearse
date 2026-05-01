@@ -43,7 +43,7 @@ class SessionFeedbackParserTest {
     private SessionFeedbackInput inputWithCategories(String... categories) {
         Map<String, Map<String, Double>> scores = new java.util.LinkedHashMap<>();
         for (String cat : categories) {
-            scores.put(cat, Map.of("D1", 2.5));
+            scores.put(cat, Map.of("problem_framing", 2.5));
         }
         return new SessionFeedbackInput(
                 metadata(), Collections.emptyList(), scores,
@@ -56,17 +56,17 @@ class SessionFeedbackParserTest {
         return """
                 {
                   "overall": {
-                    "dimension_scores": {"D1": 2.5},
+                    "dimension_scores": {"problem_framing": 2.5},
                     "level_assessment": "주니어 기대치 충족",
                     "narrative": "%s",
                     "coverage": "all turns scored"
                   },
                   "strengths": [
-                    {"dimension": "D1", "observation": "turn 1에서 명확한 설명", "why_matters": "소통 능력"}
+                    {"dimension": "problem_framing", "observation": "turn 1에서 명확한 설명", "why_matters": "소통 능력"}
                   ],
                   "gaps": [
                     {
-                      "dimension": "D2",
+                      "dimension": "technical_depth",
                       "observation": "turn 2에서 근거 부족",
                       "level_gap": "미드 레벨 기대치 미달",
                       "concrete_action": "CS 기초 복습 후 예제 코드 작성"
@@ -94,7 +94,7 @@ class SessionFeedbackParserTest {
     @Test
     @DisplayName("추상 표현 없는 유효한 JSON은 정상 파싱 (false-positive 회귀)")
     void parse_succeeds_when_no_abstract_phrases() {
-        String json = validPayloadJson("CS 개념에선 D4 평균 2.9로 탄탄하지만 경험 질문에서 구체화 부족한 패턴.");
+        String json = validPayloadJson("CS 개념에선 conceptual_accuracy 평균 2.9로 탄탄하지만 경험 질문에서 구체화 부족한 패턴.");
         assertThatCode(() -> parser.parse(json, emptyInput()))
                 .doesNotThrowAnyException();
     }
@@ -113,8 +113,8 @@ class SessionFeedbackParserTest {
     void parse_throwsException_when_overall_missing() {
         String json = """
                 {
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"없음","tone_pattern":"안정","action":"유지"},
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
@@ -129,9 +129,9 @@ class SessionFeedbackParserTest {
     void parse_throwsException_when_strengths_empty() {
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
                   "strengths": [],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"없음","tone_pattern":"안정","action":"유지"},
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
@@ -146,9 +146,9 @@ class SessionFeedbackParserTest {
     void parse_throwsException_when_week_plan_missing() {
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"없음","tone_pattern":"안정","action":"유지"}
                 }
                 """;
@@ -199,9 +199,9 @@ class SessionFeedbackParserTest {
         );
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"D1 차원에서 문제","tone_pattern":"안정","action":"유지"},
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
@@ -221,9 +221,9 @@ class SessionFeedbackParserTest {
         );
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"XD1처럼 들림","tone_pattern":"안정","action":"유지"},
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
@@ -238,9 +238,9 @@ class SessionFeedbackParserTest {
         SessionFeedbackInput inputWithNonverbalAggregate = inputWithNonverbalAggregate();
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": null,
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
@@ -257,9 +257,9 @@ class SessionFeedbackParserTest {
         SessionFeedbackInput inputWithNonverbalAggregate = inputWithNonverbalAggregate();
         String json = """
                 {
-                  "overall": {"dimension_scores":{"D1":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
-                  "strengths": [{"dimension":"D1","observation":"turn 1","why_matters":"ok"}],
-                  "gaps": [{"dimension":"D2","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
+                  "overall": {"dimension_scores":{"problem_framing":2.5},"level_assessment":"ok","narrative":"좋음","coverage":"all"},
+                  "strengths": [{"dimension":"problem_framing","observation":"turn 1","why_matters":"ok"}],
+                  "gaps": [{"dimension":"technical_depth","observation":"turn 2","level_gap":"x","concrete_action":"y"}],
                   "delivery": {"filler_words":"양호","tone_pattern":"D13이 낮음","action":"카메라 보기"},
                   "week_plan": [{"priority":1,"topic":"자료구조","resources":["CTCI"],"practice":"1문제"}]
                 }
