@@ -12,6 +12,7 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @ActiveProfiles("test")
 @DisplayName("RubricLoader")
-class RubricLoaderTest {
+class RubricLoaderTest extends AbstractMySqlContainerTest {
 
     @Autowired
     private RubricLoader rubricLoader;

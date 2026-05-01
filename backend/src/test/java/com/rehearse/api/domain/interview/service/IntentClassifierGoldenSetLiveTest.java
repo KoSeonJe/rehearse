@@ -2,6 +2,7 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.IntentResult;
 import com.rehearse.api.domain.interview.entity.IntentType;
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -21,9 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * LLM 출력은 비결정적이므로 개별 케이스 hard-assert 대신 집계 정확도 게이트로 검증한다.
  */
-@SpringBootTest(properties = "spring.sql.init.mode=never")
+@SpringBootTest
 @EnabledIfEnvironmentVariable(named = "LIVE_TEST", matches = "true")
-class IntentClassifierGoldenSetLiveTest {
+class IntentClassifierGoldenSetLiveTest extends AbstractMySqlContainerTest {
 
     @Autowired
     private IntentClassifier intentClassifier;

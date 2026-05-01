@@ -94,6 +94,11 @@ dependencies {
 
     // WireMock (HTTP mock server for OpenAI/Claude API contract tests)
     testImplementation("org.wiremock:wiremock-standalone:3.9.1")
+
+    // Testcontainers
+    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    testImplementation("org.testcontainers:mysql:1.20.4")
+    testImplementation("com.mysql:mysql-connector-j")
 }
 
 tasks.withType<Test> {

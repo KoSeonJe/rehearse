@@ -2,7 +2,6 @@ package com.rehearse.api.global.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
@@ -30,13 +29,7 @@ public class DimensionScoreMapConverter implements AttributeConverter<Map<String
             return Map.of();
         }
         try {
-            // H2 JSON column returns string literals as double-encoded JSON strings;
-            // unwrap to raw JSON object text before deserializing.
-            JsonNode node = JsonMapperHolder.get().readTree(json);
-            if (node.isTextual()) {
-                return JsonMapperHolder.get().readValue(node.asText(), new TypeReference<>() {});
-            }
-            return JsonMapperHolder.get().treeToValue(node, new TypeReference<>() {});
+            return JsonMapperHolder.get().readValue(json, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("JSON → Map<String,DimensionScore> 변환 실패", e);
         }

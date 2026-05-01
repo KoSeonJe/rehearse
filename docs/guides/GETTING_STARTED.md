@@ -8,12 +8,21 @@
 | Node.js | 20+ | `node -v` |
 | npm | 10+ | `npm -v` |
 | Git | 2.x | `git --version` |
+| Docker | 20+ | `docker --version` |
 
 ---
 
 ## Backend 실행
 
-### 1. 환경변수 설정
+### 1. MySQL 컨테이너 실행 (로컬 DB)
+
+```bash
+docker compose up -d
+```
+
+컨테이너가 healthy 상태가 될 때까지 대기합니다 (`docker compose ps`로 확인).
+
+### 2. 환경변수 설정
 
 ```bash
 cd backend
@@ -26,19 +35,25 @@ cp .env.example .env
 CLAUDE_API_KEY=your-api-key-here
 ```
 
-> 또는 `src/main/resources/application-dev.yml`에서 직접 설정 가능합니다.
-
-### 2. 서버 실행
+### 3. 서버 실행
 
 ```bash
 ./gradlew bootRun
 ```
 
 - 기본 포트: `http://localhost:8080`
-- H2 콘솔: `http://localhost:8080/h2-console` (dev 프로필)
 - Health Check: `http://localhost:8080/actuator/health`
 
-### 3. 테스트
+### 4. 테스트
+
+테스트는 Testcontainers가 MySQL 8.0 컨테이너를 자동으로 관리합니다. Docker가 실행 중이어야 합니다.
+
+컨테이너 재사용으로 테스트 속도를 높이려면 아래 설정을 추가합니다:
+
+```bash
+# ~/.testcontainers.properties
+echo "testcontainers.reuse.enable=true" >> ~/.testcontainers.properties
+```
 
 ```bash
 ./gradlew test
@@ -75,9 +90,10 @@ npx tsc --noEmit       # 타입 체크만
 
 ## 전체 실행 순서
 
-1. Backend 실행: `cd backend && ./gradlew bootRun`
-2. Frontend 실행: `cd frontend && npm run dev`
-3. 브라우저에서 `http://localhost:5173` 접속
+1. MySQL 컨테이너 시작: `docker compose up -d`
+2. Backend 실행: `cd backend && ./gradlew bootRun`
+3. Frontend 실행: `cd frontend && npm run dev`
+4. 브라우저에서 `http://localhost:5173` 접속
 
 ---
 
@@ -106,7 +122,7 @@ npx tsc --noEmit       # 타입 체크만
 - `chrome://settings/content/camera`에서 권한 확인
 - HTTPS 또는 localhost에서만 미디어 접근 가능
 
-### H2 콘솔 접속
-- URL: `http://localhost:8080/h2-console`
-- JDBC URL: `jdbc:h2:mem:rehearse`
-- Username: `sa`, Password: (없음)
+### MySQL 접속 (로컬)
+- Host: `localhost:3306`
+- Database: `rehearse_local`
+- Username: `rehearse`, Password: `rehearse`

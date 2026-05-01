@@ -1,8 +1,13 @@
 package com.rehearse.api.domain.interview.repository;
 
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.user.entity.OAuthProvider;
+import com.rehearse.api.domain.user.entity.User;
+import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.global.config.JpaAuditingConfig;
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import jakarta.persistence.EntityManager;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,13 +28,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @ActiveProfiles("test")
 @Import(JpaAuditingConfig.class)
-class InterviewRepositoryTest {
+class InterviewRepositoryTest extends AbstractMySqlContainerTest {
 
     @Autowired
     private InterviewRepository interviewRepository;
 
     @Autowired
     private EntityManager entityManager;
+
+    private Long persistedUserId;
+
+    @BeforeEach
+    void setUpUser() {
+        User user = User.builder()
+                .email("test@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-123")
+                .role(UserRole.USER)
+                .build();
+        entityManager.persist(user);
+        entityManager.flush();
+        persistedUserId = user.getId();
+    }
 
     @Test
     @DisplayName("EntityGraph로 ElementCollection이 세션 종료 후에도 접근 가능하다")
@@ -86,7 +107,7 @@ class InterviewRepositoryTest {
     void findByIdWithElementCollections_singleType_returnsExactMatch() {
         // given
         Interview interview = Interview.builder()
-                .userId(1L)
+                .userId(persistedUserId)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
@@ -116,7 +137,7 @@ class InterviewRepositoryTest {
     void findByPublicId_singleType_returnsExactMatch() {
         // given
         Interview interview = Interview.builder()
-                .userId(1L)
+                .userId(persistedUserId)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
@@ -142,7 +163,7 @@ class InterviewRepositoryTest {
     @DisplayName("다른 면접의 ElementCollection이 영속성 컨텍스트에 먼저 로드돼도 단일 type 면접 조회는 오염되지 않는다 (H2 회귀 보호)")
     void findByIdWithElementCollections_persistenceContextPollutionScenario() {
         Interview polluter = Interview.builder()
-                .userId(1L)
+                .userId(persistedUserId)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.BEHAVIORAL, InterviewType.LANGUAGE_FRAMEWORK))
@@ -150,7 +171,7 @@ class InterviewRepositoryTest {
                 .build();
 
         Interview target = Interview.builder()
-                .userId(1L)
+                .userId(persistedUserId)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
@@ -178,7 +199,7 @@ class InterviewRepositoryTest {
     void findAllByUserId_singleType_returnsExactTypes() {
         // given
         Interview csOnly = Interview.builder()
-                .userId(2L)
+                .userId(persistedUserId)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
@@ -190,7 +211,7 @@ class InterviewRepositoryTest {
         entityManager.clear();
 
         // when
-        Page<Interview> page = interviewRepository.findAllByUserId(2L, PageRequest.of(0, 10));
+        Page<Interview> page = interviewRepository.findAllByUserId(persistedUserId, PageRequest.of(0, 10));
 
         // then
         assertThat(page.getContent()).hasSize(1);
@@ -203,7 +224,7 @@ class InterviewRepositoryTest {
     @Test
     @DisplayName("createdAt이 강제로 동일한 면접 2개를 size=1로 두 페이지 조회 시 tie-break 정렬로 중복/누락 없이 2건이 반환된다")
     void findAllByUserId_sameCreatedAt_noDuplicateWithTieBreak() {
-        Long userId = 3L;
+        Long userId = persistedUserId;
         Interview first = Interview.builder()
                 .userId(userId)
                 .position(Position.BACKEND)
