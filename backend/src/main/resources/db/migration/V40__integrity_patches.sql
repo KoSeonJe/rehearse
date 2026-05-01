@@ -11,40 +11,39 @@ ALTER TABLE interview_cs_sub_topics
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 2: V4 FK에 ON DELETE CASCADE 재생성
--- DROP CONSTRAINT는 MySQL 8.0.19+에서 FK에 지원됨 (prod: 8.0.45 확인).
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- question_set → interview
 ALTER TABLE question_set
-    DROP CONSTRAINT fk_question_set_interview;
+    DROP FOREIGN KEY fk_question_set_interview;
 ALTER TABLE question_set
     ADD CONSTRAINT fk_question_set_interview
         FOREIGN KEY (interview_id) REFERENCES interview(id) ON DELETE CASCADE;
 
 -- question → question_set
 ALTER TABLE question
-    DROP CONSTRAINT fk_question_question_set;
+    DROP FOREIGN KEY fk_question_question_set;
 ALTER TABLE question
     ADD CONSTRAINT fk_question_question_set
         FOREIGN KEY (question_set_id) REFERENCES question_set(id) ON DELETE CASCADE;
 
 -- question_set_answer → question
 ALTER TABLE question_set_answer
-    DROP CONSTRAINT fk_answer_question;
+    DROP FOREIGN KEY fk_answer_question;
 ALTER TABLE question_set_answer
     ADD CONSTRAINT fk_answer_question
         FOREIGN KEY (question_id) REFERENCES question(id) ON DELETE CASCADE;
 
 -- question_set_feedback → question_set
 ALTER TABLE question_set_feedback
-    DROP CONSTRAINT fk_qs_feedback_question_set;
+    DROP FOREIGN KEY fk_qs_feedback_question_set;
 ALTER TABLE question_set_feedback
     ADD CONSTRAINT fk_qs_feedback_question_set
         FOREIGN KEY (question_set_id) REFERENCES question_set(id) ON DELETE CASCADE;
 
 -- timestamp_feedback → question_set_feedback
 ALTER TABLE timestamp_feedback
-    DROP CONSTRAINT fk_ts_feedback_qs_feedback;
+    DROP FOREIGN KEY fk_ts_feedback_qs_feedback;
 ALTER TABLE timestamp_feedback
     ADD CONSTRAINT fk_ts_feedback_qs_feedback
         FOREIGN KEY (question_set_feedback_id) REFERENCES question_set_feedback(id) ON DELETE CASCADE;
@@ -54,7 +53,7 @@ ALTER TABLE timestamp_feedback
 -- V35의 chk_question_track_meta를 DROP하고 5-way 정밀 제약으로 교체.
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE question
-    DROP CONSTRAINT chk_question_track_meta;
+    DROP CHECK chk_question_track_meta;
 
 ALTER TABLE question
     ADD CONSTRAINT chk_question_track_meta_v2 CHECK (
