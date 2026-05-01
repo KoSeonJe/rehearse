@@ -343,7 +343,7 @@ class QuestionSetServiceTest {
 
             QuestionScoreDimension dimension = QuestionScoreDimension.builder()
                     .questionScoreId(200L)
-                    .dimensionRef("D4")
+                    .dimensionRef("conceptual_accuracy")
                     .score(3)
                     .observation("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.")
                     .evidenceQuote("young 영역과 old 영역을 나눠 관리")
@@ -367,7 +367,7 @@ class QuestionSetServiceTest {
             assertThat(technicalFeedback.getRubricId()).isEqualTo("cs-v1");
             assertThat(technicalFeedback.getLevelFlag()).isEqualTo("MID_EXPECTATION_MET");
             assertThat(technicalFeedback.getDimensions()).hasSize(1);
-            assertThat(technicalFeedback.getDimensions().getFirst().getDimension()).isEqualTo("D4");
+            assertThat(technicalFeedback.getDimensions().getFirst().getDimension()).isEqualTo("conceptual_accuracy");
             assertThat(technicalFeedback.getDimensions().getFirst().getScore()).isEqualTo(3);
             assertThat(technicalFeedback.getDimensions().getFirst().getObservation())
                     .isEqualTo("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.");
