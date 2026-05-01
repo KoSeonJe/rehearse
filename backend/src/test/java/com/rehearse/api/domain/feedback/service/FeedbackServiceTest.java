@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
+import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
@@ -16,9 +17,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +29,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class FeedbackServiceTest {
@@ -42,6 +47,9 @@ class FeedbackServiceTest {
 
     @Mock
     private QuestionSetFeedbackPersister feedbackPersister;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     @DisplayName("saveFeedback_completes_analysis_when_verbal_and_nonverbal_both_true")
@@ -127,12 +135,84 @@ class FeedbackServiceTest {
                 });
     }
 
+    @Test
+    @DisplayName("saveFeedback_모든_QuestionSet_완료_시_DeliveryEnrichmentRequestedEvent_발행")
+    void saveFeedback_publishes_delivery_enrichment_event_when_all_settled() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+        given(questionSetRepository.countByInterviewId(any())).willReturn(1L);
+        given(analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(any(), any())).willReturn(0L);
+
+        SaveFeedbackRequest request = createRequest(true, true);
+
+        // when
+        feedbackService.saveFeedback(1L, request);
+
+        // then
+        then(eventPublisher).should().publishEvent(any(DeliveryEnrichmentRequestedEvent.class));
+    }
+
+    @Test
+    @DisplayName("saveFeedback_진행중_QuestionSet_존재_시_이벤트_미발행")
+    void saveFeedback_does_not_publish_event_when_analysis_still_in_progress() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+        given(questionSetRepository.countByInterviewId(any())).willReturn(2L);
+        // 1개는 아직 ANALYZING 중
+        given(analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(any(), any()))
+                .willReturn(1L)  // inProgressStatuses
+                .willReturn(0L); // PENDING/PENDING_UPLOAD
+
+        SaveFeedbackRequest request = createRequest(true, true);
+
+        // when
+        feedbackService.saveFeedback(1L, request);
+
+        // then
+        then(eventPublisher).should(never()).publishEvent(any());
+    }
+
+    @Test
+    @DisplayName("saveFeedback_QuestionSet_0개_시_이벤트_미발행")
+    void saveFeedback_does_not_publish_event_when_no_question_sets() {
+        // given
+        QuestionSet questionSet = createQuestionSet(1L);
+        QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
+        given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+        given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
+        given(questionSetRepository.countByInterviewId(any())).willReturn(0L);
+
+        SaveFeedbackRequest request = createRequest(true, true);
+
+        // when
+        feedbackService.saveFeedback(1L, request);
+
+        // then
+        then(eventPublisher).should(never()).publishEvent(any());
+    }
+
     // ----------------------------------------------------------------
     // helpers
     // ----------------------------------------------------------------
 
+    private SaveFeedbackRequest createRequest(boolean verbal, boolean nonverbal) {
+        SaveFeedbackRequest request = new SaveFeedbackRequest();
+        ReflectionTestUtils.setField(request, "questionSetComment", "테스트 코멘트");
+        ReflectionTestUtils.setField(request, "timestampFeedbacks", null);
+        ReflectionTestUtils.setField(request, "verbalCompleted", verbal);
+        ReflectionTestUtils.setField(request, "nonverbalCompleted", nonverbal);
+        return request;
+    }
+
     private QuestionSet createQuestionSet(Long id) {
         Interview interview = mock(Interview.class);
+        lenient().when(interview.getId()).thenReturn(100L);
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
                 .category(QuestionSetCategory.CS_FUNDAMENTAL)

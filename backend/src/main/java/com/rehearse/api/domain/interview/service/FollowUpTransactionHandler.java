@@ -5,7 +5,6 @@ import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.service.InterviewTurnPolicyResolver;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -16,9 +15,12 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class FollowUpTransactionHandler {
@@ -83,9 +85,12 @@ public class FollowUpTransactionHandler {
     }
 
     @Transactional
-    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int orderIndex) {
-        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
+    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int ignoredOrderIndex) {
+        QuestionSet questionSet = questionSetRepository.findByIdForUpdate(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+
+        // write TX 내에서 최신 size 기준으로 orderIndex 결정 — 동시 호출 시 race condition 차단
+        int orderIndex = questionSet.getQuestions().size();
 
         Question followUpQuestion = Question.builder()
                 .questionType(QuestionType.FOLLOWUP)
@@ -96,12 +101,16 @@ public class FollowUpTransactionHandler {
                 .build();
 
         questionSet.addQuestion(followUpQuestion);
-        Question saved = questionRepository.save(followUpQuestion);
-
-        int newFollowUpCount = (int) questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
-                .count();
-        return new FollowUpSaveResult(saved, newFollowUpCount);
+        try {
+            Question saved = questionRepository.saveAndFlush(followUpQuestion);
+            int newFollowUpCount = (int) questionSet.getQuestions().stream()
+                    .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
+                    .count();
+            return new FollowUpSaveResult(saved, newFollowUpCount);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("follow-up 중복 삽입 차단 (unique constraint): questionSetId={}, orderIndex={}",
+                    questionSetId, orderIndex);
+            throw new BusinessException(InterviewErrorCode.FOLLOWUP_DUPLICATE);
+        }
     }
-
 }

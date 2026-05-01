@@ -54,6 +54,16 @@ public class SessionFeedbackService {
             return;
         }
 
+        enrichDeliveryInternal(interviewId, deliveryJson, visionJson, nonverbalAggregateJson);
+    }
+
+    // Lambda 데이터 없이 DB의 nonverbal score만으로 enrichment를 수행한다.
+    // DeliveryEnrichmentRequestedEvent 핸들러에서 호출 — null-all TIMEOUT 가드를 우회해야 하기 때문에 분리.
+    public void enrichDeliveryFromScores(Long interviewId) {
+        enrichDeliveryInternal(interviewId, null, null, null);
+    }
+
+    private void enrichDeliveryInternal(Long interviewId, String deliveryJson, String visionJson, String nonverbalAggregateJson) {
         SessionFeedbackInput input = persistenceService.assembleInputWithDelivery(
                 interviewId, deliveryJson, visionJson, nonverbalAggregateJson);
         SessionFeedbackPayload payload = synthesizer.synthesize(input);
