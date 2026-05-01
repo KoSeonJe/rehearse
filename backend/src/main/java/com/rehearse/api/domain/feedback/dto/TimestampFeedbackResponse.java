@@ -2,18 +2,16 @@ package com.rehearse.api.domain.feedback.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.question.entity.Question;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.jackson.Jacksonized;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Collections;
 
 @Getter
 @Builder
@@ -55,7 +53,7 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class NonverbalFeedback {
-        private final String eyeContactLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String eyeContactLevel;
         private final String postureLevel;
         private final String expressionLabel;
         private final CommentBlock nonverbalComment;
@@ -64,10 +62,10 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class VocalFeedback {
-        private final String fillerWords;           // JSON 배열 문자열
+        private final String fillerWords;
         private final Integer fillerWordCount;
         private final String speechPace;
-        private final String toneConfidenceLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String toneConfidenceLevel;
         private final String emotionLabel;
         private final CommentBlock vocalComment;
     }
@@ -84,22 +82,18 @@ public class TimestampFeedbackResponse {
     @Builder
     public static class TechnicalDimensionFeedback {
         private final String dimension;
-        private final String dimensionLabel;
         private final Integer score;
         private final String observation;
         private final String evidenceQuote;
     }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
-        return from(feedback, null, Collections.emptyMap());
+        return from(feedback, null, List.of());
     }
 
-    public static TimestampFeedbackResponse from(TimestampFeedback feedback, RubricScore rubricScore) {
-        return from(feedback, rubricScore, Collections.emptyMap());
-    }
-
-    public static TimestampFeedbackResponse from(TimestampFeedback feedback, RubricScore rubricScore,
-                                                  Map<String, String> dimensionLabels) {
+    public static TimestampFeedbackResponse from(TimestampFeedback feedback,
+                                                  QuestionScore questionScore,
+                                                  List<QuestionScoreDimension> dimensions) {
         Question question = feedback.getQuestion();
 
         NonverbalFeedback nonverbal = NonverbalFeedback.builder()
@@ -134,7 +128,7 @@ public class TimestampFeedbackResponse {
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
                 .delivery(delivery)
-                .technicalFeedback(toTechnicalFeedback(rubricScore, dimensionLabels))
+                .technicalFeedback(toTechnicalFeedback(questionScore, dimensions))
                 .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
@@ -145,36 +139,31 @@ public class TimestampFeedbackResponse {
         try {
             return OBJECT_MAPPER.readValue(json, CommentBlock.class);
         } catch (Exception e) {
-            // legacy ✓△→ 또는 손상된 문자열 → positive에만 raw 입력
+            // legacy 또는 손상된 문자열 → positive에만 raw 입력
             return CommentBlock.builder().positive(json).build();
         }
     }
 
-    private static TechnicalFeedback toTechnicalFeedback(RubricScore rubricScore, Map<String, String> dimensionLabels) {
-        if (rubricScore == null || rubricScore.getScoresJson() == null || rubricScore.getScoresJson().isEmpty()) {
+    private static TechnicalFeedback toTechnicalFeedback(QuestionScore questionScore,
+                                                          List<QuestionScoreDimension> dimensions) {
+        if (questionScore == null || dimensions == null || dimensions.isEmpty()) {
             return null;
         }
 
-        List<TechnicalDimensionFeedback> dimensions = rubricScore.getScoresJson().entrySet().stream()
-                .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
-                .map(entry -> toTechnicalDimension(entry.getKey(), entry.getValue(), dimensionLabels))
+        List<TechnicalDimensionFeedback> dimFeedbacks = dimensions.stream()
+                .sorted(Comparator.comparing(QuestionScoreDimension::getDimensionRef))
+                .map(d -> TechnicalDimensionFeedback.builder()
+                        .dimension(d.getDimensionRef())
+                        .score(d.getScore())
+                        .observation(d.getObservation())
+                        .evidenceQuote(d.getEvidenceQuote())
+                        .build())
                 .toList();
 
         return TechnicalFeedback.builder()
-                .rubricId(rubricScore.getRubricId())
-                .levelFlag(rubricScore.getLevelFlag())
-                .dimensions(dimensions)
-                .build();
-    }
-
-    private static TechnicalDimensionFeedback toTechnicalDimension(String dimension, DimensionScore score,
-                                                                     Map<String, String> dimensionLabels) {
-        return TechnicalDimensionFeedback.builder()
-                .dimension(dimension)
-                .dimensionLabel(dimensionLabels.get(dimension))
-                .score(score != null ? score.score() : null)
-                .observation(score != null ? score.observation() : null)
-                .evidenceQuote(score != null ? score.evidenceQuote() : null)
+                .rubricId(questionScore.getRubricId())
+                .levelFlag(questionScore.getLevelFlag())
+                .dimensions(dimFeedbacks)
                 .build();
     }
 }

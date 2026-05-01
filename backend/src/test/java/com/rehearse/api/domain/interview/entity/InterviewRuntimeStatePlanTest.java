@@ -32,7 +32,6 @@ class InterviewRuntimeStatePlanTest {
 
         assertThat(state.getInterviewPlanCache()).isEqualTo(plan);
         assertThat(state.getInterviewPlanCache().sessionPlanId()).isEqualTo("plan_test");
-        assertThat(state.getInterviewPlanCache().durationHintMin()).isEqualTo(30);
     }
 
     @Test
@@ -40,13 +39,12 @@ class InterviewRuntimeStatePlanTest {
     void set_interview_plan_overwrites_previous_value() {
         InterviewRuntimeState state = new InterviewRuntimeState("JUNIOR", null);
         InterviewPlan first = createFixturePlan();
-        InterviewPlan second = createFixturePlan("plan_second", 60);
+        InterviewPlan second = createFixturePlan("plan_second");
 
         state.setInterviewPlan(first);
         state.setInterviewPlan(second);
 
         assertThat(state.getInterviewPlanCache().sessionPlanId()).isEqualTo("plan_second");
-        assertThat(state.getInterviewPlanCache().durationHintMin()).isEqualTo(60);
     }
 
     @Test
@@ -62,14 +60,14 @@ class InterviewRuntimeStatePlanTest {
     }
 
     private InterviewPlan createFixturePlan() {
-        return createFixturePlan("plan_test", 30);
+        return createFixturePlan("plan_test");
     }
 
-    private InterviewPlan createFixturePlan(String sessionPlanId, int durationHintMin) {
+    private InterviewPlan createFixturePlan(String sessionPlanId) {
         ChainReference chain = new ChainReference("p1::Redis", "Redis", 1, List.of(1, 2, 3, 4));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         PlaygroundPhase playground = new PlaygroundPhase("프로젝트를 소개해주세요.", List.of("p1_c1"));
         ProjectPlan projectPlan = new ProjectPlan("p1", "Project Alpha", 1, playground, interrogation);
-        return new InterviewPlan(sessionPlanId, durationHintMin, List.of(projectPlan));
+        return new InterviewPlan(sessionPlanId, List.of(projectPlan));
     }
 }

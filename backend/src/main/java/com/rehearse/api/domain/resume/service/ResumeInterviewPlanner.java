@@ -30,8 +30,7 @@ public class ResumeInterviewPlanner {
         ChatRequest request = buildRequest(skeleton, durationMin);
         InterviewPlan plan = planAdapter.execute(request, durationMin);
         planValidator.validate(skeleton, plan);
-        log.info("인터뷰 플랜 생성 완료: sessionPlanId={}, projects={}, durationHintMin={}",
-                plan.sessionPlanId(), plan.totalProjects(), plan.durationHintMin());
+        log.info("인터뷰 플랜 생성 완료: sessionPlanId={}, projects={}", plan.sessionPlanId(), plan.totalProjects());
         return plan;
     }
 

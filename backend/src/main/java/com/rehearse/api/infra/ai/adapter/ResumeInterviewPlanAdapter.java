@@ -37,26 +37,20 @@ public class ResumeInterviewPlanAdapter {
         GeneratedInterviewPlan raw = aiResponseParser.parseOrRetry(
                 response, GeneratedInterviewPlan.class, aiClient, request);
 
-        if (raw.durationHintMin() != durationMin) {
-            log.warn("LLM이 duration_hint_min을 임의 변경함. 강제 덮어쓰기: expected={}, actual={}",
-                    durationMin, raw.durationHintMin());
-        }
-
         try {
-            return mapToDomain(raw, durationMin);
+            return mapToDomain(raw);
         } catch (IllegalArgumentException e) {
             log.error("LLM 출력이 도메인 invariant 위반: {}", e.getMessage());
             throw new BusinessException(ResumePlannerErrorCode.INVALID_PLAN);
         }
     }
 
-    private InterviewPlan mapToDomain(GeneratedInterviewPlan raw, int durationMin) {
+    private InterviewPlan mapToDomain(GeneratedInterviewPlan raw) {
         List<ProjectPlan> projectPlans = sortByPriority(raw.projectPlans()).stream()
                 .map(this::mapProject)
                 .toList();
         return new InterviewPlan(
                 raw.sessionPlanId(),
-                durationMin,
                 projectPlans
         );
     }

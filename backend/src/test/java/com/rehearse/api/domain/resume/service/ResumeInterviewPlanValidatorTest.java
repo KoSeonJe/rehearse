@@ -116,6 +116,6 @@ class ResumeInterviewPlanValidatorTest {
         InterrogationPhase interrogation = new InterrogationPhase(List.of(primary), List.of(backup));
         PlaygroundPhase playground = new PlaygroundPhase("opener", claimCoverage);
         ProjectPlan project = new ProjectPlan("p1", "Project A", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", 30, List.of(project));
+        return new InterviewPlan("plan_test", List.of(project));
     }
 }

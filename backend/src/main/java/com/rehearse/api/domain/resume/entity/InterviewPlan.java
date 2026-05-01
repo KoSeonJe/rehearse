@@ -35,13 +35,6 @@ public class InterviewPlan {
     @Column(name = "session_plan_id", nullable = false)
     private String sessionPlanId;
 
-    /**
-     * 세션 전체 시간 힌트(분). 플랜 크기 컷오프가 아니라 진행 중 WRAP_UP 전환 판단 기준으로만 사용된다.
-     * LLM 플래너는 이 값과 관계없이 전체 프로젝트 priority map을 생성한다.
-     */
-    @Column(name = "duration_hint_min", nullable = false)
-    private int durationHintMin;
-
     @Column(name = "total_projects", nullable = false)
     private int totalProjects;
 
@@ -53,19 +46,15 @@ public class InterviewPlan {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public InterviewPlan(String sessionPlanId, int durationHintMin, List<ProjectPlan> projectPlans) {
+    public InterviewPlan(String sessionPlanId, List<ProjectPlan> projectPlans) {
         if (sessionPlanId == null || sessionPlanId.isBlank()) {
             throw new IllegalArgumentException("sessionPlanId 는 필수입니다.");
-        }
-        if (durationHintMin <= 0) {
-            throw new IllegalArgumentException("durationHintMin 은 0 보다 커야 합니다. durationHintMin=" + durationHintMin);
         }
         if (projectPlans == null) {
             throw new IllegalArgumentException("projectPlans 는 필수입니다.");
         }
         validateAscendingPriority(projectPlans);
         this.sessionPlanId = sessionPlanId;
-        this.durationHintMin = durationHintMin;
         this.totalProjects = projectPlans.size();
         this.projectPlans = List.copyOf(projectPlans);
     }
@@ -82,10 +71,6 @@ public class InterviewPlan {
 
     public String sessionPlanId() {
         return sessionPlanId;
-    }
-
-    public int durationHintMin() {
-        return durationHintMin;
     }
 
     public int totalProjects() {

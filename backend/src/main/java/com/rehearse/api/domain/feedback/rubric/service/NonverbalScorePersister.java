@@ -1,19 +1,19 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
-import com.rehearse.api.domain.feedback.rubric.repository.NonverbalScoreRepository;
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,9 +22,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NonverbalScorePersister {
 
-    private final NonverbalScoreRepository nonverbalScoreRepository;
     private final NonverbalRubricScorer nonverbalRubricScorer;
-    private final ObjectMapper objectMapper;
+    private final QuestionScorePersister questionScorePersister;
 
     public void persistAll(QuestionSet questionSet,
                            QuestionSetFeedback feedback,
@@ -43,8 +42,10 @@ public class NonverbalScorePersister {
     private void persistOne(QuestionSet questionSet,
                             TimestampFeedback timestampFeedback,
                             SaveFeedbackRequest.TimestampFeedbackItem item) {
-        if (timestampFeedback.getId() == null) {
-            log.debug("nonverbal_score 저장 스킵: timestampFeedback id가 아직 없습니다");
+        Question question = timestampFeedback.getQuestion();
+        if (question == null || question.getId() == null) {
+            log.warn("nonverbal_score 저장 스킵: question 또는 questionId가 없습니다 (timestampFeedbackId={})",
+                    timestampFeedback.getId());
             return;
         }
 
@@ -64,12 +65,13 @@ public class NonverbalScorePersister {
             return;
         }
 
-        nonverbalScoreRepository.save(NonverbalScore.from(
-                interview.getId(),
-                timestampFeedback.getId(),
-                score,
-                toJson(score.rawSignals())
-        ));
+        Map<String, DimensionScore> dims = new LinkedHashMap<>();
+        dims.put("fluency", DimensionScore.of(score.fluency(), null, null));
+        dims.put("confidence_tone", DimensionScore.of(score.confidenceTone(), null, null));
+        dims.put("eye_contact_posture", DimensionScore.of(score.eyeContactPosture(), null, null));
+        dims.put("composure", DimensionScore.of(score.composure(), null, null));
+
+        questionScorePersister.saveNonverbal(question.getId(), interview.getId(), dims);
     }
 
     private String resolveTrack(Interview interview) {
@@ -77,13 +79,5 @@ public class NonverbalScorePersister {
             return "RESUME_BASED";
         }
         return null;
-    }
-
-    private String toJson(Map<String, Object> rawSignals) {
-        try {
-            return objectMapper.writeValueAsString(rawSignals);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("nonverbal rawSignals 직렬화 실패", e);
-        }
     }
 }

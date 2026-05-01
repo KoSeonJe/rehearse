@@ -11,17 +11,17 @@ applies_to:
   - fallback: true
 
 uses_dimensions:
-  - ref: D2   # Technical Depth
+  - ref: technical_depth
     weight: 0.45
-  - ref: D3   # Reasoning Communication
+  - ref: reasoning_communication
     weight: 0.35
-  - ref: D8   # Recovery from Gaps
+  - ref: recovery_from_gaps
     weight: 0.20
 
 per_turn_rules:
   on_intent_clarify: []
-  on_intent_give_up: [D8]
-  on_intent_answer:  [D2, D3, D8]
+  on_intent_give_up: [recovery_from_gaps]
+  on_intent_answer:  [technical_depth, reasoning_communication, recovery_from_gaps]
 
 level_expectations:
   junior:
@@ -29,5 +29,5 @@ level_expectations:
   mid:
     must_reach_2: all
   senior:
-    must_reach_3: [D2]
+    must_reach_3: [technical_depth]
     must_reach_2: all

@@ -23,13 +23,13 @@ public class NonverbalRubricScorer {
         }
 
         NonverbalContextWeight weight = weightsLoader.resolve(questionCategory, track, mode, difficulty);
-        Integer d14 = weight.composureEnabled() ? score.getD14() : null;
+        Integer composure = weight.composureEnabled() ? score.getComposure() : null;
 
         return new NonverbalTurnScore(
-                score.getD11(),
-                score.getD12(),
-                score.getD13(),
-                d14,
+                score.getFluency(),
+                score.getConfidenceTone(),
+                score.getEyeContactPosture(),
+                composure,
                 rawSignals(score),
                 weight.multiplier()
         );
@@ -40,10 +40,10 @@ public class NonverbalRubricScorer {
             return Map.copyOf(score.getRawSignals());
         }
         Map<String, Object> raw = new HashMap<>();
-        putIfPresent(raw, "d11", score.getD11());
-        putIfPresent(raw, "d12", score.getD12());
-        putIfPresent(raw, "d13", score.getD13());
-        putIfPresent(raw, "d14", score.getD14());
+        putIfPresent(raw, "fluency", score.getFluency());
+        putIfPresent(raw, "confidence_tone", score.getConfidenceTone());
+        putIfPresent(raw, "eye_contact_posture", score.getEyeContactPosture());
+        putIfPresent(raw, "composure", score.getComposure());
         return Map.copyOf(raw);
     }
 

@@ -10,29 +10,29 @@ applies_to:
   - feedbackPerspective: EXPERIENCE
 
 uses_dimensions:
-  - ref: D1   # Problem Framing
+  - ref: problem_framing
     weight: 0.15
-  - ref: D2   # Technical Depth (조건부: 기술 의사결정 포함 시)
+  - ref: technical_depth   # 조건부: 기술 의사결정 포함 시
     weight: 0.20
     conditional: answer_contains_technical_decision
-  - ref: D3   # Reasoning Communication
+  - ref: reasoning_communication
     weight: 0.20
-  - ref: D6   # Experience Concreteness (핵심)
+  - ref: experience_concreteness   # 핵심
     weight: 0.30
-  - ref: D8   # Recovery from Gaps
+  - ref: recovery_from_gaps
     weight: 0.15
 
 per_turn_rules:
   on_intent_clarify: []
-  on_intent_give_up: [D8]
-  on_intent_answer:  [D1, D3, D6, D8]     # D2 는 conditional, RubricScorer 가 런타임 판단
+  on_intent_give_up: [recovery_from_gaps]
+  on_intent_answer:  [problem_framing, reasoning_communication, experience_concreteness, recovery_from_gaps]     # technical_depth 는 conditional, RubricScorer 가 런타임 판단
 
 level_expectations:
   junior:
-    must_reach_2: [D6]
+    must_reach_2: [experience_concreteness]
     must_reach_1: all
   mid:
     must_reach_2: all
-    must_reach_3: [D6]
+    must_reach_3: [experience_concreteness]
   senior:
-    must_reach_3: [D6, D2]   # Learnings + 기술 의사결정 깊이 필수
+    must_reach_3: [experience_concreteness, technical_depth]   # Learnings + 기술 의사결정 깊이 필수

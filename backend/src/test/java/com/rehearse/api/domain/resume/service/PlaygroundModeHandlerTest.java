@@ -30,6 +30,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +49,9 @@ class PlaygroundModeHandlerTest {
     @Mock
     private ResumePlaygroundPromptBuilder promptBuilder;
 
+    @Mock
+    private ResumeQuestionPersister questionPersister;
+
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
     private InterviewPlan plan;
@@ -56,6 +61,8 @@ class PlaygroundModeHandlerTest {
         state = new InterviewRuntimeState("JUNIOR", null);
         skeleton = createSkeleton();
         plan = createPlan();
+        given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+                .willReturn(1L);
     }
 
     @Nested
@@ -137,13 +144,16 @@ class PlaygroundModeHandlerTest {
         void handleOpener_incrementsTurnsAndReturnsResponse() {
             given(promptBuilder.buildOpener(any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult("Redis 프로젝트 소개해주세요", "Redis 프로젝트 소개해주세요", "오프너"));
+            given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+                    .willReturn(1L);
 
-            FollowUpResponse response = handler.handleOpener(1L, state, skeleton, plan);
+            PlaygroundModeHandler.OpenerResult result = handler.handleOpener(1L, state, skeleton, plan);
 
-            assertThat(response.getQuestion()).isEqualTo("Redis 프로젝트 소개해주세요");
+            assertThat(result.response().getQuestion()).isEqualTo("Redis 프로젝트 소개해주세요");
             assertThat(state.getPlaygroundTurns().get()).isEqualTo(1);
-            assertThat(response.isSkip()).isFalse();
-            assertThat(response.isPresentToUser()).isTrue();
+            assertThat(result.response().isSkip()).isFalse();
+            assertThat(result.response().isPresentToUser()).isTrue();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
     }
 
@@ -166,6 +176,6 @@ class PlaygroundModeHandlerTest {
         PlaygroundPhase playground = new PlaygroundPhase("프로젝트를 소개해주세요", List.of("Redis 사용", "캐싱 전략"));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chainRef), List.of());
         ProjectPlan projectPlan = new ProjectPlan("proj1", "Redis Cache", 1, playground, interrogation);
-        return new InterviewPlan("plan-001", 30, List.of(projectPlan));
+        return new InterviewPlan("plan-001", List.of(projectPlan));
     }
 }

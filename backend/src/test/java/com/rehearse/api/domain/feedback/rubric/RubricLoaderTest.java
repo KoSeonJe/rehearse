@@ -153,14 +153,16 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
         var dimensions = rubricLoader.getAllDimensions();
 
         assertThat(dimensions).containsKeys(
-                "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10",
-                "D11", "D12", "D13", "D14");
+                "problem_framing", "technical_depth", "reasoning_communication", "conceptual_accuracy",
+                "practical_application", "experience_concreteness", "collaboration_awareness",
+                "recovery_from_gaps", "factual_consistency", "chain_depth",
+                "fluency", "confidence_tone", "eye_contact_posture", "composure");
     }
 
     @Test
     @DisplayName("getDimension 으로 개별 차원 조회")
     void getDimension_returnsCorrectDimension() {
-        RubricDimension d2 = rubricLoader.getDimension("D2");
+        RubricDimension d2 = rubricLoader.getDimension("technical_depth");
 
         assertThat(d2).isNotNull();
         assertThat(d2.name()).isEqualTo("기술적 깊이");
@@ -170,10 +172,10 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("D11~D14는 비언어 채점 차원으로 로드됨")
     void getAllDimensions_nonverbalDimensionsLoaded() {
-        assertThat(rubricLoader.getDimension("D11").name()).isEqualTo("발화 유창성");
-        assertThat(rubricLoader.getDimension("D12").name()).isEqualTo("자신감 있는 말투");
-        assertThat(rubricLoader.getDimension("D13").name()).isEqualTo("시선과 자세");
-        assertThat(rubricLoader.getDimension("D14").name()).isEqualTo("압박 안정성");
+        assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("발화 유창성");
+        assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감 있는 말투");
+        assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선과 자세");
+        assertThat(rubricLoader.getDimension("composure").name()).isEqualTo("압박 안정성");
     }
 
     private QuestionSet buildQuestionSet(QuestionSetCategory category) {

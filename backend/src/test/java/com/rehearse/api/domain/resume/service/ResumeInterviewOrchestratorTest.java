@@ -17,6 +17,8 @@ import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.InterrogationPhase;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -69,6 +71,8 @@ class ResumeInterviewOrchestratorTest {
     private InterviewFinder interviewFinder;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private QuestionSetRepository questionSetRepository;
 
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
@@ -89,6 +93,8 @@ class ResumeInterviewOrchestratorTest {
             mutator.accept(state);
             return null;
         }).when(runtimeStateStore).update(anyLong(), any());
+        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), any(QuestionSetCategory.class)))
+                .thenReturn(java.util.Optional.empty());
     }
 
     @Nested
@@ -105,7 +111,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false));
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -165,7 +171,8 @@ class ResumeInterviewOrchestratorTest {
         void processUserTurn_timeRunsOut_transitionsToWrapUp() {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(1L);
             given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean()))
-                    .willReturn(FollowUpResponse.builder().question("마무리").presentToUser(true).build());
+                    .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
+                            FollowUpResponse.builder().question("마무리").presentToUser(true).build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -180,7 +187,8 @@ class ResumeInterviewOrchestratorTest {
             state.transitionTo(ResumeMode.WRAP_UP);
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(1L);
             given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean()))
-                    .willReturn(FollowUpResponse.builder().question("마무리").build());
+                    .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
+                            FollowUpResponse.builder().question("마무리").build(), null));
 
             orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -202,7 +210,8 @@ class ResumeInterviewOrchestratorTest {
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any()))
-                    .willReturn(FollowUpResponse.builder().question("L2 질문").build());
+                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                            FollowUpResponse.builder().question("L2 질문").build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -220,11 +229,12 @@ class ResumeInterviewOrchestratorTest {
         @DisplayName("startSession 호출 시 clockWatcher.markStart 가 호출되고 Playground opener 를 반환한다")
         void startSession_marksStartAndReturnsOpener() {
             given(playgroundHandler.handleOpener(anyLong(), any(), any(), any()))
-                    .willReturn(FollowUpResponse.builder()
-                            .question("Redis 프로젝트를 소개해주세요")
-                            .presentToUser(true)
-                            .type("RESUME_PLAYGROUND")
-                            .build());
+                    .willReturn(new PlaygroundModeHandler.OpenerResult(
+                            FollowUpResponse.builder()
+                                    .question("Redis 프로젝트를 소개해주세요")
+                                    .presentToUser(true)
+                                    .type("RESUME_PLAYGROUND")
+                                    .build(), null));
 
             FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);
 
@@ -249,7 +259,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false));
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
             Interview interview = Interview.builder()
                     .userId(99L)
@@ -282,7 +292,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false));
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
             given(interviewFinder.findById(anyLong()))
                     .willThrow(new RuntimeException("DB 오류"));
 
@@ -303,6 +313,6 @@ class ResumeInterviewOrchestratorTest {
         PlaygroundPhase playground = new PlaygroundPhase("소개해주세요", List.of());
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         ProjectPlan projectPlan = new ProjectPlan("proj1", "Redis", 1, playground, interrogation);
-        return new InterviewPlan("plan-001", 30, List.of(projectPlan));
+        return new InterviewPlan("plan-001", List.of(projectPlan));
     }
 }
