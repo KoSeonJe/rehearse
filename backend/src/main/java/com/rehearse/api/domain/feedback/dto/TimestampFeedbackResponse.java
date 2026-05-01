@@ -13,6 +13,7 @@ import lombok.extern.jackson.Jacksonized;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 @Getter
 @Builder
@@ -83,16 +84,22 @@ public class TimestampFeedbackResponse {
     @Builder
     public static class TechnicalDimensionFeedback {
         private final String dimension;
+        private final String dimensionLabel;
         private final Integer score;
         private final String observation;
         private final String evidenceQuote;
     }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
-        return from(feedback, null);
+        return from(feedback, null, Collections.emptyMap());
     }
 
     public static TimestampFeedbackResponse from(TimestampFeedback feedback, RubricScore rubricScore) {
+        return from(feedback, rubricScore, Collections.emptyMap());
+    }
+
+    public static TimestampFeedbackResponse from(TimestampFeedback feedback, RubricScore rubricScore,
+                                                  Map<String, String> dimensionLabels) {
         Question question = feedback.getQuestion();
 
         NonverbalFeedback nonverbal = NonverbalFeedback.builder()
@@ -127,7 +134,7 @@ public class TimestampFeedbackResponse {
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
                 .delivery(delivery)
-                .technicalFeedback(toTechnicalFeedback(rubricScore))
+                .technicalFeedback(toTechnicalFeedback(rubricScore, dimensionLabels))
                 .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
@@ -143,14 +150,14 @@ public class TimestampFeedbackResponse {
         }
     }
 
-    private static TechnicalFeedback toTechnicalFeedback(RubricScore rubricScore) {
+    private static TechnicalFeedback toTechnicalFeedback(RubricScore rubricScore, Map<String, String> dimensionLabels) {
         if (rubricScore == null || rubricScore.getScoresJson() == null || rubricScore.getScoresJson().isEmpty()) {
             return null;
         }
 
         List<TechnicalDimensionFeedback> dimensions = rubricScore.getScoresJson().entrySet().stream()
                 .sorted(Map.Entry.comparingByKey(Comparator.naturalOrder()))
-                .map(entry -> toTechnicalDimension(entry.getKey(), entry.getValue()))
+                .map(entry -> toTechnicalDimension(entry.getKey(), entry.getValue(), dimensionLabels))
                 .toList();
 
         return TechnicalFeedback.builder()
@@ -160,9 +167,11 @@ public class TimestampFeedbackResponse {
                 .build();
     }
 
-    private static TechnicalDimensionFeedback toTechnicalDimension(String dimension, DimensionScore score) {
+    private static TechnicalDimensionFeedback toTechnicalDimension(String dimension, DimensionScore score,
+                                                                     Map<String, String> dimensionLabels) {
         return TechnicalDimensionFeedback.builder()
                 .dimension(dimension)
+                .dimensionLabel(dimensionLabels.get(dimension))
                 .score(score != null ? score.score() : null)
                 .observation(score != null ? score.observation() : null)
                 .evidenceQuote(score != null ? score.evidenceQuote() : null)

@@ -27,8 +27,15 @@ public class QuestionSetFeedbackResponse {
     public static QuestionSetFeedbackResponse from(QuestionSetFeedback feedback,
                                                      String streamingUrl, String fallbackUrl,
                                                      Map<Long, RubricScore> rubricScoreByTurnId) {
+        return from(feedback, streamingUrl, fallbackUrl, rubricScoreByTurnId, Map.of());
+    }
+
+    public static QuestionSetFeedbackResponse from(QuestionSetFeedback feedback,
+                                                     String streamingUrl, String fallbackUrl,
+                                                     Map<Long, RubricScore> rubricScoreByTurnId,
+                                                     Map<String, String> dimensionLabels) {
         List<TimestampFeedbackResponse> timestamps = feedback.getTimestampFeedbacks().stream()
-                .map(timestamp -> TimestampFeedbackResponse.from(timestamp, resolveRubricScore(timestamp, rubricScoreByTurnId)))
+                .map(timestamp -> TimestampFeedbackResponse.from(timestamp, resolveRubricScore(timestamp, rubricScoreByTurnId), dimensionLabels))
                 .toList();
 
         return QuestionSetFeedbackResponse.builder()
