@@ -10,7 +10,14 @@ ALTER TABLE interview_cs_sub_topics
     ADD CONSTRAINT pk_cs_sub_topics PRIMARY KEY (interview_id, cs_sub_topic);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 블록 2: V4 FK에 ON DELETE CASCADE 재생성
+-- 블록 2: question_pool.cache_key UNIQUE 제약
+-- V11에서 INDEX만 생성됨, UNIQUE 누락
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE question_pool
+    ADD CONSTRAINT uq_question_pool_cache_key UNIQUE (cache_key);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 블록 3: V4 FK에 ON DELETE CASCADE 재생성
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- question_set → interview
@@ -49,7 +56,7 @@ ALTER TABLE timestamp_feedback
         FOREIGN KEY (question_set_feedback_id) REFERENCES question_set_feedback(id) ON DELETE CASCADE;
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 블록 3: question CHECK 5-way 강화
+-- 블록 4: question CHECK 5-way 강화
 -- V35의 chk_question_track_meta를 DROP하고 5-way 정밀 제약으로 교체.
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE question
@@ -70,7 +77,7 @@ ALTER TABLE question
     );
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 블록 4: timestamp_feedback level 컬럼 CHECK
+-- 블록 5: timestamp_feedback level 컬럼 CHECK
 -- TimestampFeedback 엔티티 기준: eyeContactLevel, postureLevel, toneConfidenceLevel
 -- 각각 VARCHAR(20), 값 도메인: GOOD / AVERAGE / NEEDS_IMPROVEMENT
 -- ─────────────────────────────────────────────────────────────────────────────
