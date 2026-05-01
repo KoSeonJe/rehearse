@@ -188,7 +188,7 @@ public class RubricScorerPromptBuilder {
         if (!dimensionsToScore.contains("chain_depth") || currentChainLevel == null) {
             return "";
         }
-        int chainDepthScore = D10ChainScoreMapper.scoreFor(currentChainLevel);
+        int chainDepthScore = ChainDepthScoreMapper.scoreFor(currentChainLevel);
         return "## chain_depth Chain Depth Override\n" +
                 "The system has determined that the candidate reached chain level " + currentChainLevel +
                 " in this session. Therefore chain_depth score MUST be " + chainDepthScore + ". " +
@@ -196,10 +196,10 @@ public class RubricScorerPromptBuilder {
     }
 
     /**
-     * chain level → D10 score 매핑 규칙:
+     * chain level → chain_depth score 매핑 규칙:
      * level 1 → score 1 (표면 답변), level 2~3 → score 2 (심화), level 4+ → score 3 (전문가)
      */
-    static final class D10ChainScoreMapper {
+    static final class ChainDepthScoreMapper {
         private static final int LEVEL_SURFACE_MAX = 1;
         private static final int LEVEL_DEEP_MAX = 3;
 
