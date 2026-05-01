@@ -6,8 +6,10 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisReposit
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
 import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
+import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
@@ -48,6 +50,7 @@ public class QuestionSetService {
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
     private final RubricScoreRepository rubricScoreRepository;
+    private final RubricLoader rubricLoader;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
     private final S3KeyGenerator s3KeyGenerator;
@@ -140,7 +143,9 @@ public class QuestionSetService {
         }
 
         Map<Long, RubricScore> rubricScoreByTurnId = rubricScoreByTurnId(questionSet);
-        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl, rubricScoreByTurnId);
+        Map<String, String> dimensionLabels = rubricLoader.getAllDimensions().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name()));
+        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl, rubricScoreByTurnId, dimensionLabels);
     }
 
     private Map<Long, RubricScore> rubricScoreByTurnId(QuestionSet questionSet) {

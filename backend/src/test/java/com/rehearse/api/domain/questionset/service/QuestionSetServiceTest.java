@@ -32,6 +32,7 @@ import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.infra.aws.S3KeyGenerator;
 import com.rehearse.api.infra.aws.S3Service;
 import org.junit.jupiter.api.DisplayName;
@@ -87,6 +88,9 @@ class QuestionSetServiceTest {
 
     @Mock
     private S3KeyGenerator s3KeyGenerator;
+
+    @Mock
+    private RubricLoader rubricLoader;
 
     @Nested
     @DisplayName("saveAnswers 메서드")
@@ -279,6 +283,7 @@ class QuestionSetServiceTest {
                     .willReturn("https://s3.example.com/streaming");
             given(s3Service.generateGetPresignedUrl("videos/5/qs_1.webm"))
                     .willReturn("https://s3.example.com/fallback");
+            given(rubricLoader.getAllDimensions()).willReturn(Map.of());
 
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
@@ -352,6 +357,7 @@ class QuestionSetServiceTest {
                     .willReturn(Optional.of(feedback));
             given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(99L))
                     .willReturn(List.of(rubricScore));
+            given(rubricLoader.getAllDimensions()).willReturn(Map.of());
 
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
