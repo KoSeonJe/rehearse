@@ -34,10 +34,10 @@ ALTER TABLE question
     ADD CONSTRAINT fk_question_question_set
         FOREIGN KEY (question_set_id) REFERENCES question_set(id) ON DELETE CASCADE;
 
--- question_set_answer → question
-ALTER TABLE question_set_answer
+-- question_answer → question (V5에서 question_set_answer → question_answer로 rename됨)
+ALTER TABLE question_answer
     DROP FOREIGN KEY fk_answer_question;
-ALTER TABLE question_set_answer
+ALTER TABLE question_answer
     ADD CONSTRAINT fk_answer_question
         FOREIGN KEY (question_id) REFERENCES question(id) ON DELETE CASCADE;
 
