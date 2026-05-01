@@ -6,7 +6,7 @@ import org.testcontainers.containers.MySQLContainer;
 
 public abstract class AbstractMySqlContainerTest {
 
-    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.0.36")
+    static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
             .withDatabaseName("rehearse_test")
             .withUsername("test")
             .withPassword("test")
