@@ -11,6 +11,9 @@ import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.user.entity.OAuthProvider;
+import com.rehearse.api.domain.user.entity.User;
+import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.global.config.JpaAuditingConfig;
 import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import jakarta.persistence.EntityManager;
@@ -42,8 +45,18 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
 
     @BeforeEach
     void setUp() {
+        User user = User.builder()
+                .email("test@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-test")
+                .role(UserRole.USER)
+                .build();
+        em.persist(user);
+        em.flush();
+
         savedInterview = Interview.builder()
-                .userId(1L)
+                .userId(user.getId())
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
