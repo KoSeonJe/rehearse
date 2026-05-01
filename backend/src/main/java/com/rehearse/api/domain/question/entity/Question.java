@@ -94,18 +94,4 @@ public class Question {
     public void assignQuestionSet(QuestionSet questionSet) {
         this.questionSet = questionSet;
     }
-
-    /**
-     * Resume Track용 stub — questionId가 null인 이벤트의 하위호환성 유지용.
-     * ResumeQuestionPersister 전환 완료 후 제거 예정.
-     */
-    @Deprecated
-    public static Question stubForResumeTrack() {
-        Question stub = new Question();
-        stub.questionType = QuestionType.MAIN;
-        stub.questionText = "";
-        stub.feedbackPerspective = FeedbackPerspective.TECHNICAL;
-        stub.orderIndex = 0;
-        return stub;
-    }
 }
