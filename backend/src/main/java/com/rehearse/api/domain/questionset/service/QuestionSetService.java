@@ -6,11 +6,11 @@ import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisReposit
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
-import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
@@ -49,8 +49,8 @@ public class QuestionSetService {
     private final QuestionRepository questionRepository;
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
-    private final RubricScoreRepository rubricScoreRepository;
-    private final RubricLoader rubricLoader;
+    private final QuestionScoreRepository questionScoreRepository;
+    private final QuestionScoreDimensionRepository questionScoreDimensionRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
     private final S3KeyGenerator s3KeyGenerator;
@@ -142,21 +142,35 @@ public class QuestionSetService {
             fallbackUrl = s3Service.generateGetPresignedUrl(file.getS3Key());
         }
 
-        Map<Long, RubricScore> rubricScoreByTurnId = rubricScoreByTurnId(questionSet);
-        Map<String, String> dimensionLabels = rubricLoader.getAllDimensions().entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().name()));
-        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl, rubricScoreByTurnId, dimensionLabels);
+        Map<Long, QuestionScore> questionScoresByQuestionId = questionScoreByQuestionId(questionSet);
+        Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId =
+                dimensionsByQuestionScoreId(questionScoresByQuestionId);
+
+        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl,
+                questionScoresByQuestionId, dimensionsByQuestionScoreId);
     }
 
-    private Map<Long, RubricScore> rubricScoreByTurnId(QuestionSet questionSet) {
+    private Map<Long, QuestionScore> questionScoreByQuestionId(QuestionSet questionSet) {
         if (questionSet.getInterview() == null || questionSet.getInterview().getId() == null) {
             return Map.of();
         }
-        return rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(questionSet.getInterview().getId()).stream()
+        return questionScoreRepository
+                .findByInterviewIdOrderByQuestionIdAsc(questionSet.getInterview().getId())
+                .stream()
+                .filter(qs -> !"nonverbal".equals(qs.getRubricId()))
                 .collect(Collectors.toMap(
-                        RubricScore::getTurnId,
-                        score -> score,
+                        QuestionScore::getQuestionId,
+                        qs -> qs,
                         (left, ignored) -> left
+                ));
+    }
+
+    private Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId(
+            Map<Long, QuestionScore> scoresByQuestionId) {
+        return scoresByQuestionId.values().stream()
+                .collect(Collectors.toMap(
+                        QuestionScore::getId,
+                        qs -> questionScoreDimensionRepository.findByQuestionScoreId(qs.getId())
                 ));
     }
 

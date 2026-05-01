@@ -1,11 +1,10 @@
 # status: ACTIVE
-# 10차원 마스터 사전. 모든 rubric YAML 이 ref: D* 로 참조.
+# 14차원 마스터 사전. 모든 rubric YAML 이 ref: <snake_case> 로 참조.
 # 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L164-383
 version: 1
 
 dimensions:
-  D1:
-    id: problem_framing
+  problem_framing:
     name: 문제 정의
     description: 질문 받고 전제/제약/엣지케이스 확인하는가
     scope: general
@@ -30,8 +29,7 @@ dimensions:
           - '만약 ~라면으로 경계 조건 탐색'
           - 제약 확인 후 답변 범위 스스로 정의
 
-  D2:
-    id: technical_depth
+  technical_depth:
     name: 기술적 깊이
     description: 원리/트레이드오프/대안 인지
     scope: general
@@ -56,8 +54,7 @@ dimensions:
           - '만약 ~한 상황이면 ~을 썼을 것'
           - 복수 옵션 간 의사결정 근거 제시
 
-  D3:
-    id: reasoning_communication
+  reasoning_communication:
     name: 사고 과정 전달
     description: 사고 과정 단계적 언어화
     scope: general
@@ -81,8 +78,7 @@ dimensions:
           - 배제한 옵션까지 언급
           - 전제 → 추론 → 결론 구조 명시적
 
-  D4:
-    id: conceptual_accuracy
+  conceptual_accuracy:
     name: 개념 정확성
     description: 개념 설명의 기술적 정확성
     scope: general
@@ -107,8 +103,7 @@ dimensions:
           - 경계 조건 정확히 설명
           - 실제 동작 메커니즘까지 서술
 
-  D5:
-    id: practical_application
+  practical_application:
     name: 실무 적용력
     description: 실무 사용 맥락, 주의점, 흔한 실수 이해
     scope: general
@@ -133,8 +128,7 @@ dimensions:
           - 대안과 선택 기준 명확
           - 운영 환경 고려 (모니터링, 장애 대응)
 
-  D6:
-    id: experience_concreteness
+  experience_concreteness:
     name: 경험 구체성
     description: 수치, 본인 기여, Learnings (CARL의 L)
     scope: general
@@ -160,8 +154,7 @@ dimensions:
           - 선택하지 않은 대안 언급
           - Learnings (전이 가능한 교훈)
 
-  D7:
-    id: collaboration_awareness
+  collaboration_awareness:
     name: 협업 인식
     description: 팀/이해관계자 관점 고려
     scope: general
@@ -186,8 +179,7 @@ dimensions:
           - 'PM은 ~, 백엔드는 ~, 프론트는 ~ 식 구분'
           - 상대방 입장 언어로 재서술
 
-  D8:
-    id: recovery_from_gaps
+  recovery_from_gaps:
     name: 모름 대처
     description: 모르는 걸 만났을 때 대처
     scope: general
@@ -212,8 +204,7 @@ dimensions:
           - 비슷한 경험으로 브릿지
           - '만약 안다면 이렇게 접근하겠다 제시'
 
-  D9:
-    id: factual_consistency
+  factual_consistency:
     name: 이력서 일관성
     description: (Resume 전용) 이력서 claim과 답변 일치
     scope: resume_only
@@ -236,8 +227,7 @@ dimensions:
           - 숫자·기술명·역할 모두 일치
           - 추가 설명이 이력서 맥락과 정합
 
-  D10:
-    id: chain_depth
+  chain_depth:
     name: 심화 답변 깊이
     description: (Resume 전용) 심화 체인 어디까지 답했는가 (L1 What → L2 How → L3 Why-mech → L4 Tradeoff)
     scope: resume_only
@@ -259,8 +249,7 @@ dimensions:
           - '~대신 ~을 택한 이유를 복수 관점에서 서술'
           - 운영/확장성 관점 포함
 
-  D11:
-    id: fluency
+  fluency:
     name: 발화 유창성
     description: 필러 워드가 답변 전달을 방해하지 않는가
     scope: nonverbal
@@ -284,8 +273,7 @@ dimensions:
           - 필러 워드 2회 이하
           - 답변 흐름이 안정적으로 이어짐
 
-  D12:
-    id: confidence_tone
+  confidence_tone:
     name: 자신감 있는 말투
     description: 톤과 발화 속도 변동이 자신감 있게 유지되는가
     scope: nonverbal
@@ -309,8 +297,7 @@ dimensions:
           - 톤이 CONFIDENT 또는 PROFESSIONAL
           - 발화 속도 분산 0.15 미만
 
-  D13:
-    id: eye_contact_posture
+  eye_contact_posture:
     name: 시선과 자세
     description: 시선과 자세가 안정적으로 유지되는가
     scope: nonverbal
@@ -334,24 +321,23 @@ dimensions:
           - 카메라 응시 비율 0.70 초과
           - 자세 불안정 횟수 2회 이하
 
-  D14:
-    id: composure
+  composure:
     name: 압박 안정성
     description: 난이도가 올라가도 비언어 전달 안정성을 유지하는가
     scope: nonverbal
     category: nonverbal
     data_source: lambda.nonverbalScore.d14
-    measurement: D11/D12/D13 previous-turn comparison when difficulty >= medium
+    measurement: fluency/confidence_tone/eye_contact_posture previous-turn comparison when difficulty >= medium
     scoring:
       1:
         label: 안정성 크게 저하
         observable:
-          - 이전 턴 대비 D11~D13 중 2개 이상 하락
+          - 이전 턴 대비 fluency~eye_contact_posture 중 2개 이상 하락
           - 난이도 상승 시 전달 안정성이 뚜렷하게 무너짐
       2:
         label: 일부 저하
         observable:
-          - 이전 턴 대비 D11~D13 중 1개 하락
+          - 이전 턴 대비 fluency~eye_contact_posture 중 1개 하락
           - 압박 상황에서 일부 신호만 흔들림
       3:
         label: 안정성 유지

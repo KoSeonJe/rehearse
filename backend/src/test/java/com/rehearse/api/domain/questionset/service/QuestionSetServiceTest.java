@@ -7,10 +7,11 @@ import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
-import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
@@ -29,10 +30,10 @@ import com.rehearse.api.domain.questionset.dto.QuestionSetStatusResponse;
 import com.rehearse.api.domain.questionset.dto.UploadUrlRequest;
 import com.rehearse.api.domain.questionset.dto.UploadUrlResponse;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.infra.aws.S3KeyGenerator;
 import com.rehearse.api.infra.aws.S3Service;
 import org.junit.jupiter.api.DisplayName;
@@ -54,7 +55,6 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 
 @ExtendWith(MockitoExtension.class)
 class QuestionSetServiceTest {
@@ -75,7 +75,10 @@ class QuestionSetServiceTest {
     private QuestionSetFeedbackRepository feedbackRepository;
 
     @Mock
-    private RubricScoreRepository rubricScoreRepository;
+    private QuestionScoreRepository questionScoreRepository;
+
+    @Mock
+    private QuestionScoreDimensionRepository questionScoreDimensionRepository;
 
     @Mock
     private FileMetadataRepository fileMetadataRepository;
@@ -89,9 +92,6 @@ class QuestionSetServiceTest {
     @Mock
     private S3KeyGenerator s3KeyGenerator;
 
-    @Mock
-    private RubricLoader rubricLoader;
-
     @Nested
     @DisplayName("saveAnswers 메서드")
     class SaveAnswers {
@@ -101,7 +101,6 @@ class QuestionSetServiceTest {
         void saveAnswers_success() {
             // given
             QuestionSet questionSet = createQuestionSet(1L);
-            // saveAnswers 내부에서 findOrCreateAnalysis 호출 시 새 analysis 반환
             given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
             given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.empty());
             given(analysisRepository.save(any(QuestionSetAnalysis.class))).willAnswer(inv -> inv.getArgument(0));
@@ -121,7 +120,6 @@ class QuestionSetServiceTest {
             questionSetService.saveAnswers(1L, request);
 
             // then
-            // 멱등성 보장 — saveAll 이전에 deleteByQuestionSetId 가 먼저 호출되어야 한다
             var inOrder = inOrder(answerRepository);
             then(answerRepository).should(inOrder).deleteByQuestionSetId(1L);
             then(answerRepository).should(inOrder).flush();
@@ -149,11 +147,11 @@ class QuestionSetServiceTest {
             ReflectionTestUtils.setField(timestamp, "endMs", 5000L);
             ReflectionTestUtils.setField(request, "answers", List.of(timestamp));
 
-            // when — 같은 questionSet 에 대해 2 번 호출 (프론트 복구 루프 경합 시나리오)
+            // when
             questionSetService.saveAnswers(1L, request);
             questionSetService.saveAnswers(1L, request);
 
-            // then — 매 호출마다 delete 가 선행되므로 기존 행이 남지 않고 마지막 호출의 상태만 DB 에 반영된다
+            // then
             then(answerRepository).should(times(2)).deleteByQuestionSetId(1L);
             then(answerRepository).should(times(2)).saveAll(anyList());
         }
@@ -194,7 +192,6 @@ class QuestionSetServiceTest {
             given(s3Service.generatePutPresignedUrl(anyString(), anyString()))
                     .willReturn("https://s3.example.com/presigned-put");
 
-            // 서비스 내부에서 새로 생성한 FileMetadata 인스턴스에 id를 주입해 반환한다.
             given(fileMetadataRepository.save(any(FileMetadata.class))).willAnswer(inv -> {
                 FileMetadata saved = inv.getArgument(0);
                 ReflectionTestUtils.setField(saved, "id", 100L);
@@ -283,8 +280,6 @@ class QuestionSetServiceTest {
                     .willReturn("https://s3.example.com/streaming");
             given(s3Service.generateGetPresignedUrl("videos/5/qs_1.webm"))
                     .willReturn("https://s3.example.com/fallback");
-            given(rubricLoader.getAllDimensions()).willReturn(Map.of());
-
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
 
@@ -296,7 +291,7 @@ class QuestionSetServiceTest {
         }
 
         @Test
-        @DisplayName("getFeedback: 답변 카드에 같은 turn_id의 기술 루브릭 피드백을 포함한다")
+        @DisplayName("getFeedback: 답변 카드에 같은 question_id의 기술 점수 피드백을 포함한다")
         void getFeedback_includesTechnicalFeedbackPerTimestamp() {
             // given
             Interview interview = Interview.builder()
@@ -338,26 +333,29 @@ class QuestionSetServiceTest {
             ReflectionTestUtils.setField(feedback, "id", 50L);
             feedback.addTimestampFeedback(timestampFeedback);
 
-            RubricScore rubricScore = RubricScore.builder()
+            QuestionScore questionScore = QuestionScore.builder()
+                    .questionId(10L)
                     .interviewId(99L)
-                    .turnId(0L)
                     .rubricId("cs-v1")
-                    .scoresJson(Map.of(
-                            "D4", DimensionScore.of(
-                                    3,
-                                    "세대별 GC 구조를 언급해 개념 정확도가 좋습니다.",
-                                    "young 영역과 old 영역을 나눠 관리"
-                            )
-                    ))
                     .levelFlag("MID_EXPECTATION_MET")
+                    .build();
+            ReflectionTestUtils.setField(questionScore, "id", 200L);
+
+            QuestionScoreDimension dimension = QuestionScoreDimension.builder()
+                    .questionScoreId(200L)
+                    .dimensionRef("D4")
+                    .score(3)
+                    .observation("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.")
+                    .evidenceQuote("young 영역과 old 영역을 나눠 관리")
                     .build();
 
             given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
             given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
                     .willReturn(Optional.of(feedback));
-            given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(99L))
-                    .willReturn(List.of(rubricScore));
-            given(rubricLoader.getAllDimensions()).willReturn(Map.of());
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
+                    .willReturn(List.of(questionScore));
+            given(questionScoreDimensionRepository.findByQuestionScoreId(200L))
+                    .willReturn(List.of(dimension));
 
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
@@ -455,7 +453,7 @@ class QuestionSetServiceTest {
             // when
             QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(1L);
 
-            // then — 답변 있는 질문만 포함 (unansweredMain=11L, unansweredFollowup=30L 제외)
+            // then
             assertThat(response.getQuestions()).hasSize(2);
             assertThat(response.getQuestions())
                     .extracting(QuestionsWithAnswersResponse.QuestionWithAnswer::getQuestionId)

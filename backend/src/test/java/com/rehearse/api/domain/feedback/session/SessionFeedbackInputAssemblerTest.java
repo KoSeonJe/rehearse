@@ -1,11 +1,10 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.repository.NonverbalScoreRepository;
-import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInputAssembler;
 import com.rehearse.api.domain.feedback.session.synthesis.TurnScoreView;
@@ -21,9 +20,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -34,10 +33,10 @@ class SessionFeedbackInputAssemblerTest {
     private SessionFeedbackInputAssembler assembler;
 
     @Mock
-    private RubricScoreRepository rubricScoreRepository;
+    private QuestionScoreRepository questionScoreRepository;
 
     @Mock
-    private NonverbalScoreRepository nonverbalScoreRepository;
+    private QuestionScoreDimensionRepository questionScoreDimensionRepository;
 
     @Mock
     private InterviewFinder interviewFinder;
@@ -47,8 +46,8 @@ class SessionFeedbackInputAssemblerTest {
     @BeforeEach
     void setUp() {
         assembler = new SessionFeedbackInputAssembler(
-                rubricScoreRepository,
-                nonverbalScoreRepository,
+                questionScoreRepository,
+                questionScoreDimensionRepository,
                 interviewFinder,
                 new NonverbalImprovementActionsLoader()
         );
@@ -66,25 +65,37 @@ class SessionFeedbackInputAssemblerTest {
     void assemble_mapsEmptyScoresToFailedStatus() {
         Long interviewId = 1L;
 
-        RubricScore okEntity = RubricScore.builder()
+        QuestionScore okScore = QuestionScore.builder()
                 .interviewId(interviewId)
-                .turnId(1L)
+                .questionId(1L)
                 .rubricId("cs-v1")
-                .scoresJson(Map.of("D1", DimensionScore.of(3, "명확함", "turn 1에서 증명")))
                 .levelFlag("MID")
                 .build();
+        ReflectionTestUtils.setField(okScore, "id", 1L);
 
-        RubricScore failedEntity = RubricScore.builder()
+        QuestionScore failedScore = QuestionScore.builder()
                 .interviewId(interviewId)
-                .turnId(2L)
+                .questionId(2L)
                 .rubricId("cs-v1")
-                .scoresJson(Map.of())
                 .levelFlag(null)
+                .build();
+        ReflectionTestUtils.setField(failedScore, "id", 2L);
+
+        QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                .questionScoreId(okScore.getId())
+                .dimensionRef("problem_framing")
+                .score(3)
+                .observation("명확함")
+                .evidenceQuote("turn 1에서 증명")
                 .build();
 
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
-                .willReturn(List.of(okEntity, failedEntity));
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                .willReturn(List.of(okScore, failedScore));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(okScore.getId()))
+                .willReturn(List.of(dim));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(failedScore.getId()))
+                .willReturn(List.of());
 
         SessionFeedbackInput input = assembler.assemble(interviewId);
 
@@ -92,7 +103,7 @@ class SessionFeedbackInputAssemblerTest {
 
         TurnScoreView okTurn = input.turnScores().get(0);
         assertThat(okTurn.status()).isEqualTo(TurnScoreView.TurnStatus.OK);
-        assertThat(okTurn.scoredDimensions()).containsExactly("D1");
+        assertThat(okTurn.scoredDimensions()).containsExactly("problem_framing");
 
         TurnScoreView failedTurn = input.turnScores().get(1);
         assertThat(failedTurn.status()).isEqualTo(TurnScoreView.TurnStatus.FAILED);
@@ -106,17 +117,27 @@ class SessionFeedbackInputAssemblerTest {
     void assemble_allOkTurns_returnsAllTurnsScoredCoverage() {
         Long interviewId = 2L;
 
-        RubricScore entity = RubricScore.builder()
+        QuestionScore score = QuestionScore.builder()
                 .interviewId(interviewId)
-                .turnId(1L)
+                .questionId(1L)
                 .rubricId("cs-v1")
-                .scoresJson(Map.of("D1", DimensionScore.of(2, "보통", "turn 1")))
                 .levelFlag("MID")
+                .build();
+        ReflectionTestUtils.setField(score, "id", 10L);
+
+        QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                .questionScoreId(score.getId())
+                .dimensionRef("problem_framing")
+                .score(2)
+                .observation("보통")
+                .evidenceQuote("turn 1")
                 .build();
 
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
-                .willReturn(List.of(entity));
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                .willReturn(List.of(score));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(score.getId()))
+                .willReturn(List.of(dim));
 
         SessionFeedbackInput input = assembler.assemble(interviewId);
 
@@ -130,7 +151,7 @@ class SessionFeedbackInputAssemblerTest {
         Long interviewId = 20L;
 
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of());
 
         SessionFeedbackInput input = assembler.assemble(interviewId);
@@ -146,39 +167,82 @@ class SessionFeedbackInputAssemblerTest {
     @DisplayName("DB nonverbal_score가 있으면 D11~D14 aggregate와 최저 차원 개선 액션을 Delivery 입력으로 사용한다")
     void assembleWithDelivery_usesDbNonverbalScoresForTypedAggregate() {
         Long interviewId = 3L;
-        RubricScore contentScore = RubricScore.builder()
+
+        QuestionScore contentScore = QuestionScore.builder()
                 .interviewId(interviewId)
-                .turnId(1L)
+                .questionId(1L)
                 .rubricId("cs-v1")
-                .scoresJson(Map.of("D1", DimensionScore.of(3, "명확함", "turn 1")))
                 .levelFlag("MID")
                 .build();
-        NonverbalScore firstTurn = NonverbalScore.builder()
-                .interviewId(interviewId)
-                .turnId(1L)
-                .fluencyScore(2)
-                .toneScore(3)
-                .postureScore(1)
-                .composureScore(2)
-                .rawSignals("{\"fillerWordCount\":5}")
-                .contextMultiplier(new BigDecimal("1.10"))
-                .build();
-        NonverbalScore secondTurn = NonverbalScore.builder()
-                .interviewId(interviewId)
-                .turnId(2L)
-                .fluencyScore(2)
-                .toneScore(2)
-                .postureScore(1)
-                .composureScore(3)
-                .rawSignals("{\"fillerWordCount\":2}")
-                .contextMultiplier(new BigDecimal("1.00"))
+        ReflectionTestUtils.setField(contentScore, "id", 100L);
+
+        QuestionScoreDimension contentDim = QuestionScoreDimension.builder()
+                .questionScoreId(contentScore.getId())
+                .dimensionRef("problem_framing")
+                .score(3)
+                .observation("명확함")
+                .evidenceQuote("turn 1")
                 .build();
 
+        QuestionScore nonverbalScore1 = QuestionScore.builder()
+                .interviewId(interviewId)
+                .questionId(1L)
+                .rubricId("nonverbal")
+                .levelFlag(null)
+                .build();
+        ReflectionTestUtils.setField(nonverbalScore1, "id", 101L);
+
+        QuestionScore nonverbalScore2 = QuestionScore.builder()
+                .interviewId(interviewId)
+                .questionId(2L)
+                .rubricId("nonverbal")
+                .levelFlag(null)
+                .build();
+        ReflectionTestUtils.setField(nonverbalScore2, "id", 102L);
+
+        QuestionScoreDimension nv1D11 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore1.getId())
+                .dimensionRef("fluency")
+                .score(2).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv1D12 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore1.getId())
+                .dimensionRef("confidence_tone")
+                .score(3).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv1D13 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore1.getId())
+                .dimensionRef("eye_contact_posture")
+                .score(1).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv1D14 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore1.getId())
+                .dimensionRef("composure")
+                .score(2).observation("").evidenceQuote("").build();
+
+        QuestionScoreDimension nv2D11 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore2.getId())
+                .dimensionRef("fluency")
+                .score(2).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv2D12 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore2.getId())
+                .dimensionRef("confidence_tone")
+                .score(2).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv2D13 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore2.getId())
+                .dimensionRef("eye_contact_posture")
+                .score(1).observation("").evidenceQuote("").build();
+        QuestionScoreDimension nv2D14 = QuestionScoreDimension.builder()
+                .questionScoreId(nonverbalScore2.getId())
+                .dimensionRef("composure")
+                .score(3).observation("").evidenceQuote("").build();
+
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
-                .willReturn(List.of(contentScore));
-        given(nonverbalScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
-                .willReturn(List.of(firstTurn, secondTurn));
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                .willReturn(List.of(contentScore, nonverbalScore1, nonverbalScore2));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(contentScore.getId()))
+                .willReturn(List.of(contentDim));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(nonverbalScore1.getId()))
+                .willReturn(List.of(nv1D11, nv1D12, nv1D13, nv1D14));
+        given(questionScoreDimensionRepository.findByQuestionScoreId(nonverbalScore2.getId()))
+                .willReturn(List.of(nv2D11, nv2D12, nv2D13, nv2D14));
 
         SessionFeedbackInput input = assembler.assembleWithDelivery(
                 interviewId,
@@ -192,14 +256,12 @@ class SessionFeedbackInputAssemblerTest {
         assertThat(aggregate.source()).isEqualTo("nonverbal_score");
         assertThat(input.legacyNonverbalAggregateJson()).isNull();
         assertThat(aggregate.turns()).hasSize(2);
-        assertThat(aggregate.turns().getFirst().turnId()).isEqualTo(1L);
-        assertThat(aggregate.turns().getFirst().scores()).containsEntry("D13", 1);
-        assertThat(aggregate.turns().getFirst().contextMultiplier()).isEqualTo(1.1);
-        assertThat(aggregate.averageScores()).containsEntry("D11", 2.0);
-        assertThat(aggregate.averageScores()).containsEntry("D13", 1.0);
-        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("D13");
+        assertThat(aggregate.turns().getFirst().scores()).containsEntry("eye_contact_posture", 1);
+        assertThat(aggregate.averageScores()).containsEntry("fluency", 2.0);
+        assertThat(aggregate.averageScores()).containsEntry("eye_contact_posture", 1.0);
+        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("eye_contact_posture");
         assertThat(aggregate.lowestDimension().averageScore()).isEqualTo(1.0);
-        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("D13");
+        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("eye_contact_posture");
         assertThat(aggregate.recommendedActions().getFirst().actions().getFirst())
                 .contains("카메라를 보고 말하기");
     }
@@ -211,9 +273,7 @@ class SessionFeedbackInputAssemblerTest {
         String legacyAggregate = "{\"legacy\":\"aggregate\"}";
 
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
-                .willReturn(List.of());
-        given(nonverbalScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId))
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of());
 
         SessionFeedbackInput input = assembler.assembleWithDelivery(

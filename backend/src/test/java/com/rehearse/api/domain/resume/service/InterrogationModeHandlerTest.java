@@ -25,6 +25,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InterrogationModeHandler - Interrogation 모드 결정 트리")
@@ -36,6 +37,9 @@ class InterrogationModeHandlerTest {
     @Mock
     private ResumeChainInterrogatorPromptBuilder promptBuilder;
 
+    @Mock
+    private ResumeQuestionPersister questionPersister;
+
     private InterviewRuntimeState state;
     private InterviewPlan plan;
 
@@ -43,6 +47,8 @@ class InterrogationModeHandlerTest {
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
         plan = createPlan();
+        lenient().when(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+                .thenReturn(1L);
     }
 
     @Nested
@@ -56,7 +62,8 @@ class InterrogationModeHandlerTest {
             given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
 
-            FollowUpResponse response = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan);
+            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan);
+            FollowUpResponse response = result.response();
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
             assertThat(response.getType()).startsWith("RESUME_INTERROGATION_L");
@@ -143,10 +150,10 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             state.getChainStateTracker().markChainComplete();
 
-            FollowUpResponse response = handler.handle(1L, state, "답변", createAnalysis(3), plan);
+            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan);
 
-            assertThat(response.isFollowUpExhausted()).isTrue();
-            assertThat(response.isPresentToUser()).isFalse();
+            assertThat(result.response().isFollowUpExhausted()).isTrue();
+            assertThat(result.response().isPresentToUser()).isFalse();
         }
     }
 
@@ -159,6 +166,6 @@ class InterrogationModeHandlerTest {
         PlaygroundPhase playground = new PlaygroundPhase("프로젝트 소개해주세요", List.of());
         InterrogationPhase interrogation = new InterrogationPhase(List.of(primary), List.of());
         ProjectPlan projectPlan = new ProjectPlan("proj1", "Redis Cache", 1, playground, interrogation);
-        return new InterviewPlan("plan-001", 30, List.of(projectPlan));
+        return new InterviewPlan("plan-001", List.of(projectPlan));
     }
 }

@@ -3,6 +3,7 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
@@ -16,8 +17,9 @@ import org.springframework.stereotype.Component;
 public class WrapUpModeHandler {
 
     private final ResumeWrapUpPromptBuilder promptBuilder;
+    private final ResumeQuestionPersister questionPersister;
 
-    public FollowUpResponse handle(
+    public WrapUpTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
             long remainingMinutes, boolean isRetrospective
@@ -29,9 +31,14 @@ public class WrapUpModeHandler {
         log.info("[WrapUpHandler] 회고 질문 생성: interviewId={}, remainingMin={}, isRetrospective={}",
                 interviewId, remainingMinutes, isRetrospective);
 
+        int orderIndex = state.nextResumeOrderIndex();
+        Long questionId = questionPersister.persist(
+                interviewId, QuestionType.RESUME_WRAP_UP, result.question(),
+                orderIndex, null, null, null);
+
         boolean exhausted = result.sessionComplete() || remainingMinutes <= 0;
 
-        return FollowUpResponse.builder()
+        FollowUpResponse response = FollowUpResponse.builder()
                 .question(result.question())
                 .ttsQuestion(result.ttsQuestion())
                 .reason(result.reason())
@@ -40,7 +47,10 @@ public class WrapUpModeHandler {
                 .presentToUser(true)
                 .followUpExhausted(exhausted)
                 .build();
+        return new WrapUpTurnResult(response, questionId);
     }
+
+    public record WrapUpTurnResult(FollowUpResponse response, Long questionId) {}
 
     private String buildSessionSummary(InterviewRuntimeState state) {
         ChainStateTracker tracker = state.getChainStateTracker();

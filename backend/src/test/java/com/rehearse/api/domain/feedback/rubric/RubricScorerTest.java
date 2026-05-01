@@ -129,18 +129,18 @@ class RubricScorerTest {
             Rubric rubric = createResumeRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
             ChatRequest mockRequest = mockChatRequest();
-            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D8")), any(), any(), any(), any()))
+            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("recovery_from_gaps")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("D8"))))
-                    .willReturn(new RubricScoringResult("resume-v1", List.of("D8"),
-                            Map.of("D8", DimensionScore.of(2, "모른다고 인정했음", "잘 모르겠어요")), null));
+            given(adapter.adapt(any(), any(), any(), eq(List.of("recovery_from_gaps"))))
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("recovery_from_gaps"),
+                            Map.of("recovery_from_gaps", DimensionScore.of(2, "모른다고 인정했음", "잘 모르겠어요")), null));
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "잘 모르겠습니다",
                     analysis, IntentType.GIVE_UP, ResumeMode.INTERROGATION, 2, null
             );
 
-            assertThat(result.scoredDimensions()).containsExactly("D8");
+            assertThat(result.scoredDimensions()).containsExactly("recovery_from_gaps");
         }
     }
 
@@ -154,18 +154,18 @@ class RubricScorerTest {
             Rubric rubric = createResumeRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
             ChatRequest mockRequest = mockChatRequest();
-            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D6")), any(), any(), any(), any()))
+            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("experience_concreteness")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("D6"))))
-                    .willReturn(new RubricScoringResult("resume-v1", List.of("D6"),
-                            Map.of("D6", DimensionScore.of(3, "구체적 수치 제시", "TPS 10000")), null));
+            given(adapter.adapt(any(), any(), any(), eq(List.of("experience_concreteness"))))
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("experience_concreteness"),
+                            Map.of("experience_concreteness", DimensionScore.of(3, "구체적 수치 제시", "TPS 10000")), null));
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "TPS 10000을 달성했습니다",
                     analysis, IntentType.ANSWER, ResumeMode.PLAYGROUND, 1, null
             );
 
-            assertThat(result.scoredDimensions()).containsExactly("D6");
+            assertThat(result.scoredDimensions()).containsExactly("experience_concreteness");
         }
 
         @Test
@@ -173,16 +173,16 @@ class RubricScorerTest {
         void score_interrogationMode_correctDimensions() {
             Rubric rubric = createResumeRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
-            List<String> expectedDims = List.of("D2", "D3", "D9", "D10");
+            List<String> expectedDims = List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth");
             ChatRequest mockRequest = mockChatRequest();
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
                     .willReturn(new RubricScoringResult("resume-v1", expectedDims,
-                            Map.of("D2", DimensionScore.of(2, "설명", "evidence"),
-                                   "D3", DimensionScore.of(2, "설명", "evidence"),
-                                   "D9", DimensionScore.of(3, "설명", "evidence"),
-                                   "D10", DimensionScore.of(2, "설명", "evidence")), null));
+                            Map.of("technical_depth", DimensionScore.of(2, "설명", "evidence"),
+                                   "reasoning_communication", DimensionScore.of(2, "설명", "evidence"),
+                                   "factual_consistency", DimensionScore.of(3, "설명", "evidence"),
+                                   "chain_depth", DimensionScore.of(2, "설명", "evidence")), null));
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "상세한 답변",
@@ -198,18 +198,18 @@ class RubricScorerTest {
             Rubric rubric = createResumeRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
             ChatRequest mockRequest = mockChatRequest();
-            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("D10")), any(), any(), any(), any()))
+            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("chain_depth")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("D10"))))
-                    .willReturn(new RubricScoringResult("resume-v1", List.of("D10"),
-                            Map.of("D10", DimensionScore.of(3, "L4까지 도달", "트레이드오프 비교")), null));
+            given(adapter.adapt(any(), any(), any(), eq(List.of("chain_depth"))))
+                    .willReturn(new RubricScoringResult("resume-v1", List.of("chain_depth"),
+                            Map.of("chain_depth", DimensionScore.of(3, "L4까지 도달", "트레이드오프 비교")), null));
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "회고 답변",
                     analysis, IntentType.ANSWER, ResumeMode.WRAP_UP, 4, null
             );
 
-            assertThat(result.scoredDimensions()).containsExactly("D10");
+            assertThat(result.scoredDimensions()).containsExactly("chain_depth");
         }
     }
 
@@ -222,16 +222,16 @@ class RubricScorerTest {
         void score_answerIntent_noMode_usesIntentAnswerDimensions() {
             Rubric csFundamentalRubric = createCsRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(csFundamentalRubric);
-            List<String> expectedDims = List.of("D2", "D3", "D4", "D8");
+            List<String> expectedDims = List.of("technical_depth", "reasoning_communication", "conceptual_accuracy", "recovery_from_gaps");
             ChatRequest mockRequest = mockChatRequest();
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
             given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
                     .willReturn(new RubricScoringResult("concept-cs-fundamental-v1", expectedDims,
-                            Map.of("D2", DimensionScore.of(2, "설명", "ev"),
-                                   "D3", DimensionScore.of(2, "설명", "ev"),
-                                   "D4", DimensionScore.of(3, "정확", "ev"),
-                                   "D8", DimensionScore.of(2, "인정", "ev")), null));
+                            Map.of("technical_depth", DimensionScore.of(2, "설명", "ev"),
+                                   "reasoning_communication", DimensionScore.of(2, "설명", "ev"),
+                                   "conceptual_accuracy", DimensionScore.of(3, "정확", "ev"),
+                                   "recovery_from_gaps", DimensionScore.of(2, "인정", "ev")), null));
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, standardInterview, "상세한 기술 답변",
@@ -247,18 +247,18 @@ class RubricScorerTest {
                 "resume-v1",
                 "Resume Track 루브릭",
                 List.of(
-                        new DimensionRef("D2", 0.25),
-                        new DimensionRef("D3", 0.15),
-                        new DimensionRef("D6", 0.20),
-                        new DimensionRef("D9", 0.20),
-                        new DimensionRef("D10", 0.20)
+                        new DimensionRef("technical_depth", 0.25),
+                        new DimensionRef("reasoning_communication", 0.15),
+                        new DimensionRef("experience_concreteness", 0.20),
+                        new DimensionRef("factual_consistency", 0.20),
+                        new DimensionRef("chain_depth", 0.20)
                 ),
                 Map.of(
                         "on_intent_clarify", List.of(),
-                        "on_intent_give_up", List.of("D8"),
-                        "on_playground_mode", List.of("D6"),
-                        "on_interrogation_mode", List.of("D2", "D3", "D9", "D10"),
-                        "on_wrap_up_mode", List.of("D10")
+                        "on_intent_give_up", List.of("recovery_from_gaps"),
+                        "on_playground_mode", List.of("experience_concreteness"),
+                        "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth"),
+                        "on_wrap_up_mode", List.of("chain_depth")
                 ),
                 Map.of()
         );
@@ -269,15 +269,15 @@ class RubricScorerTest {
                 "concept-cs-fundamental-v1",
                 "CS 기초 루브릭",
                 List.of(
-                        new DimensionRef("D2", 0.30),
-                        new DimensionRef("D3", 0.25),
-                        new DimensionRef("D4", 0.30),
-                        new DimensionRef("D8", 0.15)
+                        new DimensionRef("technical_depth", 0.30),
+                        new DimensionRef("reasoning_communication", 0.25),
+                        new DimensionRef("conceptual_accuracy", 0.30),
+                        new DimensionRef("recovery_from_gaps", 0.15)
                 ),
                 Map.of(
                         "on_intent_clarify", List.of(),
-                        "on_intent_give_up", List.of("D8"),
-                        "on_intent_answer", List.of("D2", "D3", "D4", "D8")
+                        "on_intent_give_up", List.of("recovery_from_gaps"),
+                        "on_intent_answer", List.of("technical_depth", "reasoning_communication", "conceptual_accuracy", "recovery_from_gaps")
                 ),
                 Map.of()
         );

@@ -3,6 +3,7 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -20,8 +21,9 @@ import java.util.Optional;
 public class InterrogationModeHandler {
 
     private final ResumeChainInterrogatorPromptBuilder promptBuilder;
+    private final ResumeQuestionPersister questionPersister;
 
-    public FollowUpResponse handle(
+    public InterrogationTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
             InterviewPlan plan
@@ -33,7 +35,7 @@ public class InterrogationModeHandler {
                 Optional<ChainReference> nextChain = tracker.resolveNextChain(plan.projectPlans());
                 if (nextChain.isEmpty()) {
                     log.info("[InterrogationHandler] 모든 chain 소진: interviewId={}", interviewId);
-                    return buildExhaustedResponse();
+                    return new InterrogationTurnResult(buildExhaustedResponse(), null);
                 }
                 ChainReference chain = nextChain.get();
                 tracker.initChain(chain.projectId(), chain.chainId());
@@ -44,6 +46,7 @@ public class InterrogationModeHandler {
             int currentLevel = tracker.getCurrentLevel();
             int consecutiveStay = tracker.getConsecutiveLevelStayCount();
             String chainTopic = tracker.getCurrentChainId();
+            String currentProjectId = tracker.getCurrentProjectId();
 
             InterrogationResult result = promptBuilder.build(
                     chainTopic, currentLevel, answerQuality, userAnswer, consecutiveStay
@@ -54,9 +57,16 @@ public class InterrogationModeHandler {
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, chainTopic, currentLevel, result.nextAction());
 
-            return buildResponse(result, tracker.getCurrentLevel());
+            int orderIndex = state.nextResumeOrderIndex();
+            Long questionId = questionPersister.persist(
+                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(),
+                    orderIndex, chainTopic, "L" + currentLevel, currentProjectId);
+
+            return new InterrogationTurnResult(buildResponse(result, tracker.getCurrentLevel()), questionId);
         });
     }
+
+    public record InterrogationTurnResult(FollowUpResponse response, Long questionId) {}
 
     private void applyDecision(ChainStateTracker tracker, InterrogationResult result, int answerQuality, int currentLevel) {
         if (result.isLevelUp()) {

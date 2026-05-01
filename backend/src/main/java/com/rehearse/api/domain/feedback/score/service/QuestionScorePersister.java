@@ -1,0 +1,86 @@
+package com.rehearse.api.domain.feedback.score.service;
+
+import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class QuestionScorePersister {
+
+    private final QuestionScoreRepository questionScoreRepository;
+    private final QuestionScoreDimensionRepository dimensionRepository;
+
+    @Transactional
+    public void saveRubric(Long questionId, Long interviewId, String rubricId,
+                           String levelFlag, String feedbackPerspective,
+                           Map<String, DimensionScore> dimensionScores) {
+        if (questionScoreRepository.findByQuestionIdAndRubricId(questionId, rubricId).isPresent()) {
+            log.debug("QuestionScore 이미 존재 (idempotent skip): questionId={}, rubricId={}", questionId, rubricId);
+            return;
+        }
+
+        QuestionScore qs = QuestionScore.builder()
+                .questionId(questionId)
+                .interviewId(interviewId)
+                .rubricId(rubricId)
+                .feedbackPerspective(feedbackPerspective)
+                .levelFlag(levelFlag)
+                .build();
+        questionScoreRepository.save(qs);
+
+        dimensionScores.forEach((dimensionRef, ds) -> {
+            if (ds == null || ds.score() == null) return;
+            QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                    .questionScoreId(qs.getId())
+                    .dimensionRef(dimensionRef)
+                    .score(ds.score())
+                    .observation(ds.observation())
+                    .evidenceQuote(ds.evidenceQuote())
+                    .build();
+            dimensionRepository.save(dim);
+        });
+
+        log.info("QuestionScore 저장: questionId={}, rubricId={}, dimensions={}", questionId, rubricId, dimensionScores.keySet());
+    }
+
+    @Transactional
+    public void saveNonverbal(Long questionId, Long interviewId,
+                              Map<String, DimensionScore> dimensionScores) {
+        String rubricId = "nonverbal";
+        if (questionScoreRepository.findByQuestionIdAndRubricId(questionId, rubricId).isPresent()) {
+            log.debug("nonverbal QuestionScore 이미 존재: questionId={}", questionId);
+            return;
+        }
+
+        QuestionScore qs = QuestionScore.builder()
+                .questionId(questionId)
+                .interviewId(interviewId)
+                .rubricId(rubricId)
+                .build();
+        questionScoreRepository.save(qs);
+
+        dimensionScores.forEach((dimensionRef, ds) -> {
+            if (ds == null || ds.score() == null) return;
+            QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                    .questionScoreId(qs.getId())
+                    .dimensionRef(dimensionRef)
+                    .score(ds.score())
+                    .observation(ds.observation())
+                    .evidenceQuote(ds.evidenceQuote())
+                    .build();
+            dimensionRepository.save(dim);
+        });
+
+        log.debug("nonverbal QuestionScore 저장: questionId={}, dimensions={}", questionId, dimensionScores.keySet());
+    }
+}
