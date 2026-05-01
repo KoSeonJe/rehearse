@@ -2,13 +2,13 @@ package com.rehearse.api.domain.feedback.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -51,15 +51,8 @@ public class FeedbackService {
     }
 
     private boolean isAllAnalysisSettled(Long interviewId) {
-        long totalCount = questionSetRepository.countByInterviewId(interviewId);
-        if (totalCount == 0) {
-            return false;
-        }
-        long pendingCount = analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(
-                interviewId, AnalysisStatus.inProgressStatuses());
-        long notStartedCount = analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(
-                interviewId, java.util.List.of(AnalysisStatus.PENDING, AnalysisStatus.PENDING_UPLOAD));
-        return (pendingCount + notStartedCount) == 0;
+        List<QuestionSetAnalysis> all = analysisRepository.findAllByQuestionSetInterviewId(interviewId);
+        return !all.isEmpty() && all.stream().allMatch(a -> a.getAnalysisStatus().isResolved());
     }
 
     private QuestionSet findQuestionSet(Long questionSetId) {

@@ -143,8 +143,7 @@ class FeedbackServiceTest {
         QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-        given(questionSetRepository.countByInterviewId(any())).willReturn(1L);
-        given(analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(any(), any())).willReturn(0L);
+        given(analysisRepository.findAllByQuestionSetInterviewId(any())).willReturn(List.of(analysis));
 
         SaveFeedbackRequest request = createRequest(true, true);
 
@@ -161,13 +160,10 @@ class FeedbackServiceTest {
         // given
         QuestionSet questionSet = createQuestionSet(1L);
         QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
+        QuestionSetAnalysis otherAnalysis = createAnalysis(2L, AnalysisStatus.ANALYZING);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-        given(questionSetRepository.countByInterviewId(any())).willReturn(2L);
-        // 1개는 아직 ANALYZING 중
-        given(analysisRepository.countByQuestionSetInterviewIdAndAnalysisStatusIn(any(), any()))
-                .willReturn(1L)  // inProgressStatuses
-                .willReturn(0L); // PENDING/PENDING_UPLOAD
+        given(analysisRepository.findAllByQuestionSetInterviewId(any())).willReturn(List.of(analysis, otherAnalysis));
 
         SaveFeedbackRequest request = createRequest(true, true);
 
@@ -186,7 +182,7 @@ class FeedbackServiceTest {
         QuestionSetAnalysis analysis = createAnalysis(1L, AnalysisStatus.FINALIZING);
         given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
         given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.of(analysis));
-        given(questionSetRepository.countByInterviewId(any())).willReturn(0L);
+        given(analysisRepository.findAllByQuestionSetInterviewId(any())).willReturn(List.of());
 
         SaveFeedbackRequest request = createRequest(true, true);
 
