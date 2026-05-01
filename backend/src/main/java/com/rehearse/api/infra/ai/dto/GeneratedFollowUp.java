@@ -11,12 +11,22 @@ import lombok.NoArgsConstructor;
 public class GeneratedFollowUp {
 
     private Boolean skip;
+
+    @JsonProperty("skip_reason")
     private String skipReason;
+
     private String question;
+
+    @JsonProperty("tts_question")
     private String ttsQuestion;
+
     private String reason;
     private String type;
+
+    @JsonProperty("model_answer")
     private String modelAnswer;
+
+    @JsonProperty("answer_text")
     private String answerText;
 
     @JsonProperty("target_claim_idx")

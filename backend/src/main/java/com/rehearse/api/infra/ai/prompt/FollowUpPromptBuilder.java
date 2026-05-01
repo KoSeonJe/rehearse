@@ -146,7 +146,7 @@ public class FollowUpPromptBuilder {
           .append("레벨: ").append(levelKorean(req.level())).append("\n\n");
 
         sb.append("메인 질문: ").append(req.questionContent()).append("\n");
-        sb.append("현재 답변: ").append(answerSection).append("\n");
+        sb.append("현재 답변:\n<<<USER_ANSWER>>>\n").append(answerSection).append("\n<<<END_USER_ANSWER>>>\n");
         sb.append("비언어: ").append(
             req.nonVerbalSummary() != null ? req.nonVerbalSummary() : "없음").append("\n");
 
@@ -155,7 +155,7 @@ public class FollowUpPromptBuilder {
             for (int i = 0; i < req.previousExchanges().size(); i++) {
                 var ex = req.previousExchanges().get(i);
                 sb.append("[").append(i + 1).append("] Q: ").append(ex.getQuestion()).append("\n");
-                sb.append("[").append(i + 1).append("] A: ").append(ex.getAnswer()).append("\n");
+                sb.append("[").append(i + 1).append("] A:\n<<<USER_ANSWER>>>\n").append(ex.getAnswer()).append("\n<<<END_USER_ANSWER>>>\n");
             }
         }
 

@@ -171,7 +171,7 @@ class FollowUpPromptBuilderTest {
             assertThat(prompt).contains("skip=true");
             assertThat(prompt).contains("모르겠다");
             assertThat(prompt).contains("\"skip\"");
-            assertThat(prompt).contains("\"answerText\"");
+            assertThat(prompt).contains("\"answer_text\"");
             assertThat(prompt).contains("JSON 형식으로만 응답");
         }
     }
@@ -227,7 +227,8 @@ class FollowUpPromptBuilderTest {
 
             // then
             assertThat(prompt).contains("메인 질문: Spring의 IoC에 대해 설명해주세요.");
-            assertThat(prompt).contains("현재 답변: 의존성을 외부에서 주입받는 방식입니다.");
+            assertThat(prompt).contains("현재 답변:");
+            assertThat(prompt).contains("의존성을 외부에서 주입받는 방식입니다.");
         }
 
         @Test
