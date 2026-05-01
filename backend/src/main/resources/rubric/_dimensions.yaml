@@ -6,7 +6,7 @@ version: 1
 dimensions:
   D1:
     id: problem_framing
-    name: Problem Framing
+    name: 문제 정의
     description: 질문 받고 전제/제약/엣지케이스 확인하는가
     scope: general
     scoring:
@@ -32,7 +32,7 @@ dimensions:
 
   D2:
     id: technical_depth
-    name: Technical Depth
+    name: 기술적 깊이
     description: 원리/트레이드오프/대안 인지
     scope: general
     scoring:
@@ -58,7 +58,7 @@ dimensions:
 
   D3:
     id: reasoning_communication
-    name: Reasoning Communication
+    name: 사고 과정 전달
     description: 사고 과정 단계적 언어화
     scope: general
     scoring:
@@ -83,7 +83,7 @@ dimensions:
 
   D4:
     id: conceptual_accuracy
-    name: Conceptual Accuracy
+    name: 개념 정확성
     description: 개념 설명의 기술적 정확성
     scope: general
     scoring:
@@ -109,7 +109,7 @@ dimensions:
 
   D5:
     id: practical_application
-    name: Practical Application
+    name: 실무 적용력
     description: 실무 사용 맥락, 주의점, 흔한 실수 이해
     scope: general
     scoring:
@@ -135,7 +135,7 @@ dimensions:
 
   D6:
     id: experience_concreteness
-    name: Experience Concreteness
+    name: 경험 구체성
     description: 수치, 본인 기여, Learnings (CARL의 L)
     scope: general
     scoring:
@@ -162,7 +162,7 @@ dimensions:
 
   D7:
     id: collaboration_awareness
-    name: Collaboration Awareness
+    name: 협업 인식
     description: 팀/이해관계자 관점 고려
     scope: general
     scoring:
@@ -188,7 +188,7 @@ dimensions:
 
   D8:
     id: recovery_from_gaps
-    name: Recovery from Gaps
+    name: 모름 대처
     description: 모르는 걸 만났을 때 대처
     scope: general
     scoring:
@@ -214,7 +214,7 @@ dimensions:
 
   D9:
     id: factual_consistency
-    name: Factual Consistency
+    name: 이력서 일관성
     description: (Resume 전용) 이력서 claim과 답변 일치
     scope: resume_only
     scoring:
@@ -238,7 +238,7 @@ dimensions:
 
   D10:
     id: chain_depth
-    name: Chain Depth
+    name: 심화 답변 깊이
     description: (Resume 전용) 심화 체인 어디까지 답했는가 (L1 What → L2 How → L3 Why-mech → L4 Tradeoff)
     scope: resume_only
     scoring:
@@ -261,7 +261,7 @@ dimensions:
 
   D11:
     id: fluency
-    name: Fluency
+    name: 발화 유창성
     description: 필러 워드가 답변 전달을 방해하지 않는가
     scope: nonverbal
     category: nonverbal
@@ -286,7 +286,7 @@ dimensions:
 
   D12:
     id: confidence_tone
-    name: Confidence Tone
+    name: 자신감 있는 말투
     description: 톤과 발화 속도 변동이 자신감 있게 유지되는가
     scope: nonverbal
     category: nonverbal
@@ -311,7 +311,7 @@ dimensions:
 
   D13:
     id: eye_contact_posture
-    name: Eye Contact & Posture
+    name: 시선과 자세
     description: 시선과 자세가 안정적으로 유지되는가
     scope: nonverbal
     category: nonverbal
@@ -336,7 +336,7 @@ dimensions:
 
   D14:
     id: composure
-    name: Composure
+    name: 압박 안정성
     description: 난이도가 올라가도 비언어 전달 안정성을 유지하는가
     scope: nonverbal
     category: nonverbal
