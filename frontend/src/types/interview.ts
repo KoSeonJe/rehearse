@@ -165,7 +165,6 @@ export interface DeliveryFeedback {
 
 export interface TechnicalDimensionFeedback {
   dimension: string
-  dimensionLabel: string | null
   score: number | null
   observation: string | null
   evidenceQuote: string | null

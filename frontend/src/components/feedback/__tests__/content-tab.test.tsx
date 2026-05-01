@@ -12,8 +12,7 @@ describe('ContentTab', () => {
           levelFlag: 'MID_EXPECTATION_MET',
           dimensions: [
             {
-              dimension: 'D4',
-              dimensionLabel: '개념 정확성',
+              dimension: 'conceptual_accuracy',
               score: 3,
               observation: '세대별 GC 구조를 언급해 개념 정확도가 좋습니다.',
               evidenceQuote: 'young 영역과 old 영역을 나눠 관리',
@@ -24,7 +23,7 @@ describe('ContentTab', () => {
     )
 
     expect(html).toContain('기술 피드백')
-    expect(html).toContain('개념 정확성')
+    expect(html).toContain('conceptual_accuracy')
     expect(html).toContain('3점')
     expect(html).toContain('세대별 GC 구조를 언급해 개념 정확도가 좋습니다.')
     expect(html).toContain('young 영역과 old 영역을 나눠 관리')
