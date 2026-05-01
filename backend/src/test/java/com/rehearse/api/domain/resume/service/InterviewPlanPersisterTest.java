@@ -84,6 +84,6 @@ class InterviewPlanPersisterTest {
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         PlaygroundPhase playground = new PlaygroundPhase("프로젝트를 소개해주세요.", List.of("p1_c1"));
         ProjectPlan projectPlan = new ProjectPlan("p1", "Project Alpha", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", 30, List.of(projectPlan));
+        return new InterviewPlan("plan_test", List.of(projectPlan));
     }
 }

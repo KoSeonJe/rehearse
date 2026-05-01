@@ -14,6 +14,9 @@ import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
 import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
@@ -45,6 +48,7 @@ public class ResumeInterviewOrchestrator {
     private final InterviewRuntimeStateCache runtimeStateStore;
     private final InterviewFinder interviewFinder;
     private final ApplicationEventPublisher eventPublisher;
+    private final QuestionSetRepository questionSetRepository;
 
     @Value("${rehearse.resume-track.wrap-up-threshold-min:2}")
     private long wrapUpThresholdMin;
@@ -98,15 +102,24 @@ public class ResumeInterviewOrchestrator {
         ChainStateTracker chainTracker = state.getChainStateTracker();
         int currentChainLevel = chainTracker != null ? chainTracker.getCurrentLevel() : 1;
 
-        FollowUpResponse response = switch (currentMode) {
+        TurnHandlerResult handlerResult = switch (currentMode) {
             case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan);
-            case INTERROGATION -> interrogationHandler.handle(interviewId, state, answerText, analysis, plan);
-            case WRAP_UP -> wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true);
+            case INTERROGATION -> {
+                InterrogationModeHandler.InterrogationTurnResult r =
+                        interrogationHandler.handle(interviewId, state, answerText, analysis, plan);
+                yield new TurnHandlerResult(r.response(), r.questionId());
+            }
+            case WRAP_UP -> {
+                WrapUpModeHandler.WrapUpTurnResult r =
+                        wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true);
+                yield new TurnHandlerResult(r.response(), r.questionId());
+            }
         };
 
-        publishResumeTurnCompletedEvent(interviewId, turnIndex, analysis, intent, currentMode, currentChainLevel, skeleton, answerText);
+        publishResumeTurnCompletedEvent(interviewId, turnIndex, analysis, intent, currentMode, currentChainLevel,
+                skeleton, answerText, handlerResult.questionId());
 
-        return response;
+        return handlerResult.response();
     }
 
     public FollowUpResponse startSession(
@@ -116,10 +129,11 @@ public class ResumeInterviewOrchestrator {
         clockWatcher.markStart(interviewId);
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
         log.info("[ResumeOrchestrator] 세션 시작: interviewId={}, mode=PLAYGROUND", interviewId);
-        return playgroundHandler.handleOpener(interviewId, state, skeleton, plan);
+        PlaygroundModeHandler.OpenerResult openerResult = playgroundHandler.handleOpener(interviewId, state, skeleton, plan);
+        return openerResult.response();
     }
 
-    private FollowUpResponse handlePlayground(
+    private TurnHandlerResult handlePlayground(
             Long interviewId, InterviewRuntimeState state,
             String answerText, AnswerAnalysis analysis,
             ResumeSkeleton skeleton, InterviewPlan plan
@@ -130,21 +144,24 @@ public class ResumeInterviewOrchestrator {
         if (result.switchedToInterrogation()) {
             runtimeStateStore.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
             InterviewRuntimeState refreshed = runtimeStateStore.get(interviewId);
-            return interrogationHandler.handle(interviewId, refreshed, null, null, plan);
+            InterrogationModeHandler.InterrogationTurnResult interrogationResult =
+                    interrogationHandler.handle(interviewId, refreshed, null, null, plan);
+            return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId());
         }
-        return result.response();
+        return new TurnHandlerResult(result.response(), result.questionId());
     }
 
     private void publishResumeTurnCompletedEvent(
             Long interviewId, long turnIndex, AnswerAnalysis analysis,
             IntentResult intent, ResumeMode currentMode, int currentChainLevel,
-            ResumeSkeleton skeleton, String userAnswer
+            ResumeSkeleton skeleton, String userAnswer, Long questionId
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
+            QuestionSet questionSet = resolveQuestionSet(interviewId, questionId);
             TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
                     interviewId, turnIndex, interview.getUserId(),
-                    null, null,
+                    questionId, questionSet != null ? questionSet.getId() : null,
                     userAnswer != null ? userAnswer : "",
                     analysis, intent.type(), interview.getLevel(),
                     currentMode, currentChainLevel, skeleton
@@ -155,6 +172,17 @@ public class ResumeInterviewOrchestrator {
                     interviewId, e.getMessage());
         }
     }
+
+    private QuestionSet resolveQuestionSet(Long interviewId, Long questionId) {
+        if (questionId == null) {
+            return null;
+        }
+        return questionSetRepository
+                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                .orElse(null);
+    }
+
+    private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}
 
     private FollowUpResponse handleNonAnswerIntent(
             Long interviewId, String questionContent, String answerText,

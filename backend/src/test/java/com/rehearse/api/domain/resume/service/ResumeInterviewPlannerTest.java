@@ -146,6 +146,6 @@ class ResumeInterviewPlannerTest {
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
         PlaygroundPhase playground = new PlaygroundPhase("opener", List.of("p1_c1"));
         ProjectPlan project = new ProjectPlan("p1", "Project A", 1, playground, interrogation);
-        return new InterviewPlan("plan_test", durationMin, List.of(project));
+        return new InterviewPlan("plan_test", List.of(project));
     }
 }

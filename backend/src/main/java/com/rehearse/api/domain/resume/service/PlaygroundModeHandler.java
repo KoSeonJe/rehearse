@@ -3,6 +3,7 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.Project;
@@ -27,8 +28,9 @@ import java.util.Optional;
 public class PlaygroundModeHandler {
 
     private final ResumePlaygroundPromptBuilder promptBuilder;
+    private final ResumeQuestionPersister questionPersister;
 
-    public FollowUpResponse handleOpener(
+    public OpenerResult handleOpener(
             Long interviewId, InterviewRuntimeState state,
             ResumeSkeleton skeleton, InterviewPlan plan
     ) {
@@ -37,10 +39,17 @@ public class PlaygroundModeHandler {
 
         PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, project, firstPlan.playgroundPhase());
 
-        log.info("[PlaygroundHandler] 오프너 생성: interviewId={}, projectId={}", interviewId, firstPlan.projectId());
+        int orderIndex = state.nextResumeOrderIndex();
+        Long questionId = questionPersister.persist(
+                interviewId, QuestionType.RESUME_OPENER, result.question(),
+                orderIndex, null, null, firstPlan.projectId());
+
+        log.info("[PlaygroundHandler] 오프너 생성: interviewId={}, projectId={}, questionId={}",
+                interviewId, firstPlan.projectId(), questionId);
         state.getPlaygroundTurns().incrementAndGet();
 
-        return buildResponse(result.question(), result.ttsQuestion(), result.reason(), false);
+        FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), false);
+        return new OpenerResult(response, questionId);
     }
 
     public PlaygroundTurnResult handle(
@@ -59,6 +68,11 @@ public class PlaygroundModeHandler {
                 interviewId, userAnswer, expectedClaims, turnCount, cumulativeLength
         );
 
+        int orderIndex = state.nextResumeOrderIndex();
+        Long questionId = questionPersister.persist(
+                interviewId, QuestionType.RESUME_PLAYGROUND, result.question(),
+                orderIndex, null, null, currentPlan.projectId());
+
         state.getPlaygroundTurns().incrementAndGet();
 
         boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);
@@ -68,7 +82,7 @@ public class PlaygroundModeHandler {
         }
 
         FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), shouldSwitch);
-        return new PlaygroundTurnResult(response, shouldSwitch);
+        return new PlaygroundTurnResult(response, shouldSwitch, questionId);
     }
 
     private boolean evaluateSwitchConditions(PlaygroundResponderResult result, int turnCount) {
@@ -115,5 +129,7 @@ public class PlaygroundModeHandler {
                 .build();
     }
 
-    public record PlaygroundTurnResult(FollowUpResponse response, boolean switchedToInterrogation) {}
+    public record OpenerResult(FollowUpResponse response, Long questionId) {}
+
+    public record PlaygroundTurnResult(FollowUpResponse response, boolean switchedToInterrogation, Long questionId) {}
 }

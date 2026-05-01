@@ -63,10 +63,12 @@ public class SaveFeedbackRequest {
     @Getter
     @NoArgsConstructor
     public static class NonverbalScore {
-        private Integer d11;
-        private Integer d12;
-        private Integer d13;
-        private Integer d14;
+        private Integer fluency;
+        @JsonProperty("confidence_tone")
+        private Integer confidenceTone;
+        @JsonProperty("eye_contact_posture")
+        private Integer eyeContactPosture;
+        private Integer composure;
         private Map<String, Object> rawSignals;
     }
 

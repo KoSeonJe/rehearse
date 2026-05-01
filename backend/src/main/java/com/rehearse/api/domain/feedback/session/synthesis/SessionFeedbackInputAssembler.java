@@ -1,11 +1,11 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.rubric.entity.NonverbalScore;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricScore;
-import com.rehearse.api.domain.feedback.rubric.repository.NonverbalScoreRepository;
-import com.rehearse.api.domain.feedback.rubric.repository.RubricScoreRepository;
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import lombok.RequiredArgsConstructor;
@@ -20,16 +20,22 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionFeedbackInputAssembler {
 
-    private final RubricScoreRepository rubricScoreRepository;
-    private final NonverbalScoreRepository nonverbalScoreRepository;
+    private static final String NONVERBAL_RUBRIC_ID = "nonverbal";
+
+    private final QuestionScoreRepository questionScoreRepository;
+    private final QuestionScoreDimensionRepository questionScoreDimensionRepository;
     private final InterviewFinder interviewFinder;
     private final NonverbalImprovementActionsLoader nonverbalImprovementActionsLoader;
 
     public SessionFeedbackInput assemble(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
-        List<RubricScore> scoreEntities = rubricScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
+        List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
 
-        List<TurnScoreView> turnScores = scoreEntities.stream()
+        List<QuestionScore> rubricScores = allScores.stream()
+                .filter(qs -> !NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
+                .toList();
+
+        List<TurnScoreView> turnScores = rubricScores.stream()
                 .map(this::toTurnScoreView)
                 .toList();
 
@@ -38,9 +44,9 @@ public class SessionFeedbackInputAssembler {
                 .toList();
 
         Map<String, Map<String, Double>> scoresByCategory = buildScoresByCategory(okTurns);
-        List<String> appliedRubrics = extractAppliedRubrics(scoreEntities);
+        List<String> appliedRubrics = extractAppliedRubrics(rubricScores);
         String coverage = buildCoverage(turnScores);
-        SessionFeedbackInput.SessionMetadata sessionMetadata = buildSessionMetadata(interview, scoreEntities.size());
+        SessionFeedbackInput.SessionMetadata sessionMetadata = buildSessionMetadata(interview, rubricScores.size());
 
         return new SessionFeedbackInput(
                 sessionMetadata,
@@ -59,8 +65,13 @@ public class SessionFeedbackInputAssembler {
     public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
                                                       String visionAnalysis, String nonverbalAggregate) {
         SessionFeedbackInput base = assemble(interviewId);
+        List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
+        List<QuestionScore> nonverbalScores = allScores.stream()
+                .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
+                .toList();
+
         SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
-                buildNonverbalAggregate(interviewId);
+                buildNonverbalAggregate(nonverbalScores);
         String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
         return new SessionFeedbackInput(
                 base.sessionMetadata(),
@@ -76,21 +87,24 @@ public class SessionFeedbackInputAssembler {
         );
     }
 
-    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(Long interviewId) {
-        List<NonverbalScore> scores = nonverbalScoreRepository.findByInterviewIdOrderByTurnIdAsc(interviewId);
-        if (scores.isEmpty()) {
+    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(List<QuestionScore> nonverbalScores) {
+        if (nonverbalScores.isEmpty()) {
             return null;
         }
 
-        Map<String, Double> averageScores = buildNonverbalAverageScores(scores);
+        List<SessionFeedbackInput.NonverbalTurnAggregate> turns = nonverbalScores.stream()
+                .map(this::toNonverbalTurn)
+                .toList();
+
+        Map<String, Double> averageScores = buildNonverbalAverageScores(turns);
         SessionFeedbackInput.LowestDimension lowestDimension = findLowestDimension(averageScores);
 
         return new SessionFeedbackInput.NonverbalDeliveryAggregate(
                 "nonverbal_score",
-                scores.stream().map(this::toNonverbalTurn).toList(),
+                turns,
                 averageScores,
                 lowestDimension,
-                averageContextMultiplier(scores),
+                averageContextMultiplier(turns),
                 List.of(new SessionFeedbackInput.RecommendedAction(
                         lowestDimension.dimension(),
                         nonverbalImprovementActionsLoader.resolve(
@@ -101,26 +115,32 @@ public class SessionFeedbackInputAssembler {
         );
     }
 
-    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(NonverbalScore score) {
+    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(QuestionScore qs) {
+        List<QuestionScoreDimension> dims = questionScoreDimensionRepository.findByQuestionScoreId(qs.getId());
         Map<String, Integer> dimensionScores = new LinkedHashMap<>();
-        dimensionScores.put("D11", score.getFluencyScore());
-        dimensionScores.put("D12", score.getToneScore());
-        dimensionScores.put("D13", score.getPostureScore());
-        dimensionScores.put("D14", score.getComposureScore());
-
+        for (QuestionScoreDimension dim : dims) {
+            dimensionScores.put(dim.getDimensionRef(), dim.getScore());
+        }
         return new SessionFeedbackInput.NonverbalTurnAggregate(
-                score.getTurnId(),
+                qs.getQuestionId(),
                 dimensionScores,
-                toDouble(score.getContextMultiplier())
+                1.0
         );
     }
 
-    private Map<String, Double> buildNonverbalAverageScores(List<NonverbalScore> scores) {
+    private Map<String, Double> buildNonverbalAverageScores(List<SessionFeedbackInput.NonverbalTurnAggregate> turns) {
+        Map<String, List<Integer>> byDim = new LinkedHashMap<>();
+        for (SessionFeedbackInput.NonverbalTurnAggregate turn : turns) {
+            turn.scores().forEach((dim, score) -> {
+                if (score != null) {
+                    byDim.computeIfAbsent(dim, k -> new ArrayList<>()).add(score);
+                }
+            });
+        }
         Map<String, Double> averages = new LinkedHashMap<>();
-        averages.put("D11", average(scores.stream().map(NonverbalScore::getFluencyScore).toList()));
-        averages.put("D12", average(scores.stream().map(NonverbalScore::getToneScore).toList()));
-        averages.put("D13", average(scores.stream().map(NonverbalScore::getPostureScore).toList()));
-        averages.put("D14", average(scores.stream().map(NonverbalScore::getComposureScore).toList()));
+        byDim.forEach((dim, scores) -> averages.put(dim, round1(
+                scores.stream().mapToInt(Integer::intValue).average().orElse(0.0)
+        )));
         return averages;
     }
 
@@ -128,30 +148,14 @@ public class SessionFeedbackInputAssembler {
         return averages.entrySet().stream()
                 .min(Map.Entry.comparingByValue())
                 .map(entry -> new SessionFeedbackInput.LowestDimension(entry.getKey(), entry.getValue()))
-                .orElse(new SessionFeedbackInput.LowestDimension("D11", 0.0));
+                .orElse(new SessionFeedbackInput.LowestDimension("fluency", 0.0));
     }
 
-    private double average(List<Integer> scores) {
-        double value = scores.stream()
-                .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .average()
-                .orElse(0.0);
-        return round1(value);
-    }
-
-    private double averageContextMultiplier(List<NonverbalScore> scores) {
-        double value = scores.stream()
-                .map(NonverbalScore::getContextMultiplier)
-                .filter(Objects::nonNull)
-                .mapToDouble(BigDecimal::doubleValue)
+    private double averageContextMultiplier(List<SessionFeedbackInput.NonverbalTurnAggregate> turns) {
+        return turns.stream()
+                .mapToDouble(SessionFeedbackInput.NonverbalTurnAggregate::contextMultiplier)
                 .average()
                 .orElse(1.0);
-        return round2(value);
-    }
-
-    private double toDouble(BigDecimal value) {
-        return value == null ? 1.0 : value.doubleValue();
     }
 
     private double round1(double value) {
@@ -162,21 +166,21 @@ public class SessionFeedbackInputAssembler {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    private TurnScoreView toTurnScoreView(RubricScore entity) {
-        Map<String, DimensionScore> scores = entity.getScoresJson();
-        boolean failed = scores == null || scores.isEmpty();
+    private TurnScoreView toTurnScoreView(QuestionScore qs) {
+        List<QuestionScoreDimension> dims = questionScoreDimensionRepository.findByQuestionScoreId(qs.getId());
+        Map<String, DimensionScore> scores = dims.stream()
+                .collect(Collectors.toMap(
+                        QuestionScoreDimension::getDimensionRef,
+                        d -> DimensionScore.of(d.getScore(), d.getObservation(), d.getEvidenceQuote())
+                ));
 
-        TurnScoreView.TurnStatus status = failed
-                ? TurnScoreView.TurnStatus.FAILED
-                : TurnScoreView.TurnStatus.OK;
-
-        List<String> scoredDimensions = failed
-                ? Collections.emptyList()
-                : new ArrayList<>(scores.keySet());
+        boolean failed = scores.isEmpty();
+        TurnScoreView.TurnStatus status = failed ? TurnScoreView.TurnStatus.FAILED : TurnScoreView.TurnStatus.OK;
+        List<String> scoredDimensions = failed ? Collections.emptyList() : new ArrayList<>(scores.keySet());
 
         return new TurnScoreView(
-                entity.getTurnId(),
-                entity.getRubricId(),
+                qs.getQuestionId(),
+                qs.getRubricId(),
                 scoredDimensions,
                 failed ? Collections.emptyMap() : scores,
                 status
@@ -214,9 +218,9 @@ public class SessionFeedbackInputAssembler {
         return result;
     }
 
-    private List<String> extractAppliedRubrics(List<RubricScore> entities) {
+    private List<String> extractAppliedRubrics(List<QuestionScore> entities) {
         return entities.stream()
-                .map(RubricScore::getRubricId)
+                .map(QuestionScore::getRubricId)
                 .distinct()
                 .toList();
     }
