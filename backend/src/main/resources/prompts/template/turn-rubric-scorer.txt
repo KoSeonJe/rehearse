@@ -51,3 +51,22 @@ Do NOT include any dimension not listed there. Output ONLY valid JSON — no mar
     "evidence_quote": null
   }
 }
+
+## Scoring Example
+
+Question: "Redis를 선택한 이유를 설명해주세요."
+Answer: "빠릅니다. 인메모리 저장소라서 일반 DB보다 응답이 훨씬 빠릅니다."
+DIMENSIONS_TO_SCORE: technical_depth, conceptual_accuracy
+
+{
+  "technical_depth": {
+    "score": 1,
+    "observation": "인메모리 특성만 언급. 자료구조·영속성·대안 비교 없음.",
+    "evidence_quote": "인메모리 저장소라서 일반 DB보다 응답이 훨씬 빠릅니다"
+  },
+  "conceptual_accuracy": {
+    "score": 2,
+    "observation": "인메모리 개념은 정확하나 Redis 고유 특성(자료구조·Pub/Sub 등) 미언급.",
+    "evidence_quote": "인메모리 저장소라서"
+  }
+}
