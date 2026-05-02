@@ -59,7 +59,7 @@ const DimensionScoreRow = ({ name, score }: { name: string; score: number }) => 
 // ---------------------------------------------------------------------------
 const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
   <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
-    <p className="text-[12px] font-semibold tracking-[0.04em] uppercase text-brand mb-1.5">
+    <p className="text-[14px] font-bold text-foreground mb-1.5">
       {item.dimension}
     </p>
     <p className="text-[14px] text-foreground/80 leading-[1.65]">{item.observation}</p>
@@ -75,7 +75,7 @@ const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
 const GapItem = ({ item }: { item: SessionFeedbackGap }) => (
   <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
     <div className="flex items-center gap-2 mb-1.5">
-      <p className="text-[12px] font-semibold tracking-[0.04em] uppercase text-brand">
+      <p className="text-[14px] font-bold text-foreground">
         {item.dimension}
       </p>
       {item.levelGap && (
@@ -200,7 +200,7 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="Dimension Scores" />
+            <SectionHeader label="역량별 점수" />
             <div>
               {dimensionEntries.map(([name, score]) => (
                 <DimensionScoreRow key={name} name={name} score={score} />
@@ -260,7 +260,7 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="딜리버리 피드백" />
+            <SectionHeader label="말하기 습관" />
             <div className="space-y-3">
               {data.delivery.fillerWords && (
                 <div>
