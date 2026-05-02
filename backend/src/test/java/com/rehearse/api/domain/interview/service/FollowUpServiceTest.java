@@ -197,7 +197,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(1)))
+            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("HashMap 충돌 해결?"), audio());
@@ -221,7 +221,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class), eq(2)))
+            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 2));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -257,7 +257,7 @@ class FollowUpServiceTest {
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("AI_005"));
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class), anyInt());
+            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class));
         }
 
         @Test
@@ -458,7 +458,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 99L);
-            given(followUpTransactionHandler.saveFollowUpResult(any(), any(), anyInt()))
+            given(followUpTransactionHandler.saveFollowUpResult(any(), any()))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());

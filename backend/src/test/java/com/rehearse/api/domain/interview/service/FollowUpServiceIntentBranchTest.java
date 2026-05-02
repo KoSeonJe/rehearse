@@ -178,7 +178,7 @@ class FollowUpServiceIntentBranchTest {
                     .orderIndex(1)
                     .build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(followUpTransactionHandler.saveFollowUpResult(anyLong(), any(), anyInt()))
+            given(followUpTransactionHandler.saveFollowUpResult(anyLong(), any()))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, buildRequest(), AUDIO_FILE);
@@ -209,7 +209,7 @@ class FollowUpServiceIntentBranchTest {
 
             assertThat(response.getSkipReason()).isEqualTo("OFF_TOPIC");
             assertThat(response.isPresentToUser()).isTrue();
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(), anyInt());
+            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any());
             then(followUpQuestionWriter).shouldHaveNoInteractions();
             then(aiCallMetrics).should().incrementFollowUpSkip("intent_off_topic");
         }
