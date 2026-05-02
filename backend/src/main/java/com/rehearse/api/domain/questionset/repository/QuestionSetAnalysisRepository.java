@@ -25,6 +25,8 @@ public interface QuestionSetAnalysisRepository extends JpaRepository<QuestionSet
     List<QuestionSetAnalysis> findByConvertStatusAndUpdatedAtBefore(
             ConvertStatus status, LocalDateTime threshold);
 
+    List<QuestionSetAnalysis> findAllByQuestionSetInterviewId(Long interviewId);
+
     long countByQuestionSetInterviewIdAndAnalysisStatusIn(
             Long interviewId, List<AnalysisStatus> statuses);
 

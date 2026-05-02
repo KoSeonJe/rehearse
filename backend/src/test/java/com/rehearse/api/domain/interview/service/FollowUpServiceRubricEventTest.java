@@ -109,7 +109,7 @@ class FollowUpServiceRubricEventTest {
                 .questionText("다음 질문")
                 .orderIndex(1)
                 .build();
-        given(followUpTransactionHandler.saveFollowUpResult(any(), any(), anyInt()))
+        given(followUpTransactionHandler.saveFollowUpResult(any(), any()))
                 .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
         FollowUpRequest request = buildRequest();

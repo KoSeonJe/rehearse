@@ -132,7 +132,7 @@ public class FollowUpService {
         ensureQuestionPresent(id, request.getQuestionSetId(), stepB);
 
         FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
-                context.questionSetId(), stepB, context.nextOrderIndex());
+                context.questionSetId(), stepB);
         boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
         log.info("REALTIME 후속 질문 생성 완료(v3): interviewId={}, questionSetId={}, questionId={}, type={}, perspective={}, targetClaim={}, exhausted={}",
@@ -140,15 +140,15 @@ public class FollowUpService {
                 stepB.getType(), stepB.getSelectedPerspective(),
                 stepB.getTargetClaimIdx(), exhausted);
 
-        publishTurnCompletedEvent(id, context, turn, saveResult.question().getId());
+        publishTurnCompletedEvent(id, context, turn, saveResult.question().getId(),
+                saveResult.question().getOrderIndex());
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
     }
 
     private void publishTurnCompletedEvent(Long interviewId, FollowUpContext context,
-                                            TurnAnalysisResult turn, Long questionId) {
+                                            TurnAnalysisResult turn, Long questionId, int turnIndex) {
         try {
-            int turnIndex = context.nextOrderIndex() - 1;
             Interview interview = interviewFinder.findById(interviewId);
             TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
                     interviewId, (long) turnIndex, interview.getUserId(),

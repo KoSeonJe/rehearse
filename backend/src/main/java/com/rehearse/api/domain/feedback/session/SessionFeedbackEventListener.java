@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.feedback.session;
 
+import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
 import com.rehearse.api.global.config.SessionFeedbackExecutorConfig;
@@ -32,6 +33,23 @@ public class SessionFeedbackEventListener {
             sessionFeedbackService.recordSynthesisFailure(interviewId, "INTERNAL_ERROR");
             aiCallMetrics.incrementSynthesizerFailure("INTERNAL_ERROR");
             log.warn("SessionFeedback synthesize 실패: interviewId={}", interviewId, e);
+        }
+    }
+
+    @Async(SessionFeedbackExecutorConfig.SESSION_FEEDBACK_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(DeliveryEnrichmentRequestedEvent event) {
+        Long interviewId = event.interviewId();
+        try {
+            sessionFeedbackService.enrichDeliveryFromScores(interviewId);
+        } catch (SessionFeedbackParseException e) {
+            sessionFeedbackService.recordSynthesisFailure(interviewId, "PARSE_FAILED");
+            aiCallMetrics.incrementSynthesizerFailure("PARSE_FAILED");
+            log.warn("SessionFeedback enrichDelivery parse 실패: interviewId={}", interviewId, e);
+        } catch (Exception e) {
+            sessionFeedbackService.recordSynthesisFailure(interviewId, "INTERNAL_ERROR");
+            aiCallMetrics.incrementSynthesizerFailure("INTERNAL_ERROR");
+            log.warn("SessionFeedback enrichDelivery 실패: interviewId={}", interviewId, e);
         }
     }
 }

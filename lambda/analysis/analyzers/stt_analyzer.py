@@ -23,6 +23,7 @@ def transcribe(audio_path: str) -> dict:
                     language="ko",
                     response_format="verbose_json",
                     timestamp_granularities=["segment"],
+                    prompt="면접 답변 자바 스프링 데이터베이스 트랜잭션 네트워크 운영체제 알고리즘 자료구조 도커 쿠버네티스 리액트 타입스크립트",
                 )
 
             segments = []

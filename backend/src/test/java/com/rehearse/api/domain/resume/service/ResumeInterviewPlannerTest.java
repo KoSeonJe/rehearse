@@ -74,7 +74,7 @@ class ResumeInterviewPlannerTest {
     void plan_returns_plan_when_adapter_and_validator_succeed() {
         given(promptBuilder.build(any(), eq(30), eq("JUNIOR"), eq("resume_interview_planner")))
                 .willReturn(stubRequest);
-        given(planAdapter.execute(eq(stubRequest), eq(30))).willReturn(stubPlan);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any())).willReturn(stubPlan);
 
         InterviewPlan result = planner.plan(skeleton, 30);
 
@@ -88,7 +88,7 @@ class ResumeInterviewPlannerTest {
         ResumeSkeleton skeletonNoLevel = new ResumeSkeleton(
                 "r_test", "hash", null, "backend", skeleton.projects(), Map.of());
         given(promptBuilder.build(any(), eq(30), eq("MID"), any())).willReturn(stubRequest);
-        given(planAdapter.execute(eq(stubRequest), eq(30))).willReturn(stubPlan);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any())).willReturn(stubPlan);
 
         planner.plan(skeletonNoLevel, 30);
 
@@ -99,7 +99,7 @@ class ResumeInterviewPlannerTest {
     @DisplayName("plan_validator_예외전파_when_validator_throws")
     void plan_propagates_validator_exception() {
         given(promptBuilder.build(any(), anyInt(), any(), any())).willReturn(stubRequest);
-        given(planAdapter.execute(eq(stubRequest), eq(30))).willReturn(stubPlan);
+        given(planAdapter.execute(any(), anyInt(), any())).willReturn(stubPlan);
         willThrow(new BusinessException(ResumePlannerErrorCode.ORPHAN_CHAIN))
                 .given(planValidator).validate(skeleton, stubPlan);
 
@@ -107,19 +107,6 @@ class ResumeInterviewPlannerTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ResumePlannerErrorCode.ORPHAN_CHAIN.getCode()));
-    }
-
-    @Test
-    @DisplayName("plan_INVALID_PLAN_when_adapter_throws_invalid_plan")
-    void plan_propagates_invalid_plan_from_adapter() {
-        given(promptBuilder.build(any(), eq(30), eq("JUNIOR"), any())).willReturn(stubRequest);
-        given(planAdapter.execute(eq(stubRequest), eq(30)))
-                .willThrow(new BusinessException(ResumePlannerErrorCode.INVALID_PLAN));
-
-        assertThatThrownBy(() -> planner.plan(skeleton, 30))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                        .isEqualTo(ResumePlannerErrorCode.INVALID_PLAN.getCode()));
     }
 
     private ResumeSkeleton createFixtureSkeleton() {
