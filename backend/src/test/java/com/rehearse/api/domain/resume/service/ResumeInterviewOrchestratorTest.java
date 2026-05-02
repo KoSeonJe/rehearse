@@ -1,21 +1,14 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
-import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.IntentResult;
 import com.rehearse.api.domain.interview.entity.IntentType;
-import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.IntentDispatcher;
-import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -35,8 +28,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -68,9 +59,9 @@ class ResumeInterviewOrchestratorTest {
     @Mock
     private InterviewRuntimeStateCache runtimeStateStore;
     @Mock
-    private InterviewFinder interviewFinder;
+    private ResumeModeTransitionPolicy modeTransitionPolicy;
     @Mock
-    private ApplicationEventPublisher eventPublisher;
+    private ResumeTurnEventPublisher turnEventPublisher;
     @Mock
     private QuestionSetRepository questionSetRepository;
 
@@ -84,9 +75,6 @@ class ResumeInterviewOrchestratorTest {
         skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), Map.of());
         plan = createPlan();
 
-        ReflectionTestUtils.setField(orchestrator, "wrapUpThresholdMin", 2L);
-        ReflectionTestUtils.setField(orchestrator, "hardTimeoutMin", 10L);
-
         lenient().when(runtimeStateStore.get(anyLong())).thenReturn(state);
         lenient().doAnswer(inv -> {
             java.util.function.Consumer<InterviewRuntimeState> mutator = inv.getArgument(1);
@@ -95,6 +83,10 @@ class ResumeInterviewOrchestratorTest {
         }).when(runtimeStateStore).update(anyLong(), any());
         lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_BASED)))
                 .thenReturn(java.util.Optional.empty());
+        // 기본: policy 가 현재 mode 그대로 반환, hard timeout 없음
+        lenient().when(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), anyLong(), any()))
+                .thenAnswer(inv -> inv.getArgument(2));
+        lenient().when(modeTransitionPolicy.isHardTimeoutExceeded(anyInt(), anyLong())).thenReturn(false);
     }
 
     @Nested
@@ -137,7 +129,7 @@ class ResumeInterviewOrchestratorTest {
         }
 
         @Test
-        @DisplayName("intent=GIVE_UP 이면 intentDispatcher 로 단축되고 followUpExhausted=false 를 반환한다")
+        @DisplayName("intent=GIVE_UP 이면 intentDispatcher 로 단축된다")
         void processUserTurn_giveUp_dispatchesToIntentDispatcher() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
                     .willReturn(new TurnAnalysisResult("모르겠습니다",
@@ -150,49 +142,53 @@ class ResumeInterviewOrchestratorTest {
 
             assertThat(response.getQuestion()).isEqualTo("힌트 제공");
             assertThat(response.isFollowUpExhausted()).isFalse();
-            then(intentDispatcher).should().dispatch(eq(IntentType.GIVE_UP), any());
         }
     }
 
     @Nested
-    @DisplayName("WRAP_UP 자동 전이")
+    @DisplayName("WRAP_UP 자동 전이 (정책 위임)")
     class WrapUpTransition {
 
-        @BeforeEach
-        void wrapUpSetUp() {
+        @Test
+        @DisplayName("policy 가 WRAP_UP 으로 전이를 알리면 wrapUpHandler 가 호출된다")
+        void processUserTurn_policyAdvancesToWrapUp_routesToWrapUpHandler() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
                     .willReturn(new TurnAnalysisResult("답변",
                             IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                             createAnalysis()));
-        }
-
-        @Test
-        @DisplayName("remainingMinutes <= wrapUpThresholdMin 이면 WRAP_UP 으로 전이된다")
-        void processUserTurn_timeRunsOut_transitionsToWrapUp() {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(1L);
+            given(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), eq(1L), any()))
+                    .willAnswer(inv -> {
+                        state.transitionTo(ResumeMode.WRAP_UP);
+                        return ResumeMode.WRAP_UP;
+                    });
             given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
                             FollowUpResponse.builder().question("마무리").presentToUser(true).build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
-            assertThat(state.getResumeMode()).isEqualTo(ResumeMode.WRAP_UP);
             assertThat(response.getQuestion()).isEqualTo("마무리");
             then(wrapUpHandler).should().handle(any(), any(), any(), any(), anyLong(), anyBoolean());
         }
 
         @Test
-        @DisplayName("이미 WRAP_UP 모드이면 추가 전이를 시도하지 않는다")
-        void processUserTurn_alreadyWrapUp_noDoubleTransition() {
-            state.transitionTo(ResumeMode.WRAP_UP);
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(1L);
-            given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean()))
-                    .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
-                            FollowUpResponse.builder().question("마무리").build(), null));
+        @DisplayName("hard timeout 초과 시 RESUME_HARD_TIMEOUT 응답이 반환된다")
+        void processUserTurn_hardTimeoutExceeded_returnsHardTimeoutResponse() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
+            given(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), anyLong(), any()))
+                    .willReturn(ResumeMode.WRAP_UP);
+            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
 
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+            FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
-            assertThat(state.getResumeMode()).isEqualTo(ResumeMode.WRAP_UP);
+            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
+            assertThat(response.isFollowUpExhausted()).isTrue();
+            then(wrapUpHandler).shouldHaveNoInteractions();
         }
     }
 
@@ -228,8 +224,6 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("RESUME_OPENER 가 없으면 playgroundHandler.handleOpener 를 호출해 opener 를 생성한다")
         void startSession_noExistingOpener_callsHandleOpener() {
-            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
-                    .willReturn(java.util.Optional.empty());
             given(playgroundHandler.handleOpener(anyLong(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.OpenerResult(
                             FollowUpResponse.builder()
@@ -248,8 +242,6 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("startSession 은 clockWatcher.markStart 를 호출하지 않는다")
         void startSession_doesNotCallMarkStart() {
-            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
-                    .willReturn(java.util.Optional.empty());
             given(playgroundHandler.handleOpener(anyLong(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.OpenerResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), null));
@@ -304,12 +296,12 @@ class ResumeInterviewOrchestratorTest {
     }
 
     @Nested
-    @DisplayName("TurnCompletedEvent payload")
-    class TurnCompletedEventPayload {
+    @DisplayName("TurnCompletedEvent 발행")
+    class EventPublishing {
 
         @Test
-        @DisplayName("processUserTurn 후 발행된 이벤트의 userAnswer, resumeMode, currentChainLevel이 올바르게 채워진다")
-        void processUserTurn_publishes_event_with_correct_payload() {
+        @DisplayName("processUserTurn 후 turnEventPublisher.publish 가 현재 mode 와 함께 호출된다")
+        void processUserTurn_publishes_event() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
                     .willReturn(new TurnAnalysisResult("사용자답변텍스트",
                             IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
@@ -317,48 +309,19 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
-
-            Interview interview = Interview.builder()
-                    .userId(99L)
-                    .position(Position.BACKEND)
-                    .level(InterviewLevel.MID)
-                    .interviewTypes(List.of(InterviewType.RESUME_BASED))
-                    .durationMinutes(30)
-                    .build();
-            given(interviewFinder.findById(1L)).willReturn(interview);
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 42L));
 
             orchestrator.processUserTurn(1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan);
 
-            ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
-            then(eventPublisher).should().publishEvent(captor.capture());
+            ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
+            ArgumentCaptor<String> answerCaptor = ArgumentCaptor.forClass(String.class);
+            ArgumentCaptor<Long> qIdCaptor = ArgumentCaptor.forClass(Long.class);
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(), any(),
+                    modeCaptor.capture(), anyInt(), eq(skeleton), answerCaptor.capture(), qIdCaptor.capture());
 
-            TurnCompletedEvent captured = captor.getValue();
-            assertThat(captured.userAnswer()).isEqualTo("사용자답변텍스트");
-            assertThat(captured.resumeMode()).isEqualTo(ResumeMode.PLAYGROUND);
-            assertThat(captured.currentChainLevel()).isNotNull();
-            assertThat(captured.interviewId()).isEqualTo(1L);
-        }
-
-        @Test
-        @DisplayName("interviewFinder 예외 시 event 발행 실패해도 응답은 정상 반환된다")
-        void processUserTurn_eventPublishFailure_doesNotBlockResponse() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변",
-                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
-                            createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
-            given(interviewFinder.findById(anyLong()))
-                    .willThrow(new RuntimeException("DB 오류"));
-
-            FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan);
-
-            assertThat(response.getQuestion()).isEqualTo("Q");
-            then(eventPublisher).shouldHaveNoInteractions();
+            assertThat(modeCaptor.getValue()).isEqualTo(ResumeMode.PLAYGROUND);
+            assertThat(answerCaptor.getValue()).isEqualTo("사용자답변텍스트");
+            assertThat(qIdCaptor.getValue()).isEqualTo(42L);
         }
     }
 
