@@ -93,7 +93,7 @@ class ResumeInterviewOrchestratorTest {
             mutator.accept(state);
             return null;
         }).when(runtimeStateStore).update(anyLong(), any());
-        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), any(QuestionSetCategory.class)))
+        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_DYNAMIC)))
                 .thenReturn(java.util.Optional.empty());
     }
 

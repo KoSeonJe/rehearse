@@ -35,7 +35,7 @@ public class ResumeQuestionPersister {
 
     private QuestionSet findOrCreateQuestionSet(Long interviewId) {
         return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_DYNAMIC)
                 .orElseGet(() -> createQuestionSet(interviewId));
     }
 
@@ -44,11 +44,11 @@ public class ResumeQuestionPersister {
         long existingCount = questionSetRepository.countByInterviewId(interviewId);
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(QuestionSetCategory.RESUME_DYNAMIC)
                 .orderIndex((int) existingCount)
                 .build();
         questionSetRepository.save(questionSet);
-        log.info("[ResumeQuestionPersister] RESUME_BASED QuestionSet 생성: interviewId={}, questionSetId={}",
+        log.info("[ResumeQuestionPersister] RESUME_DYNAMIC QuestionSet 생성: interviewId={}, questionSetId={}",
                 interviewId, questionSet.getId());
         return questionSet;
     }

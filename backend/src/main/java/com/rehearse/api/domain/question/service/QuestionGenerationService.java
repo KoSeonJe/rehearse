@@ -230,7 +230,7 @@ public class QuestionGenerationService {
     private FeedbackPerspective determinePerspective(QuestionSetCategory category) {
         return switch (category) {
             case BEHAVIORAL -> FeedbackPerspective.BEHAVIORAL;
-            case RESUME_BASED -> FeedbackPerspective.EXPERIENCE;
+            case RESUME_BASED, RESUME_DYNAMIC -> FeedbackPerspective.EXPERIENCE;
             default -> FeedbackPerspective.TECHNICAL;
         };
     }

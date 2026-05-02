@@ -178,7 +178,7 @@ public class ResumeInterviewOrchestrator {
             return null;
         }
         return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_DYNAMIC)
                 .orElse(null);
     }
 
