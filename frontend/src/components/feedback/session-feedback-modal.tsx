@@ -1,6 +1,7 @@
 import { Sparkles } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
+import { getDimensionLabel } from '@/lib/feedback/dimension-label'
 import type {
   SessionFeedbackData,
   SessionFeedbackGap,
@@ -16,25 +17,26 @@ interface SessionFeedbackModalProps {
   isError: boolean
 }
 
-// ---------------------------------------------------------------------------
-// Section header — brand teal overline, 섹션 identity 부여
-// ---------------------------------------------------------------------------
-const SectionHeader = ({ label }: { label: string }) => (
-  <p className="text-[11px] font-semibold tracking-[0.10em] uppercase text-brand mb-4">
-    {label}
-  </p>
+const SectionHeader = ({ label, caption }: { label: string; caption?: string }) => (
+  <div className={caption ? 'mb-1' : 'mb-4'}>
+    <p className="text-[11px] font-semibold tracking-[0.10em] uppercase text-brand">
+      {label}
+    </p>
+    {caption && (
+      <p className="text-[12px] text-muted-foreground mt-0.5 mb-4">{caption}</p>
+    )}
+  </div>
 )
 
-// ---------------------------------------------------------------------------
-// Dimension score row — 1~5점 dot indicator + Fraunces 숫자
-// ---------------------------------------------------------------------------
 const DimensionScoreRow = ({ name, score }: { name: string; score: number }) => {
   const clamped = Math.max(1, Math.min(5, Math.round(score)))
   return (
     <div className="flex items-center justify-between gap-4 py-1.5 border-b border-border last:border-b-0 last:pb-0">
-      <span className="text-[13px] text-foreground/80 leading-none">{name}</span>
+      <span className="text-[13px] text-foreground/80 leading-none">
+        {getDimensionLabel(name)}
+      </span>
       <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-1" aria-label={`${score}점 / 5점`}>
+        <div className="flex items-center gap-1" aria-label={`${clamped}점 / 5점`}>
           {Array.from({ length: 5 }).map((_, i) => (
             <span
               key={i}
@@ -46,38 +48,33 @@ const DimensionScoreRow = ({ name, score }: { name: string; score: number }) => 
             />
           ))}
         </div>
-        <span className="font-serif text-[15px] font-bold text-foreground/40 tabular-nums min-w-[1rem] text-right">
-          {clamped}
-        </span>
+        <div className="flex items-baseline gap-0.5">
+          <span className="text-[15px] font-bold text-foreground/40 tabular-nums min-w-[1rem] text-right">
+            {clamped}
+          </span>
+          <span className="text-[11px] text-muted-foreground">/5</span>
+        </div>
       </div>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// Strength item
-// ---------------------------------------------------------------------------
 const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
-  <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
-    <p className="text-[14px] font-bold text-foreground mb-1.5">
-      {item.dimension}
-    </p>
-    <p className="text-[14px] text-foreground/80 leading-[1.65]">{item.observation}</p>
+  <div className="px-4 py-3 bg-brand-bg/40 rounded-md">
+    <p className="text-[14px] font-bold text-foreground mb-1.5">{item.dimension}</p>
+    <p className="text-[14px] text-foreground/85 leading-[1.65]">{item.observation}</p>
     {item.whyMatters && (
-      <p className="mt-1.5 text-[13px] text-muted-foreground leading-[1.60]">{item.whyMatters}</p>
+      <p className="mt-1.5 text-[13px] text-muted-foreground leading-[1.60]">
+        {item.whyMatters}
+      </p>
     )}
   </div>
 )
 
-// ---------------------------------------------------------------------------
-// Gap item
-// ---------------------------------------------------------------------------
 const GapItem = ({ item }: { item: SessionFeedbackGap }) => (
-  <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+  <div className="px-4 py-3 bg-accent-editorial-bg/60 rounded-md">
     <div className="flex items-center gap-2 mb-1.5">
-      <p className="text-[14px] font-bold text-foreground">
-        {item.dimension}
-      </p>
+      <p className="text-[14px] font-bold text-foreground">{item.dimension}</p>
       {item.levelGap && (
         <Badge
           variant="outline"
@@ -89,24 +86,21 @@ const GapItem = ({ item }: { item: SessionFeedbackGap }) => (
     </div>
     <p className="text-[14px] text-foreground/80 leading-[1.65]">{item.observation}</p>
     {item.concreteAction && (
-      <p className="mt-2 text-[13px] text-brand leading-[1.60] font-medium">
+      <p className="mt-2 text-[13px] text-accent-editorial leading-[1.60] font-medium">
         → {item.concreteAction}
       </p>
     )}
   </div>
 )
 
-// ---------------------------------------------------------------------------
-// Week plan item
-// ---------------------------------------------------------------------------
 const WeekPlanItem = ({ item }: { item: SessionFeedbackWeekPlan }) => (
   <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
     <div className="flex items-start gap-3">
-      <span className="font-serif text-[22px] font-bold text-foreground/30 mt-0.5 tabular-nums min-w-[1.5rem] leading-none">
+      <span className="h-7 w-7 rounded-full bg-brand-bg text-brand text-[14px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
         {item.priority}
       </span>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold text-foreground mb-1.5">{item.topic}</p>
+        <p className="text-[14px] font-bold text-foreground mb-1.5">{item.topic}</p>
         {item.resources.length > 0 && (
           <ul className="space-y-0.5 mb-2">
             {item.resources.map((resource, idx) => (
@@ -126,9 +120,6 @@ const WeekPlanItem = ({ item }: { item: SessionFeedbackWeekPlan }) => (
   </div>
 )
 
-// ---------------------------------------------------------------------------
-// Modal body states
-// ---------------------------------------------------------------------------
 const LoadingBody = () => (
   <div className="flex flex-col items-center justify-center py-16 gap-4">
     <span
@@ -156,9 +147,6 @@ const PreliminaryBody = () => (
   </div>
 )
 
-// ---------------------------------------------------------------------------
-// Complete body — renders all sections
-// ---------------------------------------------------------------------------
 const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
   const hasDelivery =
     data.delivery &&
@@ -171,10 +159,10 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
 
   return (
     <div className="space-y-8">
-      {/* 총평 */}
+      {/* 이번 면접 한줄 평가 */}
       {data.overall && (
         <section>
-          <SectionHeader label="총평" />
+          <SectionHeader label="이번 면접 한줄 평가" />
           <div className="space-y-3">
             {data.overall.levelAssessment && (
               <Badge className="bg-brand-bg text-brand border-0 font-semibold text-[12px] px-2.5 py-0.5 rounded-full">
@@ -182,7 +170,7 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
               </Badge>
             )}
             {data.overall.narrative && (
-              <p className="text-[15px] text-foreground leading-[1.65]">
+              <p className="border-l-2 border-accent-editorial pl-4 text-[15px] text-foreground leading-[1.65]">
                 {data.overall.narrative}
               </p>
             )}
@@ -195,12 +183,15 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         </section>
       )}
 
-      {/* Dimension Scores */}
+      {/* 이번 면접 분야별 점수 */}
       {dimensionEntries.length > 0 && (
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="역량별 점수" />
+            <SectionHeader
+              label="이번 면접 분야별 점수"
+              caption="5점 만점 · 면접 답변에서 평가한 분야별 평균"
+            />
             <div>
               {dimensionEntries.map(([name, score]) => (
                 <DimensionScoreRow key={name} name={name} score={score} />
@@ -210,13 +201,13 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         </>
       )}
 
-      {/* 강점 */}
+      {/* 잘한 점 */}
       {data.strengths && data.strengths.length > 0 && (
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="강점" />
-            <div className="space-y-4">
+            <SectionHeader label="잘한 점" />
+            <div className="space-y-3">
               {data.strengths.map((item, idx) => (
                 <StrengthItem key={idx} item={item} />
               ))}
@@ -225,13 +216,13 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         </>
       )}
 
-      {/* 개선점 */}
+      {/* 다음에 챙길 점 */}
       {data.gaps && data.gaps.length > 0 && (
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="개선점" />
-            <div className="space-y-4">
+            <SectionHeader label="개선할 점" />
+            <div className="space-y-3">
               {data.gaps.map((item, idx) => (
                 <GapItem key={idx} item={item} />
               ))}
@@ -240,12 +231,12 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         </>
       )}
 
-      {/* 1주 학습 계획 */}
+      {/* 이번 주 추천 학습 */}
       {data.weekPlan && data.weekPlan.length > 0 && (
         <>
           <hr className="border-border" />
           <section>
-            <SectionHeader label="1주 학습 계획" />
+            <SectionHeader label="이번 주 추천 학습" />
             <div className="space-y-4">
               {data.weekPlan.map((item, idx) => (
                 <WeekPlanItem key={idx} item={item} />
@@ -255,7 +246,7 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
         </>
       )}
 
-      {/* 딜리버리 피드백 */}
+      {/* 말하기 습관 */}
       {hasDelivery && data.delivery && (
         <>
           <hr className="border-border" />
@@ -295,9 +286,6 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
   )
 }
 
-// ---------------------------------------------------------------------------
-// Modal
-// ---------------------------------------------------------------------------
 export const SessionFeedbackModal = ({
   isOpen,
   onClose,
@@ -321,6 +309,9 @@ export const SessionFeedbackModal = ({
             코치 노트
             <Sparkles size={14} className="text-brand" aria-hidden="true" />
           </DialogTitle>
+          <DialogDescription className="text-[12px] text-muted-foreground mt-1">
+            면접 답변을 코치가 짚어준 노트입니다
+          </DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto max-h-[80vh] px-6 py-6">{renderBody()}</div>
       </DialogContent>

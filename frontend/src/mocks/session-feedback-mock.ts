@@ -5,7 +5,11 @@ export const buildMockSessionFeedback = (interviewId: number): SessionFeedbackDa
   interviewId,
   status: 'COMPLETE',
   overall: {
-    dimensionScores: { 'CS 기초': 3, '시스템 설계': 2, '커뮤니케이션': 4 },
+    dimensionScores: {
+      conceptual_accuracy: 3,
+      system_design: 2,
+      communication: 4,
+    },
     levelAssessment: 'Mid (3년차) 수준 — 신입~주니어 사이',
     narrative:
       '핵심 개념을 본인 언어로 설명하는 능력은 평균 이상입니다. 다만 시스템 설계 질문에서 트레이드오프를 명시하지 않고 한 방향으로만 답하는 경향이 보였습니다. 실무 경험에서 나온 예시는 신뢰도를 높였으나, 근거 제시가 수치 없이 추상적으로 끝나는 경우가 많아 아쉬움이 남습니다.',
