@@ -7,6 +7,7 @@ import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackBusyExc
 import com.rehearse.api.domain.feedback.session.infra.LambdaRetryTrigger;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackSynthesizer;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.times;
 @ExtendWith(MockitoExtension.class)
 class SessionFeedbackServiceTest {
 
+    @Mock private InterviewFinder interviewFinder;
     @Mock private SessionFeedbackRepository sessionFeedbackRepository;
     @Mock private SessionFeedbackPersistenceService persistenceService;
     @Mock private SessionFeedbackSynthesizer synthesizer;
@@ -45,7 +47,7 @@ class SessionFeedbackServiceTest {
     void setUp() {
         meterRegistry = new SimpleMeterRegistry();
         service = new SessionFeedbackService(
-                sessionFeedbackRepository, persistenceService, synthesizer,
+                interviewFinder, sessionFeedbackRepository, persistenceService, synthesizer,
                 lambdaRetryTrigger, new ObjectMapper(), meterRegistry, aiCallMetrics);
     }
 

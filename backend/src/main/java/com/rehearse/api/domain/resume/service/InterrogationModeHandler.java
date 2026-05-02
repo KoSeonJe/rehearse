@@ -59,8 +59,7 @@ public class InterrogationModeHandler {
 
             int orderIndex = state.nextResumeOrderIndex();
             Long questionId = questionPersister.persist(
-                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(),
-                    orderIndex, chainTopic, "L" + currentLevel, currentProjectId);
+                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(), orderIndex);
 
             return new InterrogationTurnResult(buildResponse(result, tracker.getCurrentLevel()), questionId);
         });

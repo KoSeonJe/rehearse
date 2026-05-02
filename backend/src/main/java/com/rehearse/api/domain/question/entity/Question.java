@@ -50,15 +50,6 @@ public class Question {
     @JoinColumn(name = "question_pool_id")
     private QuestionPool questionPool;
 
-    @Column(length = 128)
-    private String chainId;
-
-    @Column(length = 16)
-    private String chainStepType;
-
-    @Column(length = 64)
-    private String projectId;
-
     @Builder
     public Question(QuestionType questionType, String questionText,
                     String ttsText, String modelAnswer, ReferenceType referenceType,
@@ -75,8 +66,7 @@ public class Question {
     }
 
     public static Question resume(QuestionSet questionSet, QuestionType type,
-                                   String questionText, int orderIndex,
-                                   String chainId, String chainStepType, String projectId) {
+                                   String questionText, int orderIndex) {
         if (type == QuestionType.MAIN || type == QuestionType.FOLLOWUP) {
             throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
         }
@@ -85,9 +75,6 @@ public class Question {
         q.questionType = type;
         q.questionText = questionText;
         q.orderIndex = orderIndex;
-        q.chainId = chainId;
-        q.chainStepType = chainStepType;
-        q.projectId = projectId;
         return q;
     }
 

@@ -28,7 +28,7 @@ import java.util.Map;
 
 @Slf4j
 @Component
-public class RubricLoader {
+public class RubricLoader implements RubricCatalog {
 
     private RubricFamily family;
     private Map<String, Rubric> rubrics;
