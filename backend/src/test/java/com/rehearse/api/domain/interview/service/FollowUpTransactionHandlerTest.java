@@ -184,7 +184,7 @@ class FollowUpTransactionHandlerTest {
             // given
             Interview interview = createInProgressInterview();
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
-            given(questionSetRepository.findByIdForUpdate(10L)).willReturn(Optional.of(questionSet));
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
             ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
@@ -199,7 +199,7 @@ class FollowUpTransactionHandlerTest {
             given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
             // when
-            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 1);
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp);
 
             // then
             assertThat(result.question().getId()).isEqualTo(100L);
@@ -213,7 +213,7 @@ class FollowUpTransactionHandlerTest {
         void saveFollowUpResult_increments_newFollowUpCount() {
             Interview interview = createInProgressInterview();
             QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 1);
-            given(questionSetRepository.findByIdForUpdate(10L)).willReturn(Optional.of(questionSet));
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
             ReflectionTestUtils.setField(followUp, "question", "두 번째 꼬리질문");
@@ -223,7 +223,7 @@ class FollowUpTransactionHandlerTest {
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
             given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
-            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 2);
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp);
 
             assertThat(result.newFollowUpCount()).isEqualTo(2);
         }
@@ -234,7 +234,7 @@ class FollowUpTransactionHandlerTest {
             // given
             Interview interview = createInProgressInterview();
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
-            given(questionSetRepository.findByIdForUpdate(10L)).willReturn(Optional.of(questionSet));
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
             ReflectionTestUtils.setField(followUp, "question", "중복 꼬리질문");
@@ -243,7 +243,7 @@ class FollowUpTransactionHandlerTest {
                     .willThrow(new org.springframework.dao.DataIntegrityViolationException("Duplicate entry"));
 
             // when / then
-            assertThatThrownBy(() -> handler.saveFollowUpResult(10L, followUp, 1))
+            assertThatThrownBy(() -> handler.saveFollowUpResult(10L, followUp))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> {
                         BusinessException be = (BusinessException) e;

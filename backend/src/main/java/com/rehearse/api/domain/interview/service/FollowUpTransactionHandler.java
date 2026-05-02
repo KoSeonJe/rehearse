@@ -85,11 +85,10 @@ public class FollowUpTransactionHandler {
     }
 
     @Transactional
-    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int ignoredOrderIndex) {
-        QuestionSet questionSet = questionSetRepository.findByIdForUpdate(questionSetId)
+    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp) {
+        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        // write TX 내에서 최신 size 기준으로 orderIndex 결정 — 동시 호출 시 race condition 차단
         int orderIndex = questionSet.getQuestions().size();
 
         Question followUpQuestion = Question.builder()

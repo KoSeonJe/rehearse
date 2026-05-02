@@ -2,9 +2,7 @@ package com.rehearse.api.domain.questionset.repository;
 
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -21,8 +19,4 @@ public interface QuestionSetRepository extends JpaRepository<QuestionSet, Long> 
     List<QuestionSet> findByInterviewIdWithQuestions(@Param("interviewId") Long interviewId);
 
     long countByInterviewId(Long interviewId);
-
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT qs FROM QuestionSet qs JOIN FETCH qs.questions WHERE qs.id = :id")
-    Optional<QuestionSet> findByIdForUpdate(@Param("id") Long id);
 }
