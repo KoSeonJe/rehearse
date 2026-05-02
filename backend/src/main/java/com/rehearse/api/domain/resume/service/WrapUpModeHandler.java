@@ -33,8 +33,7 @@ public class WrapUpModeHandler {
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_WRAP_UP, result.question(),
-                orderIndex, null, null, null);
+                interviewId, QuestionType.RESUME_WRAP_UP, result.question(), orderIndex);
 
         boolean exhausted = result.sessionComplete() || remainingMinutes <= 0;
 

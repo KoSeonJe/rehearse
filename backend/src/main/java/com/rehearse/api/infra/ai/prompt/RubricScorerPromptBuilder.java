@@ -3,7 +3,7 @@ package com.rehearse.api.infra.ai.prompt;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
-import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
+import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.question.entity.Question;
@@ -37,7 +37,7 @@ public class RubricScorerPromptBuilder {
     private static final String CALL_TYPE = "rubric_scorer";
     private static final String TEMPLATE_PATH = "classpath:prompts/template/turn-rubric-scorer.txt";
 
-    private final RubricLoader rubricLoader;
+    private final RubricCatalog rubricLoader;
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
 

@@ -61,7 +61,7 @@ class PlaygroundModeHandlerTest {
         state = new InterviewRuntimeState("JUNIOR", null);
         skeleton = createSkeleton();
         plan = createPlan();
-        given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+        given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                 .willReturn(1L);
     }
 
@@ -144,7 +144,7 @@ class PlaygroundModeHandlerTest {
         void handleOpener_incrementsTurnsAndReturnsResponse() {
             given(promptBuilder.buildOpener(any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult("Redis 프로젝트 소개해주세요", "Redis 프로젝트 소개해주세요", "오프너"));
-            given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+            given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                     .willReturn(1L);
 
             PlaygroundModeHandler.OpenerResult result = handler.handleOpener(1L, state, skeleton, plan);

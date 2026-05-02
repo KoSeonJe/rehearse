@@ -62,14 +62,46 @@ def test_gemini_prompt_requests_delivery_only_schema():
     system_template = gemini_analyzer._ANSWER_SYSTEM_TEMPLATE
     user_template = gemini_analyzer._ANSWER_USER_TEMPLATE
 
+    assert '"vocal"' in user_template
+    assert '"attitude"' in user_template
     assert '"overall_delivery"' in user_template
+    assert "speedVariance" in user_template
     assert '"overall"' not in user_template
     assert '"verbal"' not in user_template
     assert '"technical"' not in user_template
     assert "accuracyIssues" not in user_template
     assert "### 3. verbal" not in system_template
     assert "### 4. technical" not in system_template
+    assert "vocal" in system_template
+    assert "attitude" in system_template
     assert "overall_delivery" in system_template
+    assert "speedVariance" in system_template
+
+
+def test_legacy_verbal_prompt_factory_contract_is_default_stacks_only():
+    _install_sdk_stubs()
+    import analyzers.verbal_prompt_factory as verbal_prompt_factory
+
+    assert verbal_prompt_factory.DEFAULT_TECH_STACKS == {
+        "BACKEND": "JAVA_SPRING",
+        "FRONTEND": "REACT_TS",
+        "DEVOPS": "AWS_K8S",
+        "DATA_ENGINEER": "SPARK_AIRFLOW",
+        "FULLSTACK": "REACT_SPRING",
+    }
+    assert not hasattr(verbal_prompt_factory, "SYSTEM_TEMPLATE")
+    assert not hasattr(verbal_prompt_factory, "build_system_prompt")
+    assert not hasattr(verbal_prompt_factory, "build_user_prompt")
+
+
+def test_handler_has_no_legacy_openai_verbal_pipeline():
+    _install_sdk_stubs()
+    import handler
+
+    assert not hasattr(handler, "analyze_verbal")
+    assert not hasattr(handler, "_safe_verbal")
+    assert not hasattr(handler, "_legacy_string_to_block")
+    assert not hasattr(handler, "_tone_label_to_level")
 
 
 def test_gemini_pipeline_omits_lambda_content_fields(monkeypatch):
@@ -159,17 +191,6 @@ def test_legacy_pipeline_omits_lambda_content_fields(monkeypatch):
     )
     monkeypatch.setattr(
         handler,
-        "_safe_verbal",
-        lambda *_args, **_kwargs: {
-            "comment": "말끝이 분명합니다.",
-            "filler_word_count": 0,
-            "tone_label": "PROFESSIONAL",
-            "attitude_comment": "경어가 유지됩니다.",
-            "speed_variance": 0.1,
-        },
-    )
-    monkeypatch.setattr(
-        handler,
         "_safe_vision",
         lambda *_args, **_kwargs: {
             "eyeContactLevel": "GOOD",
@@ -206,4 +227,8 @@ def test_legacy_pipeline_omits_lambda_content_fields(monkeypatch):
     feedback = feedbacks[0]
     assert CONTENT_KEYS.isdisjoint(feedback.keys())
     assert feedback["overallComment"] is None
+    assert feedback["transcript"] == "캐시를 먼저 확인합니다"
+    assert "vocalComment" not in feedback
+    assert "fillerWordCount" not in feedback
+    assert feedback["attitudeComment"] is None
     assert "nonverbalScore" in feedback

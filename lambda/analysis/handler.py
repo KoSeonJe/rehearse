@@ -20,7 +20,6 @@ from extractors.ffmpeg_extractor import extract_audio, extract_answer_audios, ex
 from analyzers.gemini_analyzer import analyze_answer_audio
 from analyzers.stt_analyzer import transcribe_chunked
 from analyzers.vision_analyzer import analyze_frames
-from analyzers.verbal_analyzer import analyze_verbal
 from analyzers.nonverbal_rubric_mapper import NonverbalRubricMapper
 
 _RUBRIC_MAPPER = NonverbalRubricMapper()
@@ -389,13 +388,6 @@ def _build_timestamp_feedbacks(
         answer_frames = _filter_frames_for_range(frame_paths, start_ms, end_ms)
         vision_result = _safe_vision(answer_frames) if answer_frames else None
 
-        verbal = _safe_verbal(
-            question_text, transcript,
-            position=position, tech_stack=tech_stack,
-            level=level, model_answer=answer.get("modelAnswer"),
-            feedback_perspective=answer.get("feedbackPerspective", "TECHNICAL"),
-        )
-
         fb = {
             "questionId": question_id,
             "startMs": start_ms,
@@ -403,19 +395,6 @@ def _build_timestamp_feedbacks(
             "transcript": transcript or "",
             "attitudeComment": None,
         }
-
-        if verbal:
-            fb["fillerWordCount"] = verbal.get("filler_word_count", 0)
-            fb["fillerWords"] = []
-            fb["speechPace"] = ""
-            fb["toneConfidenceLevel"] = _tone_label_to_level(verbal.get("tone_label"))
-            fb["emotionLabel"] = ""
-            fb["speedVariance"] = _coerce_clamped_float(
-                verbal.get("speed_variance"), 0.0, 1.0, default=0.5, field="verbal.speed_variance"
-            )
-            fb["vocalComment"] = None
-
-            fb["attitudeComment"] = _legacy_string_to_block(verbal.get("attitude_comment"))
 
         if vision_result:
             fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
@@ -434,7 +413,7 @@ def _build_timestamp_feedbacks(
         score = _build_nonverbal_score(
             verbal_dict={
                 "filler_word_count": fb.get("fillerWordCount", 0),
-                "tone_label": (verbal or {}).get("tone_label", "PROFESSIONAL"),
+                "tone_label": "PROFESSIONAL",
                 "speedVariance": fb.get("speedVariance", 0.5),
             },
             vision_dict={
@@ -492,18 +471,6 @@ def _level_to_tone_label(level: str | None) -> str:
     return "PROFESSIONAL"
 
 
-def _tone_label_to_level(tone_label: str | None) -> str:
-    """verbal_analyzer의 tone_label을 3단계 라벨로 변환한다."""
-    if tone_label in ("PROFESSIONAL", "CONFIDENT"):
-        return "GOOD"
-    if tone_label in ("CASUAL", "VERBOSE"):
-        return "AVERAGE"
-    if tone_label == "HESITANT":
-        return "NEEDS_IMPROVEMENT"
-    return "AVERAGE"
-
-
-
 def _comment_block(src: dict | None) -> dict | None:
     if not src:
         return None
@@ -524,20 +491,6 @@ def _comment_block(src: dict | None) -> dict | None:
     return block
 
 
-def _legacy_string_to_block(text) -> dict | None:
-    """레거시 verbal_analyzer ✓△→ string을 CommentBlock dict로 변환.
-
-    줄 단위 prefix 파싱이 아니라 raw 전체를 positive에 싣는다.
-    BE의 parseCommentBlock fallback과 동일한 패턴 (legacy raw → positive only).
-    """
-    if text is None:
-        return None
-    s = str(text).strip()
-    if not s:
-        return None
-    return {"positive": s, "negative": None, "suggestion": None}
-
-
 def _safe_stt(audio_path: str) -> dict | None:
     try:
         return transcribe_chunked(audio_path, WORK_DIR)
@@ -551,27 +504,6 @@ def _safe_vision(frame_paths: list[str]) -> dict | None:
         return analyze_frames(frame_paths)
     except Exception as e:
         print(f"[Analysis] Vision 분석 실패 (언어만 분석): {e}")
-        return None
-
-
-def _safe_verbal(
-    question_text: str,
-    transcript: str,
-    position: str | None = None,
-    tech_stack: str | None = None,
-    level: str | None = None,
-    model_answer: str | None = None,
-    feedback_perspective: str | None = None,
-) -> dict | None:
-    try:
-        return analyze_verbal(
-            question_text, transcript,
-            position=position, tech_stack=tech_stack,
-            level=level, model_answer=model_answer,
-            feedback_perspective=feedback_perspective,
-        )
-    except Exception as e:
-        print(f"[Analysis] Verbal 분석 실패: {e}")
         return None
 
 

@@ -2,6 +2,7 @@ package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
+import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
@@ -26,7 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RubricScorer {
 
-    private final RubricLoader rubricLoader;
+    private final RubricCatalog rubricLoader;
     private final RubricScorerPromptBuilder promptBuilder;
     private final RubricScoringAdapter adapter;
     private final AiClient aiClient;

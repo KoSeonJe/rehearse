@@ -79,9 +79,6 @@ public class Interview {
     @Column(columnDefinition = "TEXT")
     private String failureReason;
 
-    @Column(columnDefinition = "TEXT")
-    private String overallComment;
-
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -165,7 +162,4 @@ public class Interview {
         }
     }
 
-    public void completeWithComment(String comment) {
-        this.overallComment = comment;
-    }
 }

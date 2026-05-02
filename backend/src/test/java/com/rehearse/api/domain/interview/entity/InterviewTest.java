@@ -347,52 +347,6 @@ class InterviewTest {
         }
     }
 
-    @Nested
-    @DisplayName("completeWithComment 메서드")
-    class CompleteWithComment {
-
-        @Test
-        @DisplayName("코멘트가 정상적으로 저장된다")
-        void completeWithComment_validComment_savesComment() {
-            // given
-            Interview interview = createDefaultInterview();
-            String comment = "전반적으로 잘 답변하셨습니다.";
-
-            // when
-            interview.completeWithComment(comment);
-
-            // then
-            assertThat(interview.getOverallComment()).isEqualTo(comment);
-        }
-
-        @Test
-        @DisplayName("null 코멘트도 저장된다")
-        void completeWithComment_nullComment_savesNull() {
-            // given
-            Interview interview = createDefaultInterview();
-
-            // when
-            interview.completeWithComment(null);
-
-            // then
-            assertThat(interview.getOverallComment()).isNull();
-        }
-
-        @Test
-        @DisplayName("기존 코멘트가 새 코멘트로 덮어씌워진다")
-        void completeWithComment_existingComment_overwritesWithNewComment() {
-            // given
-            Interview interview = createDefaultInterview();
-            ReflectionTestUtils.setField(interview, "overallComment", "이전 코멘트");
-
-            // when
-            interview.completeWithComment("새 코멘트");
-
-            // then
-            assertThat(interview.getOverallComment()).isEqualTo("새 코멘트");
-        }
-    }
-
     private Interview createDefaultInterview() {
         return Interview.builder()
                 .userId(1L)
