@@ -5,10 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.NONE,
-    properties = "spring.flyway.locations=classpath:db/migration,classpath:db/seed"
-)
+@SpringBootTest(properties = "spring.flyway.locations=classpath:db/migration,classpath:db/seed")
 @ActiveProfiles("test")
 class SeedMigrationSmokeTest extends AbstractMySqlContainerTest {
 
