@@ -1,6 +1,38 @@
 -- V41: DB 무결성 패치 (PK, UNIQUE, CASCADE FK, CHECK 제약 추가)
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- 블록 0: ElementCollection / cache_key 중복 제거 (PK·UNIQUE 추가 전제)
+-- Why: PK/UNIQUE 부재 상태에서 누적된 중복 행을 정리. truncate-replace 방식으로 멱등 보장.
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- interview_interview_types 중복 제거 (확인된 중복: interview_id 5·7 각 2건)
+CREATE TEMPORARY TABLE _iit_dedup AS
+    SELECT DISTINCT interview_id, interview_type FROM interview_interview_types;
+TRUNCATE TABLE interview_interview_types;
+INSERT INTO interview_interview_types (interview_id, interview_type)
+    SELECT interview_id, interview_type FROM _iit_dedup;
+DROP TEMPORARY TABLE _iit_dedup;
+
+-- interview_cs_sub_topics 중복 제거 (예방적 적용, 현재 중복 없음 확인됨)
+CREATE TEMPORARY TABLE _ics_dedup AS
+    SELECT DISTINCT interview_id, cs_sub_topic
+    FROM interview_cs_sub_topics
+    WHERE cs_sub_topic IS NOT NULL;
+TRUNCATE TABLE interview_cs_sub_topics;
+INSERT INTO interview_cs_sub_topics (interview_id, cs_sub_topic)
+    SELECT interview_id, cs_sub_topic FROM _ics_dedup;
+DROP TEMPORARY TABLE _ics_dedup;
+
+-- question_pool cache_key 중복 제거: 각 cache_key 당 MAX(id) 행만 보존
+-- Why: UNIQUE 제약 추가 전, 동일 cache_key 중복 행(dev: 30~35건/key) 제거
+DELETE FROM question_pool
+WHERE id NOT IN (
+    SELECT max_id FROM (
+        SELECT MAX(id) AS max_id FROM question_pool GROUP BY cache_key
+    ) AS _qp_keep
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 1: ElementCollection PK 추가
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE interview_interview_types
