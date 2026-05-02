@@ -26,7 +26,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ResumeQuestionPersister - 카테고리 분리 후 cardinality")
+@DisplayName("ResumeQuestionPersister - RESUME_BASED 단일 카테고리 cardinality")
 class ResumeQuestionPersisterTest {
 
     @InjectMocks
@@ -40,14 +40,14 @@ class ResumeQuestionPersisterTest {
     private InterviewFinder interviewFinder;
 
     @Test
-    @DisplayName("RESUME_DYNAMIC 으로 조회하므로 RESUME_BASED 다행과 충돌하지 않고 신규 RESUME_DYNAMIC 생성")
-    void persist_uses_resume_dynamic_category_avoiding_legacy_collision() {
+    @DisplayName("RESUME_BASED 로 조회하고 없으면 신규 RESUME_BASED QuestionSet 을 생성한다")
+    void persist_creates_resume_based_question_set_when_absent() {
         long interviewId = 19L;
         Interview interview = Interview.builder().build();
         given(interviewFinder.findById(interviewId)).willReturn(interview);
-        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_DYNAMIC)))
+        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED)))
                 .willReturn(Optional.empty());
-        given(questionSetRepository.countByInterviewId(interviewId)).willReturn(5L);
+        given(questionSetRepository.countByInterviewId(interviewId)).willReturn(0L);
         given(questionSetRepository.save(any(QuestionSet.class)))
                 .willAnswer(inv -> inv.getArgument(0));
         given(questionRepository.save(any(Question.class)))
@@ -57,20 +57,20 @@ class ResumeQuestionPersisterTest {
 
         ArgumentCaptor<QuestionSet> captor = ArgumentCaptor.forClass(QuestionSet.class);
         then(questionSetRepository).should().save(captor.capture());
-        assertThat(captor.getValue().getCategory()).isEqualTo(QuestionSetCategory.RESUME_DYNAMIC);
+        assertThat(captor.getValue().getCategory()).isEqualTo(QuestionSetCategory.RESUME_BASED);
         then(questionSetRepository).should()
-                .findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_DYNAMIC));
+                .findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED));
     }
 
     @Test
-    @DisplayName("기존 RESUME_DYNAMIC 행이 있으면 재사용한다")
-    void persist_reuses_existing_resume_dynamic_question_set() {
+    @DisplayName("기존 RESUME_BASED 행이 있으면 재사용한다 — 인터뷰당 1행 유지")
+    void persist_reuses_existing_resume_based_question_set() {
         long interviewId = 19L;
         QuestionSet existing = QuestionSet.builder()
-                .category(QuestionSetCategory.RESUME_DYNAMIC)
-                .orderIndex(5)
+                .category(QuestionSetCategory.RESUME_BASED)
+                .orderIndex(0)
                 .build();
-        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_DYNAMIC)))
+        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED)))
                 .willReturn(Optional.of(existing));
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));

@@ -12,7 +12,12 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
+import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import jakarta.annotation.PreDestroy;
@@ -34,17 +39,26 @@ public class QuestionGenerationService {
     private final CacheableQuestionProvider cacheableProvider;
     private final FreshQuestionProvider freshProvider;
     private final ResumePlanPreparationService resumePlanPreparationService;
+    private final ResumeInterviewOrchestrator resumeInterviewOrchestrator;
+    private final ResumeSkeletonPersister resumeSkeletonPersister;
+    private final InterviewPlanPersister interviewPlanPersister;
     private final ExecutorService virtualExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public QuestionGenerationService(
             QuestionGenerationTransactionHandler transactionHandler,
             CacheableQuestionProvider cacheableProvider,
             FreshQuestionProvider freshProvider,
-            ResumePlanPreparationService resumePlanPreparationService) {
+            ResumePlanPreparationService resumePlanPreparationService,
+            ResumeInterviewOrchestrator resumeInterviewOrchestrator,
+            ResumeSkeletonPersister resumeSkeletonPersister,
+            InterviewPlanPersister interviewPlanPersister) {
         this.transactionHandler = transactionHandler;
         this.cacheableProvider = cacheableProvider;
         this.freshProvider = freshProvider;
         this.resumePlanPreparationService = resumePlanPreparationService;
+        this.resumeInterviewOrchestrator = resumeInterviewOrchestrator;
+        this.resumeSkeletonPersister = resumeSkeletonPersister;
+        this.interviewPlanPersister = interviewPlanPersister;
     }
 
     @PreDestroy
@@ -70,6 +84,13 @@ public class QuestionGenerationService {
 
         if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
             resumePlanPreparationService.prepare(interviewId, resumeFileHash, resumeText, durationMinutes);
+            ResumeSkeleton skeleton = resumeSkeletonPersister.findByInterviewId(interviewId)
+                    .orElseThrow(() -> new IllegalStateException("ResumeSkeleton not found after prepare: interviewId=" + interviewId));
+            InterviewPlan plan = interviewPlanPersister.findByInterviewId(interviewId)
+                    .orElseThrow(() -> new IllegalStateException("InterviewPlan not found after prepare: interviewId=" + interviewId));
+            resumeInterviewOrchestrator.startSession(interviewId, durationMinutes != null ? durationMinutes : 30, skeleton, plan);
+            transactionHandler.saveResults(interviewId, List.of());
+            return;
         }
 
         // 유형별 질문 수 배분 및 CACHEABLE / FRESH 분류
@@ -230,7 +251,7 @@ public class QuestionGenerationService {
     private FeedbackPerspective determinePerspective(QuestionSetCategory category) {
         return switch (category) {
             case BEHAVIORAL -> FeedbackPerspective.BEHAVIORAL;
-            case RESUME_BASED, RESUME_DYNAMIC -> FeedbackPerspective.EXPERIENCE;
+            case RESUME_BASED -> FeedbackPerspective.EXPERIENCE;
             default -> FeedbackPerspective.TECHNICAL;
         };
     }

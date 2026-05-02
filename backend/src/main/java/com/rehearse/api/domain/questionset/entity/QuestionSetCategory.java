@@ -12,6 +12,5 @@ public enum QuestionSetCategory {
     INFRA_CICD,
     CLOUD,
     DATA_PIPELINE,
-    SQL_MODELING,
-    RESUME_DYNAMIC
+    SQL_MODELING
 }

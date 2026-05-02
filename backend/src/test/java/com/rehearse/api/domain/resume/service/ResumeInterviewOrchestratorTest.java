@@ -93,7 +93,7 @@ class ResumeInterviewOrchestratorTest {
             mutator.accept(state);
             return null;
         }).when(runtimeStateStore).update(anyLong(), any());
-        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_DYNAMIC)))
+        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_BASED)))
                 .thenReturn(java.util.Optional.empty());
     }
 
@@ -226,22 +226,80 @@ class ResumeInterviewOrchestratorTest {
     class SessionStart {
 
         @Test
-        @DisplayName("startSession 호출 시 clockWatcher.markStart 가 호출되고 Playground opener 를 반환한다")
-        void startSession_marksStartAndReturnsOpener() {
+        @DisplayName("RESUME_OPENER 가 없으면 playgroundHandler.handleOpener 를 호출해 opener 를 생성한다")
+        void startSession_noExistingOpener_callsHandleOpener() {
+            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
+                    .willReturn(java.util.Optional.empty());
             given(playgroundHandler.handleOpener(anyLong(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.OpenerResult(
                             FollowUpResponse.builder()
                                     .question("Redis 프로젝트를 소개해주세요")
                                     .presentToUser(true)
-                                    .type("RESUME_PLAYGROUND")
+                                    .type("RESUME_OPENER")
                                     .build(), null));
 
             FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("Redis 프로젝트를 소개해주세요");
             assertThat(response.isPresentToUser()).isTrue();
-            then(clockWatcher).should().markStart(1L);
             then(playgroundHandler).should().handleOpener(eq(1L), any(), eq(skeleton), eq(plan));
+        }
+
+        @Test
+        @DisplayName("startSession 은 clockWatcher.markStart 를 호출하지 않는다")
+        void startSession_doesNotCallMarkStart() {
+            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
+                    .willReturn(java.util.Optional.empty());
+            given(playgroundHandler.handleOpener(anyLong(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.OpenerResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), null));
+
+            orchestrator.startSession(1L, 30, skeleton, plan);
+
+            then(clockWatcher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("이미 RESUME_OPENER 가 있으면 재생성 없이 기존 텍스트로 응답을 반환한다")
+        void startSession_existingOpener_reusesWithoutCallingHandleOpener() {
+            com.rehearse.api.domain.questionset.entity.QuestionSet qs =
+                    com.rehearse.api.domain.questionset.entity.QuestionSet.builder()
+                            .category(QuestionSetCategory.RESUME_BASED)
+                            .orderIndex(0)
+                            .build();
+            com.rehearse.api.domain.question.entity.Question existingOpener =
+                    com.rehearse.api.domain.question.entity.Question.resume(
+                            qs,
+                            com.rehearse.api.domain.question.entity.QuestionType.RESUME_OPENER,
+                            "기존 opener 질문입니다",
+                            0);
+            qs.addQuestion(existingOpener);
+            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
+                    .willReturn(java.util.Optional.of(qs));
+
+            FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);
+
+            assertThat(response.getQuestion()).isEqualTo("기존 opener 질문입니다");
+            assertThat(response.isPresentToUser()).isTrue();
+            then(playgroundHandler).shouldHaveNoInteractions();
+            then(clockWatcher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("processUserTurn 첫 호출 시 clockWatcher.markStart 가 호출된다")
+        void processUserTurn_firstCall_marksStart() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
+
+            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+
+            then(clockWatcher).should().markStart(1L);
         }
     }
 

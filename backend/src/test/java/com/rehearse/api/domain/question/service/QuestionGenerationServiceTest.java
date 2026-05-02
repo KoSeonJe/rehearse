@@ -12,7 +12,12 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.service.QuestionGenerationService;
 import com.rehearse.api.domain.question.service.QuestionGenerationTransactionHandler;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
+import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -50,8 +55,35 @@ class QuestionGenerationServiceTest {
     @Mock
     private ResumePlanPreparationService resumePlanPreparationService;
 
+    @Mock
+    private ResumeInterviewOrchestrator resumeInterviewOrchestrator;
+
+    @Mock
+    private ResumeSkeletonPersister resumeSkeletonPersister;
+
+    @Mock
+    private InterviewPlanPersister interviewPlanPersister;
+
     // virtualExecutor는 final 필드이므로 실제 virtual thread executor를 그대로 사용.
     // generateQuestions()는 내부에서 .join()으로 블로킹하므로 테스트는 결정론적으로 동작한다.
+
+    private ResumeSkeleton makeSkeleton() {
+        return new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
+    }
+
+    private InterviewPlan makePlan() {
+        com.rehearse.api.domain.resume.entity.ChainReference chain =
+                new com.rehearse.api.domain.resume.entity.ChainReference(
+                        "proj1::redis", "Redis", 1, List.of(1, 2, 3));
+        com.rehearse.api.domain.resume.entity.PlaygroundPhase playground =
+                new com.rehearse.api.domain.resume.entity.PlaygroundPhase("소개해주세요", List.of());
+        com.rehearse.api.domain.resume.entity.InterrogationPhase interrogation =
+                new com.rehearse.api.domain.resume.entity.InterrogationPhase(List.of(chain), List.of());
+        com.rehearse.api.domain.resume.entity.ProjectPlan project =
+                new com.rehearse.api.domain.resume.entity.ProjectPlan(
+                        "proj1", "Redis", 1, playground, interrogation);
+        return new InterviewPlan("plan-1", List.of(project));
+    }
 
     private QuestionPool makePool(String content, String referenceType) {
         return QuestionPool.create("key:cs:junior", content, null, null, null, referenceType);
@@ -72,25 +104,26 @@ class QuestionGenerationServiceTest {
     class ProviderCallBranch {
 
         @Test
-        @DisplayName("혼합 타입(cacheable+fresh) 요청 시 양쪽 Provider가 모두 호출된다")
-        void mixedTypes_callsBothProviders() {
-            // given
-            List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.RESUME_BASED);
-            QuestionPool pool = makePool("CS 질문", "MODEL_ANSWER");
+        @DisplayName("cacheable 타입만 여럿 있을 때 CacheableProvider가 타입별로 호출된다")
+        void multiCacheableTypes_callsCacheableProviderForEachType() {
+            // given — CS_FUNDAMENTAL + BEHAVIORAL (둘 다 cacheable)
+            List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL);
+            QuestionPool csPool = makePool("CS 질문", "MODEL_ANSWER");
+            QuestionPool behavPool = makePool("자기소개", "GUIDE");
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(pool));
-            GeneratedQuestion gq = makeGeneratedQuestion("이력서 질문", "RESUME", "GUIDE");
-            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
-                    .willReturn(List.of(gq));
+                    .willReturn(List.of(csPool));
+            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
+                    .willReturn(List.of(behavPool));
 
             // when
             questionGenerationService.generateQuestions(
                     1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    types, List.of(), "이력서 내용", 30, TechStack.JAVA_SPRING);
+                    types, List.of(), null, 30, TechStack.JAVA_SPRING);
 
             // then
-            then(cacheableProvider).should().provide(anyLong(), any(), any(), any(), any(), anyInt(), any());
-            then(freshProvider).should().provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
+            then(cacheableProvider).should(org.mockito.Mockito.times(2))
+                    .provide(anyLong(), any(), any(), any(), any(), anyInt(), any());
+            then(freshProvider).should(never()).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
         }
 
         @Test
@@ -112,13 +145,15 @@ class QuestionGenerationServiceTest {
         }
 
         @Test
-        @DisplayName("fresh 타입만 있을 때 CacheableProvider는 호출되지 않는다")
-        void freshOnly_doesNotCallCacheableProvider() {
+        @DisplayName("RESUME_BASED 단독 시 CacheableProvider/FreshProvider 를 호출하지 않고 startSession 경로로 간다")
+        void resumeBasedOnly_doesNotCallProviders() {
             // given
             List<InterviewType> types = List.of(InterviewType.RESUME_BASED);
-            GeneratedQuestion gq = makeGeneratedQuestion("이력서 질문", "RESUME", "GUIDE");
-            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
-                    .willReturn(List.of(gq));
+            given(resumeSkeletonPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makeSkeleton()));
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makePlan()));
+            given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
+                    .willReturn(com.rehearse.api.domain.interview.dto.FollowUpResponse.builder()
+                            .question("opener").presentToUser(true).build());
 
             // when
             questionGenerationService.generateQuestions(
@@ -127,16 +162,19 @@ class QuestionGenerationServiceTest {
 
             // then
             then(cacheableProvider).should(never()).provide(any(), any(), any(), any(), any(), anyInt(), any());
+            then(freshProvider).should(never()).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
         }
 
         @Test
-        @DisplayName("RESUME_BASED 질문 생성 전 skeleton과 plan을 준비한다")
-        void resumeBased_preparesSkeletonAndPlanBeforeFreshProvider() {
+        @DisplayName("RESUME_BASED 단독 시 prepare → startSession 순서로 호출된다")
+        void resumeBased_preparesSkeletonAndPlanThenCallsStartSession() {
             // given
             List<InterviewType> types = List.of(InterviewType.RESUME_BASED);
-            GeneratedQuestion gq = makeGeneratedQuestion("이력서 질문", "RESUME", "GUIDE");
-            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
-                    .willReturn(List.of(gq));
+            given(resumeSkeletonPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makeSkeleton()));
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makePlan()));
+            given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
+                    .willReturn(com.rehearse.api.domain.interview.dto.FollowUpResponse.builder()
+                            .question("opener").presentToUser(true).build());
 
             // when
             questionGenerationService.generateQuestions(
@@ -145,9 +183,11 @@ class QuestionGenerationServiceTest {
                     30, TechStack.JAVA_SPRING);
 
             // then
-            org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(resumePlanPreparationService, freshProvider);
+            org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(
+                    resumePlanPreparationService, resumeInterviewOrchestrator, transactionHandler);
             inOrder.verify(resumePlanPreparationService).prepare(1L, "hash-1", "Java 백엔드 개발자. ".repeat(10), 30);
-            inOrder.verify(freshProvider).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
+            inOrder.verify(resumeInterviewOrchestrator).startSession(eq(1L), eq(30), any(), any());
+            inOrder.verify(transactionHandler).saveResults(eq(1L), eq(List.of()));
         }
 
         @Test
@@ -236,11 +276,13 @@ class QuestionGenerationServiceTest {
         }
 
         @Test
-        @DisplayName("FreshProvider 예외 발생 시 RuntimeException이 전파된다")
-        void freshProviderThrows_propagatesRuntimeException() {
+        @DisplayName("RESUME_BASED 단독 시 startSession 예외는 그대로 전파된다")
+        void resumeBased_startSessionThrows_propagatesException() {
             // given
             List<InterviewType> types = List.of(InterviewType.RESUME_BASED);
-            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
+            given(resumeSkeletonPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makeSkeleton()));
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makePlan()));
+            given(resumeInterviewOrchestrator.startSession(any(), anyInt(), any(), any()))
                     .willThrow(new RuntimeException("AI 호출 실패"));
 
             // when & then
@@ -249,7 +291,7 @@ class QuestionGenerationServiceTest {
                             1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                             types, List.of(), "이력서", 30, TechStack.JAVA_SPRING))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("질문 생성 병렬 처리 실패");
+                    .hasMessageContaining("AI 호출 실패");
         }
     }
 
@@ -382,13 +424,15 @@ class QuestionGenerationServiceTest {
         }
 
         @Test
-        @DisplayName("RESUME_BASED 타입(fresh)은 FeedbackPerspective.EXPERIENCE로 설정된다")
-        void resumeBasedType_feedbackPerspectiveExperience() {
+        @DisplayName("RESUME_BASED 단독 시 status=COMPLETED 마킹을 위해 saveResults(emptyList) 가 호출된다")
+        void resumeBasedOnly_callsSaveResultsWithEmptyList() {
             // given
             List<InterviewType> types = List.of(InterviewType.RESUME_BASED);
-            GeneratedQuestion gq = makeGeneratedQuestion("프로젝트 경험을 말해보세요", "RESUME", "GUIDE");
-            given(freshProvider.provide(any(), any(), any(), any(), anyInt(), any(), any(), any()))
-                    .willReturn(List.of(gq));
+            given(resumeSkeletonPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makeSkeleton()));
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(makePlan()));
+            given(resumeInterviewOrchestrator.startSession(eq(1L), anyInt(), any(), any()))
+                    .willReturn(com.rehearse.api.domain.interview.dto.FollowUpResponse.builder()
+                            .question("opener").build());
 
             // when
             questionGenerationService.generateQuestions(
@@ -396,12 +440,7 @@ class QuestionGenerationServiceTest {
                     types, List.of(), "이력서 내용", 30, TechStack.JAVA_SPRING);
 
             // then
-            org.mockito.ArgumentCaptor<List<QuestionSet>> captor =
-                    org.mockito.ArgumentCaptor.forClass(List.class);
-            then(transactionHandler).should().saveResults(eq(1L), captor.capture());
-
-            Question question = captor.getValue().get(0).getQuestions().get(0);
-            assertThat(question.getFeedbackPerspective()).isEqualTo(FeedbackPerspective.EXPERIENCE);
+            then(transactionHandler).should().saveResults(eq(1L), eq(List.of()));
         }
 
         @Test

@@ -14,6 +14,7 @@ import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
 import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -126,7 +127,24 @@ public class ResumeInterviewOrchestrator {
             Long interviewId, int durationMinutes,
             ResumeSkeleton skeleton, InterviewPlan plan
     ) {
-        clockWatcher.markStart(interviewId);
+        java.util.Optional<com.rehearse.api.domain.question.entity.Question> existingOpener =
+                questionSetRepository
+                        .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                        .flatMap(qs -> qs.getQuestions().stream()
+                                .filter(q -> q.getQuestionType() == QuestionType.RESUME_OPENER)
+                                .findFirst());
+
+        if (existingOpener.isPresent()) {
+            com.rehearse.api.domain.question.entity.Question opener = existingOpener.get();
+            log.info("[ResumeOrchestrator] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
+            return FollowUpResponse.builder()
+                    .question(opener.getQuestionText())
+                    .ttsQuestion(opener.getTtsText())
+                    .presentToUser(true)
+                    .type("RESUME_OPENER")
+                    .build();
+        }
+
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
         log.info("[ResumeOrchestrator] 세션 시작: interviewId={}, mode=PLAYGROUND", interviewId);
         PlaygroundModeHandler.OpenerResult openerResult = playgroundHandler.handleOpener(interviewId, state, skeleton, plan);
@@ -178,7 +196,7 @@ public class ResumeInterviewOrchestrator {
             return null;
         }
         return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_DYNAMIC)
+                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
                 .orElse(null);
     }
 
