@@ -39,7 +39,7 @@ class WrapUpModeHandlerTest {
     @BeforeEach
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
-        given(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+        given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                 .willReturn(1L);
     }
 

@@ -65,7 +65,6 @@ class InterviewCompletionServiceTest {
 
             // then
             assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-            assertThat(interview.getOverallComment()).contains("완료");
         }
 
         @Test
@@ -141,7 +140,6 @@ class InterviewCompletionServiceTest {
 
             // then
             assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-            assertThat(interview.getOverallComment()).contains("완료");
         }
     }
 

@@ -2,8 +2,8 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
-import com.rehearse.api.infra.ai.dto.openai.OpenAiRequest;
 import com.rehearse.api.infra.ai.dto.openai.OpenAiResponse;
+import org.springframework.lang.Nullable;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
@@ -224,12 +224,12 @@ public class OpenAiClient {
     }
 
     private static Map<String, Object> baseRequestBody(
-            String resolvedModel, List<Map<String, Object>> messages, int maxTokens, ChatRequest req) {
+            String resolvedModel, List<Map<String, Object>> messages, int maxTokens, @Nullable ChatRequest req) {
         Map<String, Object> body = new HashMap<>();
         body.put("model", resolvedModel);
         body.put("messages", messages);
         body.put("max_tokens", maxTokens);
-        if (req.temperature() != null) {
+        if (req != null && req.temperature() != null) {
             body.put("temperature", req.temperature());
         }
         return body;
@@ -271,37 +271,25 @@ public class OpenAiClient {
     }
 
     private String callOpenAiApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
-        Object requestBody = OpenAiRequest.builder()
-                .model(model)
-                .messages(List.of(
-                        OpenAiRequest.Message.builder()
-                                .role("system")
-                                .content(systemPrompt)
-                                .build(),
-                        OpenAiRequest.Message.builder()
-                                .role("user")
-                                .content(userPrompt)
-                                .build()
-                ))
-                .maxTokens(maxTokens)
-                .temperature(temperature)
-                .build();
-
+        List<Map<String, Object>> messages = List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                Map.of("role", "user", "content", userPrompt)
+        );
+        Map<String, Object> requestBody = new HashMap<>(baseRequestBody(model, messages, maxTokens, null));
+        if (temperature != null) {
+            requestBody.put("temperature", temperature);
+        }
         return executeWithRetry(requestBody, "OpenAI API", maxTokens)
                 .getChoices().get(0).getMessage().getContent();
     }
 
     private String callOpenAiAudioApi(String systemPrompt, String userPrompt, String audioBase64, String audioFormat) {
-        Object requestBody = Map.of(
-                "model", audioModel,
-                "messages", List.of(
-                        Map.of("role", "system", "content", systemPrompt),
-                        buildAudioUserContent(userPrompt, audioBase64, audioFormat)
-                ),
-                "max_tokens", MAX_TOKENS_FOLLOW_UP,
-                "temperature", TEMPERATURE_FOLLOW_UP
+        List<Map<String, Object>> messages = List.of(
+                Map.of("role", "system", "content", systemPrompt),
+                buildAudioUserContent(userPrompt, audioBase64, audioFormat)
         );
-
+        Map<String, Object> requestBody = baseRequestBody(audioModel, messages, MAX_TOKENS_FOLLOW_UP, null);
+        requestBody.put("temperature", TEMPERATURE_FOLLOW_UP);
         return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP)
                 .getChoices().get(0).getMessage().getContent();
     }

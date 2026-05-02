@@ -11,6 +11,8 @@ import com.rehearse.api.domain.feedback.session.infra.LambdaRetryTrigger;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackSynthesizer;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,6 +31,7 @@ public class SessionFeedbackService {
     private static final String LAMBDA_RETRY_SUCCESS = "rehearse.ai.lambda.retry.success";
     private static final String LAMBDA_RETRY_FAILURE = "rehearse.ai.lambda.retry.failure";
 
+    private final InterviewFinder interviewFinder;
     private final SessionFeedbackRepository sessionFeedbackRepository;
     private final SessionFeedbackPersistenceService persistenceService;
     private final SessionFeedbackSynthesizer synthesizer;
@@ -137,6 +140,12 @@ public class SessionFeedbackService {
             log.error("Lambda retry 트리거 실패: interviewId={}, reason={}", interviewId, e.getMessage());
             throw e;
         }
+    }
+
+    public SessionFeedbackResponse getByInterviewForUser(Long interviewId, Long userId) {
+        Interview interview = interviewFinder.findById(interviewId);
+        interview.validateOwner(userId);
+        return getByInterview(interviewId);
     }
 
     public SessionFeedbackResponse getByInterview(Long interviewId) {

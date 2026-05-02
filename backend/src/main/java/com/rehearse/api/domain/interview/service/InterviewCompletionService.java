@@ -47,7 +47,6 @@ public class InterviewCompletionService {
                     continue;
                 }
 
-                freshInterview.completeWithComment(summary.toComment());
                 freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
                 log.info("면접 완료 처리: interviewId={}, completed={}, partial={}, skipped={}",
@@ -61,11 +60,6 @@ public class InterviewCompletionService {
     private record CompletionSummary(long total, long completed, long partial, long skipped) {
         boolean isAllResolved() {
             return completed + partial + skipped == total && (completed + partial) > 0;
-        }
-
-        String toComment() {
-            return String.format("전체 %d개 질문세트 중 %d개 완료, %d개 부분완료, %d개 건너뜀",
-                    total, completed, partial, skipped);
         }
     }
 
