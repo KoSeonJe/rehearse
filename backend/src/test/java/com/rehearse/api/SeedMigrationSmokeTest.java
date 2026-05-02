@@ -1,5 +1,6 @@
 package com.rehearse.api;
 
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -9,7 +10,7 @@ import org.springframework.test.context.ActiveProfiles;
     properties = "spring.flyway.locations=classpath:db/migration,classpath:db/seed"
 )
 @ActiveProfiles("test")
-class SeedMigrationSmokeTest {
+class SeedMigrationSmokeTest extends AbstractMySqlContainerTest {
 
     @Test
     void seedFlywayAppliesWithoutError() {
