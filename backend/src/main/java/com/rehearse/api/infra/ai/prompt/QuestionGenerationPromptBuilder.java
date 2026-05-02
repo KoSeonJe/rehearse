@@ -91,7 +91,7 @@ public class QuestionGenerationPromptBuilder {
             }
         }
         if (req.resumeText() != null && !req.resumeText().isBlank()) {
-            sb.append("이력서:\n").append(req.resumeText()).append("\n");
+            sb.append("이력서:\n<<<RESUME_TEXT>>>\n").append(req.resumeText()).append("\n<<<END_RESUME_TEXT>>>\n");
         }
 
         sb.append("세션: ").append(UUID.randomUUID()).append("\n");

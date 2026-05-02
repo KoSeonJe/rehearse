@@ -196,16 +196,16 @@ class FollowUpTransactionHandlerTest {
                     .orderIndex(1)
                     .build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
+            given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
             // when
-            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 1);
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp);
 
             // then
             assertThat(result.question().getId()).isEqualTo(100L);
             assertThat(result.question().getQuestionText()).isEqualTo("해시 충돌 해결 방법은?");
             assertThat(result.newFollowUpCount()).isEqualTo(1);
-            then(questionRepository).should().save(any(Question.class));
+            then(questionRepository).should().saveAndFlush(any(Question.class));
         }
 
         @Test
@@ -221,11 +221,36 @@ class FollowUpTransactionHandlerTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
-            given(questionRepository.save(any(Question.class))).willReturn(savedQuestion);
+            given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
-            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp, 2);
+            FollowUpSaveResult result = handler.saveFollowUpResult(10L, followUp);
 
             assertThat(result.newFollowUpCount()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("saveFollowUpResult - 동시 호출 중복 시 DataIntegrityViolation → FOLLOWUP_DUPLICATE BusinessException")
+        void saveFollowUpResult_throws_followup_duplicate_on_unique_constraint_violation() {
+            // given
+            Interview interview = createInProgressInterview();
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+
+            GeneratedFollowUp followUp = new GeneratedFollowUp();
+            ReflectionTestUtils.setField(followUp, "question", "중복 꼬리질문");
+
+            given(questionRepository.saveAndFlush(any(Question.class)))
+                    .willThrow(new org.springframework.dao.DataIntegrityViolationException("Duplicate entry"));
+
+            // when / then
+            assertThatThrownBy(() -> handler.saveFollowUpResult(10L, followUp))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> {
+                        BusinessException be = (BusinessException) e;
+                        assertThat(be.getCode()).isEqualTo(
+                                com.rehearse.api.domain.interview.exception.InterviewErrorCode.FOLLOWUP_DUPLICATE.getCode());
+                        assertThat(be.getStatus()).isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
+                    });
         }
     }
 
