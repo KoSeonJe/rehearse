@@ -42,9 +42,19 @@ jobs:
       - name: Run tests
         if: steps.filter.outputs.backend == 'true'
         working-directory: backend
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test --no-daemon --stacktrace --info
         env:
           SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: |
+            backend/build/reports/tests/test/
+            backend/build/test-results/test/
+          retention-days: 7
 
       - name: No backend changes — skipping
         if: steps.filter.outputs.backend != 'true'
