@@ -179,7 +179,9 @@ export const useInterviewSession = ({
     if (interview && phase === 'preparing') {
       const qs = interview.questionSets ?? []
       const derivedQuestions = qs.map((qSet, idx) => {
-        const mainQ = qSet.questions.find((q) => q.questionType === 'MAIN')
+        const mainQ = qSet.questions.find(
+          (q) => q.questionType === 'MAIN' || q.questionType === 'RESUME_OPENER',
+        )
         return {
           id: mainQ?.id ?? qSet.id,
           content: mainQ?.questionText ?? '',
