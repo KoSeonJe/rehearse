@@ -129,6 +129,15 @@ public class CreateInterviewRequest {
 // 실패: ErrorResponse (GlobalExceptionHandler가 자동 생성)
 ```
 
+## Flyway 마이그레이션
+
+- **DDL 전용**. `CREATE/ALTER/DROP TABLE`, `ADD/DROP INDEX`, `ADD/DROP COLUMN`, `ADD/DROP CONSTRAINT` 등 스키마 변경만 작성
+- **DML 금지**. `INSERT/UPDATE/DELETE` 로 데이터 정리·시드·백필 하지 않는다
+  - 데이터 cleanup 이 필요하면 **운영 SQL** 로 분리 (버전 관리 외부, 일회성 실행)
+  - 시드 데이터는 `data.sql` (dev) 또는 별도 seed 스크립트
+- 마이그레이션은 idempotent 하게 작성 (재실행 안전성). 실패 시 history repair 후 재시도 가능해야 함
+- DDL 이 기존 데이터 제약을 위반할 수 있으면 (예: `ADD UNIQUE INDEX`) 사전에 운영 SQL 로 데이터 정리 → 그다음 DDL 적용
+
 ## 테스트
 
 - 서비스 단위 테스트 필수 (핵심 비즈니스 로직)
