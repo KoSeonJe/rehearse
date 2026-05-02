@@ -23,15 +23,6 @@ INSERT INTO interview_cs_sub_topics (interview_id, cs_sub_topic)
     SELECT interview_id, cs_sub_topic FROM _ics_dedup;
 DROP TEMPORARY TABLE _ics_dedup;
 
--- question_pool cache_key 중복 제거: 각 cache_key 당 MAX(id) 행만 보존
--- Why: UNIQUE 제약 추가 전, 동일 cache_key 중복 행(dev: 30~35건/key) 제거
-DELETE FROM question_pool
-WHERE id NOT IN (
-    SELECT max_id FROM (
-        SELECT MAX(id) AS max_id FROM question_pool GROUP BY cache_key
-    ) AS _qp_keep
-);
-
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 1: ElementCollection PK 추가
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -46,11 +37,10 @@ ALTER TABLE interview_cs_sub_topics
     ADD PRIMARY KEY (interview_id, cs_sub_topic);
 
 -- ─────────────────────────────────────────────────────────────────────────────
--- 블록 2: question_pool.cache_key UNIQUE 제약
--- V11에서 INDEX만 생성됨, UNIQUE 누락
+-- 블록 2: question_pool.cache_key UNIQUE 제약 → 별도 마이그레이션으로 분리
+-- Why: cache_key 당 여러 행이 question.question_pool_id에 의해 참조되고 있어
+--      단순 dedup 불가. 참조 정리 후 별도 V43에서 처리.
 -- ─────────────────────────────────────────────────────────────────────────────
-ALTER TABLE question_pool
-    ADD CONSTRAINT uq_question_pool_cache_key UNIQUE (cache_key);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 3: V4 FK에 ON DELETE CASCADE 재생성
