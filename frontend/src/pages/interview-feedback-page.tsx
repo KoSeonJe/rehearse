@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
@@ -8,6 +8,9 @@ import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-que
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
 import { type VideoPlayerHandle } from '@/components/feedback/video-player'
+import { SessionFeedbackModal } from '@/components/feedback/session-feedback-modal'
+import { useSessionFeedback } from '@/hooks/use-session-feedback'
+import { Button } from '@/components/ui/button'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { VideoDock } from '@/components/feedback/video-dock'
 import { QuestionList } from '@/components/feedback/question-list'
@@ -358,6 +361,24 @@ export const InterviewFeedbackPage = () => {
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 
+  const [isSessionFeedbackOpen, setIsSessionFeedbackOpen] = useState(false)
+  const hasAnyCompleted = questionSets.some(
+    (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
+  )
+  const {
+    data: sessionFeedback,
+    isLoading: sfLoading,
+    isError: sfError,
+  } = useSessionFeedback(interview?.id ?? 0, hasAnyCompleted && !!interview)
+
+  useEffect(() => {
+    if (!interview || !sessionFeedback || sfLoading) return
+    const key = `seen-session-feedback-${interview.id}`
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    setIsSessionFeedbackOpen(true)
+  }, [interview, sessionFeedback, sfLoading])
+
   const completedQs = questionSets.filter(
     (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
   )
@@ -433,7 +454,30 @@ export const InterviewFeedbackPage = () => {
             리허설
           </span>
         </div>
-        <BackLink to="/dashboard" />
+        <div className="flex items-center gap-3">
+          {hasAnyCompleted && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSessionFeedbackOpen(true)}
+              disabled={sfLoading && !sessionFeedback}
+              className="text-[13px]"
+            >
+              {sfLoading && !sessionFeedback ? (
+                <span className="flex items-center gap-1.5">
+                  <span
+                    className="h-3 w-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin"
+                    aria-hidden="true"
+                  />
+                  생성 중
+                </span>
+              ) : (
+                '종합 피드백'
+              )}
+            </Button>
+          )}
+          <BackLink to="/dashboard" />
+        </div>
       </header>
 
       {/* Page title header — InfoBand는 타이틀 아래로 이동 */}
@@ -467,6 +511,14 @@ export const InterviewFeedbackPage = () => {
             />
           ))}
       </PageGrid>
+
+      <SessionFeedbackModal
+        isOpen={isSessionFeedbackOpen}
+        onClose={() => setIsSessionFeedbackOpen(false)}
+        data={sessionFeedback}
+        isLoading={sfLoading}
+        isError={sfError}
+      />
     </div>
   )
 }
