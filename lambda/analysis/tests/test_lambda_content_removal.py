@@ -159,17 +159,6 @@ def test_legacy_pipeline_omits_lambda_content_fields(monkeypatch):
     )
     monkeypatch.setattr(
         handler,
-        "_safe_verbal",
-        lambda *_args, **_kwargs: {
-            "comment": "말끝이 분명합니다.",
-            "filler_word_count": 0,
-            "tone_label": "PROFESSIONAL",
-            "attitude_comment": "경어가 유지됩니다.",
-            "speed_variance": 0.1,
-        },
-    )
-    monkeypatch.setattr(
-        handler,
         "_safe_vision",
         lambda *_args, **_kwargs: {
             "eyeContactLevel": "GOOD",

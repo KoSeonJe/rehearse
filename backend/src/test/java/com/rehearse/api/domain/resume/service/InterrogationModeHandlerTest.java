@@ -47,7 +47,7 @@ class InterrogationModeHandlerTest {
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
         plan = createPlan();
-        lenient().when(questionPersister.persist(anyLong(), any(), any(), anyInt(), any(), any(), any()))
+        lenient().when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                 .thenReturn(1L);
     }
 

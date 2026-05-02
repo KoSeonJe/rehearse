@@ -41,8 +41,7 @@ public class PlaygroundModeHandler {
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_OPENER, result.question(),
-                orderIndex, null, null, firstPlan.projectId());
+                interviewId, QuestionType.RESUME_OPENER, result.question(), orderIndex);
 
         log.info("[PlaygroundHandler] 오프너 생성: interviewId={}, projectId={}, questionId={}",
                 interviewId, firstPlan.projectId(), questionId);
@@ -70,8 +69,7 @@ public class PlaygroundModeHandler {
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_PLAYGROUND, result.question(),
-                orderIndex, null, null, currentPlan.projectId());
+                interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
 
         state.getPlaygroundTurns().incrementAndGet();
 
