@@ -24,8 +24,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.hibernate.JDBCException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -79,18 +79,13 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
         @DisplayName("동일 (interview_id, interview_type) 쌍 중복 삽입 시 DataIntegrityViolationException 발생")
         void duplicateInterviewType_rejected() {
             Long id = savedInterview.getId();
-
-            em.createNativeQuery(
-                    "INSERT INTO interview_interview_types (interview_id, interview_type) VALUES (?, ?)"
-            ).setParameter(1, id).setParameter(2, "CS_FUNDAMENTAL").executeUpdate();
-            em.flush();
-
+            // @BeforeEach already persists CS_FUNDAMENTAL — direct duplicate insert triggers PK constraint
             assertThatThrownBy(() -> {
                 em.createNativeQuery(
                         "INSERT INTO interview_interview_types (interview_id, interview_type) VALUES (?, ?)"
                 ).setParameter(1, id).setParameter(2, "CS_FUNDAMENTAL").executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataIntegrityViolationException.class);
+            }).isInstanceOf(ConstraintViolationException.class);
         }
     }
 
@@ -113,7 +108,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                 QuestionPool duplicate = QuestionPool.create("backend:cs:junior:q1", "질문 내용 B", null, null, null, null);
                 em.persist(duplicate);
                 em.flush();
-            }).isInstanceOf(DataIntegrityViolationException.class);
+            }).isInstanceOf(ConstraintViolationException.class);
         }
 
         @Test
@@ -231,7 +226,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_INTERROGATION', '질문', 0, NULL, 'INTERROGATION', 'proj-1')"
                 ).setParameter(1, questionSet.getId()).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
 
         @Test
@@ -258,7 +253,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "chain_id, chain_step_type, project_id) VALUES (?, 'MAIN', '질문', 0, 'chain-uuid', NULL, NULL)"
                 ).setParameter(1, questionSet.getId()).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
 
         @Test
@@ -285,7 +280,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_OPENER', '질문', 0, NULL, NULL, NULL)"
                 ).setParameter(1, questionSet.getId()).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
     }
 
@@ -326,7 +321,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "VALUES (?, 0, 5000, false, 'INVALID_VALUE')"
                 ).setParameter(1, qsFeedbackId).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
 
         @Test
@@ -338,7 +333,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "VALUES (?, 0, 5000, false, 'BAD')"
                 ).setParameter(1, qsFeedbackId).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
 
         @Test
@@ -350,7 +345,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
                         "VALUES (?, 0, 5000, false, 'EXCELLENT')"
                 ).setParameter(1, qsFeedbackId).executeUpdate();
                 em.flush();
-            }).isInstanceOf(DataAccessException.class);
+            }).isInstanceOf(JDBCException.class);
         }
 
         @Test

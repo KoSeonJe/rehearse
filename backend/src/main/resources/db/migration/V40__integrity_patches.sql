@@ -55,6 +55,20 @@ ALTER TABLE timestamp_feedback
     ADD CONSTRAINT fk_ts_feedback_qs_feedback
         FOREIGN KEY (question_set_feedback_id) REFERENCES question_set_feedback(id) ON DELETE CASCADE;
 
+-- interview_interview_types → interview (ElementCollection, V1에서 CASCADE 누락)
+ALTER TABLE interview_interview_types
+    DROP FOREIGN KEY fk_types_interview;
+ALTER TABLE interview_interview_types
+    ADD CONSTRAINT fk_types_interview
+        FOREIGN KEY (interview_id) REFERENCES interview(id) ON DELETE CASCADE;
+
+-- interview_cs_sub_topics → interview (ElementCollection, V1에서 CASCADE 누락)
+ALTER TABLE interview_cs_sub_topics
+    DROP FOREIGN KEY fk_cs_topics_interview;
+ALTER TABLE interview_cs_sub_topics
+    ADD CONSTRAINT fk_cs_topics_interview
+        FOREIGN KEY (interview_id) REFERENCES interview(id) ON DELETE CASCADE;
+
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 4: question CHECK 5-way 강화
 -- V35의 chk_question_track_meta를 DROP하고 5-way 정밀 제약으로 교체.

@@ -9,8 +9,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willThrow;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.ChainStep;
@@ -39,7 +37,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,9 +54,6 @@ class ResumeInterviewPlannerTest {
 
     @Mock
     private ResumeInterviewPlanValidator planValidator;
-
-    @Spy
-    private ObjectMapper objectMapper = new ObjectMapper();
 
     private ResumeSkeleton skeleton;
     private ChatRequest stubRequest;
@@ -80,7 +74,7 @@ class ResumeInterviewPlannerTest {
     void plan_returns_plan_when_adapter_and_validator_succeed() {
         given(promptBuilder.build(any(), eq(30), eq("JUNIOR"), eq("resume_interview_planner")))
                 .willReturn(stubRequest);
-        given(planAdapter.execute(stubRequest, 30)).willReturn(stubPlan);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any(ResumeSkeleton.class))).willReturn(stubPlan);
 
         InterviewPlan result = planner.plan(skeleton, 30);
 
@@ -94,7 +88,7 @@ class ResumeInterviewPlannerTest {
         ResumeSkeleton skeletonNoLevel = new ResumeSkeleton(
                 "r_test", "hash", null, "backend", skeleton.projects(), Map.of());
         given(promptBuilder.build(any(), eq(30), eq("MID"), any())).willReturn(stubRequest);
-        given(planAdapter.execute(stubRequest, 30)).willReturn(stubPlan);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any(ResumeSkeleton.class))).willReturn(stubPlan);
 
         planner.plan(skeletonNoLevel, 30);
 
@@ -105,7 +99,7 @@ class ResumeInterviewPlannerTest {
     @DisplayName("plan_validator_예외전파_when_validator_throws")
     void plan_propagates_validator_exception() {
         given(promptBuilder.build(any(), anyInt(), any(), any())).willReturn(stubRequest);
-        given(planAdapter.execute(stubRequest, 30)).willReturn(stubPlan);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any(ResumeSkeleton.class))).willReturn(stubPlan);
         willThrow(new BusinessException(ResumePlannerErrorCode.ORPHAN_CHAIN))
                 .given(planValidator).validate(skeleton, stubPlan);
 
@@ -116,10 +110,11 @@ class ResumeInterviewPlannerTest {
     }
 
     @Test
-    @DisplayName("plan_INVALID_PLAN_when_skeleton_serialization_fails")
-    void plan_throws_invalid_plan_when_serialization_fails() throws JsonProcessingException {
-        given(objectMapper.writeValueAsString(skeleton))
-                .willThrow(new JsonProcessingException("boom") {});
+    @DisplayName("plan_INVALID_PLAN_when_adapter_throws_invalid_plan")
+    void plan_propagates_invalid_plan_from_adapter() {
+        given(promptBuilder.build(any(), eq(30), eq("JUNIOR"), any())).willReturn(stubRequest);
+        given(planAdapter.execute(eq(stubRequest), eq(30), any(ResumeSkeleton.class)))
+                .willThrow(new BusinessException(ResumePlannerErrorCode.INVALID_PLAN));
 
         assertThatThrownBy(() -> planner.plan(skeleton, 30))
                 .isInstanceOf(BusinessException.class)
