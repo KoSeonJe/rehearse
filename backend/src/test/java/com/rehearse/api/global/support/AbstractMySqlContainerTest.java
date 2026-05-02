@@ -9,8 +9,7 @@ public abstract class AbstractMySqlContainerTest {
     static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.4")
             .withDatabaseName("rehearse_test")
             .withUsername("test")
-            .withPassword("test")
-            .withReuse(true);
+            .withPassword("test");
 
     static {
         MYSQL.start();
