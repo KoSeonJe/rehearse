@@ -144,6 +144,7 @@ vi.mock('@/hooks/use-interview-setup', () => ({
     isLoading: false,
     isSubmitStep: false,
     canNext: vi.fn(() => false),
+    disabledHint: vi.fn(() => ''),
     goNext: vi.fn(),
     goPrev: vi.fn(),
     handlePositionSelect: vi.fn(),

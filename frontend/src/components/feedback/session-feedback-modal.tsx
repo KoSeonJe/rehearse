@@ -96,7 +96,7 @@ const LoadingBody = () => (
       className="h-6 w-6 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin"
       aria-hidden="true"
     />
-    <p className="text-[14px] text-muted-foreground">종합 피드백 불러오는 중...</p>
+    <p className="text-[14px] text-muted-foreground">코치 노트 불러오는 중...</p>
   </div>
 )
 
@@ -112,7 +112,7 @@ const PreliminaryBody = () => (
     <div className="h-1 w-32 bg-brand/15 rounded-full overflow-hidden">
       <div className="h-full bg-brand animate-progress-loading" />
     </div>
-    <p className="text-[14px] text-muted-foreground">종합 피드백을 생성 중입니다...</p>
+    <p className="text-[14px] text-muted-foreground">코치 노트를 작성 중입니다...</p>
     <p className="text-[12px] text-muted-foreground/60">분석이 완료되면 자동으로 표시됩니다.</p>
   </div>
 )
@@ -245,7 +245,7 @@ export const SessionFeedbackModal = ({
       <DialogContent className="max-w-xl w-full p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <DialogTitle className="text-[16px] font-semibold text-foreground">
-            종합 피드백
+            코치 노트
           </DialogTitle>
         </DialogHeader>
         <div className="overflow-y-auto max-h-[80vh] px-6 py-6">{renderBody()}</div>

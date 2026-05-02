@@ -27,7 +27,7 @@ describe('ContentTab', () => {
     expect(html).toContain('3점')
     expect(html).toContain('세대별 GC 구조를 언급해 개념 정확도가 좋습니다.')
     expect(html).toContain('young 영역과 old 영역을 나눠 관리')
-    expect(html).not.toContain('내용 피드백은 종합 피드백에서 확인하세요')
+    expect(html).not.toContain('내용 피드백은 코치 노트에서 확인하세요')
   })
 
   it('shows a pending state when technical feedback is not ready', () => {

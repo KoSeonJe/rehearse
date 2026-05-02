@@ -9,8 +9,8 @@ import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
 import { type VideoPlayerHandle } from '@/components/feedback/video-player'
 import { SessionFeedbackModal } from '@/components/feedback/session-feedback-modal'
+import { CoachNoteFab } from '@/components/feedback/coach-note-fab'
 import { useSessionFeedback } from '@/hooks/use-session-feedback'
-import { Button } from '@/components/ui/button'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { VideoDock } from '@/components/feedback/video-dock'
 import { QuestionList } from '@/components/feedback/question-list'
@@ -455,30 +455,7 @@ export const InterviewFeedbackPage = () => {
             리허설
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          {hasAnyCompleted && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSessionFeedbackOpen(true)}
-              disabled={sfLoading && !sessionFeedback}
-              className="text-[13px]"
-            >
-              {sfLoading && !sessionFeedback ? (
-                <span className="flex items-center gap-1.5">
-                  <span
-                    className="h-3 w-3 rounded-full border-2 border-foreground/30 border-t-foreground animate-spin"
-                    aria-hidden="true"
-                  />
-                  생성 중
-                </span>
-              ) : (
-                '종합 피드백'
-              )}
-            </Button>
-          )}
-          <BackLink to="/dashboard" />
-        </div>
+        <BackLink to="/dashboard" />
       </header>
 
       {/* Page title header — InfoBand는 타이틀 아래로 이동 */}
@@ -520,6 +497,13 @@ export const InterviewFeedbackPage = () => {
         isLoading={sfLoading}
         isError={sfError}
       />
+
+      {hasAnyCompleted && (
+        <CoachNoteFab
+          onClick={() => setIsSessionFeedbackOpen(true)}
+          isLoading={sfLoading && !sessionFeedback}
+        />
+      )}
     </div>
   )
 }
