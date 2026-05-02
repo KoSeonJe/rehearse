@@ -376,7 +376,8 @@ export const InterviewFeedbackPage = () => {
     const key = `seen-session-feedback-${interview.id}`
     if (localStorage.getItem(key)) return
     localStorage.setItem(key, '1')
-    setIsSessionFeedbackOpen(true)
+    const timer = setTimeout(() => setIsSessionFeedbackOpen(true), 0)
+    return () => clearTimeout(timer)
   }, [interview, sessionFeedback, sfLoading])
 
   const completedQs = questionSets.filter(
