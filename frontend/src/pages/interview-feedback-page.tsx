@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
@@ -8,6 +8,9 @@ import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-que
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
 import { useBookmarkExistsForInterview } from '@/hooks/use-review-bookmarks'
 import { type VideoPlayerHandle } from '@/components/feedback/video-player'
+import { SessionFeedbackModal } from '@/components/feedback/session-feedback-modal'
+import { CoachNoteFab } from '@/components/feedback/coach-note-fab'
+import { useSessionFeedback } from '@/hooks/use-session-feedback'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import { VideoDock } from '@/components/feedback/video-dock'
 import { QuestionList } from '@/components/feedback/question-list'
@@ -358,6 +361,25 @@ export const InterviewFeedbackPage = () => {
   const interview = response?.data
   const questionSets = interview?.questionSets ?? []
 
+  const [isSessionFeedbackOpen, setIsSessionFeedbackOpen] = useState(false)
+  const hasAnyCompleted = questionSets.some(
+    (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
+  )
+  const {
+    data: sessionFeedback,
+    isLoading: sfLoading,
+    isError: sfError,
+  } = useSessionFeedback(interview?.id ?? 0, hasAnyCompleted && !!interview)
+
+  useEffect(() => {
+    if (!interview || !sessionFeedback || sfLoading) return
+    const key = `seen-session-feedback-${interview.id}`
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    const timer = setTimeout(() => setIsSessionFeedbackOpen(true), 0)
+    return () => clearTimeout(timer)
+  }, [interview, sessionFeedback, sfLoading])
+
   const completedQs = questionSets.filter(
     (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',
   )
@@ -467,6 +489,21 @@ export const InterviewFeedbackPage = () => {
             />
           ))}
       </PageGrid>
+
+      <SessionFeedbackModal
+        isOpen={isSessionFeedbackOpen}
+        onClose={() => setIsSessionFeedbackOpen(false)}
+        data={sessionFeedback}
+        isLoading={sfLoading}
+        isError={sfError}
+      />
+
+      {hasAnyCompleted && (
+        <CoachNoteFab
+          onClick={() => setIsSessionFeedbackOpen(true)}
+          isLoading={sfLoading && !sessionFeedback}
+        />
+      )}
     </div>
   )
 }

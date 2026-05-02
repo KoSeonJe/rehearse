@@ -50,6 +50,8 @@ export const useInterviewSetup = () => {
         if (interviewTypes.length === 0) return false
         if (interviewTypes.includes('RESUME_BASED') && !resumeFile) return false
         return true
+      default:
+        return false
     }
   }, [position, techStack, level, durationMinutes, interviewTypes, resumeFile])
 
