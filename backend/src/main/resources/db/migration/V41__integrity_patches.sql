@@ -1,13 +1,17 @@
--- V40: DB 무결성 패치 (PK, UNIQUE, CASCADE FK, CHECK 제약 추가)
+-- V41: DB 무결성 패치 (PK, UNIQUE, CASCADE FK, CHECK 제약 추가)
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 1: ElementCollection PK 추가
 -- ─────────────────────────────────────────────────────────────────────────────
 ALTER TABLE interview_interview_types
-    ADD CONSTRAINT pk_interview_types PRIMARY KEY (interview_id, interview_type);
+    ADD PRIMARY KEY (interview_id, interview_type);
+
+-- cs_sub_topic 은 V1에서 NULL 허용으로 생성됨 → PK 전 NOT NULL 강제
+ALTER TABLE interview_cs_sub_topics
+    MODIFY cs_sub_topic VARCHAR(50) NOT NULL;
 
 ALTER TABLE interview_cs_sub_topics
-    ADD CONSTRAINT pk_cs_sub_topics PRIMARY KEY (interview_id, cs_sub_topic);
+    ADD PRIMARY KEY (interview_id, cs_sub_topic);
 
 -- ─────────────────────────────────────────────────────────────────────────────
 -- 블록 2: question_pool.cache_key UNIQUE 제약
