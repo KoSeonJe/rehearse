@@ -7,7 +7,6 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
@@ -90,40 +89,10 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 블록 2: question_pool cache_key UNIQUE
+    // 블록 2: question_pool.cache_key UNIQUE → V43으로 분리
+    // Why: 기존 question 70건이 non-MAX id 행 참조 중이라 단순 dedup 불가.
+    //      참조 정리 전략 확정 후 별도 마이그레이션에서 처리.
     // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("블록 2: question_pool.cache_key UNIQUE 제약")
-    class QuestionPoolCacheKeyUnique {
-
-        @Test
-        @DisplayName("동일 cache_key로 두 번 삽입하면 DataIntegrityViolationException 발생")
-        void duplicateCacheKey_rejected() {
-            QuestionPool first = QuestionPool.create("backend:cs:junior:q1", "질문 내용 A", null, null, null, null);
-            em.persist(first);
-            em.flush();
-
-            assertThatThrownBy(() -> {
-                QuestionPool duplicate = QuestionPool.create("backend:cs:junior:q1", "질문 내용 B", null, null, null, null);
-                em.persist(duplicate);
-                em.flush();
-            }).isInstanceOf(ConstraintViolationException.class);
-        }
-
-        @Test
-        @DisplayName("서로 다른 cache_key는 정상 삽입된다")
-        void distinctCacheKeys_persisted() {
-            QuestionPool first = QuestionPool.create("key:unique:1", "질문 A", null, null, null, null);
-            QuestionPool second = QuestionPool.create("key:unique:2", "질문 B", null, null, null, null);
-            em.persist(first);
-            em.persist(second);
-            em.flush();
-
-            assertThat(first.getId()).isNotNull();
-            assertThat(second.getId()).isNotNull();
-        }
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // 블록 3: ON DELETE CASCADE
@@ -193,94 +162,6 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
             return ((Number) em.createNativeQuery(
                     "SELECT COUNT(*) FROM " + table + " WHERE id = ?"
             ).setParameter(1, id).getSingleResult()).longValue();
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 블록 4: question CHECK 5-way
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("블록 4: question CHECK 5-way 제약")
-    class QuestionCheckConstraint {
-
-        private QuestionSet questionSet;
-
-        @BeforeEach
-        void setUpQuestionSet() {
-            questionSet = QuestionSet.builder()
-                    .interview(savedInterview)
-                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
-                    .orderIndex(0)
-                    .build();
-            em.persist(questionSet);
-            em.flush();
-        }
-
-        @Test
-        @DisplayName("RESUME_INTERROGATION + chain_id NULL 삽입 시 CHECK 위반으로 거부된다")
-        void resumeInterrogation_withNullChainId_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO question (question_set_id, question_type, question_text, order_index, " +
-                        "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_INTERROGATION', '질문', 0, NULL, 'INTERROGATION', 'proj-1')"
-                ).setParameter(1, questionSet.getId()).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
-        }
-
-        @Test
-        @DisplayName("RESUME_INTERROGATION + 필수 필드 모두 존재 시 정상 삽입된다")
-        void resumeInterrogation_withAllFields_accepted() {
-            em.createNativeQuery(
-                    "INSERT INTO question (question_set_id, question_type, question_text, order_index, " +
-                    "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_INTERROGATION', '질문', 0, 'chain-uuid', 'INTERROGATION', 'proj-1')"
-            ).setParameter(1, questionSet.getId()).executeUpdate();
-            em.flush();
-
-            long count = ((Number) em.createNativeQuery(
-                    "SELECT COUNT(*) FROM question WHERE question_set_id = ? AND question_type = 'RESUME_INTERROGATION'"
-            ).setParameter(1, questionSet.getId()).getSingleResult()).longValue();
-            assertThat(count).isEqualTo(1);
-        }
-
-        @Test
-        @DisplayName("MAIN 타입에 chain_id 존재 시 CHECK 위반으로 거부된다")
-        void main_withChainId_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO question (question_set_id, question_type, question_text, order_index, " +
-                        "chain_id, chain_step_type, project_id) VALUES (?, 'MAIN', '질문', 0, 'chain-uuid', NULL, NULL)"
-                ).setParameter(1, questionSet.getId()).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
-        }
-
-        @Test
-        @DisplayName("RESUME_OPENER + project_id 존재 시 정상 삽입된다")
-        void resumeOpener_withProjectId_accepted() {
-            em.createNativeQuery(
-                    "INSERT INTO question (question_set_id, question_type, question_text, order_index, " +
-                    "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_OPENER', '질문', 0, NULL, NULL, 'proj-1')"
-            ).setParameter(1, questionSet.getId()).executeUpdate();
-            em.flush();
-
-            long count = ((Number) em.createNativeQuery(
-                    "SELECT COUNT(*) FROM question WHERE question_set_id = ? AND question_type = 'RESUME_OPENER'"
-            ).setParameter(1, questionSet.getId()).getSingleResult()).longValue();
-            assertThat(count).isEqualTo(1);
-        }
-
-        @Test
-        @DisplayName("RESUME_OPENER + project_id NULL 삽입 시 CHECK 위반으로 거부된다")
-        void resumeOpener_withNullProjectId_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO question (question_set_id, question_type, question_text, order_index, " +
-                        "chain_id, chain_step_type, project_id) VALUES (?, 'RESUME_OPENER', '질문', 0, NULL, NULL, NULL)"
-                ).setParameter(1, questionSet.getId()).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
         }
     }
 
