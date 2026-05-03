@@ -60,7 +60,11 @@ public class InterrogationModeHandler {
                     interviewId, chainTopic, currentLevel, result.nextAction());
 
             if (result.question() == null || result.question().isBlank()) {
-                throw new BusinessException(AiErrorCode.PARSE_FAILED);
+                throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+            }
+            if (ResumeFallbackQuestions.INTERROGATION.equals(result.question())) {
+                log.warn("[InterrogationHandler] 안전 폴백 사용 감지: interviewId={}, chainId={}, level={}",
+                        interviewId, chainTopic, currentLevel);
             }
 
             int orderIndex = state.nextResumeOrderIndex();

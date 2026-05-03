@@ -161,7 +161,7 @@ class PlaygroundModeHandlerTest {
         }
 
         @Test
-        @DisplayName("handleOpener 에서 LLM 이 빈 question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("handleOpener 에서 LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handleOpener_blankQuestion_throwsBusinessException() {
             given(promptBuilder.buildOpener(any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult("", "", "오프너"));
@@ -169,11 +169,11 @@ class PlaygroundModeHandlerTest {
             assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
 
         @Test
-        @DisplayName("handleOpener 에서 LLM 이 null question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("handleOpener 에서 LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handleOpener_nullQuestion_throwsBusinessException() {
             given(promptBuilder.buildOpener(any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult(null, null, "오프너"));
@@ -181,7 +181,7 @@ class PlaygroundModeHandlerTest {
             assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
     }
 
@@ -204,7 +204,7 @@ class PlaygroundModeHandlerTest {
         }
 
         @Test
-        @DisplayName("shouldSwitch=false 이고 question 이 blank 이면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("shouldSwitch=false 이고 question 이 blank 이면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_withoutSwitch_throwsBusinessException() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
             given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
@@ -213,7 +213,7 @@ class PlaygroundModeHandlerTest {
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
     }
 

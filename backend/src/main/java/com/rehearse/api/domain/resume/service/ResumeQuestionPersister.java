@@ -8,8 +8,6 @@ import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
-import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,9 +25,6 @@ public class ResumeQuestionPersister {
     @Transactional
     public Long persist(Long interviewId, QuestionType questionType,
                         String questionText, int orderIndex) {
-        if (questionText == null || questionText.isBlank()) {
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
         QuestionSet questionSet = findOrCreateQuestionSet(interviewId);
         Question question = Question.resume(questionSet, questionType, questionText, orderIndex);
         questionRepository.save(question);

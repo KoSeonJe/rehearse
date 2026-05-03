@@ -34,7 +34,11 @@ public class WrapUpModeHandler {
                 interviewId, remainingMinutes, isRetrospective);
 
         if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+        }
+        if (ResumeFallbackQuestions.WRAP_UP.equals(result.question())) {
+            log.warn("[WrapUpHandler] 안전 폴백 사용 감지: interviewId={}, isRetrospective={}",
+                    interviewId, isRetrospective);
         }
 
         int orderIndex = state.nextResumeOrderIndex();

@@ -164,7 +164,7 @@ class InterrogationModeHandlerTest {
     class LlmResponseValidation {
 
         @Test
-        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_throwsBusinessException() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
@@ -173,11 +173,11 @@ class InterrogationModeHandlerTest {
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
 
         @Test
-        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_nullQuestion_throwsBusinessException() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
@@ -186,7 +186,7 @@ class InterrogationModeHandlerTest {
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
     }
 

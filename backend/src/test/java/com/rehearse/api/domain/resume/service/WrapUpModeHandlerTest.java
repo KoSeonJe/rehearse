@@ -105,7 +105,7 @@ class WrapUpModeHandlerTest {
     class LlmResponseValidation {
 
         @Test
-        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_throwsBusinessException() {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("", "", "이유", true, false));
@@ -113,11 +113,11 @@ class WrapUpModeHandlerTest {
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
 
         @Test
-        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_nullQuestion_throwsBusinessException() {
             given(promptBuilder.build(any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult(null, null, "이유", true, false));
@@ -125,7 +125,7 @@ class WrapUpModeHandlerTest {
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_005"));
+                            .isEqualTo("AI_007"));
         }
     }
 
