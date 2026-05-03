@@ -12,6 +12,7 @@ import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
@@ -38,6 +39,14 @@ public class PlaygroundModeHandler {
         Project project = findProject(skeleton, firstPlan.projectId());
 
         PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, project, firstPlan.playgroundPhase());
+
+        if (result.question() == null || result.question().isBlank()) {
+            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+        }
+        if (ResumeFallbackQuestions.OPENER.equals(result.question())) {
+            log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(opener): interviewId={}, projectId={}",
+                    interviewId, firstPlan.projectId());
+        }
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
@@ -67,13 +76,25 @@ public class PlaygroundModeHandler {
                 interviewId, userAnswer, expectedClaims, turnCount, cumulativeLength
         );
 
-        int orderIndex = state.nextResumeOrderIndex();
-        Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
+        boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);
+        boolean questionBlank = result.question() == null || result.question().isBlank();
+
+        if (questionBlank && !shouldSwitch) {
+            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+        }
 
         state.getPlaygroundTurns().incrementAndGet();
 
-        boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);
+        Long questionId = null;
+        if (!questionBlank) {
+            if (ResumeFallbackQuestions.PLAYGROUND_RESPONDER.equals(result.question())) {
+                log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(responder): interviewId={}, turnCount={}",
+                        interviewId, turnCount + 1);
+            }
+            int orderIndex = state.nextResumeOrderIndex();
+            questionId = questionPersister.persist(
+                    interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
+        }
 
         if (shouldSwitch) {
             log.info("[PlaygroundHandler] Interrogation 전환 결정: interviewId={}, turnCount={}", interviewId, turnCount + 1);

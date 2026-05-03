@@ -55,6 +55,8 @@ public class Question {
                     String ttsText, String modelAnswer, ReferenceType referenceType,
                     FeedbackPerspective feedbackPerspective,
                     int orderIndex, QuestionPool questionPool) {
+        requireValidQuestionText(questionText);
+        requireNonNullQuestionType(questionType);
         this.questionType = questionType;
         this.questionText = questionText;
         this.ttsText = ttsText;
@@ -67,6 +69,8 @@ public class Question {
 
     public static Question resume(QuestionSet questionSet, QuestionType type,
                                    String questionText, int orderIndex) {
+        requireValidQuestionText(questionText);
+        requireNonNullQuestionType(type);
         if (type == QuestionType.MAIN || type == QuestionType.FOLLOWUP) {
             throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
         }
@@ -80,5 +84,17 @@ public class Question {
 
     public void assignQuestionSet(QuestionSet questionSet) {
         this.questionSet = questionSet;
+    }
+
+    private static void requireValidQuestionText(String questionText) {
+        if (questionText == null || questionText.isBlank()) {
+            throw new IllegalArgumentException("questionText must not be blank");
+        }
+    }
+
+    private static void requireNonNullQuestionType(QuestionType questionType) {
+        if (questionType == null) {
+            throw new IllegalArgumentException("questionType must not be null");
+        }
     }
 }

@@ -7,6 +7,8 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import lombok.RequiredArgsConstructor;
@@ -56,6 +58,14 @@ public class InterrogationModeHandler {
 
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, chainTopic, currentLevel, result.nextAction());
+
+            if (result.question() == null || result.question().isBlank()) {
+                throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+            }
+            if (ResumeFallbackQuestions.INTERROGATION.equals(result.question())) {
+                log.warn("[InterrogationHandler] 안전 폴백 사용 감지: interviewId={}, chainId={}, level={}",
+                        interviewId, chainTopic, currentLevel);
+            }
 
             int orderIndex = state.nextResumeOrderIndex();
             Long questionId = questionPersister.persist(

@@ -17,6 +17,8 @@ import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ChainStep;
 import com.rehearse.api.domain.resume.entity.StepType;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
@@ -61,8 +64,9 @@ class PlaygroundModeHandlerTest {
         state = new InterviewRuntimeState("JUNIOR", null);
         skeleton = createSkeleton();
         plan = createPlan();
-        given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
-                .willReturn(1L);
+        Mockito.lenient()
+                .when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+                .thenReturn(1L);
     }
 
     @Nested
@@ -154,6 +158,62 @@ class PlaygroundModeHandlerTest {
             assertThat(result.response().isSkip()).isFalse();
             assertThat(result.response().isPresentToUser()).isTrue();
             assertThat(result.questionId()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("handleOpener 에서 LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
+        void handleOpener_blankQuestion_throwsBusinessException() {
+            given(promptBuilder.buildOpener(any(), any(), any()))
+                    .willReturn(new PlaygroundOpenerResult("", "", "오프너"));
+
+            assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_007"));
+        }
+
+        @Test
+        @DisplayName("handleOpener 에서 LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
+        void handleOpener_nullQuestion_throwsBusinessException() {
+            given(promptBuilder.buildOpener(any(), any(), any()))
+                    .willReturn(new PlaygroundOpenerResult(null, null, "오프너"));
+
+            assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_007"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Responder 빈 question 처리")
+    class ResponderBlankQuestion {
+
+        @Test
+        @DisplayName("shouldSwitch=true 이고 question 이 blank 이면 persist 를 호출하지 않고 정상 응답한다")
+        void handle_blankQuestion_withSwitch_skipsPersistAndReturnsResponse() {
+            SwitchConditions cond = new SwitchConditions(false, false, false, false);
+            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+                    .willReturn(new PlaygroundResponderResult(null, null, "전환 이유", true, cond));
+
+            PlaygroundModeHandler.PlaygroundTurnResult result =
+                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan);
+
+            assertThat(result.switchedToInterrogation()).isTrue();
+            assertThat(result.questionId()).isNull();
+        }
+
+        @Test
+        @DisplayName("shouldSwitch=false 이고 question 이 blank 이면 BusinessException(RESPONSE_INVALID) 을 던진다")
+        void handle_blankQuestion_withoutSwitch_throwsBusinessException() {
+            SwitchConditions cond = new SwitchConditions(false, false, false, false);
+            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+                    .willReturn(new PlaygroundResponderResult("", "", "이유", false, cond));
+
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_007"));
         }
     }
 
