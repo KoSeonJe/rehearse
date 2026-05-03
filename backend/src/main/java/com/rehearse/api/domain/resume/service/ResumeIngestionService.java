@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
@@ -23,24 +22,16 @@ public class ResumeIngestionService {
     private final ResumeExtractionService extractionService;
     private final FileHasher fileHasher;
     private final ResumeSkeletonPersister skeletonStore;
-    private final ResumeSkeletonRuntimeCache skeletonCache;
 
     public ResumeSkeleton ingest(Long interviewId, MultipartFile resumeFile) {
         byte[] fileBytes = readFileBytes(resumeFile);
         String fileHash = fileHasher.hash(fileBytes);
-
-        ResumeSkeleton cached = skeletonCache.read(interviewId, fileHash);
-        if (cached != null) {
-            log.info("이력서 캐시 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
-            return cached;
-        }
 
         ResumeSkeleton fromDb = skeletonStore.findByInterviewId(interviewId)
                 .filter(s -> fileHash.equals(s.fileHash()))
                 .orElse(null);
         if (fromDb != null) {
             log.info("이력서 DB 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
-            skeletonCache.write(interviewId, fromDb);
             return fromDb;
         }
 
@@ -56,18 +47,11 @@ public class ResumeIngestionService {
             throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
         }
 
-        ResumeSkeleton cached = skeletonCache.read(interviewId, fileHash);
-        if (cached != null) {
-            log.info("이력서 캐시 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
-            return cached;
-        }
-
         ResumeSkeleton fromDb = skeletonStore.findByInterviewId(interviewId)
                 .filter(s -> fileHash.equals(s.fileHash()))
                 .orElse(null);
         if (fromDb != null) {
             log.info("이력서 DB 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
-            skeletonCache.write(interviewId, fromDb);
             return fromDb;
         }
 
@@ -92,7 +76,6 @@ public class ResumeIngestionService {
     private ResumeSkeleton extractAndPersist(Long interviewId, String normalizedText, String fileHash) {
         ResumeSkeleton skeleton = extractionService.extract(normalizedText, fileHash);
         skeletonStore.save(interviewId, skeleton);
-        skeletonCache.write(interviewId, skeleton);
         log.info("이력서 추출·저장 완료: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
         return skeleton;
     }

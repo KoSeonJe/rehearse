@@ -36,7 +36,7 @@ public class QuestionGenerationService {
         transactionHandler.startGeneration(interviewId);
 
         if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
-            resumeTrackInitiator.initiate(interviewId, resumeFileHash, resumeText, durationMinutes);
+            resumeTrackInitiator.initiate(interviewId, level, resumeFileHash, resumeText, durationMinutes);
             return;
         }
 

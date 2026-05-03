@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -60,13 +61,12 @@ class InterviewPlanRuntimeCacheTest {
     }
 
     @Test
-    @DisplayName("read_null반환_when_session_not_initialized")
-    void read_returns_null_when_session_not_initialized() {
+    @DisplayName("read_propagates_when_session_not_initialized")
+    void read_throws_when_session_not_initialized() {
         given(runtimeStateStore.get(1L)).willThrow(new IllegalStateException("not initialized"));
 
-        InterviewPlan result = cache.read(1L);
-
-        assertThat(result).isNull();
+        assertThatThrownBy(() -> cache.read(1L))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -81,15 +81,15 @@ class InterviewPlanRuntimeCacheTest {
     }
 
     @Test
-    @DisplayName("write_graceful_skip_when_session_not_initialized")
-    void write_silently_skips_when_session_not_initialized() {
+    @DisplayName("write_throws_descriptive_error_when_session_not_initialized")
+    void write_throws_when_session_not_initialized() {
         InterviewPlan plan = createFixturePlan();
         willThrow(new IllegalStateException("not initialized"))
                 .given(runtimeStateStore).update(eq(1L), any());
 
-        cache.write(1L, plan);
-
-        then(runtimeStateStore).should().update(eq(1L), any());
+        assertThatThrownBy(() -> cache.write(1L, plan))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Runtime state must be seeded");
     }
 
     private InterviewPlan createFixturePlan() {
