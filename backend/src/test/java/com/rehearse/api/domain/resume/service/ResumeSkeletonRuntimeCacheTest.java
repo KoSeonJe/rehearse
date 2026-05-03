@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ResumeSkeletonRuntimeCache - RuntimeState 기반 인메모리 캐시")
@@ -73,13 +73,12 @@ class ResumeSkeletonRuntimeCacheTest {
     }
 
     @Test
-    @DisplayName("read_returns_null_when_session_not_initialized")
-    void read_returns_null_when_session_not_initialized() {
+    @DisplayName("read_propagates_when_session_not_initialized")
+    void read_throws_when_session_not_initialized() {
         given(runtimeStateStore.get(1L)).willThrow(new IllegalStateException("not initialized"));
 
-        ResumeSkeleton result = cache.read(1L, "abc123");
-
-        assertThat(result).isNull();
+        assertThatThrownBy(() -> cache.read(1L, "abc123"))
+                .isInstanceOf(IllegalStateException.class);
     }
 
     @Test
@@ -94,15 +93,15 @@ class ResumeSkeletonRuntimeCacheTest {
     }
 
     @Test
-    @DisplayName("write_silently_skips_when_session_not_initialized")
-    void write_silently_skips_when_session_not_initialized() {
+    @DisplayName("write_throws_descriptive_error_when_session_not_initialized")
+    void write_throws_when_session_not_initialized() {
         ResumeSkeleton skeleton = createSkeleton("abc123");
         willThrow(new IllegalStateException("not initialized"))
                 .given(runtimeStateStore).update(eq(1L), any());
 
-        cache.write(1L, skeleton);
-
-        then(runtimeStateStore).should().update(eq(1L), any());
+        assertThatThrownBy(() -> cache.write(1L, skeleton))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Runtime state must be seeded");
     }
 
     private ResumeSkeleton createSkeleton(String fileHash) {

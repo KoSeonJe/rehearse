@@ -1,11 +1,11 @@
 package com.rehearse.api.domain.question.service;
 
-import com.rehearse.api.domain.resume.entity.InterviewPlan;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
+import com.rehearse.api.domain.resume.service.PreparedResume;
 import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -19,20 +19,18 @@ public class ResumeTrackInitiator {
 
     private final QuestionGenerationTransactionHandler transactionHandler;
     private final ResumePlanPreparationService resumePlanPreparationService;
-    private final ResumeSkeletonPersister resumeSkeletonPersister;
-    private final InterviewPlanPersister interviewPlanPersister;
     private final ResumeInterviewOrchestrator resumeInterviewOrchestrator;
+    private final InterviewRuntimeStateCache runtimeStateStore;
 
-    public void initiate(Long interviewId, String resumeFileHash, String resumeText, Integer durationMinutes) {
-        resumePlanPreparationService.prepare(interviewId, resumeFileHash, resumeText, durationMinutes);
+    public void initiate(Long interviewId, InterviewLevel level, String resumeFileHash, String resumeText, Integer durationMinutes) {
+        PreparedResume prepared = resumePlanPreparationService.prepare(interviewId, resumeFileHash, resumeText, durationMinutes);
 
-        ResumeSkeleton skeleton = resumeSkeletonPersister.findByInterviewId(interviewId)
-                .orElseThrow(() -> new IllegalStateException("ResumeSkeleton not found after prepare: interviewId=" + interviewId));
-        InterviewPlan plan = interviewPlanPersister.findByInterviewId(interviewId)
-                .orElseThrow(() -> new IllegalStateException("InterviewPlan not found after prepare: interviewId=" + interviewId));
+        String levelName = level != null ? level.name() : InterviewLevel.JUNIOR.name();
+        runtimeStateStore.getOrInit(interviewId,
+                () -> InterviewRuntimeState.seed(levelName, prepared.skeleton(), prepared.plan()));
 
         int duration = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MIN;
-        resumeInterviewOrchestrator.startSession(interviewId, duration, skeleton, plan);
+        resumeInterviewOrchestrator.startSession(interviewId, duration, prepared.skeleton(), prepared.plan());
 
         transactionHandler.saveResults(interviewId, List.of());
     }

@@ -14,12 +14,9 @@ public class ResumeSkeletonRuntimeCache {
     private final InterviewRuntimeStateCache runtimeStateStore;
 
     public ResumeSkeleton read(Long interviewId, String fileHash) {
-        try {
-            ResumeSkeleton cached = runtimeStateStore.get(interviewId).getResumeSkeletonCache();
-            if (cached != null && fileHash.equals(cached.fileHash())) {
-                return cached;
-            }
-        } catch (IllegalStateException e) {
+        ResumeSkeleton cached = runtimeStateStore.get(interviewId).getResumeSkeletonCache();
+        if (cached != null && fileHash.equals(cached.fileHash())) {
+            return cached;
         }
         return null;
     }
@@ -28,7 +25,8 @@ public class ResumeSkeletonRuntimeCache {
         try {
             runtimeStateStore.update(interviewId, state -> state.setResumeSkeleton(skeleton));
         } catch (IllegalStateException e) {
-            log.warn("RuntimeState 미초기화로 캐시 갱신 스킵: interviewId={}", interviewId);
+            throw new IllegalStateException(
+                    "Runtime state must be seeded before skeleton cache write: interviewId=" + interviewId, e);
         }
     }
 }

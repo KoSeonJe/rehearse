@@ -59,6 +59,12 @@ public class InterviewRuntimeState {
         this.resumeSkeletonCache = resumeSkeletonCache;
     }
 
+    public static InterviewRuntimeState seed(String currentLevel, ResumeSkeleton skeleton, InterviewPlan plan) {
+        InterviewRuntimeState state = new InterviewRuntimeState(currentLevel, skeleton);
+        state.interviewPlanCache = plan;
+        return state;
+    }
+
     public void setResumeSkeleton(ResumeSkeleton skeleton) {
         this.resumeSkeletonCache = skeleton;
     }

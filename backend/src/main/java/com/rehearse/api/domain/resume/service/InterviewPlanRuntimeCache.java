@@ -14,18 +14,15 @@ public class InterviewPlanRuntimeCache {
     private final InterviewRuntimeStateCache runtimeStateStore;
 
     public InterviewPlan read(Long interviewId) {
-        try {
-            return runtimeStateStore.get(interviewId).getInterviewPlanCache();
-        } catch (IllegalStateException e) {
-            return null;
-        }
+        return runtimeStateStore.get(interviewId).getInterviewPlanCache();
     }
 
     public void write(Long interviewId, InterviewPlan plan) {
         try {
             runtimeStateStore.update(interviewId, state -> state.setInterviewPlan(plan));
         } catch (IllegalStateException e) {
-            log.warn("RuntimeState 미초기화로 인터뷰 플랜 캐시 갱신 스킵: interviewId={}", interviewId);
+            throw new IllegalStateException(
+                    "Runtime state must be seeded before interview plan cache write: interviewId=" + interviewId, e);
         }
     }
 }

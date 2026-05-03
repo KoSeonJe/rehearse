@@ -54,7 +54,7 @@ class QuestionGenerationServiceTest {
                     types, List.of(), "이력서", "hash-1", 30, TechStack.JAVA_SPRING);
 
             then(transactionHandler).should().startGeneration(1L);
-            then(resumeTrackInitiator).should().initiate(1L, "hash-1", "이력서", 30);
+            then(resumeTrackInitiator).should().initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", 30);
             then(standardTrackGenerator).should(never()).generate(
                     anyLong(), anyLong(), any(), any(), any(), any(), any(), anyInt(), any());
             then(transactionHandler).should(never()).saveResults(anyLong(), any());
@@ -69,7 +69,7 @@ class QuestionGenerationServiceTest {
                     1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     types, List.of(), "이력서", 30, TechStack.JAVA_SPRING);
 
-            then(resumeTrackInitiator).should().initiate(1L, null, "이력서", 30);
+            then(resumeTrackInitiator).should().initiate(1L, InterviewLevel.JUNIOR, null, "이력서", 30);
         }
     }
 
@@ -98,7 +98,7 @@ class QuestionGenerationServiceTest {
             inOrder.verify(standardTrackGenerator).generate(
                     anyLong(), anyLong(), any(), any(), any(), any(), any(), anyInt(), any());
             inOrder.verify(transactionHandler).saveResults(1L, generated);
-            then(resumeTrackInitiator).should(never()).initiate(any(), any(), any(), any());
+            then(resumeTrackInitiator).should(never()).initiate(any(), any(), any(), any(), any());
         }
     }
 }
