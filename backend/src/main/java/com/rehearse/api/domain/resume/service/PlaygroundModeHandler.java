@@ -12,6 +12,7 @@ import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
@@ -38,6 +39,10 @@ public class PlaygroundModeHandler {
         Project project = findProject(skeleton, firstPlan.projectId());
 
         PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, project, firstPlan.playgroundPhase());
+
+        if (result.question() == null || result.question().isBlank()) {
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
@@ -67,13 +72,21 @@ public class PlaygroundModeHandler {
                 interviewId, userAnswer, expectedClaims, turnCount, cumulativeLength
         );
 
-        int orderIndex = state.nextResumeOrderIndex();
-        Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
+        boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);
+        boolean questionBlank = result.question() == null || result.question().isBlank();
+
+        if (questionBlank && !shouldSwitch) {
+            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
 
         state.getPlaygroundTurns().incrementAndGet();
 
-        boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);
+        Long questionId = null;
+        if (!questionBlank) {
+            int orderIndex = state.nextResumeOrderIndex();
+            questionId = questionPersister.persist(
+                    interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
+        }
 
         if (shouldSwitch) {
             log.info("[PlaygroundHandler] Interrogation 전환 결정: interviewId={}, turnCount={}", interviewId, turnCount + 1);

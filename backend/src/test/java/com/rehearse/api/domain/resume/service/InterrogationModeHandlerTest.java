@@ -9,6 +9,8 @@ import com.rehearse.api.domain.resume.entity.InterrogationPhase;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import org.junit.jupiter.api.BeforeEach;
@@ -154,6 +156,37 @@ class InterrogationModeHandlerTest {
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
             assertThat(result.response().isPresentToUser()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("LLM 응답 검증")
+    class LlmResponseValidation {
+
+        @Test
+        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        void handle_blankQuestion_throwsBusinessException() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1));
+
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_005"));
+        }
+
+        @Test
+        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        void handle_nullQuestion_throwsBusinessException() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1));
+
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_005"));
         }
     }
 

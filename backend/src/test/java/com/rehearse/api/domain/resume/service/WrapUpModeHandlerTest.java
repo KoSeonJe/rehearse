@@ -4,6 +4,8 @@ import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -39,8 +42,9 @@ class WrapUpModeHandlerTest {
     @BeforeEach
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
-        given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
-                .willReturn(1L);
+        Mockito.lenient()
+                .when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+                .thenReturn(1L);
     }
 
     @Nested
@@ -93,6 +97,35 @@ class WrapUpModeHandlerTest {
 
             assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
             assertThat(state.getChainStateTracker().hasActiveChain()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("LLM 응답 검증")
+    class LlmResponseValidation {
+
+        @Test
+        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        void handle_blankQuestion_throwsBusinessException() {
+            given(promptBuilder.build(any(), anyLong(), anyBoolean()))
+                    .willReturn(new WrapUpResult("", "", "이유", true, false));
+
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_005"));
+        }
+
+        @Test
+        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(PARSE_FAILED) 을 던진다")
+        void handle_nullQuestion_throwsBusinessException() {
+            given(promptBuilder.build(any(), anyLong(), anyBoolean()))
+                    .willReturn(new WrapUpResult(null, null, "이유", true, false));
+
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo("AI_005"));
         }
     }
 

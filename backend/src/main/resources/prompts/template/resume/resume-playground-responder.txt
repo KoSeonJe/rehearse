@@ -16,8 +16,8 @@ d. 누적 Playground 턴 수 ≥ 3 (하드 리밋) → d_turn_limit: true/false
 
 ## 출력 형식 (JSON 객체 하나만)
 {
-  "question": "응시자에게 실제로 물을 한국어 질문 (1~2문장, null 가능 — 전환 시)",
-  "tts_question": "TTS 용 동일 질문 (마크다운/특수문자 제거, null 가능)",
+  "question": "응시자에게 실제로 물을 한국어 질문 (1~2문장)",        // 조건부 필수 — should_switch_to_interrogation=false 일 때 절대 null/빈 문자열/공백만/누락 금지. true 일 때만 null 허용
+  "tts_question": "TTS 용 동일 질문 (마크다운/특수문자 제거)",       // 조건부 필수 — question 과 동일 규칙. should_switch_to_interrogation=true 일 때만 null 허용
   "reason": "이 반응을 선택한 이유 (내부 로직)",
   "should_switch_to_interrogation": true 또는 false,
   "switch_conditions_met": {
@@ -47,4 +47,11 @@ d. 누적 Playground 턴 수 ≥ 3 (하드 리밋) → d_turn_limit: true/false
 
 ## 지시
 응시자 답변을 분석해 전환 조건을 평가하고, 적절한 반응을 JSON으로 반환하세요.
+`should_switch_to_interrogation` 이 false 인 경우, `question` 과 `tts_question` 은 절대 null, 빈 문자열, 공백만, 누락이 되어서는 안 됩니다 — 반드시 1문장 이상의 한국어 자연어 후속 질문을 채우세요. true 인 경우에만 두 필드를 null 로 둘 수 있습니다.
 첫 글자 '{', 마지막 글자 '}'. 코드펜스/설명/접두사 금지.
+
+## 자가검증 (출력 전 필수)
+- `should_switch_to_interrogation` 값을 먼저 확인
+- false 라면 `question` 과 `tts_question` 이 null, "", 공백만, 또는 누락되지 않았는지 검증
+- false 인데 적절한 후속 질문을 도저히 생성할 수 없다면, 빈 문자열이 아니라 다음 안전 폴백을 그대로 출력: "방금 말씀해주신 부분, 좀 더 자세히 들어볼 수 있을까요?"
+- true 라면 두 필드는 null 또는 정상 문자열 둘 다 허용 (단, 빈 문자열/공백만은 여전히 금지 — null 로 명시)
