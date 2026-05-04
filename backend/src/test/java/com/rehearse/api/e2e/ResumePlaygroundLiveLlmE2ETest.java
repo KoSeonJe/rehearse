@@ -1,5 +1,6 @@
 package com.rehearse.api.e2e;
 
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
@@ -34,8 +35,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Disabled("Live LLM 호출 — 수동 실행만. OPENAI_API_KEY 필요.")
 @SpringBootTest
-@ActiveProfiles("llm-e2e")
-class ResumePlaygroundLiveLlmE2ETest {
+@ActiveProfiles({"test", "llm-e2e"})
+class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
 
     @Autowired
     private ResumePlaygroundPromptBuilder builder;

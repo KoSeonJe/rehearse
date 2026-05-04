@@ -1,16 +1,4 @@
 spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-
   security:
     oauth2:
       client:

@@ -8,6 +8,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -69,15 +70,24 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
                 + "\nimplicitCsTopics: " + project.implicitCsTopics().size() + "개";
     }
 
-    public record PlaygroundOpenerResult(String question, String ttsQuestion, String reason) {}
+    public record PlaygroundOpenerResult(
+            String question,
+            @JsonProperty("tts_question") String ttsQuestion,
+            String reason
+    ) {}
 
     public record PlaygroundResponderResult(
-            String question, String ttsQuestion, String reason,
-            boolean shouldSwitchToInterrogation,
-            SwitchConditions switchConditionsMet
+            String question,
+            @JsonProperty("tts_question") String ttsQuestion,
+            String reason,
+            @JsonProperty("should_switch_to_interrogation") boolean shouldSwitchToInterrogation,
+            @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet
     ) {
         public record SwitchConditions(
-                boolean aCovered, boolean bLengthOk, boolean cSignal, boolean dTurnLimit
+                @JsonProperty("a_covered") boolean aCovered,
+                @JsonProperty("b_length_ok") boolean bLengthOk,
+                @JsonProperty("c_signal") boolean cSignal,
+                @JsonProperty("d_turn_limit") boolean dTurnLimit
         ) {}
     }
 }
