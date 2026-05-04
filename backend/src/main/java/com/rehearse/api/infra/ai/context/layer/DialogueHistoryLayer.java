@@ -16,8 +16,8 @@ import java.util.List;
 @Component
 public class DialogueHistoryLayer implements ContextLayer {
 
-    static final String RUNTIME_STATE_KEY = "interviewRuntimeState";
-    static final String INTERVIEW_ID_KEY = "interviewId";
+    public static final String RUNTIME_STATE_KEY = "interviewRuntimeState";
+    public static final String INTERVIEW_ID_KEY = "interviewId";
 
     private final DialogueCompactor dialogueCompactor;
     private final ContextEngineeringProperties properties;

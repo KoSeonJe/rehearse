@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 public class FixedContextLayer implements ContextLayer {
 
     private static final String ANSWER_ANALYZER_TEMPLATE_PATH = "/prompts/template/answer-analyzer.txt";
+    private static final String RESUME_TEMPLATE_DIR = "/prompts/template/resume/";
+    private static final String DEFAULT_TEMPLATE_DIR = "/prompts/template/";
 
     private static final String GLOBAL_CORE = """
             당신은 한국어 개발자 기술 면접 시스템의 AI 컴포넌트입니다.
@@ -46,7 +48,17 @@ public class FixedContextLayer implements ContextLayer {
     private final Map<String, String> dynamicSkeletons = new HashMap<>();
 
     @PostConstruct
-    void init() {
+    public void init() {
+        loadAnswerAnalyzerTemplate();
+        for (SkeletonCallType callType : SkeletonCallType.values()) {
+            if (callType == SkeletonCallType.ANSWER_ANALYZER) {
+                continue;
+            }
+            tryLoadTemplate(callType);
+        }
+    }
+
+    private void loadAnswerAnalyzerTemplate() {
         try (InputStream stream = getClass().getResourceAsStream(ANSWER_ANALYZER_TEMPLATE_PATH)) {
             if (stream == null) {
                 throw new IllegalStateException(ANSWER_ANALYZER_TEMPLATE_PATH + " 템플릿 파일을 찾을 수 없습니다.");
@@ -55,6 +67,36 @@ public class FixedContextLayer implements ContextLayer {
             log.info("answer_analyzer 프롬프트 템플릿 로드 완료");
         } catch (IOException e) {
             throw new IllegalStateException(ANSWER_ANALYZER_TEMPLATE_PATH + " 템플릿 로드 실패", e);
+        }
+    }
+
+    private void tryLoadTemplate(SkeletonCallType callType) {
+        String filename = callType.value().replace('_', '-') + ".txt";
+        String resumePath = RESUME_TEMPLATE_DIR + filename;
+        String defaultPath = DEFAULT_TEMPLATE_DIR + filename;
+
+        String content = readResource(resumePath);
+        if (content == null) {
+            content = readResource(defaultPath);
+        }
+        if (content == null) {
+            log.warn("템플릿 미발견 — enum skeleton 폴백: callType={}, paths=[{}, {}]",
+                    callType.value(), resumePath, defaultPath);
+            return;
+        }
+        dynamicSkeletons.put(callType.value(), content);
+        log.info("프롬프트 템플릿 로드 완료: callType={}", callType.value());
+    }
+
+    private String readResource(String path) {
+        try (InputStream stream = getClass().getResourceAsStream(path)) {
+            if (stream == null) {
+                return null;
+            }
+            return new String(stream.readAllBytes());
+        } catch (IOException e) {
+            log.warn("템플릿 로드 IOException: path={}, cause={}", path, e.getMessage());
+            return null;
         }
     }
 

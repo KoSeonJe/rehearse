@@ -1,14 +1,17 @@
 package com.rehearse.api.infra.ai.prompt;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
+import java.util.List;
 
 @Slf4j
 @Component
@@ -28,16 +31,21 @@ public class ResumeChainInterrogatorPromptBuilder extends AbstractResumeJsonProm
     }
 
     public InterrogationResult build(
+            Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> exchanges,
             String chainTopic, int currentLevel, int answerQuality,
             String userAnswer, int consecutiveStayCount
     ) {
-        return executeJson(CALL_TYPE, Map.of(
-                "CURRENT_CHAIN", chainTopic,
-                "CURRENT_LEVEL", String.valueOf(currentLevel),
-                "ANSWER_QUALITY", String.valueOf(answerQuality),
-                "USER_ANSWER", userAnswer != null ? userAnswer : "",
-                "CONSECUTIVE_STAY_COUNT", String.valueOf(consecutiveStayCount)
-        ), InterrogationResult.class);
+        return executeJson(
+                CALL_TYPE, interviewId, state, exchanges,
+                new FocusHints.ResumeChainInterrogatorHints(
+                        chainTopic,
+                        currentLevel,
+                        answerQuality,
+                        userAnswer != null ? userAnswer : "",
+                        consecutiveStayCount
+                ),
+                InterrogationResult.class
+        );
     }
 
     public record InterrogationResult(

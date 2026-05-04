@@ -99,6 +99,12 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.20.4")
     testImplementation("org.testcontainers:mysql:1.20.4")
     testImplementation("com.mysql:mysql-connector-j")
+
+    // ArchUnit — context engineering 계층 규칙 정적 검증
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+
+    // REST Assured — Live LLM E2E (manual run, OPENAI_API_KEY 환경변수 필요)
+    testImplementation("io.rest-assured:rest-assured:5.5.0")
 }
 
 tasks.withType<Test> {

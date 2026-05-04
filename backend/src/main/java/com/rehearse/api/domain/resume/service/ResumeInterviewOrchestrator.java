@@ -82,7 +82,7 @@ public class ResumeInterviewOrchestrator {
 
         TurnHandlerResult handlerResult = dispatchByMode(
                 currentMode, interviewId, currentState, answerText, analysis,
-                skeleton, plan, remainingMinutes);
+                skeleton, plan, remainingMinutes, previousExchanges);
 
         turnEventPublisher.publish(interviewId, turnIndex, analysis, intent, currentMode,
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
@@ -121,18 +121,19 @@ public class ResumeInterviewOrchestrator {
     private TurnHandlerResult dispatchByMode(
             ResumeMode mode, Long interviewId, InterviewRuntimeState state,
             String answerText, AnswerAnalysis analysis,
-            ResumeSkeleton skeleton, InterviewPlan plan, long remainingMinutes
+            ResumeSkeleton skeleton, InterviewPlan plan, long remainingMinutes,
+            List<FollowUpExchange> previousExchanges
     ) {
         return switch (mode) {
-            case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan);
+            case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan, previousExchanges);
             case INTERROGATION -> {
                 InterrogationModeHandler.InterrogationTurnResult r =
-                        interrogationHandler.handle(interviewId, state, answerText, analysis, plan);
+                        interrogationHandler.handle(interviewId, state, answerText, analysis, plan, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
             case WRAP_UP -> {
                 WrapUpModeHandler.WrapUpTurnResult r =
-                        wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true);
+                        wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
         };
@@ -141,16 +142,17 @@ public class ResumeInterviewOrchestrator {
     private TurnHandlerResult handlePlayground(
             Long interviewId, InterviewRuntimeState state,
             String answerText, AnswerAnalysis analysis,
-            ResumeSkeleton skeleton, InterviewPlan plan
+            ResumeSkeleton skeleton, InterviewPlan plan,
+            List<FollowUpExchange> previousExchanges
     ) {
         PlaygroundModeHandler.PlaygroundTurnResult result =
-                playgroundHandler.handle(interviewId, state, answerText, analysis, skeleton, plan);
+                playgroundHandler.handle(interviewId, state, answerText, analysis, skeleton, plan, previousExchanges);
 
         if (result.switchedToInterrogation()) {
             runtimeStateStore.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
             InterviewRuntimeState refreshed = runtimeStateStore.get(interviewId);
             InterrogationModeHandler.InterrogationTurnResult interrogationResult =
-                    interrogationHandler.handle(interviewId, refreshed, null, null, plan);
+                    interrogationHandler.handle(interviewId, refreshed, null, null, plan, previousExchanges);
             return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId());
         }
         return new TurnHandlerResult(result.response(), result.questionId());

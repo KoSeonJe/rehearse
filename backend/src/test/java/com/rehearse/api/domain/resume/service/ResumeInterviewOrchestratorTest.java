@@ -101,14 +101,14 @@ class ResumeInterviewOrchestratorTest {
                             IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("Q");
-            then(playgroundHandler).should().handle(any(), any(), any(), any(), any(), any());
+            then(playgroundHandler).should().handle(any(), any(), any(), any(), any(), any(), any());
             then(intentDispatcher).shouldHaveNoInteractions();
         }
 
@@ -162,14 +162,14 @@ class ResumeInterviewOrchestratorTest {
                         state.transitionTo(ResumeMode.WRAP_UP);
                         return ResumeMode.WRAP_UP;
                     });
-            given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean(), any()))
                     .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
                             FollowUpResponse.builder().question("마무리").presentToUser(true).build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("마무리");
-            then(wrapUpHandler).should().handle(any(), any(), any(), any(), anyLong(), anyBoolean());
+            then(wrapUpHandler).should().handle(any(), any(), any(), any(), anyLong(), anyBoolean(), any());
         }
 
         @Test
@@ -205,14 +205,14 @@ class ResumeInterviewOrchestratorTest {
                             IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(interrogationHandler.handle(any(), any(), any(), any(), any()))
+            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("L2 질문");
-            then(interrogationHandler).should().handle(any(), any(), any(), any(), any());
+            then(interrogationHandler).should().handle(any(), any(), any(), any(), any(), any());
             then(playgroundHandler).shouldHaveNoInteractions();
         }
     }
@@ -285,7 +285,7 @@ class ResumeInterviewOrchestratorTest {
                             IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
@@ -307,7 +307,7 @@ class ResumeInterviewOrchestratorTest {
                             IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any()))
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 42L));
 

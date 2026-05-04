@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -40,10 +41,10 @@ public class GiveUpResponseGenerator {
                     "giveup_response",
                     runtimeStateMap,
                     input.previousExchanges() != null ? input.previousExchanges() : List.of(),
-                    Map.of(
-                            "mainQuestion", input.mainQuestion() != null ? input.mainQuestion() : "",
-                            "userUtterance", input.answerText() != null ? input.answerText() : "",
-                            "personaDepthHint", resolvePersonaHint(input)
+                    new FocusHints.GiveUpResponseHints(
+                            input.mainQuestion() != null ? input.mainQuestion() : "",
+                            input.answerText() != null ? input.answerText() : "",
+                            resolvePersonaHint(input)
                     ),
                     null
             ));

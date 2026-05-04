@@ -6,18 +6,30 @@ Reads session fixtures (JSON), simulates the 4-layer context assembly
 using the same heuristic as Java TokenEstimator (4 chars / 1 token),
 prints per-layer + total token counts.
 
-Exit 0 if avg <= 8000 AND max <= 9000.
-Exit 1 otherwise.
+Resume 트랙 4 callType (resume_playground_opener / resume_playground_responder /
+resume_chain_interrogator / resume_wrap_up) 분포는 마지막 요약 라인에 별도 출력.
+
+Standard 트랙 검증 게이트:
+  Exit 0 if avg <= 8000 AND max <= 9000.
+  Exit 1 otherwise.
+Resume 트랙 fixture 만 측정한 경우는 분포 출력 후 항상 Exit 0
+(L4 cap 검증은 Java 런타임이 강제 — 여기선 가시화 목적).
 
 Usage:
     python3 eval/context/measure_tokens.py --sessions eval/context/fixtures/*.json
-    python3 eval/context/measure_tokens.py --sessions eval/context/fixtures/*.json --encoding cl100k_base
+    python3 eval/context/measure_tokens.py                     # auto-discover
+    python3 eval/context/measure_tokens.py --encoding cl100k_base
 """
 
+from __future__ import annotations
+
 import argparse
+import glob
 import json
+import os
 import sys
 from pathlib import Path
+from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Optional tiktoken support (falls back to 4-char heuristic if absent)
@@ -56,44 +68,45 @@ _GLOBAL_CORE = (
     "- 모든 키는 snake_case 로 작성한다.\n"
 )
 
-_SKELETON_BY_CALL_TYPE = {
+_TEMPLATE_DIR_PRIMARY = Path(__file__).resolve().parents[2] / "backend" / "src" / "main" / "resources" / "prompts" / "template"
+_TEMPLATE_DIR_RESUME = _TEMPLATE_DIR_PRIMARY / "resume"
+
+# Inline skeletons mirror SkeletonCallType.java for callTypes that have no template file
+# (kept as last-resort fallback if filesystem lookup fails — e.g. running outside repo).
+_INLINE_SKELETON = {
     "intent_classifier": (
-        "## 역할\n"
-        "당신은 응시자 발화 의도를 분류하는 분류기입니다.\n"
+        "## 역할\n당신은 응시자 발화 의도를 분류하는 분류기입니다.\n"
         "분류 유형: ANSWER | CLARIFY_REQUEST | GIVE_UP | OFF_TOPIC\n"
     ),
     "answer_analyzer": (
-        "## 역할\n"
-        "당신은 응시자 답변을 구조화 분석하는 분석기입니다.\n"
-        "꼬리질문 생성기(Step B)가 이 결과를 입력으로 받아 다음 질문을 결정합니다.\n"
-        "분석 항목: claims, missing_perspectives, unstated_assumptions, answer_quality, recommended_next_action\n"
+        "## 역할\n당신은 응시자 답변을 구조화 분석하는 분석기입니다.\n"
     ),
     "follow_up_generator_v3": (
-        "## 역할\n"
-        "당신은 면접관으로서 응시자 답변에 기반한 꼬리질문을 생성합니다.\n"
-        "질문 유형: DEEP_DIVE | CLARIFICATION | CHALLENGE | APPLICATION\n"
-        "관점(EXPERIENCE 모드): TRADEOFF | MAINTAINABILITY | RELIABILITY | SCALABILITY | TESTING | COLLABORATION | USER_IMPACT\n"
+        "## 역할\n당신은 면접관으로서 응시자 답변에 기반한 꼬리질문을 생성합니다.\n"
     ),
-    "clarify_response": (
-        "## 역할\n"
-        "당신은 한국어 개발자 기술 면접의 AI 면접관입니다.\n"
-        "응시자가 질문을 이해하지 못했을 때 더 쉬운 말로 재설명하고 힌트를 1개 제공합니다.\n"
-        "답을 직접 알려주지 않고 방향만 제시합니다.\n"
-    ),
-    "giveup_response": (
-        "## 역할\n"
-        "당신은 한국어 개발자 기술 면접의 AI 면접관입니다.\n"
-        "응시자가 포기 의사를 밝혔을 때 SCAFFOLD 또는 REVEAL_AND_MOVE_ON 모드를 선택합니다.\n"
-        "모드 선택 기준: 힌트 한 개로 답변 가능하면 SCAFFOLD, 그 외 REVEAL_AND_MOVE_ON.\n"
-    ),
+    "clarify_response": "## 역할\n응시자 질문 재설명.\n",
+    "giveup_response": "## 역할\n포기 의사 응답.\n",
+    "resume_playground_opener": "## 역할\nPlaygound 오프너.\n",
+    "resume_playground_responder": "## 역할\nPlayground 응답기.\n",
+    "resume_chain_interrogator": "## 역할\nInterrogation chain.\n",
+    "resume_wrap_up": "## 역할\nWRAP_UP.\n",
 }
 
 _DEFAULT_SKELETON = "## 역할\n당신은 한국어 개발자 기술 면접 AI 컴포넌트입니다.\n"
 
 
+def _load_template(call_type: str) -> Optional[str]:
+    filename = call_type.replace("_", "-") + ".txt"
+    for d in (_TEMPLATE_DIR_RESUME, _TEMPLATE_DIR_PRIMARY):
+        p = d / filename
+        if p.exists():
+            return p.read_text(encoding="utf-8")
+    return None
+
+
 def l1_tokens(call_type: str, enc=None) -> int:
     """Estimate L1 FixedContextLayer tokens for given callType."""
-    skeleton = _SKELETON_BY_CALL_TYPE.get(call_type, _DEFAULT_SKELETON)
+    skeleton = _load_template(call_type) or _INLINE_SKELETON.get(call_type, _DEFAULT_SKELETON)
     fixed_block = _GLOBAL_CORE + "\n" + skeleton
     return estimate_tokens(fixed_block, enc)
 
@@ -104,20 +117,19 @@ def l1_tokens(call_type: str, enc=None) -> int:
 
 def l2_tokens(session: dict, enc=None) -> int:
     """Estimate L2 SessionStateLayer tokens from fixture data."""
-    level = session.get("level", "MID")
+    runtime = session.get("runtimeState") or {}
+    level = runtime.get("currentLevel") or session.get("level", "MID")
     exchanges = session.get("exchanges", [])
-    current_turn = len(exchanges)
-    covered_claims = session.get("covered_claims", [])
-    active_chain = session.get("active_chain", [])
+    current_turn = runtime.get("playgroundTurns", len(exchanges))
+    covered_claims = runtime.get("coveredClaims") or session.get("covered_claims", [])
+    active_chain = runtime.get("activeChain") or session.get("active_chain", [])
 
-    # Derive asked_perspectives from exchanges (distinct, same logic as Java layer)
     asked_perspectives = list(dict.fromkeys(
         ex["selectedPerspective"]
         for ex in exchanges
         if ex.get("selectedPerspective")
     ))
 
-    # covered_claims_recent: trim to most recent 50 (same as Java MAX trim)
     covered_claims_recent = covered_claims[-50:]
 
     state_json = json.dumps({
@@ -133,14 +145,13 @@ def l2_tokens(session: dict, enc=None) -> int:
 
 
 # ---------------------------------------------------------------------------
-# L3 — Dialogue history layer (sliding window 5, mirrors DialogueHistoryLayer.java)
+# L3 — Dialogue history layer (sliding window 5)
 # ---------------------------------------------------------------------------
 
-_L3_RECENT_WINDOW = 5  # matches application.yml l3-recent-window: 5
+_L3_RECENT_WINDOW = 5
 
 
 def _render_alternating(exchanges: list, enc=None) -> int:
-    """Token count for alternating USER/ASSISTANT message pairs."""
     total = 0
     for ex in exchanges:
         total += estimate_tokens(ex.get("q", ""), enc)
@@ -149,7 +160,6 @@ def _render_alternating(exchanges: list, enc=None) -> int:
 
 
 def l3_tokens(session: dict, enc=None) -> int:
-    """Estimate L3 DialogueHistoryLayer tokens."""
     exchanges = session.get("exchanges", [])
     if not exchanges:
         return 0
@@ -157,15 +167,10 @@ def l3_tokens(session: dict, enc=None) -> int:
     if len(exchanges) <= _L3_RECENT_WINDOW:
         return _render_alternating(exchanges, enc)
 
-    # Compaction path: older turns produce a summary message placeholder,
-    # recent window is rendered as-is.
     window_end = len(exchanges) - _L3_RECENT_WINDOW
     older_turns = exchanges[:window_end]
     recent_turns = exchanges[window_end:]
 
-    # Simulate compacted summary header (no real LLM call — placeholder size)
-    # The actual Java layer uses a compacted JSON summary; we estimate its size
-    # proportionally: each older turn contributes ~60 chars compressed (1 claim line).
     compacted_text = (
         f"## DIALOGUE SUMMARY (turns 1..{window_end})\n"
         + "\n".join(
@@ -182,32 +187,81 @@ def l3_tokens(session: dict, enc=None) -> int:
 # L4 — Focus layer (mirrors FocusLayer.java per-callType fragment)
 # ---------------------------------------------------------------------------
 
-# Token caps from FocusLayer.java
 _L4_CAPS = {
     "intent_classifier": 300,
     "answer_analyzer": 800,
     "follow_up_generator_v3": 1000,
     "clarify_response": 400,
     "giveup_response": 400,
+    "resume_playground_opener": 600,
+    "resume_playground_responder": 1000,
+    "resume_chain_interrogator": 1200,
+    "resume_wrap_up": 600,
+}
+
+_RESUME_CALL_TYPES = {
+    "resume_playground_opener",
+    "resume_playground_responder",
+    "resume_chain_interrogator",
+    "resume_wrap_up",
 }
 
 
-def l4_tokens(session: dict, enc=None) -> int:
-    """
-    Estimate L4 FocusLayer tokens.
+def _resume_l4_fragment(session: dict) -> str:
+    call_type = session["call_type"]
+    hints = session.get("focusHints") or {}
+    runtime = session.get("runtimeState") or {}
 
-    For follow_up_generator_v3 (the primary callType in fixtures):
-    renders ANSWER_ANALYSIS JSON + asked_perspectives fragment,
-    using the last exchange as the current turn.
-    """
+    if call_type == "resume_playground_opener":
+        return (
+            "<<<PROJECT_INFO>>>\n" + (hints.get("projectInfo") or "") +
+            "\n<<<END_PROJECT_INFO>>>\n\n" +
+            "<<<OPENER_QUESTION>>>\n" + (hints.get("openerQuestion") or "") +
+            "\n<<<END_OPENER_QUESTION>>>\n\n" +
+            "위 정보를 기반으로 Playground 오프너 질문을 JSON 한 객체로만 응답하세요."
+        )
+    if call_type == "resume_playground_responder":
+        return (
+            "<<<EXPECTED_CLAIMS>>>\n" + (hints.get("expectedClaims") or "") +
+            "\n<<<END_EXPECTED_CLAIMS>>>\n\n" +
+            "<<<USER_ANSWER>>>\n" + (hints.get("userAnswer") or "") +
+            "\n<<<END_USER_ANSWER>>>\n\n" +
+            f"PLAYGROUND_TURN_COUNT: {hints.get('playgroundTurnCount', runtime.get('playgroundTurns', 0))}\n" +
+            f"CUMULATIVE_UTTERANCE_LENGTH: {hints.get('cumulativeUtteranceLength', 0)}\n\n" +
+            "위 입력으로 Responder 결정과 다음 질문을 JSON 한 객체로만 응답하세요."
+        )
+    if call_type == "resume_chain_interrogator":
+        return (
+            "<<<CURRENT_CHAIN>>>\n" + (hints.get("currentChain") or "") +
+            "\n<<<END_CURRENT_CHAIN>>>\n\n" +
+            f"CURRENT_LEVEL: {hints.get('currentLevel', runtime.get('currentLevel', 'L1'))}\n" +
+            f"ANSWER_QUALITY: {hints.get('answerQuality', 0)}\n" +
+            f"CONSECUTIVE_STAY_COUNT: {hints.get('consecutiveStayCount', 0)}\n\n" +
+            "<<<USER_ANSWER>>>\n" + (hints.get("userAnswer") or "") +
+            "\n<<<END_USER_ANSWER>>>\n\n" +
+            "위 chain 상태에서 LEVEL_UP/LEVEL_STAY/CHAIN_SWITCH 결정과 다음 질문을 JSON 한 객체로만 응답하세요."
+        )
+    if call_type == "resume_wrap_up":
+        return (
+            "<<<SESSION_SUMMARY>>>\n" + (hints.get("sessionSummary") or "") +
+            "\n<<<END_SESSION_SUMMARY>>>\n\n" +
+            f"REMAINING_MINUTES: {hints.get('remainingMinutes', 0)}\n" +
+            f"IS_RETROSPECTIVE: {hints.get('isRetrospective', False)}\n\n" +
+            "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요."
+        )
+    return ""
+
+
+def l4_tokens(session: dict, enc=None) -> int:
     call_type = session.get("call_type", "follow_up_generator_v3")
     exchanges = session.get("exchanges", [])
 
-    if call_type == "follow_up_generator_v3":
+    if call_type in _RESUME_CALL_TYPES:
+        fragment = _resume_l4_fragment(session)
+    elif call_type == "follow_up_generator_v3":
         if not exchanges:
             return 0
         last = exchanges[-1]
-        # Simulate AnswerAnalysis JSON that Step A would produce for last answer
         answer_analysis = json.dumps({
             "turn_id": 0,
             "claims": [{"text": last.get("a", "")[:60], "depth_score": 3,
@@ -247,7 +301,6 @@ def l4_tokens(session: dict, enc=None) -> int:
     estimated = estimate_tokens(fragment, enc)
     cap = _L4_CAPS.get(call_type, 1500)
     if estimated > cap:
-        # Truncate to cap (defense — mirrors Java IllegalStateException guard)
         estimated = cap
     return estimated
 
@@ -279,14 +332,23 @@ def measure_session(path: Path, enc=None) -> dict:
     }
 
 
+def _autodiscover() -> List[str]:
+    fixtures_dir = Path(__file__).resolve().parent / "fixtures"
+    return sorted(str(p) for p in fixtures_dir.glob("session-*.json"))
+
+
 def main():
     parser = argparse.ArgumentParser(description="Measure context engineering token usage")
-    parser.add_argument("--sessions", nargs="+", required=True,
-                        help="Paths to session fixture JSON files")
+    parser.add_argument("--sessions", nargs="+", required=False,
+                        help="Paths to session fixture JSON files (default: auto-discover eval/context/fixtures/session-*.json)")
     parser.add_argument("--encoding", default=None,
-                        help="tiktoken encoding name (e.g. cl100k_base). "
-                             "Falls back to 4-char heuristic if tiktoken is not installed.")
+                        help="tiktoken encoding name (e.g. cl100k_base). Falls back to 4-char heuristic.")
     args = parser.parse_args()
+
+    sessions = args.sessions or _autodiscover()
+    if not sessions:
+        print("[error] no session fixtures found", file=sys.stderr)
+        sys.exit(1)
 
     enc = None
     heuristic_note = "heuristic (4 chars/token)"
@@ -297,16 +359,19 @@ def main():
         print(f"[warn] tiktoken not installed — falling back to 4-char heuristic", file=sys.stderr)
 
     results = []
-    for raw_path in args.sessions:
-        path = Path(raw_path)
-        if not path.exists():
-            print(f"[error] file not found: {path}", file=sys.stderr)
-            sys.exit(1)
-        r = measure_session(path, enc)
-        results.append(r)
-        print(f"{r['name']}: total={r['total']} "
-              f"(L1={r['L1']}, L2={r['L2']}, L3={r['L3']}, L4={r['L4']}) "
-              f"[{r['level']}/{r['track']}/{r['call_type']}]")
+    for raw_path in sessions:
+        # Expand glob patterns shell didn't expand (e.g. quoted)
+        expanded = sorted(glob.glob(raw_path)) or [raw_path]
+        for ep in expanded:
+            path = Path(ep)
+            if not path.exists():
+                print(f"[error] file not found: {path}", file=sys.stderr)
+                sys.exit(1)
+            r = measure_session(path, enc)
+            results.append(r)
+            print(f"{r['name']}: total={r['total']} "
+                  f"(L1={r['L1']}, L2={r['L2']}, L3={r['L3']}, L4={r['L4']}) "
+                  f"[{r['level']}/{r['track']}/{r['call_type']}]")
 
     if not results:
         print("[error] no sessions measured", file=sys.stderr)
@@ -322,25 +387,50 @@ def main():
         ct = r["call_type"]
         call_types.setdefault(ct, []).append(r["total"])
     ct_summary = ", ".join(
-        f"{ct}(n={len(vals)},avg={int(sum(vals)/len(vals))})"
+        f"{ct}(n={len(vals)},avg={int(sum(vals)/len(vals))},max={max(vals)})"
         for ct, vals in call_types.items()
     )
+
+    # Resume 4 callType 분포 — spec §E1 가시화 요구
+    resume_results = [r for r in results if r["call_type"] in _RESUME_CALL_TYPES]
+    if resume_results:
+        print("---")
+        print("Resume 4 callType 토큰 분포:")
+        for ct in ("resume_playground_opener", "resume_playground_responder",
+                   "resume_chain_interrogator", "resume_wrap_up"):
+            vals = [r for r in resume_results if r["call_type"] == ct]
+            if not vals:
+                print(f"  {ct}: (no fixture)")
+                continue
+            for r in vals:
+                print(f"  {ct} [{r['name']}]: total={r['total']} "
+                      f"L1={r['L1']} L2={r['L2']} L3={r['L3']} L4={r['L4']} "
+                      f"(L4 cap={_L4_CAPS[ct]})")
 
     print("---")
     print(f"avg={avg:.0f}, max={maximum}, min={minimum} "
           f"({len(results)} sessions, callType breakdown: {ct_summary})")
     print(f"token estimation: {heuristic_note}")
 
-    passed = avg <= 8000 and maximum <= 9000
+    standard_results = [r for r in results if r["call_type"] not in _RESUME_CALL_TYPES]
+    if not standard_results:
+        # Resume-only run — gates do not apply
+        print("Resume-only fixture set — Standard track gates skipped.")
+        sys.exit(0)
+
+    standard_totals = [r["total"] for r in standard_results]
+    s_avg = sum(standard_totals) / len(standard_totals)
+    s_max = max(standard_totals)
+    passed = s_avg <= 8000 and s_max <= 9000
     if passed:
-        print(f"PASS (avg={avg:.0f} ≤ 8000, max={maximum} ≤ 9000)")
+        print(f"PASS (Standard avg={s_avg:.0f} ≤ 8000, max={s_max} ≤ 9000)")
         sys.exit(0)
     else:
         reasons = []
-        if avg > 8000:
-            reasons.append(f"avg={avg:.0f} > 8000")
-        if maximum > 9000:
-            reasons.append(f"max={maximum} > 9000")
+        if s_avg > 8000:
+            reasons.append(f"avg={s_avg:.0f} > 8000")
+        if s_max > 9000:
+            reasons.append(f"max={s_max} > 9000")
         print(f"FAIL ({', '.join(reasons)})")
         sys.exit(1)
 

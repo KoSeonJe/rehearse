@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SessionStateLayer implements ContextLayer {
 
-    static final String RUNTIME_STATE_KEY = "interviewRuntimeState";
+    public static final String RUNTIME_STATE_KEY = "interviewRuntimeState";
 
     private static final int MAX_TOKENS = 500;
     private static final int INITIAL_CLAIM_TRIM = 50;

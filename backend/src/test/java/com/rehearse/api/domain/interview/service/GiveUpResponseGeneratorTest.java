@@ -167,8 +167,7 @@ class GiveUpResponseGeneratorTest {
         generator.generate(INPUT);
 
         assertThat(captor.getValue().callType()).isEqualTo("giveup_response");
-        assertThat(captor.getValue().focusHints()).containsKey("mainQuestion");
-        assertThat(captor.getValue().focusHints()).containsKey("userUtterance");
-        assertThat(captor.getValue().focusHints()).containsKey("personaDepthHint");
+        assertThat(captor.getValue().focusHints())
+                .isInstanceOf(com.rehearse.api.infra.ai.context.FocusHints.GiveUpResponseHints.class);
     }
 }

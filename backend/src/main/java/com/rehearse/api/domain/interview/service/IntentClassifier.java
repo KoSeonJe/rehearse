@@ -8,6 +8,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -35,9 +36,9 @@ public class IntentClassifier {
                     "intent_classifier",
                     Map.of(),
                     previousExchanges != null ? previousExchanges : List.of(),
-                    Map.of(
-                            "mainQuestion", mainQuestion != null ? mainQuestion : "",
-                            "userUtterance", answerText != null ? answerText : ""
+                    new FocusHints.IntentClassifierHints(
+                            mainQuestion != null ? mainQuestion : "",
+                            answerText != null ? answerText : ""
                     ),
                     null
             ));

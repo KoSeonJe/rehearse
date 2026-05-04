@@ -61,10 +61,10 @@ class InterrogationModeHandlerTest {
         @DisplayName("answer_quality >= 3 AND level < 4 이면 레벨이 올라간다")
         void handle_highQuality_levelsUp() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan);
+            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
             FollowUpResponse response = result.response();
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
@@ -81,10 +81,10 @@ class InterrogationModeHandlerTest {
         @DisplayName("answer_quality <= 2 이면 같은 레벨을 유지한다")
         void handle_lowQuality_staysAtSameLevel() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1));
 
-            handler.handle(1L, state, "모호한 답변", createAnalysis(2), plan);
+            handler.handle(1L, state, "모호한 답변", createAnalysis(2), plan, java.util.List.of());
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(1);
             assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(1);
@@ -97,10 +97,10 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
             state.getChainStateTracker().levelStay();
 
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1));
 
-            handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan);
+            handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
         }
@@ -115,10 +115,10 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
             state.getChainStateTracker().levelStay();
 
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 4));
 
-            handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan);
+            handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
 
             assertThat(state.getChainStateTracker().getCompletedChainIds()).contains("proj1::redis");
         }
@@ -132,10 +132,10 @@ class InterrogationModeHandlerTest {
         @DisplayName("CHAIN_SWITCH 결정 시 현재 chain 이 완료 처리된다")
         void handle_chainSwitch_completesCurrentChain() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("다음 주제", "다음 주제", "이유", "CHAIN_SWITCH", 1));
 
-            handler.handle(1L, state, "모릅니다", createAnalysis(1), plan);
+            handler.handle(1L, state, "모릅니다", createAnalysis(1), plan, java.util.List.of());
 
             assertThat(state.getChainStateTracker().getCompletedChainIds()).contains("proj1::redis");
             assertThat(state.getChainStateTracker().hasActiveChain()).isFalse();
@@ -152,7 +152,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             state.getChainStateTracker().markChainComplete();
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan);
+            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of());
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
             assertThat(result.response().isPresentToUser()).isFalse();
@@ -167,10 +167,10 @@ class InterrogationModeHandlerTest {
         @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_throwsBusinessException() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1));
 
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));
@@ -180,10 +180,10 @@ class InterrogationModeHandlerTest {
         @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_nullQuestion_throwsBusinessException() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), anyInt(), anyInt(), any(), anyInt()))
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1));
 
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan))
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));

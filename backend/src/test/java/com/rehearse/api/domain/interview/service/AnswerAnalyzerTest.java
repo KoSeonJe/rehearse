@@ -261,8 +261,11 @@ class AnswerAnalyzerTest {
 
         ContextBuildRequest captured = captor.getValue();
         assertThat(captured.callType()).isEqualTo("answer_analyzer");
-        assertThat(captured.focusHints()).containsKey("mainQuestion");
-        assertThat(captured.focusHints()).containsKey("userAnswer");
-        assertThat(captured.focusHints()).containsKey("personaDepthHint");
+        assertThat(captured.focusHints()).isInstanceOf(com.rehearse.api.infra.ai.context.FocusHints.AnswerAnalyzerHints.class);
+        com.rehearse.api.infra.ai.context.FocusHints.AnswerAnalyzerHints hints =
+                (com.rehearse.api.infra.ai.context.FocusHints.AnswerAnalyzerHints) captured.focusHints();
+        assertThat(hints.mainQuestion()).isEqualTo("GC 설명");
+        assertThat(hints.userAnswer()).isEqualTo("답변");
+        assertThat(hints.personaDepthHint()).isNotBlank();
     }
 }
