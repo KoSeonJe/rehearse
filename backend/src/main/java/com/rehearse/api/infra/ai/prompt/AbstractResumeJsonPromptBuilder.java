@@ -8,6 +8,8 @@ import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.context.layer.DialogueHistoryLayer;
+import com.rehearse.api.infra.ai.context.layer.SessionStateLayer;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
@@ -79,10 +81,10 @@ public abstract class AbstractResumeJsonPromptBuilder {
         }
         Map<String, Object> map = new HashMap<>();
         if (state != null) {
-            map.put("interviewRuntimeState", state);
+            map.put(SessionStateLayer.RUNTIME_STATE_KEY, state);
         }
         if (interviewId != null) {
-            map.put("interviewId", interviewId);
+            map.put(DialogueHistoryLayer.INTERVIEW_ID_KEY, interviewId);
         }
         return map;
     }
