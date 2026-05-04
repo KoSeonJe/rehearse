@@ -1,0 +1,54 @@
+{
+  "interview_id": 2002,
+  "level": "MID",
+  "track": "RESUME",
+  "call_type": "resume_playground_responder",
+  "runtimeState": {
+    "currentLevel": "L1",
+    "playgroundTurns": 3,
+    "coveredClaims": [
+      "Kafka 도입으로 동접 12k 안정 처리",
+      "Redis Pub/Sub 은 영속성 없어 탈락",
+      "데이터팀 클러스터 분리 운영"
+    ],
+    "activeChain": [],
+    "playgroundCumulativeLength": 642,
+    "chainStateTracker": {
+      "currentChainId": null,
+      "consecutiveStayCount": 0
+    }
+  },
+  "focusHints": {
+    "expectedClaims": "1) Kafka partition key 전략 명시 2) 컨슈머 그룹 단위 확장 근거 3) p99 latency 개선 수치 4) 데이터팀 운영 노하우 활용",
+    "userAnswer": "partition key 는 chat_room_id 해시로 잡았습니다. 같은 방의 메시지는 순서가 보장되도록 한 partition 으로 묶고, 컨슈머는 room 단위 affinity 를 가져가도록 sticky assignor 를 썼습니다. 그 덕에 latency 가 95ms 로 떨어졌고 컨슈머 그룹은 3개에서 8개까지 늘렸습니다.",
+    "playgroundTurnCount": 3,
+    "cumulativeUtteranceLength": 642
+  },
+  "exchanges": [
+    {
+      "q": "이력서 잘 봤습니다. 첫 프로젝트인 실시간 채팅 백엔드부터 편하게 이야기 나눠볼까요?",
+      "a": "네, 사내 협업 도구를 자체 개발하면서 실시간 메시징을 담당했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "동시접속이 늘었다는 부분이 흥미로운데요, 어떤 신호로 한계를 감지하셨나요?",
+      "a": "동접 3k 부근에서 단일 인스턴스 메모리가 80% 를 넘었고 p99 가 300ms 를 넘었습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "그 시점에 Kafka 를 선택한 이유가 따로 있었을까요?",
+      "a": "Redis 는 영속성이 없고 RabbitMQ 는 partition throughput 한계가 있어 Kafka 로 정했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "Kafka partition 전략을 어떻게 잡으셨고 왜 그렇게 하셨나요?",
+      "a": "partition key 는 chat_room_id 해시로 잡았습니다. 같은 방의 메시지는 순서가 보장되도록 한 partition 으로 묶고, 컨슈머는 room 단위 affinity 를 가져가도록 sticky assignor 를 썼습니다. 그 덕에 latency 가 95ms 로 떨어졌고 컨슈머 그룹은 3개에서 8개까지 늘렸습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "한 방에 메시지가 몰리면 그 partition 만 hot 해지지 않나요? 그 부분은 어떻게 풀고 있죠?",
+      "a": "현재는 hot room 을 별도 토픽으로 분리하고, 그 토픽만 partition 수를 6배 늘렸습니다. 메시지 ordering 이 약해지는 trade-off 가 있었지만 UX 에서 ms 단위 reorder 는 허용 가능했습니다.",
+      "selectedPerspective": null
+    }
+  ]
+}

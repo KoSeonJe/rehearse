@@ -1,0 +1,56 @@
+{
+  "interview_id": 2003,
+  "level": "MID",
+  "track": "RESUME",
+  "call_type": "resume_chain_interrogator",
+  "runtimeState": {
+    "currentLevel": "L3",
+    "playgroundTurns": 3,
+    "coveredClaims": [
+      "chat_room_id 해시 partition 전략",
+      "sticky assignor 로 room affinity",
+      "hot room 토픽 분리"
+    ],
+    "activeChain": [101, 102],
+    "chainStateTracker": {
+      "currentChainId": 102,
+      "currentChainTopic": "Kafka partition hot key 완화",
+      "currentLevel": "L3",
+      "consecutiveStayCount": 1
+    }
+  },
+  "focusHints": {
+    "currentChain": "topic=Kafka partition hot key 완화 / levelsToCover=[L1=현상, L2=원인, L3=대안비교, L4=trade-off] / coveredLevels=[L1, L2]",
+    "currentLevel": "L3",
+    "answerQuality": 3,
+    "consecutiveStayCount": 1,
+    "userAnswer": "hot room 분리 외에 다른 후보로 partition 수를 더 늘리거나 컨슈머별 in-memory queue 로 흡수하는 방법도 봤습니다. 전자는 broker 디스크 I/O 가 비례 증가하고, 후자는 인스턴스 죽으면 메시지 유실 위험이 있어 운영 중인 채팅 도메인엔 적합하지 않다고 판단했습니다."
+  },
+  "exchanges": [
+    {
+      "q": "Kafka partition 전략을 어떻게 잡으셨고 왜 그렇게 하셨나요?",
+      "a": "chat_room_id 해시로 partition key 를 잡고 sticky assignor 로 room 단위 affinity 를 유지했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "한 방에 메시지가 몰리면 그 partition 만 hot 해지지 않나요? 그 부분은 어떻게 풀고 있죠?",
+      "a": "hot room 을 별도 토픽으로 분리하고 그 토픽만 partition 을 6배 늘렸습니다. ordering 이 약해지는 trade-off 가 있었지만 UX 상 허용 가능 수준이었습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "hot room 분리 말고 검토했던 다른 후보가 있었나요? 각각 왜 탈락시켰는지 함께 설명해주세요.",
+      "a": "hot room 분리 외에 다른 후보로 partition 수를 더 늘리거나 컨슈머별 in-memory queue 로 흡수하는 방법도 봤습니다. 전자는 broker 디스크 I/O 가 비례 증가하고, 후자는 인스턴스 죽으면 메시지 유실 위험이 있어 운영 중인 채팅 도메인엔 적합하지 않다고 판단했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "in-memory queue 의 메시지 유실 risk 를 좀 더 풀어주실 수 있나요? at-least-once 보장 측면에서요.",
+      "a": "프로듀서 ack=all 과 컨슈머 manual commit 으로 broker 까지는 at-least-once 가 보장됩니다. in-memory queue 에 들어간 순간부터는 인스턴스 graceful shutdown hook 이 없으면 미flush 메시지가 사라집니다. 운영 SLA 와 맞지 않아 제외했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "ordering 약화로 발생한 실제 사용자 영향은 측정해보셨나요?",
+      "a": "channel 당 reorder window 를 50ms 로 잡고 클라이언트 측에서 timestamp 기반 정렬을 다시 했습니다. 그 결과 사용자 가시 측에서 reorder 사례는 0 에 가까웠고 CS 인입은 변화가 없었습니다.",
+      "selectedPerspective": null
+    }
+  ]
+}
