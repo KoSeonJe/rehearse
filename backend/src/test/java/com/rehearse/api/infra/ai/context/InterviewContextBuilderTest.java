@@ -60,7 +60,7 @@ class InterviewContextBuilderTest {
     }
 
     private ContextBuildRequest minimalRequest(String callType) {
-        return new ContextBuildRequest(callType, Map.of(), List.of(), Map.of(), null);
+        return new ContextBuildRequest(callType, Map.of(), List.of(), null, null);
     }
 
     @Test
@@ -128,7 +128,7 @@ class InterviewContextBuilderTest {
         given(l4.build(any())).willReturn(List.of(ChatMessage.of(ChatMessage.Role.USER, l4Content)));
 
         InterviewContextBuilder builder = builderWith(true, 8000);
-        ContextBuildRequest req = new ContextBuildRequest("follow_up_generator_v3", Map.of(), exchanges, Map.of(), null);
+        ContextBuildRequest req = new ContextBuildRequest("follow_up_generator_v3", Map.of(), exchanges, null, null);
         BuiltContext result = builder.build(req);
 
         assertThat(result.tokenEstimate()).isLessThanOrEqualTo(8000);

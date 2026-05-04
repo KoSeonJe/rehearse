@@ -5,13 +5,13 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -36,10 +36,10 @@ public class ResumeWrapUpPromptBuilder extends AbstractResumeJsonPromptBuilder {
     ) {
         return executeJson(
                 CALL_TYPE, interviewId, state, exchanges,
-                Map.of(
-                        "SESSION_SUMMARY", sessionSummary != null ? sessionSummary : "",
-                        "REMAINING_MINUTES", String.valueOf(remainingMinutes),
-                        "IS_RETROSPECTIVE", String.valueOf(isRetrospective)
+                new FocusHints.ResumeWrapUpHints(
+                        sessionSummary != null ? sessionSummary : "",
+                        remainingMinutes,
+                        isRetrospective
                 ),
                 WrapUpResult.class
         );

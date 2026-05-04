@@ -162,8 +162,12 @@ class IntentClassifierTest {
             intentClassifier.classify("질문", "답변", null);
 
             assertThat(captor.getValue().callType()).isEqualTo("intent_classifier");
-            assertThat(captor.getValue().focusHints()).containsKey("mainQuestion");
-            assertThat(captor.getValue().focusHints()).containsKey("userUtterance");
+            assertThat(captor.getValue().focusHints())
+                    .isInstanceOf(com.rehearse.api.infra.ai.context.FocusHints.IntentClassifierHints.class);
+            com.rehearse.api.infra.ai.context.FocusHints.IntentClassifierHints hints =
+                    (com.rehearse.api.infra.ai.context.FocusHints.IntentClassifierHints) captor.getValue().focusHints();
+            assertThat(hints.mainQuestion()).isEqualTo("질문");
+            assertThat(hints.userUtterance()).isEqualTo("답변");
         }
     }
 

@@ -99,6 +99,9 @@ dependencies {
     testImplementation("org.testcontainers:junit-jupiter:1.20.4")
     testImplementation("org.testcontainers:mysql:1.20.4")
     testImplementation("com.mysql:mysql-connector-j")
+
+    // ArchUnit — context engineering 계층 규칙 정적 검증
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
 }
 
 tasks.withType<Test> {

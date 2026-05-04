@@ -9,7 +9,7 @@ public record ContextBuildRequest(
         String callType,
         Map<String, Object> runtimeState,
         List<FollowUpExchange> exchanges,
-        Map<String, Object> focusHints,
+        FocusHints focusHints,
         String providerHint
 ) {
     public ContextBuildRequest {
@@ -23,7 +23,7 @@ public record ContextBuildRequest(
             exchanges = List.of();
         }
         if (focusHints == null) {
-            focusHints = Map.of();
+            focusHints = FocusHints.EmptyHints.INSTANCE;
         }
     }
 }

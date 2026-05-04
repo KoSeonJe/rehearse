@@ -5,13 +5,13 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -37,12 +37,12 @@ public class ResumeChainInterrogatorPromptBuilder extends AbstractResumeJsonProm
     ) {
         return executeJson(
                 CALL_TYPE, interviewId, state, exchanges,
-                Map.of(
-                        "CURRENT_CHAIN", chainTopic,
-                        "CURRENT_LEVEL", String.valueOf(currentLevel),
-                        "ANSWER_QUALITY", String.valueOf(answerQuality),
-                        "USER_ANSWER", userAnswer != null ? userAnswer : "",
-                        "CONSECUTIVE_STAY_COUNT", String.valueOf(consecutiveStayCount)
+                new FocusHints.ResumeChainInterrogatorHints(
+                        chainTopic,
+                        currentLevel,
+                        answerQuality,
+                        userAnswer != null ? userAnswer : "",
+                        consecutiveStayCount
                 ),
                 InterrogationResult.class
         );

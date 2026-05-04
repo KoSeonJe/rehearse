@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.AnswerAnalysisJsonRenderer;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -19,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -58,11 +58,9 @@ public class FollowUpQuestionWriter {
                 CALL_TYPE,
                 Map.of(),
                 req.previousExchanges() != null ? req.previousExchanges() : List.of(),
-                Map.of(
-                        "answerAnalysisJson", answerAnalysisJson,
-                        "askedPerspectives", askedPerspectives.values().stream()
-                                .map(Enum::name)
-                                .collect(Collectors.joining(", "))
+                new FocusHints.FollowUpGeneratorV3Hints(
+                        answerAnalysisJson,
+                        askedPerspectives.values().stream().map(Enum::name).toList()
                 ),
                 null
         ));

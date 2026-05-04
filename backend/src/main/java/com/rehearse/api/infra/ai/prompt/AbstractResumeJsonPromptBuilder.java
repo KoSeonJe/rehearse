@@ -6,6 +6,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -40,16 +41,12 @@ public abstract class AbstractResumeJsonPromptBuilder {
         this.maxTokens = maxTokens;
     }
 
-    protected <T> T executeJson(String callType, Map<String, Object> variables, Class<T> resultClass) {
-        return executeJson(callType, null, null, null, variables, resultClass);
-    }
-
     protected <T> T executeJson(
             String callType,
             Long interviewId,
             InterviewRuntimeState runtimeState,
             List<FollowUpExchange> exchanges,
-            Map<String, Object> variables,
+            FocusHints focusHints,
             Class<T> resultClass
     ) {
         Map<String, Object> runtimeStateMap = buildRuntimeStateMap(interviewId, runtimeState);
@@ -59,7 +56,7 @@ public abstract class AbstractResumeJsonPromptBuilder {
                 callType,
                 runtimeStateMap,
                 safeExchanges,
-                variables,
+                focusHints,
                 null
         ));
 

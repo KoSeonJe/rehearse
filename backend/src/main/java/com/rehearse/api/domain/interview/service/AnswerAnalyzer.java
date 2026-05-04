@@ -10,6 +10,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -55,10 +56,10 @@ public class AnswerAnalyzer {
                 CALL_TYPE,
                 Map.of("interviewRuntimeState", runtimeState, "interviewId", interviewId),
                 List.of(),
-                Map.of(
-                        "mainQuestion", mainQuestion != null ? mainQuestion : "",
-                        "userAnswer", userAnswer != null ? userAnswer : "",
-                        "personaDepthHint", personaDepthHint + " | ASKED_PERSPECTIVES: " + askedPerspectivesStr
+                new FocusHints.AnswerAnalyzerHints(
+                        mainQuestion != null ? mainQuestion : "",
+                        userAnswer != null ? userAnswer : "",
+                        personaDepthHint + " | ASKED_PERSPECTIVES: " + askedPerspectivesStr
                 ),
                 null
         ));
