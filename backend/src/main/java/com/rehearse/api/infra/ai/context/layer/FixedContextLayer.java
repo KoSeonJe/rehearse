@@ -48,7 +48,7 @@ public class FixedContextLayer implements ContextLayer {
     private final Map<String, String> dynamicSkeletons = new HashMap<>();
 
     @PostConstruct
-    void init() {
+    public void init() {
         loadAnswerAnalyzerTemplate();
         for (SkeletonCallType callType : SkeletonCallType.values()) {
             if (callType == SkeletonCallType.ANSWER_ANALYZER) {
