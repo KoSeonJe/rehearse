@@ -272,3 +272,17 @@ public class TestFixtures {
 
 ### Phase 5: Global/Security 보강
 `GlobalExceptionHandler`, `GlobalRateLimiterFilter`, `CustomOAuth2UserService`
+
+## Live LLM E2E (수동 실행)
+
+`com.rehearse.api.e2e.*LiveLlmE2ETest` 는 실제 OpenAI/Claude API 를 호출하므로 `@Disabled`.
+컨텍스트 회귀 의심 시 수동 실행:
+
+```bash
+export OPENAI_API_KEY=sk-...
+./gradlew test --tests "com.rehearse.api.e2e.ResumePlaygroundLiveLlmE2ETest" \
+    -Djunit.jupiter.conditions.deactivate=org.junit.*DisabledCondition
+```
+
+`OPENAI_API_KEY` 미설정 시 `assumeTrue` 로 자동 스킵. CI 비실행 (비용 + 비결정성).
+프로파일 `application-llm-e2e.yml` 가 환경변수에서 키를 주입한다.
