@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Context Engineering 정적 규칙.
- * - Resume 트랙 callType 은 모두 prompt template 파일이 존재해야 한다 (enum skeleton 폴백 대신 외부 파일 운영).
+ * - 모든 SkeletonCallType 은 prompt template 파일이 존재해야 한다 (enum skeleton 폴백 대신 외부 파일 운영).
  * - ContextBuildRequest 인스턴스화는 infra.ai.prompt 또는 domain.*.service 패키지에서만 허용 (아키텍처 우회 방지).
  * - *PromptBuilder 가 AiClient.chat 직접 호출 시 반드시 InterviewContextBuilder 경유 (fail-silent 재진입 방지).
  */
@@ -32,12 +32,9 @@ class ContextEngineeringArchTest {
     private static final String DEFAULT_DIR = "/prompts/template/";
 
     @Test
-    void every_resume_skeleton_call_type_has_template_file() {
+    void every_skeleton_call_type_has_template_file() {
         List<String> missing = new ArrayList<>();
         for (SkeletonCallType callType : SkeletonCallType.values()) {
-            if (!callType.value().startsWith("resume_")) {
-                continue;
-            }
             String filename = callType.value().replace('_', '-') + ".txt";
             boolean exists = getClass().getResource(RESUME_DIR + filename) != null
                     || getClass().getResource(DEFAULT_DIR + filename) != null;
@@ -46,7 +43,7 @@ class ContextEngineeringArchTest {
             }
         }
         assertThat(missing)
-                .as("Resume 트랙 템플릿 미발견 callType: %s", missing)
+                .as("SkeletonCallType 템플릿 미발견: %s", missing)
                 .isEmpty();
     }
 
