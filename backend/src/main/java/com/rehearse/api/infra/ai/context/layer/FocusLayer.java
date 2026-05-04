@@ -29,6 +29,10 @@ public class FocusLayer implements ContextLayer {
     static final int CAP_FOLLOW_UP_GENERATOR_V3 = 1000;
     static final int CAP_CLARIFY_RESPONSE = 400;
     static final int CAP_GIVEUP_RESPONSE = 400;
+    static final int CAP_RESUME_PLAYGROUND_OPENER = 600;
+    static final int CAP_RESUME_PLAYGROUND_RESPONDER = 1000;
+    static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
+    static final int CAP_RESUME_WRAP_UP = 600;
 
     private final TokenEstimator tokenEstimator;
 
@@ -40,9 +44,57 @@ public class FocusLayer implements ContextLayer {
             case "follow_up_generator_v3" -> render(buildFollowUpGeneratorV3(req.focusHints()), CAP_FOLLOW_UP_GENERATOR_V3);
             case "clarify_response"       -> render(buildClarifyResponse(req.focusHints()), CAP_CLARIFY_RESPONSE);
             case "giveup_response"        -> render(buildGiveUpResponse(req.focusHints()), CAP_GIVEUP_RESPONSE);
+            case "resume_playground_opener"     -> render(buildResumePlaygroundOpener(req.focusHints()), CAP_RESUME_PLAYGROUND_OPENER);
+            case "resume_playground_responder"  -> render(buildResumePlaygroundResponder(req.focusHints()), CAP_RESUME_PLAYGROUND_RESPONDER);
+            case "resume_chain_interrogator"    -> render(buildResumeChainInterrogator(req.focusHints()), CAP_RESUME_CHAIN_INTERROGATOR);
+            case "resume_wrap_up"               -> render(buildResumeWrapUp(req.focusHints()), CAP_RESUME_WRAP_UP);
             case "compaction_summarizer"  -> List.of();
-            default                       -> List.of();
+            default -> throw new IllegalStateException("L4 unregistered callType: " + req.callType());
         };
+    }
+
+    private String buildResumePlaygroundOpener(Map<String, Object> hints) {
+        String projectInfo = str(hints, "PROJECT_INFO");
+        String openerQuestion = str(hints, "OPENER_QUESTION");
+        return "<<<PROJECT_INFO>>>\n" + projectInfo + "\n<<<END_PROJECT_INFO>>>\n\n" +
+               "<<<OPENER_QUESTION>>>\n" + openerQuestion + "\n<<<END_OPENER_QUESTION>>>\n\n" +
+               "위 정보를 기반으로 Playground 오프너 질문을 JSON 한 객체로만 응답하세요.";
+    }
+
+    private String buildResumePlaygroundResponder(Map<String, Object> hints) {
+        String expectedClaims = str(hints, "EXPECTED_CLAIMS");
+        String userAnswer = str(hints, "USER_ANSWER");
+        String turnCount = str(hints, "PLAYGROUND_TURN_COUNT");
+        String cumulativeLength = str(hints, "CUMULATIVE_UTTERANCE_LENGTH");
+        return "<<<EXPECTED_CLAIMS>>>\n" + expectedClaims + "\n<<<END_EXPECTED_CLAIMS>>>\n\n" +
+               "<<<USER_ANSWER>>>\n" + userAnswer + "\n<<<END_USER_ANSWER>>>\n\n" +
+               "PLAYGROUND_TURN_COUNT: " + turnCount + "\n" +
+               "CUMULATIVE_UTTERANCE_LENGTH: " + cumulativeLength + "\n\n" +
+               "위 입력으로 Responder 결정과 다음 질문을 JSON 한 객체로만 응답하세요.";
+    }
+
+    private String buildResumeChainInterrogator(Map<String, Object> hints) {
+        String chain = str(hints, "CURRENT_CHAIN");
+        String level = str(hints, "CURRENT_LEVEL");
+        String quality = str(hints, "ANSWER_QUALITY");
+        String userAnswer = str(hints, "USER_ANSWER");
+        String stayCount = str(hints, "CONSECUTIVE_STAY_COUNT");
+        return "<<<CURRENT_CHAIN>>>\n" + chain + "\n<<<END_CURRENT_CHAIN>>>\n\n" +
+               "CURRENT_LEVEL: " + level + "\n" +
+               "ANSWER_QUALITY: " + quality + "\n" +
+               "CONSECUTIVE_STAY_COUNT: " + stayCount + "\n\n" +
+               "<<<USER_ANSWER>>>\n" + userAnswer + "\n<<<END_USER_ANSWER>>>\n\n" +
+               "위 chain 상태에서 LEVEL_UP/LEVEL_STAY/CHAIN_SWITCH 결정과 다음 질문을 JSON 한 객체로만 응답하세요.";
+    }
+
+    private String buildResumeWrapUp(Map<String, Object> hints) {
+        String summary = str(hints, "SESSION_SUMMARY");
+        String remaining = str(hints, "REMAINING_MINUTES");
+        String retrospective = str(hints, "IS_RETROSPECTIVE");
+        return "<<<SESSION_SUMMARY>>>\n" + summary + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
+               "REMAINING_MINUTES: " + remaining + "\n" +
+               "IS_RETROSPECTIVE: " + retrospective + "\n\n" +
+               "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요.";
     }
 
     private List<ChatMessage> render(String fragment, int cap) {

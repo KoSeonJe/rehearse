@@ -194,11 +194,11 @@ class FocusLayerTest {
     // ── unknown callType ───────────────────────────────────────────────────
 
     @Test
-    @DisplayName("알 수 없는 callType 은 빈 리스트를 반환한다")
-    void unknown_call_type_returns_empty_list() {
-        List<ChatMessage> result = focusLayer.build(req("unknown_future_type", Map.of()));
-
-        assertThat(result).isEmpty();
+    @DisplayName("등록되지 않은 callType 은 IllegalStateException 으로 fail-fast 한다")
+    void unknown_call_type_throws_illegal_state() {
+        assertThatThrownBy(() -> focusLayer.build(req("unknown_future_type", Map.of())))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("L4 unregistered callType: unknown_future_type");
     }
 
     // ── optional hints (graceful degradation) ─────────────────────────────
