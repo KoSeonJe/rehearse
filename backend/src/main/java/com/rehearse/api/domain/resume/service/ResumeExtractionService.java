@@ -97,7 +97,7 @@ public class ResumeExtractionService {
     private Project mapProject(ExtractedProject raw) {
         List<ResumeClaim> claims = mapClaims(raw.getClaims());
         List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
-        return new Project(raw.getProjectId(), claims, chains);
+        return new Project(raw.getProjectId(), raw.getProjectName(), claims, chains);
     }
 
     private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {

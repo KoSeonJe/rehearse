@@ -65,9 +65,20 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
     }
 
     private static String formatProjectInfo(Project project) {
-        return "projectId: " + project.projectId()
-                + "\nclaims: " + project.claims().size() + "개"
-                + "\nimplicitCsTopics: " + project.implicitCsTopics().size() + "개";
+        StringBuilder sb = new StringBuilder()
+                .append("projectId: ").append(project.projectId())
+                .append("\nprojectName: ").append(project.displayName())
+                .append("\nclaims: ").append(project.claims().size()).append("개")
+                .append("\nimplicitCsTopics: ").append(project.implicitCsTopics().size()).append("개");
+
+        var topClaims = project.claims().stream().limit(3).toList();
+        if (!topClaims.isEmpty()) {
+            sb.append("\ntopClaims:");
+            for (var c : topClaims) {
+                sb.append("\n  - ").append(c.text());
+            }
+        }
+        return sb.toString();
     }
 
     public record PlaygroundOpenerResult(
