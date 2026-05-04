@@ -1,5 +1,7 @@
 package com.rehearse.api.infra.ai.prompt;
 
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
@@ -9,6 +11,7 @@ import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,10 +41,24 @@ public abstract class AbstractResumeJsonPromptBuilder {
     }
 
     protected <T> T executeJson(String callType, Map<String, Object> variables, Class<T> resultClass) {
+        return executeJson(callType, null, null, null, variables, resultClass);
+    }
+
+    protected <T> T executeJson(
+            String callType,
+            Long interviewId,
+            InterviewRuntimeState runtimeState,
+            List<FollowUpExchange> exchanges,
+            Map<String, Object> variables,
+            Class<T> resultClass
+    ) {
+        Map<String, Object> runtimeStateMap = buildRuntimeStateMap(interviewId, runtimeState);
+        List<FollowUpExchange> safeExchanges = exchanges != null ? exchanges : List.of();
+
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 callType,
-                Map.of(),
-                List.of(),
+                runtimeStateMap,
+                safeExchanges,
                 variables,
                 null
         ));
@@ -57,5 +74,19 @@ public abstract class AbstractResumeJsonPromptBuilder {
 
         ChatResponse response = aiClient.chat(request);
         return aiResponseParser.parseOrRetry(response, resultClass, aiClient, request);
+    }
+
+    private static Map<String, Object> buildRuntimeStateMap(Long interviewId, InterviewRuntimeState state) {
+        if (interviewId == null && state == null) {
+            return Map.of();
+        }
+        Map<String, Object> map = new HashMap<>();
+        if (state != null) {
+            map.put("interviewRuntimeState", state);
+        }
+        if (interviewId != null) {
+            map.put("interviewId", interviewId);
+        }
+        return map;
     }
 }

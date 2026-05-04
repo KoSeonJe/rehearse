@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -13,6 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,11 +27,14 @@ public class WrapUpModeHandler {
     public WrapUpTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
-            long remainingMinutes, boolean isRetrospective
+            long remainingMinutes, boolean isRetrospective,
+            List<FollowUpExchange> previousExchanges
     ) {
         String sessionSummary = buildSessionSummary(state);
 
-        WrapUpResult result = promptBuilder.build(sessionSummary, remainingMinutes, isRetrospective);
+        WrapUpResult result = promptBuilder.build(
+                interviewId, state, previousExchanges,
+                sessionSummary, remainingMinutes, isRetrospective);
 
         log.info("[WrapUpHandler] 회고 질문 생성: interviewId={}, remainingMin={}, isRetrospective={}",
                 interviewId, remainingMinutes, isRetrospective);

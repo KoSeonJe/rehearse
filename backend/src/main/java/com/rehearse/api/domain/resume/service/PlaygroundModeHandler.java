@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -38,7 +39,7 @@ public class PlaygroundModeHandler {
         ProjectPlan firstPlan = plan.projectPlans().get(0);
         Project project = findProject(skeleton, firstPlan.projectId());
 
-        PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, project, firstPlan.playgroundPhase());
+        PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, state, project, firstPlan.playgroundPhase());
 
         if (result.question() == null || result.question().isBlank()) {
             throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
@@ -63,7 +64,8 @@ public class PlaygroundModeHandler {
     public PlaygroundTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
-            ResumeSkeleton skeleton, InterviewPlan plan
+            ResumeSkeleton skeleton, InterviewPlan plan,
+            List<FollowUpExchange> previousExchanges
     ) {
         ProjectPlan currentPlan = resolveCurrentPlan(plan);
         PlaygroundPhase phase = currentPlan.playgroundPhase();
@@ -73,7 +75,8 @@ public class PlaygroundModeHandler {
         int cumulativeLength = accumulateLength(state, userAnswer);
 
         PlaygroundResponderResult result = promptBuilder.buildResponder(
-                interviewId, userAnswer, expectedClaims, turnCount, cumulativeLength
+                interviewId, state, previousExchanges,
+                userAnswer, expectedClaims, turnCount, cumulativeLength
         );
 
         boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);

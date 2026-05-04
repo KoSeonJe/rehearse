@@ -77,11 +77,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("4조건 중 2개 충족(a+b) 시 switchedToInterrogation=true 를 반환한다")
         void handle_conditionsAB_met_switches() {
             SwitchConditions cond = new SwitchConditions(true, true, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "답변입니다", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "답변입니다", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
         }
@@ -90,11 +90,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("4조건 중 1개만 충족 시 switchedToInterrogation=false 를 반환한다")
         void handle_only1Condition_doesNotSwitch() {
             SwitchConditions cond = new SwitchConditions(true, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "짧은 답변", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "짧은 답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isFalse();
         }
@@ -103,11 +103,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitchToInterrogation=true 이면 조건 count 무관하게 전환된다")
         void handle_explicitSwitch_alwaysTransitions() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult(null, null, "이유", true, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
         }
@@ -116,11 +116,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("d 조건(3턴 이상)만 충족 시 단독으로는 전환하지 않는다")
         void handle_onlyTurnLimit_doesNotSwitch() {
             SwitchConditions cond = new SwitchConditions(false, false, false, true);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isFalse();
         }
@@ -129,11 +129,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("c+d 조건 충족 시 전환된다")
         void handle_conditionsCD_met_switches() {
             SwitchConditions cond = new SwitchConditions(false, false, true, true);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "그래서 결론적으로 정리하면", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "그래서 결론적으로 정리하면", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
         }
@@ -146,7 +146,7 @@ class PlaygroundModeHandlerTest {
         @Test
         @DisplayName("handleOpener 호출 시 playgroundTurns 가 1 증가하고 응답을 반환한다")
         void handleOpener_incrementsTurnsAndReturnsResponse() {
-            given(promptBuilder.buildOpener(any(), any(), any()))
+            given(promptBuilder.buildOpener(any(), any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult("Redis 프로젝트 소개해주세요", "Redis 프로젝트 소개해주세요", "오프너"));
             given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                     .willReturn(1L);
@@ -163,7 +163,7 @@ class PlaygroundModeHandlerTest {
         @Test
         @DisplayName("handleOpener 에서 LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handleOpener_blankQuestion_throwsBusinessException() {
-            given(promptBuilder.buildOpener(any(), any(), any()))
+            given(promptBuilder.buildOpener(any(), any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult("", "", "오프너"));
 
             assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
@@ -175,7 +175,7 @@ class PlaygroundModeHandlerTest {
         @Test
         @DisplayName("handleOpener 에서 LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handleOpener_nullQuestion_throwsBusinessException() {
-            given(promptBuilder.buildOpener(any(), any(), any()))
+            given(promptBuilder.buildOpener(any(), any(), any(), any()))
                     .willReturn(new PlaygroundOpenerResult(null, null, "오프너"));
 
             assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
@@ -193,11 +193,11 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitch=true 이고 question 이 blank 이면 persist 를 호출하지 않고 정상 응답한다")
         void handle_blankQuestion_withSwitch_skipsPersistAndReturnsResponse() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult(null, null, "전환 이유", true, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
-                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan);
+                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
             assertThat(result.questionId()).isNull();
@@ -207,10 +207,10 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitch=false 이고 question 이 blank 이면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_withoutSwitch_throwsBusinessException() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("", "", "이유", false, cond));
 
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan))
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));

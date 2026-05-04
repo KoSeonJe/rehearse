@@ -1,5 +1,7 @@
 package com.rehearse.api.infra.ai.prompt;
 
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.infra.ai.AiClient;
@@ -30,23 +32,35 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
         super(aiClient, aiResponseParser, contextBuilder, model, temperature, maxTokens);
     }
 
-    public PlaygroundOpenerResult buildOpener(Long interviewId, Project project, PlaygroundPhase phase) {
-        return executeJson(OPENER_CALL_TYPE, Map.of(
-                "PROJECT_INFO", formatProjectInfo(project),
-                "OPENER_QUESTION", phase.openerQuestion()
-        ), PlaygroundOpenerResult.class);
+    public PlaygroundOpenerResult buildOpener(
+            Long interviewId, InterviewRuntimeState state,
+            Project project, PlaygroundPhase phase
+    ) {
+        return executeJson(
+                OPENER_CALL_TYPE, interviewId, state, List.of(),
+                Map.of(
+                        "PROJECT_INFO", formatProjectInfo(project),
+                        "OPENER_QUESTION", phase.openerQuestion()
+                ),
+                PlaygroundOpenerResult.class
+        );
     }
 
     public PlaygroundResponderResult buildResponder(
-            Long interviewId, String userAnswer, List<String> expectedClaims,
+            Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> exchanges,
+            String userAnswer, List<String> expectedClaims,
             int playgroundTurnCount, int cumulativeLength
     ) {
-        return executeJson(RESPONDER_CALL_TYPE, Map.of(
-                "EXPECTED_CLAIMS", String.join("\n", expectedClaims),
-                "PLAYGROUND_TURN_COUNT", String.valueOf(playgroundTurnCount),
-                "CUMULATIVE_UTTERANCE_LENGTH", String.valueOf(cumulativeLength),
-                "USER_ANSWER", userAnswer != null ? userAnswer : ""
-        ), PlaygroundResponderResult.class);
+        return executeJson(
+                RESPONDER_CALL_TYPE, interviewId, state, exchanges,
+                Map.of(
+                        "EXPECTED_CLAIMS", String.join("\n", expectedClaims),
+                        "PLAYGROUND_TURN_COUNT", String.valueOf(playgroundTurnCount),
+                        "CUMULATIVE_UTTERANCE_LENGTH", String.valueOf(cumulativeLength),
+                        "USER_ANSWER", userAnswer != null ? userAnswer : ""
+                ),
+                PlaygroundResponderResult.class
+        );
     }
 
     private static String formatProjectInfo(Project project) {

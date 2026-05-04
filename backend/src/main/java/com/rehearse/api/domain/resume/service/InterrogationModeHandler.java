@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -28,7 +30,8 @@ public class InterrogationModeHandler {
     public InterrogationTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
-            InterviewPlan plan
+            InterviewPlan plan,
+            List<FollowUpExchange> previousExchanges
     ) {
         ChainStateTracker tracker = state.getChainStateTracker();
 
@@ -51,6 +54,7 @@ public class InterrogationModeHandler {
             String currentProjectId = tracker.getCurrentProjectId();
 
             InterrogationResult result = promptBuilder.build(
+                    interviewId, state, previousExchanges,
                     chainTopic, currentLevel, answerQuality, userAnswer, consecutiveStay
             );
 
