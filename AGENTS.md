@@ -103,8 +103,6 @@ cd analysis && pytest                                   # 단위 테스트
 cd analysis && pytest tests/test_vision_analyzer.py     # 단일 파일
 ```
 
-환경 전제조건 상세: `docs/guides/GETTING_STARTED.md`.
-
 ## 작업 후 보고
 
 모든 agent / 메인 세션 공통. 작업 완료 / 중단 시 변경 요약 외 **발견 사항 + 사용자 결정 필요 항목** 별도 처리. "문제 없음" 으로 묻어두지 말 것.
