@@ -19,6 +19,7 @@ description: |
   user: "머지됐으니 develop 당겨줘"
   assistant: "git-manager 로 git checkout develop && git pull 실행."
   </example>
+tools: Bash, Read
 model: sonnet
 ---
 

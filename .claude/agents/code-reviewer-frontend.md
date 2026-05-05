@@ -21,6 +21,7 @@ description: |
   user: "PR #382 FE 변경 리뷰"
   assistant: "code-reviewer-frontend 로 변경 diff + 룰 매핑 + 5개 품질 축 보고."
   </example>
+tools: Read, Glob, Grep, Bash
 model: opus
 ---
 

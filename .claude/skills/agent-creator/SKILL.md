@@ -42,15 +42,29 @@ Claude Code 공식 [sub-agents 스펙](https://code.claude.com/docs/en/sub-agent
 
 ### Step 3 — 권한/도구
 
+> ⚠️ **중요**: `tools` 필드 **명시 권장**. 생략 시 일부 harness 환경에서 agent 등록 실패 사례 발견 (특히 `description: |` block scalar + `<example>` 태그 조합).
+
+**용도별 추천 셋** (Step 1–2 답변 기반 자동 매칭):
+
+| 용도 | 추천 tools |
+|------|-----------|
+| 구현 / 리팩 / 테스트 작성 | `Read, Write, Edit, Bash, Glob, Grep` |
+| 코드 리뷰 (수정 X) | `Read, Glob, Grep, Bash` |
+| 디버깅 (minimal fix) | `Read, Edit, Bash, Glob, Grep` |
+| 문서 편집 | `Read, Write, Edit, Glob, Grep` |
+| Git / PR 운영 | `Bash, Read` |
+| 검색 / 분류 | `Read, Glob, Grep` |
+| 디자인 / UI 리뷰 | `Read, Grep, Glob` |
+
 `AskUserQuestion`:
 
 - Q: "도구 접근 정책?"
-  - **모두 상속 (추천)** — 필드 생략
+  - **추천 셋 ({위 매칭 결과}) (추천)** — 용도 자동 매칭
   - **읽기 전용** — `tools: Read, Grep, Glob, Bash`
-  - **쓰기 차단만** — `disallowedTools: Write, Edit, NotebookEdit`
+  - **모두 상속** — 필드 생략 (⚠️ 등록 실패 위험)
   - **커스텀** — 직접 나열
 
-읽기 전용/커스텀 → 후속: "Bash 필요? MCP 도구 필요?"
+커스텀 → 후속: "Bash 필요? MCP 도구 필요? Write 필요?"
 
 ### Step 4 — 모델 선택 (자동 추천 로직)
 
@@ -158,7 +172,7 @@ frontmatter 아래 markdown = system prompt. 4섹션 템플릿:
 ---
 name: <kebab-case-name>
 description: <자동 위임 트리거 + 사용 사례. 필요시 <example> 블록>
-tools: <옵션 — 생략 시 전체 상속>
+tools: <명시 권장 — 생략 시 일부 harness 에서 등록 실패>
 model: <sonnet|opus|haiku|inherit, 기본 inherit>
 ---
 
@@ -183,7 +197,7 @@ model: <sonnet|opus|haiku|inherit, 기본 inherit>
 
 - [ ] `name` kebab-case + lowercase + 충돌 없음 (`ls .claude/agents/`, `ls ~/.claude/agents/`)
 - [ ] `description` 위임 트리거 명확 — "언제 사용/미사용" 둘 다
-- [ ] `tools` 명시 시 공식 도구명 정확 (Read/Edit/Write/Grep/Glob/Bash/WebFetch/WebSearch/NotebookEdit/TaskCreate 등)
+- [ ] **`tools` 필드 존재** — 공식 도구명 정확 (Read/Edit/Write/Grep/Glob/Bash/WebFetch/WebSearch/NotebookEdit/TaskCreate 등). 생략 시 등록 실패 위험
 - [ ] `model` 값 유효 (`sonnet`/`opus`/`haiku`/`inherit` 또는 full ID 예: `claude-opus-4-7`)
 - [ ] system prompt 본문 비어있지 않음
 - [ ] BE/FE 작업 agent면 프로젝트 컨벤션 참조 안내 포함
@@ -198,6 +212,7 @@ model: <sonnet|opus|haiku|inherit, 기본 inherit>
 - ❌ `description` 한 단어 ("코드 리뷰") — 자동 위임 실패
 - ❌ Dry-run 스킵하고 바로 `Write`
 - ❌ 용도 mechanical인데 opus 추천, 또는 heavy reasoning에 haiku 추천
+- ❌ **`tools` 필드 생략** — `description: |` block scalar + `<example>` 태그 조합 시 harness 등록 실패 사례 (관찰 2026-05-06)
 
 ---
 

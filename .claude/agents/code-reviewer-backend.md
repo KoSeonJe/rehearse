@@ -20,6 +20,7 @@ description: |
   user: "PR #381 BE 변경 리뷰"
   assistant: "code-reviewer-backend 로 변경 diff + 룰 매핑 + 4개 품질 축 보고."
   </example>
+tools: Read, Glob, Grep, Bash
 model: opus
 ---
 

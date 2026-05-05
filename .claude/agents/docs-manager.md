@@ -20,6 +20,7 @@ description: |
   user: "오늘 작업 핸드오프 작성해줘"
   assistant: "docs-manager 로 docs/plans/{N}-{slug}/handoff.md 작성."
   </example>
+tools: Read, Write, Edit, Glob, Grep
 model: sonnet
 ---
 

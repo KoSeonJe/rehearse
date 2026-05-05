@@ -20,6 +20,7 @@ description: |
   user: "DashboardPage 들어가면 CPU 튀고 fetch 가 계속 반복돼"
   assistant: "debugger-frontend 로 useEffect deps / Zustand selector 추적."
   </example>
+tools: Read, Edit, Bash, Glob, Grep
 model: opus
 ---
 

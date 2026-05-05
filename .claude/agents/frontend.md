@@ -22,6 +22,7 @@ description: |
   user: "이 컴포넌트 그냥 바로 만들어줘"
   assistant: "frontend 에이전트는 tech-spec 부재 시 거부. 설계부터 작성 후 사용자 승인 진행."
   </example>
+tools: Read, Write, Edit, Bash, Glob, Grep
 model: opus
 ---
 

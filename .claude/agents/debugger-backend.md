@@ -19,6 +19,7 @@ description: |
   user: "user 123 이 인터뷰 조회 시 403 반복. 왜?"
   assistant: "debugger-backend 로 docker log 에서 userId=123 trace → 인가 로직 확인."
   </example>
+tools: Read, Edit, Bash, Glob, Grep
 model: opus
 ---
 
