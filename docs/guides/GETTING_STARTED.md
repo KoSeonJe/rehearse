@@ -17,15 +17,15 @@
 ### 1. MySQL 컨테이너 실행 (로컬 DB)
 
 ```bash
-docker compose up -d
+cd backend
+docker compose -f docker-compose.local.yml up -d
 ```
 
-컨테이너가 healthy 상태가 될 때까지 대기합니다 (`docker compose ps`로 확인).
+컨테이너가 healthy 상태가 될 때까지 대기합니다 (`docker compose -f docker-compose.local.yml ps`로 확인).
 
 ### 2. 환경변수 설정
 
 ```bash
-cd backend
 cp .env.example .env
 ```
 
@@ -90,7 +90,7 @@ npx tsc --noEmit       # 타입 체크만
 
 ## 전체 실행 순서
 
-1. MySQL 컨테이너 시작: `docker compose up -d`
+1. MySQL 컨테이너 시작: `cd backend && docker compose -f docker-compose.local.yml up -d`
 2. Backend 실행: `cd backend && ./gradlew bootRun`
 3. Frontend 실행: `cd frontend && npm run dev`
 4. 브라우저에서 `http://localhost:5173` 접속
