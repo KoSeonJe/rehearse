@@ -1,4 +1,4 @@
-"""S3 키 파싱·유도 유틸. docs/architecture/s3-key-schema.md v1.0 규격 구현."""
+"""S3 키 파싱·유도 유틸."""
 import re
 from dataclasses import dataclass
 from typing import Optional
