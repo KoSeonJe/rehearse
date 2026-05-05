@@ -1,4 +1,4 @@
-# eval/context — Context Engineering Token Measurement
+# backend/eval/context — Context Engineering Token Measurement
 
 ## Purpose
 
@@ -10,17 +10,17 @@ distribution; the gate applies only to Standard fixtures.
 ## How to Run
 
 ```bash
-# From repo root — auto-discover all eval/context/fixtures/session-*.json
-python3 eval/context/measure_tokens.py
+# From repo root — auto-discover all backend/eval/context/fixtures/session-*.json
+python3 backend/eval/context/measure_tokens.py
 
 # Explicit subset
-python3 eval/context/measure_tokens.py --sessions eval/context/fixtures/session-resume-*.json
+python3 backend/eval/context/measure_tokens.py --sessions backend/eval/context/fixtures/session-resume-*.json
 ```
 
 Optional: use tiktoken for more accurate counting (requires `pip install tiktoken`):
 
 ```bash
-python3 eval/context/measure_tokens.py --encoding cl100k_base
+python3 backend/eval/context/measure_tokens.py --encoding cl100k_base
 ```
 
 ## What Counts as PASS

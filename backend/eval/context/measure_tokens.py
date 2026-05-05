@@ -16,9 +16,9 @@ Resume 트랙 fixture 만 측정한 경우는 분포 출력 후 항상 Exit 0
 (L4 cap 검증은 Java 런타임이 강제 — 여기선 가시화 목적).
 
 Usage:
-    python3 eval/context/measure_tokens.py --sessions eval/context/fixtures/*.json
-    python3 eval/context/measure_tokens.py                     # auto-discover
-    python3 eval/context/measure_tokens.py --encoding cl100k_base
+    python3 backend/eval/context/measure_tokens.py --sessions backend/eval/context/fixtures/*.json
+    python3 backend/eval/context/measure_tokens.py                     # auto-discover
+    python3 backend/eval/context/measure_tokens.py --encoding cl100k_base
 """
 
 from __future__ import annotations
@@ -68,7 +68,7 @@ _GLOBAL_CORE = (
     "- 모든 키는 snake_case 로 작성한다.\n"
 )
 
-_TEMPLATE_DIR_PRIMARY = Path(__file__).resolve().parents[2] / "backend" / "src" / "main" / "resources" / "prompts" / "template"
+_TEMPLATE_DIR_PRIMARY = Path(__file__).resolve().parents[2] / "src" / "main" / "resources" / "prompts" / "template"
 _TEMPLATE_DIR_RESUME = _TEMPLATE_DIR_PRIMARY / "resume"
 
 # Inline skeletons mirror SkeletonCallType.java for callTypes that have no template file
@@ -340,7 +340,7 @@ def _autodiscover() -> List[str]:
 def main():
     parser = argparse.ArgumentParser(description="Measure context engineering token usage")
     parser.add_argument("--sessions", nargs="+", required=False,
-                        help="Paths to session fixture JSON files (default: auto-discover eval/context/fixtures/session-*.json)")
+                        help="Paths to session fixture JSON files (default: auto-discover backend/eval/context/fixtures/session-*.json)")
     parser.add_argument("--encoding", default=None,
                         help="tiktoken encoding name (e.g. cl100k_base). Falls back to 4-char heuristic.")
     args = parser.parse_args()
