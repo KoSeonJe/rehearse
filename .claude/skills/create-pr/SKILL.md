@@ -82,7 +82,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 
 **⚠️ 금지 표현 — 타이틀·본문 모두 적용:**
 
-내부 작업 계획의 흔적(플랜 문서 파일명, Phase/Task/Plan 번호, 스프린트 식별자 등)은 **PR 타이틀·본문 어디에도 노출하지 않는다**. 리뷰어 입장에서는 의미 없는 내부 식별자일 뿐이며, 플랜 문서 자체는 `docs/plans/{YYYY-MM-DD-topic}/{product_spec,tech_spec}/`에 따로 링크하면 된다.
+내부 작업 계획의 흔적(플랜 문서 파일명, Phase/Task/Plan 번호, 스프린트 식별자 등)은 **PR 타이틀·본문 어디에도 노출하지 않는다**. 리뷰어 입장에서는 의미 없는 내부 식별자일 뿐이며, 플랜 문서 자체는 `docs/plans/{N}-{slug}/{product-spec,tech-spec,implement}.md`에 따로 링크하면 된다.
 
 금지 예 (타이틀):
 - ❌ `[FE] refactor: Plan 10 Phase B.1 레이아웃 primitive`
@@ -96,7 +96,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 - ✅ `[BE] fix: 면접 생성 API 레이어링 정리`
 - ✅ `[FE] feat: 페이지별 title 고유화 (review-list / admin-feedbacks)`
 
-본문에서도 "Phase B.1", "Plan 10", "T2.5", "Sprint 2" 같은 내부 식별자는 제거하고 **무엇이 달라지는지**로 환원한다. 플랜 문서 참조는 `## 문제 & 동기` 섹션의 `스펙: docs/plans/{YYYY-MM-DD-topic}/{product_spec,tech_spec}/...` 링크로만 남긴다.
+본문에서도 "Phase B.1", "Plan 10", "T2.5", "Sprint 2" 같은 내부 식별자는 제거하고 **무엇이 달라지는지**로 환원한다. 플랜 문서 참조는 `## 문제 & 동기` 섹션의 `스펙: docs/plans/{N}-{slug}/{product-spec,tech-spec}.md` 링크로만 남긴다.
 
 **⚠️ 타이틀은 "개발자 관점의 결과"로 작성 (필수 원칙):**
 
@@ -143,7 +143,7 @@ Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 <!-- 이 PR이 왜 필요한지 1~3문장. 이슈/스펙 링크 -->
 
 - closes #N
-- 스펙: `docs/plans/{YYYY-MM-DD-topic}/{product_spec,tech_spec}/...`
+- 스펙: `docs/plans/{N}-{slug}/{product-spec,tech-spec}.md`
 
 ## 변경 내용
 

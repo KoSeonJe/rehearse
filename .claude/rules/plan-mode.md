@@ -1,6 +1,6 @@
 # Plan Mode Rule
 
-Claude Code Plan Mode (ExitPlanMode) 활용 시 작성하는 플랜 문서 규칙. 영구 문서 (`docs/plans/{YYYY-MM-DD-topic}/tech_spec/design.md`) 는 사용자가 명시 요청 시에만 별도 작성. 폴더 구조는 루트 `AGENTS.md` "Spec-Driven Work" 섹션 참조.
+Claude Code Plan Mode (ExitPlanMode) 활용 시 작성하는 플랜 문서 규칙. 영구 문서 (`docs/plans/{N}-{slug}/tech-spec.md`) 는 사용자가 명시 요청 시에만 별도 작성. 폴더 구조는 루트 `AGENTS.md` "Spec-Driven Work" + `docs/plans/AGENTS.md` 참조.
 
 ## 작성 원칙
 

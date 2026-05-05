@@ -35,7 +35,7 @@ Start by understanding the current project context, then ask questions one at a 
 ## After the Design
 
 **Documentation:**
-- Write the validated design to `docs/plans/{YYYY-MM-DD-topic}/tech_spec/design.md` (folder structure per root `AGENTS.md` "Spec-Driven Work" — `product_spec/` for requirements, `tech_spec/` for design)
+- Write the validated design to `docs/plans/{N}-{slug}/tech-spec.md` (folder structure per root `AGENTS.md` "Spec-Driven Work" + `docs/plans/AGENTS.md` — `product-spec.md` for requirements, `tech-spec.md` for design)
 - Use elements-of-style:writing-clearly-and-concisely skill if available
 - Commit the design document to git
 
