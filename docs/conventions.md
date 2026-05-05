@@ -1,8 +1,8 @@
 # Rehearse 공통 컨벤션
 
 > 유지보수와 협업을 위한 공통 규칙. 모든 에이전트가 준수합니다.
-> FE 컨벤션: `frontend/CONVENTIONS.md` | BE 컨벤션: `backend/CONVENTIONS.md`
-> FE 코딩 가이드: `frontend/CODING_GUIDE.md` | BE 코딩 가이드: `backend/CODING_GUIDE.md`
+> FE 컨벤션: `frontend/.claude/rules/conventions.md` | BE 컨벤션: `backend/.claude/rules/conventions.md`
+> FE 아키텍처: `frontend/.claude/rules/architecture.md`
 
 ---
 
