@@ -7,6 +7,15 @@ description: "GitHub open Issue 선택 후 메타인지 대화로 product-spec.m
 
 Issue 1개 → `docs/plans/{N}-{slug}/product-spec.md` 1개. 사용자 메타인지를 강제하는 대화형 spec 생성.
 
+## 전제 (Read 필수, Blocking)
+
+스킬 시작 직후 다음 2개 문서 `Read`. 미로드 시 진행 금지.
+
+- `docs/plans/AGENTS.md` — 폴더 생성 트리거 / 명명 규약 / 워크플로우 / 안티패턴
+- `docs/plans/_templates/product-spec.md` — 출력 파일 템플릿 구조
+
+스펙 작성 전체 단계에서 위 2개 룰 준수. 충돌 시 `docs/plans/AGENTS.md` 우선.
+
 ## 핵심 원칙
 
 - **한 번에 1 질문** (brainstorming 스킬 패턴 차용).
@@ -117,7 +126,7 @@ options:
 
 ## Step 4 — preview
 
-수집한 답변으로 product-spec.md 초안 작성. 템플릿: `docs/plans/_templates/product-spec.md` 구조 따름.
+수집한 답변으로 product-spec.md 초안 작성. 템플릿: `docs/plans/_templates/product-spec.md` 섹션 / 헤더 / 체크리스트 구조 그대로 따름 (자의적 변형 X). `docs/plans/AGENTS.md` Section 3 (파일 역할 — product-spec = 왜 / 무엇 / 수용기준) 위반 X.
 
 ```markdown
 # Product Spec — {title}

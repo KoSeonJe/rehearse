@@ -7,10 +7,18 @@ description: "기존 product-spec 기반 tech-spec.md 생성. 영향범위 / 정
 
 `product-spec.md` 1개 → `tech-spec.md` 1개. 기술 메타인지를 강제하는 대화형 spec 생성.
 
-## 전제
+## 전제 (Read 필수, Blocking)
+
+스킬 시작 직후 다음 2개 문서 `Read`. 미로드 시 진행 금지.
+
+- `docs/plans/AGENTS.md` — 워크플로우 / 승인 게이트 / BE+FE 분리 룰 / 안티패턴
+- `docs/plans/_templates/tech-spec.md` — 출력 파일 템플릿 구조
+
+추가 전제:
 
 - 사용자가 product-spec 을 이미 작성했어야 함. 부재 시 → "먼저 `/create-product-spec` 호출 권장." 종료.
 - tech-spec 은 product-spec 의 WHY/WHAT 을 받아 **HOW** 만 다룬다. 요구사항 새로 정의 X.
+- 모든 단계에서 `docs/plans/AGENTS.md` 룰 준수. 충돌 시 AGENTS.md 우선.
 
 ## 핵심 원칙
 
@@ -217,7 +225,7 @@ options:
 
 ## Step 5 — preview
 
-수집된 답변으로 tech-spec.md 초안. 템플릿: `docs/plans/_templates/tech-spec.md` 구조.
+수집된 답변으로 tech-spec.md 초안. 템플릿: `docs/plans/_templates/tech-spec.md` 섹션 / 헤더 / 메타데이터 블록 그대로 따름 (자의적 변형 X). `docs/plans/AGENTS.md` Section 3 (파일 역할) + Section 5 (BE/FE 분리 룰 / API contract 필수 케이스) 위반 X.
 
 ```markdown
 # Tech Spec — {title}
