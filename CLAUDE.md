@@ -13,8 +13,8 @@
 - Key agents:
   - **Code review (BE)**: `code-reviewer-backend` (Opus) — 룰 위배 + 성능 / 확장성 / 클린코드 / 쿼리 효율성. 자기 코드 셀프 승인 금지
   - **Code review (FE)**: `code-reviewer-frontend` (Opus) — 룰 위배 + 결함·사이드이펙트 / 성능 / 확장성 / 클린코드 / 데이터 페칭 효율성. 자기 코드 셀프 승인 금지
-  - **FE 구현**: `frontend` (Opus) — 구현 설계 (tech_spec) + 컴포넌트 / 훅 / store / API / 테스트
-  - **BE 구현**: `backend` — API, 비즈니스 로직, DB 스키마, 구현 설계 (tech_spec)
+  - **FE 구현**: `frontend` (Opus) — 구현 설계 (tech-spec.md) + 컴포넌트 / 훅 / store / API / 테스트
+  - **BE 구현**: `backend` — API, 비즈니스 로직, DB 스키마, 구현 설계 (tech-spec.md)
   - **Git/PR (Sonnet)**: `git-manager` — 브랜치 푸시, `/create-pr`, PR 머지, develop 동기화, 태그
   - **Docs (Sonnet)**: `docs-manager` — `progress.md` 갱신, 핸드오프 문서, spec status, README/AGENTS.md 편집
   - **Debugging (BE)**: `debugger-backend` (Opus) — 재현 / 원인 분석 / minimal fix. 큰 변경 = backend 위임
@@ -33,8 +33,8 @@
 - 태그 push (사용자 명시 시)
 
 **`docs-manager` (Sonnet)**:
-- `docs/plans/{YYYY-MM-DD-topic}/tech_spec/progress.md` 행 상태 변경 / 진행 로그 추가 (구식 `docs/plans/**/progress.md` 도 호환)
-- `docs/todo/<날짜>/*.md` 핸드오프 문서 작성·갱신
+- `docs/plans/{N}-{slug}/progress.md` 진행 로그 추가 / 행 상태 변경
+- `docs/plans/{N}-{slug}/handoff.md` 세션 인계 문서 작성·갱신 (세션 종료 시)
 - spec status 갱신, README / AGENTS.md / CLAUDE.md 부분 편집
 
 위 작업 등장 시 즉시 `Agent(subagent_type=git-manager|docs-manager, ...)`. 결과만 받아 사용자 보고.

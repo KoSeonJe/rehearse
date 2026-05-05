@@ -21,6 +21,11 @@
 @.claude/rules/security.md
 @.claude/rules/plan-mode.md
 @.claude/rules/branch-pr.md
+@.claude/rules/reporting.md
+
+## AGENTS.md / CLAUDE.md 관리
+
+`AGENTS.md` / `CLAUDE.md` (root + backend/frontend/lambda) 수정·추가·점검 시 `claude-md-management` 플러그인 사용. 상세 룰 (도구 매핑 / 트리거 신호 / 운영 룰) = `.claude/rules/meta-docs.md` Read.
 
 ## Project Overview
 
@@ -38,7 +43,7 @@ devlens/
 ├── frontend/   # React 18 + TypeScript + Vite + Tailwind + Zustand + TanStack Query
 ├── backend/    # Java 21 + Spring Boot 3.x + Gradle Kotlin DSL + Spring Data JPA
 ├── lambda/     # Python 3.12 (analysis: Gemini/Vision/Whisper, convert: MediaConvert)
-├── docs/       # architecture, product, plans, guides
+├── docs/       # plans (Issue spec), images, performance-tests, troubleshooting
 ```
 
 ### Placement Rule
@@ -103,73 +108,12 @@ cd analysis && pytest                                   # 단위 테스트
 cd analysis && pytest tests/test_vision_analyzer.py     # 단일 파일
 ```
 
-## 작업 후 보고
-
-모든 agent / 메인 세션 공통. 작업 완료 / 중단 시 변경 요약 외 **발견 사항 + 사용자 결정 필요 항목** 별도 처리. "문제 없음" 으로 묻어두지 말 것.
-
-### 1. 발견 사항 보고 (텍스트)
-
-후속 결정에 사용자 판단 불필요한 단순 발견은 텍스트 보고.
-
-- 미수정 결정 (예: 과거 문서 / 역사 기록 / scope 외 파일) — 무엇을 / 왜 / 추후 어떻게 할지
-- 가능 추정 / 미확인 가정 — 검증 필요 항목
-- 발견된 다른 위반 / 불일치 (현재 작업 범위 외)
-- 마이그레이션 필요 항목 (현재 코드와 새 컨벤션 갭 등)
-
-형식:
-```
-**발견 사항**:
-- {내용} — {조치 / 보류 사유 / 사용자 결정 필요 여부}
-```
-
-### 2. 사용자 결정 필요 → `AskUserQuestion` 도구 사용 (Blocking)
-
-다음 케이스 = **`AskUserQuestion` 도구로 선택지 제시**. 텍스트 나열 X. 자유서술 받기 X.
-
-- trade-off 결정 (옵션 비등 / NF 결정: 확장성·정합성·성능·동시성)
-- 영향 범위 큰 변경 (공개 API 시그니처 / 이벤트 페이로드 / 마이그레이션 backfill)
-- spec 미커버 / 컨벤션 미커버 케이스
-- 발견 사항 중 후속 작업 분기 필요 (수정 / 보류 / 별도 PR)
-- 요구사항 모호 / 누락
-
-**원칙**:
-- 옵션 2-4개. 자유서술 회피.
-- 첫 자리 = 추천 옵션. 라벨에 `(추천)` 명시.
-- 각 옵션 = trade-off 한 줄 (장 / 단 / 채택 사유).
-- 사용자 답변 받기 전 후속 작업 / 코드 변경 금지 (Blocking).
-
-**예시**:
-```
-question: "동시성 모델 결정 — 어떻게 진행할까요?"
-options:
-  - "낙관락 (추천) — 충돌 적은 도메인. 재시도 로직 단순"
-  - "비관락 — 충돌 잦은 도메인. select for update 비용"
-  - "이벤트 직렬화 — 강순서 보장. 큐 인프라 필요"
-```
-
-`AskUserQuestion` 도구 부재 환경에서만 텍스트 fallback (옵션 + 추천 + 사유 동일 형식).
-
-발견 즉시 표면화. "일단 해보고" / "CI 통과" / "단순함" 우회 금지.
-
 ## Spec-Driven Work
 
-### 폴더 구조
+모든 spec 필요 작업 = GitHub Issue (Epic) + `docs/plans/{N}-{slug}/` 폴더 1:1 매핑. 작은 bug/chore 는 Issue body 만 (폴더 X).
 
-```
-docs/plans/{YYYY-MM-DD-topic}/
-├── product_spec/        # 기획 스펙 (사용자 작성). 무엇을 / 왜 / 수용 기준
-│   └── requirements.md
-└── tech_spec/           # 구현 설계 (backend / frontend agent 작성). 어떻게
-    ├── design.md
-    └── progress.md
-```
+플로우: `product-spec.md` (사용자) → `tech-spec.md` (agent, API contract 포함) → ★승인★ → `implement.md` (또는 `-be`/`-fe`) → ★승인★ → 구현 → PR (`Closes #N`) → Issue close.
 
-### 워크플로우
+BE/FE 동시 작업 시 API contract 합의 후 병렬 시작 (FE 는 mock 진행). 세션 종료 / 컨텍스트 30-40% 잔여 시 `handoff.md` 작성.
 
-```
-[사용자] product_spec 작성
-   ↓
-[구현 agent] tech_spec 작성 (Why / Goal / Tasks / Trade-offs / Verification)
-   ↓ (사용자 승인)
-[구현 agent] 코드 작성
-```
+상세 룰 (폴더 구조 / 명명 / 파일 역할 / 분리 임계 / handoff / 종료) + 템플릿: `docs/plans/AGENTS.md` + `docs/plans/_templates/`.

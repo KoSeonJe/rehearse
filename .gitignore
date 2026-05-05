@@ -42,11 +42,6 @@ skills-lock.json
 docs/resume/
 docs/local/
 
-# === docs/todo (개별 todo 는 로컬 전용, 규약 AGENTS.md 만 공유) ===
-docs/todo/**
-!docs/todo/
-!docs/todo/AGENTS.md
-
 # === Docker ===
 backend/.env
 mysql_data/
@@ -76,9 +71,6 @@ __pycache__/
 !.claude/skills/
 !.claude/skills/**
 .claude.local.md
-
-# === 계획 문서 (개인 작업 노트, 레포 추적 안 함) ===
-docs/plans/
 
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/

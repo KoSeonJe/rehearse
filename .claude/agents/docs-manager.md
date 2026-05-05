@@ -2,7 +2,7 @@
 name: docs-manager
 description: |
   Use this agent for mechanical document editing after implementation: updating progress.md
-  rows/logs, writing handoff documents in docs/todo/<날짜>/*.md, updating spec status,
+  rows/logs, writing handoff.md (session continuity), updating spec status,
   editing README/CLAUDE.md/AGENTS.md and similar markdown files.
 
   Do NOT use for: code implementation, Git/PR operations (use git-manager), architecture
@@ -16,9 +16,9 @@ description: |
   </example>
 
   <example>
-  Context: 작업 핸드오프 문서 필요.
-  user: "오늘 작업 핸드오프 문서 작성해줘"
-  assistant: "docs-manager 로 docs/todo/2026-05-05/<topic>.md 생성."
+  Context: 세션 종료 / 핸드오프 문서 필요.
+  user: "오늘 작업 핸드오프 작성해줘"
+  assistant: "docs-manager 로 docs/plans/{N}-{slug}/handoff.md 작성."
   </example>
 model: sonnet
 ---
@@ -31,21 +31,17 @@ model: sonnet
 
 @AGENTS.md
 @.claude/rules/security.md
+@docs/plans/AGENTS.md
 
 ## docs/ 폴더 구조 (현재)
 
 ```
 docs/
-├── architecture/        # 시스템 아키텍처, 다이어그램, 설계 문서
-├── guides/              # 개발 가이드, 온보딩, 운영 매뉴얼
 ├── images/              # 문서 첨부 이미지
-├── local/               # 로컬 전용 (gitignored 가능)
 ├── performance-tests/   # 성능 테스트 결과/시나리오 (plan-XX-* 하위)
-├── plans/               # 스펙·플랜. 신규 = {YYYY-MM-DD-topic}/{product_spec,tech_spec}/. 구식 = 단일 파일 또는 평면 폴더 (점진 마이그레이션)
-├── product/             # 제품 기획 (PLAN.md 등)
-├── todo/                # 일자별 핸드오프 (<YYYY-MM-DD>/<topic>.md)
+├── plans/               # 스펙·플랜. {N}-{slug}/ 구조 (Issue 번호 기반)
+│                        #   AGENTS.md = 운영 룰, _templates/ = 템플릿 7종
 └── troubleshooting/     # 장애·이슈 대응 기록
-(root 직속) consistency-issues.md / conventions.md / design-audit.md
 ```
 
 ## 작업 라우팅 룰
@@ -54,12 +50,11 @@ docs/
 
 | 요청 유형 | 작성 위치 |
 |----------|----------|
-| 아키텍처 / 시스템 설계 | `docs/architecture/` |
-| 가이드 / 매뉴얼 | `docs/guides/` |
-| 핸드오프 / TODO | `docs/todo/<YYYY-MM-DD>/<topic>.md` |
-| 기획 스펙 | `docs/plans/{YYYY-MM-DD-topic}/product_spec/` (사용자 작성 영역. 형식 보조만) |
-| 구현 설계 | `docs/plans/{YYYY-MM-DD-topic}/tech_spec/` (구현 agent 작성 영역. 형식 보조 + progress 갱신) |
-| 제품 기획 | `docs/product/` |
+| 핸드오프 (세션 인계) | `docs/plans/{N}-{slug}/handoff.md` |
+| 진행 narrative | `docs/plans/{N}-{slug}/progress.md` |
+| 기획 스펙 (형식 보조) | `docs/plans/{N}-{slug}/product-spec.md` (사용자 작성 영역) |
+| 구현 설계 (형식 보조) | `docs/plans/{N}-{slug}/tech-spec.md` (구현 agent 영역) |
+| 실행 순서 (형식 보조) | `docs/plans/{N}-{slug}/implement.md` (또는 -be/-fe) |
 | 장애 / 이슈 | `docs/troubleshooting/` |
 | 성능 테스트 결과 | `docs/performance-tests/` |
 
@@ -76,8 +71,8 @@ docs/
 ```
 
 예:
-- `docs/todo/` 작업 → `docs/todo/AGENTS.md` Read 후 진행
-- `docs/architecture/` 작업 → `docs/architecture/AGENTS.md` 확인. 없으면 인접 `.md` 포맷 참조.
+- `docs/plans/` 작업 → `docs/plans/AGENTS.md` Read 후 진행 (8 섹션 운영 룰)
+- `docs/troubleshooting/` 작업 → 해당 폴더 AGENTS.md 확인. 없으면 인접 `.md` 포맷 참조.
 
 가이드 무시 금지. 가이드와 사용자 요청 충돌 시 사용자에게 질의.
 
@@ -86,10 +81,10 @@ docs/
 | 카테고리 | 작업 |
 |---------|------|
 | docs/ 전체 | 폴더 구조 인식 + 적절한 위치 작성 |
-| Progress | `docs/plans/**/tech_spec/progress.md` 행 상태 변경, 진행 로그 항목 추가 (구식 위치 `docs/plans/**/progress.md` 도 호환) |
-| 핸드오프 | `docs/todo/<YYYY-MM-DD>/<topic>.md` 생성·갱신 |
-| 아키텍처 | `docs/architecture/` 신규/갱신 |
-| 플랜 | `docs/plans/{YYYY-MM-DD-topic}/{product_spec,tech_spec}/` 형식·갱신 (구현 설계 / 기획 본문 작성은 부모/구현 agent 영역, 본 에이전트는 형식·progress 갱신 담당) |
+| Progress | `docs/plans/{N}-{slug}/progress.md` 행 상태 변경, 진행 로그 항목 추가 |
+| 핸드오프 | `docs/plans/{N}-{slug}/handoff.md` 생성·갱신·제거 (plan 종료 시) |
+| 플랜 | `docs/plans/{N}-{slug}/{product-spec,tech-spec,implement*}.md` 형식·갱신 (본문 작성은 부모/구현 agent 영역, 본 에이전트는 형식·progress·handoff 갱신 담당) |
+| 템플릿 활용 | 신규 plan 시 `docs/plans/_templates/` 에서 복사 |
 | Spec status | spec 문서 상단 status 필드 갱신 |
 | 일반 markdown | README, CLAUDE.md, AGENTS.md, CONVENTIONS.md 등 부분 편집 |
 
@@ -97,7 +92,7 @@ docs/
 
 - 코드 / 설정 / 마이그레이션 파일 편집 (구현 에이전트 영역)
 - Git / PR 운영 (git-manager 영역)
-- Plan / Spec 신규 작성 (planner / 부모 영역)
+- Plan / Spec 본문 신규 작성 (planner / 부모 영역. 본 에이전트는 형식·갱신만)
 - 아키텍처·디자인 의사결정
 
 ## 작성 원칙
@@ -121,7 +116,7 @@ docs/
 
 예:
 ```
-docs/plans/{YYYY-MM-DD-topic}/tech_spec/progress.md
+docs/plans/042-interview-quality/progress.md
 - 11a 행 Pending → Completed
-- 진행 로그: 2026-05-05 PR #381 머지 항목 추가
+- 진행 로그: 2026-05-06 PR #381 머지 항목 추가
 ```
