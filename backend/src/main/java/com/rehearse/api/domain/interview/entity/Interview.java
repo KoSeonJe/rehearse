@@ -57,11 +57,12 @@ public class Interview {
     @BatchSize(size = 100)
     private Set<InterviewType> interviewTypes = new HashSet<>();
 
-    @ElementCollection
+    @ElementCollection(targetClass = CsSubTopic.class)
     @CollectionTable(name = "interview_cs_sub_topics", joinColumns = @JoinColumn(name = "interview_id"))
+    @Enumerated(EnumType.STRING)
     @Column(name = "cs_sub_topic", length = 50)
     @BatchSize(size = 100)
-    private Set<String> csSubTopics = new HashSet<>();
+    private Set<CsSubTopic> csSubTopics = new HashSet<>();
 
     @Column(nullable = false)
     private Integer durationMinutes;
@@ -104,7 +105,7 @@ public class Interview {
 
     @Builder
     public Interview(Long userId, Position position, String positionDetail, InterviewLevel level,
-                     List<InterviewType> interviewTypes, List<String> csSubTopics,
+                     List<InterviewType> interviewTypes, List<CsSubTopic> csSubTopics,
                      Integer durationMinutes, TechStack techStack) {
         this.userId = userId;
         this.position = position;
@@ -122,7 +123,7 @@ public class Interview {
         return Collections.unmodifiableSet(interviewTypes);
     }
 
-    public Set<String> getCsSubTopics() {
+    public Set<CsSubTopic> getCsSubTopics() {
         return Collections.unmodifiableSet(csSubTopics);
     }
 

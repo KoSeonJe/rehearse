@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.event;
 
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
@@ -74,18 +75,18 @@ class QuestionGenerationEventHandlerTest {
                     Position.FRONTEND, "React 개발자",
                     InterviewLevel.SENIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL),
-                    List.of("OS", "Network"),
+                    List.of(CsSubTopic.OS, CsSubTopic.NETWORK),
                     "이력서 내용", "hash-42", 45,
                     TechStack.REACT_TS);
 
             // when
             eventHandler.handleQuestionGenerationEvent(event);
 
-            // then
+            // then: enum 페이로드 → 핸들러 경계에서 enum.name() 으로 변환
             then(questionGenerationService).should().generateQuestions(
                     eq(42L), eq(99L), eq(Position.FRONTEND), eq(InterviewLevel.SENIOR),
                     eq(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL)),
-                    eq(List.of("OS", "Network")),
+                    eq(List.of("OS", "NETWORK")),
                     eq("이력서 내용"), eq("hash-42"), eq(45), eq(TechStack.REACT_TS));
         }
     }

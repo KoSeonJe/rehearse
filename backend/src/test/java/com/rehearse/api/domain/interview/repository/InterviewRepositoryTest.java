@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.repository;
 
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
@@ -60,7 +61,7 @@ class InterviewRepositoryTest extends AbstractMySqlContainerTest {
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.LANGUAGE_FRAMEWORK))
-                .csSubTopics(List.of("자료구조", "운영체제"))
+                .csSubTopics(List.of(CsSubTopic.DATA_STRUCTURE, CsSubTopic.OS))
                 .durationMinutes(30)
                 .build();
 
@@ -75,7 +76,7 @@ class InterviewRepositoryTest extends AbstractMySqlContainerTest {
         // then
         assertThat(found.getInterviewTypes()).containsExactlyInAnyOrder(
                 InterviewType.CS_FUNDAMENTAL, InterviewType.LANGUAGE_FRAMEWORK);
-        assertThat(found.getCsSubTopics()).containsExactlyInAnyOrder("자료구조", "운영체제");
+        assertThat(found.getCsSubTopics()).containsExactlyInAnyOrder(CsSubTopic.DATA_STRUCTURE, CsSubTopic.OS);
         assertThat(found.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
     }
 
@@ -111,7 +112,7 @@ class InterviewRepositoryTest extends AbstractMySqlContainerTest {
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
                 .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
-                .csSubTopics(List.of("자료구조"))
+                .csSubTopics(List.of(CsSubTopic.DATA_STRUCTURE))
                 .durationMinutes(30)
                 .build();
 
@@ -129,7 +130,7 @@ class InterviewRepositoryTest extends AbstractMySqlContainerTest {
                 .containsExactly(InterviewType.CS_FUNDAMENTAL);
         assertThat(found.getCsSubTopics())
                 .hasSize(1)
-                .containsExactly("자료구조");
+                .containsExactly(CsSubTopic.DATA_STRUCTURE);
     }
 
     @Test
