@@ -5,14 +5,18 @@ import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * L4 FocusLayer — JIT per-callType USER fragment renderer.
  * FocusHints sealed pattern 매칭으로 컴파일타임 callType ↔ hint type 정합성 보장.
  */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class FocusLayer implements ContextLayer {
@@ -27,22 +31,31 @@ public class FocusLayer implements ContextLayer {
     static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
     static final int CAP_RESUME_WRAP_UP = 600;
 
+    // chars/4 토큰 휴리스틱 ±20% 오차 흡수 마진
+    private static final double SAFETY_MARGIN = 0.9;
+    private static final int MAX_TRUNCATE_ITERATIONS = 8;
+    // LLM JSON 형식 유지 위한 지시문 끝부분 보존
+    private static final int FALLBACK_TAIL_PRESERVE_CHARS = 200;
+    private static final Pattern MARKER_BLOCK_PATTERN =
+            Pattern.compile("<<<([A-Z_]+)>>>\\n([\\s\\S]*?)\\n<<<END_\\1>>>", Pattern.MULTILINE);
+
     private final TokenEstimator tokenEstimator;
 
     @Override
     public List<ChatMessage> build(ContextBuildRequest req) {
         FocusHints hints = req.focusHints();
+        String callType = req.callType();
         return switch (hints) {
-            case FocusHints.IntentClassifierHints h -> render(buildIntentClassifier(h), CAP_INTENT_CLASSIFIER);
-            case FocusHints.AnswerAnalyzerHints h -> render(buildAnswerAnalyzer(h), CAP_ANSWER_ANALYZER);
-            case FocusHints.FollowUpGeneratorV3Hints h -> render(buildFollowUpGeneratorV3(h), CAP_FOLLOW_UP_GENERATOR_V3);
-            case FocusHints.ClarifyResponseHints h -> render(buildClarifyResponse(h), CAP_CLARIFY_RESPONSE);
-            case FocusHints.GiveUpResponseHints h -> render(buildGiveUpResponse(h), CAP_GIVEUP_RESPONSE);
-            case FocusHints.ResumePlaygroundOpenerHints h -> render(buildResumePlaygroundOpener(h), CAP_RESUME_PLAYGROUND_OPENER);
-            case FocusHints.ResumePlaygroundResponderHints h -> render(buildResumePlaygroundResponder(h), CAP_RESUME_PLAYGROUND_RESPONDER);
-            case FocusHints.ResumeChainInterrogatorHints h -> render(buildResumeChainInterrogator(h), CAP_RESUME_CHAIN_INTERROGATOR);
-            case FocusHints.ResumeWrapUpHints h -> render(buildResumeWrapUp(h), CAP_RESUME_WRAP_UP);
-            case FocusHints.EmptyHints ignored -> handleEmpty(req.callType());
+            case FocusHints.IntentClassifierHints h -> render(buildIntentClassifier(h), CAP_INTENT_CLASSIFIER, callType);
+            case FocusHints.AnswerAnalyzerHints h -> render(buildAnswerAnalyzer(h), CAP_ANSWER_ANALYZER, callType);
+            case FocusHints.FollowUpGeneratorV3Hints h -> render(buildFollowUpGeneratorV3(h), CAP_FOLLOW_UP_GENERATOR_V3, callType);
+            case FocusHints.ClarifyResponseHints h -> render(buildClarifyResponse(h), CAP_CLARIFY_RESPONSE, callType);
+            case FocusHints.GiveUpResponseHints h -> render(buildGiveUpResponse(h), CAP_GIVEUP_RESPONSE, callType);
+            case FocusHints.ResumePlaygroundOpenerHints h -> render(buildResumePlaygroundOpener(h), CAP_RESUME_PLAYGROUND_OPENER, callType);
+            case FocusHints.ResumePlaygroundResponderHints h -> render(buildResumePlaygroundResponder(h), CAP_RESUME_PLAYGROUND_RESPONDER, callType);
+            case FocusHints.ResumeChainInterrogatorHints h -> render(buildResumeChainInterrogator(h), CAP_RESUME_CHAIN_INTERROGATOR, callType);
+            case FocusHints.ResumeWrapUpHints h -> render(buildResumeWrapUp(h), CAP_RESUME_WRAP_UP, callType);
+            case FocusHints.EmptyHints ignored -> handleEmpty(callType);
         };
     }
 
@@ -50,7 +63,8 @@ public class FocusLayer implements ContextLayer {
         if ("compaction_summarizer".equals(callType)) {
             return List.of();
         }
-        throw new IllegalStateException("L4 unregistered callType: " + callType);
+        log.warn("[FocusLayer] L4 미등록 callType 진입: callType={}", callType);
+        return List.of();
     }
 
     private String buildResumePlaygroundOpener(FocusHints.ResumePlaygroundOpenerHints h) {
@@ -83,14 +97,85 @@ public class FocusLayer implements ContextLayer {
                "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요.";
     }
 
-    private List<ChatMessage> render(String fragment, int cap) {
+    private List<ChatMessage> render(String fragment, int cap, String callType) {
         int estimated = tokenEstimator.estimate(fragment);
         if (estimated > cap) {
-            throw new IllegalStateException(
-                "L4 fragment exceeds " + cap + " tokens (estimated " + estimated + ")"
-            );
+            log.warn("[FocusLayer] L4 cap 초과 → 본문 절단: callType={}, estimated={}, cap={}",
+                    callType, estimated, cap);
+            fragment = truncateBodyWithSafetyMargin(fragment, cap);
         }
         return List.of(ChatMessage.of(ChatMessage.Role.USER, fragment));
+    }
+
+    private String truncateBodyWithSafetyMargin(String fragment, int cap) {
+        int targetTokens = (int) Math.floor(cap * SAFETY_MARGIN);
+        int targetChars = Math.max(1, targetTokens * 4);
+
+        String current = fragment;
+        for (int i = 0; i < MAX_TRUNCATE_ITERATIONS; i++) {
+            if (tokenEstimator.estimate(current) <= targetTokens) {
+                return current;
+            }
+            int currentLen = current.length();
+            if (currentLen <= targetChars) {
+                return current;
+            }
+            int excess = currentLen - targetChars;
+            String reduced = reduceMarkerBlocks(current, excess);
+            if (reduced.equals(current)) {
+                reduced = headTruncatePreservingTail(current, targetChars);
+            }
+            current = reduced;
+        }
+        if (tokenEstimator.estimate(current) > targetTokens) {
+            log.warn("[FocusLayer] L4 절단 미수렴 → 강제 head 절단: iterations={}, targetTokens={}",
+                    MAX_TRUNCATE_ITERATIONS, targetTokens);
+            current = headTruncatePreservingTail(current, targetChars);
+        }
+        return current;
+    }
+
+    private String reduceMarkerBlocks(String fragment, int charsToRemove) {
+        Matcher matcher = MARKER_BLOCK_PATTERN.matcher(fragment);
+        int totalBodyLen = 0;
+        int blockCount = 0;
+        while (matcher.find()) {
+            totalBodyLen += matcher.group(2).length();
+            blockCount++;
+        }
+        if (blockCount == 0 || totalBodyLen == 0) {
+            return fragment;
+        }
+
+        StringBuilder sb = new StringBuilder(fragment.length());
+        int cursor = 0;
+        matcher.reset();
+        while (matcher.find()) {
+            sb.append(fragment, cursor, matcher.start());
+            String markerName = matcher.group(1);
+            String body = matcher.group(2);
+            int bodyShare = (int) Math.ceil(((double) body.length() / totalBodyLen) * charsToRemove);
+            int keep = Math.max(0, body.length() - bodyShare);
+            String truncated = body.length() <= keep ? body : body.substring(0, keep);
+            sb.append("<<<").append(markerName).append(">>>\n")
+                    .append(truncated)
+                    .append("\n<<<END_").append(markerName).append(">>>");
+            cursor = matcher.end();
+        }
+        sb.append(fragment, cursor, fragment.length());
+        return sb.toString();
+    }
+
+    private String headTruncatePreservingTail(String fragment, int targetChars) {
+        int tailKeep = Math.min(FALLBACK_TAIL_PRESERVE_CHARS, fragment.length());
+        if (targetChars >= fragment.length()) {
+            return fragment;
+        }
+        int headBudget = Math.max(0, targetChars - tailKeep);
+        if (headBudget <= 0) {
+            return fragment.substring(fragment.length() - tailKeep);
+        }
+        return fragment.substring(0, headBudget) + fragment.substring(fragment.length() - tailKeep);
     }
 
     private String buildIntentClassifier(FocusHints.IntentClassifierHints h) {
