@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
@@ -24,6 +25,7 @@ public class ResumeTurnEventPublisher {
     private final QuestionSetRepository questionSetRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional(readOnly = true)
     public void publish(Long interviewId, long turnIndex, AnswerAnalysis analysis,
                         IntentResult intent, ResumeMode currentMode, int currentChainLevel,
                         ResumeSkeleton skeleton, String userAnswer, Long questionId) {

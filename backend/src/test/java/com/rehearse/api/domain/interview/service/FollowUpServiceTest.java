@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
@@ -39,7 +38,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -102,17 +100,13 @@ class FollowUpServiceTest {
     @Mock
     private InterviewFinder interviewFinder;
 
-    @Mock
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
-                eventPublisher);
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));
@@ -201,7 +195,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("HashMap 충돌 해결?"), audio());
@@ -225,7 +219,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 2));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -259,11 +253,8 @@ class FollowUpServiceTest {
 
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
-            TurnCompletedEvent event = capturePublishedEvent();
-            assertThat(event.questionId()).isEqualTo(50L);
-            assertThat(event.questionSetId()).isEqualTo(10L);
-            assertThat(event.turnIndex()).isZero();
-            assertThat(event.intent()).isEqualTo(IntentType.ANSWER);
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
         }
 
         @Test
@@ -277,7 +268,8 @@ class FollowUpServiceTest {
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("AI_005"));
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class));
+            then(followUpTransactionHandler).should(never())
+                    .saveFollowUpResultAndPublishEvent(anyLong(), any(), any(), any());
         }
 
         @Test
@@ -305,11 +297,8 @@ class FollowUpServiceTest {
 
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
-            TurnCompletedEvent event = capturePublishedEvent();
-            assertThat(event.questionId()).isEqualTo(50L);
-            assertThat(event.questionSetId()).isEqualTo(10L);
-            assertThat(event.turnIndex()).isZero();
-            assertThat(event.intent()).isEqualTo(IntentType.ANSWER);
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
         }
 
         @Test
@@ -323,11 +312,8 @@ class FollowUpServiceTest {
 
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
-            TurnCompletedEvent event = capturePublishedEvent();
-            assertThat(event.questionId()).isEqualTo(50L);
-            assertThat(event.questionSetId()).isEqualTo(10L);
-            assertThat(event.turnIndex()).isZero();
-            assertThat(event.intent()).isEqualTo(IntentType.CLARIFY_REQUEST);
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
         }
 
         @Test
@@ -513,7 +499,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 99L);
-            given(followUpTransactionHandler.saveFollowUpResult(any(), any()))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(any(), any(), any(), any()))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -530,9 +516,4 @@ class FollowUpServiceTest {
         }
     }
 
-    private TurnCompletedEvent capturePublishedEvent() {
-        ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
-        then(eventPublisher).should().publishEvent(captor.capture());
-        return captor.getValue();
-    }
 }
