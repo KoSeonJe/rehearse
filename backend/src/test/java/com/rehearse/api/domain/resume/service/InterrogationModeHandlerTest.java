@@ -73,7 +73,7 @@ class InterrogationModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
+            InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
             FollowUpResponse response = result.response();
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
@@ -162,7 +162,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             state.getChainStateTracker().markChainComplete();
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of());
+            InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of());
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
             assertThat(result.response().isPresentToUser()).isFalse();
@@ -234,7 +234,7 @@ class InterrogationModeHandlerTest {
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
             try {
-                Future<InterrogationModeHandler.InterrogationTurnResult> handlerFuture =
+                Future<InterrogationTurnResult> handlerFuture =
                         executor.submit(() -> handler.handle(1L, state, "답변", createAnalysis(4), plan, java.util.List.of()));
 
                 // LLM 진입까지 대기 = handler 가 Phase 2 안에 있다는 의미 (Phase 1 lock 은 이미 해제)
@@ -252,7 +252,7 @@ class InterrogationModeHandlerTest {
 
                 // handler 마무리
                 llmRelease.countDown();
-                InterrogationModeHandler.InterrogationTurnResult result = handlerFuture.get(2, TimeUnit.SECONDS);
+                InterrogationTurnResult result = handlerFuture.get(2, TimeUnit.SECONDS);
                 assertThat(result.questionId()).isEqualTo(1L);
             } finally {
                 executor.shutdownNow();

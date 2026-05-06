@@ -156,7 +156,7 @@ public class ResumeInterviewOrchestrator {
         return switch (mode) {
             case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan, previousExchanges);
             case INTERROGATION -> {
-                InterrogationModeHandler.InterrogationTurnResult r =
+                InterrogationTurnResult r =
                         interrogationHandler.handle(interviewId, state, answerText, analysis, plan, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
@@ -180,7 +180,7 @@ public class ResumeInterviewOrchestrator {
         if (result.switchedToInterrogation()) {
             runtimeStateStore.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
             InterviewRuntimeState refreshed = runtimeStateStore.get(interviewId);
-            InterrogationModeHandler.InterrogationTurnResult interrogationResult =
+            InterrogationTurnResult interrogationResult =
                     interrogationHandler.handle(interviewId, refreshed, null, null, plan, previousExchanges);
             return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId());
         }

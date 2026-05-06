@@ -208,7 +208,7 @@ class ResumeInterviewOrchestratorTest {
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                    .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 13L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
@@ -355,7 +355,7 @@ class ResumeInterviewOrchestratorTest {
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                    .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder()
                                     .skip(true)
                                     .presentToUser(false)

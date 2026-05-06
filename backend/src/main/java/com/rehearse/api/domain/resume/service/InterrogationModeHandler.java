@@ -36,13 +36,13 @@ public class InterrogationModeHandler {
         ChainStateTracker tracker = state.getChainStateTracker();
 
         // Phase 1: chain state 진입 + 스냅샷 캡처 (lock 안)
-        Optional<ChainSnapshot> snapshotOpt = tracker.withLock(() ->
+        Optional<ChainStateTrackerSnapshot> snapshotOpt = tracker.withLock(() ->
                 acquireSnapshot(interviewId, tracker, state, analysis, plan));
         if (snapshotOpt.isEmpty()) {
             log.info("[InterrogationHandler] 모든 chain 소진: interviewId={}", interviewId);
             return new InterrogationTurnResult(buildExhaustedResponse(), null);
         }
-        ChainSnapshot snapshot = snapshotOpt.get();
+        ChainStateTrackerSnapshot snapshot = snapshotOpt.get();
 
         // Phase 2: LLM 호출 + 응답 검증 (lock 밖)
         InterrogationResult result = promptBuilder.build(
@@ -70,7 +70,7 @@ public class InterrogationModeHandler {
         });
     }
 
-    private Optional<ChainSnapshot> acquireSnapshot(
+    private Optional<ChainStateTrackerSnapshot> acquireSnapshot(
             Long interviewId, ChainStateTracker tracker, InterviewRuntimeState state,
             AnswerAnalysis analysis, InterviewPlan plan
     ) {
@@ -85,7 +85,7 @@ public class InterrogationModeHandler {
         }
         int answerQuality = analysis != null ? analysis.answerQuality() : 2;
         int orderIndex = state.nextResumeOrderIndex();
-        return Optional.of(new ChainSnapshot(
+        return Optional.of(new ChainStateTrackerSnapshot(
                 tracker.getCurrentChainId(),
                 tracker.getCurrentLevel(),
                 tracker.getConsecutiveLevelStayCount(),
@@ -94,17 +94,6 @@ public class InterrogationModeHandler {
                 answerQuality
         ));
     }
-
-    public record InterrogationTurnResult(FollowUpResponse response, Long questionId) {}
-
-    private record ChainSnapshot(
-            String chainTopic,
-            int currentLevel,
-            int consecutiveStay,
-            String currentProjectId,
-            int orderIndex,
-            int answerQuality
-    ) {}
 
     private void applyDecision(ChainStateTracker tracker, InterrogationResult result, int answerQuality, int currentLevel) {
         if (result.isLevelUp()) {
