@@ -7,6 +7,7 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -20,7 +21,9 @@ import com.rehearse.api.infra.ai.dto.GeneratedInterviewPlan.GeneratedPlaygroundP
 import com.rehearse.api.infra.ai.dto.GeneratedInterviewPlan.GeneratedProjectPlan;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +51,7 @@ public class ResumeInterviewPlanAdapter {
         Set<String> allowedChainIds = buildAllowedChainIds(skeleton);
 
         try {
-            InterviewPlan plan = mapToDomain(raw, allowedChainIds);
+            InterviewPlan plan = mapToDomain(raw, allowedChainIds, skeleton);
             if (skeleton != null && hasMissingChain(plan, skeleton)) {
                 log.warn("drop 후 chain 부족 — chain_id hallucination 재시도");
                 ChatRequest retryRequest = request.withSchemaRetryHint(
@@ -56,7 +59,7 @@ public class ResumeInterviewPlanAdapter {
                 ChatResponse retryResponse = aiClient.chat(retryRequest);
                 GeneratedInterviewPlan retryRaw = aiResponseParser.parseOrRetry(
                         retryResponse, GeneratedInterviewPlan.class, aiClient, retryRequest);
-                plan = mapToDomain(retryRaw, allowedChainIds);
+                plan = mapToDomain(retryRaw, allowedChainIds, skeleton);
                 if (hasMissingChain(plan, skeleton)) {
                     log.error("재시도 후에도 유효한 chain 부족: skeleton projects={}", skeleton.projects().size());
                     throw new BusinessException(ResumePlannerErrorCode.INVALID_PLAN);
@@ -91,14 +94,23 @@ public class ResumeInterviewPlanAdapter {
         });
     }
 
-    private InterviewPlan mapToDomain(GeneratedInterviewPlan raw, Set<String> allowedChainIds) {
+    private InterviewPlan mapToDomain(GeneratedInterviewPlan raw, Set<String> allowedChainIds, ResumeSkeleton skeleton) {
+        Map<String, Project> skeletonProjects = indexSkeletonProjects(skeleton);
         List<ProjectPlan> projectPlans = sortByPriority(raw.projectPlans()).stream()
-                .map(p -> mapProject(p, allowedChainIds))
+                .map(p -> mapProject(p, allowedChainIds, skeletonProjects))
                 .toList();
         return new InterviewPlan(
                 raw.sessionPlanId(),
                 projectPlans
         );
+    }
+
+    private Map<String, Project> indexSkeletonProjects(ResumeSkeleton skeleton) {
+        if (skeleton == null || skeleton.projects() == null) {
+            return Map.of();
+        }
+        return skeleton.projects().stream()
+                .collect(Collectors.toMap(Project::projectId, Function.identity(), (a, b) -> a));
     }
 
     private List<GeneratedProjectPlan> sortByPriority(List<GeneratedProjectPlan> projectPlans) {
@@ -110,14 +122,36 @@ public class ResumeInterviewPlanAdapter {
                 .toList();
     }
 
-    private ProjectPlan mapProject(GeneratedProjectPlan raw, Set<String> allowedChainIds) {
+    private ProjectPlan mapProject(GeneratedProjectPlan raw, Set<String> allowedChainIds,
+                                    Map<String, Project> skeletonProjects) {
+        String finalName = resolveProjectName(raw, skeletonProjects);
         return new ProjectPlan(
                 raw.projectId(),
-                raw.projectName(),
+                finalName,
                 raw.priority(),
                 mapPlayground(raw.playgroundPhase()),
                 mapInterrogation(raw.interrogationPhase(), allowedChainIds)
         );
+    }
+
+    private String resolveProjectName(GeneratedProjectPlan raw, Map<String, Project> skeletonProjects) {
+        Project skeletonProject = skeletonProjects.get(raw.projectId());
+        String skeletonName = skeletonProject != null ? skeletonProject.projectName() : null;
+        String llmName = raw.projectName();
+
+        if (skeletonName == null || skeletonName.isBlank()) {
+            if (llmName != null && !llmName.isBlank()) {
+                return llmName;
+            }
+            log.error("projectName invariant 위반: projectId={}", raw.projectId());
+            throw new BusinessException(ResumeErrorCode.PROJECT_NAME_INVALID);
+        }
+
+        if (llmName != null && !llmName.isBlank() && !skeletonName.equals(llmName)) {
+            log.warn("[ResumeInterviewPlan] planner projectName mismatch: projectId={}, skeletonLen={}, llmLen={}, skeleton 우선",
+                    raw.projectId(), skeletonName.length(), llmName.length());
+        }
+        return skeletonName;
     }
 
     private PlaygroundPhase mapPlayground(GeneratedPlaygroundPhase raw) {
