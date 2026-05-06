@@ -1,0 +1,31 @@
+package com.rehearse.api.global.support;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.List;
+
+@SpringBootTest
+@ActiveProfiles("test")
+public abstract class ServiceIntegrationSupport extends AbstractMySqlContainerTest {
+
+    @Autowired
+    protected JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    void truncateDatabase() {
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0");
+        List<String> tables = jdbcTemplate.queryForList("""
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = DATABASE()
+                  AND table_type = 'BASE TABLE'
+                  AND table_name <> 'flyway_schema_history'
+                """, String.class);
+        tables.forEach(table -> jdbcTemplate.execute("TRUNCATE TABLE `" + table + "`"));
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1");
+    }
+}
