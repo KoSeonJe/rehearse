@@ -7,9 +7,6 @@ Use this file for all work under `lambda/`. Also read the root `AGENTS.md`.
 Before editing Lambda code, consult:
 
 - `lambda/CLAUDE.md` for the current Lambda-specific project context.
-- `docs/architecture/lambda-deployment.md` for deployment, IAM, and environment variable details.
-- `docs/architecture/system-flow.md` for the S3 to EventBridge to Lambda to S3 result flow.
-- Relevant prompt redesign or prompt improvement specs under `docs/plans/` when modifying analysis prompts or scoring behavior.
 
 ## Structure
 

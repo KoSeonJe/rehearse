@@ -37,18 +37,12 @@ cd lambda
 - Safe deploy 스크립트: `update-function-code` → `publish-version` → smoke test → `update-alias` (실패 시 자동 롤백)
 - `/lambda-deploy` 스킬 트리거 가능 — 람다 배포 요청 시 반드시 safe deploy 경로 사용
 
-## 참조 문서
-
-- `docs/architecture/lambda-deployment.md` — 배포 상세, IAM, 환경변수
-- `docs/architecture/system-flow.md` — S3 → EventBridge → Lambda → S3 결과 쓰기 플로우
-- `docs/plans/` 내 prompt-redesign, prompt-improvement-2026-04 — 분석 프롬프트 개편 이력
-
 ## 작업 규칙
 
-- **경로 변경 금지** — `lambda/` 위치 이동은 9개 이상 docs/architecture 문서 + deploy 스크립트 + plan 경로 갱신 필요. 별도 플랜으로만.
+- **경로 변경 금지** — `lambda/` 위치 이동은 deploy 스크립트 + plan 경로 갱신 필요. 별도 플랜으로만.
 - **Backend Java 코드와 import 공유 없음** — 완전 독립. EventBridge로만 소통.
 - **로컬 테스트**: Docker 이미지 빌드 후 AWS SAM 또는 컨테이너 직접 실행. 프로덕션 배포 전 smoke test 필수.
-- **Spec 없는 수정 금지** — 프롬프트/로직 변경은 `.omc/plans/` 또는 `docs/plans/`에 spec 선행.
+- **Spec 없는 수정 금지** — 프롬프트/로직 변경은 `docs/plans/` spec 선행.
 
 ## 에이전트 호출 시
 

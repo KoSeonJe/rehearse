@@ -1,6 +1,5 @@
 # status: ACTIVE
 # 14차원 마스터 사전. 모든 rubric YAML 이 ref: <snake_case> 로 참조.
-# 출처: docs/todo/2026-04-20/03-m3-feedback-rubric.md L164-383
 version: 1
 
 dimensions:

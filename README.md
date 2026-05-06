@@ -112,8 +112,8 @@ AI 면접관이 내 답변을 듣고 **심화·보충·반론** 후속 질문을
 | **상태관리** | Zustand (client), TanStack Query (server) |
 | **Backend** | Java 21, Spring Boot 3.4, Spring Data JPA |
 | **Database** | MySQL 8.0 (prod) · H2 (local dev) |
-| **AI — 질문/피드백** | Claude API (`claude-sonnet-4-20250514`) |
-| **AI — 분석** | OpenAI Whisper (STT), GPT-4o (Vision + LLM) |
+| **AI — 질문/피드백 (Backend)** | OpenAI GPT-4o-mini primary + Claude Sonnet/Haiku fallback (`ResilientAiClient` 이중화) |
+| **AI — 분석 (Lambda)** | Gemini (audio 통합 분석, 주력) + GPT-4o Vision (프레임) + Whisper (STT fallback) |
 | **Infra** | AWS S3, EventBridge, Lambda (Python 3.12), CloudFront |
 | **영상** | MediaRecorder (WebM), FFmpeg, MediaConvert |
 | **배포** | EC2, Docker Compose, Nginx, ECR |

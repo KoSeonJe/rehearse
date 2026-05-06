@@ -29,27 +29,18 @@ Thumbs.db
 # === 디자인 검토용 스크린샷 (루트에만 금지 — frontend/public/images 는 허용) ===
 /*.png
 
-# === OMC (전체 로컬 전용) ===
-.omc/
-**/.omc/
-
 # === Claude Code (로컬 전용) ===
-**/.claude/skills/
 skills-lock.json
-**/.claude/agents/
 **/.claude/worktrees/
 **/.claude/settings.local.json
 **/.claude/docs/
 **/.claude/.claude/
+**/.claude/scheduled_tasks.lock
+**/.claude/launch.json
 
 # === 개인 문서 ===
 docs/resume/
 docs/local/
-
-# === docs/todo (개별 todo 는 로컬 전용, 규약 AGENTS.md 만 공유) ===
-docs/todo/**
-!docs/todo/
-!docs/todo/AGENTS.md
 
 # === Docker ===
 backend/.env
@@ -67,18 +58,23 @@ secrets.*
 lambda/**/package/
 lambda/**/*.zip
 
+# === Python (Lambda) ===
+__pycache__/
+*.pyc
+
 # === Claude Code 설정 ===
 .claude/*
 !.claude/rules/
 !.claude/rules/**
+!.claude/agents/
+!.claude/agents/**
 !.claude/skills/
-.claude/skills/*
-!.claude/skills/shadcn/
-!.claude/skills/shadcn/**
+!.claude/skills/**
+!.claude/hooks/
+!.claude/hooks/**
+!.claude/settings.json
+.claude/settings.local.json
 .claude.local.md
-
-# === 계획 문서 (개인 작업 노트, 레포 추적 안 함) ===
-docs/plans/
 
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/
