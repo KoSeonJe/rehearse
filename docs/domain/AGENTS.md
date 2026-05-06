@@ -83,6 +83,17 @@ docs/domain/
 - 신규 도메인 추가 → 본 절차 재실행
 - PR 머지 전 갱신 누락 시 reviewer 가 차단
 
+### 자동 동기화 (post-merge hook)
+
+`git merge` / `git pull` (ff 포함) 시 `.git/hooks/post-merge` → `scripts/sync-domain-docs.sh` 가 백그라운드 실행. 변경된 backend domain 코드 / Flyway SQL 분석 후 영향 도메인의 docs/domain/{name}/ 파일을 working tree 에 자동 갱신 (자동 commit X). 추론 불가 정책은 `❓TODO(auto-sync, YYYY-MM-DD)` 마킹.
+
+비활성화:
+- 일시: `SKIP_DOMAIN_DOC_HOOK=1 git merge ...`
+- 머지 커밋 메시지에 `[skip-domain-doc]` 포함
+- 영구: `.git/hooks/post-merge` 제거
+
+로그: `.git/sync-domain-docs.log`. docs/domain/{name}/ 미존재 시 노터치 → §3 5단계로 사용자 트리거 필요.
+
 PR 단위 갱신 원칙. "나중에 한꺼번에" 금지 — drift 누적.
 
 ---
