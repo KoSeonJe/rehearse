@@ -62,7 +62,6 @@ public class DialogueCompactor {
             return;
         }
 
-        // TODO when sync fallback added (deferred from Task 3), record "sync_fallback"
         contextMetrics.recordCompaction("async");
         try {
             String userPrompt = buildUserPrompt(windowed);
