@@ -71,7 +71,7 @@ class ResumePlaygroundOpenerIntegrationTest {
 
         ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-1", List.of(), List.of());
+        Project project = new Project("proj-1", "샘플 프로젝트", List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase("프로젝트에 대해 자유롭게 소개해주세요.", List.of("c1", "c2"));
 
         builder.buildOpener(42L, state, project, phase);

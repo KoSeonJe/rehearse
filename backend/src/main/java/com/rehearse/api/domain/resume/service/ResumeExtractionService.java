@@ -23,6 +23,7 @@ import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedImplicitCs
 import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedProject;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.prompt.ResumeExtractorPromptBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class ResumeExtractionService {
     private static final double MIN_CONFIDENCE_THRESHOLD = 0.3;
     private static final double TEMPERATURE = 0.2;
     private static final int MAX_TOKENS = 4096;
+    private static final String PROJECT_NAME_PLACEHOLDER_PREFIX = "프로젝트 ";
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
@@ -50,8 +52,11 @@ public class ResumeExtractionService {
                 response, ExtractedResumeSkeleton.class, aiClient, request);
 
         ResumeSkeleton skeleton = toDomain(raw, fileHash);
-        log.info("이력서 추출 완료: resumeId={}, projects={}, level={}",
-                skeleton.resumeId(), skeleton.projects().size(), skeleton.candidateLevel());
+        long named = skeleton.projects().stream()
+                .filter(p -> !p.projectName().startsWith(PROJECT_NAME_PLACEHOLDER_PREFIX))
+                .count();
+        log.info("이력서 추출 완료: resumeId={}, projects={}, named={}, level={}",
+                skeleton.resumeId(), skeleton.projects().size(), named, skeleton.candidateLevel());
         return skeleton;
     }
 
@@ -89,15 +94,24 @@ public class ResumeExtractionService {
         if (rawProjects == null) {
             return List.of();
         }
-        return rawProjects.stream()
-                .map(this::mapProject)
-                .toList();
+        List<Project> projects = new ArrayList<>(rawProjects.size());
+        for (int i = 0; i < rawProjects.size(); i++) {
+            projects.add(mapProject(rawProjects.get(i), i));
+        }
+        return List.copyOf(projects);
     }
 
-    private Project mapProject(ExtractedProject raw) {
+    private Project mapProject(ExtractedProject raw, int index) {
         List<ResumeClaim> claims = mapClaims(raw.getClaims());
         List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
-        return new Project(raw.getProjectId(), claims, chains);
+        String name = raw.getProjectName();
+        if (name == null || name.isBlank()) {
+            int fallbackIndex = index + 1;
+            name = PROJECT_NAME_PLACEHOLDER_PREFIX + fallbackIndex;
+            log.warn("[ResumeExtraction] projectName 부재 → placeholder 주입: projectId={}, fallbackIndex={}",
+                    raw.getProjectId(), fallbackIndex);
+        }
+        return new Project(raw.getProjectId(), name, claims, chains);
     }
 
     private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {

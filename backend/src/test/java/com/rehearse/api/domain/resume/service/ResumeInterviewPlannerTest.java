@@ -119,7 +119,7 @@ class ResumeInterviewPlannerTest {
         List<ResumeClaim> claims = List.of(
                 new ResumeClaim("p1_c1", "claim", ClaimType.IMPLEMENTATION, Priority.HIGH, List.of())
         );
-        Project project = new Project("p1", claims, List.of(new InterrogationChain("Redis", 0.9, steps)));
+        Project project = new Project("p1", "Redis 캐싱 프로젝트", claims, List.of(new InterrogationChain("Redis", 0.9, steps)));
         return new ResumeSkeleton("r1", "h1", CandidateLevel.JUNIOR, "backend", List.of(project), Map.of());
     }
 
