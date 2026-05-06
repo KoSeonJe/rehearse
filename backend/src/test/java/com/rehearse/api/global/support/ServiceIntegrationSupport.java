@@ -1,5 +1,6 @@
 package com.rehearse.api.global.support;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +18,15 @@ public abstract class ServiceIntegrationSupport extends AbstractMySqlContainerTe
 
     @BeforeEach
     void truncateDatabase() {
+        truncateAllTables();
+    }
+
+    @AfterEach
+    void cleanDatabase() {
+        truncateAllTables();
+    }
+
+    private void truncateAllTables() {
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0");
         List<String> tables = jdbcTemplate.queryForList("""
                 SELECT table_name
