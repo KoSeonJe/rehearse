@@ -1,13 +1,6 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.dto.ReplanResponse;
-import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.InterrogationPhase;
@@ -15,8 +8,10 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
+import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
+import com.rehearse.api.domain.resume.service.ResumeReplanLoader.ReplanContext;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -63,7 +58,7 @@ class ResumePlanPreparationServiceTest {
     private InterviewPlanPersister planStore;
 
     @Mock
-    private InterviewFinder interviewFinder;
+    private ResumeReplanLoader replanLoader;
 
     @Nested
     @DisplayName("정상 흐름")
@@ -73,7 +68,6 @@ class ResumePlanPreparationServiceTest {
         @DisplayName("기존 plan 존재 시 새 plan 으로 교체하고 replaced=true 반환")
         void replan_replacesExistingPlan_andReturnsReplacedTrue() {
             // given
-            Interview interview = createResumeBasedInterview();
             ResumeSkeleton skeleton = createSkeleton();
             InterviewPlan existingPlan = createInterviewPlan("plan-old");
             ReflectionTestUtils.setField(existingPlan, "id", 100L);
@@ -81,8 +75,8 @@ class ResumePlanPreparationServiceTest {
             InterviewPlan savedPlan = createInterviewPlan("plan-new");
             ReflectionTestUtils.setField(savedPlan, "id", 200L);
 
-            given(interviewFinder.findById(INTERVIEW_ID)).willReturn(interview);
-            given(skeletonStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.of(skeleton));
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, 30));
             given(planStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.of(existingPlan));
             given(resumeInterviewPlanner.plan(eq(skeleton), anyInt())).willReturn(freshPlan);
             given(planStore.replace(INTERVIEW_ID, freshPlan)).willReturn(savedPlan);
@@ -101,14 +95,13 @@ class ResumePlanPreparationServiceTest {
         @DisplayName("기존 plan 부재 시 새 plan 생성하고 replaced=false 반환")
         void replan_createsNewPlan_whenNoExistingPlan() {
             // given
-            Interview interview = createResumeBasedInterview();
             ResumeSkeleton skeleton = createSkeleton();
             InterviewPlan freshPlan = createInterviewPlan("plan-fresh");
             InterviewPlan savedPlan = createInterviewPlan("plan-fresh");
             ReflectionTestUtils.setField(savedPlan, "id", 300L);
 
-            given(interviewFinder.findById(INTERVIEW_ID)).willReturn(interview);
-            given(skeletonStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.of(skeleton));
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, 30));
             given(planStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.empty());
             given(resumeInterviewPlanner.plan(eq(skeleton), anyInt())).willReturn(freshPlan);
             given(planStore.replace(INTERVIEW_ID, freshPlan)).willReturn(savedPlan);
@@ -121,97 +114,137 @@ class ResumePlanPreparationServiceTest {
             assertThat(response.planId()).isEqualTo(300L);
             assertThat(response.replaced()).isFalse();
         }
+
+        @Test
+        @DisplayName("durationMinutes null 인 경우 default 30 적용")
+        void replan_appliesDefaultDuration_whenInterviewDurationNull() {
+            // given
+            ResumeSkeleton skeleton = createSkeleton();
+            InterviewPlan freshPlan = createInterviewPlan("plan-default");
+            InterviewPlan savedPlan = createInterviewPlan("plan-default");
+            ReflectionTestUtils.setField(savedPlan, "id", 400L);
+
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, null));
+            given(planStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.empty());
+            given(resumeInterviewPlanner.plan(eq(skeleton), eq(30))).willReturn(freshPlan);
+            given(planStore.replace(INTERVIEW_ID, freshPlan)).willReturn(savedPlan);
+
+            // when
+            ReplanResponse response = service.replan(INTERVIEW_ID, OWNER_USER_ID);
+
+            // then
+            assertThat(response.planId()).isEqualTo(400L);
+            then(resumeInterviewPlanner).should().plan(skeleton, 30);
+        }
     }
 
     @Nested
-    @DisplayName("거부 케이스")
+    @DisplayName("거부 / 실패 케이스")
     class Rejection {
 
         @Test
-        @DisplayName("RESUME_BASED 외 인터뷰 호출 시 INTERVIEW_NOT_RESUME_BASED (400)")
-        void replan_rejects_whenInterviewNotResumeBased() {
+        @DisplayName("loader 가 BusinessException 던지면 그대로 전파 (도메인 룰 통과)")
+        void replan_propagatesLoaderBusinessException() {
             // given
-            Interview interview = createCsInterview();
-            given(interviewFinder.findById(INTERVIEW_ID)).willReturn(interview);
+            BusinessException loaderError = new BusinessException(
+                    com.rehearse.api.domain.interview.exception.InterviewErrorCode.INTERVIEW_NOT_RESUME_BASED);
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID)).willThrow(loaderError);
 
             // when / then
             assertThatThrownBy(() -> service.replan(INTERVIEW_ID, OWNER_USER_ID))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> {
-                        BusinessException be = (BusinessException) e;
-                        assertThat(be.getCode())
-                                .isEqualTo(InterviewErrorCode.INTERVIEW_NOT_RESUME_BASED.getCode());
-                    });
+                    .isSameAs(loaderError);
 
-            then(skeletonStore).should(never()).findByInterviewId(anyLong());
-            then(planStore).should(never()).replace(anyLong(), any());
-        }
-
-        @Test
-        @DisplayName("skeleton 부재 시 RESUME_PLAN_NOT_READY (409)")
-        void replan_rejects_whenSkeletonMissing() {
-            // given
-            Interview interview = createResumeBasedInterview();
-            given(interviewFinder.findById(INTERVIEW_ID)).willReturn(interview);
-            given(skeletonStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.empty());
-
-            // when / then
-            assertThatThrownBy(() -> service.replan(INTERVIEW_ID, OWNER_USER_ID))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> {
-                        BusinessException be = (BusinessException) e;
-                        assertThat(be.getCode())
-                                .isEqualTo(ResumeErrorCode.RESUME_PLAN_NOT_READY.getCode());
-                    });
-
-            then(planStore).should(never()).replace(anyLong(), any());
             then(resumeInterviewPlanner).should(never()).plan(any(), anyInt());
+            then(planStore).should(never()).replace(anyLong(), any());
         }
 
         @Test
-        @DisplayName("타 유저 호출 시 INTERVIEW_NOT_FOUND (404, 정보 누출 방지)")
-        void replan_rejects_whenNotOwner() {
+        @DisplayName("planner 가 LLM 인프라 BusinessException(AI_*) 던지면 PLAN_GENERATION_FAILED (503) 매핑")
+        void replan_mapsAiInfraFailure_toPlanGenerationFailed() {
             // given
-            Interview interview = createResumeBasedInterview();
-            given(interviewFinder.findById(INTERVIEW_ID)).willReturn(interview);
+            ResumeSkeleton skeleton = createSkeleton();
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, 30));
+            given(resumeInterviewPlanner.plan(eq(skeleton), anyInt()))
+                    .willThrow(new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE));
 
             // when / then
-            assertThatThrownBy(() -> service.replan(INTERVIEW_ID, 999L))
+            assertThatThrownBy(() -> service.replan(INTERVIEW_ID, OWNER_USER_ID))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> {
                         BusinessException be = (BusinessException) e;
                         assertThat(be.getCode())
-                                .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
+                                .isEqualTo(ResumePlannerErrorCode.PLAN_GENERATION_FAILED.getCode());
+                        assertThat(be.getStatus().value()).isEqualTo(503);
                     });
 
-            then(skeletonStore).should(never()).findByInterviewId(anyLong());
+            then(planStore).should(never()).replace(anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("planner 가 RuntimeException 던지면 PLAN_GENERATION_FAILED (503) 매핑")
+        void replan_mapsRuntimeException_toPlanGenerationFailed() {
+            // given
+            ResumeSkeleton skeleton = createSkeleton();
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, 30));
+            given(resumeInterviewPlanner.plan(eq(skeleton), anyInt()))
+                    .willThrow(new RuntimeException("LLM timeout"));
+
+            // when / then
+            assertThatThrownBy(() -> service.replan(INTERVIEW_ID, OWNER_USER_ID))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> {
+                        BusinessException be = (BusinessException) e;
+                        assertThat(be.getCode())
+                                .isEqualTo(ResumePlannerErrorCode.PLAN_GENERATION_FAILED.getCode());
+                    });
+
+            then(planStore).should(never()).replace(anyLong(), any());
+        }
+
+        @Test
+        @DisplayName("planner 가 도메인 BusinessException(non-AI) 던지면 그대로 전파")
+        void replan_propagatesDomainBusinessException() {
+            // given
+            ResumeSkeleton skeleton = createSkeleton();
+            BusinessException domainError = new BusinessException(ResumePlannerErrorCode.INVALID_PLAN);
+            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
+                    .willReturn(new ReplanContext(skeleton, 30));
+            given(resumeInterviewPlanner.plan(eq(skeleton), anyInt())).willThrow(domainError);
+
+            // when / then
+            assertThatThrownBy(() -> service.replan(INTERVIEW_ID, OWNER_USER_ID))
+                    .isSameAs(domainError);
         }
     }
 
-    private Interview createResumeBasedInterview() {
-        Interview interview = Interview.builder()
-                .userId(OWNER_USER_ID)
-                .position(Position.BACKEND)
-                .level(InterviewLevel.JUNIOR)
-                .interviewTypes(List.of(InterviewType.RESUME_BASED))
-                .durationMinutes(30)
-                .techStack(TechStack.JAVA_SPRING)
-                .build();
-        ReflectionTestUtils.setField(interview, "id", INTERVIEW_ID);
-        return interview;
-    }
+    @Nested
+    @DisplayName("prepare - 정상 / 실패 매핑")
+    class PrepareFlow {
 
-    private Interview createCsInterview() {
-        Interview interview = Interview.builder()
-                .userId(OWNER_USER_ID)
-                .position(Position.BACKEND)
-                .level(InterviewLevel.JUNIOR)
-                .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
-                .durationMinutes(30)
-                .techStack(TechStack.JAVA_SPRING)
-                .build();
-        ReflectionTestUtils.setField(interview, "id", INTERVIEW_ID);
-        return interview;
+        @Test
+        @DisplayName("planner 가 LLM 인프라 BusinessException 던지면 PLAN_GENERATION_FAILED 매핑")
+        void prepare_mapsAiInfraFailure_toPlanGenerationFailed() {
+            // given
+            ResumeSkeleton skeleton = createSkeleton();
+            given(skeletonStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.of(skeleton));
+            given(planStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.empty());
+            given(resumeInterviewPlanner.plan(eq(skeleton), anyInt()))
+                    .willThrow(new BusinessException(AiErrorCode.TIMEOUT));
+
+            // when / then
+            assertThatThrownBy(() -> service.prepare(INTERVIEW_ID, "hash-1", "ignored", 30))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> {
+                        BusinessException be = (BusinessException) e;
+                        assertThat(be.getCode())
+                                .isEqualTo(ResumePlannerErrorCode.PLAN_GENERATION_FAILED.getCode());
+                    });
+
+            then(planStore).should(never()).save(anyLong(), any());
+        }
     }
 
     private ResumeSkeleton createSkeleton() {
