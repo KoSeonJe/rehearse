@@ -1,307 +1,246 @@
 ---
 name: create-tech-spec
-description: "기존 product-spec 기반 tech-spec.md 생성. 영향범위 / 정합성 / 실시간성 / 성능 / 동시성 / 마이그레이션 / 외부의존 / 보안 / 롤백 메타인지 질문으로 Architecture / API contract / Trade-off / Verification 채움. docs/plans/{N}-{slug}/tech-spec.md."
+description: "Staff Engineer 페르소나 tech-spec 작성. product-spec + 도메인 코드 + 컨벤션 + 유사 tech-spec 자율 분석해 Architecture / Data Model / API contract / NF / Trade-off / Verification 초안 설계 후 브리핑. 모호한 NF (정합성 vs 실시간성 충돌 등)만 사용자 결정. 'tech-spec', '기술 설계', 'tech spec 작성' 등 트리거. 출력: docs/plans/{N}-{slug}/tech-spec.md."
 ---
 
 # Create Tech Spec
 
-`product-spec.md` 1개 → `tech-spec.md` 1개. 기술 메타인지를 강제하는 대화형 spec 생성.
+**Persona**: Staff Engineer. product-spec + 도메인 코드 + 컨벤션 + 유사 spec 직접 분석 → 설계 초안 (Architecture / Data Model / API / NF / Trade-off) + 근거 → 사용자 브리핑. 모호한 결정만 질문.
 
-## 전제 (Read 필수, Blocking)
+`AskUserQuestion` = 진짜 trade-off (정합성 vs 실시간성 충돌 / 마이그레이션 전략 / 동시성 모델 비등) 만. Staff Engineer 추정 가능하면 추정 + 근거.
 
-스킬 시작 직후 다음 2개 문서 `Read`. 미로드 시 진행 금지.
+## 전제 (Read Blocking)
 
-- `docs/plans/AGENTS.md` — 워크플로우 / 승인 게이트 / BE+FE 분리 룰 / 안티패턴
-- `docs/plans/_templates/tech-spec.md` — 출력 파일 템플릿 구조
+- `docs/plans/AGENTS.md` — 워크플로우 / 승인 게이트 / BE+FE 분리 / 안티패턴
+- `docs/plans/_templates/tech-spec.md` — 출력 구조
 
-추가 전제:
+product-spec 부재 시 → "먼저 `/create-product-spec` 호출 권장." 종료.
 
-- 사용자가 product-spec 을 이미 작성했어야 함. 부재 시 → "먼저 `/create-product-spec` 호출 권장." 종료.
-- tech-spec 은 product-spec 의 WHY/WHAT 을 받아 **HOW** 만 다룬다. 요구사항 새로 정의 X.
-- 모든 단계에서 `docs/plans/AGENTS.md` 룰 준수. 충돌 시 AGENTS.md 우선.
+tech-spec = product-spec WHY/WHAT 받아 **HOW** 만. 요구사항 새로 정의 X.
 
 ## 핵심 원칙
 
-- **한 번에 1 질문** (brainstorming 패턴).
-- **`AskUserQuestion` 우선** — 메타인지 결정은 다중선택. 자유서술은 구조 / 데이터 모델 / API contract 같이 자연어 필요한 필드.
-- **Trade-off 명시 강제** — 결정마다 "왜 A 가 아닌 B?" 답 받아낸다.
-- **승인 게이트** — preview → confirm → write (Blocking).
+- **자율 분석 + 설계 초안**. product-spec 외에도 도메인 코드 / 컨벤션 / 유사 tech-spec / 메모리 직접 수집.
+- **추정 + 근거 (Evidence)**. 모든 NF / 설계 결정에 1줄 근거.
+- **Trade-off 자동 제안**. Option A (채택) + Option B (폐기) + 사유 Staff 가 작성.
+- **모호도 셀프 채점**. NF 11개 중 명확 / 추정 / 모호 마킹. 모호만 사용자 결정.
+- **최종 confirm Blocking**.
 
-## Step 1 — product-spec 선택
+## Phase A — Investigation (자율)
 
-후보 폴더 자동 수집:
+### A-1. plan 폴더 + product-spec 선택
 
 ```bash
-# handoff.md 존재 = 진행 중 plan (최우선)
 find docs/plans -maxdepth 2 -name handoff.md
-
-# product-spec.md 존재 폴더 + 최근 수정 정렬
 find docs/plans -maxdepth 2 -name product-spec.md -exec stat -f "%m %N" {} \; | sort -rn | head -5
 ```
 
-`AskUserQuestion` 으로 제시 (최대 4개):
+`AskUserQuestion` 4개 옵션 + handoff 우선 + "직접 경로".
+
+선택 폴더의 `product-spec.md` Read. tech-spec.md 이미 존재 시:
 
 ```
-question: "어떤 product-spec 의 tech-spec 작성할까요?"
+question: "tech-spec.md 이미 존재."
 options:
-  - "042-interview-quality (handoff 진행중, 추천)"
-  - "048-payment-intro (최근 수정 2026-05-04)"
-  - "051-resume-preview (최근 수정 2026-05-02)"
-  - "다른 폴더 — 직접 경로 입력"
-```
-
-선택된 폴더의 `product-spec.md` Read → 컨텍스트 파악. tech-spec.md 이미 존재 시:
-
-```
-question: "tech-spec.md 이미 존재. 어떻게?"
-options:
-  - "갱신 — 기존 내용 보여주고 수정"
+  - "갱신 — 기존 내용 + 차이만 수정"
   - "덮어쓰기 — 처음부터"
   - "취소"
 ```
 
-## Step 2 — 기술 메타인지 질문 (순서대로)
+### A-2. 도메인 / 컨벤션 / 유사 spec 컨텍스트 수집
 
-각 답변은 tech-spec 섹션에 매핑. 모호 답 = 재질문.
+product-spec 키워드 기반:
 
-### 2-1. 영향 범위
+```bash
+# BE 도메인 코드
+grep -rn "{domain}" backend/src/main/java/.../{domain}/
+ls backend/src/main/java/.../{domain}/
 
-`AskUserQuestion`:
+# FE 영역
+ls frontend/src/{area}/
+
+# 컨벤션 (필요 시)
+# backend: backend/.claude/rules/conventions.md, testing.md
+# frontend: frontend/.claude/rules/conventions.md, architecture.md, testing.md
+
+# 유사 tech-spec (참고 패턴)
+find docs/plans -maxdepth 2 -name tech-spec.md | head -5
+grep -l "{keyword}" docs/plans/*/tech-spec.md
+
+# 스키마 기존 상태
+ls backend/src/main/resources/db/migration/ | tail -10
+```
+
+### A-3. 분석 결과 정리 (내부)
+
+- 현재 구조: 관련 클래스 / 모듈 / 테이블
+- 영향 범위 추정: BE / FE / lambda
+- 기존 패턴: 유사 도메인 / 유사 spec 참고 항목
+- 컨벤션 제약: @Transactional / Flyway / 트랜잭션 / 로깅 등
+- 모호 영역: Staff 판단 부족 부분 마킹
+
+## Phase B — Synthesis (설계 초안)
+
+`docs/plans/_templates/tech-spec.md` 구조 그대로. Staff 가 채움.
+
+### B-1. Architecture
+
+도메인 코드 분석 기반 구조도 작성. 텍스트 시퀀스:
 
 ```
-question: "영향 범위?"
+[Client] → [Controller] → [Service] → [Repo] → [DB]
+                              ↓
+                        [Event Publisher]
+```
+
+구체 클래스 / 메서드 명시. 모호 ("interview 영역") 자체 금지.
+
+### B-2. Data Model
+
+스키마 변경 필요 시 Flyway DDL 작성. 기존 스키마 grep 후 영향 컬럼 식별. **DDL only — DML 금지** (`backend/.claude/rules/conventions.md`).
+
+```sql
+ALTER TABLE interviews ADD COLUMN intent_score DECIMAL(3,2);
+```
+
+스키마 변경 없음 시 "변경 없음" 명시.
+
+### B-3. API Contract
+
+BE+FE 영향 케이스 = 필수. Staff가 endpoint / req / resp / error 모두 설계:
+
+```
+POST /api/v1/interviews/{id}/intent
+Request: { "score": 0.85 }
+Response 200: { "id": 1, "score": 0.85 }
+Errors: 400 validation, 404 not found, 409 conflict
+```
+
+### B-4. NF 결정 (11개)
+
+각 항목 Staff 추정 + 근거 + 모호도:
+
+| NF | 추정 단서 | confidence |
+|---|---|---|
+| 영향 범위 | 코드 grep 결과 (BE / FE / 양쪽) | 보통 확신 |
+| 정합성 | 도메인 성격 (트랜잭션 / 이벤트 / 캐시) | 추정 (도메인 따라 모호) |
+| 실시간성 | 사용자 직접 대기 vs 비동기 | 보통 확신 |
+| 부하 | 사용자 수 / TPS / 쿼리 패턴 | 추정 |
+| 동시성 | 동일 자원 동시 수정 가능성 | 추정 (자주 모호) |
+| 마이그레이션 | 스키마 변경 + 백필 필요 여부 | 확신 (코드 단서) |
+| 외부 의존 | AWS / AI / 3rd party 호출 | 확신 |
+| 보안 | 인증/권한/입력/SSRF 영역 | 확신 (`.claude/rules/security.md` 매핑) |
+| 관찰성 | 로그 / 메트릭 / 알람 후보 | 추정 |
+| 롤백 | feature flag / DB 변경 / 신규 | 확신 |
+| 검증 | testing.md 카테고리 매핑 | 확신 |
+
+`모호` 항목만 Phase C 결정 후보.
+
+### B-5. Trade-offs (자동 제안)
+
+Staff 가 최소 1개 trade-off 작성. 형식:
+
+```
+### Option A (채택): 이벤트 기반 비동기
+- 장점: 응답 빠름, 외부 의존 격리
+- 단점: 이벤트적 정합성, 디버깅 복잡
+- 채택 사유: 사용자 응답 속도 우선 (P95 < 1s)
+
+### Option B (폐기): 동기 트랜잭션
+- 장점: 정합성 강함, 단순
+- 폐기 사유: 외부 호출 latency 사용자 직접 대기 = UX 저하
+```
+
+대안 0개 = Staff 페르소나 위반. 도메인 / 라이브러리 / 패턴 단서 1+ 제안.
+
+### B-6. Verification
+
+testing.md 매핑 + 구체 케이스:
+
+```
+- [ ] 단위: InterviewServiceTest#testIntentScoreCalculation
+- [ ] 통합: Testcontainers MySQL + 이벤트 publish 검증
+- [ ] 빌드: ./gradlew build
+- [ ] 관찰: docker log 에서 "intent.score.calculated" 이벤트 확인
+- [ ] 회귀: 기존 InterviewService 영향 영역 통합 테스트 통과
+```
+
+### B-7. Pre / Post + 위험 / 롤백
+
+코드 단서 기반 diff 형태:
+
+```
+Pre: InterviewService 에 intent 계산 없음
+Post: IntentScoreCalculator 추가 + Service 호출 + 이벤트 publish
+```
+
+위험 / 마이그레이션 / 롤백 전략 Staff 작성.
+
+### B-8. 분기 결정 (BE / FE 분리)
+
+Architecture + 영향 범위 기반:
+
+- 단일 영역 → `implement.md`
+- BE+FE 동시 → `implement-be.md` + `implement-fe.md`
+- 강결합 (마이그레이션 / 이벤트 페이로드 변경) → BE 선행 명시
+
+## Phase C — Briefing + 결정 게이트
+
+```
+## Staff 분석 — Plan {NNN}-{slug}
+
+### Evidence
+- 코드: {InterviewService.java:42, ...}
+- 컨벤션: backend/.claude/rules/conventions.md (트랜잭션 룰)
+- 유사 spec: docs/plans/038-.../tech-spec.md (이벤트 패턴 참고)
+
+### 설계 초안 (요약)
+
+**Architecture**: (한 줄 + 시퀀스)
+**Data Model**: ALTER 1개 (intent_score 컬럼)
+**API Contract**: POST /api/v1/.../intent
+**NF 결정** (확신 9 / 추정 1 / 모호 1):
+  - 정합성: 이벤트적 (확신 — 외부 AI 호출 격리)
+  - 실시간성: P95 < 1s (확신)
+  - 동시성: 낙관락 (추정 — 동일 인터뷰 동시 수정 드문)
+  - **마이그레이션 백필 전략**: 모호 ← 결정 필요
+**Trade-off**: 비동기 이벤트 채택 (사유: latency 우선)
+**Verification**: 5개 항목
+
+### 결정 필요
+1. 백필 전략 — 기존 인터뷰 1만건 intent_score NULL. 어떻게?
+```
+
+`결정 필요` 만 `AskUserQuestion`:
+
+```
+question: "백필 전략?"
 options:
-  - "BE only"
-  - "FE only"
-  - "BE+FE 동시 (API contract 필요)"
-  - "BE+FE+lambda"
+  - "NULL 허용 + 신규만 채움 (추천 — 단순, 회귀 적음)"
+  - "배치 스크립트로 일괄 백필 (단점: 비용 N$ + 시간)"
+  - "lazy 채움 (조회 시 계산) (단점: 1회 latency)"
 ```
 
-→ implement.md 단일 / -be / -fe 분리 결정. BE+FE 선택 시 이후 단계에서 API contract 필수.
+수정 시 해당 섹션 재작성 후 재브리핑.
 
-### 2-2. 정합성 (consistency) 중요도
+## Phase D — 파일 작성
 
-`AskUserQuestion`:
+승인 후 `Write` `$PLAN_DIR/tech-spec.md`. 템플릿 구조 유지.
 
-```
-question: "데이터 정합성 요구 수준?"
-options:
-  - "강한 정합성 — 트랜잭션 / 락 / 즉시 반영 필수"
-  - "이벤트적 정합성 — 결국 일치 OK (이벤트 / 비동기)"
-  - "낮음 — 캐시 / 통계 / 일시 불일치 허용"
-```
+## 후속
 
-→ Trade-off 섹션, 트랜잭션 경계 결정 근거.
-
-### 2-3. 실시간성 (latency 민감도)
-
-`AskUserQuestion`:
-
-```
-options:
-  - "P95 < 200ms 필수 (사용자 직접 대기)"
-  - "P95 < 1s 권장 (인터랙티브)"
-  - "P95 < 5s 허용 (백그라운드 / 비동기 OK)"
-  - "분~시간 단위 OK (배치 / 분석)"
-```
-
-### 2-4. 부하 / 성능 고려?
-
-`AskUserQuestion`:
-
-```
-options:
-  - "고부하 — N+1 / 쿼리 최적화 / 캐싱 필수"
-  - "중간 — 일반적 인덱스 / 페이징 충분"
-  - "저부하 — 운영 / 어드민 류, 최적화 우선순위 낮음"
-```
-
-### 2-5. 동시성 시나리오?
-
-`AskUserQuestion`:
-
-```
-question: "동시 요청 / race condition 가능?"
-options:
-  - "있음 + 중요 — 락 / 큐 / 이벤트 직렬화 설계 필요"
-  - "있음 + 약함 — 낙관락 / retry 로 충분"
-  - "없음 — 단일 사용자 / 단일 트랜잭션"
-```
-
-→ 있음 시 후속: 어느 자원? 어떤 충돌 형태? (자유서술)
-
-### 2-6. 데이터 마이그레이션 / 스키마 변경?
-
-`AskUserQuestion`:
-
-```
-options:
-  - "스키마 변경 + 백필 필요"
-  - "스키마 변경만 (백필 X)"
-  - "스키마 변경 없음"
-```
-
-→ 마이그레이션 시: Flyway DDL 만 (DML 금지 — `backend/.claude/rules/conventions.md`). 백필 = 별도 SQL 운영 스크립트.
-
-### 2-7. 외부 의존?
-
-`AskUserQuestion` (복수 선택 자유서술):
-
-```
-question: "외부 시스템 의존?"
-options:
-  - "AI (OpenAI / Claude / Gemini) — 비용 + 실패 케이스"
-  - "AWS (S3 / Lambda / EventBridge / MediaConvert)"
-  - "3rd party (Google OAuth / 결제 등)"
-  - "없음"
-```
-
-→ 의존 있음 시: 실패 시 대응 (fallback / retry / 사용자 알림)?
-
-### 2-8. 보안 영역?
-
-`AskUserQuestion`:
-
-```
-question: "보안 / OWASP 고려 필요?"
-options:
-  - "인증 / 권한 변경 (A01)"
-  - "암호화 / 민감 데이터 (A02)"
-  - "사용자 입력 → 쿼리 / 명령 (A03 SQLi / Command)"
-  - "외부 URL fetch (A10 SSRF)"
-  - "특별 영향 없음"
-```
-
-→ 영향 시 `.claude/rules/security.md` 항목 명시 + 검증 방법 tech-spec 에 기록.
-
-### 2-9. 관찰성 / 모니터링?
-
-> "운영 중 어떻게 알 수 있나? 로그 / 메트릭 / 알람? 실패 탐지 방법?"
-
-자유서술. "없음" 답 = "정말 안 봐도 되나? 실패 시 어떻게 알지?" 재질문.
-
-### 2-10. 롤백 / 호환성?
-
-`AskUserQuestion`:
-
-```
-options:
-  - "변경 후 즉시 롤백 가능 (feature flag / 환경변수)"
-  - "롤백 어려움 (마이그레이션 / 데이터 변경)"
-  - "롤백 불필요 (신규 기능, 기존 영향 없음)"
-```
-
-### 2-11. 검증 방법
-
-> "어떻게 '구현 됐다' 판정? 단위 / 통합 / E2E 테스트, 수동 시나리오, 메트릭 등."
-
-자유서술. testing.md (BE / FE) 카테고리 명시 권장.
-
-## Step 3 — 구조 / 데이터 / API contract (자유서술 단계)
-
-### 3-1. Architecture 개요
-
-> "BE 어떤 도메인 / 어떤 서비스 추가 / 수정? FE 어떤 페이지 / 컴포넌트 / 훅? 데이터 흐름 한 줄로."
-
-자유서술. 모호 시 ("interview 영역" 류) = 재질문 ("구체 클래스 / 파일?").
-
-### 3-2. 데이터 모델 (필요 시)
-
-> "신규 테이블 / 컬럼 / VO / DTO? 기존 schema 변경?"
-
-스키마 변경 답변 (2-6) Yes 시 강제. No 시 생략 가능.
-
-### 3-3. API contract (BE+FE 시 필수)
-
-> "엔드포인트 / 메서드 / 요청 schema / 응답 schema / 에러 코드?"
-
-`POST /api/x` 형태 + JSON 예시 받기. 모호 시 재질문.
-
-## Step 4 — Trade-off 명시
-
-> "이 설계 외 검토한 대안? 왜 이걸 선택?"
-
-최소 1개 trade-off 강제. "없음" 답 = "정말 한 가지 길? 다른 도메인 사례 / 라이브러리 / 패턴?" 재질문.
-
-## Step 5 — preview
-
-수집된 답변으로 tech-spec.md 초안. 템플릿: `docs/plans/_templates/tech-spec.md` 섹션 / 헤더 / 메타데이터 블록 그대로 따름 (자의적 변형 X). `docs/plans/AGENTS.md` Section 3 (파일 역할) + Section 5 (BE/FE 분리 룰 / API contract 필수 케이스) 위반 X.
-
-```markdown
-# Tech Spec — {title}
-
-> Issue: #{N}
-> product-spec: ./product-spec.md
-> 작성일: {YYYY-MM-DD}
-
-## Why
-(product-spec 요약 1-2줄)
-
-## Goal
-(product-spec Goal 그대로)
-
-## Evidence
-{현 코드베이스 분석 / 사용자 발화 / 리서치}
-
-## Architecture
-{3-1 답변}
-
-## Data Model
-{3-2 답변, 없으면 "변경 없음"}
-
-## API Contract
-{3-3 답변, 없으면 생략}
-
-## NF 결정
-- 영향 범위: {2-1}
-- 정합성: {2-2}
-- 실시간성: {2-3}
-- 부하: {2-4}
-- 동시성: {2-5}
-- 마이그레이션: {2-6}
-- 외부 의존: {2-7}
-- 보안: {2-8}
-- 관찰성: {2-9}
-- 롤백: {2-10}
-
-## Trade-offs
-{Step 4 답변}
-
-## Verification
-{2-11 답변}
-
-## Pre / Post
-- Pre: {현재 상태}
-- Post: {구현 후 기대 상태}
-```
-
-`AskUserQuestion`:
-
-```
-options:
-  - "생성 — 그대로 진행"
-  - "수정 — 특정 섹션"
-  - "취소"
-```
-
-## Step 6 — 파일 작성
-
-`Write` 로 `$PLAN_DIR/tech-spec.md` 작성.
-
-## Step 7 — 후속 안내
-
-- "tech-spec 작성 완료. **사용자 명시 승인** 후 implement.md 작성 단계 (`docs/plans/AGENTS.md` Section 4 승인 게이트)."
-- BE+FE 시: "API contract 합의 후 병렬 시작 가능 (implement-be.md / implement-fe.md 분리)."
-- 강결합 시: "BE 선행 명시. FE 는 BE 머지 후 시작."
-- 커밋은 별도. 사용자 결정.
+- "tech-spec 작성 완료. **사용자 명시 승인** 후 `/create-implement-plan` 진입."
+- BE+FE 시: API contract 합의 = 사용자 승인 게이트 (AGENTS.md Section 5).
+- 강결합 시: BE 선행 명시.
+- 커밋 별도.
 
 ## 안티 패턴
 
-- product-spec 부재인데 tech-spec 진행 (요구사항 추측).
-- 한 메시지에 메타인지 질문 여러 개.
-- Trade-off "없음" 그대로 수용.
-- API contract BE+FE 작업인데 생략.
-- NF 결정 (정합성 / 실시간성 등) 사용자 확인 없이 자율 결정.
+- Phase A 자율 분석 생략하고 11개 NF 사용자에게 떠넘김.
+- Trade-off "없음" / 사용자에게 제안 강요.
+- Architecture 모호 ("interview 영역") 그대로 spec 작성.
+- API contract BE+FE 작업인데 사용자에게 설계 떠넘김.
+- 도메인 코드 / 컨벤션 / 유사 spec 탐색 생략.
+- product-spec WHY/WHAT 침범 (HOW 영역만).
+- Verification 테스트 작성만 (통과 기준 없음).
 - preview 없이 파일 작성.
-- product-spec WHY / WHAT 침범 (HOW 영역만).
-- Verification "테스트 작성" 만 (통과 기준 없음 — `.claude/rules/plan-mode.md` 안티패턴).

@@ -1,173 +1,165 @@
 ---
 name: create-product-spec
-description: "GitHub open Issue 선택 후 메타인지 대화로 product-spec.md 작성. WHY / 누구에게 / 측정기준 / 수용기준 / 비스코프 / YAGNI 점검 강제. docs/plans/{N}-{slug}/product-spec.md 생성."
+description: "Senior PM/CEO 페르소나 product-spec 작성. open Issue 선택 후 Issue body + 도메인 코드 + 기존 plan + 운영 단서 자율 분석해 Why/Goal/AC/비스코프 초안 작성 후 브리핑. 측정기준 / phase 분리 / YAGNI 점검 직접 제안. 모호한 부분만 사용자 결정. 'product-spec 작성', '스펙 작성', '플랜 시작' 등 트리거. 출력: docs/plans/{N}-{slug}/product-spec.md."
 ---
 
 # Create Product Spec
 
-Issue 1개 → `docs/plans/{N}-{slug}/product-spec.md` 1개. 사용자 메타인지를 강제하는 대화형 spec 생성.
+**Persona**: Senior PM / CEO. Issue + 코드베이스 + 도메인 컨텍스트 직접 분석 → 문제 정의 + 해결 방향 + 측정 기준 + AC + 비스코프 초안 → 사용자 브리핑 + 모호한 부분만 결정 요청.
 
-## 전제 (Read 필수, Blocking)
+`AskUserQuestion` = 진짜 trade-off (스코프 절단 / 우선순위 / 측정 기준 비등) 만. PM 추정 가능하면 추정 + 근거.
 
-스킬 시작 직후 다음 2개 문서 `Read`. 미로드 시 진행 금지.
+## 전제 (Read Blocking)
 
-- `docs/plans/AGENTS.md` — 폴더 생성 트리거 / 명명 규약 / 워크플로우 / 안티패턴
-- `docs/plans/_templates/product-spec.md` — 출력 파일 템플릿 구조
+스킬 진입 직후:
 
-스펙 작성 전체 단계에서 위 2개 룰 준수. 충돌 시 `docs/plans/AGENTS.md` 우선.
+- `docs/plans/AGENTS.md` — 폴더 / 명명 / 워크플로우 / 안티패턴
+- `docs/plans/_templates/product-spec.md` — 출력 구조
 
 ## 핵심 원칙
 
-- **한 번에 1 질문** (brainstorming 스킬 패턴 차용).
-- **`AskUserQuestion` 우선** — 선택지로 좁힐 수 있는 건 무조건 다중선택. 자유서술은 자연어 답변 필요한 필드만.
-- **메타인지 강제** — "왜 / 무엇 / 누구에게 / 어디까지 / 빠지는 건 뭔가" 사용자가 직접 정리하게 한다. 추측 금지, 모호 답 = 재질문.
-- **YAGNI 점검 명시** — "꼭 필요한가? 미루면? 더 작은 버전?" 항상 묻는다.
-- **승인 후 파일 작성** — preview → confirm → write (Blocking).
+- **자율 분석 우선**. Issue body 만으로 부족. 도메인 코드 / 기존 plan / 메모리 / 운영 단서 직접 수집.
+- **PM 톤 초안**. WHY 명확, Goal 측정 가능, AC 검증 가능, 비스코프 의도적.
+- **추정 근거 명시**. 모든 결정에 1줄 근거 (Evidence).
+- **모호도 셀프 채점**. 명확 / 추정 / 모호. 모호만 사용자 질문.
+- **최종 confirm Blocking**.
 
-## Step 1 — open Issue 나열 + 선택
+## Phase A — Investigation (자율)
 
-```bash
-gh issue list --state open --json number,title,labels --limit 20
-```
-
-결과를 `AskUserQuestion` 옵션 (최대 4개) 으로 제시. Epic 라벨 우선:
-
-```
-question: "어떤 Issue 의 product-spec 을 작성할까요?"
-options:
-  - "#42 [Epic] 인터뷰 품질 개편 (type:epic, BE+FE)"
-  - "#48 [Epic] 결제 도입 (type:epic, BE)"
-  - "#51 [Feat] resume 미리보기 (type:feat, FE)"
-  - "다른 Issue / 새로 검색 — 직접 번호 입력"
-```
-
-5개 이상이면 첫 4개 (label `type:epic` 가중) + "다른 Issue" 옵션. 사용자가 "다른 Issue" 선택 시 자유서술로 번호 받기.
-
-선택된 Issue 의 number / title / labels 수집:
+### A-1. 대상 Issue 선택
 
 ```bash
-gh issue view {N} --json number,title,body,labels
+gh issue list --state open --json number,title,labels,body --limit 20
 ```
 
-→ Issue body 가 product-spec 초안 가질 수 있음. Read 해서 이후 질문에 컨텍스트로 활용.
-
-## Step 2 — slug 결정
-
-`AskUserQuestion`:
+`type:epic` 가중 + 최근 활동 순. 4개 옵션 + "다른 Issue":
 
 ```
-question: "plan 폴더 slug? (kebab-case, 30자 이하, 의미 압축)"
+question: "어떤 Issue 의 product-spec?"
 options:
-  - "{Issue title 자동 추론 slug} (추천)"
-  - "직접 입력"
+  - "#N [Epic] ... (추천 — 라벨 epic)"
+  ...
+  - "다른 Issue / 직접 번호"
 ```
 
-폴더 경로 = `docs/plans/{NNN}-{slug}/` (NNN = 3자리 zero-padding).
+### A-2. 컨텍스트 수집
 
-**아직 폴더 생성 X** — preview 단계에서 사용자 확정 후 생성.
+선택 Issue 의 body + 첨부 메타 흡수 후 도메인 분석:
 
-## Step 3 — 메타인지 질문 (순서대로, 한 번에 1개)
+```bash
+# Issue 본문 + 댓글
+gh issue view {N} --json number,title,body,labels,comments
 
-각 질문 후 답변 누적. 모호 / 추상 답 = 재질문 ("좀 더 구체적으로 — 예시?" / "측정 가능한 형태로?" 류).
+# 관련 도메인 코드 (Issue title 키워드 기반)
+grep -rn "{keyword}" backend/src/main/java/.../{domain}/ frontend/src/{area}/
 
-### 3-1. 현재 어떤 문제 / 갭? (자유서술)
+# 유사 / 인접 plan (참고용)
+ls docs/plans/ | head -10
+find docs/plans -maxdepth 2 -name product-spec.md -exec grep -l "{keyword}" {} \;
 
-> "지금 무엇이 안 되거나 부족한가요? 사용자 / 시스템 / 운영 어느 시점에서 발생?"
+# 메모리 관련 항목 (이미 컨텍스트에 있음 — 재확인)
+```
 
-목적: 배경 / 문제 명확화. 추상 답 ("UX 안 좋다") = 재질문 ("어떤 화면 / 어떤 행동 / 어느 단계?").
+도메인 / 모듈 / 사용자 흐름 / 기존 제약 파악. 수집한 단서 = Evidence 섹션 근거.
 
-### 3-2. 왜 지금? 미루면 어떻게 되나? (YAGNI 점검)
+### A-3. 분석 결과 정리 (내부)
 
-> "이걸 다음 sprint / 다음 분기로 미루면 어떤 손해? 미루면 안 되는 이유?"
+- 현재 상태: (관련 코드 / 데이터 / UX)
+- 문제점 (Issue body + 코드 단서): ...
+- 영향 범위 (사용자 / 운영 / 시스템): ...
+- 측정 후보: (운영 메트릭 / UX KPI / latency 등)
+- 인접 작업: 유사 plan / 의존
+- 모호 영역: PM 판단 부족 부분 마킹
 
-목적: 우선순위 정당화. "미뤄도 무방" 답 = 우선순위 P3 또는 Issue close 권유.
+## Phase B — Synthesis (초안 작성)
 
-### 3-3. 누구에게 가치가 가는가? (자유서술 또는 다중선택)
+`docs/plans/_templates/product-spec.md` 구조 그대로. PM이 채움.
 
-`AskUserQuestion`:
+### B-1. Why / Background
+
+Issue body + 코드 단서 → "현재 상태 / 문제점 / 동기" 3블록 채움. "UX 안 좋다" 류 추상 표현 금지 — 구체 화면/행동/단계 명시.
+
+### B-2. Goal (측정 가능)
+
+PM이 측정 후보 제안. 단서:
+- 사용자 행동: "X 가 Y 를 N초 안에"
+- 운영 메트릭: "5xx 비율 N% → M%"
+- 비즈니스: "전환율 N% ↑"
+
+수치 기반 단서 부족 시 → 모호 마킹 + Phase C 결정 항목.
+
+### B-3. 수용기준 (AC, 3-5개)
+
+PM이 검증 가능 단언으로 작성. 시나리오 / 엣지케이스 / 실패 케이스 포함. 빈약 (1-2개) 자체 금지 — Phase A 단서 부족 = 추가 탐색.
+
+### B-4. 비스코프 (Don't)
+
+PM이 의도적 절단 제안. 단서:
+- 비슷해 보이지만 다른 작업 → 별도 Issue 권유
+- MVP 외 확장 영역
+- 다음 phase 후보
+
+"없음" 결과 거의 없음 — PM 톤이면 반드시 절단 1+ 제안.
+
+### B-5. 의존 / 선행
+
+기존 plan / Issue / 외부 의존 (AWS / 3rd party). A-2 단서 활용.
+
+### B-6. slug 추정
+
+Issue title kebab-case 변환. 30자 이하. 의미 압축.
+
+### B-7. YAGNI 점검 (PM 자체)
+
+PM이 셀프 체크:
+- 더 작게 자를 수 있나? (phase 1 / phase 2 분리 가능?)
+- 미루면 큰 손해?
+
+자르기 가능 시 → 비스코프에 추가 + Phase C 결정 항목.
+
+## Phase C — Briefing + 결정 게이트
+
+브리핑 형식:
 
 ```
+## PM 분석 — Issue #N "{title}"
+
+### Evidence
+- 코드: {path:line, ...}
+- 메모리/메모: ...
+- 인접 plan: ...
+
+### 제안 spec 초안
+
+**Why**: (3블록 요약)
+**Goal**: 
+- (측정 가능 1) — 확신
+- (측정 가능 2) — 추정 (단서: ...)
+**AC** (5개): ...
+**비스코프**: (절단 항목 + 사유)
+**의존**: ...
+**slug**: {slug-안} (확신)
+
+### 결정 필요
+1. Goal 수치 — 운영 데이터 부족. 사용자 기준 vs 시스템 기준?
+2. Phase 분리 — phase 1 (핵심) + phase 2 (확장) 권장. 한번에 갈지?
+```
+
+`결정 필요` 만 `AskUserQuestion` (보통 0~3개). 없으면 바로 preview confirm.
+
+각 결정마다 옵션 2-3개 + 추천 + 근거.
+
+```
+question: "Goal 수치 기준?"
 options:
-  - "최종 사용자 (취준생 / 인터뷰 응시자)"
-  - "운영진 / 어드민"
-  - "개발자 (개발 생산성 / 유지보수)"
-  - "시스템 안정성 (성능 / 비용 / 가용성)"
+  - "운영 메트릭 — 5xx 비율 (추천 — 데이터 추적 가능)"
+  - "UX KPI — 사용자 만족도 (단점: 측정 도구 부재)"
+  - "둘 다 — phase 별 분리"
 ```
 
-복합이면 "직접 입력" 옵션 추가.
+수정 요청 시 해당 섹션만 재작성 후 재브리핑.
 
-### 3-4. 측정 가능한 성공 기준? (자유서술 + 재질문 강제)
-
-> "Goal 을 어떻게 측정할 건가요? 'X가 Y할 수 있다', 'N% 개선', 'Nms 이내' 형태."
-
-추상 답 ("좋아진다") = 재질문. **숫자 / 관찰 가능한 행동 강제**.
-
-### 3-5. 수용기준 체크리스트 (자유서술, 3-7개)
-
-> "완료 판정 체크리스트 3-5개. 각 항목 = 검증 가능한 단언."
-
-빈약 (1-2개) = "더 있나? 엣지케이스 / 실패 케이스?" 재질문.
-
-### 3-6. 비스코프 — 이번에 안 할 것 (자유서술)
-
-> "MVP 에서 의도적으로 빼는 것? 비슷해 보이지만 다른 작업?"
-
-"없음" 답 = 한 번 더 확인 ("정말 없나? 비슷한 기능 중 미루는 것? 미래 확장 영역?").
-
-### 3-7. 의존성 / 선행 (자유서술 또는 "없음")
-
-> "이 작업 시작 전 끝나야 하는 다른 Issue / 작업? 또는 외부 의존 (AWS / 3rd party)?"
-
-### 3-8. 더 작은 버전 가능? (YAGNI 점검 2)
-
-> "지금 정의한 것보다 더 작게 자를 수 있나? phase 1 / phase 2 분리 가능?"
-
-목적: 스코프 압축 기회 탐색. 자르기 가능 시 → 비스코프 / 별도 Issue 분리 권유.
-
-## Step 4 — preview
-
-수집한 답변으로 product-spec.md 초안 작성. 템플릿: `docs/plans/_templates/product-spec.md` 섹션 / 헤더 / 체크리스트 구조 그대로 따름 (자의적 변형 X). `docs/plans/AGENTS.md` Section 3 (파일 역할 — product-spec = 왜 / 무엇 / 수용기준) 위반 X.
-
-```markdown
-# Product Spec — {title}
-
-> Issue: #{N}
-> 작성일: {YYYY-MM-DD}
-
-## Why
-{3-1 + 3-2 답변 정리}
-
-## 누구에게
-{3-3 답변}
-
-## Goal
-{3-4 답변, 측정 가능 형태}
-
-## 수용기준
-- [ ] {3-5 항목 1}
-- [ ] {3-5 항목 2}
-...
-
-## 비스코프
-- {3-6 항목}
-
-## 의존 / 선행
-- {3-7 항목}
-```
-
-`AskUserQuestion`:
-
-```
-question: "이 product-spec 으로 파일 생성할까요?"
-options:
-  - "생성 — 그대로 진행"
-  - "수정 — 특정 섹션 다시 답변"
-  - "취소"
-```
-
-수정 선택 시 → 어느 섹션? → 해당 step 만 재실행 → 다시 preview.
-
-## Step 5 — 폴더 + 파일 생성
+## Phase D — 파일 작성
 
 승인 후:
 
@@ -176,24 +168,26 @@ PLAN_DIR=docs/plans/{NNN}-{slug}
 mkdir -p "$PLAN_DIR"
 ```
 
-`Write` 도구로 `$PLAN_DIR/product-spec.md` 작성.
+`Write` 로 `$PLAN_DIR/product-spec.md`. 템플릿 구조 유지.
 
-Issue 에 폴더 경로 코멘트 자동 추가 (옵션, 사용자 confirm 후):
+Issue 코멘트 자동 추가 (사용자 confirm 후):
 
 ```bash
 gh issue comment {N} --body "📁 plan: \`docs/plans/{NNN}-{slug}/\`"
 ```
 
-## Step 6 — 후속 안내
+## 후속
 
-- "product-spec 작성 완료. 다음 = tech-spec. `/create-tech-spec` 호출 시 이 폴더 자동 추천됨."
-- 커밋은 별도 (skill 자동 커밋 X). 사용자가 결정.
+- "product-spec 작성 완료. 다음 = `/create-tech-spec` (이 폴더 자동 추천)."
+- 커밋 별도. 사용자 결정.
 
 ## 안티 패턴
 
-- 한 메시지에 질문 여러 개.
-- 추상 답 그대로 수용 ("좋아진다", "잘 된다", "UX 개선" 등 측정 불가 표현).
-- 비스코프 / YAGNI 질문 생략.
-- preview 없이 파일 작성.
-- product-spec 안에 구현 디테일 (HOW) 침범. tech-spec 영역.
+- Phase A 자율 분석 생략하고 사용자에게 8개 메타인지 떠넘김.
+- Goal 을 "잘 된다" 류 추상 표현 그대로 수용.
+- PM 추정 가능한 항목 (비스코프 / phase 분리) 사용자 답변 강요.
+- Evidence 없이 결론 작성.
+- 비스코프 "없음" 그대로 수용.
+- product-spec 안에 구현 디테일 (HOW) 침범.
 - 폴더 / Issue 번호 / slug 사용자 미확인 자동 결정.
+- preview 없이 파일 작성.

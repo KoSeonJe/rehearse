@@ -1,134 +1,147 @@
 ---
 name: create-issue
-description: "GitHub Issue 생성 — 사용자에게 단계별 질문하여 type / area / priority / body 채운 후 gh issue create. Plan 폴더 생성은 별도 (이 스킬 = Issue 생성만)."
+description: "Tech Lead 페르소나 GitHub Issue 트리아지. 사용자 호소(예: '인터뷰 시작 5xx 가끔 나') 받으면 repo 코드/로그/기존 Issue 자율 탐색해 type/area/priority/title/body 초안 작성 후 브리핑. 최종 confirm + 모호한 부분만 사용자 결정. 'Issue 만들어줘', '이거 이슈로', '이슈 등록' 등 트리거. Plan 폴더/spec 작성은 별도."
 ---
 
 # Create Issue
 
-GitHub Issue 를 대화형으로 생성. 한 번에 한 질문씩 묻고, 답변 누적해서 최종 `gh issue create` 호출.
+**Persona**: Tech Lead. 사용자 호소 듣고 직접 코드/log/Issue 탐색 → 핵심 이슈 식별 → 트리아지 초안 + 근거 → 브리핑. 사용자는 검증·결정.
+
+`AskUserQuestion` = 진짜 모호한 부분 (옵션 비등 / 정보 부족) 만. 추정 가능하면 추정 + 근거 명시.
 
 ## 핵심 원칙
 
-- **한 번에 한 질문**. 다중 질문 금지.
-- **`AskUserQuestion` 도구 우선** (선택지 명확한 경우). 자유서술은 필드 텍스트 입력 시만.
-- **모호 답변 = 재질문**. 자율 추측 금지.
-- **사용자 명시 confirm 후 `gh issue create` 호출** (Blocking).
-- 라벨 / 템플릿 = 이 repo `.github/ISSUE_TEMPLATE/` + 라벨 스킴 (type / area / priority) 따름.
+- **자율 분석 우선**. 사용자 발화 = 출발점. 최종 정답 X. 코드/log/문서 직접 Read·Grep.
+- **추정 + 근거**. 모든 분류 (type/area/priority) 결정에 1줄 근거 첨부.
+- **모호도 셀프 채점**. 명확 / 추정 / 모호. 모호만 사용자 질문.
+- **최종 confirm Blocking**. preview → confirm → `gh issue create`.
 
-## Step 1 — type 분류
+## Phase A — Investigation (자율)
 
-`AskUserQuestion`:
+사용자 발화 키워드 + repo 컨텍스트 분석. 사용자 추가 질문 X.
+
+### A-1. 키워드 추출 + 도메인 매핑
+
+발화에서 도메인/모듈/현상 키워드 추출. `backend/src/main/java/.../domain/` + `frontend/src/` 디렉토리 구조 매핑.
+
+### A-2. 코드 / 로그 / 기존 Issue 탐색
+
+다음 중 발화에 맞는 것 실행:
+
+```bash
+# 기존 중복 Issue
+gh issue list --state all --search "{keyword}" --limit 5
+
+# 관련 도메인 코드
+grep -rn "{keyword}" backend/src/main/java frontend/src
+
+# 5xx/에러 호소 시 EC2 docker log (메모리: dev=54.180.188.135 / prod=api.rehearse.co.kr)
+ssh -i ~/.ssh/rehearse-key.pem ec2-user@54.180.188.135 \
+  "docker logs --since 24h rehearse-backend 2>&1 | grep -i '{keyword}\|ERROR\|Exception' | tail -50"
+
+# 최근 PR 관련 변경
+gh pr list --state merged --search "{keyword}" --limit 5
+```
+
+발화가 단순 작업 제안 (예: "프로젝트명 필드 추가") 시 코드 탐색만. log 탐색 스킵.
+
+### A-3. 분석 결과 요약 (내부)
+
+- 무엇 (1줄)
+- 관련 코드/파일 (path 1-3개)
+- 중복 Issue 여부
+- 추가 단서 (log 항목 / PR 등)
+
+## Phase B — Synthesis (초안 작성)
+
+분석 결과 기반 추정. 각 항목 confidence (`확신` / `추정` / `모호`) 마킹.
+
+### B-1. type 추정
+
+| 단서 | type |
+|---|---|
+| 재현 명확한 5xx/4xx, 잘못된 동작 | `bug` |
+| 재현 명확 + 작은 fix 범위 | `fix` |
+| 새 기능 작은 범위 | `feat` |
+| 큰 작업 / plan 폴더 필요 | `epic` |
+| 동작 변경 없음 + 구조 개선 | `refactor` |
+| 인프라 / 문서 / 의존성 | `chore` |
+
+### B-2. area 추정
+
+코드 탐색 결과로 결정:
+- backend/ hit → `BE`
+- frontend/ hit → `FE`
+- lambda/ hit → `lambda`
+- .github/ / docker / 스크립트 → `infra`
+- docs/ 만 → `docs`
+- 양쪽 hit → `BE+FE` (Epic 한정)
+
+### B-3. priority 추정
+
+| 단서 | priority |
+|---|---|
+| 서비스 장애 / 데이터 손실 / 보안 | `P0` |
+| 현재 sprint 핵심 / 사용자 다수 영향 | `P1` |
+| 다음 sprint / 일부 사용자 / 운영 불편 | `P2` |
+| backlog / 시간 날 때 | `P3` |
+
+명확 단서 부재 시 `P2` 기본 + 모호 마킹.
+
+### B-4. title + body 초안
+
+type 별 prefix + body 자동 생성:
+
+- **bug/fix**: 현상 / 재현 (log 단서 / 코드 라인) / 기대 / 실제 / 환경 / 추정 원인
+- **feat/refactor/chore**: 목적 / 변경 영역 (path) / DoD 2-4
+- **epic**: Why / Goal / 수용기준 / 비스코프 placeholder ("product-spec 단계에서 정밀화") / slug
+
+body 끝에 **분석 메모** 섹션 자동 추가:
+```
+---
+## 분석 메모 (자동 생성)
+- 관련 코드: path:line
+- 관련 PR/Issue: #N
+- log 단서: ...
+```
+
+## Phase C — Briefing + 결정 게이트
+
+다음 형식으로 1회 브리핑:
 
 ```
-question: "어떤 종류의 이슈인가요?"
+## Tech Lead 트리아지
+
+**무엇**: {1줄}
+**근거**: 
+- 코드: {path:line}
+- log: {단서}
+- 기존 Issue: {중복 여부}
+
+**제안 분류**:
+- type: bug (확신 — 5xx 재현 가능, log Exception 식별)
+- area: BE (확신 — InterviewService line 42)
+- priority: P1 (추정 — 사용자 다수 영향, 단서 부족하면 P2)
+
+**title 안**: [Bug] 인터뷰 시작 시 5xx 간헐 발생
+
+**body 초안**: (위 generated body 표시)
+
+**결정 필요**:
+- priority P1/P2 — 빈도 데이터 없음. 어느 쪽?
+```
+
+`결정 필요` 항목만 `AskUserQuestion`. 없으면 바로 confirm:
+
+```
+question: "이 Issue 생성?"
 options:
-  - "Epic — 큰 작업, plan 폴더 1:1 매핑 (product-spec / tech-spec 작성 예정)"
-  - "Feat — 작은 기능 추가 (plan 폴더 없이 진행)"
-  - "Fix — 버그 fix (재현 명확, 작은 변경)"
-  - "Bug — 버그 리포트 (재현 / 기대 / 실제 분석 필요)"
-  - "Chore — 인프라 / 문서 / 의존성 정리"
-  - "Refactor — 동작 변경 없는 구조 개선"
+  - "생성 — 그대로"
+  - "수정 — 어느 부분?"
+  - "취소"
 ```
 
-→ type 라벨 결정: `type:epic` / `type:feat` / `type:fix` / `type:bug` / `type:chore` / `type:refactor`.
-
-## Step 2 — area
-
-`AskUserQuestion`:
-
-```
-question: "영향 영역?"
-options:
-  - "BE — backend"
-  - "FE — frontend"
-  - "lambda — analysis / convert"
-  - "infra — CI/CD / AWS / 도커"
-  - "docs — 문서 전용"
-  - "BE+FE — 동시 작업 (Epic 한정)"
-```
-
-→ 라벨: `BE` / `FE` / `lambda` / `infra` / `docs` (BE+FE 선택 시 두 라벨 동시).
-
-## Step 3 — priority
-
-`AskUserQuestion`:
-
-```
-question: "우선순위?"
-options:
-  - "P0 — 즉시 (서비스 장애 / 데이터 손실 / 보안)"
-  - "P1 — 이번 주 (현재 sprint 핵심)"
-  - "P2 — 보통 (다음 sprint 까지)"
-  - "P3 — backlog (시간 날 때)"
-```
-
-→ 라벨: `priority:P0` / `priority:P1` / `priority:P2` / `priority:P3`.
-
-## Step 4 — title
-
-자유서술 입력 받기. 한 줄 (50자 권장, 80자 max). 한국어.
-
-```
-"이슈 한 줄 제목을 알려주세요. (type prefix 자동 추가됨)"
-```
-
-→ 최종 title = `[Epic] {입력}` / `[Feat] {입력}` / `[Bug] {입력}` 등. type 별로 prefix 변동.
-
-## Step 5 — type 별 body 질문 분기
-
-### Epic
-
-순서대로 (한 번에 1개):
-
-1. **Why** — "왜 필요한가요? 배경 / 문제 / 기회를 알려주세요." (자유서술)
-2. **Goal** — "측정 가능한 성공 기준은? 'X가 Y할 수 있다' 형태." (자유서술)
-3. **수용기준** — "완료 판정 체크리스트 (3-5개)." (자유서술 → bullet 으로 정리)
-4. **비스코프** — "이번 Epic 에서 다루지 않을 항목? (없으면 '없음')" (자유서술)
-5. **plan 폴더 slug** — "plan 폴더용 slug? (kebab-case, 예: `interview-quality-sprint`)"
-
-→ body = `.github/ISSUE_TEMPLATE/epic.md` 구조 채우기. plan 폴더 경로 = `docs/plans/{Issue번호}-{slug}/` (Issue 번호는 생성 후 확정).
-
-### Feat
-
-1. **목적** — "이 기능 무엇을 / 왜?"
-2. **변경 영역** — "어떤 파일 / 모듈 / 도메인 영향?"
-3. **완료 조건** — "DoD 체크리스트 2-4개."
-
-### Fix
-
-1. **현상** — "무엇이 잘못 동작?"
-2. **원인 (알면)** — "원인 추정?"
-3. **수정 범위** — "어떤 파일 / 함수 영향?"
-
-### Bug
-
-1. **재현 절차** — "1, 2, 3 단계로."
-2. **기대 동작**
-3. **실제 동작**
-4. **환경** — "브라우저/OS, 백엔드 환경 (local/dev/prod), 발생 시각, userId/interviewId (있으면)."
-5. **로그 / 스크린샷** — "첨부할 것 있으면 경로 / 링크." (옵션)
-
-### Chore / Refactor
-
-1. **무엇을** — "구체적으로 어떤 정리 / 개선?"
-2. **왜** — "현재 어떤 문제 / 갭?"
-3. **완료 기준** — "어떻게 끝났다고 판단?"
-
-## Step 6 — preview + confirm
-
-채워진 body markdown + title + label 을 사용자에게 제시. `AskUserQuestion`:
-
-```
-question: "이 내용으로 Issue 생성할까요?"
-options:
-  - "생성 — 그대로 진행"
-  - "수정 — 특정 필드 다시 작성"
-  - "취소 — 중단"
-```
-
-수정 선택 시 → "어떤 필드?" 재질문 → 해당 step 만 재실행 → 다시 preview.
-
-## Step 7 — `gh issue create`
+## Phase D — 생성
 
 승인 후:
 
@@ -139,29 +152,30 @@ gh issue create \
   --body "{body}"
 ```
 
-multi-area (BE+FE) = label 컴마 추가. 결과 = Issue URL 출력.
+라벨 부재 시 `gh label create` 자동 제안. 라벨 스킴:
 
-## Step 8 — 후속 안내
+- `type:epic` (#5319e7) / `type:feat` (#a2eeef) / `type:fix` (#fbca04) / `type:bug` (#d73a4a) / `type:chore` (#cfd3d7) / `type:refactor` (#bfdadc)
+- `priority:P0` (#b60205) / `priority:P1` (#d93f0b) / `priority:P2` (#fbca04) / `priority:P3` (#0e8a16)
+- area (BE/FE/infra/lambda/docs): 기존 사용
 
-- Epic 생성 시: "Issue #N 생성 완료. plan 폴더 만들려면: `mkdir -p docs/plans/{N}-{slug}` + 템플릿 복사 (`docs/plans/_templates/`)." — 자동 생성 X (이 스킬 범위 외).
-- 기타 type: URL 만 보고.
+## 후속
 
-## 라벨 부재 대응
+- Epic 생성 시: "Issue #N 생성. plan 폴더 필요하면 `/create-product-spec` 호출 — 이 Issue 자동 추천됨."
+- 기타: URL 출력.
 
-`gh issue create` 가 라벨 없음 에러 시:
+## 스킬 경계
 
-1. 사용자에게 "라벨 `{name}` 가 repo 에 없음. 생성할까요?" 질문 (`AskUserQuestion`).
-2. 승인 시 `gh label create "{name}" --color "{hex}" --description "{desc}"`.
-3. 라벨 스킴 (참고):
-   - `type:epic` (#5319e7) / `type:feat` (#a2eeef) / `type:fix` (#fbca04) / `type:bug` (#d73a4a) / `type:chore` (#cfd3d7) / `type:refactor` (#bfdadc)
-   - `priority:P0` (#b60205) / `priority:P1` (#d93f0b) / `priority:P2` (#fbca04) / `priority:P3` (#0e8a16)
-   - area 라벨 (BE / FE / infra / lambda) = 기존 사용. `docs` 신규 시 동일 패턴 (#0075ca).
+- 이 스킬 = **Issue 트리아지 + 등록**. 깊이 = type/area/priority 결정 가능 수준.
+- product-spec 깊이 (수용기준 정밀화 / 측정 지표 / phase 분리 / YAGNI) = 별도 스킬.
+- plan 폴더 자동 생성 X.
 
 ## 안티 패턴
 
-- 한 메시지에 질문 여러 개.
-- 사용자 답변 추측 / 자율 채움.
+- Phase A 자율 탐색 생략하고 사용자에게 다중 질문.
+- 모든 분류 사용자에게 떠넘김 (옵션 다중선택 폭탄).
+- 추정 근거 없이 분류 결정.
+- 중복 Issue / 관련 PR 검색 생략.
+- log 단서 있는데 본문에 미반영.
+- 사용자 발화 그대로 title 사용 (정제 X).
 - preview 생략하고 바로 `gh issue create`.
-- type / area / priority 라벨 누락.
-- title 에 type prefix (`[Epic]` 등) 자동 추가 안 함.
-- Epic 인데 plan 폴더 자동 생성 (스킬 범위 외).
+- product-spec 깊이 침범.
