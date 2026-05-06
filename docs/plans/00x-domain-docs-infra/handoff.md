@@ -1,16 +1,16 @@
 # Handoff — 00x-domain-docs-infra
 
-> **수명**: 단명. Phase B 파일럿 + (선택) FE 정책 plan 결정 후 제거
-> **작성 시점**: 2026-05-06 세션 종료 (Phase A 완료 + Phase B 보류)
+> **수명**: 단명. Phase C 완료 / 나머지 도메인 문서화 계획 확정 후 제거
+> **작성 시점**: 2026-05-06 세션 종료 (Phase A 완료 + Phase B 완료 + Phase C 완료)
 > **다음 세션**: 이 파일 먼저 읽음
 
 ---
 
 ## 현재 상태
 
-- 진행: **Phase A 완료**, **Phase B 완료** (interview 도메인 정책 작성)
-- 브랜치: `chore/claude-meta-setup` (마지막 commit `5659c4d`)
-- 커밋: `docs(domain): 도메인 정책 문서화 인프라 + 템플릿 3종 추가` (5659c4d)
+- 진행: **Phase A 완료**, **Phase B 완료**, **Phase C 완료** (interview + question 도메인 정책 작성)
+- 브랜치: `chore/claude-meta-setup` (마지막 commit `c794cf4`)
+- 커밋: `docs(domain): question 도메인 정책 / 스키마 / API 흐름 문서화` (c794cf4)
 - 빌드 / 테스트: 해당 없음 (문서만)
 - PR: 미생성
 
@@ -29,30 +29,41 @@
 - **가설 정정**: `interview_session` / `interview_turn` 테이블 부재 확인 → 답변·턴 데이터는 question 도메인 관리, `InterviewRuntimeState` 는 Caffeine in-memory
 - **템플릿 갱신**: `docs/domain/_templates/schema.md` / `api-flow.md` 에 "연관 의존성" 섹션 추가
 
+### Phase C 완료 (2026-05-06)
+
+- `docs/domain/question/` 6개 파일 작성 (schema.md / api 4개 / glossary.md, 총 1,101 lines)
+- interview 도메인과의 의존 관계 명시 (턴 데이터 소유권 question, runtimeState 연동 지점)
+- `scripts/sync-domain-docs.sh` 추가 — post-merge 자동 동기화 hook
+
 ---
 
 ## 다음 세션 시작점
 
-**1순위**: Phase C — question 도메인 정책 작성.
+**Phase A~C 완료** — resume / feedback / interview / question 4개 도메인 정책 문서화 완료.
 
-### Phase C (question 도메인)
+### 문서화 현황 (2026-05-06 기준)
 
-interview 파일럿 완료 기준으로 동일 절차 적용:
+| 도메인 | 문서화 상태 | 위치 |
+|--------|-----------|------|
+| resume | 완료 | `docs/domain/resume/` |
+| feedback | 완료 | `docs/domain/feedback/` |
+| interview | 완료 | `docs/domain/interview/` |
+| question | 완료 | `docs/domain/question/` |
+| questionset | 미문서화 | `backend/.../domain/questionset/` |
+| reviewbookmark | 미문서화 | `backend/.../domain/reviewbookmark/` |
+| file | 미문서화 | `backend/.../domain/file/` |
+| user | 미문서화 | `backend/.../domain/user/` |
+| auth | 미문서화 | `backend/.../domain/auth/` |
+| admin | 미문서화 | `backend/.../domain/admin/` |
+| servicefeedback | 미문서화 | `backend/.../domain/servicefeedback/` |
 
-- C1. backend agent 호출 (`docs/domain/AGENTS.md` §6 프롬프트 복붙)
-  - 분석: `backend/src/main/java/com/rehearse/api/domain/question/` (controller / service / entity / repository / dto / event / exception)
-  - Flyway: `V*.sql` 중 question / interview_turn / answer 관련
-  - 출력: schema.md + api/{action}.md + (옵션) glossary.md
-  - ❓TODO 마킹 = 코드 추론 불가 항목 (interview 파일럿에서 정정된 가설 참조)
+### 다음 우선순위 (사용자 결정 필요)
 
-- C2. 메타인지 보완 (`docs/domain/AGENTS.md` §7 체크리스트 8항목)
-  - 턴 데이터가 question 도메인에 있음 재확인 / runtimeState 연동 지점 명시
+1. **questionset** — QuestionSet / QuestionSetAnalysis / 분석 스케줄러 포함. interview·question·feedback 의존. 복잡도 높음.
+2. **reviewbookmark** — ReviewBookmark. feedback 도메인과 연동.
+3. 나머지 (file / user / auth / admin / servicefeedback) — 비즈니스 복잡도 낮음. 우선순위 후순위.
 
-- C3. preview → 사용자 승인 → Write
-
-- C4. 검증 (Flyway 컬럼 일치 / endpoint 100% 커버 / ❓TODO 보류 5개 제외 나머지 0건 / 조건엣지 빈 row 0)
-
-**참고**: Phase B 정정 가설 (`interview_session` / `interview_turn` 부재) 이 question 도메인 분석에 영향. 시작 전 `docs/domain/interview/schema.md` 재확인 권장.
+동일 절차: `docs/domain/AGENTS.md` §6 프롬프트 → backend agent → preview → 승인 → Write → 검증.
 
 ---
 
@@ -62,7 +73,9 @@ interview 파일럿 완료 기준으로 동일 절차 적용:
 |------|------|------|
 | 서브에이전트 미노출 원인 | **Resolved** | `tools:` 필드 8개 agent 추가로 해결 (commit c93c803) |
 | Phase B 진행 시점 | **Completed** | interview 도메인 정책 작성 완료 (2026-05-06) |
+| Phase C 진행 시점 | **Completed** | question 도메인 정책 작성 완료 (2026-05-06) |
 | FE 비즈니스 정책 문서화 | 미결 | BE 파일럿 완료 → 별도 plan 으로 분리 예정 |
+| 나머지 도메인 문서화 순서 | 미결 | questionset / reviewbookmark 우선 후보. 사용자 결정 필요 |
 
 ---
 
@@ -75,8 +88,10 @@ interview 파일럿 완료 기준으로 동일 절차 적용:
 - **정정 (Phase B)**: `interview_session` / `interview_turn` 테이블 실재하지 않음. 답변·턴 = question 도메인, runtimeState = Caffeine in-memory. 기존 handoff 가설 수정
 - **함정**: backend agent 가 코드 추론으로 ❓TODO 채우면 안 됨. 모르면 ❓TODO 마킹 후 사용자에게
 - **함정**: api 파일은 endpoint 1:1 X. 비즈니스 액션 단위 묶음
+- **함정**: questionset 도메인 분석 시 AnalysisScheduler 가 interview / question / feedback 3개 도메인과 교차. 의존 방향 명시 필수
 - **재사용**: `docs/plans/AGENTS.md` 톤 / 섹션 구성 차용. `docs/plans/_templates/` 7종 구조 참조
 - **재사용**: `.claude/skills/create-tech-spec/SKILL.md` Step 6 (preview → confirm → write Blocking) 워크플로우
+- **재사용**: `scripts/sync-domain-docs.sh` — post-merge 자동 동기화. 신규 도메인 추가 시 스크립트 내 도메인 목록 갱신 필요
 
 ---
 
@@ -116,4 +131,4 @@ backend agent 로 docs/domain/interview/ 초안 작성.
 
 ---
 
-업데이트: 2026-05-06 (Phase A 완료 / Phase B 완료 / Phase C = question 도메인 예정)
+업데이트: 2026-05-06 (Phase A 완료 / Phase B 완료 / Phase C 완료 — resume·feedback·interview·question 4개 도메인 정책 문서화 완결)

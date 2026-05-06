@@ -83,16 +83,19 @@ docs/domain/
 - 신규 도메인 추가 → 본 절차 재실행
 - PR 머지 전 갱신 누락 시 reviewer 가 차단
 
-### 자동 동기화 (post-merge hook)
+### 자동 동기화 (Claude Code PostToolUse hook)
 
-`git merge` / `git pull` (ff 포함) 시 `.git/hooks/post-merge` → `scripts/sync-domain-docs.sh` 가 백그라운드 실행. 변경된 backend domain 코드 / Flyway SQL 분석 후 영향 도메인의 docs/domain/{name}/ 파일을 working tree 에 자동 갱신 (자동 commit X). 추론 불가 정책은 `❓TODO(auto-sync, YYYY-MM-DD)` 마킹.
+Claude 세션 안에서 `git pull` / `git merge` Bash 도구 실행 직후 `.claude/hooks/post-merge-sync.sh` 가 fire. ORIG_HEAD..HEAD diff 분석 → 영향받은 BE 도메인 / Flyway / docs/architecture / progress.md 카테고리 추출 → **메인 세션에 작업 컨텍스트 inject** (`hookSpecificOutput.additionalContext`). 메인 세션이 다음 turn 에서 직접 docs 파일 Edit. 별개 백그라운드 `claude -p` 호출 X — 토큰 / 컨텍스트 메인 세션 통합.
 
 비활성화:
-- 일시: `SKIP_DOMAIN_DOC_HOOK=1 git merge ...`
-- 머지 커밋 메시지에 `[skip-domain-doc]` 포함
-- 영구: `.git/hooks/post-merge` 제거
+- 일시: `SKIP_DOC_SYNC_HOOK=1` env (per-shell)
+- 머지 커밋 메시지에 `[skip-doc-sync]` 포함
+- 영구: `.claude/settings.json` 의 PostToolUse hook 항목 제거
 
-로그: `.git/sync-domain-docs.log`. docs/domain/{name}/ 미존재 시 노터치 → §3 5단계로 사용자 트리거 필요.
+제약:
+- Claude 세션 밖 머지 (직접 터미널 / IDE / CI) = fire 안함. 워크플로우상 develop pull 은 `git-manager` agent 위임이 원칙 → 거의 모든 케이스 커버.
+- docs/domain/{name}/ 미존재 = 노터치 → §3 5단계로 사용자 수동 트리거 필요.
+- `git pull --rebase` 는 ORIG_HEAD 머지 시맨틱 부재 → 스킵.
 
 PR 단위 갱신 원칙. "나중에 한꺼번에" 금지 — drift 누적.
 
