@@ -79,6 +79,12 @@ public class Interview {
     @Column(columnDefinition = "TEXT")
     private String failureReason;
 
+    @Column(name = "question_gen_retry_count", nullable = false)
+    private int questionGenRetryCount;
+
+    @Column(name = "question_gen_last_retried_at")
+    private LocalDateTime questionGenLastRetriedAt;
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -146,6 +152,11 @@ public class Interview {
     public void resetForRetry() {
         this.questionGenerationStatus = QuestionGenerationStatus.PENDING;
         this.failureReason = null;
+    }
+
+    public void recordRetryAttempt() {
+        this.questionGenRetryCount++;
+        this.questionGenLastRetriedAt = LocalDateTime.now();
     }
 
     public void updateStatus(InterviewStatus newStatus) {

@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import com.rehearse.api.domain.question.entity.CsSubTopic;
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.infra.ai.AiClient;

@@ -347,6 +347,42 @@ class InterviewTest {
         }
     }
 
+    @Nested
+    @DisplayName("recordRetryAttempt 메서드")
+    class RecordRetryAttempt {
+
+        @Test
+        @DisplayName("최초 호출 시 카운터가 1로 증가하고 시각이 기록된다")
+        void recordRetryAttempt_initial_incrementsCounterAndSetsTimestamp() {
+            // given
+            Interview interview = createDefaultInterview();
+            assertThat(interview.getQuestionGenRetryCount()).isZero();
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNull();
+
+            // when
+            interview.recordRetryAttempt();
+
+            // then
+            assertThat(interview.getQuestionGenRetryCount()).isEqualTo(1);
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("두 번 연속 호출하면 카운터가 2로 증가한다")
+        void recordRetryAttempt_calledTwice_incrementsToTwo() {
+            // given
+            Interview interview = createDefaultInterview();
+
+            // when
+            interview.recordRetryAttempt();
+            interview.recordRetryAttempt();
+
+            // then
+            assertThat(interview.getQuestionGenRetryCount()).isEqualTo(2);
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNotNull();
+        }
+    }
+
     private Interview createDefaultInterview() {
         return Interview.builder()
                 .userId(1L)
