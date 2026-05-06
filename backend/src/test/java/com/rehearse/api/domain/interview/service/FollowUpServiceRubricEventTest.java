@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
@@ -29,18 +28,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
@@ -65,7 +60,6 @@ class FollowUpServiceRubricEventTest {
     @Mock private InterviewPlanRuntimeCache interviewPlanCache;
     @Mock private ResumeInterviewPlanner resumeInterviewPlanner;
     @Mock private InterviewFinder interviewFinder;
-    @Mock private ApplicationEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
@@ -73,8 +67,7 @@ class FollowUpServiceRubricEventTest {
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
-                eventPublisher);
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
 
         InterviewRuntimeState state = new InterviewRuntimeState("MID", null);
         lenient().when(runtimeStateStore.getOrInit(any(), any())).thenReturn(state);
@@ -109,19 +102,14 @@ class FollowUpServiceRubricEventTest {
                 .questionText("다음 질문")
                 .orderIndex(1)
                 .build();
-        given(followUpTransactionHandler.saveFollowUpResult(any(), any()))
+        given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(any(), any(), any(), any()))
                 .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
         FollowUpRequest request = buildRequest();
         followUpService.generateFollowUp(1L, 1L, request, buildAudioFile());
 
-        ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
-        then(eventPublisher).should().publishEvent(captor.capture());
-
-        TurnCompletedEvent event = captor.getValue();
-        assertThat(event.interviewId()).isEqualTo(1L);
-        assertThat(event.intent()).isEqualTo(IntentType.ANSWER);
-        assertThat(event.resumeMode()).isNull();
+        then(followUpTransactionHandler).should()
+                .saveFollowUpResultAndPublishEvent(any(), any(), any(), any());
     }
 
     private GeneratedFollowUp buildFollowUp(String question) {

@@ -10,6 +10,11 @@
 
 이 Task 가 무엇을 달성하는가. 1-2 문장.
 
+## 에이전트
+
+- **구현**: `{backend | frontend | general-purpose}` — {영역 책임 1줄}
+- **리뷰**: `{code-reviewer-backend | code-reviewer-frontend}` — {리뷰 포커스 1줄}
+
 ## 변경 파일
 
 - `path/to/File.java` — 무엇을 / 왜
@@ -44,7 +49,8 @@
 - [ ] 변경 파일 commit
 - [ ] 테스트 모두 통과
 - [ ] 린트 / 빌드 통과
-- [ ] 코드 리뷰 통과 (지정 reviewer)
+- [ ] **지정 리뷰어 실행** (구현 직후, MANDATORY)
+- [ ] Critical / Major 지적 fix 반영
 
 ## 커밋 메시지
 

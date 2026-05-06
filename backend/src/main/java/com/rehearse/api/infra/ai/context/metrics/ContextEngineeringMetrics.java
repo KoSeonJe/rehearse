@@ -18,6 +18,7 @@ public class ContextEngineeringMetrics {
     static final String TOKENS_METRIC = "rehearse.ai.context.tokens";
     static final String CACHE_HIT_RATIO_METRIC = "rehearse.ai.context.cache_hit_ratio";
     static final String COMPACTION_COUNT_METRIC = "rehearse.ai.context.compaction_count";
+    static final String TOKENS_EXCEEDED_METRIC = "rehearse.ai.context.tokens.exceeded";
 
     private final MeterRegistry registry;
 
@@ -65,6 +66,10 @@ public class ContextEngineeringMetrics {
 
     public void recordCompaction(String mode) {
         registry.counter(COMPACTION_COUNT_METRIC, "mode", mode).increment();
+    }
+
+    public void incrementTokensExceeded(String callType) {
+        registry.counter(TOKENS_EXCEEDED_METRIC, "callType", callType).increment();
     }
 
     private double computeRatio(AtomicLong reads, AtomicLong writes) {

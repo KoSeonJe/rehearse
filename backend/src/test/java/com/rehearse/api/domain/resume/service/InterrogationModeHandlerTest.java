@@ -70,6 +70,7 @@ class InterrogationModeHandlerTest {
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
             assertThat(response.getType()).startsWith("RESUME_INTERROGATION_L");
             assertThat(response.isSkip()).isFalse();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
     }
 
@@ -156,6 +157,7 @@ class InterrogationModeHandlerTest {
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
             assertThat(result.response().isPresentToUser()).isFalse();
+            assertThat(result.questionId()).isNull();
         }
     }
 

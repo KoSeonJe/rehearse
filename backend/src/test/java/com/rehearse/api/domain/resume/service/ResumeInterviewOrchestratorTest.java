@@ -19,6 +19,7 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -103,7 +104,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 11L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -164,7 +165,7 @@ class ResumeInterviewOrchestratorTest {
                     });
             given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean(), any()))
                     .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
-                            FollowUpResponse.builder().question("마무리").presentToUser(true).build(), null));
+                            FollowUpResponse.builder().question("마무리").presentToUser(true).build(), 12L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -207,7 +208,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
                     .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
-                            FollowUpResponse.builder().question("L2 질문").build(), null));
+                            FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 13L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -287,7 +288,7 @@ class ResumeInterviewOrchestratorTest {
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
-                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 14L));
 
             orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
@@ -322,6 +323,50 @@ class ResumeInterviewOrchestratorTest {
             assertThat(modeCaptor.getValue()).isEqualTo(ResumeMode.PLAYGROUND);
             assertThat(answerCaptor.getValue()).isEqualTo("사용자답변텍스트");
             assertThat(qIdCaptor.getValue()).isEqualTo(42L);
+        }
+
+        @Test
+        @DisplayName("표시할 질문이 있는데 questionId 가 없으면 결함으로 예외를 던진다")
+        void processUserTurn_presentedQuestionWithoutQuestionId_throwsException() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("사용자답변텍스트",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
+
+            assertThatThrownBy(() -> orchestrator.processUserTurn(
+                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan))
+                    .isInstanceOf(BusinessException.class);
+
+            then(turnEventPublisher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("표시할 질문 없이 종료된 턴은 TurnCompletedEvent 를 발행하지 않는다")
+        void processUserTurn_exhaustedWithoutQuestion_doesNotPublish() {
+            state.transitionTo(ResumeMode.INTERROGATION);
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("사용자답변텍스트",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                            FollowUpResponse.builder()
+                                    .skip(true)
+                                    .presentToUser(false)
+                                    .followUpExhausted(true)
+                                    .type("RESUME_INTERROGATION_EXHAUSTED")
+                                    .build(), null));
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan);
+
+            assertThat(response.isFollowUpExhausted()).isTrue();
+            then(turnEventPublisher).shouldHaveNoInteractions();
         }
     }
 

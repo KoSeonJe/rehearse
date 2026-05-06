@@ -100,17 +100,13 @@ class FollowUpServiceTest {
     @Mock
     private InterviewFinder interviewFinder;
 
-    @Mock
-    private org.springframework.context.ApplicationEventPublisher eventPublisher;
-
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder,
-                eventPublisher);
+                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
 
         lenient().when(runtimeStateStore.getOrInit(any(), any()))
                 .thenReturn(new InterviewRuntimeState("JUNIOR", null));
@@ -118,6 +114,8 @@ class FollowUpServiceTest {
         // CS 트랙 기본 stub: skeleton=null 경로에서 interviewFinder 호출 시 CS interview 반환
         Interview csDefault = mock(Interview.class);
         lenient().when(csDefault.getInterviewTypes()).thenReturn(Set.of(InterviewType.CS_FUNDAMENTAL));
+        lenient().when(csDefault.getUserId()).thenReturn(1L);
+        lenient().when(csDefault.getLevel()).thenReturn(InterviewLevel.JUNIOR);
         lenient().when(interviewFinder.findById(any())).thenReturn(csDefault);
     }
 
@@ -197,7 +195,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("HashMap 충돌 해결?"), audio());
@@ -221,7 +219,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
-            given(followUpTransactionHandler.saveFollowUpResult(eq(10L), any(GeneratedFollowUp.class)))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 2));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -247,6 +245,19 @@ class FollowUpServiceTest {
         }
 
         @Test
+        @DisplayName("Analyzer SKIP 권고 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_analyzerRecommendsSkip_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
+        }
+
+        @Test
         @DisplayName("Step B 응답이 skip=false 인데 question 이 비어 있으면 PARSE_FAILED")
         void generateFollowUp_stepBNonSkipWithBlankQuestion_throwsParseFailed() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
@@ -257,7 +268,8 @@ class FollowUpServiceTest {
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("AI_005"));
-            then(followUpTransactionHandler).should(never()).saveFollowUpResult(anyLong(), any(GeneratedFollowUp.class));
+            then(followUpTransactionHandler).should(never())
+                    .saveFollowUpResultAndPublishEvent(anyLong(), any(), any(), any());
         }
 
         @Test
@@ -273,6 +285,35 @@ class FollowUpServiceTest {
             assertThat(response.isSkip()).isTrue();
             assertThat(response.getSkipReason()).isEqualTo("답변이 main_question 과 무관");
             then(aiCallMetrics).should().incrementFollowUpSkip("step_b_skip");
+        }
+
+        @Test
+        @DisplayName("Step B 자체 skip 반환 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_stepBSelfSkip_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
+        }
+
+        @Test
+        @DisplayName("intent != ANSWER 분기 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_nonAnswerIntent_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.CLARIFY_REQUEST, "무슨 뜻인가요?", AnswerAnalysis.empty(50L)));
+            given(intentDispatcher.dispatch(eq(IntentType.CLARIFY_REQUEST), any()))
+                    .willReturn(FollowUpResponse.builder().question("질문을 다시 설명합니다").build());
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            then(followUpTransactionHandler).should()
+                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
         }
 
         @Test
@@ -458,7 +499,7 @@ class FollowUpServiceTest {
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 99L);
-            given(followUpTransactionHandler.saveFollowUpResult(any(), any()))
+            given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(any(), any(), any(), any()))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -474,4 +515,5 @@ class FollowUpServiceTest {
             return interview;
         }
     }
+
 }

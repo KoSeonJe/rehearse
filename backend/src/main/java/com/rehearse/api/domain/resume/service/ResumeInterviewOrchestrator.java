@@ -18,8 +18,10 @@ import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -83,6 +85,13 @@ public class ResumeInterviewOrchestrator {
         TurnHandlerResult handlerResult = dispatchByMode(
                 currentMode, interviewId, currentState, answerText, analysis,
                 skeleton, plan, remainingMinutes, previousExchanges);
+
+        if (shouldSkipTurnCompletedEvent(handlerResult)) {
+            log.debug("[정상 skip] Resume TurnCompletedEvent 발행 대상 아님. interviewId={}, turnIndex={}, mode={}",
+                    interviewId, turnIndex, currentMode);
+            return handlerResult.response();
+        }
+        validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
 
         turnEventPublisher.publish(interviewId, turnIndex, analysis, intent, currentMode,
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
@@ -176,6 +185,25 @@ public class ResumeInterviewOrchestrator {
                 interviewId, null, questionContent, answerText, turnIndex, previousExchanges
         );
         return intentDispatcher.dispatch(intent.type(), input);
+    }
+
+    private boolean shouldSkipTurnCompletedEvent(TurnHandlerResult result) {
+        FollowUpResponse response = result.response();
+        return result.questionId() == null
+                && response.isSkip()
+                && !response.isPresentToUser();
+    }
+
+    private void validateQuestionId(Long interviewId, long turnIndex, ResumeMode mode, TurnHandlerResult result) {
+        if (result.questionId() != null) {
+            return;
+        }
+        log.warn("[결함 skip] Resume handler questionId 누락. interviewId={}, turnIndex={}, mode={}, type={}",
+                interviewId, turnIndex, mode, result.response().getType());
+        throw new BusinessException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "RESUME_012",
+                "이력서 면접 질문 식별자가 누락되었습니다.");
     }
 
     private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}

@@ -84,6 +84,7 @@ class PlaygroundModeHandlerTest {
                     handler.handle(1L, state, "답변입니다", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
 
         @Test
@@ -97,6 +98,7 @@ class PlaygroundModeHandlerTest {
                     handler.handle(1L, state, "짧은 답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isFalse();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
 
         @Test
@@ -123,6 +125,7 @@ class PlaygroundModeHandlerTest {
                     handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isFalse();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
 
         @Test
@@ -136,6 +139,7 @@ class PlaygroundModeHandlerTest {
                     handler.handle(1L, state, "그래서 결론적으로 정리하면", createAnalysis(), skeleton, plan, List.of());
 
             assertThat(result.switchedToInterrogation()).isTrue();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
     }
 
