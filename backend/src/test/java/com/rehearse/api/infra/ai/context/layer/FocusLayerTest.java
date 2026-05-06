@@ -227,7 +227,8 @@ class FocusLayerTest {
             String content = result.get(0).content();
             assertThat(tokenEstimator.estimate(content))
                     .isLessThanOrEqualTo((int) Math.ceil(FocusLayer.CAP_ANSWER_ANALYZER * 0.9) + 1);
-            assertThat(content).contains("JSON");
+            assertThat(content).contains("위 답변을 분석해");
+            assertThat(content).endsWith("JSON 한 객체로만 응답하세요.");
         }
 
         @Test
@@ -244,6 +245,8 @@ class FocusLayerTest {
             assertThat(tokenEstimator.estimate(content))
                     .isLessThanOrEqualTo((int) Math.ceil(FocusLayer.CAP_RESUME_CHAIN_INTERROGATOR * 0.9) + 1);
             assertThat(content).contains("CURRENT_LEVEL: 2");
+            assertThat(content).contains("LEVEL_UP/LEVEL_STAY/CHAIN_SWITCH");
+            assertThat(content).endsWith("JSON 한 객체로만 응답하세요.");
         }
     }
 

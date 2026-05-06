@@ -31,8 +31,10 @@ public class FocusLayer implements ContextLayer {
     static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
     static final int CAP_RESUME_WRAP_UP = 600;
 
+    // chars/4 토큰 휴리스틱 ±20% 오차 흡수 마진
     private static final double SAFETY_MARGIN = 0.9;
     private static final int MAX_TRUNCATE_ITERATIONS = 8;
+    // LLM JSON 형식 유지 위한 지시문 끝부분 보존
     private static final int FALLBACK_TAIL_PRESERVE_CHARS = 200;
     private static final Pattern MARKER_BLOCK_PATTERN =
             Pattern.compile("<<<([A-Z_]+)>>>\\n([\\s\\S]*?)\\n<<<END_\\1>>>", Pattern.MULTILINE);
@@ -124,6 +126,11 @@ public class FocusLayer implements ContextLayer {
                 reduced = headTruncatePreservingTail(current, targetChars);
             }
             current = reduced;
+        }
+        if (tokenEstimator.estimate(current) > targetTokens) {
+            log.warn("[FocusLayer] L4 절단 미수렴 → 강제 head 절단: iterations={}, targetTokens={}",
+                    MAX_TRUNCATE_ITERATIONS, targetTokens);
+            current = headTruncatePreservingTail(current, targetChars);
         }
         return current;
     }
