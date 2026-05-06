@@ -44,7 +44,7 @@ public class InterrogationModeHandler {
         }
         ChainSnapshot snapshot = snapshotOpt.get();
 
-        // Phase 2: LLM 호출 + 응답 검증 + DB persist (lock 밖)
+        // Phase 2: LLM 호출 + 응답 검증 (lock 밖)
         InterrogationResult result = promptBuilder.build(
                 interviewId, state, previousExchanges,
                 snapshot.chainTopic(), snapshot.currentLevel(),
@@ -59,11 +59,10 @@ public class InterrogationModeHandler {
                     interviewId, snapshot.chainTopic(), snapshot.currentLevel());
         }
 
-        Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_INTERROGATION, result.question(), snapshot.orderIndex());
-
-        // Phase 3: tracker 상태 변경 (lock 안)
+        // Phase 3: DB persist + tracker 상태 변경 (lock 안, 원자 묶음)
         return tracker.withLock(() -> {
+            Long questionId = questionPersister.persist(
+                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(), snapshot.orderIndex());
             applyDecision(tracker, result, snapshot.answerQuality(), snapshot.currentLevel());
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, snapshot.chainTopic(), snapshot.currentLevel(), result.nextAction());

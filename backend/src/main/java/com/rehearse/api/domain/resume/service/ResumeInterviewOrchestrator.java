@@ -59,7 +59,7 @@ public class ResumeInterviewOrchestrator {
                     interviewId, durationMinutes, questionContent, answerText,
                     previousExchanges, skeleton, plan);
         } catch (BusinessException e) {
-            if (AiErrorCode.CONTEXT_BUDGET_EXCEEDED.getCode().equals(e.getCode())) {
+            if (e.getErrorCode() == AiErrorCode.CONTEXT_BUDGET_EXCEEDED) {
                 log.warn("[ResumeOrchestrator] 컨텍스트 토큰 예산 초과 → graceful 종료: interviewId={}", interviewId);
                 return contextBudgetExceededResponse();
             }

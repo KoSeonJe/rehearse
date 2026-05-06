@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -217,7 +218,7 @@ class InterrogationModeHandlerTest {
     class LockBoundary {
 
         @Test
-        @DisplayName("Phase 2 (LLM 호출 + DB persist) 동안 lock 이 점유되지 않아 다른 thread 의 withLock 이 1초 이내 진입한다")
+        @DisplayName("Phase 2 (LLM 호출) 동안 lock 이 점유되지 않아 다른 thread 의 withLock 이 1초 이내 진입한다")
         void phase2_doesNotHoldLock_allowsOtherThreadToAcquire() throws Exception {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
 
@@ -256,6 +257,33 @@ class InterrogationModeHandlerTest {
             } finally {
                 executor.shutdownNow();
             }
+        }
+
+        @Test
+        @DisplayName("persist 는 Phase 3 (lock 안) 에서 tracker state 변경 전에 호출된다 — orphan question row 방지")
+        void persist_runsInsideLock_beforeTrackerMutation() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            int levelBeforeTurn = state.getChainStateTracker().getCurrentLevel();
+
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
+
+            AtomicInteger levelAtPersist = new AtomicInteger(-1);
+            given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+                    .willAnswer(inv -> {
+                        // persist 호출 시점에 tracker 가 아직 mutation 안 된 상태인지 캡처
+                        levelAtPersist.set(state.getChainStateTracker().getCurrentLevel());
+                        return 1L;
+                    });
+
+            handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
+
+            // persist 시점 = applyDecision 직전 (level=1) 이어야 한다.
+            // applyDecision 후 호출되었다면 levelAtPersist=2 가 되어 fail.
+            assertThat(levelAtPersist.get())
+                    .as("persist 는 tracker mutation 전에 호출되어야 한다 (Phase 3 lock 안 원자 묶음)")
+                    .isEqualTo(levelBeforeTurn);
+            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
         }
     }
 
