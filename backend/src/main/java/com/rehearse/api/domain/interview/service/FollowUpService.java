@@ -83,7 +83,7 @@ public class FollowUpService {
             return handleNonAnswerIntent(id, context, request, turn);
         }
         if (turn.answerAnalysis().recommendedNextAction() == RecommendedNextAction.SKIP) {
-            return handleAnalyzerSkip(id, request, turn);
+            return handleAnalyzerSkip(id, context, request, turn);
         }
         return generateAndSaveFollowUp(id, context, request, turn, askedPerspectives);
     }
@@ -100,13 +100,17 @@ public class FollowUpService {
         IntentBranchInput input = new IntentBranchInput(
                 id, context, request.getQuestionContent(), turn.answerText(),
                 turnIndex, request.getPreviousExchanges());
-        return intentDispatcher.dispatch(intentType, input);
+        FollowUpResponse response = intentDispatcher.dispatch(intentType, input);
+        publishTurnCompletedEvent(id, context, turn, context.currentMainQuestionId(), turnIndex);
+        return response;
     }
 
-    private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpRequest request, TurnAnalysisResult turn) {
+    private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn) {
         log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
                 id, request.getQuestionSetId());
         aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
+        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+        publishTurnCompletedEvent(id, context, turn, context.currentMainQuestionId(), turnIndex);
         return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
     }
 
@@ -127,6 +131,8 @@ public class FollowUpService {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
                     id, request.getQuestionSetId(), stepB.getSkipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
+            int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+            publishTurnCompletedEvent(id, context, turn, context.currentMainQuestionId(), turnIndex);
             return FollowUpResponse.aiSkip(answerText, stepB.getSkipReason());
         }
         ensureQuestionPresent(id, request.getQuestionSetId(), stepB);

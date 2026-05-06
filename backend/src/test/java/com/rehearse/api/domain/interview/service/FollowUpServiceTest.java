@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -118,6 +120,8 @@ class FollowUpServiceTest {
         // CS 트랙 기본 stub: skeleton=null 경로에서 interviewFinder 호출 시 CS interview 반환
         Interview csDefault = mock(Interview.class);
         lenient().when(csDefault.getInterviewTypes()).thenReturn(Set.of(InterviewType.CS_FUNDAMENTAL));
+        lenient().when(csDefault.getUserId()).thenReturn(1L);
+        lenient().when(csDefault.getLevel()).thenReturn(InterviewLevel.JUNIOR);
         lenient().when(interviewFinder.findById(any())).thenReturn(csDefault);
     }
 
@@ -247,6 +251,22 @@ class FollowUpServiceTest {
         }
 
         @Test
+        @DisplayName("Analyzer SKIP 권고 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_analyzerRecommendsSkip_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            TurnCompletedEvent event = capturePublishedEvent();
+            assertThat(event.questionId()).isEqualTo(50L);
+            assertThat(event.questionSetId()).isEqualTo(10L);
+            assertThat(event.turnIndex()).isZero();
+            assertThat(event.intent()).isEqualTo(IntentType.ANSWER);
+        }
+
+        @Test
         @DisplayName("Step B 응답이 skip=false 인데 question 이 비어 있으면 PARSE_FAILED")
         void generateFollowUp_stepBNonSkipWithBlankQuestion_throwsParseFailed() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
@@ -273,6 +293,41 @@ class FollowUpServiceTest {
             assertThat(response.isSkip()).isTrue();
             assertThat(response.getSkipReason()).isEqualTo("답변이 main_question 과 무관");
             then(aiCallMetrics).should().incrementFollowUpSkip("step_b_skip");
+        }
+
+        @Test
+        @DisplayName("Step B 자체 skip 반환 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_stepBSelfSkip_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            TurnCompletedEvent event = capturePublishedEvent();
+            assertThat(event.questionId()).isEqualTo(50L);
+            assertThat(event.questionSetId()).isEqualTo(10L);
+            assertThat(event.turnIndex()).isZero();
+            assertThat(event.intent()).isEqualTo(IntentType.ANSWER);
+        }
+
+        @Test
+        @DisplayName("intent != ANSWER 분기 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        void generateFollowUp_nonAnswerIntent_publishesEvent() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn(IntentType.CLARIFY_REQUEST, "무슨 뜻인가요?", AnswerAnalysis.empty(50L)));
+            given(intentDispatcher.dispatch(eq(IntentType.CLARIFY_REQUEST), any()))
+                    .willReturn(FollowUpResponse.builder().question("질문을 다시 설명합니다").build());
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            TurnCompletedEvent event = capturePublishedEvent();
+            assertThat(event.questionId()).isEqualTo(50L);
+            assertThat(event.questionSetId()).isEqualTo(10L);
+            assertThat(event.turnIndex()).isZero();
+            assertThat(event.intent()).isEqualTo(IntentType.CLARIFY_REQUEST);
         }
 
         @Test
@@ -473,5 +528,11 @@ class FollowUpServiceTest {
             given(interview.getDurationMinutes()).willReturn(30);
             return interview;
         }
+    }
+
+    private TurnCompletedEvent capturePublishedEvent() {
+        ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
+        then(eventPublisher).should().publishEvent(captor.capture());
+        return captor.getValue();
     }
 }
