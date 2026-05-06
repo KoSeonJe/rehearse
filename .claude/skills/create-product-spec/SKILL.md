@@ -92,6 +92,12 @@ PM이 측정 후보 제안. 단서:
 
 PM이 검증 가능 단언으로 작성. 시나리오 / 엣지케이스 / 실패 케이스 포함. 빈약 (1-2개) 자체 금지 — Phase A 단서 부족 = 추가 탐색.
 
+**HOW 침범 금지 (Blocking)**: AC 는 **외부 관찰 가능한 결과** 만. 구현 메커니즘 (메서드명 / 호출 추가 / 로그 레벨 / 조건문 / null 처리 / publish / event 발행 등) 등장 시 즉시 추상화. 룰:
+
+- 금지 어휘 예시: "publish 호출 추가", "log.warn", "null 분기 추가", "메서드 X 호출", "이벤트 Y 발행", `==`/`!=` 같은 코드 표현, 클래스명 / 메서드명 / 변수명 직접 등장.
+- 허용 표현: 사용자 / 운영자 / 데이터 관점의 관찰 결과. "row 적재됨", "운영자가 로그로 식별 가능", "회귀 테스트 통과", "운영 모니터링에서 구분 가능".
+- 자가 점검: 작성한 AC 를 "구현 방법을 모르는 PM 이 수용 여부 판단 가능한가?" 로 self-check. 코드 어휘 보이면 추상화.
+
 ### B-4. 비스코프 (Don't)
 
 PM이 의도적 절단 제안. 단서:
@@ -176,9 +182,33 @@ Issue 코멘트 자동 추가 (사용자 confirm 후):
 gh issue comment {N} --body "📁 plan: \`docs/plans/{NNN}-{slug}/\`"
 ```
 
-## 후속
+## Phase E — 셀프 리뷰 회피 (Blocking, 필수)
 
-- "product-spec 작성 완료. 다음 = `/create-tech-spec` (이 폴더 자동 추천)."
+**파일 작성 직후 반드시 `spec-reviewer-product` 서브에이전트 호출.** 메인 세션 / 본 스킬 = 작성자 컨텍스트 = 셀프 승인 금지.
+
+```
+Agent(
+  subagent_type="spec-reviewer-product",
+  description="product-spec 리뷰",
+  prompt="docs/plans/{NNN}-{slug}/product-spec.md 리뷰. 룰 위배 + Goal 측정성 / AC 검증성 / Non-Goals / 비스코프 / HOW 침범 / Issue 정합성 검토. P0/P1/P2 분류 + 강점 + 발견 사항 보고."
+)
+```
+
+**호출 강제 룰**:
+- 메인 세션 직접 리뷰 금지 — 작성 컨텍스트 = 객관성 부족
+- `spec-reviewer-tech` 와 분리 호출 (product-spec 만)
+- Phase D 완료 → Phase E 호출 → 결과 사용자 보고 → 사용자 결정 (그대로 / 수정 / 무시)
+- P0 발견 시 → 사용자 명시 승인 없이 다음 단계 (`/create-tech-spec`) 진입 금지
+- 발견 0건이어도 호출은 필수 (검증 책임)
+
+리뷰 결과 사용자 결정:
+- "수정" → 본 스킬 Phase B 재진입 (해당 섹션만 재작성) → Phase D → Phase E 재호출
+- "그대로 진행" → Phase F 진입 (사용자 명시 승인 기록)
+- "무시 / 보류" → 발견 사항 plan 폴더 메모 후 진행
+
+## Phase F — 후속
+
+- "product-spec 작성 + 리뷰 완료. 다음 = `/create-tech-spec` (이 폴더 자동 추천)."
 - 커밋 별도. 사용자 결정.
 
 ## 안티 패턴
@@ -188,6 +218,8 @@ gh issue comment {N} --body "📁 plan: \`docs/plans/{NNN}-{slug}/\`"
 - PM 추정 가능한 항목 (비스코프 / phase 분리) 사용자 답변 강요.
 - Evidence 없이 결론 작성.
 - 비스코프 "없음" 그대로 수용.
-- product-spec 안에 구현 디테일 (HOW) 침범.
+- product-spec 안에 구현 디테일 (HOW) 침범 — 특히 **해결 방향 / AC** 에서 메서드명 / 호출 추가 / 로그 레벨 / null 처리 / publish / event 같은 구현 어휘 등장. PM 톤 = 외부 관찰 결과만.
 - 폴더 / Issue 번호 / slug 사용자 미확인 자동 결정.
 - preview 없이 파일 작성.
+- **Phase E (`spec-reviewer-product` 서브에이전트 호출) 생략** — 셀프 리뷰 = 객관성 부족, 강제 룰.
+- 메인 세션 직접 리뷰 (별도 컨텍스트 분리 위반).

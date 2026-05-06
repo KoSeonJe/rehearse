@@ -227,9 +227,34 @@ options:
 
 승인 후 `Write` `$PLAN_DIR/tech-spec.md`. 템플릿 구조 유지.
 
-## 후속
+## Phase E — 셀프 리뷰 회피 (Blocking, 필수)
 
-- "tech-spec 작성 완료. **사용자 명시 승인** 후 `/create-implement-plan` 진입."
+**파일 작성 직후 반드시 `spec-reviewer-tech` 서브에이전트 호출.** 메인 세션 / 본 스킬 = 작성자 컨텍스트 = 셀프 승인 금지.
+
+```
+Agent(
+  subagent_type="spec-reviewer-tech",
+  description="tech-spec 리뷰",
+  prompt="docs/plans/{NNN}-{slug}/tech-spec.md 리뷰. 룰 위배 + Architecture 구체성 / NF 11개 커버리지 / Trade-off 1+ / Data Model DDL / API contract / Verification 통과기준 / 컨벤션 매핑 / 분기 결정 검토. product-spec 정합성 확인. P0/P1/P2 분류 + 강점 + 발견 사항 보고."
+)
+```
+
+**호출 강제 룰**:
+- 메인 세션 직접 리뷰 금지 — 작성 컨텍스트 = 객관성 부족
+- `spec-reviewer-product` 와 분리 호출 (tech-spec 만)
+- Phase D 완료 → Phase E 호출 → 결과 사용자 보고 → 사용자 결정
+- P0 발견 시 → 사용자 명시 승인 없이 implement 진입 금지
+- 발견 0건이어도 호출은 필수 (검증 책임)
+- BE+FE 분리 spec → 한 번 호출로 양쪽 룰 매핑 (`spec-reviewer-tech` 가 frontend 룰 추가 로드)
+
+리뷰 결과 사용자 결정:
+- "수정" → 본 스킬 Phase B 재진입 (해당 섹션만 재작성) → Phase D → Phase E 재호출
+- "그대로 진행" → Phase F 진입 (사용자 명시 승인 기록)
+- "무시 / 보류" → 발견 사항 plan 폴더 메모 후 진행
+
+## Phase F — 후속
+
+- "tech-spec 작성 + 리뷰 완료. **사용자 명시 승인** 후 `/create-implement-plan` 진입."
 - BE+FE 시: API contract 합의 = 사용자 승인 게이트 (AGENTS.md Section 5).
 - 강결합 시: BE 선행 명시.
 - 커밋 별도.
@@ -244,3 +269,5 @@ options:
 - product-spec WHY/WHAT 침범 (HOW 영역만).
 - Verification 테스트 작성만 (통과 기준 없음).
 - preview 없이 파일 작성.
+- **Phase E (`spec-reviewer-tech` 서브에이전트 호출) 생략** — 셀프 리뷰 = 객관성 부족, 강제 룰.
+- 메인 세션 직접 리뷰 (별도 컨텍스트 분리 위반).

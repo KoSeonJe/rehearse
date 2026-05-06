@@ -123,6 +123,11 @@ tech-spec Architecture / Data Model / API contract 기반:
 
 Phase 별:
 
+- **구현 에이전트** (필수): Phase 작업 영역 따라 자동 결정
+  - BE Phase → `backend`
+  - FE Phase → `frontend`
+  - lambda Phase → `general-purpose` (전담 에이전트 없음, 사용자에게 신규 생성 추천)
+  - 영역 혼합 단일 Phase = 분할 권유 (Phase C 결정)
 - **변경 파일** (구체 path, 무엇을 / 왜):
   - `backend/.../domain/interview/IntentScoreCalculator.java` — 신규 (intent 계산 도메인 서비스)
   - `backend/.../resources/db/migration/V42__add_intent_score.sql` — Flyway DDL
@@ -133,6 +138,18 @@ Phase 별:
   - 통과 기준: 모든 케이스 green
 - **커밋 메시지**: Conventional Commits (Korean) — `.claude/rules/commit.md`
   - `feat(BE): IntentScoreCalculator 추가`
+
+**출력 형식 — Phase / Step 개요 표 컬럼 강제**:
+
+| Phase | 제목 | 구현 에이전트 | 의존 | 커밋 |
+
+각 Phase 본문 첫 줄에 동일 정보 재명시:
+
+```
+- **구현**: `backend` — {Phase 영역 책임 1줄}
+```
+
+근거: `.claude/rules/plan-mode.md` Section 5 ("각 task 마다 Implement 에이전트 명시"). Review 는 Phase 별 X — 구현 종료 후 통합 리뷰 1회 (Phase B-6 / 리뷰 게이트 섹션 참조).
 
 ### B-4. 분리 임계 자동 감지
 
@@ -148,15 +165,29 @@ Phase 누적 후 체크:
 
 기본 = "tech-spec.md Verification 참조" 1줄. 추가 회귀 항목 있으면 명시. 새 정의 = STOP (tech-spec 갱신 권유).
 
-### B-6. 리뷰 게이트
+### B-6. 리뷰 게이트 (출력 강제)
 
 영향 범위 따라 자동 결정:
 
 - BE only → `code-reviewer-backend`
 - FE only → `code-reviewer-frontend`
-- BE+FE → 둘 다 병렬
+- BE+FE → 둘 다 **병렬** (단일 메시지 multiple tool_use)
 
-memory `feedback_post_impl_review.md` (Post-Impl Review MANDATORY) 자동 반영.
+**출력 강제** — implement*.md 마지막 섹션에 `## 리뷰 게이트 (MANDATORY)` 반드시 포함:
+
+```markdown
+## 리뷰 게이트 (MANDATORY)
+
+구현 완료 직후 지정 리뷰어 실행 강제. 스킵 = 위반.
+
+- [ ] 지정 리뷰어 실행 (구현 완료 직후 — 메인 세션 책임)
+  - {영역별 리뷰어 명시}
+- [ ] 컨벤션 위반 0건 ({영역별 rules 경로})
+- [ ] Critical / Major 지적 = fix 반영 후 재리뷰
+- [ ] Pre/Post State diff 일치
+```
+
+근거: `.claude/rules/plan-mode.md` Section "구현 후 (Post-Impl)". 누락 = 안티패턴.
 
 ## Phase C — Briefing + 결정 게이트
 
@@ -187,7 +218,7 @@ memory `feedback_post_impl_review.md` (Post-Impl Review MANDATORY) 자동 반영
 
 **분리 임계**: Phase 8개 합 (임계 8 도달) — tasks/ 분리 권장 (확신 추정)
 
-**리뷰**: code-reviewer-backend + code-reviewer-frontend 병렬
+**통합 리뷰** (구현 종료 후 1회): code-reviewer-backend + code-reviewer-frontend 병렬
 
 ### 결정 필요
 1. tasks/ 분리 — Phase 8 임계 도달. 분리할까 단일 유지?
@@ -233,6 +264,8 @@ options:
 - 분리 임계 도달 무시.
 - Verification 새 정의 (tech-spec 영역 침범).
 - 지정 리뷰어 미명시 (memory Post-Impl Review MANDATORY 위반).
+- Phase 별 **구현 에이전트** 미명시 (B-3 출력 형식 위반).
+- Phase 별 리뷰 에이전트 명시 (정책 = 통합 리뷰 1회. Phase 별 리뷰는 안티패턴).
 - 한 메시지에 5+ 결정 떠넘김.
 - preview 없이 파일 작성.
 - 템플릿 섹션 자의적 변형.

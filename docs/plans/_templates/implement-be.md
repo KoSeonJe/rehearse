@@ -20,18 +20,20 @@
 
 ## Phase / Step 개요
 
-| Phase | 제목 | 예상 PR | 의존 |
-|-------|------|--------|------|
-| 1 | 도메인 / Entity | #N | Phase 0 |
-| 2 | Repository / Service | #N+1 | Phase 1 |
-| 3 | Controller + Validation | #N+2 | Phase 2 |
-| 4 | 마이그레이션 / 이벤트 / 통합 테스트 | #N+3 | Phase 3 |
+| Phase | 제목 | 구현 | 예상 PR | 의존 |
+|-------|------|------|--------|------|
+| 1 | 도메인 / Entity | `backend` | #N | Phase 0 |
+| 2 | Repository / Service | `backend` | #N+1 | Phase 1 |
+| 3 | Controller + Validation | `backend` | #N+2 | Phase 2 |
+| 4 | 마이그레이션 / 이벤트 / 통합 테스트 | `backend` | #N+3 | Phase 3 |
 
 > Task 8개+ → `tasks/be-{NN}-{slug}.md` 분리.
 
 ---
 
 ## Phase 1: {제목}
+
+- **구현**: `backend` — {영역 책임 1줄}
 
 ### 변경 파일
 - `backend/src/main/java/.../Xxx.java`
@@ -70,3 +72,13 @@ feat(BE): xxx Entity 추가
 
 - [ ] tech-spec.md Verification 통과
 - [ ] FE 통합 후 회귀 체크
+
+## 리뷰 게이트 (MANDATORY)
+
+구현 완료 직후 지정 리뷰어 실행 강제. 스킵 = 위반.
+
+- [ ] `code-reviewer-backend` 실행 (구현 완료 직후 — 메인 세션 책임)
+- [ ] BE+FE 동시 작업 시 `code-reviewer-frontend` 와 **병렬** 호출 (단일 메시지 multiple tool_use)
+- [ ] 컨벤션 위반 0건 (`backend/.claude/rules/conventions.md` + `testing.md`)
+- [ ] Critical / Major 지적 = fix 반영 후 재리뷰
+- [ ] Pre/Post State diff 일치
