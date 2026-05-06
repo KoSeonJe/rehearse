@@ -1,7 +1,9 @@
 package com.rehearse.api.domain.interview.validation;
 
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,36 +14,20 @@ import java.util.Set;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class AudioValidator {
 
-    private static final Set<String> DEFAULT_MIME_WHITELIST = Set.of(
-            "audio/webm",
-            "audio/mp4",
-            "audio/mpeg",
-            "audio/wav"
-    );
-    private static final long DEFAULT_MAX_BYTES = 10L * 1024 * 1024;
-    private static final int DEFAULT_MAX_DURATION_SECONDS = 300;
     private static final int HEADER_READ_LENGTH = 12;
 
-    private final Set<String> mimeWhitelist;
-    private final long maxBytes;
-    private final int maxDurationSeconds;
-
-    public AudioValidator() {
-        this(DEFAULT_MIME_WHITELIST, DEFAULT_MAX_BYTES, DEFAULT_MAX_DURATION_SECONDS);
-    }
-
-    AudioValidator(Set<String> mimeWhitelist, long maxBytes, int maxDurationSeconds) {
-        this.mimeWhitelist = mimeWhitelist;
-        this.maxBytes = maxBytes;
-        this.maxDurationSeconds = maxDurationSeconds;
-    }
+    private final InterviewProperties interviewProperties;
 
     public void validate(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             return;
         }
+
+        InterviewProperties.Audio audio = interviewProperties.audio();
+        Set<String> mimeWhitelist = audio.mimeWhitelist();
 
         String contentType = file.getContentType();
         if (contentType == null || !mimeWhitelist.contains(contentType)) {
@@ -49,8 +35,8 @@ public class AudioValidator {
             throw new BusinessException(InterviewErrorCode.AUDIO_MIME_NOT_ALLOWED);
         }
 
-        if (file.getSize() > maxBytes) {
-            log.warn("오디오 용량 초과 — size={}, maxBytes={}", file.getSize(), maxBytes);
+        if (file.getSize() > audio.maxBytes()) {
+            log.warn("오디오 용량 초과 — size={}, maxBytes={}", file.getSize(), audio.maxBytes());
             throw new BusinessException(InterviewErrorCode.AUDIO_DURATION_EXCEEDED);
         }
 
@@ -69,7 +55,7 @@ public class AudioValidator {
     }
 
     public int getMaxDurationSeconds() {
-        return maxDurationSeconds;
+        return interviewProperties.audio().maxDurationSeconds();
     }
 
     private boolean matchesMagicBytes(byte[] header, String contentType) {

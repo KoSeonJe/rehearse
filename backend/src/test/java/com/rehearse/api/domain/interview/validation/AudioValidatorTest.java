@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.validation;
 
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -21,11 +22,15 @@ class AudioValidatorTest {
 
     @BeforeEach
     void setUp() {
-        validator = new AudioValidator(
-                Set.of("audio/webm", "audio/mp4", "audio/mpeg", "audio/wav"),
-                1024L,
-                300
+        InterviewProperties properties = new InterviewProperties(
+                new InterviewProperties.Retry(5, 30),
+                new InterviewProperties.Audio(
+                        1024L,
+                        300,
+                        Set.of("audio/webm", "audio/mp4", "audio/mpeg", "audio/wav")
+                )
         );
+        validator = new AudioValidator(properties);
     }
 
     @Nested

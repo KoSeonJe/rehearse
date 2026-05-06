@@ -14,6 +14,7 @@ import com.rehearse.api.domain.questionset.entity.QuestionSet;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.domain.questionset.service.QuestionSetService;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
+import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +32,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class InterviewService {
 
-    private static final int RETRY_MAX_ATTEMPTS = 5;
-    private static final int RETRY_COOLDOWN_SECONDS = 30;
-
     private final InterviewFinder interviewFinder;
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
@@ -41,6 +39,7 @@ public class InterviewService {
     private final ApplicationEventPublisher eventPublisher;
     private final ResumeSkeletonRepository resumeSkeletonRepository;
     private final InterviewRetryRecorder interviewRetryRecorder;
+    private final InterviewProperties interviewProperties;
 
     @Transactional
     public UpdateStatusResponse updateStatus(Long id, Long userId, UpdateStatusRequest request) {
@@ -78,7 +77,7 @@ public class InterviewService {
             throw new BusinessException(InterviewErrorCode.RESUME_PLAN_RECOVERY_REQUIRED);
         }
 
-        if (interview.getQuestionGenRetryCount() >= RETRY_MAX_ATTEMPTS) {
+        if (interview.getQuestionGenRetryCount() >= interviewProperties.retry().maxAttempts()) {
             log.warn("질문 생성 재시도 한도 초과 — interviewId={}, userId={}, count={}",
                     id, userId, interview.getQuestionGenRetryCount());
             throw new BusinessException(InterviewErrorCode.RETRY_LIMIT_EXCEEDED);
@@ -86,7 +85,7 @@ public class InterviewService {
 
         LocalDateTime lastRetriedAt = interview.getQuestionGenLastRetriedAt();
         if (lastRetriedAt != null
-                && lastRetriedAt.plusSeconds(RETRY_COOLDOWN_SECONDS).isAfter(LocalDateTime.now())) {
+                && lastRetriedAt.plusSeconds(interviewProperties.retry().cooldownSeconds()).isAfter(LocalDateTime.now())) {
             log.warn("질문 생성 재시도 쿨다운 미경과 — interviewId={}, userId={}, lastRetriedAt={}",
                     id, userId, lastRetriedAt);
             throw new BusinessException(InterviewErrorCode.RETRY_COOLDOWN);

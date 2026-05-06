@@ -53,6 +53,17 @@ rehearse:
     policy:
       standard:
         max-follow-up-rounds: 2
+    retry:
+      max-attempts: 5
+      cooldown-seconds: 30
+    audio:
+      max-bytes: 10485760
+      max-duration-seconds: 300
+      mime-whitelist:
+        - audio/webm
+        - audio/mp4
+        - audio/mpeg
+        - audio/wav
   intent-classifier:
     # 분류기 confidence 가 임계 미만이면 ANSWER 로 fallback (False Negative 안전망)
     fallback-on-low-confidence: 0.7

@@ -11,6 +11,7 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
+import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -59,6 +60,16 @@ class InterviewServiceTest {
 
     @Mock
     private InterviewRetryRecorder interviewRetryRecorder;
+
+    @org.mockito.Spy
+    private InterviewProperties interviewProperties = new InterviewProperties(
+            new InterviewProperties.Retry(5, 30),
+            new InterviewProperties.Audio(
+                    10L * 1024 * 1024,
+                    300,
+                    java.util.Set.of("audio/webm", "audio/mp4", "audio/mpeg", "audio/wav")
+            )
+    );
 
     @Nested
     @DisplayName("updateStatus 메서드")
