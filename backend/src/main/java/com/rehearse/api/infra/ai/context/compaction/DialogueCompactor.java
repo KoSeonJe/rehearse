@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.global.config.AsyncConfig;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
@@ -53,7 +54,7 @@ public class DialogueCompactor {
         log.info("Compaction Summarizer 프롬프트 템플릿 로드 완료");
     }
 
-    @Async("compactionExecutor")
+    @Async(AsyncConfig.VT_EXECUTOR)
     public void compactAsync(Long interviewId, int windowEnd,
                              List<FollowUpExchange> windowed,
                              InterviewRuntimeState state) {
