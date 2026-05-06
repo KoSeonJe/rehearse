@@ -30,10 +30,11 @@ import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.domain.user.repository.UserRepository;
-import com.rehearse.api.global.support.ServiceIntegrationSupport;
 import com.rehearse.api.global.support.TestFixtures;
 import com.rehearse.api.infra.ai.ResilientAiClient;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.support.ServiceIntegrationSupport;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -85,6 +86,11 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     @MockitoBean
     private ResilientAiClient resilientAiClient;
 
+    @BeforeEach
+    void resetAiMock() {
+        reset(resilientAiClient);
+    }
+
     @Nested
     @DisplayName("TurnCompletedEvent 적재")
     class TurnCompletedEventPersist {
@@ -123,28 +129,26 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
 
         @Test
         @DisplayName("intent CLARIFY_REQUEST 는 정상 skip 되어 question_score 를 적재하지 않는다")
-        void clarifyIntent_skipsScoring() throws InterruptedException {
+        void clarifyIntent_skipsScoring() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
 
             followUpTransactionHandler.publishTurnCompletedEvent(
                     data.interview().getId(), context(data), clarifyTurn(),
                     data.question().getId(), 0);
 
-            Thread.sleep(500);
-            assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(data.interview().getId())).isEmpty();
+            assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
             then(resilientAiClient).should(never()).chat(any());
         }
 
         @Test
         @DisplayName("intent != ANSWER 분기는 publish 후 정상 skip 된다")
-        void nonAnswerIntentBranch_publishesAndSkips() throws InterruptedException {
+        void nonAnswerIntentBranch_publishesAndSkips() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
             given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(IntentType.CLARIFY_REQUEST, RecommendedNextAction.CLARIFICATION));
 
             followUpService.generateFollowUp(data.interview().getId(), data.interview().getUserId(), request(data), audio());
 
-            Thread.sleep(500);
-            assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(data.interview().getId())).isEmpty();
+            assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
         }
 
         @Test
@@ -173,18 +177,16 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
 
         @Test
         @DisplayName("Resume publish 시 questionId null 은 발행 skip 되어 question_score 를 적재하지 않는다")
-        void resumeNullQuestionId_skipsPublish() throws InterruptedException {
+        void resumeNullQuestionId_skipsPublish() {
             InterviewData data = persistInterview(QuestionSetCategory.RESUME_BASED, InterviewType.RESUME_BASED,
                     QuestionType.RESUME_PLAYGROUND);
-            reset(resilientAiClient);
 
             resumeTurnEventPublisher.publish(
                     data.interview().getId(), 0L, answerAnalysis(RecommendedNextAction.DEEP_DIVE),
                     IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                     ResumeMode.PLAYGROUND, 1, null, "답변 텍스트", null);
 
-            Thread.sleep(300);
-            assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(data.interview().getId())).isEmpty();
+            assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
             then(resilientAiClient).shouldHaveNoInteractions();
         }
     }
@@ -247,21 +249,35 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     }
 
     private List<QuestionScore> awaitScores(Long interviewId, int expectedSize) {
-        long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        Duration timeout = Duration.ofSeconds(5);
+        long deadline = System.nanoTime() + timeout.toNanos();
         List<QuestionScore> scores;
         do {
             scores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
-            if (scores.size() >= expectedSize) {
+            if (scores.size() == expectedSize) {
                 return scores;
             }
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+            waitBriefly();
         } while (System.nanoTime() < deadline);
-        return questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
+        assertThat(scores).hasSize(expectedSize);
+        return scores;
+    }
+
+    private void assertNoScoresDuring(Long interviewId, Duration duration) {
+        long deadline = System.nanoTime() + duration.toNanos();
+        do {
+            assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId)).isEmpty();
+            waitBriefly();
+        } while (System.nanoTime() < deadline);
+    }
+
+    private void waitBriefly() {
+        try {
+            Thread.sleep(50);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("비동기 리스너 검증 대기 중 interrupt 발생", e);
+        }
     }
 
     private ChatResponse analyzerResponse(IntentType intentType, RecommendedNextAction action) {

@@ -1,4 +1,6 @@
-package com.rehearse.api.global.support;
+package com.rehearse.api.support;
+
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,14 +30,17 @@ public abstract class ServiceIntegrationSupport extends AbstractMySqlContainerTe
 
     private void truncateAllTables() {
         jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 0");
-        List<String> tables = jdbcTemplate.queryForList("""
-                SELECT table_name
-                FROM information_schema.tables
-                WHERE table_schema = DATABASE()
-                  AND table_type = 'BASE TABLE'
-                  AND table_name <> 'flyway_schema_history'
-                """, String.class);
-        tables.forEach(table -> jdbcTemplate.execute("TRUNCATE TABLE `" + table + "`"));
-        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1");
+        try {
+            List<String> tables = jdbcTemplate.queryForList("""
+                    SELECT table_name
+                    FROM information_schema.tables
+                    WHERE table_schema = DATABASE()
+                      AND table_type = 'BASE TABLE'
+                      AND table_name <> 'flyway_schema_history'
+                    """, String.class);
+            tables.forEach(table -> jdbcTemplate.execute("TRUNCATE TABLE `" + table + "`"));
+        } finally {
+            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS = 1");
+        }
     }
 }
