@@ -63,6 +63,7 @@ class WrapUpModeHandlerTest {
             assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
             assertThat(result.response().isSkip()).isFalse();
             assertThat(result.response().isPresentToUser()).isTrue();
+            assertThat(result.questionId()).isEqualTo(1L);
         }
 
         @Test

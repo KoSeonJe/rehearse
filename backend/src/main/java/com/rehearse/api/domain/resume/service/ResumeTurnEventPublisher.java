@@ -27,6 +27,11 @@ public class ResumeTurnEventPublisher {
     public void publish(Long interviewId, long turnIndex, AnswerAnalysis analysis,
                         IntentResult intent, ResumeMode currentMode, int currentChainLevel,
                         ResumeSkeleton skeleton, String userAnswer, Long questionId) {
+        if (questionId == null) {
+            log.warn("[결함 skip] Resume TurnCompletedEvent 발행 skip. questionId null. interviewId={}, turnIndex={}, mode={}",
+                    interviewId, turnIndex, currentMode);
+            return;
+        }
         try {
             Interview interview = interviewFinder.findById(interviewId);
             QuestionSet questionSet = resolveQuestionSet(interviewId, questionId);
