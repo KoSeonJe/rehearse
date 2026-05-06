@@ -130,13 +130,14 @@ class RubricScoringEventListenerTest {
     class FailureHandling {
 
         @Test
-        @DisplayName("채점 예외 발생 시 예외 전파하지 않음")
+        @DisplayName("채점 예외 발생 시 예외 전파하지 않고 결함 skip metric 증가")
         void on_scoringException_doesNotThrow() {
             TurnCompletedEvent event = createEvent(1L, 3L);
             given(interviewFinder.findById(anyLong()))
                     .willThrow(new RuntimeException("DB 오류"));
 
             assertThatNoException().isThrownBy(() -> listener.on(event));
+            then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
     }
 
@@ -145,7 +146,7 @@ class RubricScoringEventListenerTest {
     class ResumeTrackNullQuestionId {
 
         @Test
-        @DisplayName("questionId=null인 Resume Track 이벤트는 채점 스킵된다")
+        @DisplayName("questionId=null인 Resume Track 이벤트는 결함 skip — score/saveRubric 호출 안 하고 metric 증가")
         void on_resumeTrack_nullQuestionId_skipsScoring() {
             TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
                     1L, 0L, 1L,
@@ -164,33 +165,30 @@ class RubricScoringEventListenerTest {
 
             then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+            then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
-    }
-
-    @Nested
-    @DisplayName("stub question (questionId null)")
-    class StubQuestion {
 
         @Test
-        @DisplayName("DB에서 조회된 question의 id가 null이면 저장 스킵")
-        void on_questionIdNull_skipsScoring() {
-            TurnCompletedEvent event = createEvent(1L, 4L);
+        @DisplayName("questionSetId=null이면 결함 skip — score/saveRubric 호출 안 하고 metric 증가")
+        void on_nullQuestionSetId_skipsScoring() {
+            TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
+                    1L, 5L, 1L,
+                    10L, null,
+                    "답변 텍스트",
+                    new AnswerAnalysis(5L, List.of(), List.of(), List.of(), 3,
+                            RecommendedNextAction.DEEP_DIVE),
+                    IntentType.ANSWER, InterviewLevel.MID
+            );
 
             Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
-
-            // id가 없는 question (builder로 생성 시 id=null)
-            Question stubQuestion = Question.builder()
-                    .questionType(QuestionType.MAIN)
-                    .questionText("stub")
-                    .orderIndex(0)
-                    .build();
-            given(questionRepository.findById(10L)).willReturn(Optional.of(stubQuestion));
+            given(questionRepository.findById(10L)).willReturn(Optional.of(createQuestionWithId(10L)));
 
             listener.on(event);
 
             then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+            then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
     }
 

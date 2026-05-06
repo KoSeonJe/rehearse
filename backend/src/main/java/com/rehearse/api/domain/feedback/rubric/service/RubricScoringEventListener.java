@@ -38,22 +38,8 @@ public class RubricScoringEventListener {
 
         try {
             Interview interview = interviewFinder.findById(interviewId);
-
             Question question = resolveQuestion(event);
-            if (question == null) {
-                return;
-            }
-
-            if (question.getId() == null) {
-                log.warn("[결함 skip] Question 식별 불가. questionId null. interviewId={}, turnIndex={}",
-                        interviewId, turnIndex);
-                return;
-            }
-
             QuestionSet questionSet = resolveQuestionSet(event, interview);
-            if (questionSet == null) {
-                return;
-            }
 
             RubricScoringResult score = rubricScorer.score(
                     question, questionSet, interview,
@@ -86,29 +72,28 @@ public class RubricScoringEventListener {
 
     private Question resolveQuestion(TurnCompletedEvent event) {
         if (event.questionId() == null) {
-            log.warn("[결함 skip] Question 식별 불가. questionId null. interviewId={}, turnIndex={}",
-                    event.interviewId(), event.turnIndex());
-            return null;
+            throw new IllegalStateException(
+                    "Question 식별 불가 — questionId null. interviewId=" + event.interviewId()
+                            + ", turnIndex=" + event.turnIndex());
         }
         return questionRepository.findById(event.questionId())
-                .orElseThrow(() -> {
-                    log.warn("[결함 skip] Question 미존재. questionId={}, interviewId={}, turnIndex={}",
-                            event.questionId(), event.interviewId(), event.turnIndex());
-                    return new IllegalStateException("Question 미존재: " + event.questionId());
-                });
+                .orElseThrow(() -> new IllegalStateException(
+                        "Question 미존재: questionId=" + event.questionId()
+                                + ", interviewId=" + event.interviewId()
+                                + ", turnIndex=" + event.turnIndex()));
     }
 
     private QuestionSet resolveQuestionSet(TurnCompletedEvent event, Interview interview) {
         if (event.questionSetId() == null) {
-            log.warn("[결함 skip] QuestionSet 식별 불가. questionSetId null. interviewId={}, turnIndex={}, questionId={}",
-                    event.interviewId(), event.turnIndex(), event.questionId());
-            return null;
+            throw new IllegalStateException(
+                    "QuestionSet 식별 불가 — questionSetId null. interviewId=" + event.interviewId()
+                            + ", turnIndex=" + event.turnIndex()
+                            + ", questionId=" + event.questionId());
         }
         return questionSetRepository.findById(event.questionSetId())
-                .orElseThrow(() -> {
-                    log.warn("[결함 skip] QuestionSet 미존재. questionSetId={}, interviewId={}, questionId={}",
-                            event.questionSetId(), event.interviewId(), event.questionId());
-                    return new IllegalStateException("QuestionSet 미존재: " + event.questionSetId());
-                });
+                .orElseThrow(() -> new IllegalStateException(
+                        "QuestionSet 미존재: questionSetId=" + event.questionSetId()
+                                + ", interviewId=" + event.interviewId()
+                                + ", questionId=" + event.questionId()));
     }
 }
