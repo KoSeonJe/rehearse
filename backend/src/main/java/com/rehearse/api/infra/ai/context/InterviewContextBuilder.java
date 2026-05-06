@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.context;
 
 import com.rehearse.api.global.config.ContextEngineeringProperties;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.context.layer.DialogueHistoryLayer;
 import com.rehearse.api.infra.ai.context.layer.FixedContextLayer;
 import com.rehearse.api.infra.ai.context.layer.FocusLayer;
@@ -8,6 +9,7 @@ import com.rehearse.api.infra.ai.context.layer.SessionStateLayer;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -45,8 +47,10 @@ public class InterviewContextBuilder {
         perLayer.put("total", total);
 
         if (total > properties.maxContextTokens()) {
-            log.warn("[ContextBuilder] token budget exceeded: callType={}, total={}, max={}",
+            log.warn("[InterviewContextBuilder] 전체 cap 초과 → graceful 종료: callType={}, total={}, max={}",
                     req.callType(), total, properties.maxContextTokens());
+            contextMetrics.incrementTokensExceeded(req.callType());
+            throw new BusinessException(AiErrorCode.CONTEXT_BUDGET_EXCEEDED);
         }
 
         BuiltContext built = new BuiltContext(List.copyOf(messages), total, Map.copyOf(perLayer));

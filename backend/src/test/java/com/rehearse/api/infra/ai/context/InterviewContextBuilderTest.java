@@ -6,9 +6,11 @@ import com.rehearse.api.infra.ai.context.layer.DialogueHistoryLayer;
 import com.rehearse.api.infra.ai.context.layer.FixedContextLayer;
 import com.rehearse.api.infra.ai.context.layer.FocusLayer;
 import com.rehearse.api.infra.ai.context.layer.SessionStateLayer;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -153,22 +156,26 @@ class InterviewContextBuilderTest {
     }
 
     @Test
-    @DisplayName("logs_warn_when_total_exceeds_max_no_exception_thrown")
-    void logs_warn_when_total_exceeds_max_no_exception_thrown() {
-        // L1 alone has 10000 chars → ~2500 tokens, max is 100
+    @DisplayName("throws_context_budget_exceeded_and_increments_metric_when_total_exceeds_max")
+    void throws_context_budget_exceeded_and_increments_metric_when_total_exceeds_max() {
         String hugeContent = "x".repeat(10000);
         given(l1.build(any())).willReturn(List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, hugeContent)));
         given(l2.build(any())).willReturn(List.of());
         given(l3.build(any())).willReturn(List.of());
         given(l4.build(any())).willReturn(List.of());
 
-        // maxContextTokens=100 to force the warn path; l4JustInTime=true but L4 returns empty
         ContextEngineeringProperties props = new ContextEngineeringProperties(true, 5, 5, true, 2000);
+        SimpleMeterRegistry registry = new SimpleMeterRegistry();
         InterviewContextBuilder builder = new InterviewContextBuilder(l1, l2, l3, l4, tokenEstimator, props,
-                new ContextEngineeringMetrics(new SimpleMeterRegistry()));
+                new ContextEngineeringMetrics(registry));
 
-        // Should NOT throw — just log warn
-        BuiltContext result = builder.build(minimalRequest("answer_analyzer"));
-        assertThat(result.tokenEstimate()).isGreaterThan(2000);
+        assertThatThrownBy(() -> builder.build(minimalRequest("answer_analyzer")))
+                .isInstanceOf(BusinessException.class)
+                .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                        .isEqualTo(AiErrorCode.CONTEXT_BUDGET_EXCEEDED.getCode()));
+
+        double exceededCount = registry.counter(
+                "rehearse.ai.context.tokens.exceeded", "callType", "answer_analyzer").count();
+        assertThat(exceededCount).isEqualTo(1.0);
     }
 }
