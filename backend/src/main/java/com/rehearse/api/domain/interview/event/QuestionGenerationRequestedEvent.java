@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.event;
 
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
@@ -19,7 +20,7 @@ public class QuestionGenerationRequestedEvent {
     private final String positionDetail;
     private final InterviewLevel level;
     private final List<InterviewType> interviewTypes;
-    private final List<String> csSubTopics;
+    private final List<CsSubTopic> csSubTopics;
     private final String resumeText;
     private final String resumeFileHash;
     private final Integer durationMinutes;

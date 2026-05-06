@@ -6,6 +6,8 @@ import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
+import com.rehearse.api.domain.interview.validation.AudioValidator;
+import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.global.common.ApiResponse;
 import com.rehearse.api.global.config.AsyncConfig;
 import jakarta.validation.Valid;
@@ -33,6 +35,8 @@ public class InterviewController {
     private final InterviewService interviewService;
     private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
+    private final AudioValidator audioValidator;
+    private final ResumePlanPreparationService resumePlanPreparationService;
     private final Executor vtExecutor;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -92,6 +96,9 @@ public class InterviewController {
             @PathVariable Long id,
             @Valid @RequestPart("request") FollowUpRequest request,
             @RequestPart(value = "audio", required = false) MultipartFile audioFile) {
+        if (audioFile != null && !audioFile.isEmpty()) {
+            audioValidator.validate(audioFile);
+        }
         return CompletableFuture.supplyAsync(
                 () -> followUpService.generateFollowUp(id, userId, request, audioFile),
                 vtExecutor
@@ -103,6 +110,14 @@ public class InterviewController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
         InterviewResponse response = interviewService.retryQuestionGeneration(id, userId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PostMapping("/{id}/replan")
+    public ResponseEntity<ApiResponse<ReplanResponse>> replan(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable Long id) {
+        ReplanResponse response = resumePlanPreparationService.replan(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

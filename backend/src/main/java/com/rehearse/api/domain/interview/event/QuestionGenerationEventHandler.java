@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.event;
 
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.question.service.QuestionGenerationService;
 import com.rehearse.api.domain.question.service.QuestionGenerationTransactionHandler;
 import com.rehearse.api.global.config.AsyncConfig;
@@ -9,6 +10,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -24,7 +27,7 @@ public class QuestionGenerationEventHandler {
         try {
             questionGenerationService.generateQuestions(
                     event.getInterviewId(), event.getUserId(), event.getPosition(), event.getLevel(),
-                    event.getInterviewTypes(), event.getCsSubTopics(),
+                    event.getInterviewTypes(), toCsSubTopicNames(event.getCsSubTopics()),
                     event.getResumeText(), event.getResumeFileHash(),
                     event.getDurationMinutes(), event.getTechStack());
         } catch (Exception e) {
@@ -33,5 +36,12 @@ public class QuestionGenerationEventHandler {
             transactionHandler.failGeneration(event.getInterviewId(),
                     reason != null ? reason : "알 수 없는 오류");
         }
+    }
+
+    private List<String> toCsSubTopicNames(List<CsSubTopic> csSubTopics) {
+        if (csSubTopics == null) {
+            return List.of();
+        }
+        return csSubTopics.stream().map(CsSubTopic::name).toList();
     }
 }

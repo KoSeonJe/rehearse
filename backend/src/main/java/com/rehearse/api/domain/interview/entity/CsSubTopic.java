@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.question.entity;
+package com.rehearse.api.domain.interview.entity;
 
 import java.util.Arrays;
 import java.util.List;

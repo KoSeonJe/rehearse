@@ -1,13 +1,18 @@
 package com.rehearse.api.domain.interview.controller;
 
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
+import com.rehearse.api.domain.interview.dto.ReplanResponse;
 import com.rehearse.api.domain.interview.dto.UpdateStatusResponse;
 import com.rehearse.api.domain.interview.entity.*;
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewService;
+import com.rehearse.api.domain.interview.validation.AudioValidator;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
+import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
 import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
@@ -35,6 +40,7 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.anonymous;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -67,6 +73,12 @@ class InterviewControllerTest {
 
     @MockitoBean
     private FollowUpService followUpService;
+
+    @MockitoBean
+    private AudioValidator audioValidator;
+
+    @MockitoBean
+    private ResumePlanPreparationService resumePlanPreparationService;
 
     @MockitoBean(name = "vtExecutor")
     private java.util.concurrent.Executor vtExecutor;
@@ -202,14 +214,14 @@ class InterviewControllerTest {
         }
 
         @Test
-        @DisplayName("타 유저 publicId 조회 시 403")
-        void getInterviewByPublicId_otherUser_forbidden() throws Exception {
+        @DisplayName("타 유저 publicId 조회 시 404 INTERVIEW_NOT_FOUND (정보 노출 방지)")
+        void getInterviewByPublicId_otherUser_notFound() throws Exception {
             given(interviewQueryService.getInterviewByPublicId(eq("test-uuid"), eq(1L)))
-                    .willThrow(new BusinessException(HttpStatus.FORBIDDEN, "INTERVIEW_008", "접근 권한이 없습니다."));
+                    .willThrow(new BusinessException(InterviewErrorCode.NOT_FOUND));
 
             mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid"))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.code").value("INTERVIEW_008"));
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_001"));
         }
 
         @Test
@@ -307,6 +319,84 @@ class InterviewControllerTest {
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
         }
+
+        @Test
+        @DisplayName("audio MIME 위조 시 400 AUDIO_MIME_NOT_ALLOWED")
+        void generateFollowUp_audioMimeNotAllowed() throws Exception {
+            String requestJson = """
+                    {
+                        "questionSetId": 1,
+                        "questionContent": "HashMap의 동작 원리를 설명해주세요.",
+                        "answerText": "답변입니다."
+                    }
+                    """;
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+            MockMultipartFile audioPart = new MockMultipartFile(
+                    "audio", "evil.exe", "application/octet-stream", new byte[]{0, 0, 0, 0});
+
+            willThrow(new BusinessException(InterviewErrorCode.AUDIO_MIME_NOT_ALLOWED))
+                    .given(audioValidator).validate(any());
+
+            mockMvc.perform(multipart("/api/v1/interviews/1/follow-up")
+                            .file(requestPart)
+                            .file(audioPart))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_016"));
+        }
+
+        @Test
+        @DisplayName("audio 용량 초과 시 400 AUDIO_DURATION_EXCEEDED")
+        void generateFollowUp_audioDurationExceeded() throws Exception {
+            String requestJson = """
+                    {
+                        "questionSetId": 1,
+                        "questionContent": "HashMap의 동작 원리를 설명해주세요.",
+                        "answerText": "답변입니다."
+                    }
+                    """;
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+            MockMultipartFile audioPart = new MockMultipartFile(
+                    "audio", "big.webm", "audio/webm", new byte[]{0x1A, 0x45, (byte) 0xDF, (byte) 0xA3});
+
+            willThrow(new BusinessException(InterviewErrorCode.AUDIO_DURATION_EXCEEDED))
+                    .given(audioValidator).validate(any());
+
+            mockMvc.perform(multipart("/api/v1/interviews/1/follow-up")
+                            .file(requestPart)
+                            .file(audioPart))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_017"));
+        }
+
+        @Test
+        @DisplayName("audio 매직바이트 불일치 시 400 AUDIO_MAGIC_BYTE_MISMATCH")
+        void generateFollowUp_audioMagicByteMismatch() throws Exception {
+            String requestJson = """
+                    {
+                        "questionSetId": 1,
+                        "questionContent": "HashMap의 동작 원리를 설명해주세요.",
+                        "answerText": "답변입니다."
+                    }
+                    """;
+
+            MockMultipartFile requestPart = new MockMultipartFile(
+                    "request", "", MediaType.APPLICATION_JSON_VALUE, requestJson.getBytes());
+            MockMultipartFile audioPart = new MockMultipartFile(
+                    "audio", "fake.webm", "audio/webm", new byte[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+
+            willThrow(new BusinessException(InterviewErrorCode.AUDIO_MAGIC_BYTE_MISMATCH))
+                    .given(audioValidator).validate(any());
+
+            mockMvc.perform(multipart("/api/v1/interviews/1/follow-up")
+                            .file(requestPart)
+                            .file(audioPart))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_018"));
+        }
     }
 
     @Nested
@@ -325,6 +415,80 @@ class InterviewControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
                     .andExpect(jsonPath("$.data.id").value(1));
+        }
+
+        @Test
+        @DisplayName("재시도 한도 초과 시 429 RETRY_LIMIT_EXCEEDED")
+        void retryQuestionGeneration_retryLimitExceeded() throws Exception {
+            given(interviewService.retryQuestionGeneration(eq(1L), any()))
+                    .willThrow(new BusinessException(InterviewErrorCode.RETRY_LIMIT_EXCEEDED));
+
+            mockMvc.perform(post("/api/v1/interviews/1/retry-questions"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_012"));
+        }
+
+        @Test
+        @DisplayName("재시도 쿨다운 미경과 시 429 RETRY_COOLDOWN")
+        void retryQuestionGeneration_retryCooldown() throws Exception {
+            given(interviewService.retryQuestionGeneration(eq(1L), any()))
+                    .willThrow(new BusinessException(InterviewErrorCode.RETRY_COOLDOWN));
+
+            mockMvc.perform(post("/api/v1/interviews/1/retry-questions"))
+                    .andExpect(status().isTooManyRequests())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_013"));
+        }
+
+        @Test
+        @DisplayName("RESUME_BASED skeleton 부재 시 409 RESUME_PLAN_RECOVERY_REQUIRED")
+        void retryQuestionGeneration_resumePlanRecoveryRequired() throws Exception {
+            given(interviewService.retryQuestionGeneration(eq(1L), any()))
+                    .willThrow(new BusinessException(InterviewErrorCode.RESUME_PLAN_RECOVERY_REQUIRED));
+
+            mockMvc.perform(post("/api/v1/interviews/1/retry-questions"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_014"));
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /api/v1/interviews/{id}/replan")
+    class Replan {
+
+        @Test
+        @DisplayName("replan 성공 (200) — RESUME_BASED + skeleton 존재")
+        void replan_success() throws Exception {
+            given(resumePlanPreparationService.replan(eq(1L), any()))
+                    .willReturn(ReplanResponse.of(1L, 99L, true));
+
+            mockMvc.perform(post("/api/v1/interviews/1/replan"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.interviewId").value(1))
+                    .andExpect(jsonPath("$.data.planId").value(99))
+                    .andExpect(jsonPath("$.data.replaced").value(true));
+        }
+
+        @Test
+        @DisplayName("RESUME_BASED 인터뷰 아님 시 400 INTERVIEW_NOT_RESUME_BASED")
+        void replan_notResumeBased() throws Exception {
+            given(resumePlanPreparationService.replan(eq(1L), any()))
+                    .willThrow(new BusinessException(InterviewErrorCode.INTERVIEW_NOT_RESUME_BASED));
+
+            mockMvc.perform(post("/api/v1/interviews/1/replan"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.code").value("INTERVIEW_019"));
+        }
+
+        @Test
+        @DisplayName("skeleton 부재 시 409 RESUME_PLAN_NOT_READY")
+        void replan_skeletonMissing() throws Exception {
+            given(resumePlanPreparationService.replan(eq(1L), any()))
+                    .willThrow(new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY));
+
+            mockMvc.perform(post("/api/v1/interviews/1/replan"))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.code").value("RESUME_011"));
         }
     }
 

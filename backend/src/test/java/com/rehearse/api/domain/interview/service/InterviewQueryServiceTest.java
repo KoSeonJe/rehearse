@@ -76,16 +76,16 @@ class InterviewQueryServiceTest {
         }
 
         @Test
-        @DisplayName("소유자가 다른 면접 세션 조회 시 FORBIDDEN BusinessException이 발생한다")
-        void getInterview_differentOwner_forbidden() {
-            // given: userId=1L 소유 면접을 userId=2L 로 조회
+        @DisplayName("소유자가 다른 면접 세션 조회 시 INTERVIEW_NOT_FOUND BusinessException이 발생한다")
+        void getInterview_differentOwner_notFound() {
+            // given: userId=1L 소유 면접을 userId=2L 로 조회 (정보 누출 방지 차원에서 NOT_FOUND 응답)
             Interview interview = createMockInterview(1L);
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             // when & then
             assertThatThrownBy(() -> interviewQueryService.getInterview(1L, 2L))
                     .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_008"));
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
         }
     }
 
@@ -109,8 +109,8 @@ class InterviewQueryServiceTest {
         }
 
         @Test
-        @DisplayName("타 유저 publicId 조회 시 FORBIDDEN 예외")
-        void getInterviewByPublicId_otherUser_forbidden() {
+        @DisplayName("타 유저 publicId 조회 시 INTERVIEW_NOT_FOUND 예외")
+        void getInterviewByPublicId_otherUser_notFound() {
             String publicId = "test-public-uuid";
             Interview interview = createMockInterview(1L);
             ReflectionTestUtils.setField(interview, "publicId", publicId);
@@ -118,7 +118,7 @@ class InterviewQueryServiceTest {
 
             assertThatThrownBy(() -> interviewQueryService.getInterviewByPublicId(publicId, 2L))
                     .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_008"));
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
         }
     }
 

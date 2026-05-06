@@ -34,4 +34,16 @@ public class InterviewPlanPersister {
                     .orElseThrow(() -> new BusinessException(ResumePlannerErrorCode.INVALID_PLAN));
         }
     }
+
+    @Transactional
+    public InterviewPlan replace(Long interviewId, InterviewPlan newPlan) {
+        boolean replaced = planRepository.deleteByInterviewId(interviewId) > 0;
+        // unique 제약 회피 위해 즉시 flush
+        planRepository.flush();
+        newPlan.assignToInterview(interviewId);
+        InterviewPlan saved = planRepository.save(newPlan);
+        log.info("인터뷰 플랜 교체 — interviewId={}, planId={}, replaced={}",
+                interviewId, saved.getId(), replaced);
+        return saved;
+    }
 }

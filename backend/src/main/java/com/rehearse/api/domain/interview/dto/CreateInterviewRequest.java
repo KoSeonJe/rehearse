@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.dto;
 
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
@@ -30,7 +31,7 @@ public class CreateInterviewRequest {
     @NotEmpty(message = "면접 유형을 최소 1개 선택해주세요.")
     private List<InterviewType> interviewTypes;
 
-    private List<String> csSubTopics;
+    private List<CsSubTopic> csSubTopics;
 
     @NotNull(message = "면접 시간을 설정해주세요.")
     @Min(value = 5, message = "면접 시간은 최소 5분입니다.")
