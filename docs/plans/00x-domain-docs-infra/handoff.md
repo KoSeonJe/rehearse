@@ -8,7 +8,7 @@
 
 ## 현재 상태
 
-- 진행: **Phase A 완료**, Phase B (interview 파일럿) 미시작
+- 진행: **Phase A 완료**, **Phase B 완료** (interview 도메인 정책 작성)
 - 브랜치: `chore/claude-meta-setup` (마지막 commit `5659c4d`)
 - 커밋: `docs(domain): 도메인 정책 문서화 인프라 + 템플릿 3종 추가` (5659c4d)
 - 빌드 / 테스트: 해당 없음 (문서만)
@@ -21,58 +21,48 @@
 - `docs/domain/_templates/api-flow.md` — 입출력 / 흐름 / 분기 / 외부호출 / 저장 / 조건엣지 / 상태전이 / 관찰성
 - `docs/domain/_templates/glossary.md` — 한↔영 매핑 + 약어
 
+### Phase B 완료 (2026-05-06)
+
+- `docs/domain/interview/` 8개 파일 작성 (schema.md / api 6개 / glossary.md, 총 1,191 lines)
+- ❓TODO 17개 해결 + 5개 보류 유지 (의도적 미결)
+- Issue #404 발행 — 보안/안정성/cleanup 8건 통합 Epic (https://github.com/KoSeonJe/rehearse/issues/404)
+- **가설 정정**: `interview_session` / `interview_turn` 테이블 부재 확인 → 답변·턴 데이터는 question 도메인 관리, `InterviewRuntimeState` 는 Caffeine in-memory
+- **템플릿 갱신**: `docs/domain/_templates/schema.md` / `api-flow.md` 에 "연관 의존성" 섹션 추가
+
 ---
 
 ## 다음 세션 시작점
 
-**1순위**: 서브에이전트 등록 이슈 해결 (Phase B 비용 영향).
+**1순위**: Phase C — question 도메인 정책 작성.
 
-### Blocker — 서브에이전트 미노출
+### Phase C (question 도메인)
 
-`.claude/agents/` 10개 파일 중 2개만 노출 (`prompt-engineer`, `ui-ux-designer`). 나머지 8개 (`backend`, `frontend`, `git-manager`, `docs-manager`, `debugger-backend`, `debugger-frontend`, `code-reviewer-backend`, `code-reviewer-frontend`) 미노출.
+interview 파일럿 완료 기준으로 동일 절차 적용:
 
-**가설** (확신 70%):
-- 노출되는 2개 = `description: "..."` quoted / 단일줄 + `tools:` 필드 명시
-- 미노출 8개 = `description: |` YAML block scalar + `tools:` 필드 부재
-- harness 가 `description: |` block + `<example>` XML 태그 조합 파싱 실패 OR `tools:` 부재 시 거부
+- C1. backend agent 호출 (`docs/domain/AGENTS.md` §6 프롬프트 복붙)
+  - 분석: `backend/src/main/java/com/rehearse/api/domain/question/` (controller / service / entity / repository / dto / event / exception)
+  - Flyway: `V*.sql` 중 question / interview_turn / answer 관련
+  - 출력: schema.md + api/{action}.md + (옵션) glossary.md
+  - ❓TODO 마킹 = 코드 추론 불가 항목 (interview 파일럿에서 정정된 가설 참조)
 
-**검증 / 수정 옵션**:
-1. (옵션 A) `tools:` 필드 추가 후 재시작
-2. (옵션 B) `description: |` → `description: "...\n<example>...\n</example>"` quoted 로 변경
-3. (옵션 C) 한 파일만 변경 → 재시작 → 노출 확인 → 나머지 일괄 적용
+- C2. 메타인지 보완 (`docs/domain/AGENTS.md` §7 체크리스트 8항목)
+  - 턴 데이터가 question 도메인에 있음 재확인 / runtimeState 연동 지점 명시
 
-**다음 세션 첫 명령**:
-```bash
-# 한 agent 만 수정해 검증 (예: git-manager)
-# tools 필드 추가 시도
-```
+- C3. preview → 사용자 승인 → Write
 
-### Phase B (서브에이전트 등록 후 진행)
+- C4. 검증 (Flyway 컬럼 일치 / endpoint 100% 커버 / ❓TODO 보류 5개 제외 나머지 0건 / 조건엣지 빈 row 0)
 
-`.claude/rules/` plan 본문 §B1~B4. interview 도메인 파일럿:
-
-- B1. backend agent 호출 (`docs/domain/AGENTS.md` §6 프롬프트 복붙)
-  - 분석: `backend/src/main/java/com/rehearse/api/domain/interview/` (controller / service / entity / repository / dto / event / exception)
-  - Flyway: `V*.sql` 중 interview / interview_session / interview_turn 관련 (V10, V17, V25, V29, V31, V40, V41, V43 등)
-  - 출력: schema.md + api/{action}.md 다수 (endpoint 9 → 액션 단위 5-7개로 묶음 가능)
-  - ❓TODO 마킹 = 코드 추론 불가 항목
-
-- B2. 메타인지 보완 (`docs/domain/AGENTS.md` §7 체크리스트 8항목)
-  - intent 분기 룰 / 모호도 임계값 / AI fallback / runtimeState / session.status 전이 / 동시 세션 제약 / resume 삭제 fallback
-
-- B3. preview → 사용자 승인 → Write
-
-- B4. 검증 (Flyway 컬럼 일치 / endpoint 9 100% 커버 / ❓TODO 0건 / 조건엣지 빈 row 0)
+**참고**: Phase B 정정 가설 (`interview_session` / `interview_turn` 부재) 이 question 도메인 분석에 영향. 시작 전 `docs/domain/interview/schema.md` 재확인 권장.
 
 ---
 
 ## 미해결 질문 / Blocker
 
-| 항목 | 옵션 | 추천 |
+| 항목 | 상태 | 결과 |
 |------|------|------|
-| 서브에이전트 미노출 원인 | A) tools 필드 추가 / B) description quoted 변환 / C) 한 파일 검증 후 일괄 | C — 1개로 가설 검증 후 일괄 |
-| Phase B 진행 시점 | A) agent 등록 수정 후 / B) general-purpose 로 우회 / C) main 세션 직접 | A — agent 비용 / 컨벤션 Read 강제 보장 |
-| FE 비즈니스 정책 문서화 | 결정됨: BE 파일럿 후 별도 plan | — |
+| 서브에이전트 미노출 원인 | **Resolved** | `tools:` 필드 8개 agent 추가로 해결 (commit c93c803) |
+| Phase B 진행 시점 | **Completed** | interview 도메인 정책 작성 완료 (2026-05-06) |
+| FE 비즈니스 정책 문서화 | 미결 | BE 파일럿 완료 → 별도 plan 으로 분리 예정 |
 
 ---
 
@@ -81,6 +71,8 @@
 - **결정**: FE 정책은 별도 plan 으로 분리. interview BE 파일럿 결과 보고 진행 (사용자 답변 2026-05-06)
 - **결정**: 루트 `AGENTS.md` / `CLAUDE.md` 의 `docs/domain/` 참조 룰 추가는 별도 plan (파일럿 검증 후)
 - **결정**: 도메인별 작성은 1회 1 도메인. 메타인지 분산 방지
+- **결정 (Phase B)**: Issue #404 발행 — interview 도메인 분석 중 발견된 보안/안정성/cleanup 8건 통합 Epic
+- **정정 (Phase B)**: `interview_session` / `interview_turn` 테이블 실재하지 않음. 답변·턴 = question 도메인, runtimeState = Caffeine in-memory. 기존 handoff 가설 수정
 - **함정**: backend agent 가 코드 추론으로 ❓TODO 채우면 안 됨. 모르면 ❓TODO 마킹 후 사용자에게
 - **함정**: api 파일은 endpoint 1:1 X. 비즈니스 액션 단위 묶음
 - **재사용**: `docs/plans/AGENTS.md` 톤 / 섹션 구성 차용. `docs/plans/_templates/` 7종 구조 참조
@@ -124,4 +116,4 @@ backend agent 로 docs/domain/interview/ 초안 작성.
 
 ---
 
-업데이트: 2026-05-06 (Phase A 완료 / Phase B 미시작 / agent 등록 blocker)
+업데이트: 2026-05-06 (Phase A 완료 / Phase B 완료 / Phase C = question 도메인 예정)
