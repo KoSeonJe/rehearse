@@ -38,21 +38,8 @@ public class RubricScoringEventListener {
 
         try {
             Interview interview = interviewFinder.findById(interviewId);
-
             Question question = resolveQuestion(event);
-            if (question == null) {
-                return;
-            }
-
-            if (question.getId() == null) {
-                log.warn("questionId null — QuestionScore 저장 불가 (stub 사용 중): interviewId={}, turnIndex={}", interviewId, turnIndex);
-                return;
-            }
-
             QuestionSet questionSet = resolveQuestionSet(event, interview);
-            if (questionSet == null) {
-                return;
-            }
 
             RubricScoringResult score = rubricScorer.score(
                     question, questionSet, interview,
@@ -62,8 +49,8 @@ public class RubricScoringEventListener {
             );
 
             if (score.isEmpty()) {
-                log.debug("RubricScore empty (CLARIFY 등) — row 적재 안 함: interviewId={}, turnId={}",
-                        interviewId, turnIndex);
+                log.debug("[정상 skip] RubricScore empty. intent={}, interviewId={}, turnIndex={}, questionId={}",
+                        event.intent(), interviewId, turnIndex, event.questionId());
                 return;
             }
 
@@ -77,29 +64,36 @@ public class RubricScoringEventListener {
             );
 
         } catch (Exception e) {
-            log.warn("RubricScoring 실패 — 턴 진행 차단하지 않음: interviewId={}, turnId={}, reason={}",
-                    interviewId, turnIndex, e.getMessage());
+            log.warn("[결함 skip] RubricScoring listener 예외. interviewId={}, turnIndex={}, reason={}",
+                    interviewId, turnIndex, e.getMessage(), e);
             aiCallMetrics.incrementRubricFailure("persist_failed");
         }
     }
 
     private Question resolveQuestion(TurnCompletedEvent event) {
         if (event.questionId() == null) {
-            log.warn("questionId가 null — RubricScoring 스킵: interviewId={}, turnIndex={}",
-                    event.interviewId(), event.turnIndex());
-            return null;
+            throw new IllegalStateException(
+                    "Question 식별 불가 — questionId null. interviewId=" + event.interviewId()
+                            + ", turnIndex=" + event.turnIndex());
         }
         return questionRepository.findById(event.questionId())
-                .orElseThrow(() -> new IllegalStateException("Question not found: " + event.questionId()));
+                .orElseThrow(() -> new IllegalStateException(
+                        "Question 미존재: questionId=" + event.questionId()
+                                + ", interviewId=" + event.interviewId()
+                                + ", turnIndex=" + event.turnIndex()));
     }
 
     private QuestionSet resolveQuestionSet(TurnCompletedEvent event, Interview interview) {
         if (event.questionSetId() == null) {
-            log.warn("questionSetId가 null — RubricScoring 스킵: interviewId={}, turnIndex={}",
-                    event.interviewId(), event.turnIndex());
-            return null;
+            throw new IllegalStateException(
+                    "QuestionSet 식별 불가 — questionSetId null. interviewId=" + event.interviewId()
+                            + ", turnIndex=" + event.turnIndex()
+                            + ", questionId=" + event.questionId());
         }
         return questionSetRepository.findById(event.questionSetId())
-                .orElseThrow(() -> new IllegalStateException("QuestionSet not found: " + event.questionSetId()));
+                .orElseThrow(() -> new IllegalStateException(
+                        "QuestionSet 미존재: questionSetId=" + event.questionSetId()
+                                + ", interviewId=" + event.interviewId()
+                                + ", questionId=" + event.questionId()));
     }
 }

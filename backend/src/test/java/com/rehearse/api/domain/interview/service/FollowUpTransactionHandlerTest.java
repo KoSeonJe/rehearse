@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.*;
@@ -20,9 +21,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -53,6 +56,9 @@ class FollowUpTransactionHandlerTest {
 
     @Mock
     private InterviewTurnPolicy turnPolicy;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Nested
     @DisplayName("loadFollowUpContext 메서드")
@@ -209,6 +215,51 @@ class FollowUpTransactionHandlerTest {
         }
 
         @Test
+        @DisplayName("saveFollowUpResultAndPublishEvent - 저장과 이벤트 발행을 같은 트랜잭션 메서드에서 처리한다")
+        void saveFollowUpResultAndPublishEvent_savesAndPublishes() {
+            Interview interview = createInProgressInterview();
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            GeneratedFollowUp followUp = new GeneratedFollowUp();
+            ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
+
+            Question savedQuestion = Question.builder()
+                    .questionType(QuestionType.FOLLOWUP)
+                    .questionText("해시 충돌 해결 방법은?")
+                    .orderIndex(1)
+                    .build();
+            ReflectionTestUtils.setField(savedQuestion, "id", 100L);
+            given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
+
+            FollowUpSaveResult result = handler.saveFollowUpResultAndPublishEvent(
+                    1L, createContext(), followUp, createTurn(IntentType.ANSWER));
+
+            assertThat(result.question().getId()).isEqualTo(100L);
+            TurnCompletedEvent event = capturePublishedEvent();
+            assertThat(event.questionId()).isEqualTo(100L);
+            assertThat(event.questionSetId()).isEqualTo(10L);
+            assertThat(event.turnIndex()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("publishTurnCompletedEvent - 저장 없는 종료 분기도 짧은 트랜잭션 메서드에서 이벤트를 발행한다")
+        void publishTurnCompletedEvent_publishesBaseQuestionEvent() {
+            Interview interview = createInProgressInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            handler.publishTurnCompletedEvent(
+                    1L, createContext(), createTurn(IntentType.CLARIFY_REQUEST), 50L, 0);
+
+            TurnCompletedEvent event = capturePublishedEvent();
+            assertThat(event.questionId()).isEqualTo(50L);
+            assertThat(event.questionSetId()).isEqualTo(10L);
+            assertThat(event.turnIndex()).isZero();
+            assertThat(event.intent()).isEqualTo(IntentType.CLARIFY_REQUEST);
+        }
+
+        @Test
         @DisplayName("saveFollowUpResult - 기존 followUp 1개가 있던 세트에 추가하면 newFollowUpCount=2")
         void saveFollowUpResult_increments_newFollowUpCount() {
             Interview interview = createInProgressInterview();
@@ -302,5 +353,24 @@ class FollowUpTransactionHandlerTest {
             qs.addQuestion(followUp);
         }
         return qs;
+    }
+
+    private FollowUpContext createContext() {
+        return new FollowUpContext(
+                Position.BACKEND, TechStack.JAVA_SPRING, InterviewLevel.JUNIOR,
+                10L, 50L, 1, ReferenceType.MODEL_ANSWER, 2);
+    }
+
+    private TurnAnalysisResult createTurn(IntentType intentType) {
+        return new TurnAnalysisResult(
+                "답변 텍스트",
+                IntentResult.of(intentType, 0.9, "test"),
+                new AnswerAnalysis(50L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE));
+    }
+
+    private TurnCompletedEvent capturePublishedEvent() {
+        ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
+        then(eventPublisher).should().publishEvent(captor.capture());
+        return captor.getValue();
     }
 }
