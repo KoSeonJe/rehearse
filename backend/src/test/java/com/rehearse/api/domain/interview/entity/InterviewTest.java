@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.entity;
 
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -324,7 +325,7 @@ class InterviewTest {
         }
 
         @Test
-        @DisplayName("소유자 ID가 불일치하면 BusinessException이 발생한다")
+        @DisplayName("소유자 ID가 불일치하면 INTERVIEW_NOT_FOUND BusinessException이 발생한다")
         void validateOwner_differentUserId_throwsBusinessException() {
             // given
             Interview interview = createDefaultInterview();
@@ -332,18 +333,37 @@ class InterviewTest {
 
             // when & then
             assertThatThrownBy(() -> interview.validateOwner(999L))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
         }
 
         @Test
-        @DisplayName("userId가 null이면 어떤 사용자도 예외가 발생하지 않는다")
-        void validateOwner_nullUserId_doesNotThrow() {
+        @DisplayName("ownerUserId가 null이면 어떤 요청자도 INTERVIEW_NOT_FOUND로 거부된다")
+        void validateOwner_ownerUserIdNull_throwsInterviewNotFound() {
             // given
             Interview interview = createDefaultInterview();
             ReflectionTestUtils.setField(interview, "userId", null);
 
             // when & then
-            interview.validateOwner(999L);
+            assertThatThrownBy(() -> interview.validateOwner(999L))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
+        }
+
+        @Test
+        @DisplayName("요청자 userId가 null이면 INTERVIEW_NOT_FOUND로 거부된다")
+        void validateOwner_requesterUserIdNull_throwsInterviewNotFound() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "userId", 1L);
+
+            // when & then
+            assertThatThrownBy(() -> interview.validateOwner(null))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
         }
     }
 

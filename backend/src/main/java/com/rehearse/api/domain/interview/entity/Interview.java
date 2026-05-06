@@ -9,6 +9,7 @@ import org.hibernate.annotations.BatchSize;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "interview")
 @Getter
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Interview {
@@ -168,8 +170,10 @@ public class Interview {
     }
 
     public void validateOwner(Long userId) {
-        if (this.userId != null && !this.userId.equals(userId)) {
-            throw new BusinessException(InterviewErrorCode.FORBIDDEN);
+        if (this.userId == null || !this.userId.equals(userId)) {
+            log.warn("면접 접근 권한 검증 실패 — interviewId={}, ownerUserId={}, requesterUserId={}",
+                    this.id, this.userId, userId);
+            throw new BusinessException(InterviewErrorCode.NOT_FOUND);
         }
     }
 
