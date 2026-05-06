@@ -37,3 +37,16 @@
 
 ### 마이그레이션 히스토리
 - `V{NN}__{slug}.sql` — {1줄 요약}
+
+---
+
+## 연관 의존성
+
+도메인 외부에서 이 도메인 데이터 / 상태에 직접 접근하거나, 이 도메인이 직접 호출하는 패키지·클래스. 추론으로 채우지 말 것 — `import` / 호출 그래프 근거.
+
+| 패키지 / 클래스 | 역할 | 관계 |
+|----------------|------|------|
+| `com.rehearse.api.domain.{other}.{Class}` | {1줄 역할} | {호출 방향 — calls / called-by / event-listener / cache / persister} |
+| `com.rehearse.api.infra.{Class}` | {1줄 역할} | {관계} |
+
+> 각 외부 클래스는 도메인 정책 작성 시 함께 검토. 임계값 / 디폴트값 / eviction 정책 등 코드 상수는 ❓TODO 대신 직접 인용.

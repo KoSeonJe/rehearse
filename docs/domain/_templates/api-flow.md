@@ -98,8 +98,19 @@
 
 ---
 
+## 연관 의존성
+
+이 액션이 호출 / 청취하는 도메인 외부 클래스. `import` / 호출 그래프 근거. 임계값·디폴트는 클래스 직접 인용.
+
+| 패키지 / 클래스 | 역할 | 관계 |
+|----------------|------|------|
+| `com.rehearse.api.domain.{other}.{Class}` | {1줄 역할} | calls / event-publisher / event-listener / cache / persister |
+| `com.rehearse.api.infra.ai.{Class}` | {AI 클라이언트} | calls — primary / fallback |
+
+---
+
 ## 정책 출처
 
 - 비즈니스 룰: `docs/domain/{name}/schema.md` `{관련 invariant}`
-- 임계값 / fallback 룰: §메타인지 보완 결과
-- ❓TODO(사용자 확인): {코드에서 추론 불가 항목 명시}
+- 임계값 / fallback 룰: §메타인지 보완 결과 (가능 시 연관 의존성 클래스 상수 직접 인용)
+- ❓TODO(사용자 확인): {코드에서 추론 불가 항목 명시 — 정책 결정 필요한 것만}
