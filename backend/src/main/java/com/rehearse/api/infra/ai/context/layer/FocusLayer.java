@@ -74,7 +74,8 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildResumePlaygroundResponder(FocusHints.ResumePlaygroundResponderHints h) {
-        return "<<<EXPECTED_CLAIMS>>>\n" + nz(h.expectedClaims()) + "\n<<<END_EXPECTED_CLAIMS>>>\n\n" +
+        return "<<<PROJECT_INFO>>>\n" + nz(h.projectInfo()) + "\n<<<END_PROJECT_INFO>>>\n\n" +
+               "<<<EXPECTED_CLAIMS>>>\n" + nz(h.expectedClaims()) + "\n<<<END_EXPECTED_CLAIMS>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "PLAYGROUND_TURN_COUNT: " + h.playgroundTurnCount() + "\n" +
                "CUMULATIVE_UTTERANCE_LENGTH: " + h.cumulativeUtteranceLength() + "\n\n" +
@@ -82,7 +83,8 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildResumeChainInterrogator(FocusHints.ResumeChainInterrogatorHints h) {
-        return "<<<CURRENT_CHAIN>>>\n" + nz(h.currentChain()) + "\n<<<END_CURRENT_CHAIN>>>\n\n" +
+        return "<<<PROJECT_NAME>>>\n" + nz(h.projectName()) + "\n<<<END_PROJECT_NAME>>>\n\n" +
+               "<<<CURRENT_CHAIN>>>\n" + nz(h.currentChain()) + "\n<<<END_CURRENT_CHAIN>>>\n\n" +
                "CURRENT_LEVEL: " + h.currentLevel() + "\n" +
                "ANSWER_QUALITY: " + h.answerQuality() + "\n" +
                "CONSECUTIVE_STAY_COUNT: " + h.consecutiveStayCount() + "\n\n" +
@@ -91,7 +93,8 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildResumeWrapUp(FocusHints.ResumeWrapUpHints h) {
-        return "<<<SESSION_SUMMARY>>>\n" + nz(h.sessionSummary()) + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
+        return "<<<PROJECT_NAME>>>\n" + nz(h.projectName()) + "\n<<<END_PROJECT_NAME>>>\n\n" +
+               "<<<SESSION_SUMMARY>>>\n" + nz(h.sessionSummary()) + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
                "REMAINING_MINUTES: " + h.remainingMinutes() + "\n" +
                "IS_RETROSPECTIVE: " + h.isRetrospective() + "\n\n" +
                "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요.";

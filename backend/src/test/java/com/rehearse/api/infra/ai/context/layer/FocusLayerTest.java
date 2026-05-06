@@ -134,9 +134,10 @@ class FocusLayerTest {
         }
 
         @Test
-        @DisplayName("resume_playground_responder: expectedClaims + userAnswer 가 프래그먼트에 포함된다")
+        @DisplayName("resume_playground_responder: projectInfo + expectedClaims + userAnswer 가 프래그먼트에 포함된다")
         void resume_playground_responder_renders_expected_fragment_when_hints_present() {
             FocusHints hints = new FocusHints.ResumePlaygroundResponderHints(
+                    "projectId: p1\nprojectName: 결제 시스템\nclaims: 3개\nimplicitCsTopics: 2개",
                     "동시성 제어 경험", "낙관락으로 처리했습니다.", 3, 240
             );
 
@@ -144,6 +145,8 @@ class FocusLayerTest {
 
             assertThat(result).hasSize(1);
             String content = result.get(0).content();
+            assertThat(content).contains("<<<PROJECT_INFO>>>");
+            assertThat(content).contains("projectName: 결제 시스템");
             assertThat(content).contains("동시성 제어 경험");
             assertThat(content).contains("낙관락으로 처리했습니다.");
             assertThat(content).contains("PLAYGROUND_TURN_COUNT: 3");
@@ -151,16 +154,18 @@ class FocusLayerTest {
         }
 
         @Test
-        @DisplayName("resume_chain_interrogator: chain 상태와 userAnswer 가 프래그먼트에 포함된다")
+        @DisplayName("resume_chain_interrogator: projectName + chain 상태와 userAnswer 가 프래그먼트에 포함된다")
         void resume_chain_interrogator_renders_expected_fragment_when_hints_present() {
             FocusHints hints = new FocusHints.ResumeChainInterrogatorHints(
-                    "동시성 chain", 2, 1, "낙관락 사용", 1
+                    "결제 시스템 백엔드", "동시성 chain", 2, 1, "낙관락 사용", 1
             );
 
             List<ChatMessage> result = focusLayer.build(req("resume_chain_interrogator", hints));
 
             assertThat(result).hasSize(1);
             String content = result.get(0).content();
+            assertThat(content).contains("<<<PROJECT_NAME>>>");
+            assertThat(content).contains("결제 시스템 백엔드");
             assertThat(content).contains("동시성 chain");
             assertThat(content).contains("CURRENT_LEVEL: 2");
             assertThat(content).contains("ANSWER_QUALITY: 1");
@@ -169,16 +174,18 @@ class FocusLayerTest {
         }
 
         @Test
-        @DisplayName("resume_wrap_up: sessionSummary + remainingMinutes 가 프래그먼트에 포함된다")
+        @DisplayName("resume_wrap_up: projectName + sessionSummary + remainingMinutes 가 프래그먼트에 포함된다")
         void resume_wrap_up_renders_expected_fragment_when_hints_present() {
             FocusHints hints = new FocusHints.ResumeWrapUpHints(
-                    "세션 요약본", 5, true
+                    "결제 시스템 백엔드", "세션 요약본", 5, true
             );
 
             List<ChatMessage> result = focusLayer.build(req("resume_wrap_up", hints));
 
             assertThat(result).hasSize(1);
             String content = result.get(0).content();
+            assertThat(content).contains("<<<PROJECT_NAME>>>");
+            assertThat(content).contains("결제 시스템 백엔드");
             assertThat(content).contains("세션 요약본");
             assertThat(content).contains("REMAINING_MINUTES: 5");
             assertThat(content).contains("IS_RETROSPECTIVE: true");
@@ -236,7 +243,7 @@ class FocusLayerTest {
         void resume_chain_interrogator_truncates_preserves_instruction_tail() {
             String oversized = "C".repeat(FocusLayer.CAP_RESUME_CHAIN_INTERROGATOR * 4 + 800);
             FocusHints hints = new FocusHints.ResumeChainInterrogatorHints(
-                    "chain", 2, 1, oversized, 1);
+                    "결제", "chain", 2, 1, oversized, 1);
 
             List<ChatMessage> result = focusLayer.build(req("resume_chain_interrogator", hints));
 

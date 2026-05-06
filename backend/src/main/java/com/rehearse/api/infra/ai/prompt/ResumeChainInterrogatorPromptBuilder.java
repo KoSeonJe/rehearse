@@ -32,12 +32,13 @@ public class ResumeChainInterrogatorPromptBuilder extends AbstractResumeJsonProm
 
     public InterrogationResult build(
             Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> exchanges,
-            String chainTopic, int currentLevel, int answerQuality,
+            String projectName, String chainTopic, int currentLevel, int answerQuality,
             String userAnswer, int consecutiveStayCount
     ) {
         return executeJson(
                 CALL_TYPE, interviewId, state, exchanges,
                 new FocusHints.ResumeChainInterrogatorHints(
+                        projectName,
                         chainTopic,
                         currentLevel,
                         answerQuality,

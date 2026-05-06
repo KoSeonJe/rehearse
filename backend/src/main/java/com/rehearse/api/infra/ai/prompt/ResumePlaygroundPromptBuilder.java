@@ -49,12 +49,13 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
 
     public PlaygroundResponderResult buildResponder(
             Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> exchanges,
-            String userAnswer, List<String> expectedClaims,
+            Project project, String userAnswer, List<String> expectedClaims,
             int playgroundTurnCount, int cumulativeLength
     ) {
         return executeJson(
                 RESPONDER_CALL_TYPE, interviewId, state, exchanges,
                 new FocusHints.ResumePlaygroundResponderHints(
+                        formatProjectInfo(project),
                         String.join("\n", expectedClaims),
                         userAnswer != null ? userAnswer : "",
                         playgroundTurnCount,
@@ -66,6 +67,7 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
 
     private static String formatProjectInfo(Project project) {
         return "projectId: " + project.projectId()
+                + "\nprojectName: " + project.projectName()
                 + "\nclaims: " + project.claims().size() + "개"
                 + "\nimplicitCsTopics: " + project.implicitCsTopics().size() + "개";
     }

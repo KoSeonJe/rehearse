@@ -162,7 +162,7 @@ public class ResumeInterviewOrchestrator {
             }
             case WRAP_UP -> {
                 WrapUpModeHandler.WrapUpTurnResult r =
-                        wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true, previousExchanges);
+                        wrapUpHandler.handle(interviewId, state, answerText, analysis, plan, remainingMinutes, true, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
         };

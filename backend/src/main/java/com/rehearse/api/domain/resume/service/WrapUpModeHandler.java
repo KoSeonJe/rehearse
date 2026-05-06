@@ -6,6 +6,8 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
@@ -27,14 +29,16 @@ public class WrapUpModeHandler {
     public WrapUpTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
+            InterviewPlan plan,
             long remainingMinutes, boolean isRetrospective,
             List<FollowUpExchange> previousExchanges
     ) {
         String sessionSummary = buildSessionSummary(state);
+        String projectName = resolveProjectName(plan, state.getChainStateTracker().getCurrentProjectId());
 
         WrapUpResult result = promptBuilder.build(
                 interviewId, state, previousExchanges,
-                sessionSummary, remainingMinutes, isRetrospective);
+                projectName, sessionSummary, remainingMinutes, isRetrospective);
 
         log.info("[WrapUpHandler] 회고 질문 생성: interviewId={}, remainingMin={}, isRetrospective={}",
                 interviewId, remainingMinutes, isRetrospective);
@@ -66,6 +70,17 @@ public class WrapUpModeHandler {
     }
 
     public record WrapUpTurnResult(FollowUpResponse response, Long questionId) {}
+
+    private String resolveProjectName(InterviewPlan plan, String projectId) {
+        if (projectId == null) {
+            return "";
+        }
+        return plan.projectPlans().stream()
+                .filter(pp -> pp.projectId().equals(projectId))
+                .findFirst()
+                .map(ProjectPlan::projectName)
+                .orElse("");
+    }
 
     private String buildSessionSummary(InterviewRuntimeState state) {
         ChainStateTracker tracker = state.getChainStateTracker();

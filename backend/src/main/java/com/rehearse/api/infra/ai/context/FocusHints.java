@@ -31,6 +31,7 @@ public sealed interface FocusHints
     record ResumePlaygroundOpenerHints(String projectInfo, String openerQuestion) implements FocusHints {}
 
     record ResumePlaygroundResponderHints(
+            String projectInfo,
             String expectedClaims,
             String userAnswer,
             int playgroundTurnCount,
@@ -38,6 +39,7 @@ public sealed interface FocusHints
     ) implements FocusHints {}
 
     record ResumeChainInterrogatorHints(
+            String projectName,
             String currentChain,
             int currentLevel,
             int answerQuality,
@@ -46,6 +48,7 @@ public sealed interface FocusHints
     ) implements FocusHints {}
 
     record ResumeWrapUpHints(
+            String projectName,
             String sessionSummary,
             long remainingMinutes,
             boolean isRetrospective
