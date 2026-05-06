@@ -1,9 +1,11 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
@@ -16,6 +18,7 @@ import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +32,7 @@ public class FollowUpTransactionHandler {
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
     private final InterviewTurnPolicyResolver turnPolicyResolver;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public FollowUpContext loadFollowUpContext(Long interviewId, Long userId, Long questionSetId) {
@@ -110,6 +114,36 @@ public class FollowUpTransactionHandler {
             log.warn("follow-up 중복 삽입 차단 (unique constraint): questionSetId={}, orderIndex={}",
                     questionSetId, orderIndex);
             throw new BusinessException(InterviewErrorCode.FOLLOWUP_DUPLICATE);
+        }
+    }
+
+    @Transactional
+    public FollowUpSaveResult saveFollowUpResultAndPublishEvent(
+            Long interviewId, FollowUpContext context, GeneratedFollowUp followUp, TurnAnalysisResult turn
+    ) {
+        FollowUpSaveResult saveResult = saveFollowUpResult(context.questionSetId(), followUp);
+        publishTurnCompletedEvent(
+                interviewId, context, turn,
+                saveResult.question().getId(), saveResult.question().getOrderIndex());
+        return saveResult;
+    }
+
+    @Transactional
+    public void publishTurnCompletedEvent(
+            Long interviewId, FollowUpContext context, TurnAnalysisResult turn, Long questionId, int turnIndex
+    ) {
+        try {
+            Interview interview = interviewFinder.findById(interviewId);
+            TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
+                    interviewId, (long) turnIndex, interview.getUserId(),
+                    questionId, context.questionSetId(),
+                    turn.answerText(), turn.answerAnalysis(),
+                    turn.intent().type(), context.level()
+            );
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.warn("TurnCompletedEvent 발행 실패. interviewId={}, reason={}",
+                    interviewId, e.getMessage());
         }
     }
 }
