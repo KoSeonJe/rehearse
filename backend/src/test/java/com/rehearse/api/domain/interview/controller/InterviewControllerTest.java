@@ -9,6 +9,7 @@ import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.domain.interview.validation.AudioValidator;
+import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.global.config.InternalApiKeyFilter;
 import com.rehearse.api.global.config.TestSecurityConfig;
 import com.rehearse.api.global.exception.BusinessException;
@@ -71,6 +72,9 @@ class InterviewControllerTest {
 
     @MockitoBean
     private AudioValidator audioValidator;
+
+    @MockitoBean
+    private ResumePlanPreparationService resumePlanPreparationService;
 
     @MockitoBean(name = "vtExecutor")
     private java.util.concurrent.Executor vtExecutor;
