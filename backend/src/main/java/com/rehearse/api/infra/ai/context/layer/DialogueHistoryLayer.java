@@ -54,15 +54,33 @@ public class DialogueHistoryLayer implements ContextLayer {
 
         List<ChatMessage> result = new ArrayList<>();
 
-        if (runtimeState != null) {
+        if (runtimeState == null) {
+            log.warn("[DialogueHistoryLayer] L3 raw fallback 발동: interviewId={}, windowEnd={}, reason=null_runtime_state",
+                    interviewId, windowEnd);
+            result.addAll(renderAlternating(olderTurns));
+        } else {
             runtimeState.getCompactedSummary(windowEnd).ifPresentOrElse(
                     summary -> result.add(buildSummaryMessage(summary, windowEnd)),
-                    () -> triggerCompactionIfPossible(interviewId, windowEnd, olderTurns, runtimeState)
+                    () -> handleMissingSummary(interviewId, windowEnd, olderTurns, runtimeState, result)
             );
         }
 
         result.addAll(renderAlternating(recentTurns));
         return result;
+    }
+
+    private void handleMissingSummary(Long interviewId, int windowEnd,
+                                      List<FollowUpExchange> olderTurns,
+                                      InterviewRuntimeState runtimeState,
+                                      List<ChatMessage> result) {
+        boolean inFlight = runtimeState.hasCompactionInFlight(windowEnd);
+        String reason = inFlight ? "compaction_in_flight" : "summary_absent";
+        log.warn("[DialogueHistoryLayer] L3 raw fallback 발동: interviewId={}, windowEnd={}, reason={}",
+                interviewId, windowEnd, reason);
+        result.addAll(renderAlternating(olderTurns));
+        if (!inFlight) {
+            triggerCompactionIfPossible(interviewId, windowEnd, olderTurns, runtimeState);
+        }
     }
 
     private void triggerCompactionIfPossible(Long interviewId, int windowEnd,

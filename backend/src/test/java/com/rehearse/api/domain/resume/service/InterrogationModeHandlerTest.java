@@ -23,11 +23,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InterrogationModeHandler - Interrogation 모드 결정 트리")
@@ -64,7 +73,7 @@ class InterrogationModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
+            InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
             FollowUpResponse response = result.response();
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
@@ -153,7 +162,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             state.getChainStateTracker().markChainComplete();
 
-            InterrogationModeHandler.InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of());
+            InterrogationTurnResult result = handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of());
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
             assertThat(result.response().isPresentToUser()).isFalse();
@@ -166,9 +175,11 @@ class InterrogationModeHandlerTest {
     class LlmResponseValidation {
 
         @Test
-        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handle_blankQuestion_throwsBusinessException() {
+        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 lock 밖에서 던지고 tracker state 가 변하지 않는다")
+        void handle_blankQuestion_throwsBusinessException_andDoesNotMutateTracker() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            int levelBefore = state.getChainStateTracker().getCurrentLevel();
+            int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
             given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1));
 
@@ -176,12 +187,18 @@ class InterrogationModeHandlerTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));
+
+            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
+            assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
+            verify(questionPersister, never()).persist(anyLong(), any(), any(), anyInt());
         }
 
         @Test
-        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handle_nullQuestion_throwsBusinessException() {
+        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 lock 밖에서 던지고 tracker state 가 변하지 않는다")
+        void handle_nullQuestion_throwsBusinessException_andDoesNotMutateTracker() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            int levelBefore = state.getChainStateTracker().getCurrentLevel();
+            int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
             given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1));
 
@@ -189,6 +206,84 @@ class InterrogationModeHandlerTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));
+
+            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
+            assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
+            verify(questionPersister, never()).persist(anyLong(), any(), any(), anyInt());
+        }
+    }
+
+    @Nested
+    @DisplayName("Lock 경계 (P1-3)")
+    class LockBoundary {
+
+        @Test
+        @DisplayName("Phase 2 (LLM 호출) 동안 lock 이 점유되지 않아 다른 thread 의 withLock 이 1초 이내 진입한다")
+        void phase2_doesNotHoldLock_allowsOtherThreadToAcquire() throws Exception {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+
+            CountDownLatch llmEntered = new CountDownLatch(1);
+            CountDownLatch llmRelease = new CountDownLatch(1);
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willAnswer(inv -> {
+                        llmEntered.countDown();
+                        // LLM 응답 지연 시뮬: 다른 thread 가 lock 진입할 시간을 벌어준다
+                        llmRelease.await(2, TimeUnit.SECONDS);
+                        return new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2);
+                    });
+
+            ExecutorService executor = Executors.newFixedThreadPool(2);
+            try {
+                Future<InterrogationTurnResult> handlerFuture =
+                        executor.submit(() -> handler.handle(1L, state, "답변", createAnalysis(4), plan, java.util.List.of()));
+
+                // LLM 진입까지 대기 = handler 가 Phase 2 안에 있다는 의미 (Phase 1 lock 은 이미 해제)
+                assertThat(llmEntered.await(2, TimeUnit.SECONDS)).isTrue();
+
+                AtomicBoolean acquired = new AtomicBoolean(false);
+                Future<?> probeFuture = executor.submit(() ->
+                        state.getChainStateTracker().withLock(() -> {
+                            acquired.set(true);
+                            return null;
+                        })
+                );
+                probeFuture.get(1, TimeUnit.SECONDS);
+                assertThat(acquired).isTrue();
+
+                // handler 마무리
+                llmRelease.countDown();
+                InterrogationTurnResult result = handlerFuture.get(2, TimeUnit.SECONDS);
+                assertThat(result.questionId()).isEqualTo(1L);
+            } finally {
+                executor.shutdownNow();
+            }
+        }
+
+        @Test
+        @DisplayName("persist 는 Phase 3 (lock 안) 에서 tracker state 변경 전에 호출된다 — orphan question row 방지")
+        void persist_runsInsideLock_beforeTrackerMutation() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            int levelBeforeTurn = state.getChainStateTracker().getCurrentLevel();
+
+            given(promptBuilder.build(any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
+
+            AtomicInteger levelAtPersist = new AtomicInteger(-1);
+            given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+                    .willAnswer(inv -> {
+                        // persist 호출 시점에 tracker 가 아직 mutation 안 된 상태인지 캡처
+                        levelAtPersist.set(state.getChainStateTracker().getCurrentLevel());
+                        return 1L;
+                    });
+
+            handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
+
+            // persist 시점 = applyDecision 직전 (level=1) 이어야 한다.
+            // applyDecision 후 호출되었다면 levelAtPersist=2 가 되어 fail.
+            assertThat(levelAtPersist.get())
+                    .as("persist 는 tracker mutation 전에 호출되어야 한다 (Phase 3 lock 안 원자 묶음)")
+                    .isEqualTo(levelBeforeTurn);
+            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(2);
         }
     }
 

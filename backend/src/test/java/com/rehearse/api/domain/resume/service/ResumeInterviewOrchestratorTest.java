@@ -20,6 +20,7 @@ import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -207,7 +208,7 @@ class ResumeInterviewOrchestratorTest {
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                    .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 13L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
@@ -354,7 +355,7 @@ class ResumeInterviewOrchestratorTest {
                             createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
             given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationModeHandler.InterrogationTurnResult(
+                    .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder()
                                     .skip(true)
                                     .presentToUser(false)
@@ -367,6 +368,50 @@ class ResumeInterviewOrchestratorTest {
 
             assertThat(response.isFollowUpExhausted()).isTrue();
             then(turnEventPublisher).shouldHaveNoInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("컨텍스트 토큰 예산 초과 graceful 종료 (P1-2)")
+    class ContextBudgetExceeded {
+
+        @Test
+        @DisplayName("핸들러가 CONTEXT_BUDGET_EXCEEDED 를 던지면 200 응답 + type=CONTEXT_BUDGET_EXCEEDED 로 변환된다")
+        void processUserTurn_contextBudgetExceeded_returnsGracefulResponse() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willThrow(new BusinessException(AiErrorCode.CONTEXT_BUDGET_EXCEEDED));
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan);
+
+            assertThat(response.getType()).isEqualTo("CONTEXT_BUDGET_EXCEEDED");
+            assertThat(response.isFollowUpExhausted()).isTrue();
+            assertThat(response.isSkip()).isTrue();
+            assertThat(response.isPresentToUser()).isFalse();
+            then(turnEventPublisher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("CONTEXT_BUDGET_EXCEEDED 가 아닌 BusinessException 은 그대로 재throw 된다")
+        void processUserTurn_otherBusinessException_rethrows() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변",
+                            IntentResult.of(IntentType.ANSWER, 0.95, "answer"),
+                            createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willThrow(new BusinessException(AiErrorCode.RESPONSE_INVALID));
+
+            assertThatThrownBy(() -> orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
+                            .isEqualTo(AiErrorCode.RESPONSE_INVALID.getCode()));
         }
     }
 

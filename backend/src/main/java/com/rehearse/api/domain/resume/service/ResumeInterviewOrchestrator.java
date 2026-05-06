@@ -19,6 +19,7 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -48,6 +49,25 @@ public class ResumeInterviewOrchestrator {
     private final QuestionSetRepository questionSetRepository;
 
     public FollowUpResponse processUserTurn(
+            Long interviewId, int durationMinutes,
+            String questionContent, String answerText,
+            List<FollowUpExchange> previousExchanges,
+            ResumeSkeleton skeleton, InterviewPlan plan
+    ) {
+        try {
+            return processUserTurnInternal(
+                    interviewId, durationMinutes, questionContent, answerText,
+                    previousExchanges, skeleton, plan);
+        } catch (BusinessException e) {
+            if (e.getErrorCode() == AiErrorCode.CONTEXT_BUDGET_EXCEEDED) {
+                log.warn("[ResumeOrchestrator] 컨텍스트 토큰 예산 초과 → graceful 종료: interviewId={}", interviewId);
+                return contextBudgetExceededResponse();
+            }
+            throw e;
+        }
+    }
+
+    private FollowUpResponse processUserTurnInternal(
             Long interviewId, int durationMinutes,
             String questionContent, String answerText,
             List<FollowUpExchange> previousExchanges,
@@ -136,7 +156,7 @@ public class ResumeInterviewOrchestrator {
         return switch (mode) {
             case PLAYGROUND -> handlePlayground(interviewId, state, answerText, analysis, skeleton, plan, previousExchanges);
             case INTERROGATION -> {
-                InterrogationModeHandler.InterrogationTurnResult r =
+                InterrogationTurnResult r =
                         interrogationHandler.handle(interviewId, state, answerText, analysis, plan, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
@@ -160,7 +180,7 @@ public class ResumeInterviewOrchestrator {
         if (result.switchedToInterrogation()) {
             runtimeStateStore.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
             InterviewRuntimeState refreshed = runtimeStateStore.get(interviewId);
-            InterrogationModeHandler.InterrogationTurnResult interrogationResult =
+            InterrogationTurnResult interrogationResult =
                     interrogationHandler.handle(interviewId, refreshed, null, null, plan, previousExchanges);
             return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId());
         }
@@ -173,6 +193,15 @@ public class ResumeInterviewOrchestrator {
                 .skip(true)
                 .presentToUser(false)
                 .type("RESUME_HARD_TIMEOUT")
+                .build();
+    }
+
+    private FollowUpResponse contextBudgetExceededResponse() {
+        return FollowUpResponse.builder()
+                .followUpExhausted(true)
+                .skip(true)
+                .presentToUser(false)
+                .type("CONTEXT_BUDGET_EXCEEDED")
                 .build();
     }
 

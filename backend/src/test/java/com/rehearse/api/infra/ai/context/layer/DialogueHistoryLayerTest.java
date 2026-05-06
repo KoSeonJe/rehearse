@@ -10,6 +10,7 @@ import com.rehearse.api.infra.ai.context.compaction.DialogueCompactor;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -27,7 +28,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("DialogueHistoryLayer — L3 슬라이딩 윈도우 + compaction")
+@DisplayName("DialogueHistoryLayer — L3 슬라이딩 윈도우 + compaction + raw fallback")
 class DialogueHistoryLayerTest {
 
     @Mock
@@ -35,7 +36,6 @@ class DialogueHistoryLayerTest {
 
     private DialogueHistoryLayer layer;
 
-    // l3RecentWindow=5, l3CompactionThreshold=5 matches original RECENT_WINDOW=5 behaviour
     private static final ContextEngineeringProperties PROPS =
             new ContextEngineeringProperties(true, 5, 5, true, 8000);
 
@@ -99,15 +99,14 @@ class DialogueHistoryLayerTest {
     }
 
     @Test
-    @DisplayName("triggers_compaction_when_over_window_and_no_cached_summary")
-    void triggers_compaction_when_over_window_and_no_cached_summary() {
-        List<FollowUpExchange> exs = exchanges(7); // windowEnd = 7 - 5 = 2
-        InterviewRuntimeState state = freshState();
-        ContextBuildRequest req = requestWith(exs, state);
+    @DisplayName("does_not_enter_compaction_when_within_window")
+    void does_not_enter_compaction_when_within_window() {
+        List<FollowUpExchange> exs = exchanges(5); // recentWindow == 5, no older turns
+        ContextBuildRequest req = requestWith(exs, null);
 
         layer.build(req);
 
-        verify(dialogueCompactor).compactAsync(eq(42L), eq(2), any(), eq(state));
+        verify(dialogueCompactor, never()).compactAsync(any(), anyInt(), any(), any());
     }
 
     @Test
@@ -130,34 +129,6 @@ class DialogueHistoryLayerTest {
     }
 
     @Test
-    @DisplayName("omits_summary_when_compaction_in_flight_first_turn")
-    void omits_summary_when_compaction_in_flight_first_turn() {
-        List<FollowUpExchange> exs = exchanges(7); // windowEnd = 2
-        InterviewRuntimeState state = freshState();
-        state.markCompactionStarted(2); // already in-flight
-        ContextBuildRequest req = requestWith(exs, state);
-
-        List<ChatMessage> result = layer.build(req);
-
-        // No summary — just recent 5 turns
-        assertThat(result).hasSize(10);
-        assertThat(result.get(0).role()).isEqualTo(ChatMessage.Role.USER);
-        // Compactor must NOT be called again (already in-flight)
-        verify(dialogueCompactor, never()).compactAsync(any(), anyInt(), any(), any());
-    }
-
-    @Test
-    @DisplayName("outputs_non_cached_messages")
-    void outputs_non_cached_messages() {
-        List<FollowUpExchange> exs = exchanges(3);
-        ContextBuildRequest req = requestWith(exs, null);
-
-        List<ChatMessage> result = layer.build(req);
-
-        assertThat(result).allMatch(msg -> !msg.cacheControl());
-    }
-
-    @Test
     @DisplayName("recent_window_contains_last_5_turns_when_over_window")
     void recent_window_contains_last_5_turns_when_over_window() {
         List<FollowUpExchange> exs = exchanges(8); // windowEnd = 3, recent = turns 4..8
@@ -173,5 +144,69 @@ class DialogueHistoryLayerTest {
         assertThat(result.get(1).content()).isEqualTo("Question 4");
         // Last message is ASSISTANT of turn 8
         assertThat(result.get(10).content()).isEqualTo("Answer 8");
+    }
+
+    @Test
+    @DisplayName("outputs_non_cached_messages")
+    void outputs_non_cached_messages() {
+        List<FollowUpExchange> exs = exchanges(3);
+        ContextBuildRequest req = requestWith(exs, null);
+
+        List<ChatMessage> result = layer.build(req);
+
+        assertThat(result).allMatch(msg -> !msg.cacheControl());
+    }
+
+    @Nested
+    @DisplayName("L3 raw fallback (P1-1)")
+    class RawFallback {
+
+        @Test
+        @DisplayName("runtimeState 가 null 이고 window 를 초과하면 olderTurns 를 raw 로 포함하고 compactor 는 호출하지 않는다")
+        void includes_raw_older_turns_when_runtime_state_null() {
+            List<FollowUpExchange> exs = exchanges(7); // windowEnd = 2 (older = turns 1..2, recent = 3..7)
+            ContextBuildRequest req = requestWith(exs, null);
+
+            List<ChatMessage> result = layer.build(req);
+
+            // older 2 turns × 2 + recent 5 turns × 2 = 14
+            assertThat(result).hasSize(14);
+            assertThat(result.get(0).role()).isEqualTo(ChatMessage.Role.USER);
+            assertThat(result.get(0).content()).isEqualTo("Question 1");
+            assertThat(result.get(3).content()).isEqualTo("Answer 2");
+            assertThat(result.get(4).content()).isEqualTo("Question 3");
+            verify(dialogueCompactor, never()).compactAsync(any(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("요약 부재 + 압축 in-flight 이면 olderTurns 를 raw 로 포함하고 compactor 는 다시 호출하지 않는다")
+        void includes_raw_older_turns_when_compaction_in_flight() {
+            List<FollowUpExchange> exs = exchanges(7); // windowEnd = 2
+            InterviewRuntimeState state = freshState();
+            state.markCompactionStarted(2);
+            ContextBuildRequest req = requestWith(exs, state);
+
+            List<ChatMessage> result = layer.build(req);
+
+            // older 2 turns + recent 5 turns alternating = 14
+            assertThat(result).hasSize(14);
+            assertThat(result.get(0).content()).isEqualTo("Question 1");
+            assertThat(result.get(4).content()).isEqualTo("Question 3");
+            verify(dialogueCompactor, never()).compactAsync(any(), anyInt(), any(), any());
+        }
+
+        @Test
+        @DisplayName("요약 부재 + 압축 미시작 이면 olderTurns raw 포함과 동시에 compactor 를 호출한다")
+        void includes_raw_and_triggers_compaction_when_summary_absent() {
+            List<FollowUpExchange> exs = exchanges(7); // windowEnd = 2
+            InterviewRuntimeState state = freshState();
+            ContextBuildRequest req = requestWith(exs, state);
+
+            List<ChatMessage> result = layer.build(req);
+
+            assertThat(result).hasSize(14);
+            assertThat(result.get(0).content()).isEqualTo("Question 1");
+            verify(dialogueCompactor).compactAsync(eq(42L), eq(2), any(), eq(state));
+        }
     }
 }
