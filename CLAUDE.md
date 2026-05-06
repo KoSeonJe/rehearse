@@ -13,6 +13,8 @@
 - Key agents:
   - **Code review (BE)**: `code-reviewer-backend` (Opus) — 룰 위배 + 성능 / 확장성 / 클린코드 / 쿼리 효율성. 자기 코드 셀프 승인 금지
   - **Code review (FE)**: `code-reviewer-frontend` (Opus) — 룰 위배 + 결함·사이드이펙트 / 성능 / 확장성 / 클린코드 / 데이터 페칭 효율성. 자기 코드 셀프 승인 금지
+  - **Spec review (Product)**: `spec-reviewer-product` (Opus) — product-spec.md 리뷰. Goal 측정성 / AC 검증성 / Non-Goals / 비스코프 / HOW 침범 / Issue 정합성. **`/create-product-spec` 직후 Phase E 강제 호출**
+  - **Spec review (Tech)**: `spec-reviewer-tech` (Opus) — tech-spec.md 리뷰. Architecture 구체성 / NF 11개 / Trade-off / Data Model / API contract / Verification / 컨벤션 매핑 / 분기 결정. **`/create-tech-spec` 직후 Phase E 강제 호출**
   - **FE 구현**: `frontend` (Opus) — 구현 설계 (tech-spec.md) + 컴포넌트 / 훅 / store / API / 테스트
   - **BE 구현**: `backend` — API, 비즈니스 로직, DB 스키마, 구현 설계 (tech-spec.md)
   - **Git/PR (Sonnet)**: `git-manager` — 브랜치 푸시, `/create-pr`, PR 머지, develop 동기화, 태그

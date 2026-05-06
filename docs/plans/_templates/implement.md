@@ -9,17 +9,19 @@
 
 ## Phase / Step 개요
 
-| Phase | 제목 | 예상 PR | 의존 |
-|-------|------|--------|------|
-| 1 | 기반 셋업 | #N | - |
-| 2 | 핵심 로직 | #N+1 | Phase 1 |
-| 3 | 통합 / 테스트 | #N+2 | Phase 2 |
+| Phase | 제목 | 구현 에이전트 | 예상 PR | 의존 |
+|-------|------|--------------|--------|------|
+| 1 | 기반 셋업 | `backend` / `frontend` | #N | - |
+| 2 | 핵심 로직 | (위와 동일 패턴) | #N+1 | Phase 1 |
+| 3 | 통합 / 테스트 | (위와 동일 패턴) | #N+2 | Phase 2 |
 
 > Task 8개+ 또는 단일 Phase 50줄+ → `tasks/{NN}-{slug}.md` 분리. 본 파일은 목록 + 링크.
 
 ---
 
 ## Phase 1: {제목}
+
+- **구현**: `{agent}` — {영역 책임 1줄}
 
 ### 변경 파일
 - `path/to/File.java` — 무엇을 / 왜
@@ -63,8 +65,14 @@ feat(BE): xxx 기능의 yyy 추가
 - [ ] tech-spec.md Verification 항목 모두 통과
 - [ ] 추가 회귀 체크: (있을 시)
 
-## 리뷰 게이트
+## 리뷰 게이트 (MANDATORY)
 
-- [ ] 지정 리뷰어 병렬 실행 (`code-reviewer-backend` / `code-reviewer-frontend`)
-- [ ] 컨벤션 위반 0건
+구현 완료 직후 지정 리뷰어 실행 강제. 스킵 = 위반.
+
+- [ ] 지정 리뷰어 실행 (구현 완료 직후 — 메인 세션 책임)
+  - BE only → `code-reviewer-backend`
+  - FE only → `code-reviewer-frontend`
+  - BE+FE → 둘 다 **병렬** 호출 (단일 메시지 multiple tool_use)
+- [ ] 컨벤션 위반 0건 (영역별 `.claude/rules/conventions.md` + `testing.md`)
+- [ ] Critical / Major 지적 = fix 반영 후 재리뷰
 - [ ] Pre/Post State diff 일치
