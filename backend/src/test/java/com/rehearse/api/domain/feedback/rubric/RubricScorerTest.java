@@ -189,8 +189,7 @@ class RubricScorerTest {
                 ),
                 Map.of(
                         "on_playground_mode", List.of("experience_concreteness"),
-                        "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth"),
-                        "on_wrap_up_mode", List.of("chain_depth")
+                        "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth")
                 ),
                 Map.of()
         );

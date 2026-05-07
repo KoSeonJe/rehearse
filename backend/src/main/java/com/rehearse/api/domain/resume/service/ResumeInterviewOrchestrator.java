@@ -183,6 +183,7 @@ public class ResumeInterviewOrchestrator {
                 .build();
     }
 
+    // type 미설정 의도 — tech-spec 424 Option C (응답 schema 구분 회피) 채택.
     private FollowUpResponse terminateResponse() {
         return FollowUpResponse.builder()
                 .followUpExhausted(true)
