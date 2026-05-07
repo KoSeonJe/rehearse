@@ -448,15 +448,21 @@ export const useInterviewSession = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recorder, setVideoBlob, setUploadStatus, completeInterview, updateStatus, interview?.publicId, interviewId, mediaStream, navigate, tts, recordEvent, getEvents, addInterviewEvent, skipRemaining, s3UploadForFinish, registerUploadPromise])
 
-  // 시간 만료 → recorder/audioCapture 정지 + finishing phase 전환
+  // 시간 만료 처리.
+  // - 답변 중(recording) → 끊지 않고 isTimeOverdue 플래그만 set.
+  //   다음 [답변 완료] 제출 시점에 follow-up payload 의 terminate=true 동봉으로 BE 종료 신호.
+  // - 그 외(ready/paused/greeting) → 기존 동작: 즉시 finishing phase 전환.
   const handleTimeExpired = useCallback(() => {
     const state = useInterviewStore.getState()
     if (state.phase === 'finishing' || state.phase === 'completed') return
+
+    state.setTimeOverdue(true)
+
+    if (state.phase === 'recording') return
+
     pendingTtsActionRef.current = null
     tts.stop()
-    // in-flight 후속질문 mutation 이 있다면 abort (응답 뒤늦게 와도 상태 오염 방지)
     cancelFollowUp()
-    // Always Recording: recorder는 finishing → stop()에서 정리됨
     audioCapture.stop()
     useInterviewStore.getState().setPhase('finishing')
   }, [tts, audioCapture, cancelFollowUp])
