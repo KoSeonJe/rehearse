@@ -356,10 +356,8 @@ export const useAnswerFlow = ({
           completeFollowUpRound(res.data.answerText || answerText)
         }
 
-        // skip 분기 — presentToUser 로 두 케이스 구분:
-        //   1) AI 자체 skip (답변 불충분): skip=true, presentToUser 없음/false → 다음 메인 질문
-        //   2) 의도 분기 응답 (OFF_TOPIC/CLARIFY/GIVE_UP): skip=true, presentToUser=true → 화면 표시 + TTS, 라운드 미증가
-        if (res.data.skip && res.data.presentToUser !== true) {
+        // AI 자체 skip(답변 불충분): 다음 메인 질문 자연스러운 멘트로 전환.
+        if (res.data.skip) {
           resetFollowUpState()
           transitionToNext(isLastQuestion, /* useSkipPhrase */ true)
           return
@@ -368,8 +366,7 @@ export const useAnswerFlow = ({
         setCurrentFollowUp(res.data)
         setFollowUpExhausted(res.data.followUpExhausted ?? false)
 
-        // 의도 분기는 DB 저장 안 됐으므로 questionId 없음 — addQuestionToSet 스킵
-        if (currentSet && !res.data.skip && res.data.questionId) {
+        if (currentSet && res.data.questionId) {
           addQuestionToSet(updatedState.currentQuestionSetIndex, {
             id: res.data.questionId,
             questionType: 'FOLLOWUP',
