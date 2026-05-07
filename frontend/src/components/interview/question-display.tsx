@@ -16,9 +16,6 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
   CLARIFICATION: '명확화',
   CHALLENGE: '반론',
   APPLICATION: '적용',
-  CLARIFY_FALLBACK: '재설명',
-  SCAFFOLD: '힌트',
-  REVEAL_AND_MOVE_ON: '정답 공개',
 }
 
 const FOLLOW_UP_TYPE_LABEL_FALLBACK = '안내'

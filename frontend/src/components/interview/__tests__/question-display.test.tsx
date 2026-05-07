@@ -18,7 +18,6 @@ const BASE_FOLLOW_UP: FollowUpResponse = {
   reason: '경험 기반 심화',
   type: 'DEEP_DIVE',
   skip: false,
-  presentToUser: false,
   followUpExhausted: false,
 }
 

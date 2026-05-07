@@ -259,9 +259,6 @@ export type FollowUpType =
   | 'CLARIFICATION'
   | 'CHALLENGE'
   | 'APPLICATION'
-  | 'CLARIFY_FALLBACK'
-  | 'SCAFFOLD'
-  | 'REVEAL_AND_MOVE_ON'
 
 export interface FollowUpExchange {
   question: string
@@ -287,7 +284,6 @@ export interface FollowUpResponse {
   modelAnswer?: string | null
   skip: boolean
   skipReason?: string | null
-  presentToUser?: boolean
   followUpExhausted?: boolean
 }
 
