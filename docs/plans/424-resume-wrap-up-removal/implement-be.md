@@ -18,9 +18,8 @@
 ### 선행 의존 (Blocking)
 
 - [ ] **plan 423 (intent classifier removal) 머지 완료** — `ResumeInterviewOrchestrator.processUserTurn` 본문 conflict 영역 baseline 변동. 423 머지 → 424 rebase 후 본 implement 진입.
-- [ ] **운영 SQL 사전 합의** — Phase 1 운영 SQL 은 별도 ops 채널 PR. dev / prod 적용 시점 백엔드 담당자 + ops 검수자 페어링 합의 (tech-spec 운영 SQL 헤더 7요소 충족).
 
-미합의 → 즉시 STOP. tech-spec 갱신 + 사용자 승인 재요청.
+미완 → 즉시 STOP. tech-spec 갱신 + 사용자 승인 재요청.
 
 ---
 
@@ -28,43 +27,18 @@
 
 | Phase | 제목 | 구현 | 예상 PR | 의존 |
 |-------|------|------|--------|------|
-| 1 | 운영 SQL (별도 ops PR — 본 BE PR 비스코프) | `backend` (검수만) | ops 채널 | Phase 0 (ops 합의) |
+| 1 | (스킵 — 운영 SQL / V46 모두 불필요) | — | — | — |
 | 2 | enum + 회고 산출물 9종 제거 + 설정 키 정리 | `backend` | #N (동일 PR) | Phase 0 |
 | 3 | FollowUpRequest.terminate + Orchestrator / Policy 재작성 | `backend` | #N (동일 PR) | Phase 2 |
 | 4 | 통합 테스트 + 정적 grep + docs 정리 | `backend` | #N (동일 PR) | Phase 3 |
 
-> 단일 PR `[BE] refactor: Resume 트랙 WRAP_UP 모드 제거` — Phase 2/3/4 를 작업 단위로 커밋 분할 후 1 PR 묶음. Phase 1 은 별도 ops PR. Flyway 신규 마이그레이션 0건 (Amendment — V42 가 이미 chk_question_track_meta_v2 + chain_*/project_id DROP).
+> 단일 PR `[BE] refactor: Resume 트랙 WRAP_UP 모드 제거` — Phase 2/3/4 를 작업 단위로 커밋 분할 후 1 PR 묶음. Flyway 신규 마이그레이션 0건 (Amendment — V42 가 이미 chk_question_track_meta_v2 + chain_*/project_id DROP). 운영 SQL cleanup 불필요 — RESUME_WRAP_UP row dev 환경에만 존재 / prod 부재.
 
 ---
 
-## Phase 1: 운영 SQL (별도 ops PR — 본 BE PR 비스코프)
+## Phase 1: (스킵 — 운영 SQL / V46 모두 불필요)
 
-> **Amendment**: V42 가 이미 `chk_question_track_meta_v2` constraint + `chain_id` / `chain_step_type` / `project_id` 컬럼 일괄 DROP. 신규 Flyway V46 / 롤백용 V47 모두 폐기. 운영 SQL 은 단순 데이터 위생 작업으로 격하 — 본 BE PR 비스코프.
-
-- **구현**: `backend` 검수자 + `ops` 채널 — 운영 DB 잔존 row cleanup
-
-### 변경 파일
-
-- `ops/424-resume-wrap-up-cleanup.sql` — **별도 ops PR**. tech-spec `운영 SQL` 블록 그대로 (헤더 7요소 + 트랜잭션 본문). dev → prod 순 1회 실행. 본 BE PR 머지 후 임의 시점 적용 가능 (constraint prerequisite 아님).
-
-### 핵심 로직
-
-1. ops 검수자 페어링 + RDS 스냅샷 트리거 → dev / prod 운영 SQL 실행 → `SELECT COUNT(*) WHERE question_type='RESUME_WRAP_UP'` = 0 검증.
-2. Flyway 신규 마이그레이션 0건. V46 / V47 폐기.
-
-### 의존
-
-- 선행: Phase 0 (ops 합의)
-- 외부: 운영 RDS dev / prod (ops 채널)
-
-### Verification
-
-- [ ] (ops PR 적용 후) dev / prod `SELECT COUNT(*) FROM question WHERE question_type='RESUME_WRAP_UP'` = 0
-- [ ] BE PR 자체는 Flyway 변경 없음 → `./gradlew :backend:flywayValidate` 회귀 검증만 통과 확인
-
-### 커밋 메시지
-
-본 Phase 는 BE PR 외 ops PR 로 처리 → 본 BE PR 의 커밋 0건.
+RESUME_WRAP_UP row 가 dev 환경에만 존재 / prod 부재 확인. 운영 cleanup 불필요. V46 / V47 폐기 (Amendment 동일 사유).
 
 ---
 
