@@ -24,4 +24,8 @@ public class ResumeModeTransitionPolicy {
     public boolean isPlaygroundHardCapReached(int turnCount) {
         return turnCount >= playgroundMaxTurns;
     }
+
+    public int getPlaygroundMaxTurns() {
+        return playgroundMaxTurns;
+    }
 }

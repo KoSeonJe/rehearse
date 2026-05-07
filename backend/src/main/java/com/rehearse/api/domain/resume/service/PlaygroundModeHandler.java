@@ -60,10 +60,10 @@ public class PlaygroundModeHandler {
             ResumeSkeleton skeleton, InterviewPlan plan,
             List<FollowUpExchange> previousExchanges
     ) {
-        int currentTurnCount = state.getPlaygroundTurns().get();
-        if (modeTransitionPolicy.isPlaygroundHardCapReached(currentTurnCount)) {
-            log.info("[PlaygroundHandler] hard cap 도달 → INTERROGATION 강제 전환: interviewId={}, turnCount={}",
-                    interviewId, currentTurnCount);
+        int turnCount = state.getPlaygroundTurns().get();
+        if (modeTransitionPolicy.isPlaygroundHardCapReached(turnCount)) {
+            log.info("[PlaygroundHandler] hard cap 도달 → INTERROGATION 강제 전환: interviewId={}, turnCount={}, threshold={}",
+                    interviewId, turnCount, modeTransitionPolicy.getPlaygroundMaxTurns());
             FollowUpResponse response = buildResponse(null, null, null, true, null);
             return new PlaygroundTurnResult(response, true, null);
         }
@@ -73,7 +73,6 @@ public class PlaygroundModeHandler {
         List<String> expectedClaims = phase.expectedClaimsCoverage();
         Project project = findProject(skeleton, currentPlan.projectId());
 
-        int turnCount = state.getPlaygroundTurns().get();
         int cumulativeLength = accumulateLength(state, userAnswer);
 
         PlaygroundResponderResult result = resultGenerator.generatePlaygroundResponder(
