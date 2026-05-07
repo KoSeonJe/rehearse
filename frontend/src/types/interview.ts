@@ -52,7 +52,7 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'MAIN' | 'FOLLOWUP' | 'RESUME_OPENER' | 'RESUME_PLAYGROUND' | 'RESUME_INTERROGATION' | 'RESUME_WRAP_UP'
+export type QuestionType = 'MAIN' | 'FOLLOWUP' | 'RESUME_OPENER' | 'RESUME_PLAYGROUND' | 'RESUME_INTERROGATION'
 
 export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
@@ -269,6 +269,8 @@ export interface FollowUpRequest {
   questionContent: string
   answerText?: string
   previousExchanges?: Array<{ question: string; answer: string; followUpType?: FollowUpType }>
+  // 사용자 시간 만료 후 답변 완료 시점에 면접 종료 의사 신호 — BE 가 followUpExhausted=true 응답
+  terminate?: boolean
 }
 
 export interface FollowUpResponse {
