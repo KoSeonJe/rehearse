@@ -55,7 +55,7 @@ public class RubricScoringEventListener {
             }
 
             String feedbackPerspective = question.getQuestionType()
-                    .feedbackPerspectiveOrFallback(questionSet.getCategory())
+                    .feedbackPerspective()
                     .name();
 
             questionScorePersister.saveRubric(

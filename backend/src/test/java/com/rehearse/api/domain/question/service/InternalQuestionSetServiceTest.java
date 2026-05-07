@@ -345,7 +345,7 @@ class InternalQuestionSetServiceTest {
 
     private Question createQuestion(Long id) {
         Question question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("Java의 GC 동작 원리를 설명하세요.")
                 .orderIndex(1)
                 .build();

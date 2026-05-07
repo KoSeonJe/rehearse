@@ -62,27 +62,6 @@ class AnswerResponseTest {
             assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
         }
 
-        @Test
-        @DisplayName("MAIN sentinel + BEHAVIORAL 카테고리 → BEHAVIORAL 폴백")
-        void mainSentinel_behavioralCategory_fallsBackBehavioral() {
-            Question question = buildQuestion(QuestionType.MAIN);
-            QuestionAnswer answer = buildAnswer(question);
-
-            AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.BEHAVIORAL);
-
-            assertThat(response.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
-        }
-
-        @Test
-        @DisplayName("MAIN sentinel + CS 카테고리 → TECHNICAL 폴백")
-        void mainSentinel_csCategory_fallsBackTechnical() {
-            Question question = buildQuestion(QuestionType.MAIN);
-            QuestionAnswer answer = buildAnswer(question);
-
-            AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.CS_FUNDAMENTAL);
-
-            assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
-        }
     }
 
     private Question buildQuestion(QuestionType type) {

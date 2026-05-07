@@ -9,9 +9,7 @@ public enum QuestionType {
     BEHAVIORAL_FOLLOWUP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
     RESUME_OPENER(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
     RESUME_PLAYGROUND(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
-    RESUME_INTERROGATION(ReferenceType.GUIDE, FeedbackPerspective.TECHNICAL),
-    MAIN(null, null),
-    FOLLOWUP(null, null);
+    RESUME_INTERROGATION(ReferenceType.GUIDE, FeedbackPerspective.TECHNICAL);
 
     private final ReferenceType referenceType;
     private final FeedbackPerspective feedbackPerspective;
@@ -30,33 +28,15 @@ public enum QuestionType {
     }
 
     public boolean isFollowUp() {
-        return this == TECH_FOLLOWUP || this == BEHAVIORAL_FOLLOWUP || this == FOLLOWUP;
+        return this == TECH_FOLLOWUP || this == BEHAVIORAL_FOLLOWUP;
     }
 
     public boolean isMain() {
-        return this == TECH_MAIN || this == BEHAVIORAL_MAIN || this == MAIN;
+        return this == TECH_MAIN || this == BEHAVIORAL_MAIN;
     }
 
     public boolean isResume() {
         return this == RESUME_OPENER || this == RESUME_PLAYGROUND
                 || this == RESUME_INTERROGATION;
-    }
-
-    public ReferenceType referenceTypeOrFallback(QuestionSetCategory category) {
-        if (referenceType != null) {
-            return referenceType;
-        }
-        return category == QuestionSetCategory.BEHAVIORAL
-                ? ReferenceType.GUIDE
-                : ReferenceType.MODEL_ANSWER;
-    }
-
-    public FeedbackPerspective feedbackPerspectiveOrFallback(QuestionSetCategory category) {
-        if (feedbackPerspective != null) {
-            return feedbackPerspective;
-        }
-        return category == QuestionSetCategory.BEHAVIORAL
-                ? FeedbackPerspective.BEHAVIORAL
-                : FeedbackPerspective.TECHNICAL;
     }
 }

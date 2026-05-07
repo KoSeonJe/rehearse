@@ -155,7 +155,7 @@ class TimestampFeedbackBatchTest {
 
     private Question createQuestion(Long id) {
         Question question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("질문 텍스트")
                 .orderIndex(1)
                 .build();

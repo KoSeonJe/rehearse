@@ -72,7 +72,7 @@ public class Question {
                                    int orderIndex) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(type);
-        if (type == QuestionType.MAIN || type == QuestionType.FOLLOWUP) {
+        if (!type.isResume()) {
             throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
         }
         Question q = new Question();

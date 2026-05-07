@@ -69,7 +69,7 @@ class QuestionSetTest {
             Interview interview = TestFixtures.createInterview();
             QuestionSet questionSet = TestFixtures.createQuestionSet(interview);
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("Spring IoC 컨테이너에 대해 설명하세요.")
                     .orderIndex(0)
                     .build();
@@ -89,7 +89,7 @@ class QuestionSetTest {
             Interview interview = TestFixtures.createInterview();
             QuestionSet questionSet = TestFixtures.createQuestionSet(interview);
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("DI에 대해 설명하세요.")
                     .orderIndex(0)
                     .build();
@@ -108,12 +108,12 @@ class QuestionSetTest {
             Interview interview = TestFixtures.createInterview();
             QuestionSet questionSet = TestFixtures.createQuestionSet(interview);
             Question question1 = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("질문 1")
                     .orderIndex(0)
                     .build();
             Question question2 = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP)
+                    .questionType(QuestionType.TECH_FOLLOWUP)
                     .questionText("질문 2")
                     .orderIndex(1)
                     .build();

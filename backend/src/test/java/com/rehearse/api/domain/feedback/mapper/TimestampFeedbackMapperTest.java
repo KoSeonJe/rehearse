@@ -29,7 +29,7 @@ class TimestampFeedbackMapperTest {
         void toEntity_validItem_createsEntity() {
             // given
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("질문입니다")
                     .orderIndex(0)
                     .build();

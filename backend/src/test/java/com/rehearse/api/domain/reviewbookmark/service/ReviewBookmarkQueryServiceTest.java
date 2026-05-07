@@ -187,7 +187,7 @@ class ReviewBookmarkQueryServiceTest {
         ReflectionTestUtils.setField(qsf, "id", 1L);
 
         Question question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("자기소개를 해주세요.")
                 .modelAnswer("모범 답변입니다.")
                 .orderIndex(0)
