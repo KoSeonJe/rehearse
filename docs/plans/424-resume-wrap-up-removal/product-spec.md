@@ -24,7 +24,7 @@
 - 종료 시점 판단을 FE 로 이관: FE 가 잔여 시간 모니터링 → 사용자 답변 처리 시점에 종료 의사 BE 에 전달 → BE 는 추가 질문 없이 종료 응답 반환.
 - BE side backstop = 기존 hard timeout (duration + hard-timeout-min 초과 시 강제 종료) 유지.
 - 회고 단계 관련 코드 산물 / 컨텍스트 빌더 / DB 제약 / 환경설정 항목 전면 제거.
-- 기존 DB 의 RESUME_WRAP_UP question row = 운영 SQL 로 cleanup → enum / CHECK constraint 정리.
+- 기존 DB 의 RESUME_WRAP_UP question row = prod 부재 (dev 한정) 확인 — 운영 cleanup 불필요. application enum 차단으로 충분.
 
 ### 대안 비교
 
@@ -63,7 +63,7 @@
 - [ ] FE 가 종료 의사를 BE 에 전달한 턴에서 BE 응답에 후속 질문 페이로드가 포함되지 않음 (응답 schema 관찰).
 - [ ] FE 종료 신호 부재 + duration + hard-timeout-min 초과 상황에서 BE 가 hard timeout 종료 응답 반환 (backstop 검증).
 - [ ] BE/FE 종료 신호 contract (요청 / 응답 페이로드 변경 사항) 가 tech-spec 에 명시됨 — BE/FE 동시 진행 게이트 충족.
-- [ ] dev / prod DB 에서 question 테이블 type=RESUME_WRAP_UP row 카운트 0 확인 후 enum / CHECK constraint 정리 마이그레이션 적용 — 적용 전후 row 카운트 0 검증.
+- [ ] RESUME_WRAP_UP row prod 부재 확인 완료 — 운영 cleanup 불필요. application enum 차단으로 신규 INSERT 방지.
 - [ ] 기존 DB 의 RESUME_WRAP_UP 데이터가 신규 인터뷰 처리 / 조회 / 리포트에서 관찰되지 않음.
 - [ ] Resume 트랙 시작 → 다중 턴 → 종료 통합 시나리오 회귀 없이 통과.
 - [ ] FSM 다이어그램 / 도메인 문서에 WRAP_UP 잔존 0.

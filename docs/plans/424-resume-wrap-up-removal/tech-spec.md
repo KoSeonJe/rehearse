@@ -11,7 +11,7 @@
 본 spec 초기 버전은 V46 (chk_question_track_meta_v2 재정의 — RESUME_WRAP_UP 제외) + V47 (롤백용 — RESUME_WRAP_UP 허용 복원) 두 Flyway 마이그레이션을 동반하기로 설계됨. 그러나 **V42 (`drop_question_resume_meta`) 가 이미 `chk_question_track_meta_v2` constraint + `chain_id` / `chain_step_type` / `project_id` 컬럼 일괄 DROP** 한 사실 확인. 즉 RESUME_WRAP_UP 차단을 위한 row-pattern CHECK 자체가 런타임에 부재. 따라서:
 
 - **V46 / V47 폐기** — 신규 Flyway 마이그레이션 0건. application enum 차단만으로 충분.
-- **운영 SQL cleanup** — V46 prerequisite 가 아닌 단순 데이터 위생 작업으로 격하 (별도 ops PR / 본 PR 비스코프).
+- **운영 SQL cleanup** — 불필요 (RESUME_WRAP_UP row 가 dev 환경에만 존재 / prod 부재 확인).
 - **롤백** — V47 (constraint 복원) 경로 무효. 코드 revert 만으로 충분 (revert 시 V35/V41/V42 SQL 파일은 immutable past-V 룰에 따라 그대로 보존).
 - **Repository 테스트 (V46 prerequisite 검증)** — 폐기. constraint 부재 → CHECK 검증 불가.
 
@@ -134,7 +134,7 @@ processUserTurn 분기 (변경 후):
 | FE follow-up 호출 hook | 잔여 시간 산출 (인터뷰 시작 시각 = `interview-store` 또는 마운트 시 서버 응답) → 잔여 ≤ 0 + 답변 완료 시점에 request payload 에 `terminate: true` 포함 |
 | FE 종료 처리 | 기존 `followUpExhausted=true` 분기 그대로 활용 |
 | docs | `docs/domain/resume/glossary.md` / `schema.md` / `api/process-user-turn.md` / `docs/domain/question/glossary.md` / `schema.md` / `api/generate-questions.md` / `docs/domain/interview/api/follow-up.md` / `docs/domain/interview/runtime-state-and-context-layers.md` / `docs/domain/feedback/rubric-score-reflection.md` / `docs/domain/feedback/api/score-turn.md` 의 RESUME_WRAP_UP / WRAP_UP / wrap-up-threshold-min 항목 제거 |
-| 운영 SQL (별도 ops PR — 본 PR 비스코프) | dev / prod `question` 테이블 `question_type='RESUME_WRAP_UP'` row 카운트 → 자식 FK 정리 → row 삭제. constraint prerequisite 가 아닌 단순 데이터 위생 |
+
 
 ## Data Model
 
@@ -143,42 +143,6 @@ processUserTurn 분기 (변경 후):
 V42 가 이미 `chk_question_track_meta_v2` constraint + `chain_id` / `chain_step_type` / `project_id` 컬럼 일괄 DROP. RESUME_WRAP_UP row-pattern 차단 대상 부재 → 신규 V 파일 불필요.
 
 과거 V 파일 (V35 / V41 / V44) 은 immutable 원칙에 따라 RESUME_WRAP_UP 문자열 잔존 (DDL 히스토리). 신규 마이그레이션 / 롤백 마이그레이션 0건.
-
-### 운영 SQL (별도 ops PR — 본 PR 비스코프)
-
-```sql
--- ============================================================
--- 파일: ops/424-resume-wrap-up-cleanup.sql (별도 PR / ops 채널 관리)
--- 실행 시점: 본 BE PR 머지 후 임의 시점 (constraint prerequisite 아님 — 데이터 위생).
--- 실행 환경: dev → prod 순서. 각 환경 1회.
--- 실행자: 백엔드 담당자 + ops 검수자 2인 페어 (PR 리뷰 + 실행 로그 캡처).
--- 사전 검증: 하기 1) SELECT 결과 = (예상 row 수) 보고 + 0 이면 skip 결정.
--- 사후 검증: 하기 3) SELECT = 0 확인.
--- 트랜잭션: START TRANSACTION ~ COMMIT 한 단위. 실패 시 ROLLBACK.
--- 백업: 운영 DB 표준 백업 정책 준수 (실행 전 RDS 스냅샷 1회 트리거).
--- 롤백: 본 SQL 비가역 (DELETE). RDS 스냅샷 복원 외 자동 롤백 없음.
--- ============================================================
--- 자식 FK ON DELETE CASCADE 아님 → 자식 우선 삭제.
-
--- 1) 카운트 확인
-SELECT COUNT(*) FROM question WHERE question_type = 'RESUME_WRAP_UP';
-
--- 2) 자식 정리 → 본 row 삭제 (트랜잭션)
-START TRANSACTION;
-CREATE TEMPORARY TABLE _wrap_up_q AS
-  SELECT id FROM question WHERE question_type = 'RESUME_WRAP_UP';
-
-DELETE FROM timestamp_feedback WHERE question_id IN (SELECT id FROM _wrap_up_q);
-DELETE FROM question_score     WHERE question_id IN (SELECT id FROM _wrap_up_q);
-DELETE FROM question_answer    WHERE question_id IN (SELECT id FROM _wrap_up_q);
-DELETE FROM question           WHERE id          IN (SELECT id FROM _wrap_up_q);
-
-DROP TEMPORARY TABLE _wrap_up_q;
-COMMIT;
-
--- 3) 카운트 0 검증
-SELECT COUNT(*) FROM question WHERE question_type = 'RESUME_WRAP_UP';
-```
 
 ### Entity
 
@@ -348,8 +312,7 @@ V42 가 chk_question_track_meta_v2 constraint DROP 한 상태 → CHECK 검증 �
 
 1. **BE 머지 + 배포**: 코드 산출 제거 / `FollowUpRequest.terminate` 추가. Flyway 신규 0건 → DB 무관. FE 미배포 상태에서도 BE backstop 정상 동작.
 2. **FE 머지 + 배포**: terminate 신호 전송 / QuestionType 유니언 정리.
-3. **운영 SQL cleanup (별도 ops PR — 본 PR 비스코프)**: dev / prod RESUME_WRAP_UP row 자식 + 본체 삭제 → 카운트 0. 데이터 위생 작업.
-4. 양방향 호환: BE only (FE 미배포) → terminate 미수신 + backstop 정상. FE only (BE 미배포) → request 의 terminate 필드 BE 무시 (Jackson default) → 기존 동작.
+3. 양방향 호환: BE only (FE 미배포) → terminate 미수신 + backstop 정상. FE only (BE 미배포) → request 의 terminate 필드 BE 무시 (Jackson default) → 기존 동작.
 
 ### 롤백 시나리오
 
