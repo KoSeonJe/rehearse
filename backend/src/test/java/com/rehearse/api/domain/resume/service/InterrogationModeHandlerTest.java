@@ -194,6 +194,28 @@ class InterrogationModeHandlerTest {
     }
 
     @Nested
+    @DisplayName("응답 DTO questionId 주입 (Issue #433 회귀 가드)")
+    class ResponseQuestionIdInjection {
+
+        @Test
+        @DisplayName("handle 응답 DTO 가 persister 반환 questionId 를 보유한다")
+        void handle_responseCarriesPersistedQuestionId() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
+            given(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
+                    .willReturn(999L);
+
+            InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, List.of());
+
+            assertThat(result.questionId()).isEqualTo(999L);
+            assertThat(result.response().getQuestionId())
+                    .as("응답 DTO 가 자기 질문 ID 를 보유해야 FE 매핑 정상")
+                    .isEqualTo(999L);
+        }
+    }
+
+    @Nested
     @DisplayName("Lock 경계 (P1-3)")
     class LockBoundary {
 

@@ -203,6 +203,45 @@ class PlaygroundModeHandlerTest {
     }
 
     @Nested
+    @DisplayName("응답 DTO questionId 주입 (Issue #433 회귀 가드)")
+    class ResponseQuestionIdInjection {
+
+        @Test
+        @DisplayName("handleOpener 응답 DTO 가 persister 반환 questionId 를 보유한다")
+        void handleOpener_responseCarriesPersistedQuestionId() {
+            given(resultGenerator.generateOpener(any(), any(), any(), any()))
+                    .willReturn(new PlaygroundOpenerResult("Redis 프로젝트 소개해주세요", "Redis 프로젝트 소개해주세요", "오프너", "model"));
+            given(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
+                    .willReturn(777L);
+
+            PlaygroundModeHandler.OpenerResult result = handler.handleOpener(1L, state, skeleton, plan);
+
+            assertThat(result.questionId()).isEqualTo(777L);
+            assertThat(result.response().getQuestionId())
+                    .as("응답 DTO 가 자기 질문 ID 를 보유해야 FE 매핑 정상")
+                    .isEqualTo(777L);
+        }
+
+        @Test
+        @DisplayName("handle (responder) 응답 DTO 가 persister 반환 questionId 를 보유한다")
+        void handle_responderResponseCarriesPersistedQuestionId() {
+            SwitchConditions cond = new SwitchConditions(false, false, false, false);
+            given(resultGenerator.generatePlaygroundResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                    .willReturn(new PlaygroundResponderResult("후속 질문", "후속 질문", "이유", false, cond, "model"));
+            given(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
+                    .willReturn(888L);
+
+            PlaygroundModeHandler.PlaygroundTurnResult result =
+                    handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
+
+            assertThat(result.questionId()).isEqualTo(888L);
+            assertThat(result.response().getQuestionId())
+                    .as("응답 DTO questionId 와 result.questionId 정합")
+                    .isEqualTo(888L);
+        }
+    }
+
+    @Nested
     @DisplayName("Responder 빈 question 처리")
     class ResponderBlankQuestion {
 

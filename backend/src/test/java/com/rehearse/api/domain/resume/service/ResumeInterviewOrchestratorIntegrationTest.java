@@ -1,5 +1,9 @@
 package com.rehearse.api.domain.resume.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -32,6 +36,7 @@ import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -211,6 +216,42 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
 
         InterviewRuntimeState state = runtimeStateCache.get(interviewId);
         assertThat(state.getTurnAnalysisCache()).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("RESUME PLAYGROUND turn 응답 DTO questionId 가 자기 질문 ID 를 보유 + mismatch WARN 미발생 (Issue #433 회귀)")
+    void playgroundTurn_responseCarriesSelfQuestionIdWithoutMismatchWarn() {
+        Long interviewId = persistInterviewAndInitState();
+
+        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+        ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+        logAppender.start();
+        orchestratorLogger.addAppender(logAppender);
+        try {
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", "Redis 기반 캐시 시스템을 구축했습니다.",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            assertThat(response.getQuestionId())
+                    .as("응답 DTO 가 자기 질문 ID 를 보유해야 FE 매핑 정상")
+                    .isNotNull();
+            assertThat(response.getQuestion()).isNotBlank();
+
+            assertThat(logAppender.list.stream()
+                    .filter(event -> event.getLevel() == Level.WARN)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList())
+                    .as("정상 흐름 — mismatch WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-mismatch"));
+        } finally {
+            orchestratorLogger.detachAppender(logAppender);
+            logAppender.stop();
+        }
     }
 
     @Test

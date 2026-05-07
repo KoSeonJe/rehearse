@@ -16,8 +16,13 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,6 +32,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -157,7 +163,7 @@ class ResumeInterviewOrchestratorTest {
         }
 
         @Test
-        @DisplayName("이미 RESUME_OPENER 가 있으면 재생성 없이 기존 텍스트로 응답을 반환한다")
+        @DisplayName("이미 RESUME_OPENER 가 있으면 재생성 없이 기존 텍스트로 응답을 반환한다 (응답 DTO 가 기존 OPENER 질문 ID 보유 — Issue #433 회귀)")
         void startSession_existingOpener_reusesWithoutCallingHandleOpener() {
             com.rehearse.api.domain.question.entity.QuestionSet qs =
                     com.rehearse.api.domain.question.entity.QuestionSet.builder()
@@ -172,6 +178,7 @@ class ResumeInterviewOrchestratorTest {
                             null,
                             null,
                             0);
+            org.springframework.test.util.ReflectionTestUtils.setField(existingOpener, "id", 7777L);
             qs.addQuestion(existingOpener);
             given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
                     .willReturn(java.util.Optional.of(qs));
@@ -180,6 +187,9 @@ class ResumeInterviewOrchestratorTest {
 
             assertThat(response.getQuestion()).isEqualTo("기존 opener 질문입니다");
             assertThat(response.isPresentToUser()).isTrue();
+            assertThat(response.getQuestionId())
+                    .as("재사용 응답 DTO 가 기존 OPENER 질문 ID 를 보유해야 FE 매핑 정상")
+                    .isEqualTo(7777L);
             then(playgroundHandler).shouldHaveNoInteractions();
             then(clockWatcher).shouldHaveNoInteractions();
         }
@@ -284,6 +294,77 @@ class ResumeInterviewOrchestratorTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo(AiErrorCode.RESPONSE_INVALID.getCode()));
+        }
+    }
+
+    @Nested
+    @DisplayName("응답 questionId 정합 가드 (Issue #433 회귀)")
+    class ResponseQuestionIdGuard {
+
+        private ListAppender<ILoggingEvent> logAppender;
+        private Logger orchestratorLogger;
+
+        @BeforeEach
+        void attachLogAppender() {
+            orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+            logAppender = new ListAppender<>();
+            logAppender.start();
+            orchestratorLogger.addAppender(logAppender);
+        }
+
+        @AfterEach
+        void detachLogAppender() {
+            orchestratorLogger.detachAppender(logAppender);
+            logAppender.stop();
+        }
+
+        @Test
+        @DisplayName("응답 DTO questionId 가 handler 와 mismatch 면 WARN 로그를 남기고 publish 는 진행한다")
+        void processUserTurn_responseQuestionIdMismatch_logsWarnAndPublishes() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            // handler 가 응답 DTO 에 questionId 미주입한 결함 흐름 강제 시뮬
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 99L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            assertThat(warnMessages())
+                    .as("mismatch WARN 발생")
+                    .anyMatch(m -> m.contains("response-questionid-mismatch")
+                            && m.contains("handlerQuestionId=99")
+                            && m.contains("responseQuestionId=null"));
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
+                    any(), anyInt(), eq(skeleton), any(), eq(99L));
+        }
+
+        @Test
+        @DisplayName("정상 흐름에서 response.questionId == handler.questionId 이면 mismatch WARN 미발생")
+        void processUserTurn_responseQuestionIdMatches_doesNotLogWarn() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().questionId(42L).question("Q").presentToUser(true).build(),
+                            false, 42L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            assertThat(warnMessages())
+                    .as("정상 매칭 케이스 — mismatch WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-mismatch"));
+        }
+
+        private List<String> warnMessages() {
+            return logAppender.list.stream()
+                    .filter(event -> event.getLevel() == Level.WARN)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList();
         }
     }
 
