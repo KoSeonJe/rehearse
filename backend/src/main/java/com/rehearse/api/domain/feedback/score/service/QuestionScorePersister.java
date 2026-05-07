@@ -22,7 +22,7 @@ public class QuestionScorePersister {
 
     @Transactional
     public void saveRubric(Long questionId, Long interviewId, String rubricId,
-                           String levelFlag, String feedbackPerspective,
+                           String levelFlag,
                            Map<String, DimensionScore> dimensionScores) {
         if (questionScoreRepository.findByQuestionIdAndRubricId(questionId, rubricId).isPresent()) {
             log.debug("QuestionScore 이미 존재 (idempotent skip): questionId={}, rubricId={}", questionId, rubricId);
@@ -33,7 +33,6 @@ public class QuestionScorePersister {
                 .questionId(questionId)
                 .interviewId(interviewId)
                 .rubricId(rubricId)
-                .feedbackPerspective(feedbackPerspective)
                 .levelFlag(levelFlag)
                 .build();
         questionScoreRepository.save(qs);

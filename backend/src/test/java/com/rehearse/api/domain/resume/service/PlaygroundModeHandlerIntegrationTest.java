@@ -36,7 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@DisplayName("PlaygroundModeHandler Service Integration - 4 필드 적재 검증")
+@DisplayName("PlaygroundModeHandler Service Integration - 적재 검증")
 class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
 
     @Autowired
@@ -52,8 +52,8 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
     private ResilientAiClient resilientAiClient;
 
     @Test
-    @DisplayName("handleOpener 호출 시 RESUME_OPENER row 가 tts_text/model_answer 적재 + reference_type/feedback_perspective NULL 로 저장된다")
-    void handleOpener_persistsAllFourFields() {
+    @DisplayName("handleOpener 호출 시 RESUME_OPENER row 가 tts_text/model_answer 적재된다")
+    void handleOpener_persistsAllFields() {
         Long interviewId = persistInterview();
         ResumeSkeleton skeleton = createSkeleton();
         InterviewPlan plan = createPlan();
@@ -63,18 +63,16 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
         PlaygroundModeHandler.OpenerResult result = handler.handleOpener(interviewId, state, skeleton, plan);
 
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer, reference_type, feedback_perspective FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_OPENER");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
         assertThat((String) row.get("model_answer")).isNotBlank();
-        assertThat(row.get("reference_type")).isNull();
-        assertThat(row.get("feedback_perspective")).isNull();
     }
 
     @Test
-    @DisplayName("handle (responder) 호출 시 RESUME_PLAYGROUND row 가 4 필드 정합 적재된다")
-    void handle_responder_persistsAllFourFields() {
+    @DisplayName("handle (responder) 호출 시 RESUME_PLAYGROUND row 가 정합 적재된다")
+    void handle_responder_persistsAllFields() {
         Long interviewId = persistInterview();
         ResumeSkeleton skeleton = createSkeleton();
         InterviewPlan plan = createPlan();
@@ -86,13 +84,11 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(result.questionId()).isNotNull();
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer, reference_type, feedback_perspective FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_PLAYGROUND");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
         assertThat((String) row.get("model_answer")).isNotBlank();
-        assertThat(row.get("reference_type")).isNull();
-        assertThat(row.get("feedback_perspective")).isNull();
     }
 
     private Long persistInterview() {

@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,10 +23,9 @@ class QuestionPoolTest {
             String ttsContent = "Spring IoC 컨테이너에 대해 설명하세요.";
             String category = "CS";
             String modelAnswer = "IoC는 제어의 역전을 의미합니다.";
-            String referenceType = "CS_FUNDAMENTAL";
 
             // when
-            QuestionPool pool = QuestionPool.create(cacheKey, content, ttsContent, category, modelAnswer, referenceType);
+            QuestionPool pool = QuestionPool.create(cacheKey, content, ttsContent, category, modelAnswer);
 
             // then
             assertThat(pool.getCacheKey()).isEqualTo(cacheKey);
@@ -35,7 +33,6 @@ class QuestionPoolTest {
             assertThat(pool.getTtsContent()).isEqualTo(ttsContent);
             assertThat(pool.getCategory()).isEqualTo(category);
             assertThat(pool.getModelAnswer()).isEqualTo(modelAnswer);
-            assertThat(pool.getReferenceType()).isEqualTo(referenceType);
             assertThat(pool.isActive()).isTrue();
         }
 
@@ -46,7 +43,7 @@ class QuestionPoolTest {
             String cacheKey = null;
 
             // when & then
-            assertThatThrownBy(() -> QuestionPool.create(cacheKey, "content", null, null, null, null))
+            assertThatThrownBy(() -> QuestionPool.create(cacheKey, "content", null, null, null))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -57,7 +54,7 @@ class QuestionPoolTest {
             String cacheKey = "   ";
 
             // when & then
-            assertThatThrownBy(() -> QuestionPool.create(cacheKey, "content", null, null, null, null))
+            assertThatThrownBy(() -> QuestionPool.create(cacheKey, "content", null, null, null))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -68,7 +65,7 @@ class QuestionPoolTest {
             String content = null;
 
             // when & then
-            assertThatThrownBy(() -> QuestionPool.create("cacheKey", content, null, null, null, null))
+            assertThatThrownBy(() -> QuestionPool.create("cacheKey", content, null, null, null))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -79,7 +76,7 @@ class QuestionPoolTest {
             String content = "  ";
 
             // when & then
-            assertThatThrownBy(() -> QuestionPool.create("cacheKey", content, null, null, null, null))
+            assertThatThrownBy(() -> QuestionPool.create("cacheKey", content, null, null, null))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -87,14 +84,13 @@ class QuestionPoolTest {
         @DisplayName("nullable 필드(ttsContent, category 등)에 null을 전달하면 정상 생성된다")
         void create_nullableFields_acceptsNull() {
             // given & when
-            QuestionPool pool = QuestionPool.create("backend:cs:junior", "질문 내용", null, null, null, null);
+            QuestionPool pool = QuestionPool.create("backend:cs:junior", "질문 내용", null, null, null);
 
             // then
             assertThat(pool).isNotNull();
             assertThat(pool.getTtsContent()).isNull();
             assertThat(pool.getCategory()).isNull();
             assertThat(pool.getModelAnswer()).isNull();
-            assertThat(pool.getReferenceType()).isNull();
         }
     }
 

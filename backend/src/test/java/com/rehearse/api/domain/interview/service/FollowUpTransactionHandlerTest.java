@@ -211,7 +211,7 @@ class FollowUpTransactionHandlerTest {
         void saveFollowUpResult_success() {
             // given
             Interview interview = createInProgressInterview();
-            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -282,7 +282,7 @@ class FollowUpTransactionHandlerTest {
         @DisplayName("saveFollowUpResultAndPublishEvent - 저장과 이벤트 발행을 같은 트랜잭션 메서드에서 처리한다")
         void saveFollowUpResultAndPublishEvent_savesAndPublishes() {
             Interview interview = createInProgressInterview();
-            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(interviewFinder.findById(1L)).willReturn(interview);
 
@@ -347,7 +347,7 @@ class FollowUpTransactionHandlerTest {
         void saveFollowUpResult_throws_followup_duplicate_on_unique_constraint_violation() {
             // given
             Interview interview = createInProgressInterview();
-            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+            QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -387,7 +387,7 @@ class FollowUpTransactionHandlerTest {
         return interview;
     }
 
-    private QuestionSet createQuestionSetWithMainQuestion(Interview interview, ReferenceType mainReferenceType) {
+    private QuestionSet createQuestionSetWithMainQuestion(Interview interview) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
                 .category(QuestionSetCategory.CS_FUNDAMENTAL)
@@ -398,7 +398,6 @@ class FollowUpTransactionHandlerTest {
         Question mainQuestion = Question.builder()
                 .questionType(QuestionType.TECH_MAIN)
                 .questionText("HashMap과 TreeMap의 차이점은?")
-                .referenceType(mainReferenceType)
                 .orderIndex(0)
                 .build();
         qs.addQuestion(mainQuestion);
@@ -425,7 +424,7 @@ class FollowUpTransactionHandlerTest {
     }
 
     private QuestionSet createQuestionSetWithFollowUps(Interview interview, int followUpCount) {
-        QuestionSet qs = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
+        QuestionSet qs = createQuestionSetWithMainQuestion(interview);
         for (int i = 0; i < followUpCount; i++) {
             Question followUp = Question.builder()
                     .questionType(QuestionType.TECH_FOLLOWUP)
