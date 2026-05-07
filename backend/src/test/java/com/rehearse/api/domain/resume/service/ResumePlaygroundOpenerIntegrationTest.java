@@ -132,7 +132,8 @@ class ResumePlaygroundOpenerIntegrationTest {
         given(ctx.parser.parseOrRetry(any(), any(), any(), any()))
                 .willReturn(new PlaygroundResponderResult(
                         "후속 질문", "후속 질문", "이유", false,
-                        new PlaygroundResponderResult.SwitchConditions(false, false, false, false)));
+                        new PlaygroundResponderResult.SwitchConditions(false, false, false, false),
+                        null));
 
         String explicitName = "검색 인덱싱 파이프라인";
         Project project = new Project("proj-responder", explicitName, List.of(), List.of());
