@@ -103,9 +103,10 @@ class ResumeInterviewPlannerPromptBuilderTest {
         ChatRequest request = builder.build(null, 30, "MID", "resume_interview_planner");
 
         String userMessage = request.messages().get(0).content();
-        assertThat(userMessage)
+        String fewshotOpenerLine = extractFewshotOpenerLine(userMessage);
+        assertThat(fewshotOpenerLine)
                 .containsAnyOf("역할", "맡으셨", "소개");
-        assertThat(extractFewshotOpenerLine(userMessage))
+        assertThat(fewshotOpenerLine)
                 .doesNotContain("기술적 결정")
                 .doesNotContain("트레이드오프");
     }
