@@ -54,8 +54,6 @@ export interface Question {
 
 export type QuestionType = 'MAIN' | 'FOLLOWUP' | 'RESUME_OPENER' | 'RESUME_PLAYGROUND' | 'RESUME_INTERROGATION'
 
-export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
-
 export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
 export type ConvertStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED'
@@ -68,7 +66,6 @@ export interface QuestionDetail {
   questionText: string
   ttsText?: string | null
   modelAnswer: string | null
-  referenceType: ReferenceType
   orderIndex: number
 }
 

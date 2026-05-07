@@ -59,7 +59,6 @@ const buildQuestionSet = (id: number): QuestionSetData => ({
       questionType: 'MAIN',
       questionText: '질문 0',
       modelAnswer: null,
-      referenceType: 'CS',
       orderIndex: 0,
     },
   ],
