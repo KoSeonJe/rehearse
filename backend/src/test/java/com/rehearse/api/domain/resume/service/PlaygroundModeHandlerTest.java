@@ -57,6 +57,9 @@ class PlaygroundModeHandlerTest {
     @Mock
     private ResumeQuestionPersister questionPersister;
 
+    @Mock
+    private ResumeModeTransitionPolicy modeTransitionPolicy;
+
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
     private InterviewPlan plan;
@@ -69,6 +72,9 @@ class PlaygroundModeHandlerTest {
         Mockito.lenient()
                 .when(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
                 .thenReturn(1L);
+        Mockito.lenient()
+                .when(modeTransitionPolicy.isPlaygroundHardCapReached(anyInt()))
+                .thenReturn(false);
     }
 
     @Nested
