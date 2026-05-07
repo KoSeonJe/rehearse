@@ -99,6 +99,29 @@ class StandardFollowUpPolicyTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    @DisplayName("TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP 도 isFollowUp() 으로 카운트되어 cap 트리거")
+    void assertCanContinue_subTypeFollowUps_countsTowardsCap() {
+        Interview interview = standardInterview();
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview)
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .orderIndex(0)
+                .build();
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.TECH_MAIN)
+                .questionText("main").orderIndex(0).build());
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.TECH_FOLLOWUP)
+                .questionText("f1").orderIndex(1).build());
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.BEHAVIORAL_FOLLOWUP)
+                .questionText("f2").orderIndex(2).build());
+
+        assertThatThrownBy(() -> policy.assertCanContinue(interview, qs))
+                .isInstanceOf(BusinessException.class);
+    }
+
     private Interview standardInterview() {
         return Interview.builder()
                 .position(Position.BACKEND)

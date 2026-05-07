@@ -95,7 +95,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("정상 1턴 STANDARD 답변은 question_score 와 dimension 을 적재한다")
         void standardAnswer_persistsQuestionScore() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
+            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
             followUpTransactionHandler.publishTurnCompletedEvent(
@@ -105,6 +105,65 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
             QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
             assertThat(score.getQuestionId()).isEqualTo(data.question().getId());
             assertThat(questionScoreDimensionRepository.findByQuestionScoreId(score.getId())).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("TECH_MAIN 적재 시 feedback_perspective=TECHNICAL 로 영속된다 (P0-1 회귀)")
+        void techMain_persistsTechnicalPerspective() {
+            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishTurnCompletedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId(), 0);
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            assertThat(score.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+        }
+
+        @Test
+        @DisplayName("BEHAVIORAL_MAIN 적재 시 feedback_perspective=BEHAVIORAL 로 영속된다 (P0-1 회귀)")
+        void behavioralMain_persistsBehavioralPerspective() {
+            InterviewData data = persistInterview(QuestionSetCategory.BEHAVIORAL, InterviewType.BEHAVIORAL,
+                    QuestionType.BEHAVIORAL_MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishTurnCompletedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId(), 0);
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            assertThat(score.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
+        }
+
+        @Test
+        @DisplayName("MAIN sentinel + CS 카테고리 → feedback_perspective=TECHNICAL 폴백 (P0-1 회귀)")
+        void mainSentinel_csCategory_fallsBackTechnical() {
+            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL,
+                    QuestionType.MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishTurnCompletedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId(), 0);
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            assertThat(score.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+        }
+
+        @Test
+        @DisplayName("MAIN sentinel + BEHAVIORAL 카테고리 → feedback_perspective=BEHAVIORAL 폴백 (P0-1 회귀)")
+        void mainSentinel_behavioralCategory_fallsBackBehavioral() {
+            InterviewData data = persistInterview(QuestionSetCategory.BEHAVIORAL, InterviewType.BEHAVIORAL,
+                    QuestionType.MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishTurnCompletedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId(), 0);
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            assertThat(score.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
         }
 
         @Test

@@ -137,14 +137,58 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("FeedbackPerspective=EXPERIENCE → experience-technical-v1 매핑")
+    @DisplayName("RESUME_PLAYGROUND (EXPERIENCE perspective) + standard interview + SYSTEM_DESIGN → experience-technical-v1 매핑")
     void resolveFor_experiencePerspective_correctRubric() {
         QuestionSet qs = buildQuestionSet(QuestionSetCategory.SYSTEM_DESIGN);
-        Question q = buildQuestion(FeedbackPerspective.EXPERIENCE);
+        Question q = buildQuestionWithType(QuestionType.RESUME_PLAYGROUND);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
         assertThat(rubric.rubricId()).isEqualTo("experience-technical-v1");
+    }
+
+    @Test
+    @DisplayName("TECH_MAIN + CS 카테고리 → enum perspective TECHNICAL 매핑 (P0-2 회귀)")
+    void resolveFor_techMain_csCategory_usesEnumPerspective() {
+        QuestionSet qs = buildQuestionSet(QuestionSetCategory.CS_FUNDAMENTAL);
+        Question q = buildQuestionWithType(QuestionType.TECH_MAIN);
+
+        Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
+
+        assertThat(rubric.rubricId()).isEqualTo("concept-cs-fundamental-v1");
+    }
+
+    @Test
+    @DisplayName("BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → enum perspective BEHAVIORAL 매핑 (P0-2 회귀)")
+    void resolveFor_behavioralMain_behavioralCategory_usesEnumPerspective() {
+        QuestionSet qs = buildQuestionSet(QuestionSetCategory.BEHAVIORAL);
+        Question q = buildQuestionWithType(QuestionType.BEHAVIORAL_MAIN);
+
+        Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
+
+        assertThat(rubric.rubricId()).isEqualTo("experience-collaboration-v1");
+    }
+
+    @Test
+    @DisplayName("MAIN sentinel + CS 카테고리 → category 추론 fallback (P0-2 회귀)")
+    void resolveFor_mainSentinel_csCategory_fallsBackTechnical() {
+        QuestionSet qs = buildQuestionSet(QuestionSetCategory.CS_FUNDAMENTAL);
+        Question q = buildQuestionWithType(QuestionType.MAIN);
+
+        Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
+
+        assertThat(rubric.rubricId()).isEqualTo("concept-cs-fundamental-v1");
+    }
+
+    @Test
+    @DisplayName("MAIN sentinel + BEHAVIORAL 카테고리 → category 추론 fallback (P0-2 회귀)")
+    void resolveFor_mainSentinel_behavioralCategory_fallsBackBehavioral() {
+        QuestionSet qs = buildQuestionSet(QuestionSetCategory.BEHAVIORAL);
+        Question q = buildQuestionWithType(QuestionType.MAIN);
+
+        Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
+
+        assertThat(rubric.rubricId()).isEqualTo("experience-collaboration-v1");
     }
 
     @Test
@@ -198,6 +242,14 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
                 .questionType(QuestionType.MAIN)
                 .questionText("테스트 질문")
                 .feedbackPerspective(perspective)
+                .orderIndex(0)
+                .build();
+    }
+
+    private Question buildQuestionWithType(QuestionType questionType) {
+        return Question.builder()
+                .questionType(questionType)
+                .questionText("테스트 질문")
                 .orderIndex(0)
                 .build();
     }

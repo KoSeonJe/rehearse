@@ -9,6 +9,7 @@ import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
@@ -22,6 +23,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -65,27 +68,22 @@ public class FollowUpTransactionHandler {
     }
 
     private Long resolveCurrentMainQuestionId(QuestionSet questionSet) {
-        return questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.MAIN)
-                .findFirst()
+        return findMainQuestion(questionSet)
                 .map(Question::getId)
                 .orElse(null);
     }
 
-    /**
-     * 메인 질문의 referenceType을 추출해 후속질문 프롬프트 모드 분기에 사용한다.
-     * MODEL_ANSWER → CS 개념 설명형 메인 질문 → CONCEPT 모드
-     * GUIDE        → 이력서·경험 기반 메인 질문 → EXPERIENCE 모드
-     * 메인 질문이 없거나 referenceType이 null인 엣지 케이스는 안전한 기본값(MODEL_ANSWER)으로 폴백한다.
-     * 경험 전제 프레이밍이 안 나가는 쪽이 어색함보다 덜 위험하기 때문.
-     */
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
+        QuestionSetCategory category = questionSet.getCategory();
+        return findMainQuestion(questionSet)
+                .map(q -> q.getQuestionType().referenceTypeOrFallback(category))
+                .orElseGet(() -> QuestionType.MAIN.referenceTypeOrFallback(category));
+    }
+
+    private Optional<Question> findMainQuestion(QuestionSet questionSet) {
         return questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.MAIN)
-                .findFirst()
-                .map(Question::getReferenceType)
-                .filter(rt -> rt != null)
-                .orElse(ReferenceType.MODEL_ANSWER);
+                .filter(q -> q.getQuestionType().isMain())
+                .findFirst();
     }
 
     @Transactional
@@ -93,10 +91,18 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
+        // RESUME 트랙은 ResumeInterviewOrchestrator path 일임. 본 핸들러 진입 시 = 흐름 결함.
+        if (questionSet.getCategory() == QuestionSetCategory.RESUME_BASED) {
+            throw new IllegalStateException(
+                    "RESUME 트랙은 FollowUpTransactionHandler.saveFollowUpResult 를 호출할 수 없다. questionSetId="
+                            + questionSetId);
+        }
+
         int orderIndex = questionSet.getQuestions().size();
+        QuestionType followUpType = resolveFollowUpType(questionSet);
 
         Question followUpQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
+                .questionType(followUpType)
                 .questionText(followUp.getQuestion())
                 .ttsText(followUp.getTtsQuestion())
                 .modelAnswer(followUp.getModelAnswer())
@@ -107,7 +113,7 @@ public class FollowUpTransactionHandler {
         try {
             Question saved = questionRepository.saveAndFlush(followUpQuestion);
             int newFollowUpCount = (int) questionSet.getQuestions().stream()
-                    .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
+                    .filter(q -> q.getQuestionType().isFollowUp())
                     .count();
             return new FollowUpSaveResult(saved, newFollowUpCount);
         } catch (DataIntegrityViolationException e) {
@@ -115,6 +121,25 @@ public class FollowUpTransactionHandler {
                     questionSetId, orderIndex);
             throw new BusinessException(InterviewErrorCode.FOLLOWUP_DUPLICATE);
         }
+    }
+
+    private QuestionType resolveFollowUpType(QuestionSet questionSet) {
+        QuestionType mainType = findMainQuestion(questionSet)
+                .map(Question::getQuestionType)
+                .orElse(null);
+        return followUpTypeOf(mainType, questionSet.getCategory());
+    }
+
+    private QuestionType followUpTypeOf(QuestionType mainType, QuestionSetCategory category) {
+        if (mainType == QuestionType.TECH_MAIN) {
+            return QuestionType.TECH_FOLLOWUP;
+        }
+        if (mainType == QuestionType.BEHAVIORAL_MAIN) {
+            return QuestionType.BEHAVIORAL_FOLLOWUP;
+        }
+        return category == QuestionSetCategory.BEHAVIORAL
+                ? QuestionType.BEHAVIORAL_FOLLOWUP
+                : QuestionType.TECH_FOLLOWUP;
     }
 
     @Transactional
