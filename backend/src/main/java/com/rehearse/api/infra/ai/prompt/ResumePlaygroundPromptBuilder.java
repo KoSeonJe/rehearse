@@ -74,16 +74,28 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
     public record PlaygroundOpenerResult(
             String question,
             @JsonProperty("tts_question") String ttsQuestion,
-            String reason
-    ) {}
+            String reason,
+            @JsonProperty("model_answer") String modelAnswer
+    ) {
+        public PlaygroundOpenerResult withModelAnswer(String newModelAnswer) {
+            return new PlaygroundOpenerResult(question, ttsQuestion, reason, newModelAnswer);
+        }
+    }
 
     public record PlaygroundResponderResult(
             String question,
             @JsonProperty("tts_question") String ttsQuestion,
             String reason,
             @JsonProperty("should_switch_to_interrogation") boolean shouldSwitchToInterrogation,
-            @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet
+            @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet,
+            @JsonProperty("model_answer") String modelAnswer
     ) {
+        public PlaygroundResponderResult withModelAnswer(String newModelAnswer) {
+            return new PlaygroundResponderResult(
+                    question, ttsQuestion, reason,
+                    shouldSwitchToInterrogation, switchConditionsMet, newModelAnswer);
+        }
+
         public record SwitchConditions(
                 @JsonProperty("a_covered") boolean aCovered,
                 @JsonProperty("b_length_ok") boolean bLengthOk,

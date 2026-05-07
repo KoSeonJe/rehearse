@@ -5,9 +5,9 @@ import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,7 +53,7 @@ class ResumeQuestionPersisterTest {
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
-        persister.persist(interviewId, QuestionType.RESUME_OPENER, "Q?", 0);
+        persister.persist(interviewId, QuestionType.RESUME_OPENER, "Q?", "Q", "answer", 0);
 
         ArgumentCaptor<QuestionSet> captor = ArgumentCaptor.forClass(QuestionSet.class);
         then(questionSetRepository).should().save(captor.capture());
@@ -75,7 +75,7 @@ class ResumeQuestionPersisterTest {
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
-        persister.persist(interviewId, QuestionType.RESUME_PLAYGROUND, "Q?", 1);
+        persister.persist(interviewId, QuestionType.RESUME_PLAYGROUND, "Q?", "Q", "answer", 1);
 
         then(questionSetRepository).should(org.mockito.Mockito.never()).save(any(QuestionSet.class));
         then(interviewFinder).shouldHaveNoInteractions();

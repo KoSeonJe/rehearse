@@ -5,7 +5,7 @@
 > 관련 테이블: `question_answer` (DELETE) / `question` (CASCADE — `question_set_id` FK ON DELETE CASCADE) / `question_set` (DELETE) / `question_set_analysis` (DELETE) / `question_set_feedback` + `timestamp_feedback` (DELETE)
 > 관련 외부 의존: 없음 (S3 영상 객체 / Lambda 산출물은 본 흐름에서 제거하지 않음 — ⚠️ Issue #407 후보)
 
-> ⚠️ **패키지 분리 상태** (Issue #405). 삭제 오케스트레이션은 `domain/interview/service/InterviewDeletionService` 가 담당하며, question / questionset / feedback Repository 를 직접 참조한다 (cross-domain repository 호출). 컨벤션상 허용 (상위 → 하위).
+> 삭제 오케스트레이션은 `domain/interview/service/InterviewDeletionService` 가 담당하며, question / feedback Repository 를 직접 참조한다 (cross-domain repository 호출). 컨벤션상 허용 (상위 → 하위).
 
 ---
 
@@ -58,10 +58,10 @@
    → feedback 도메인 — 세트 단위 종합 피드백
 
 4. questionSetAnalysisRepository.deleteAllByInterviewId(id)
-   → questionset 도메인 — Lambda 분석 결과
+   → question 도메인 — Lambda 분석 결과
 
 5. questionSetRepository.deleteAll(findByInterviewIdOrderByOrderIndex(id))
-   → questionset 도메인. 본 단계 호출 시 question 은 CASCADE
+   → question 도메인. 본 단계 호출 시 question 은 CASCADE
      (V41 fk_question_question_set ON DELETE CASCADE) 로 함께 제거
 
 6. interviewRepository.delete(interview)
@@ -127,8 +127,8 @@
 | `com.rehearse.api.domain.interview.service.InterviewFinder` | interview 조회 + `validateOwner` | calls |
 | `com.rehearse.api.domain.interview.repository.InterviewRepository` | 본체 삭제 | persister |
 | `com.rehearse.api.domain.interview.entity.Interview` | aggregate root | read / delete |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | `question_set` 조회 + 삭제 | persister (cross-domain call) |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository` | `question_set_analysis` 삭제 | persister (cross-domain call) |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | `question_set` 조회 + 삭제 | persister (cross-domain call) |
+| `com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository` | `question_set_analysis` 삭제 | persister (cross-domain call) |
 | `com.rehearse.api.domain.question.repository.QuestionAnswerRepository` | `question_answer` 삭제 (`deleteAllByInterviewId`) | persister (cross-domain call) |
 | `com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository` | 세트 피드백 삭제 | persister (cross-domain call) |
 | `com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository` | 타임스탬프 피드백 삭제 | persister (cross-domain call) |

@@ -178,7 +178,7 @@ class ResumePlaygroundOpenerIntegrationTest {
                 ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
         given(aiClient.chat(any())).willReturn(stub);
         given(parser.parseOrRetry(any(), any(), any(), any()))
-                .willReturn(new PlaygroundOpenerResult("q", "q", "r"));
+                .willReturn(new PlaygroundOpenerResult("q", "q", "r", "m"));
 
         ResumePlaygroundPromptBuilder builder = new ResumePlaygroundPromptBuilder(
                 aiClient, parser, contextBuilder, "gpt-4o-mini", 0.7, 800);

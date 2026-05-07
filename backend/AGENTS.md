@@ -56,8 +56,7 @@
 | `user/` | 사용자 프로필 | entity / repository / service (controller 없음, 다른 도메인이 사용) |
 | `resume/` | 이력서 도메인 + 트랙 | service 중심 (Resume Project / Playground Context Engineering) |
 | `interview/` | 인터뷰 세션 (핵심 도메인) | `Interview`, `InterviewRuntimeState`, `IntentType`, FollowUp 서비스군. `intent/` 하위 분기 분류기 |
-| `question/` | 질문 본체 | service 만 (controller 없음 — questionset 경유) |
-| `questionset/` | 질문 세트 / 프리셋 | 표준 구조 |
+| `question/` | 질문 본체 + 질문 세트/분석/업로드 | 표준 구조 + 질문 생성 서비스 |
 | `feedback/` | AI 피드백 + 루브릭/점수 | `rubric/`, `score/` 하위 도메인 분리 (event 발행 포함) |
 | `reviewbookmark/` | 피드백 북마크 | 표준 구조 |
 | `servicefeedback/` | 서비스 자체 피드백 (사용자 → 운영진) | 표준 구조 |

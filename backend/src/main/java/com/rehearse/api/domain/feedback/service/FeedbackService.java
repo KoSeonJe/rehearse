@@ -2,11 +2,11 @@ package com.rehearse.api.domain.feedback.service;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
-import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

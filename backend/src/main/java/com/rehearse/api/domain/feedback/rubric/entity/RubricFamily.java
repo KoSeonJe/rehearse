@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric.entity;
 
 import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 
 import java.util.List;
 import java.util.Map;

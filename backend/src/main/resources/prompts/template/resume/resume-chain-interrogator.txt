@@ -24,7 +24,8 @@ fact_check_flag, fact_check_note, factual_inconsistency 등의 필드는 절대 
   "tts_question": "TTS 용 동일 질문 (마크다운/특수문자 제거)",       // 필수 — null/빈 문자열/공백만/누락 절대 금지
   "reason": "이 질문을 선택한 이유 (내부 로직, FE 미노출)",
   "next_action": "LEVEL_UP" 또는 "LEVEL_STAY" 또는 "CHAIN_SWITCH",
-  "next_level": 1~4 (LEVEL_UP 시 current_level+1, LEVEL_STAY 시 current_level, CHAIN_SWITCH 시 1)
+  "next_level": 1~4 (LEVEL_UP 시 current_level+1, LEVEL_STAY 시 current_level, CHAIN_SWITCH 시 1),
+  "model_answer": "현재 chain 의 해당 레벨 (L1 WHAT / L2 HOW / L3 WHY_MECH / L4 TRADEOFF) 답변 시 참고할 가이드라인 (50~200자, 정답 X — 어떤 기술적 관점/구조로 답하면 좋은지만 안내)"  // 필수 — null/빈 문자열/공백만/누락 절대 금지
 }
 
 ## 출력 금지 필드 (자가검증 후 제거)
@@ -66,4 +67,5 @@ PROJECT_NAME 이 비어 있거나 명시되지 않은 경우, 임의 명칭을 �
 ## 자가검증 (출력 전 필수)
 - `question` 필드가 null, "", 공백만, 또는 누락되지 않았는지 확인
 - `tts_question` 도 동일 검증
+- `model_answer` 필드가 null, "", 공백만, 또는 누락되지 않았는지 확인. 50~200자 한국어 답변 가이드라인이어야 한다 (정답 X)
 - 만약 적절한 심문 질문을 도저히 생성할 수 없다면, 빈 문자열이 아니라 다음 안전 폴백을 그대로 출력: "방금 답변하신 부분의 구체적인 구현 방식을 좀 더 설명해주실 수 있을까요?"

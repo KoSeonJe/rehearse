@@ -54,7 +54,8 @@ public class ResumeChainInterrogatorPromptBuilder extends AbstractResumeJsonProm
             @JsonProperty("tts_question") String ttsQuestion,
             String reason,
             @JsonProperty("next_action") String nextAction,
-            @JsonProperty("next_level") int nextLevel
+            @JsonProperty("next_level") int nextLevel,
+            @JsonProperty("model_answer") String modelAnswer
     ) {
         public boolean isLevelUp() {
             return "LEVEL_UP".equalsIgnoreCase(nextAction);
@@ -66,6 +67,10 @@ public class ResumeChainInterrogatorPromptBuilder extends AbstractResumeJsonProm
 
         public boolean isChainSwitch() {
             return "CHAIN_SWITCH".equalsIgnoreCase(nextAction);
+        }
+
+        public InterrogationResult withModelAnswer(String newModelAnswer) {
+            return new InterrogationResult(question, ttsQuestion, reason, nextAction, nextLevel, newModelAnswer);
         }
     }
 }

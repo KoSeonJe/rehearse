@@ -92,8 +92,8 @@
 
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | 질문세트 정리 | calls |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository` | 분석 결과 정리 | calls |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | 질문세트 정리 | calls |
+| `com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository` | 분석 결과 정리 | calls |
 | `com.rehearse.api.domain.question.repository.QuestionAnswerRepository` | 답변 정리 | calls |
 | `com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository` | 타임스탬프 피드백 정리 | calls |
 | `com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository` | 질문세트 피드백 정리 | calls |

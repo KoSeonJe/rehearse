@@ -2,12 +2,12 @@ package com.rehearse.api.global.config;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.service.FeedbackService;
-import com.rehearse.api.domain.questionset.dto.UpdateConvertStatusRequest;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.ConvertStatus;
+import com.rehearse.api.domain.question.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.ConvertStatus;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.service.InternalQuestionSetService;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.repository.UserRepository;
 import com.rehearse.api.global.common.ApiResponse;
@@ -157,7 +157,7 @@ public class DevController {
 
         var request = objectMapper.convertValue(
                 Map.of("status", status.name()),
-                com.rehearse.api.domain.questionset.dto.UpdateProgressRequest.class
+                com.rehearse.api.domain.question.dto.UpdateProgressRequest.class
         );
         internalQuestionSetService.updateProgress(questionSetId, request);
     }

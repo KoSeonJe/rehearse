@@ -5,9 +5,9 @@ import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -24,9 +24,9 @@ public class ResumeQuestionPersister {
 
     @Transactional
     public Long persist(Long interviewId, QuestionType questionType,
-                        String questionText, int orderIndex) {
+                        String questionText, String ttsText, String modelAnswer, int orderIndex) {
         QuestionSet questionSet = findOrCreateQuestionSet(interviewId);
-        Question question = Question.resume(questionSet, questionType, questionText, orderIndex);
+        Question question = Question.resume(questionSet, questionType, questionText, ttsText, modelAnswer, orderIndex);
         questionRepository.save(question);
         log.debug("[ResumeQuestionPersister] 질문 저장: interviewId={}, type={}, questionId={}",
                 interviewId, questionType, question.getId());

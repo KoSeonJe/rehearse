@@ -94,7 +94,7 @@
 - `interview.status == IN_PROGRESS` 필수 (위반 시 `INTERVIEW_003 (409)`)
 
 #### 2-3. 위임
-- `questionSetService.skipRemaining(id)` — 외부 도메인 (`questionset`) 이 미응답 (`PENDING` analysis) 인 question_set 들을 `SKIPPED` 로 일괄 갱신
+- `questionSetService.skipRemaining(id)` — question 도메인이 미응답 (`PENDING` analysis) 인 question_set 들을 `SKIPPED` 로 일괄 갱신
 - `interview.status` 자체는 변경하지 않음. `InterviewCompletionService` 30초 polling 이 모든 question_set 이 `SKIPPED|COMPLETED|PARTIAL` 이 되면 자동 `COMPLETED` 전이.
 
 #### 2-4. 응답
@@ -157,8 +157,8 @@ PENDING → GENERATING → COMPLETED | FAILED
 |----------------|------|------|
 | `com.rehearse.api.domain.interview.entity.Interview` (도메인 메서드 `updateStatus`) | 상태 전이 로직 | calls |
 | `com.rehearse.api.domain.interview.entity.InterviewStatus.canTransitionTo` | 전이 매트릭스 | reads |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService` | skipRemaining 위임 | calls |
-| `com.rehearse.api.domain.questionset.entity.AnalysisStatus` | 완료 판정 | reads — `InterviewCompletionService` |
+| `com.rehearse.api.domain.question.service.QuestionSetService` | skipRemaining 위임 | calls |
+| `com.rehearse.api.domain.question.entity.AnalysisStatus` | 완료 판정 | reads — `InterviewCompletionService` |
 | `com.rehearse.api.domain.interview.event.InterviewCompletedEvent` | 완료 이벤트 | event-publisher — `InterviewCompletionService` |
 
 ---

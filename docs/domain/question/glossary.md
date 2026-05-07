@@ -1,7 +1,6 @@
 # question 도메인 용어집
 
-> 패키지: `com.rehearse.api.domain.question` (질문 본체 / 풀 / 답변) + `com.rehearse.api.domain.questionset` (세트 / 분석 / 업로드)
-> ⚠️ 패키지 통합 진행 중 — Issue #405 (`questionset` → `question` 통합). 본 용어집은 코드 현 상태 (분리) 반영.
+> 패키지: `com.rehearse.api.domain.question` (질문 본체 / 풀 / 답변 / 세트 / 분석 / 업로드)
 
 ## 핵심 용어
 
@@ -16,7 +15,7 @@
 
 ### QuestionSet (질문 세트)
 
-`question_set` 테이블 1행. `QuestionSet` 엔티티 (`domain/questionset/entity/`). 영상 1개 단위. 질문 N개 + 답변 N개 + 분석 1개 + 피드백 1개 + 영상 파일 1개 (`file_metadata` 1:1) 묶음.
+`question_set` 테이블 1행. `QuestionSet` 엔티티 (`domain/question/entity/`). 영상 1개 단위. 질문 N개 + 답변 N개 + 분석 1개 + 피드백 1개 + 영상 파일 1개 (`file_metadata` 1:1) 묶음.
 
 `QuestionSetCategory`:
 - `STANDARD` — 일반 면접 (단일 세트).
@@ -42,7 +41,7 @@
 
 ### QuestionSetAnalysis (분석)
 
-`question_set_analysis` 테이블 1행. `QuestionSetAnalysis` 엔티티 (`domain/questionset/entity/`). 영상 분석 단계 추적.
+`question_set_analysis` 테이블 1행. `QuestionSetAnalysis` 엔티티 (`domain/question/entity/`). 영상 분석 단계 추적.
 
 `AnalysisStatus`:
 - `PENDING_UPLOAD` — saveAnswers 후 진입. S3 업로드 대기.
@@ -94,7 +93,7 @@ CS 트랙 세부 주제. `CsSubTopic` enum (`domain/question/entity/`). `intervi
 
 ---
 
-## 핵심 서비스 (`domain/questionset/service/`)
+## 핵심 서비스 (`domain/question/service/`)
 
 | 클래스 | 역할 |
 |--------|------|
@@ -141,7 +140,6 @@ CS 트랙 세부 주제. `CsSubTopic` enum (`domain/question/entity/`). `intervi
 
 본 도메인 정책-코드 갭은 다음 GitHub Issue 로 추적:
 
-- **Issue #405** — `questionset` 패키지 → `question` 패키지 통합 (Refactor)
 - **Issue #407** — question 도메인 발견 이슈 통합 (안정성 / 보안 / cleanup 12건 Epic)
 
 각 API 문서 본문의 ⚠️ 마킹 항목이 위 Issue 로 분류된다.

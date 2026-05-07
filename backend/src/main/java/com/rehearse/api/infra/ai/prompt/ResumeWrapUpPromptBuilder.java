@@ -50,6 +50,12 @@ public class ResumeWrapUpPromptBuilder extends AbstractResumeJsonPromptBuilder {
             @JsonProperty("tts_question") String ttsQuestion,
             String reason,
             @JsonProperty("is_wrap_up_question") boolean isWrapUpQuestion,
-            @JsonProperty("session_complete") boolean sessionComplete
-    ) {}
+            @JsonProperty("session_complete") boolean sessionComplete,
+            @JsonProperty("model_answer") String modelAnswer
+    ) {
+        public WrapUpResult withModelAnswer(String newModelAnswer) {
+            return new WrapUpResult(question, ttsQuestion, reason,
+                    isWrapUpQuestion, sessionComplete, newModelAnswer);
+        }
+    }
 }
