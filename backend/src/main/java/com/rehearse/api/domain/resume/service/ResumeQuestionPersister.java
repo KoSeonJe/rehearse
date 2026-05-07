@@ -26,7 +26,7 @@ public class ResumeQuestionPersister {
     public Long persist(Long interviewId, QuestionType questionType,
                         String questionText, int orderIndex) {
         QuestionSet questionSet = findOrCreateQuestionSet(interviewId);
-        Question question = Question.resume(questionSet, questionType, questionText, orderIndex);
+        Question question = Question.resume(questionSet, questionType, questionText, null, null, orderIndex);
         questionRepository.save(question);
         log.debug("[ResumeQuestionPersister] 질문 저장: interviewId={}, type={}, questionId={}",
                 interviewId, questionType, question.getId());

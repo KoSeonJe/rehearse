@@ -68,7 +68,8 @@ public class Question {
     }
 
     public static Question resume(QuestionSet questionSet, QuestionType type,
-                                   String questionText, int orderIndex) {
+                                   String questionText, String ttsText, String modelAnswer,
+                                   int orderIndex) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(type);
         if (type == QuestionType.MAIN || type == QuestionType.FOLLOWUP) {
@@ -78,6 +79,8 @@ public class Question {
         q.questionSet = questionSet;
         q.questionType = type;
         q.questionText = questionText;
+        q.ttsText = ttsText;
+        q.modelAnswer = modelAnswer;
         q.orderIndex = orderIndex;
         return q;
     }

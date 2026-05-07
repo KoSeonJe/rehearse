@@ -208,7 +208,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         questionSetRepository.saveAndFlush(questionSet);
 
         Question question = questionType.name().startsWith("RESUME_")
-                ? Question.resume(questionSet, questionType, "프로젝트 경험을 설명해주세요.", 0)
+                ? Question.resume(questionSet, questionType, "프로젝트 경험을 설명해주세요.", null, null, 0)
                 : Question.builder()
                 .questionType(questionType)
                 .questionText("HashMap과 TreeMap의 차이점은?")

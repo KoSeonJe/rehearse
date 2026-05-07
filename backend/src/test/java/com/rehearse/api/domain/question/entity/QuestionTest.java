@@ -18,7 +18,7 @@ class QuestionTest {
         @DisplayName("questionText 가 null 이면 IllegalArgumentException 을 던진다")
         void resume_nullQuestionText_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, QuestionType.RESUME_OPENER, null, 0))
+                    Question.resume(null, QuestionType.RESUME_OPENER, null, null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("questionText must not be blank");
         }
@@ -27,7 +27,7 @@ class QuestionTest {
         @DisplayName("questionText 가 빈 문자열이면 IllegalArgumentException 을 던진다")
         void resume_blankQuestionText_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, QuestionType.RESUME_OPENER, "   ", 0))
+                    Question.resume(null, QuestionType.RESUME_OPENER, "   ", null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("questionText must not be blank");
         }
@@ -36,7 +36,7 @@ class QuestionTest {
         @DisplayName("questionType 이 null 이면 IllegalArgumentException 을 던진다")
         void resume_nullQuestionType_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, null, "유효한 질문", 0))
+                    Question.resume(null, null, "유효한 질문", null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("questionType must not be null");
         }
@@ -45,7 +45,7 @@ class QuestionTest {
         @DisplayName("MAIN 타입은 resume() 팩토리에서 거부된다")
         void resume_mainType_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, QuestionType.MAIN, "유효한 질문", 0))
+                    Question.resume(null, QuestionType.MAIN, "유효한 질문", null, null, 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("RESUME_* 타입만 허용");
         }
@@ -53,7 +53,7 @@ class QuestionTest {
         @Test
         @DisplayName("유효한 RESUME_OPENER 타입과 questionText 로 생성하면 성공한다")
         void resume_validArgs_createsQuestion() {
-            Question q = Question.resume(null, QuestionType.RESUME_OPENER, "프로젝트를 소개해주세요.", 0);
+            Question q = Question.resume(null, QuestionType.RESUME_OPENER, "프로젝트를 소개해주세요.", null, null, 0);
 
             assertThat(q.getQuestionText()).isEqualTo("프로젝트를 소개해주세요.");
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
