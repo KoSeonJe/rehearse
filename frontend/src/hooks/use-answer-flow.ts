@@ -339,6 +339,10 @@ export const useAnswerFlow = ({
           followUpType: e.followUpType ?? e.type,
         }))
 
+        // 시간 만료 후 첫 답변 완료 시점 → BE 에 종료 신호.
+        // BE 는 답변 분석만 수행 후 followUpExhausted=true 응답 → 기존 종료 분기 재사용.
+        const shouldTerminate = updatedState.isTimeOverdue
+
         const res = await followUpMutation.mutateAsync({
           id: interview.id,
           data: {
@@ -346,6 +350,7 @@ export const useAnswerFlow = ({
             questionContent: state.questions[state.currentQuestionIndex].content,
             answerText,
             previousExchanges,
+            terminate: shouldTerminate,
           },
           audioBlob: audioBlob && audioBlob.size > 0 ? audioBlob : undefined,
         })
@@ -354,6 +359,15 @@ export const useAnswerFlow = ({
         // API 응답에서 Whisper STT 결과를 받아 히스토리에 저장
         if (wasFollowUp) {
           completeFollowUpRound(res.data.answerText || answerText)
+        }
+
+        // 종료 신호 — terminate=true 송신 또는 BE hard-timeout backstop:
+        // 응답이 skip=true && followUpExhausted=true 형태로 옴 → 즉시 면접 종료 페이즈.
+        if (res.data.skip && res.data.followUpExhausted) {
+          setFollowUpExhausted(true)
+          resetFollowUpState()
+          transitionToNext(/* isLast */ true, /* useSkipPhrase */ true)
+          return
         }
 
         // AI 자체 skip(답변 불충분): 다음 메인 질문 자연스러운 멘트로 전환.
