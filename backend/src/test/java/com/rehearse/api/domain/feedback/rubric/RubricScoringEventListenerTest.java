@@ -9,7 +9,6 @@ import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListene
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -90,7 +89,7 @@ class RubricScoringEventListenerTest {
 
             RubricScoringResult score = new RubricScoringResult("concept-cs-fundamental-v1",
                     List.of("technical_depth"), Map.of("technical_depth", DimensionScore.of(2, "설명", "ev")), null);
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(score);
 
             listener.on(event);
@@ -116,7 +115,7 @@ class RubricScoringEventListenerTest {
             QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any(), any()))
+            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any()))
                     .willReturn(RubricScoringResult.empty("resume-v1"));
 
             listener.on(event);
@@ -154,7 +153,7 @@ class RubricScoringEventListenerTest {
                     "답변 텍스트",
                     new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3,
                             RecommendedNextAction.DEEP_DIVE),
-                    IntentType.ANSWER, InterviewLevel.MID,
+                    InterviewLevel.MID,
                     ResumeMode.INTERROGATION, 2, null
             );
 
@@ -163,7 +162,7 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
@@ -177,7 +176,7 @@ class RubricScoringEventListenerTest {
                     "답변 텍스트",
                     new AnswerAnalysis(5L, List.of(), List.of(), List.of(), 3,
                             RecommendedNextAction.DEEP_DIVE),
-                    IntentType.ANSWER, InterviewLevel.MID
+                    InterviewLevel.MID
             );
 
             Interview interview = createInterview();
@@ -186,7 +185,7 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any(), any());
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
@@ -199,7 +198,7 @@ class RubricScoringEventListenerTest {
                 interviewId, turnIndex, 1L,
                 10L, 20L,
                 "답변 텍스트", analysis,
-                IntentType.ANSWER, InterviewLevel.MID
+                InterviewLevel.MID
         );
     }
 

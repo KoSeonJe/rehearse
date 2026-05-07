@@ -2,7 +2,6 @@ package com.rehearse.api.domain.feedback.rubric;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,60 +24,6 @@ class RubricTest {
     );
 
     @Nested
-    @DisplayName("on_intent_clarify")
-    class ClarifyIntent {
-
-        @Test
-        @DisplayName("CLARIFY_REQUEST intent → empty 반환")
-        void clarify_returns_empty() {
-            Rubric rubric = rubricWith(Map.of(
-                    "on_intent_clarify", List.of()
-            ));
-
-            List<String> result = rubric.selectDimensions(IntentType.CLARIFY_REQUEST, null);
-
-            assertThat(result).isEmpty();
-        }
-
-        @Test
-        @DisplayName("CLARIFY_REQUEST intent — perTurnRules에 키 없으면 empty 반환")
-        void clarify_missing_key_returns_empty() {
-            Rubric rubric = rubricWith(Map.of());
-
-            List<String> result = rubric.selectDimensions(IntentType.CLARIFY_REQUEST, null);
-
-            assertThat(result).isEmpty();
-        }
-    }
-
-    @Nested
-    @DisplayName("on_intent_give_up")
-    class GiveUpIntent {
-
-        @Test
-        @DisplayName("GIVE_UP intent → 해당 차원만 반환")
-        void give_up_returns_only_d8() {
-            Rubric rubric = rubricWith(Map.of(
-                    "on_intent_give_up", List.of("recovery_from_gaps")
-            ));
-
-            List<String> result = rubric.selectDimensions(IntentType.GIVE_UP, null);
-
-            assertThat(result).containsExactly("recovery_from_gaps");
-        }
-
-        @Test
-        @DisplayName("GIVE_UP intent — perTurnRules에 키 없으면 empty 반환")
-        void give_up_missing_key_returns_empty() {
-            Rubric rubric = rubricWith(Map.of());
-
-            List<String> result = rubric.selectDimensions(IntentType.GIVE_UP, null);
-
-            assertThat(result).isEmpty();
-        }
-    }
-
-    @Nested
     @DisplayName("Resume Track mode 매핑")
     class ResumeModeMapping {
 
@@ -89,7 +34,7 @@ class RubricTest {
                     "on_playground_mode", List.of("experience_concreteness")
             ));
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.PLAYGROUND);
+            List<String> result = rubric.selectDimensions(ResumeMode.PLAYGROUND);
 
             assertThat(result).containsExactly("experience_concreteness");
         }
@@ -101,7 +46,7 @@ class RubricTest {
                     "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth")
             ));
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.INTERROGATION);
+            List<String> result = rubric.selectDimensions(ResumeMode.INTERROGATION);
 
             assertThat(result).containsExactlyInAnyOrder("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth");
         }
@@ -113,7 +58,7 @@ class RubricTest {
                     "on_wrap_up_mode", List.of("chain_depth")
             ));
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.WRAP_UP);
+            List<String> result = rubric.selectDimensions(ResumeMode.WRAP_UP);
 
             assertThat(result).containsExactly("chain_depth");
         }
@@ -125,7 +70,7 @@ class RubricTest {
                     "on_intent_answer", List.of("technical_depth", "reasoning_communication")
             ));
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, ResumeMode.PLAYGROUND);
+            List<String> result = rubric.selectDimensions(ResumeMode.PLAYGROUND);
 
             assertThat(result).containsExactly("technical_depth", "reasoning_communication");
         }
@@ -136,23 +81,23 @@ class RubricTest {
     class AnswerIntentFallback {
 
         @Test
-        @DisplayName("ANSWER intent, resumeMode null → on_intent_answer 반환")
+        @DisplayName("resumeMode null → on_intent_answer 반환")
         void answer_no_mode_uses_intent_answer() {
             Rubric rubric = rubricWith(Map.of(
                     "on_intent_answer", List.of("technical_depth", "reasoning_communication", "conceptual_accuracy")
             ));
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, null);
+            List<String> result = rubric.selectDimensions(null);
 
             assertThat(result).containsExactly("technical_depth", "reasoning_communication", "conceptual_accuracy");
         }
 
         @Test
-        @DisplayName("perTurnRules 비어있고 intent=ANSWER → usesDimensions 전체 반환")
+        @DisplayName("perTurnRules 비어있으면 usesDimensions 전체 반환")
         void empty_per_turn_rules_returns_all_uses_dimensions() {
             Rubric rubric = rubricWith(Map.of());
 
-            List<String> result = rubric.selectDimensions(IntentType.ANSWER, null);
+            List<String> result = rubric.selectDimensions(null);
 
             assertThat(result).containsExactlyInAnyOrder("technical_depth", "reasoning_communication", "experience_concreteness", "factual_consistency", "chain_depth");
         }

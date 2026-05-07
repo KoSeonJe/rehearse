@@ -1,5 +1,9 @@
 package com.rehearse.api.domain.interview.service;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
@@ -17,8 +21,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
@@ -33,11 +35,13 @@ import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
 import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.slf4j.LoggerFactory;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -66,9 +70,6 @@ class FollowUpServiceTest {
 
     @Mock
     private FollowUpQuestionWriter followUpQuestionWriter;
-
-    @Mock
-    private IntentDispatcher intentDispatcher;
 
     @Mock
     private FollowUpTransactionHandler followUpTransactionHandler;
@@ -103,7 +104,7 @@ class FollowUpServiceTest {
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
-                audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
+                audioTurnAnalyzer, followUpQuestionWriter,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
                 resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
@@ -135,8 +136,8 @@ class FollowUpServiceTest {
                 action);
     }
 
-    private static TurnAnalysisResult turn(IntentType intentType, String answerText, AnswerAnalysis analysis) {
-        return new TurnAnalysisResult(answerText, IntentResult.of(intentType, 0.95, "test"), analysis);
+    private static TurnAnalysisResult turn(String answerText, AnswerAnalysis analysis) {
+        return new TurnAnalysisResult(answerText, analysis);
     }
 
     private static GeneratedFollowUp stepBQuestion(String question) {
@@ -187,7 +188,7 @@ class FollowUpServiceTest {
         void generateFollowUp_answerPath_buildsFromStepB() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(eq(1L), eq(50L), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "HashMap 은 해시 기반입니다.",
+                    .willReturn(turn("HashMap 은 해시 기반입니다.",
                             analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(FollowUpGenerationRequest.class), any(AnswerAnalysis.class), any(AskedPerspectives.class)))
                     .willReturn(stepBQuestion("Step B 가 만든 꼬리질문"));
@@ -213,7 +214,7 @@ class FollowUpServiceTest {
         void generateFollowUp_atMaxRounds_returnsExhaustedTrue() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(2, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("Q2"));
 
             Question savedQuestion = Question.builder()
@@ -233,7 +234,7 @@ class FollowUpServiceTest {
         void generateFollowUp_analyzerRecommendsSkip_skipsStepB() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
+                    .willReturn(turn("충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
@@ -249,7 +250,7 @@ class FollowUpServiceTest {
         void generateFollowUp_analyzerRecommendsSkip_publishesEvent() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
+                    .willReturn(turn("충분히 깊은 답변", analysisOf(RecommendedNextAction.SKIP)));
 
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
@@ -262,7 +263,7 @@ class FollowUpServiceTest {
         void generateFollowUp_stepBNonSkipWithBlankQuestion_throwsParseFailed() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBBlankQuestion());
 
             assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
@@ -277,7 +278,7 @@ class FollowUpServiceTest {
         void generateFollowUp_stepBSelfSkip_incrementsCounter() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -292,23 +293,8 @@ class FollowUpServiceTest {
         void generateFollowUp_stepBSelfSkip_publishesEvent() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
-
-            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
-
-            then(followUpTransactionHandler).should()
-                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
-        }
-
-        @Test
-        @DisplayName("intent != ANSWER 분기 시 base questionId 로 TurnCompletedEvent 를 발행한다")
-        void generateFollowUp_nonAnswerIntent_publishesEvent() {
-            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.CLARIFY_REQUEST, "무슨 뜻인가요?", AnswerAnalysis.empty(50L)));
-            given(intentDispatcher.dispatch(eq(IntentType.CLARIFY_REQUEST), any()))
-                    .willReturn(FollowUpResponse.builder().question("질문을 다시 설명합니다").build());
 
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
@@ -493,7 +479,7 @@ class FollowUpServiceTest {
             given(interviewFinder.findById(1L)).willReturn(csInterview);
 
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn(IntentType.ANSWER, "CS 답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+                    .willReturn(turn("CS 답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("CS 꼬리질문"));
 
             Question savedQuestion = Question.builder()
@@ -513,6 +499,74 @@ class FollowUpServiceTest {
             given(interview.getInterviewTypes()).willReturn(Set.of(InterviewType.RESUME_BASED));
             given(interview.getDurationMinutes()).willReturn(30);
             return interview;
+        }
+    }
+
+    @Nested
+    @DisplayName("[진행차단진단] WARN 로그")
+    class BlockingDiagnosticsWarnLog {
+
+        private ListAppender<ILoggingEvent> appender;
+        private Logger targetLogger;
+
+        @BeforeEach
+        void attachAppender() {
+            targetLogger = (Logger) LoggerFactory.getLogger(FollowUpService.class);
+            appender = new ListAppender<>();
+            appender.start();
+            targetLogger.addAppender(appender);
+        }
+
+        @AfterEach
+        void detachAppender() {
+            targetLogger.detachAppender(appender);
+        }
+
+        @Test
+        @DisplayName("analyzer-skip 분기 진입 시 track=STANDARD WARN 로그를 4개 키와 함께 기록")
+        void analyzerSkip_logsBlockingDiagnosticsWarn() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.SKIP)));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            ILoggingEvent warn = findWarn(appender);
+            assertThat(warn.getLevel()).isEqualTo(Level.WARN);
+            String formatted = warn.getFormattedMessage();
+            assertThat(formatted).contains("[진행차단진단]");
+            assertThat(formatted).contains("interviewId=1");
+            assertThat(formatted).contains("track=STANDARD");
+            assertThat(formatted).contains("stage=standard-followup");
+            assertThat(formatted).contains("reason=analyzer-skip");
+        }
+
+        @Test
+        @DisplayName("step-b-skip 분기 진입 시 track=STANDARD WARN 로그를 4개 키와 함께 기록")
+        void stepBSkip_logsBlockingDiagnosticsWarn() {
+            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
+            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
+                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
+            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBSkip("답변이 main_question 과 무관"));
+
+            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+
+            ILoggingEvent warn = findWarn(appender);
+            assertThat(warn.getLevel()).isEqualTo(Level.WARN);
+            String formatted = warn.getFormattedMessage();
+            assertThat(formatted).contains("[진행차단진단]");
+            assertThat(formatted).contains("interviewId=1");
+            assertThat(formatted).contains("track=STANDARD");
+            assertThat(formatted).contains("stage=standard-followup");
+            assertThat(formatted).contains("reason=step-b-skip");
+        }
+
+        private ILoggingEvent findWarn(ListAppender<ILoggingEvent> appender) {
+            return appender.list.stream()
+                    .filter(e -> e.getLevel() == Level.WARN)
+                    .filter(e -> e.getFormattedMessage().contains("[진행차단진단]"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("[진행차단진단] WARN 로그 미발견"));
         }
     }
 

@@ -25,25 +25,8 @@ class FocusLayerTest {
     }
 
     @Nested
-    @DisplayName("정상 렌더링 회귀 — 9종 callType")
+    @DisplayName("정상 렌더링 회귀")
     class NormalRender {
-
-        @Test
-        @DisplayName("intent_classifier: mainQuestion + userUtterance 가 프래그먼트에 포함된다")
-        void intent_classifier_renders_expected_fragment_when_hints_present() {
-            FocusHints hints = new FocusHints.IntentClassifierHints(
-                    "JVM 메모리 구조를 설명하세요.",
-                    "힙과 스택으로 나뉘는데요..."
-            );
-
-            List<ChatMessage> result = focusLayer.build(req("intent_classifier", hints));
-
-            assertThat(result).hasSize(1);
-            String content = result.get(0).content();
-            assertThat(content).contains("JVM 메모리 구조를 설명하세요.");
-            assertThat(content).contains("힙과 스택으로 나뉘는데요...");
-            assertThat(content).contains("의도를 분류하세요");
-        }
 
         @Test
         @DisplayName("answer_analyzer: mainQuestion + userAnswer + personaDepthHint 가 프래그먼트에 포함된다")
@@ -82,39 +65,6 @@ class FocusLayerTest {
             assertThat(content).contains("RELIABILITY");
             assertThat(content).contains("SCALABILITY");
             assertThat(content).contains("후속 질문을 생성하세요");
-        }
-
-        @Test
-        @DisplayName("clarify_response: mainQuestion + userUtterance 가 프래그먼트에 포함된다")
-        void clarify_response_renders_expected_fragment_when_hints_present() {
-            FocusHints hints = new FocusHints.ClarifyResponseHints(
-                    "SOLID 원칙이 무엇인가요?", "잘 모르겠어요."
-            );
-
-            List<ChatMessage> result = focusLayer.build(req("clarify_response", hints));
-
-            assertThat(result).hasSize(1);
-            String content = result.get(0).content();
-            assertThat(content).contains("SOLID 원칙이 무엇인가요?");
-            assertThat(content).contains("잘 모르겠어요.");
-            assertThat(content).contains("재설명");
-        }
-
-        @Test
-        @DisplayName("giveup_response: mainQuestion + userUtterance + personaDepthHint 가 프래그먼트에 포함된다")
-        void giveup_response_renders_expected_fragment_when_hints_present() {
-            FocusHints hints = new FocusHints.GiveUpResponseHints(
-                    "REST와 GraphQL 차이를 설명하세요.", "모르겠습니다.", "GENTLE"
-            );
-
-            List<ChatMessage> result = focusLayer.build(req("giveup_response", hints));
-
-            assertThat(result).hasSize(1);
-            String content = result.get(0).content();
-            assertThat(content).contains("REST와 GraphQL 차이를 설명하세요.");
-            assertThat(content).contains("모르겠습니다.");
-            assertThat(content).contains("GENTLE");
-            assertThat(content).contains("포기");
         }
 
         @Test
@@ -195,7 +145,8 @@ class FocusLayerTest {
         @DisplayName("L4 출력은 USER 메시지이며 cacheControl=false 이어야 한다")
         void outputs_non_cached_user_message() {
             List<ChatMessage> result = focusLayer.build(
-                    req("intent_classifier", new FocusHints.IntentClassifierHints("q", "a")));
+                    req("answer_analyzer",
+                            new FocusHints.AnswerAnalyzerHints("질문", "답변", "MID_SENIOR")));
 
             assertThat(result).hasSize(1);
             ChatMessage msg = result.get(0);
@@ -209,20 +160,7 @@ class FocusLayerTest {
     class CapExceededTruncate {
 
         @Test
-        @DisplayName("intent_classifier: 300 토큰 초과 fragment 도 본문 절단 후 정상 반환되며 cap × 0.9 이내")
-        void intent_classifier_truncates_and_returns_within_safety_margin() {
-            String oversized = "A".repeat(FocusLayer.CAP_INTENT_CLASSIFIER * 4 + 400);
-            FocusHints hints = new FocusHints.IntentClassifierHints("질문", oversized);
-
-            List<ChatMessage> result = focusLayer.build(req("intent_classifier", hints));
-
-            assertThat(result).hasSize(1);
-            int actualTokens = tokenEstimator.estimate(result.get(0).content());
-            assertThat(actualTokens).isLessThanOrEqualTo((int) Math.ceil(FocusLayer.CAP_INTENT_CLASSIFIER * 0.9) + 1);
-        }
-
-        @Test
-        @DisplayName("answer_analyzer: 800 토큰 초과 시 절단 후 지시문 (JSON 응답 안내) 보존")
+        @DisplayName("answer_analyzer: cap 초과 시 절단 후 지시문 (JSON 응답 안내) 보존")
         void answer_analyzer_truncates_preserves_instruction_tail() {
             String oversized = "B".repeat(FocusLayer.CAP_ANSWER_ANALYZER * 4 + 500);
             FocusHints hints = new FocusHints.AnswerAnalyzerHints("질문", oversized, "MID_SENIOR");
@@ -238,7 +176,7 @@ class FocusLayerTest {
         }
 
         @Test
-        @DisplayName("resume_chain_interrogator: 1200 토큰 초과 시 절단 후 LEVEL/QUALITY 지시문 보존")
+        @DisplayName("resume_chain_interrogator: cap 초과 시 절단 후 LEVEL/QUALITY 지시문 보존")
         void resume_chain_interrogator_truncates_preserves_instruction_tail() {
             String oversized = "C".repeat(FocusLayer.CAP_RESUME_CHAIN_INTERROGATOR * 4 + 800);
             FocusHints hints = new FocusHints.ResumeChainInterrogatorHints(

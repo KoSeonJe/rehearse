@@ -5,8 +5,6 @@ import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionR
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
@@ -50,7 +48,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 
 @DisplayName("RubricScoringEventListener Service Integration")
@@ -96,7 +93,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     class TurnCompletedEventPersist {
 
         @Test
-        @DisplayName("정상 1턴 TECH intent ANSWER 는 question_score 와 dimension 을 적재한다")
+        @DisplayName("정상 1턴 STANDARD 답변은 question_score 와 dimension 을 적재한다")
         void standardAnswer_persistsQuestionScore() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
@@ -119,7 +116,6 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
 
             resumeTurnEventPublisher.publish(
                     data.interview().getId(), 0L, answerAnalysis(RecommendedNextAction.DEEP_DIVE),
-                    IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                     ResumeMode.PLAYGROUND, 1, null, "답변 텍스트", data.question().getId());
 
             QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
@@ -128,34 +124,10 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
 
         @Test
-        @DisplayName("intent CLARIFY_REQUEST 는 정상 skip 되어 question_score 를 적재하지 않는다")
-        void clarifyIntent_skipsScoring() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
-
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    data.interview().getId(), context(data), clarifyTurn(),
-                    data.question().getId(), 0);
-
-            assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
-            then(resilientAiClient).should(never()).chat(any());
-        }
-
-        @Test
-        @DisplayName("intent != ANSWER 분기는 publish 후 정상 skip 된다")
-        void nonAnswerIntentBranch_publishesAndSkips() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
-            given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(IntentType.CLARIFY_REQUEST, RecommendedNextAction.CLARIFICATION));
-
-            followUpService.generateFollowUp(data.interview().getId(), data.interview().getUserId(), request(data), audio());
-
-            assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
-        }
-
-        @Test
         @DisplayName("analyzer_skip 분기는 publish 후 question_score 를 적재한다")
         void analyzerSkip_publishesAndPersists() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
-            given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(IntentType.ANSWER, RecommendedNextAction.SKIP));
+            given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.SKIP));
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
             followUpService.generateFollowUp(data.interview().getId(), data.interview().getUserId(), request(data), audio());
@@ -167,7 +139,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @DisplayName("step_b_skip 분기는 publish 후 question_score 를 적재한다")
         void stepBSkip_publishesAndPersists() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
-            given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(IntentType.ANSWER, RecommendedNextAction.DEEP_DIVE));
+            given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.DEEP_DIVE));
             given(resilientAiClient.chat(any())).willReturn(stepBSkipResponse(), rubricResponse());
 
             followUpService.generateFollowUp(data.interview().getId(), data.interview().getUserId(), request(data), audio());
@@ -183,7 +155,6 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
 
             resumeTurnEventPublisher.publish(
                     data.interview().getId(), 0L, answerAnalysis(RecommendedNextAction.DEEP_DIVE),
-                    IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                     ResumeMode.PLAYGROUND, 1, null, "답변 텍스트", null);
 
             assertNoScoresDuring(data.interview().getId(), Duration.ofMillis(500));
@@ -236,12 +207,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     }
 
     private TurnAnalysisResult answerTurn(RecommendedNextAction action) {
-        return new TurnAnalysisResult("답변 텍스트", IntentResult.of(IntentType.ANSWER, 0.9, "answer"), answerAnalysis(action));
-    }
-
-    private TurnAnalysisResult clarifyTurn() {
-        return new TurnAnalysisResult("무슨 뜻인가요?", IntentResult.of(IntentType.CLARIFY_REQUEST, 0.9, "clarify"),
-                answerAnalysis(RecommendedNextAction.CLARIFICATION));
+        return new TurnAnalysisResult("답변 텍스트", answerAnalysis(action));
     }
 
     private AnswerAnalysis answerAnalysis(RecommendedNextAction action) {
@@ -280,11 +246,10 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
     }
 
-    private ChatResponse analyzerResponse(IntentType intentType, RecommendedNextAction action) {
+    private ChatResponse analyzerResponse(RecommendedNextAction action) {
         return chat("""
                 {
                   "answer_text": "답변 텍스트",
-                  "intent": {"type": "%s", "confidence": 0.95, "reasoning": "test"},
                   "answer_analysis": {
                     "turn_id": 50,
                     "claims": [],
@@ -294,7 +259,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
                     "recommended_next_action": "%s"
                   }
                 }
-                """.formatted(intentType.name(), action.name()));
+                """.formatted(action.name()));
     }
 
     private ChatResponse stepBSkipResponse() {

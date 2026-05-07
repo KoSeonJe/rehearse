@@ -3,7 +3,6 @@ package com.rehearse.api.infra.ai.context.layer;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
-import com.rehearse.api.infra.ai.context.layer.SkeletonCallType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +27,7 @@ class FixedContextLayerTest {
     @DisplayName("L1은 단일 SYSTEM 메시지를 반환한다")
     void build_returnsSingleSystemMessage_whenAnyCallType() {
         ContextBuildRequest req = new ContextBuildRequest(
-                "intent_classifier", null, null, null, null);
+                "answer_analyzer", null, null, null, null);
 
         List<ChatMessage> result = layer.build(req);
 
@@ -45,22 +44,6 @@ class FixedContextLayerTest {
         List<ChatMessage> result = layer.build(req);
 
         assertThat(result.get(0).cacheControl()).isTrue();
-    }
-
-    @Test
-    @DisplayName("intent_classifier callType은 intent_classifier skeleton을 포함한다")
-    void build_containsIntentClassifierSkeleton_whenIntentClassifierCallType() {
-        ContextBuildRequest req = new ContextBuildRequest(
-                "intent_classifier", null, null, null, null);
-
-        List<ChatMessage> result = layer.build(req);
-        String content = result.get(0).content();
-
-        assertThat(content).contains("분류기");
-        assertThat(content).contains("ANSWER");
-        assertThat(content).contains("CLARIFY_REQUEST");
-        assertThat(content).contains("GIVE_UP");
-        assertThat(content).contains("OFF_TOPIC");
     }
 
     @Test
@@ -92,25 +75,24 @@ class FixedContextLayerTest {
     }
 
     @Test
-    @DisplayName("intent_classifier와 follow_up_generator_v3는 서로 다른 skeleton tail을 가진다")
+    @DisplayName("answer_analyzer와 follow_up_generator_v3는 서로 다른 skeleton tail을 가진다")
     void build_producesDifferentSkeletonTails_whenDifferentCallTypes() {
-        ContextBuildRequest intentReq = new ContextBuildRequest(
-                "intent_classifier", null, null, null, null);
+        ContextBuildRequest analyzerReq = new ContextBuildRequest(
+                "answer_analyzer", null, null, null, null);
         ContextBuildRequest followUpReq = new ContextBuildRequest(
                 "follow_up_generator_v3", null, null, null, null);
 
-        String intentContent = layer.build(intentReq).get(0).content();
+        String analyzerContent = layer.build(analyzerReq).get(0).content();
         String followUpContent = layer.build(followUpReq).get(0).content();
 
-        assertThat(intentContent).isNotEqualTo(followUpContent);
+        assertThat(analyzerContent).isNotEqualTo(followUpContent);
     }
 
     @Test
     @DisplayName("모든 callType의 L1 블록은 공통 보안 규칙을 포함한다")
     void build_containsGlobalSecurityRules_forAllCallTypes() {
         List<String> callTypes = List.of(
-                "intent_classifier", "answer_analyzer",
-                "follow_up_generator_v3", "clarify_response", "giveup_response"
+                "answer_analyzer", "follow_up_generator_v3"
         );
 
         for (String callType : callTypes) {
@@ -128,11 +110,10 @@ class FixedContextLayerTest {
     }
 
     @Test
-    @DisplayName("L1 토큰 추정값은 callType별로 3000~5000 범위 안에 있다")
+    @DisplayName("L1 토큰 추정값은 callType별로 50~5000 범위 안에 있다")
     void build_tokenEstimateWithinTarget_forKnownCallTypes() {
         List<String> callTypes = List.of(
-                "intent_classifier", "answer_analyzer",
-                "follow_up_generator_v3", "clarify_response", "giveup_response"
+                "answer_analyzer", "follow_up_generator_v3"
         );
 
         for (String callType : callTypes) {

@@ -234,7 +234,7 @@ class FollowUpTransactionHandlerTest {
             given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
             FollowUpSaveResult result = handler.saveFollowUpResultAndPublishEvent(
-                    1L, createContext(), followUp, createTurn(IntentType.ANSWER));
+                    1L, createContext(), followUp, createTurn());
 
             assertThat(result.question().getId()).isEqualTo(100L);
             TurnCompletedEvent event = capturePublishedEvent();
@@ -250,13 +250,12 @@ class FollowUpTransactionHandlerTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             handler.publishTurnCompletedEvent(
-                    1L, createContext(), createTurn(IntentType.CLARIFY_REQUEST), 50L, 0);
+                    1L, createContext(), createTurn(), 50L, 0);
 
             TurnCompletedEvent event = capturePublishedEvent();
             assertThat(event.questionId()).isEqualTo(50L);
             assertThat(event.questionSetId()).isEqualTo(10L);
             assertThat(event.turnIndex()).isZero();
-            assertThat(event.intent()).isEqualTo(IntentType.CLARIFY_REQUEST);
         }
 
         @Test
@@ -361,10 +360,9 @@ class FollowUpTransactionHandlerTest {
                 10L, 50L, 1, ReferenceType.MODEL_ANSWER, 2);
     }
 
-    private TurnAnalysisResult createTurn(IntentType intentType) {
+    private TurnAnalysisResult createTurn() {
         return new TurnAnalysisResult(
                 "답변 텍스트",
-                IntentResult.of(intentType, 0.9, "test"),
                 new AnswerAnalysis(50L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE));
     }
 

@@ -1,8 +1,6 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -46,7 +44,6 @@ class ResumeTurnEventPublisherTest {
             publisher.publish(
                     1L, 0L,
                     new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE),
-                    IntentResult.of(IntentType.ANSWER, 0.9, "answer"),
                     ResumeMode.PLAYGROUND, 1,
                     null, "답변", null);
 
