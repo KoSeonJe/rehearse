@@ -19,10 +19,10 @@ LLM 응답과 도메인 코드 두 출처로 분산된 STANDARD 트랙의 refere
   - Entity: `Question.java:38-44, 75` (`reference_type` / `feedback_perspective` 컬럼 적재) + 팩토리 `Question.resume()` (line 75 — RESUME_* 만 허용 가드).
   - Assembler: `QuestionSetAssembler.java:42-51` — STANDARD 신규 Question 적재 시 `questionType=MAIN` 고정 + perspective 도메인 계산 + referenceType LLM 결과 그대로 (이중 출처 핵심).
   - Follow-up 분기: `FollowUpTransactionHandler.java:67-110` — 메인 질문의 referenceType 으로 follow-up prompt 모드 분기 (MODEL_ANSWER → CONCEPT 모드, GUIDE → EXPERIENCE 모드). **데이터가 아닌 도메인 로직 결합**. 또한 line 99/110 에서 `QuestionType.FOLLOWUP` 직접 비교 + 빌더에 직접 사용 (Phase 1 enum 환원 영향 직접 영역).
-  - Track Policy (FOLLOWUP enum 직접 비교 — Phase 1 환원 필수):
+  - Track Policy (FOLLOWUP enum 직접 비교 — Phase 1 환원 필수, 위치 = `domain/interview/service/`):
     - `StandardFollowUpPolicy.java:35` — `q.getQuestionType() == QuestionType.FOLLOWUP` count → `maxRounds(2)` cap.
     - `ResumeTrackPolicy.java:29` — 동일 비교 → `HARD_TURN_CAP(7)` cap. RESUME 트랙은 FOLLOWUP enum 미사용 → count 항상 0 → **dead code**. RESUME 종료 제어는 ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 가 별도 보장.
-  - DTO: `QuestionDetailResponse.java:18,28` (`referenceType`), `AnswerResponse.java:23-33` (`feedbackPerspective` 문자열).
+  - DTO: `QuestionDetailResponse.java:18,28` (`referenceType`), `domain/question/dto/AnswerResponse.java:23-33` (`feedbackPerspective` 문자열).
   - Rubric: `RubricLoader.java:71`, `RubricFamily.java:54-58` — `feedbackPerspective` 로 매핑 (출처 변경만 — 값 동등).
   - LLM schema: `prompts/template/question-generation.txt:37-39, 71-74`, `GeneratedQuestion.java:30` (`@JsonProperty("reference_type")`), `MockAiClient.java:50-54`.
   - Migration 이력: V4 (`reference_type` 최초), V11 (`question_pool.reference_type`), V16 (`feedback_perspective`), V21 (`question_set.category` = InterviewType.name), V42 (RESUME meta drop), V44 (RESUME 통일).

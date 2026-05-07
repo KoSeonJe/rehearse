@@ -58,13 +58,13 @@
   - `resolveMainReferenceType` (line 81-91 추정) → `mainQuestion.getQuestionType().referenceTypeOrFallback(category)` 환원
   - `saveFollowUpResult` (line 99 / 110 추정) → `q.getQuestionType().isFollowUp()` 환원 + sub-type 결정 (`TECH_MAIN` → `TECH_FOLLOWUP` / `BEHAVIORAL_MAIN` → `BEHAVIORAL_FOLLOWUP` / `RESUME_*` → 기존 path)
 
-**Policy (2)**:
-- `.../interview/policy/StandardFollowUpPolicy.java` (line 35) — `q.getQuestionType() == QuestionType.FOLLOWUP` → `q.getQuestionType().isFollowUp()`
-- `.../interview/policy/ResumeTrackPolicy.java` (line 28-30) — `assertCanContinue` no-op 으로 정리 (RESUME 종료 제어 = ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 일임). dead `FOLLOWUP` count 가드 제거. tech-spec Architecture 섹션 옵션 (a) 채택. (b)(`RESUME_INTERROGATION` count cap) 선택 시 implement 단계 결정 + tech-spec 동시 갱신.
+**Policy (2, 실제 위치 = `domain/interview/service/`)**:
+- `.../interview/service/StandardFollowUpPolicy.java` (line 35) — `q.getQuestionType() == QuestionType.FOLLOWUP` → `q.getQuestionType().isFollowUp()`
+- `.../interview/service/ResumeTrackPolicy.java` (line 28-30) — `assertCanContinue` no-op 으로 정리 (RESUME 종료 제어 = ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 일임). dead `FOLLOWUP` count 가드 제거. tech-spec Architecture 섹션 옵션 (a) 채택. (b)(`RESUME_INTERROGATION` count cap) 선택 시 implement 단계 결정 + tech-spec 동시 갱신.
 
-**DTO (2)**:
+**DTO (2, AnswerResponse 실제 위치 = `domain/question/dto/`)**:
 - `.../question/dto/QuestionDetailResponse.java` (line 18, 28) — `from(question)` 에서 `question.getReferenceType()` → `question.getQuestionType().referenceTypeOrFallback(category)` 환원
-- `.../interview/dto/AnswerResponse.java` (line 23-33) — `feedbackPerspective` 매핑을 `question.getQuestionType().feedbackPerspectiveOrFallback(category)` 환원
+- `.../question/dto/AnswerResponse.java` (line 23-33) — `feedbackPerspective` 매핑을 `question.getQuestionType().feedbackPerspectiveOrFallback(category)` 환원
 
 **Question Entity (가드 보존)**:
 - `.../question/entity/Question.java` (line 75 — `Question.resume()` 팩토리)
