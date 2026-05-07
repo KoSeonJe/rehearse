@@ -55,7 +55,7 @@ npm run test:watch   # vitest watch
 
 - **LLM API 직접 호출 금지** — Claude / OpenAI 등 모든 AI 호출은 backend 경유.
 - **shadcn primitive 우선 + Aceternity 절제** — 기본 UI = shadcn (`/shadcn` 스킬). Aceternity = 페이지당 최대 1–2개 포인트.
-- **Spec 없는 수정 금지** — `frontend/src/` 변경 전 `docs/plans/{N}-{slug}/tech-spec.md` 존재 확인. 부재 시 설계부터. 자세한 워크플로우는 루트 `AGENTS.md` "Spec-Driven Work" + `docs/plans/AGENTS.md` 참조.
+- **Spec 없는 수정 금지** — `frontend/src/` 변경 전 `docs/plans/{YYYY-MM-DD-topic}/tech_spec/design.md` 존재 확인. 부재 시 설계부터. 자세한 워크플로우는 루트 `AGENTS.md` "Spec-Driven Work" 참조.
 
 > 코드 수준 컨벤션 = `conventions.md`. 런타임 / 데이터 흐름 / 시스템 경계 = `architecture.md`.
 
