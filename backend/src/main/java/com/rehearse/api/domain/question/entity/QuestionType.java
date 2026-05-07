@@ -3,12 +3,16 @@ package com.rehearse.api.domain.question.entity;
 import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 
 public enum QuestionType {
-    MAIN(null, null),
-    FOLLOWUP(null, null),
+    TECH_MAIN(ReferenceType.MODEL_ANSWER, FeedbackPerspective.TECHNICAL),
+    TECH_FOLLOWUP(ReferenceType.MODEL_ANSWER, FeedbackPerspective.TECHNICAL),
+    BEHAVIORAL_MAIN(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
+    BEHAVIORAL_FOLLOWUP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
     RESUME_OPENER(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
     RESUME_PLAYGROUND(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
     RESUME_INTERROGATION(ReferenceType.GUIDE, FeedbackPerspective.TECHNICAL),
-    RESUME_WRAP_UP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL);
+    RESUME_WRAP_UP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
+    MAIN(null, null),
+    FOLLOWUP(null, null);
 
     private final ReferenceType referenceType;
     private final FeedbackPerspective feedbackPerspective;
@@ -24,5 +28,36 @@ public enum QuestionType {
 
     public FeedbackPerspective feedbackPerspective() {
         return feedbackPerspective;
+    }
+
+    public boolean isFollowUp() {
+        return this == TECH_FOLLOWUP || this == BEHAVIORAL_FOLLOWUP || this == FOLLOWUP;
+    }
+
+    public boolean isMain() {
+        return this == TECH_MAIN || this == BEHAVIORAL_MAIN || this == MAIN;
+    }
+
+    public boolean isResume() {
+        return this == RESUME_OPENER || this == RESUME_PLAYGROUND
+                || this == RESUME_INTERROGATION || this == RESUME_WRAP_UP;
+    }
+
+    public ReferenceType referenceTypeOrFallback(QuestionSetCategory category) {
+        if (referenceType != null) {
+            return referenceType;
+        }
+        return category == QuestionSetCategory.BEHAVIORAL
+                ? ReferenceType.GUIDE
+                : ReferenceType.MODEL_ANSWER;
+    }
+
+    public FeedbackPerspective feedbackPerspectiveOrFallback(QuestionSetCategory category) {
+        if (feedbackPerspective != null) {
+            return feedbackPerspective;
+        }
+        return category == QuestionSetCategory.BEHAVIORAL
+                ? FeedbackPerspective.BEHAVIORAL
+                : FeedbackPerspective.TECHNICAL;
     }
 }

@@ -85,7 +85,7 @@ public class InternalQuestionSetService {
         Interview interview = interviewFinder.findById(interviewId);
 
         List<AnswerResponse> answers = getAnswers(questionSetId).stream()
-                .map(AnswerResponse::from)
+                .map(answer -> AnswerResponse.from(answer, questionSet.getCategory()))
                 .toList();
 
         return AnswersResponse.builder()

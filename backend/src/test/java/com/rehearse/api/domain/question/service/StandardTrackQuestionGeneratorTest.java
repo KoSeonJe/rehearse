@@ -7,6 +7,8 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionPool;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
@@ -150,12 +152,12 @@ class StandardTrackQuestionGeneratorTest {
     }
 
     @Nested
-    @DisplayName("QuestionSet 구조 및 FeedbackPerspective")
+    @DisplayName("QuestionSet 구조 - sub-type 결정 + column null 적재")
     class QuestionSetStructure {
 
         @Test
-        @DisplayName("BEHAVIORAL 타입은 FeedbackPerspective.BEHAVIORAL 로 설정된다")
-        void behavioralType_perspectiveBehavioral() {
+        @DisplayName("BEHAVIORAL 타입은 BEHAVIORAL_MAIN 으로 적재되고 enum 환원 시 (GUIDE, BEHAVIORAL)")
+        void behavioralType_assignsBehavioralMain() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
                     .willReturn(List.of(makePool("자기소개", "GUIDE")));
 
@@ -163,12 +165,16 @@ class StandardTrackQuestionGeneratorTest {
                     List.of(InterviewType.BEHAVIORAL), List.of(), null, 30, TechStack.JAVA_SPRING);
 
             Question q = result.get(0).getQuestions().get(0);
-            assertThat(q.getFeedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
+            assertThat(q.getQuestionType()).isEqualTo(QuestionType.BEHAVIORAL_MAIN);
+            assertThat(q.getQuestionType().referenceTypeOrFallback(QuestionSetCategory.BEHAVIORAL))
+                    .isEqualTo(ReferenceType.GUIDE);
+            assertThat(q.getQuestionType().feedbackPerspectiveOrFallback(QuestionSetCategory.BEHAVIORAL))
+                    .isEqualTo(FeedbackPerspective.BEHAVIORAL);
         }
 
         @Test
-        @DisplayName("CS_FUNDAMENTAL 타입은 FeedbackPerspective.TECHNICAL 로 설정된다")
-        void csFundamental_perspectiveTechnical() {
+        @DisplayName("CS_FUNDAMENTAL 타입은 TECH_MAIN 으로 적재되고 enum 환원 시 (MODEL_ANSWER, TECHNICAL)")
+        void csFundamental_assignsTechMain() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("OS 스케줄링", "MODEL_ANSWER")));
 
@@ -176,12 +182,16 @@ class StandardTrackQuestionGeneratorTest {
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
 
             Question q = result.get(0).getQuestions().get(0);
-            assertThat(q.getFeedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(q.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
+            assertThat(q.getQuestionType().referenceTypeOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
+                    .isEqualTo(ReferenceType.MODEL_ANSWER);
+            assertThat(q.getQuestionType().feedbackPerspectiveOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
+                    .isEqualTo(FeedbackPerspective.TECHNICAL);
         }
 
         @Test
-        @DisplayName("referenceType 문자열이 ReferenceType enum 으로 파싱된다")
-        void referenceType_parsedCorrectly() {
+        @DisplayName("Phase 1 - referenceType / feedbackPerspective 컬럼 적재가 중단되어 null 이다")
+        void columns_nullPersisted() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("CS 질문", "MODEL_ANSWER")));
 
@@ -189,7 +199,8 @@ class StandardTrackQuestionGeneratorTest {
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
 
             Question q = result.get(0).getQuestions().get(0);
-            assertThat(q.getReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+            assertThat(q.getReferenceType()).isNull();
+            assertThat(q.getFeedbackPerspective()).isNull();
         }
     }
 }

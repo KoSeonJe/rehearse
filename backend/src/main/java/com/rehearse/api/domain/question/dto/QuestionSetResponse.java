@@ -21,7 +21,7 @@ public class QuestionSetResponse {
 
     public static QuestionSetResponse from(QuestionSet questionSet) {
         List<QuestionDetailResponse> questionDetails = questionSet.getQuestions().stream()
-                .map(QuestionDetailResponse::from)
+                .map(q -> QuestionDetailResponse.from(q, questionSet.getCategory()))
                 .toList();
 
         AnalysisStatus status = questionSet.getEffectiveAnalysisStatus();

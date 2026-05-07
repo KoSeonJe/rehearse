@@ -2,7 +2,6 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.global.exception.BusinessException;
@@ -32,7 +31,7 @@ public class StandardFollowUpPolicy implements InterviewTurnPolicy {
     @Override
     public void assertCanContinue(Interview interview, QuestionSet questionSet) {
         long followUpCount = questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
+                .filter(q -> q.getQuestionType().isFollowUp())
                 .count();
 
         if (followUpCount >= maxRounds) {

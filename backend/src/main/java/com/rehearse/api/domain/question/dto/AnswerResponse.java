@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.question.dto;
 
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,11 +19,11 @@ public class AnswerResponse {
     private final long startMs;
     private final long endMs;
 
-    public static AnswerResponse from(QuestionAnswer answer) {
+    public static AnswerResponse from(QuestionAnswer answer, QuestionSetCategory category) {
         var question = answer.getQuestion();
-        String perspective = question.getFeedbackPerspective() != null
-                ? question.getFeedbackPerspective().name()
-                : "TECHNICAL";
+        String perspective = question.getQuestionType()
+                .feedbackPerspectiveOrFallback(category)
+                .name();
 
         return AnswerResponse.builder()
                 .id(answer.getId())
