@@ -30,7 +30,7 @@ public class ResumeTurnEventPublisher {
                         ResumeSkeleton skeleton, String userAnswer, Long questionId) {
         if (questionId == null) {
             log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={}",
-                    interviewId, currentMode, turnIndex);
+                    interviewId, currentMode.name().toLowerCase(), turnIndex);
             return;
         }
         try {

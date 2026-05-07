@@ -24,10 +24,7 @@ uses_dimensions:
 # - PLAYGROUND: 놀이터 모드 — 구체성만 측정
 # - INTERROGATION: 심문 모드 — 깊이 + 사실 + 체인
 # - WRAP_UP: 회고 모드 — 체인 완결 중심
-# on_intent_* 는 모드와 독립 적용
 per_turn_rules:
-  on_intent_clarify: []
-  on_intent_give_up: [recovery_from_gaps]
   on_playground_mode:    [experience_concreteness]
   on_interrogation_mode: [technical_depth, reasoning_communication, factual_consistency, chain_depth]
   on_wrap_up_mode:       [chain_depth]

@@ -97,7 +97,7 @@ public class ResumeInterviewOrchestrator {
 
         if (shouldSkipTurnCompletedEvent(handlerResult)) {
             log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=publish-skip turnIndex={}",
-                    interviewId, currentMode, turnIndex);
+                    interviewId, currentMode.name().toLowerCase(), turnIndex);
             return handlerResult.response();
         }
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
@@ -206,7 +206,7 @@ public class ResumeInterviewOrchestrator {
             return;
         }
         log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={} type={}",
-                interviewId, mode, turnIndex, result.response().getType());
+                interviewId, mode.name().toLowerCase(), turnIndex, result.response().getType());
         throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
     }
 

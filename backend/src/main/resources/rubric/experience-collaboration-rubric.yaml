@@ -17,8 +17,6 @@ uses_dimensions:
     weight: 0.35
 
 per_turn_rules:
-  on_intent_clarify: []
-  on_intent_give_up: []                   # 협업 질문은 "모른다" 보다 상황 재구성을 기대
   on_intent_answer:  [problem_framing, reasoning_communication, experience_concreteness, collaboration_awareness]
 
 level_expectations:

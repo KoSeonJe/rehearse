@@ -407,7 +407,7 @@ class ResumeInterviewOrchestratorTest {
             assertThat(formatted).contains("[진행차단진단]");
             assertThat(formatted).contains("interviewId=1");
             assertThat(formatted).contains("track=RESUME");
-            assertThat(formatted).contains("stage=INTERROGATION");
+            assertThat(formatted).contains("stage=interrogation");
             assertThat(formatted).contains("reason=publish-skip");
         }
 
