@@ -62,6 +62,7 @@
   - `chain_id` allowlist 외 필드 drop (skeleton 의 `synthesizeChainId(projectId, topic)` 만 허용).
   - drop 후 `primaryChains.isEmpty()` 인 ProjectPlan 발견 시 `withSchemaRetryHint("chain_id 는 ALLOWED_CHAIN_IDS 안에서만...")` 1회 재호출 + `parseOrRetry` 재실행.
   - 재시도 후도 missing → `INVALID_PLAN` (500).
+  - `projectName` resolution: skeleton 의 `Project.projectName` 우선. LLM 응답 projectName 이 skeleton 과 mismatch 시 WARN 로그 + skeleton 값 사용 (no-throw, 길이만 로깅, 원문 미노출).
 - `ResumeInterviewPlanValidator.validate` — 트리 정합성 (chain → claim 부모 참조, projectId 매칭).
   - `ORPHAN_CHAIN` / `ORPHAN_CLAIM` / `PROJECT_NOT_FOUND_IN_SKELETON` (500).
 
