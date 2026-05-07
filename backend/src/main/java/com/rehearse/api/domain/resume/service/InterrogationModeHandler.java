@@ -8,6 +8,8 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder;
@@ -45,8 +47,10 @@ public class InterrogationModeHandler {
         ChainStateTrackerSnapshot snapshot = snapshotOpt.get();
 
         // Phase 2: LLM 호출 + 응답 검증 (lock 밖)
+        String projectName = resolveProjectName(plan, snapshot.currentProjectId());
         InterrogationResult result = promptBuilder.build(
                 interviewId, state, previousExchanges,
+                projectName,
                 snapshot.chainTopic(), snapshot.currentLevel(),
                 snapshot.answerQuality(), userAnswer, snapshot.consecutiveStay()
         );
@@ -93,6 +97,14 @@ public class InterrogationModeHandler {
                 orderIndex,
                 answerQuality
         ));
+    }
+
+    private String resolveProjectName(InterviewPlan plan, String projectId) {
+        return plan.projectPlans().stream()
+                .filter(pp -> pp.projectId().equals(projectId))
+                .findFirst()
+                .map(ProjectPlan::projectName)
+                .orElseThrow(() -> new BusinessException(ResumeErrorCode.PROJECT_NOT_FOUND_IN_SKELETON));
     }
 
     private void applyDecision(ChainStateTracker tracker, InterrogationResult result, int answerQuality, int currentLevel) {

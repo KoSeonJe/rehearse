@@ -42,6 +42,82 @@ class ResumePlaygroundOpenerIntegrationTest {
     @Test
     @DisplayName("buildOpener 호출 시 L1(SYSTEM cached) + L2(SESSION STATE) + L4(USER fragment) 모두 ChatRequest.messages 에 주입된다")
     void opener_invocation_assembles_all_four_layers() {
+        TestContext ctx = newContext();
+
+        Project project = new Project("proj-1", "샘플 프로젝트", List.of(), List.of());
+        PlaygroundPhase phase = new PlaygroundPhase("프로젝트에 대해 자유롭게 소개해주세요.", List.of("c1", "c2"));
+
+        ctx.builder.buildOpener(42L, ctx.state, project, phase);
+
+        List<ChatMessage> messages = capturedMessages(ctx);
+
+        assertThat(messages).isNotEmpty();
+        // L1: cached SYSTEM
+        assertThat(messages.stream().anyMatch(m ->
+                m.role() == ChatMessage.Role.SYSTEM
+                        && m.cacheControl()
+                        && m.content().contains("보안 규칙")))
+                .as("L1 cached SYSTEM 블록 누락")
+                .isTrue();
+        // L2: SESSION STATE header
+        assertThat(messages.stream().anyMatch(m ->
+                m.role() == ChatMessage.Role.SYSTEM
+                        && m.content().startsWith("## SESSION STATE")))
+                .as("L2 SESSION STATE 블록 누락 (runtimeState 미주입)")
+                .isTrue();
+        // L4: USER fragment with PROJECT_INFO + opener question
+        assertThat(messages.stream().anyMatch(m ->
+                m.role() == ChatMessage.Role.USER
+                        && m.content().contains("<<<PROJECT_INFO>>>")
+                        && m.content().contains("프로젝트에 대해 자유롭게 소개해주세요.")))
+                .as("L4 PROJECT_INFO + opener question 블록 누락 (focusHints 미주입)")
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("Project.projectName 명시 시 L4 USER fragment 의 PROJECT_INFO 블록에 정확한 명칭이 포함된다 — production substitution 회귀 가드")
+    void opener_invocation_propagates_explicit_project_name_to_l4_fragment() {
+        TestContext ctx = newContext();
+
+        String explicitName = "결제 시스템 안정화 프로젝트";
+        Project project = new Project("proj-explicit", explicitName, List.of(), List.of());
+        PlaygroundPhase phase = new PlaygroundPhase("프로젝트 흐름 소개해주세요.", List.of());
+
+        ctx.builder.buildOpener(99L, ctx.state, project, phase);
+
+        List<ChatMessage> messages = capturedMessages(ctx);
+        ChatMessage userFragment = messages.stream()
+                .filter(m -> m.role() == ChatMessage.Role.USER && m.content().contains("<<<PROJECT_INFO>>>"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("L4 USER fragment 누락"));
+
+        assertThat(userFragment.content())
+                .contains("projectName: " + explicitName)
+                .doesNotContain("projectName: null");
+    }
+
+    @Test
+    @DisplayName("Project.projectName 부재 시 L4 USER fragment 에 빈 명칭 라인이 포함되며 'null' 문자열이나 임의 명칭이 새지 않는다")
+    void opener_invocation_passes_blank_project_name_through_without_hallucination() {
+        TestContext ctx = newContext();
+
+        Project project = new Project("proj-blank", null, List.of(), List.of());
+        PlaygroundPhase phase = new PlaygroundPhase("자유롭게 이야기해주세요.", List.of());
+
+        ctx.builder.buildOpener(7L, ctx.state, project, phase);
+
+        List<ChatMessage> messages = capturedMessages(ctx);
+        ChatMessage userFragment = messages.stream()
+                .filter(m -> m.role() == ChatMessage.Role.USER && m.content().contains("<<<PROJECT_INFO>>>"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("L4 USER fragment 누락"));
+
+        assertThat(userFragment.content())
+                .contains("projectName: \n")
+                .doesNotContain("projectName: null");
+    }
+
+    private static TestContext newContext() {
         TokenEstimator tokenEstimator = new TokenEstimator();
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -71,35 +147,19 @@ class ResumePlaygroundOpenerIntegrationTest {
 
         ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-1", List.of(), List.of());
-        PlaygroundPhase phase = new PlaygroundPhase("프로젝트에 대해 자유롭게 소개해주세요.", List.of("c1", "c2"));
 
-        builder.buildOpener(42L, state, project, phase);
-
-        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
-        org.mockito.Mockito.verify(aiClient).chat(captor.capture());
-        List<ChatMessage> messages = captor.getValue().messages();
-
-        assertThat(messages).isNotEmpty();
-        // L1: cached SYSTEM
-        assertThat(messages.stream().anyMatch(m ->
-                m.role() == ChatMessage.Role.SYSTEM
-                        && m.cacheControl()
-                        && m.content().contains("보안 규칙")))
-                .as("L1 cached SYSTEM 블록 누락")
-                .isTrue();
-        // L2: SESSION STATE header
-        assertThat(messages.stream().anyMatch(m ->
-                m.role() == ChatMessage.Role.SYSTEM
-                        && m.content().startsWith("## SESSION STATE")))
-                .as("L2 SESSION STATE 블록 누락 (runtimeState 미주입)")
-                .isTrue();
-        // L4: USER fragment with PROJECT_INFO + opener question
-        assertThat(messages.stream().anyMatch(m ->
-                m.role() == ChatMessage.Role.USER
-                        && m.content().contains("<<<PROJECT_INFO>>>")
-                        && m.content().contains("프로젝트에 대해 자유롭게 소개해주세요.")))
-                .as("L4 PROJECT_INFO + opener question 블록 누락 (focusHints 미주입)")
-                .isTrue();
+        return new TestContext(builder, aiClient, state);
     }
+
+    private static List<ChatMessage> capturedMessages(TestContext ctx) {
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        org.mockito.Mockito.verify(ctx.aiClient).chat(captor.capture());
+        return captor.getValue().messages();
+    }
+
+    private record TestContext(
+            ResumePlaygroundPromptBuilder builder,
+            AiClient aiClient,
+            InterviewRuntimeState state
+    ) {}
 }

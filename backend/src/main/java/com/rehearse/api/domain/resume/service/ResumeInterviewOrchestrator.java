@@ -18,11 +18,11 @@ import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
+import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -162,7 +162,7 @@ public class ResumeInterviewOrchestrator {
             }
             case WRAP_UP -> {
                 WrapUpModeHandler.WrapUpTurnResult r =
-                        wrapUpHandler.handle(interviewId, state, answerText, analysis, remainingMinutes, true, previousExchanges);
+                        wrapUpHandler.handle(interviewId, state, answerText, analysis, plan, remainingMinutes, true, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
         };
@@ -229,10 +229,7 @@ public class ResumeInterviewOrchestrator {
         }
         log.warn("[결함 skip] Resume handler questionId 누락. interviewId={}, turnIndex={}, mode={}, type={}",
                 interviewId, turnIndex, mode, result.response().getType());
-        throw new BusinessException(
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                "RESUME_012",
-                "이력서 면접 질문 식별자가 누락되었습니다.");
+        throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
     }
 
     private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}

@@ -6,6 +6,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
@@ -27,6 +28,7 @@ public class WrapUpModeHandler {
     public WrapUpTurnResult handle(
             Long interviewId, InterviewRuntimeState state,
             String userAnswer, AnswerAnalysis analysis,
+            InterviewPlan plan,
             long remainingMinutes, boolean isRetrospective,
             List<FollowUpExchange> previousExchanges
     ) {

@@ -34,6 +34,9 @@ public class ExtractedResumeSkeleton {
         @JsonProperty("project_id")
         private String projectId;
 
+        @JsonProperty("project_name")
+        private String projectName;
+
         private List<ExtractedClaim> claims;
 
         @JsonProperty("implicit_cs_topics")

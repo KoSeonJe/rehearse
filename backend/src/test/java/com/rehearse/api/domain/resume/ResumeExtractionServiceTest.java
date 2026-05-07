@@ -2,6 +2,7 @@ package com.rehearse.api.domain.resume;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.service.ResumeExtractionService;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.AiClient;
@@ -129,6 +130,53 @@ class ResumeExtractionServiceTest {
         assertThat(result.interrogationPriorityMap().get("high")).contains("p1_c1");
     }
 
+    @Test
+    @DisplayName("다수 명시 프로젝트는 LLM 응답의 project_name 을 그대로 적재한다")
+    void extract_uses_explicit_project_names_when_all_named() {
+        given(promptBuilder.buildSystemPrompt()).willReturn("system");
+        given(promptBuilder.buildUserPrompt(any())).willReturn("user");
+        given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
+        given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
+                .willReturn(parseSkeleton(MULTI_NAMED_JSON));
+
+        ResumeSkeleton result = service.extract("이력서", "hash");
+
+        assertThat(result.projects())
+                .extracting(Project::projectName)
+                .containsExactly("쿠폰 발급 시스템", "사내 모니터링 대시보드");
+    }
+
+    @Test
+    @DisplayName("명칭 부재 시 placeholder 주입 없이 그대로 통과한다 — LLM hallucinate 차단")
+    void extract_passes_blank_project_name_through_without_placeholder() {
+        given(promptBuilder.buildSystemPrompt()).willReturn("system");
+        given(promptBuilder.buildUserPrompt(any())).willReturn("user");
+        given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
+        given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
+                .willReturn(parseSkeleton(SINGLE_GENERAL_BLANK_NAME_JSON));
+
+        ResumeSkeleton result = service.extract("이력서", "hash");
+
+        assertThat(result.projects()).hasSize(1);
+        assertThat(result.projects().get(0).projectName()).isEqualTo("  ");
+    }
+
+    @Test
+    @DisplayName("다수 프로젝트 중 일부 명칭 부재 시 명시 항목만 보존하고 부재 항목은 그대로 통과한다")
+    void extract_preserves_explicit_names_and_passes_missing_through() {
+        given(promptBuilder.buildSystemPrompt()).willReturn("system");
+        given(promptBuilder.buildUserPrompt(any())).willReturn("user");
+        given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
+        given(aiResponseParser.parseOrRetry(any(), eq(ExtractedResumeSkeleton.class), any(), any()))
+                .willReturn(parseSkeleton(PARTIAL_MISSING_NAMES_JSON));
+
+        ResumeSkeleton result = service.extract("이력서", "hash");
+
+        assertThat(result.projects())
+                .extracting(Project::projectName)
+                .containsExactly("쿠폰 발급 시스템", null, "사내 모니터링 대시보드");
+    }
+
 
     private ChatResponse mockChatResponse() {
         return new ChatResponse("{}", null, "openai", "gpt-4o-mini", false, false);
@@ -230,4 +278,80 @@ class ResumeExtractionServiceTest {
             throw new RuntimeException(e);
         }
     }
+
+    private ExtractedResumeSkeleton parseSkeleton(String json) {
+        try {
+            return new ObjectMapper().readValue(json, ExtractedResumeSkeleton.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static final String MULTI_NAMED_JSON = """
+            {
+              "resume_id": "r_named",
+              "candidate_level": "mid",
+              "target_domain": "backend",
+              "projects": [
+                {
+                  "project_id": "p1",
+                  "project_name": "쿠폰 발급 시스템",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                },
+                {
+                  "project_id": "p2",
+                  "project_name": "사내 모니터링 대시보드",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                }
+              ],
+              "interrogation_priority_map": {}
+            }
+            """;
+
+    private static final String SINGLE_GENERAL_BLANK_NAME_JSON = """
+            {
+              "resume_id": "r_general",
+              "candidate_level": "junior",
+              "target_domain": "backend",
+              "projects": [
+                {
+                  "project_id": "general",
+                  "project_name": "  ",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                }
+              ],
+              "interrogation_priority_map": {}
+            }
+            """;
+
+    private static final String PARTIAL_MISSING_NAMES_JSON = """
+            {
+              "resume_id": "r_partial",
+              "candidate_level": "mid",
+              "target_domain": "backend",
+              "projects": [
+                {
+                  "project_id": "p1",
+                  "project_name": "쿠폰 발급 시스템",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                },
+                {
+                  "project_id": "p2",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                },
+                {
+                  "project_id": "p3",
+                  "project_name": "사내 모니터링 대시보드",
+                  "claims": [],
+                  "implicit_cs_topics": []
+                }
+              ],
+              "interrogation_priority_map": {}
+            }
+            """;
 }

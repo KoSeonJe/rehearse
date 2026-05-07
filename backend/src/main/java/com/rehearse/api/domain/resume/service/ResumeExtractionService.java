@@ -23,6 +23,7 @@ import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedImplicitCs
 import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedProject;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.prompt.ResumeExtractorPromptBuilder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -50,8 +51,11 @@ public class ResumeExtractionService {
                 response, ExtractedResumeSkeleton.class, aiClient, request);
 
         ResumeSkeleton skeleton = toDomain(raw, fileHash);
-        log.info("이력서 추출 완료: resumeId={}, projects={}, level={}",
-                skeleton.resumeId(), skeleton.projects().size(), skeleton.candidateLevel());
+        long named = skeleton.projects().stream()
+                .filter(p -> p.projectName() != null && !p.projectName().isBlank())
+                .count();
+        log.info("이력서 추출 완료: resumeId={}, projects={}, named={}, level={}",
+                skeleton.resumeId(), skeleton.projects().size(), named, skeleton.candidateLevel());
         return skeleton;
     }
 
@@ -89,15 +93,17 @@ public class ResumeExtractionService {
         if (rawProjects == null) {
             return List.of();
         }
-        return rawProjects.stream()
-                .map(this::mapProject)
-                .toList();
+        List<Project> projects = new ArrayList<>(rawProjects.size());
+        for (ExtractedProject raw : rawProjects) {
+            projects.add(mapProject(raw));
+        }
+        return List.copyOf(projects);
     }
 
     private Project mapProject(ExtractedProject raw) {
         List<ResumeClaim> claims = mapClaims(raw.getClaims());
         List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
-        return new Project(raw.getProjectId(), claims, chains);
+        return new Project(raw.getProjectId(), raw.getProjectName(), claims, chains);
     }
 
     private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {

@@ -164,14 +164,14 @@ class ResumeInterviewOrchestratorTest {
                         state.transitionTo(ResumeMode.WRAP_UP);
                         return ResumeMode.WRAP_UP;
                     });
-            given(wrapUpHandler.handle(any(), any(), any(), any(), anyLong(), anyBoolean(), any()))
+            given(wrapUpHandler.handle(any(), any(), any(), any(), any(), anyLong(), anyBoolean(), any()))
                     .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
                             FollowUpResponse.builder().question("마무리").presentToUser(true).build(), 12L));
 
             FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("마무리");
-            then(wrapUpHandler).should().handle(any(), any(), any(), any(), anyLong(), anyBoolean(), any());
+            then(wrapUpHandler).should().handle(any(), any(), any(), any(), any(), anyLong(), anyBoolean(), any());
         }
 
         @Test

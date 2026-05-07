@@ -106,7 +106,7 @@ class ResumeInterviewPlanValidatorTest {
                 new InterrogationChain("Redis", 0.9, steps),
                 new InterrogationChain("JPA", 0.8, steps)
         );
-        Project project = new Project("p1", claims, chains);
+        Project project = new Project("p1", "프로젝트 A", claims, chains);
         return new ResumeSkeleton("r1", "h1", CandidateLevel.JUNIOR, "backend", List.of(project), Map.of());
     }
 

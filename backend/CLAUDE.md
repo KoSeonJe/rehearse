@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@AGENTS.md
-
 > **먼저 `backend/AGENTS.md` 를 Read 후 본 파일로 돌아온다.** 기술 스택 / 핵심 룰 / 도메인 맵 / 테스트 정책 등 모든 보편 컨텍스트는 AGENTS.md 단일 소스.
 > 본 파일은 `backend/` 자동 로드되는 Claude 세션 전용 추가 컨텍스트만 보유.
 

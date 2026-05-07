@@ -54,7 +54,7 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-live-1", List.of(), List.of());
+        Project project = new Project("proj-live-1", "Live 테스트 프로젝트", List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase(
                 "프로젝트에 대해 자유롭게 소개해주세요.", List.of("기술 스택", "주요 의사결정"));
 

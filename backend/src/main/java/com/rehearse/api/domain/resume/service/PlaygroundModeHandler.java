@@ -70,13 +70,14 @@ public class PlaygroundModeHandler {
         ProjectPlan currentPlan = resolveCurrentPlan(plan);
         PlaygroundPhase phase = currentPlan.playgroundPhase();
         List<String> expectedClaims = phase.expectedClaimsCoverage();
+        Project project = findProject(skeleton, currentPlan.projectId());
 
         int turnCount = state.getPlaygroundTurns().get();
         int cumulativeLength = accumulateLength(state, userAnswer);
 
         PlaygroundResponderResult result = promptBuilder.buildResponder(
                 interviewId, state, previousExchanges,
-                userAnswer, expectedClaims, turnCount, cumulativeLength
+                project, userAnswer, expectedClaims, turnCount, cumulativeLength
         );
 
         boolean shouldSwitch = evaluateSwitchConditions(result, turnCount + 1);

@@ -2,8 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@AGENTS.md
-
 > **먼저 `frontend/AGENTS.md` 를 Read 후 본 파일로 돌아온다.**
 > - AGENTS.md = 진입점 / 기술 스택 / 핵심 룰 / 도메인 맵.
 > - `frontend/.claude/rules/` = 코드 컨벤션 (`conventions.md`) / 아키텍처 (`architecture.md`) / 테스트 정책 (`testing.md`).

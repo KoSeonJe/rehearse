@@ -8,6 +8,9 @@
    - high: 문제 해결 스토리, 명확한 임팩트 메트릭
    - medium: 아키텍처 선택 근거, 기술 의사결정
    - low: 일반적인 구현 사항, 흔한 기술 스택 나열
+5. **project_name 처리**:
+   - 이력서에 명시된 프로젝트명이 있으면 그대로 사용 (번역·요약·줄임 금지).
+   - 명시 명칭이 없으면 빈 문자열 또는 null 로 둘 것. 임의 명칭 생성·요약·hallucinate 금지.
 
 ## 출력 스키마 (JSON 객체 하나만 출력, 마크다운 금지)
 ```json
@@ -18,6 +21,7 @@
   "projects": [
     {
       "project_id": "p1",
+      "project_name": "이력서 명시 명칭 (없으면 빈 문자열 또는 null)",
       "claims": [
         {
           "claim_id": "p1_c1",
@@ -60,6 +64,8 @@
 
 ## 예시
 
+### 예시 1: 프로젝트명 미명시 → project_name 은 빈 문자열 (요약 명칭 생성 금지)
+
 이력서 스니펫:
 "주문 조회 API p95 응답 800ms → Redis Cache-Aside + TTL 5분으로 120ms 달성. JPA fetch join으로 N+1 문제 해결."
 
@@ -72,6 +78,7 @@
   "projects": [
     {
       "project_id": "p1",
+      "project_name": "",
       "claims": [
         {
           "claim_id": "p1_c1",
@@ -109,3 +116,17 @@
   }
 }
 ```
+
+### 예시 2: 다수 프로젝트 + 프로젝트명 명시 → 명시값 그대로 (project_name 부분 발췌)
+
+이력서 스니펫:
+"[쿠폰 발급 시스템] Redis Lua 스크립트로 동시성 제어. [사내 모니터링 대시보드] Grafana + Prometheus 도입."
+
+출력 projects 배열만:
+```json
+"projects": [
+  { "project_id": "p1", "project_name": "쿠폰 발급 시스템", "claims": [...], "implicit_cs_topics": [...] },
+  { "project_id": "p2", "project_name": "사내 모니터링 대시보드", "claims": [...], "implicit_cs_topics": [...] }
+]
+```
+(claims / implicit_cs_topics 구조는 예시 1과 동일. 명시 명칭이 있을 때는 그대로 사용한다.)

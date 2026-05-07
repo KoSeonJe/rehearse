@@ -6,6 +6,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
@@ -23,13 +27,16 @@ import com.rehearse.api.infra.ai.dto.GeneratedInterviewPlan.GeneratedPlaygroundP
 import com.rehearse.api.infra.ai.dto.GeneratedInterviewPlan.GeneratedProjectPlan;
 import java.util.List;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -180,6 +187,175 @@ class ResumeInterviewPlanAdapterTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getCode())
                         .isEqualTo(ResumePlannerErrorCode.INVALID_PLAN.getCode()));
+    }
+
+    @Nested
+    @DisplayName("projectName 정합성 - skeleton 우선 강제")
+    class ProjectNameReconciliation {
+
+        private ListAppender<ILoggingEvent> logAppender;
+        private Logger adapterLogger;
+
+        @BeforeEach
+        void attachLogAppender() {
+            adapterLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewPlanAdapter.class);
+            logAppender = new ListAppender<>();
+            logAppender.start();
+            adapterLogger.addAppender(logAppender);
+        }
+
+        @AfterEach
+        void detachLogAppender() {
+            adapterLogger.detachAppender(logAppender);
+            logAppender.stop();
+        }
+
+        @Test
+        @DisplayName("skeleton/planner projectName 일치 시 skeleton 값 사용 + WARN 미발생")
+        void uses_skeleton_name_and_no_warn_when_names_match() {
+            // given
+            ResumeSkeleton skeleton = skeletonWithProjectName("p1", "주문 API 캐싱 프로젝트");
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, "주문 API 캐싱 프로젝트", "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            // when
+            InterviewPlan result = adapter.execute(request, 30, skeleton);
+
+            // then
+            assertThat(result.projectPlans().get(0).projectName()).isEqualTo("주문 API 캐싱 프로젝트");
+            assertThat(warnMessages()).noneMatch(m -> m.contains("planner projectName mismatch"));
+        }
+
+        @Test
+        @DisplayName("planner 가 다른 명칭 반환 시 skeleton 값 우선 + WARN 로그 발생 (본문 미노출)")
+        void prefers_skeleton_name_and_logs_warn_when_names_mismatch() {
+            // given
+            ResumeSkeleton skeleton = skeletonWithProjectName("p1", "주문 API 캐싱 프로젝트");
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, "Order Cache Project", "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            // when
+            InterviewPlan result = adapter.execute(request, 30, skeleton);
+
+            // then
+            assertThat(result.projectPlans().get(0).projectName()).isEqualTo("주문 API 캐싱 프로젝트");
+            assertThat(warnMessages())
+                    .anySatisfy(message -> {
+                        assertThat(message).contains("planner projectName mismatch");
+                        assertThat(message).contains("projectId=p1");
+                        assertThat(message).contains("skeleton 우선");
+                        assertThat(message).doesNotContain("주문 API 캐싱 프로젝트");
+                        assertThat(message).doesNotContain("Order Cache Project");
+                    });
+        }
+
+        @Test
+        @DisplayName("planner projectName null 시 skeleton 우선 + WARN 미발생")
+        void prefers_skeleton_name_silently_when_planner_name_null() {
+            // given
+            ResumeSkeleton skeleton = skeletonWithProjectName("p1", "주문 API 캐싱 프로젝트");
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, null, "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            // when
+            InterviewPlan result = adapter.execute(request, 30, skeleton);
+
+            // then
+            assertThat(result.projectPlans().get(0).projectName()).isEqualTo("주문 API 캐싱 프로젝트");
+            assertThat(warnMessages()).noneMatch(m -> m.contains("planner projectName mismatch"));
+        }
+
+        @Test
+        @DisplayName("planner projectName blank 시 skeleton 우선 + WARN 미발생")
+        void prefers_skeleton_name_silently_when_planner_name_blank() {
+            // given
+            ResumeSkeleton skeleton = skeletonWithProjectName("p1", "주문 API 캐싱 프로젝트");
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, "   ", "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            // when
+            InterviewPlan result = adapter.execute(request, 30, skeleton);
+
+            // then
+            assertThat(result.projectPlans().get(0).projectName()).isEqualTo("주문 API 캐싱 프로젝트");
+            assertThat(warnMessages()).noneMatch(m -> m.contains("planner projectName mismatch"));
+        }
+
+        @Test
+        @DisplayName("skeleton 미제공 + planner projectName 정상 시 planner 값 사용 (기존 호환)")
+        void uses_planner_name_when_skeleton_absent() {
+            // given
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, "Order Cache Project", "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            // when
+            InterviewPlan result = adapter.execute(request, 30);
+
+            // then
+            assertThat(result.projectPlans().get(0).projectName()).isEqualTo("Order Cache Project");
+        }
+
+        @Test
+        @DisplayName("skeleton 미제공 + planner projectName 부재 시 그대로 null 통과 (다운스트림 prompt 가 open question 으로 처리)")
+        void passes_null_project_name_when_skeleton_absent_and_planner_blank() {
+            GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
+                    "plan_test", 1,
+                    List.of(projectWithName("p1", 1, null, "p1::Redis"))
+            );
+            given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
+
+            InterviewPlan result = adapter.execute(request, 30);
+
+            assertThat(result.projectPlans().get(0).projectName()).isNull();
+        }
+
+        private List<String> warnMessages() {
+            return logAppender.list.stream()
+                    .filter(event -> event.getLevel() == Level.WARN)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList();
+        }
+
+        private ResumeSkeleton skeletonWithProjectName(String projectId, String projectName) {
+            ResumeSkeleton skeleton = mock(ResumeSkeleton.class);
+            Project project = mock(Project.class);
+            given(skeleton.projects()).willReturn(List.of(project));
+            given(project.projectId()).willReturn(projectId);
+            given(project.projectName()).willReturn(projectName);
+
+            com.rehearse.api.domain.resume.entity.InterrogationChain chain =
+                    mock(com.rehearse.api.domain.resume.entity.InterrogationChain.class);
+            given(chain.topic()).willReturn("Redis");
+            given(project.implicitCsTopics()).willReturn(List.of(chain));
+            return skeleton;
+        }
+
+        private GeneratedProjectPlan projectWithName(String projectId, int priority,
+                                                     String projectName, String chainId) {
+            GeneratedChainRef chain = new GeneratedChainRef(
+                    chainId,
+                    chainId.contains("::") ? chainId.split("::")[1] : "topic",
+                    1,
+                    List.of(1, 2));
+            GeneratedInterrogationPhase interrogation = new GeneratedInterrogationPhase(List.of(chain), List.of());
+            GeneratedPlaygroundPhase playground = new GeneratedPlaygroundPhase("opener", List.of());
+            return new GeneratedProjectPlan(projectId, projectName, priority, playground, interrogation);
+        }
     }
 
     private ResumeSkeleton mockSkeleton(String projectId, Set<String> allowedChainIds) {

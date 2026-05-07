@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -77,7 +78,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("4조건 중 2개 충족(a+b) 시 switchedToInterrogation=true 를 반환한다")
         void handle_conditionsAB_met_switches() {
             SwitchConditions cond = new SwitchConditions(true, true, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -91,7 +92,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("4조건 중 1개만 충족 시 switchedToInterrogation=false 를 반환한다")
         void handle_only1Condition_doesNotSwitch() {
             SwitchConditions cond = new SwitchConditions(true, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -105,7 +106,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitchToInterrogation=true 이면 조건 count 무관하게 전환된다")
         void handle_explicitSwitch_alwaysTransitions() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult(null, null, "이유", true, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -118,7 +119,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("d 조건(3턴 이상)만 충족 시 단독으로는 전환하지 않는다")
         void handle_onlyTurnLimit_doesNotSwitch() {
             SwitchConditions cond = new SwitchConditions(false, false, false, true);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -132,7 +133,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("c+d 조건 충족 시 전환된다")
         void handle_conditionsCD_met_switches() {
             SwitchConditions cond = new SwitchConditions(false, false, true, true);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -190,6 +191,40 @@ class PlaygroundModeHandlerTest {
     }
 
     @Nested
+    @DisplayName("projectName 컨텍스트 주입")
+    class ProjectNameInjection {
+
+        @Test
+        @DisplayName("handleOpener 가 buildOpener 에 skeleton 의 Project (projectName 포함) 를 전달한다")
+        void handleOpener_passesProjectWithProjectName() {
+            given(promptBuilder.buildOpener(any(), any(), any(), any()))
+                    .willReturn(new PlaygroundOpenerResult("Redis 캐싱 프로젝트에서 어떤 역할이었나요?",
+                            "Redis 캐싱 프로젝트에서 어떤 역할이었나요?", "오프너"));
+
+            handler.handleOpener(1L, state, skeleton, plan);
+
+            ArgumentCaptor<Project> projectCaptor = ArgumentCaptor.forClass(Project.class);
+            then(promptBuilder).should().buildOpener(any(), any(), projectCaptor.capture(), any());
+            assertThat(projectCaptor.getValue().projectName()).isEqualTo("Redis 캐싱 프로젝트");
+        }
+
+        @Test
+        @DisplayName("handle 가 buildResponder 에 skeleton 의 Project (projectName 포함) 를 전달한다")
+        void handle_passesProjectWithProjectName() {
+            SwitchConditions cond = new SwitchConditions(false, false, false, false);
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
+                    .willReturn(new PlaygroundResponderResult("질문", "질문", "이유", false, cond));
+
+            handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of());
+
+            ArgumentCaptor<Project> projectCaptor = ArgumentCaptor.forClass(Project.class);
+            then(promptBuilder).should().buildResponder(any(), any(), any(), projectCaptor.capture(),
+                    any(), any(), anyInt(), anyInt());
+            assertThat(projectCaptor.getValue().projectName()).isEqualTo("Redis 캐싱 프로젝트");
+        }
+    }
+
+    @Nested
     @DisplayName("Responder 빈 question 처리")
     class ResponderBlankQuestion {
 
@@ -197,7 +232,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitch=true 이고 question 이 blank 이면 persist 를 호출하지 않고 정상 응답한다")
         void handle_blankQuestion_withSwitch_skipsPersistAndReturnsResponse() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult(null, null, "전환 이유", true, cond));
 
             PlaygroundModeHandler.PlaygroundTurnResult result =
@@ -211,7 +246,7 @@ class PlaygroundModeHandlerTest {
         @DisplayName("shouldSwitch=false 이고 question 이 blank 이면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_withoutSwitch_throwsBusinessException() {
             SwitchConditions cond = new SwitchConditions(false, false, false, false);
-            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), anyInt(), anyInt()))
+            given(promptBuilder.buildResponder(any(), any(), any(), any(), any(), any(), anyInt(), anyInt()))
                     .willReturn(new PlaygroundResponderResult("", "", "이유", false, cond));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), skeleton, plan, List.of()))
@@ -231,7 +266,7 @@ class PlaygroundModeHandlerTest {
         ChainStep whyMech = new ChainStep(3, StepType.WHY_MECH, "왜 Redis 인가?");
         ChainStep tradeoff = new ChainStep(4, StepType.TRADEOFF, "트레이드오프는?");
         InterrogationChain chain = new InterrogationChain("Redis 캐싱", 0.9, List.of(what, how, whyMech, tradeoff));
-        Project project = new Project("proj1", List.of(), List.of(chain));
+        Project project = new Project("proj1", "Redis 캐싱 프로젝트", List.of(), List.of(chain));
         return new ResumeSkeleton("resume1", "hash123", null, "backend", List.of(project), Map.of());
     }
 

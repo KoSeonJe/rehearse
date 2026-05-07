@@ -4,8 +4,12 @@ import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.resume.entity.ChainReference;
+import com.rehearse.api.domain.resume.entity.InterrogationPhase;
+import com.rehearse.api.domain.resume.entity.InterviewPlan;
+import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
+import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,13 +42,23 @@ class WrapUpModeHandlerTest {
     private ResumeQuestionPersister questionPersister;
 
     private InterviewRuntimeState state;
+    private InterviewPlan plan;
 
     @BeforeEach
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
+        plan = createPlan();
         Mockito.lenient()
                 .when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
                 .thenReturn(1L);
+    }
+
+    private InterviewPlan createPlan() {
+        ChainReference chainRef = new ChainReference("proj1::redis", "Redis", 1, List.of(1, 2, 3, 4));
+        PlaygroundPhase playground = new PlaygroundPhase("프로젝트 소개해주세요", List.of());
+        InterrogationPhase interrogation = new InterrogationPhase(List.of(chainRef), List.of());
+        ProjectPlan projectPlan = new ProjectPlan("proj1", "Redis 캐싱 프로젝트", 1, playground, interrogation);
+        return new InterviewPlan("plan-001", List.of(projectPlan));
     }
 
     @Nested
@@ -57,7 +71,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("가장 어려웠던 부분이 뭐였나요?", "가장 어려웠던 부분이 뭐였나요?", "이유", true, false));
 
-            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 3L, true, java.util.List.of());
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of());
 
             assertThat(result.response().getQuestion()).isEqualTo("가장 어려웠던 부분이 뭐였나요?");
             assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
@@ -72,7 +86,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마지막 한 마디", "마지막 한 마디", "이유", true, true));
 
-            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 1L, true, java.util.List.of());
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 1L, true, java.util.List.of());
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
         }
@@ -83,7 +97,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("질문", "질문", "이유", true, false));
 
-            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 0L, true, java.util.List.of());
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 0L, true, java.util.List.of());
 
             assertThat(result.response().isFollowUpExhausted()).isTrue();
         }
@@ -94,7 +108,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마무리 질문", "마무리 질문", "이유", true, false));
 
-            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), 2L, true, java.util.List.of());
+            WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 2L, true, java.util.List.of());
 
             assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
             assertThat(state.getChainStateTracker().hasActiveChain()).isFalse();
@@ -111,7 +125,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("", "", "이유", true, false));
 
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true, java.util.List.of()))
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));
@@ -123,7 +137,7 @@ class WrapUpModeHandlerTest {
             given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult(null, null, "이유", true, false));
 
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), 3L, true, java.util.List.of()))
+            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo("AI_007"));

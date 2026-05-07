@@ -40,7 +40,7 @@
 
 - **AI 호출 = `ResilientAiClient` 단일 진입점** — OpenAI / Claude SDK 도메인 / 애플리케이션 서비스 직접 호출 금지.
 - **AI 모델 ID = `application-*.yml`** — Java 코드 하드코딩 금지.
-- **Spec 없는 수정 금지** — `backend/src/` 변경 전 `docs/plans/{N}-{slug}/tech-spec.md` 존재 확인. 부재 시 설계부터 (구현 거부). `product-spec.md` 부재 시 사용자에게 기획 요청. 자세한 워크플로우는 루트 `AGENTS.md` "Spec-Driven Work" + `docs/plans/AGENTS.md` 참조.
+- **Spec 없는 수정 금지** — `backend/src/` 변경 전 `docs/plans/{YYYY-MM-DD-topic}/tech_spec/design.md` 존재 확인. 부재 시 설계부터 (구현 거부). `product_spec/` 부재 시 사용자에게 기획 요청. 자세한 워크플로우는 루트 `AGENTS.md` "Spec-Driven Work" 참조.
 
 > 패키지 / 네이밍 / 계층 / DTO / 트랜잭션 / Flyway / Lombok / 로깅 등 코드 컨벤션 = `backend/.claude/rules/conventions.md` (`@import`).
 

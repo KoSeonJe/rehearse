@@ -14,9 +14,6 @@ public record ProjectPlan(
         if (projectId == null || projectId.isBlank()) {
             throw new IllegalArgumentException("projectId 는 필수입니다.");
         }
-        if (projectName == null || projectName.isBlank()) {
-            throw new IllegalArgumentException("projectName 은 필수입니다.");
-        }
         if (priority < MIN_PRIORITY) {
             throw new IllegalArgumentException("priority 는 1 이상이어야 합니다. priority=" + priority);
         }

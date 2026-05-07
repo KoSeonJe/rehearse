@@ -197,7 +197,7 @@ class GlobalExceptionHandlerTest {
         }
 
         @Test
-        @DisplayName("BusinessException의 message가 응답에 그대로 포함된다")
+        @DisplayName("4xx BusinessException 의 message 는 응답에 그대로 포함된다")
         void businessException_messageIncluded() {
             // given
             BusinessException exception = new BusinessException(HttpStatus.BAD_REQUEST, "ERR", "사용자 정의 메시지");
@@ -208,6 +208,25 @@ class GlobalExceptionHandlerTest {
             // then
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().getMessage()).isEqualTo("사용자 정의 메시지");
+        }
+
+        @Test
+        @DisplayName("5xx BusinessException 의 도메인 메시지는 클라이언트에 노출되지 않고 generic 메시지로 마스킹된다")
+        void businessException_5xx_messageMasked() {
+            // given
+            BusinessException exception = new BusinessException(
+                    HttpStatus.INTERNAL_SERVER_ERROR, "DOMAIN_5XX", "내부 도메인 상세 메시지");
+
+            // when
+            ResponseEntity<ErrorResponse> response = handler.handleBusinessException(exception, request);
+
+            // then
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().getMessage())
+                    .isEqualTo("서버 내부 오류가 발생했습니다.")
+                    .doesNotContain("내부 도메인 상세 메시지");
+            assertThat(response.getBody().getCode()).isEqualTo("DOMAIN_5XX");
+            assertThat(response.getBody().getStatus()).isEqualTo(500);
         }
     }
 

@@ -120,16 +120,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
+    private static final String SERVER_ERROR_GENERIC_MESSAGE = "서버 내부 오류가 발생했습니다.";
+
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(
             BusinessException e, HttpServletRequest request) {
 
-        log.warn("Business exception: uri={}, message={}", request.getRequestURI(), e.getMessage());
+        boolean is5xx = e.getStatus().is5xxServerError();
+        if (is5xx) {
+            log.error("Business exception 5xx: uri={}, code={}, message={}",
+                    request.getRequestURI(), e.getCode(), e.getMessage(), e);
+        } else {
+            log.warn("Business exception: uri={}, code={}, message={}",
+                    request.getRequestURI(), e.getCode(), e.getMessage());
+        }
 
+        String clientMessage = is5xx ? SERVER_ERROR_GENERIC_MESSAGE : e.getMessage();
         ErrorResponse response = ErrorResponse.of(
                 e.getStatus().value(),
                 e.getCode(),
-                e.getMessage());
+                clientMessage);
 
         return ResponseEntity.status(e.getStatus()).body(response);
     }
