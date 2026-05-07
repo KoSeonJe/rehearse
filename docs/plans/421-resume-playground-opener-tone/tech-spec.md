@@ -109,7 +109,7 @@ Playground opener / Responder LLM 출력 톤을 intro / 자유 회고로 강제 
 **1-2. few-shot opener_question 교체** (line 82, 다중 프로젝트 매핑 발췌 line 108-116 영향 없음):
 
 - 현재 (line 82): `"opener_question": "이 프로젝트에서 가장 어려웠던 기술적 결정을 설명해주세요."`
-- 변경: `"opener_question": "__example_name__ 프로젝트에서 어떤 역할을 맡으셨고, 전체 흐름을 자유롭게 소개해주세요."`
+- 변경: `"opener_question": "__example_name__ 프로젝트에 대해 설명해주시고, 어떤 역할을 맡으셨는지 설명해주세요."`
 
 ### 변경 2: `resume-playground-opener.txt:5-10`
 
@@ -219,7 +219,7 @@ Playground opener / Responder LLM 출력 톤을 intro / 자유 회고로 강제 
 - `ResumePlaygroundOpenerIntegrationTest`: PROJECT_INFO 슬롯 단언 = `projectName:` 라인 검증만 (카운트 라벨 부재 단언 없음).
 
 ### Post (구현 후)
-- `resume-interview-planner.txt`: Playground opener_question 톤 가이드 헤더 추가 + few-shot opener_question intro 톤 ("__example_name__ 프로젝트에서 어떤 역할을 맡으셨고..."). 다중 프로젝트 매핑 규칙 (line 108-116) 영향 없음.
+- `resume-interview-planner.txt`: Playground opener_question 톤 가이드 헤더 추가 + few-shot opener_question intro 톤 ("__example_name__ 프로젝트에 대해 설명해주시고..."). 다중 프로젝트 매핑 규칙 (line 108-116) 영향 없음.
 - `resume-playground-opener.txt`: 금지 어휘 = 6개 (확장). 허용 톤 (역할 / 흐름 / 인상 깊은 경험) 명시.
 - `resume-playground-responder.txt`: 금지 어휘 = 6개. Responder 1턴 의도 (감정·서사 oriented) 명시.
 - `ResumePlaygroundPromptBuilder.formatProjectInfo()`: 1 라인 (`"projectName: {safeName}"`).

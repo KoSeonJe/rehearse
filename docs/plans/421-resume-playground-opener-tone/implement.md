@@ -45,7 +45,7 @@ tech-spec "핵심 변경 4건" §변경 1~3 그대로. 텍스트 diff:
 
 **2) planner.txt few-shot 교체 (line 82)**:
 - 전: `"opener_question": "이 프로젝트에서 가장 어려웠던 기술적 결정을 설명해주세요."`
-- 후: `"opener_question": "__example_name__ 프로젝트에서 어떤 역할을 맡으셨고, 전체 흐름을 자유롭게 소개해주세요."`
+- 후: `"opener_question": "__example_name__ 프로젝트에 대해 설명해주시고, 어떤 역할을 맡으셨는지 설명해주세요."`
 
 **3) opener.txt 금지 어휘 확장 (line 8)**:
 - 전: `**금지**: "왜 그렇게 설계했나요?", "내부 원리가 어떻게 되나요?" 류의 깊은 기술 심문 금지.`
