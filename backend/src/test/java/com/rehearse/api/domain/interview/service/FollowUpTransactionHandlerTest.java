@@ -109,14 +109,14 @@ class FollowUpTransactionHandlerTest {
         }
 
         @Test
-        @DisplayName("loadFollowUpContext - MAIN sentinel + BEHAVIORAL 카테고리 → GUIDE 폴백")
-        void loadFollowUpContext_mainSentinel_behavioralCategory_fallsBackGuide() {
+        @DisplayName("loadFollowUpContext - BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → GUIDE 환원")
+        void loadFollowUpContext_behavioralMain_behavioralCategory_resolvesGuide() {
             // given
             Interview interview = createInProgressInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.MAIN, QuestionSetCategory.BEHAVIORAL);
+                    interview, QuestionType.BEHAVIORAL_MAIN, QuestionSetCategory.BEHAVIORAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
@@ -128,14 +128,14 @@ class FollowUpTransactionHandlerTest {
         }
 
         @Test
-        @DisplayName("loadFollowUpContext - MAIN sentinel + CS 카테고리 → MODEL_ANSWER 폴백")
-        void loadFollowUpContext_mainSentinel_csCategory_fallsBackModelAnswer() {
+        @DisplayName("loadFollowUpContext - TECH_MAIN + CS 카테고리 → MODEL_ANSWER 환원")
+        void loadFollowUpContext_techMain_csCategory_resolvesModelAnswer() {
             // given
             Interview interview = createInProgressInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
+                    interview, QuestionType.TECH_MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
@@ -279,48 +279,6 @@ class FollowUpTransactionHandlerTest {
         }
 
         @Test
-        @DisplayName("saveFollowUpResult - MAIN sentinel + BEHAVIORAL 카테고리 → BEHAVIORAL_FOLLOWUP 폴백")
-        void saveFollowUpResult_mainSentinel_behavioralCategory_fallsBackBehavioralFollowUp() {
-            Interview interview = createInProgressInterview();
-            QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.MAIN, QuestionSetCategory.BEHAVIORAL);
-            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
-
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "꼬리질문");
-
-            given(questionRepository.saveAndFlush(any(Question.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
-
-            handler.saveFollowUpResult(10L, followUp);
-
-            ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
-            then(questionRepository).should().saveAndFlush(captor.capture());
-            assertThat(captor.getValue().getQuestionType()).isEqualTo(QuestionType.BEHAVIORAL_FOLLOWUP);
-        }
-
-        @Test
-        @DisplayName("saveFollowUpResult - MAIN sentinel + CS 카테고리 → TECH_FOLLOWUP 폴백")
-        void saveFollowUpResult_mainSentinel_csCategory_fallsBackTechFollowUp() {
-            Interview interview = createInProgressInterview();
-            QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
-            given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
-
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "꼬리질문");
-
-            given(questionRepository.saveAndFlush(any(Question.class)))
-                    .willAnswer(invocation -> invocation.getArgument(0));
-
-            handler.saveFollowUpResult(10L, followUp);
-
-            ArgumentCaptor<Question> captor = ArgumentCaptor.forClass(Question.class);
-            then(questionRepository).should().saveAndFlush(captor.capture());
-            assertThat(captor.getValue().getQuestionType()).isEqualTo(QuestionType.TECH_FOLLOWUP);
-        }
-
-        @Test
         @DisplayName("saveFollowUpResultAndPublishEvent - 저장과 이벤트 발행을 같은 트랜잭션 메서드에서 처리한다")
         void saveFollowUpResultAndPublishEvent_savesAndPublishes() {
             Interview interview = createInProgressInterview();
@@ -332,7 +290,7 @@ class FollowUpTransactionHandlerTest {
             ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
 
             Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP)
+                    .questionType(QuestionType.TECH_FOLLOWUP)
                     .questionText("해시 충돌 해결 방법은?")
                     .orderIndex(1)
                     .build();
@@ -375,7 +333,7 @@ class FollowUpTransactionHandlerTest {
             ReflectionTestUtils.setField(followUp, "question", "두 번째 꼬리질문");
 
             Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
+                    .questionType(QuestionType.TECH_FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
             given(questionRepository.saveAndFlush(any(Question.class))).willReturn(savedQuestion);
 
@@ -438,7 +396,7 @@ class FollowUpTransactionHandlerTest {
         ReflectionTestUtils.setField(qs, "id", 10L);
 
         Question mainQuestion = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("HashMap과 TreeMap의 차이점은?")
                 .referenceType(mainReferenceType)
                 .orderIndex(0)
@@ -470,7 +428,7 @@ class FollowUpTransactionHandlerTest {
         QuestionSet qs = createQuestionSetWithMainQuestion(interview, ReferenceType.MODEL_ANSWER);
         for (int i = 0; i < followUpCount; i++) {
             Question followUp = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP)
+                    .questionType(QuestionType.TECH_FOLLOWUP)
                     .questionText("후속질문 " + (i + 1))
                     .orderIndex(i + 1)
                     .build();

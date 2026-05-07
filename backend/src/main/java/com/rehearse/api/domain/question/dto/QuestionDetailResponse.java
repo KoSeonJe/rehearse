@@ -26,7 +26,7 @@ public class QuestionDetailResponse {
                 .questionText(question.getQuestionText())
                 .ttsText(question.getTtsText())
                 .modelAnswer(question.getModelAnswer())
-                .referenceType(question.getQuestionType().referenceTypeOrFallback(category))
+                .referenceType(question.getQuestionType().referenceType())
                 .orderIndex(question.getOrderIndex())
                 .build();
     }

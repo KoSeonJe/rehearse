@@ -139,14 +139,14 @@ class StandardFollowUpPolicyTest {
                 .build();
 
         qs.addQuestion(Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("main")
                 .orderIndex(0)
                 .build());
 
         for (int i = 0; i < followUpCount; i++) {
             qs.addQuestion(Question.builder()
-                    .questionType(QuestionType.FOLLOWUP)
+                    .questionType(QuestionType.TECH_FOLLOWUP)
                     .questionText("followup " + (i + 1))
                     .orderIndex(i + 1)
                     .build());

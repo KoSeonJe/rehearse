@@ -71,34 +71,14 @@ class QuestionTypeTest {
     }
 
     @Nested
-    @DisplayName("MAIN/FOLLOWUP sentinel 은 enum 속성이 정의되지 않는다 (Phase 1.6 제거 예정)")
-    class LegacySentinels {
-
-        @Test
-        @DisplayName("MAIN 은 referenceType / feedbackPerspective 둘 다 null 이다")
-        void main_hasNoEnumProperties() {
-            assertThat(QuestionType.MAIN.referenceType()).isNull();
-            assertThat(QuestionType.MAIN.feedbackPerspective()).isNull();
-        }
-
-        @Test
-        @DisplayName("FOLLOWUP 은 referenceType / feedbackPerspective 둘 다 null 이다")
-        void followup_hasNoEnumProperties() {
-            assertThat(QuestionType.FOLLOWUP.referenceType()).isNull();
-            assertThat(QuestionType.FOLLOWUP.feedbackPerspective()).isNull();
-        }
-    }
-
-    @Nested
     @DisplayName("isFollowUp / isMain / isResume helper")
     class TypeHelpers {
 
         @Test
-        @DisplayName("isFollowUp 은 TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP / FOLLOWUP 에 대해 true")
+        @DisplayName("isFollowUp 은 TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP 에 대해 true")
         void isFollowUp_trueForFollowUpTypes() {
             assertThat(QuestionType.TECH_FOLLOWUP.isFollowUp()).isTrue();
             assertThat(QuestionType.BEHAVIORAL_FOLLOWUP.isFollowUp()).isTrue();
-            assertThat(QuestionType.FOLLOWUP.isFollowUp()).isTrue();
         }
 
         @Test
@@ -106,17 +86,15 @@ class QuestionTypeTest {
         void isFollowUp_falseForOthers() {
             assertThat(QuestionType.TECH_MAIN.isFollowUp()).isFalse();
             assertThat(QuestionType.BEHAVIORAL_MAIN.isFollowUp()).isFalse();
-            assertThat(QuestionType.MAIN.isFollowUp()).isFalse();
             assertThat(QuestionType.RESUME_OPENER.isFollowUp()).isFalse();
             assertThat(QuestionType.RESUME_INTERROGATION.isFollowUp()).isFalse();
         }
 
         @Test
-        @DisplayName("isMain 은 TECH_MAIN / BEHAVIORAL_MAIN / MAIN 에 대해 true")
+        @DisplayName("isMain 은 TECH_MAIN / BEHAVIORAL_MAIN 에 대해 true")
         void isMain_trueForMainTypes() {
             assertThat(QuestionType.TECH_MAIN.isMain()).isTrue();
             assertThat(QuestionType.BEHAVIORAL_MAIN.isMain()).isTrue();
-            assertThat(QuestionType.MAIN.isMain()).isTrue();
         }
 
         @Test
@@ -126,59 +104,32 @@ class QuestionTypeTest {
             assertThat(QuestionType.RESUME_PLAYGROUND.isResume()).isTrue();
             assertThat(QuestionType.RESUME_INTERROGATION.isResume()).isTrue();
             assertThat(QuestionType.TECH_MAIN.isResume()).isFalse();
-            assertThat(QuestionType.MAIN.isResume()).isFalse();
+            assertThat(QuestionType.BEHAVIORAL_FOLLOWUP.isResume()).isFalse();
         }
     }
 
     @Nested
-    @DisplayName("category 추론 fallback (Phase 1 한시)")
-    class CategoryFallback {
-
-        @Test
-        @DisplayName("TECH_MAIN 은 category 와 무관하게 (MODEL_ANSWER, TECHNICAL) 반환")
-        void techMain_ignoresCategory() {
-            assertThat(QuestionType.TECH_MAIN.referenceTypeOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(QuestionType.TECH_MAIN.feedbackPerspectiveOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(FeedbackPerspective.TECHNICAL);
-        }
-
-        @Test
-        @DisplayName("MAIN sentinel + BEHAVIORAL category 는 (GUIDE, BEHAVIORAL) 폴백")
-        void mainSentinel_behavioralCategory_guideBehavioralFallback() {
-            assertThat(QuestionType.MAIN.referenceTypeOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.MAIN.feedbackPerspectiveOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(FeedbackPerspective.BEHAVIORAL);
-        }
-
-        @Test
-        @DisplayName("FOLLOWUP sentinel + CS category 는 (MODEL_ANSWER, TECHNICAL) 폴백")
-        void followUpSentinel_csCategory_modelAnswerTechnicalFallback() {
-            assertThat(QuestionType.FOLLOWUP.referenceTypeOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
-                    .isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(QuestionType.FOLLOWUP.feedbackPerspectiveOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
-                    .isEqualTo(FeedbackPerspective.TECHNICAL);
-        }
-
-        @Test
-        @DisplayName("MAIN sentinel + RESUME_BASED category 는 비-BEHAVIORAL 분기로 (MODEL_ANSWER, TECHNICAL) 폴백")
-        void mainSentinel_resumeCategory_modelAnswerTechnicalFallback() {
-            assertThat(QuestionType.MAIN.referenceTypeOrFallback(QuestionSetCategory.RESUME_BASED))
-                    .isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(QuestionType.MAIN.feedbackPerspectiveOrFallback(QuestionSetCategory.RESUME_BASED))
-                    .isEqualTo(FeedbackPerspective.TECHNICAL);
-        }
-    }
-
-    @Nested
-    @DisplayName("RESUME_WRAP_UP 은 enum 에서 제거되었다 (FSM 2단계 단순화)")
-    class WrapUpRemoval {
+    @DisplayName("RESUME_WRAP_UP / MAIN / FOLLOWUP 은 enum 에서 제거되었다")
+    class RemovedTypes {
 
         @Test
         @DisplayName("RESUME_WRAP_UP 이름으로 valueOf 호출 시 IllegalArgumentException 을 던진다")
         void valueOf_resumeWrapUp_throws() {
             assertThatThrownBy(() -> QuestionType.valueOf("RESUME_WRAP_UP"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("MAIN sentinel valueOf 호출 시 IllegalArgumentException 을 던진다")
+        void valueOf_main_throws() {
+            assertThatThrownBy(() -> QuestionType.valueOf("MAIN"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("FOLLOWUP sentinel valueOf 호출 시 IllegalArgumentException 을 던진다")
+        void valueOf_followup_throws() {
+            assertThatThrownBy(() -> QuestionType.valueOf("FOLLOWUP"))
                     .isInstanceOf(IllegalArgumentException.class);
         }
 
@@ -191,6 +142,14 @@ class QuestionTypeTest {
                             QuestionType.RESUME_OPENER,
                             QuestionType.RESUME_PLAYGROUND,
                             QuestionType.RESUME_INTERROGATION);
+        }
+
+        @Test
+        @DisplayName("values() 에 MAIN / FOLLOWUP sentinel 이 부재한다")
+        void values_doesNotContainSentinels() {
+            assertThat(QuestionType.values())
+                    .extracting(Enum::name)
+                    .doesNotContain("MAIN", "FOLLOWUP");
         }
     }
 }

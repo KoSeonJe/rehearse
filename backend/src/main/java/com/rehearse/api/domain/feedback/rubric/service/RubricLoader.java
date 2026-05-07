@@ -68,8 +68,7 @@ public class RubricLoader implements RubricCatalog {
     public Rubric resolveFor(Question question, QuestionSet questionSet, Interview interview) {
         boolean resumeTrack = interview.getInterviewTypes().contains(InterviewType.RESUME_BASED);
         QuestionSetCategory category = questionSet.getCategory();
-        FeedbackPerspective perspective = question.getQuestionType()
-                .feedbackPerspectiveOrFallback(category);
+        FeedbackPerspective perspective = question.getQuestionType().feedbackPerspective();
 
         RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);
         String rubricId = family.resolve(ctx);
