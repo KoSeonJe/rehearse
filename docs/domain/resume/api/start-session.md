@@ -135,8 +135,8 @@
 | `com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache` | Caffeine getOrInit | calls |
 | `com.rehearse.api.domain.question.entity.Question / QuestionType.RESUME_OPENER` | factory | persister write |
 | `com.rehearse.api.domain.question.repository.QuestionRepository` | save | persister write |
-| `com.rehearse.api.domain.questionset.entity.QuestionSet / QuestionSetCategory.RESUME_BASED` | find or create | persister write |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | findByInterviewIdAndCategory / countByInterviewId / save | reads + writes |
+| `com.rehearse.api.domain.question.entity.QuestionSet / QuestionSetCategory.RESUME_BASED` | find or create | persister write |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | findByInterviewIdAndCategory / countByInterviewId / save | reads + writes |
 | `com.rehearse.api.infra.ai.ResilientAiClient` | LLM 이중화 | calls |
 | `com.rehearse.api.infra.ai.AiResponseParser` | parse + schema-hint | calls |
 | `com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder` | opener prompt | calls |

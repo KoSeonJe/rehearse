@@ -3,7 +3,6 @@
 > 대상 마이그레이션: `backend/src/main/resources/db/migration/V*.sql` 중 question 도메인 관련
 > 핵심 V 파일: V4 (`question` / `question_set` / `question_answer (=question_set_answer)` 생성), V5 (`question_set_answer → question_answer` rename + `FOLLOWUP_*` → `FOLLOWUP` 통합), V11 (`question_pool` 생성 + `question.question_pool_id` FK), V20 (pool 미사용 컬럼 cleanup), V23 (`tts_text` / `tts_content`), V35 / V41 / V42 (resume meta 도입 → 5-way CHECK 강화 → 제거), V40 (followup unique), V44 (RESUME_BASED 단일화 + UNIQUE)
 >
-> ⚠️ **패키지 통합 진행 중** (Issue #405). 현 코드는 `domain/question/` (질문 본체 / pool / 답변) 와 `domain/questionset/` (질문 세트 / 분석 / 업로드) 가 분리되어 있다. 본 schema 는 코드 현 상태 (분리) 를 반영한다. 통합 후 본 문서 갱신은 별도 작업 (Issue #405 머지 후).
 
 ## 테이블 목록
 
@@ -150,7 +149,7 @@
 
 ## question_set
 
-> 본 도메인은 코드상 `domain/questionset/` 하위. Issue #405 통합 후 본 schema 안으로 흡수 예정. 현재는 본 schema 가 같이 다룬다 (질문 / 답변 / 풀 / 세트 모두 question 도메인 책임).
+> `question_set` 은 `domain/question/` 하위 엔티티이며, 질문 / 답변 / 풀 / 세트는 모두 question 도메인 책임이다.
 
 ### 성격
 영상 1개 단위 = 1행. `interview` 1:N. 녹화 / 분석 / 피드백 파이프라인 단위. category (`QuestionSetCategory`) 가 `RESUME_BASED` 면 인터뷰당 1행 UNIQUE.
@@ -198,9 +197,9 @@
 
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
-| `com.rehearse.api.domain.questionset.entity.QuestionSet` | 질문 세트 엔티티 (1:N 부모) | calls — `Question.questionSet`, `QuestionSetAssembler.assemble` (질문 세트 생성) |
-| `com.rehearse.api.domain.questionset.entity.QuestionSetCategory` | 세트 카테고리 enum | calls — `QuestionSetAssembler.fromPool/fromGenerated` |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | 세트 저장 / 조회 | calls — `QuestionGenerationTransactionHandler.saveResults` |
+| `com.rehearse.api.domain.question.entity.QuestionSet` | 질문 세트 엔티티 (1:N 부모) | calls — `Question.questionSet`, `QuestionSetAssembler.assemble` (질문 세트 생성) |
+| `com.rehearse.api.domain.question.entity.QuestionSetCategory` | 세트 카테고리 enum | calls — `QuestionSetAssembler.fromPool/fromGenerated` |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | 세트 저장 / 조회 | calls — `QuestionGenerationTransactionHandler.saveResults` |
 | `com.rehearse.api.domain.feedback.entity.FeedbackPerspective` | 질문 관점 (TECHNICAL/BEHAVIORAL/EXPERIENCE) | calls — `Question.feedbackPerspective`, `QuestionSetAssembler.perspectiveOf` |
 | `com.rehearse.api.domain.interview.entity.Interview` | 면접 엔티티 | calls — `QuestionGenerationTransactionHandler` (`startQuestionGeneration` / `completeQuestionGeneration` / `failQuestionGeneration`) |
 | `com.rehearse.api.domain.interview.entity.InterviewType` / `InterviewLevel` / `Position` / `TechStack` | 면접 메타 enum | calls — `QuestionGenerationService.generateQuestions` 시그니처, `QuestionCacheKeyGenerator`, `QuestionDistribution` |
@@ -241,4 +240,3 @@
   - `question_pool` UNIQUE 부재 (위 ❓TODO 1)
   - `category` 화이트리스트 서버 검증 부재 (위 ❓TODO 2)
   - `question_answer` 입력 검증 부재 (위 ❓TODO 4)
-- 패키지 통합 (Issue #405): `domain/questionset/` 을 `domain/question/` 안으로 흡수 예정. 본 schema 는 코드 현 상태 (분리) 를 반영. 통합 후 본 문서 별도 갱신 필요.

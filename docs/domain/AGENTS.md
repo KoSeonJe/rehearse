@@ -4,7 +4,7 @@
 
 > 루트 `AGENTS.md`, `CLAUDE.md` 와 함께 적용. 충돌 시 이 파일 우선 (이 폴더 한정).
 
-대상 도메인 11개: `interview`, `questionset`, `feedback`, `reviewbookmark`, `file`, `resume`, `question`, `user`, `auth`, `admin`, `servicefeedback`.
+대상 도메인 10개: `interview`, `feedback`, `reviewbookmark`, `file`, `resume`, `question`, `user`, `auth`, `admin`, `servicefeedback`.
 
 ---
 

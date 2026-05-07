@@ -99,7 +99,7 @@ FAILED ── retryQuestionGeneration ──► PENDING
 |----------------|------|------|
 | `com.rehearse.api.domain.interview.entity.Interview` (`resetForRetry`) | 상태 reset | calls |
 | `com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent` | 재시도 트리거 | event-publisher |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | 응답용 fetch | calls |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | 응답용 fetch | calls |
 | `org.springframework.context.ApplicationEventPublisher` | 이벤트 발행 | calls |
 
 ---
