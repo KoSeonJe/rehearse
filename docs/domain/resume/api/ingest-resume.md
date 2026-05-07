@@ -64,6 +64,7 @@
 - Sampling: temperature 0.2, maxTokens 4096, response_format = `json_object`.
 - Parse: `AiResponseParser.parseOrRetry` — 1차 실패 시 schema-hint 1회 재호출 → 2차 실패 시 `AI_PARSE_FAILED`.
 - 응답 후처리: `implicit_cs_topic.confidence < 0.3` (`MIN_CONFIDENCE_THRESHOLD`) 항목 drop.
+- 응답 스키마: `projects[].project_name` 포함. 이력서 명시 명칭 그대로 추출, 미명시 시 빈 문자열 (요약명 생성 금지). `Project.projectName` 으로 그대로 통과 (placeholder 주입 없음, null/blank 허용).
 
 ### 5. 저장
 - `ResumeSkeletonPersister.persist(interviewId, skeleton)` — `resume_skeleton` INSERT.
@@ -114,8 +115,8 @@ N/A — `resume_skeleton` INSERT-only, mutable status 없음.
 ## 관찰성
 
 - **로그**: `[ResumeIngestionService]` / `[ResumeExtractionService]` / `[PdfTextExtractor]`
-  - key fields: `interviewId`, `userId`, `fileHashPrefix(8)`, `textLength`, `provider`, `model`, `latencyMs`
-  - 민감 정보 (이력서 본문) 로깅 금지
+  - key fields: `interviewId`, `userId`, `fileHashPrefix(8)`, `textLength`, `provider`, `model`, `latencyMs`, `projects` count, `named` count (non-blank projectName)
+  - 민감 정보 (이력서 본문 / projectName 원문) 로깅 금지
 - **메트릭** (`AiCallMetrics`):
   - `rehearse.ai.call.duration{call.type=RESUME_EXTRACTOR, model, provider, cache.hit, fallback, outcome}`
   - `rehearse.ai.parse.fail.total{stage=first|second, call.type=RESUME_EXTRACTOR}`

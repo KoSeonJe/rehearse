@@ -266,6 +266,8 @@ class ResumeInterviewOrchestratorTest {
                             qs,
                             com.rehearse.api.domain.question.entity.QuestionType.RESUME_OPENER,
                             "기존 opener 질문입니다",
+                            null,
+                            null,
                             0);
             qs.addQuestion(existingOpener);
             given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
