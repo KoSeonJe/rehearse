@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ResumeTrackPolicy implements InterviewTurnPolicy {
 
+    // FollowUpContext 응답 표시용 상한. RESUME 트랙 실제 종료 = ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 일임.
     static final int HARD_TURN_CAP = 7;
 
     @Override
@@ -20,10 +21,7 @@ public class ResumeTrackPolicy implements InterviewTurnPolicy {
         return HARD_TURN_CAP;
     }
 
-    /**
-     * RESUME 트랙 종료 제어는 ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 가 보장한다.
-     * follow-up count 기반 cap 가드는 RESUME 트랙에서 무의미하므로 no-op.
-     */
+    // RESUME 트랙 종료 = ChainStateTracker / ResumeModeTransitionPolicy / ClockWatcher 일임. follow-up cap = 무의미하므로 no-op.
     @Override
     public void assertCanContinue(Interview interview, QuestionSet questionSet) {
     }

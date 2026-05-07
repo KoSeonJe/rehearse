@@ -77,7 +77,7 @@ public class FollowUpTransactionHandler {
         QuestionSetCategory category = questionSet.getCategory();
         return findMainQuestion(questionSet)
                 .map(q -> q.getQuestionType().referenceTypeOrFallback(category))
-                .orElse(ReferenceType.MODEL_ANSWER);
+                .orElseGet(() -> QuestionType.MAIN.referenceTypeOrFallback(category));
     }
 
     private Optional<Question> findMainQuestion(QuestionSet questionSet) {
@@ -90,6 +90,13 @@ public class FollowUpTransactionHandler {
     public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp) {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+
+        // RESUME 트랙은 ResumeInterviewOrchestrator path 일임. 본 핸들러 진입 시 = 흐름 결함.
+        if (questionSet.getCategory() == QuestionSetCategory.RESUME_BASED) {
+            throw new IllegalStateException(
+                    "RESUME 트랙은 FollowUpTransactionHandler.saveFollowUpResult 를 호출할 수 없다. questionSetId="
+                            + questionSetId);
+        }
 
         int orderIndex = questionSet.getQuestions().size();
         QuestionType followUpType = resolveFollowUpType(questionSet);
@@ -117,10 +124,10 @@ public class FollowUpTransactionHandler {
     }
 
     private QuestionType resolveFollowUpType(QuestionSet questionSet) {
-        return findMainQuestion(questionSet)
+        QuestionType mainType = findMainQuestion(questionSet)
                 .map(Question::getQuestionType)
-                .map(mainType -> followUpTypeOf(mainType, questionSet.getCategory()))
-                .orElseGet(() -> followUpTypeOf(null, questionSet.getCategory()));
+                .orElse(null);
+        return followUpTypeOf(mainType, questionSet.getCategory());
     }
 
     private QuestionType followUpTypeOf(QuestionType mainType, QuestionSetCategory category) {
