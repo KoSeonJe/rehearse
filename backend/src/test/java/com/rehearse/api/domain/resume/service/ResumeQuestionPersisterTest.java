@@ -53,7 +53,7 @@ class ResumeQuestionPersisterTest {
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
-        persister.persist(interviewId, QuestionType.RESUME_OPENER, "Q?", 0);
+        persister.persist(interviewId, QuestionType.RESUME_OPENER, "Q?", "Q", "answer", 0);
 
         ArgumentCaptor<QuestionSet> captor = ArgumentCaptor.forClass(QuestionSet.class);
         then(questionSetRepository).should().save(captor.capture());
@@ -75,7 +75,7 @@ class ResumeQuestionPersisterTest {
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
-        persister.persist(interviewId, QuestionType.RESUME_PLAYGROUND, "Q?", 1);
+        persister.persist(interviewId, QuestionType.RESUME_PLAYGROUND, "Q?", "Q", "answer", 1);
 
         then(questionSetRepository).should(org.mockito.Mockito.never()).save(any(QuestionSet.class));
         then(interviewFinder).shouldHaveNoInteractions();

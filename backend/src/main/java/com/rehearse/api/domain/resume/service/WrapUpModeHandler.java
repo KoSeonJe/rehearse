@@ -9,7 +9,6 @@ import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class WrapUpModeHandler {
 
-    private final ResumeWrapUpPromptBuilder promptBuilder;
+    private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
 
     public WrapUpTurnResult handle(
@@ -34,7 +33,7 @@ public class WrapUpModeHandler {
     ) {
         String sessionSummary = buildSessionSummary(state);
 
-        WrapUpResult result = promptBuilder.build(
+        WrapUpResult result = resultGenerator.generateWrapUp(
                 interviewId, state, previousExchanges,
                 sessionSummary, remainingMinutes, isRetrospective);
 
@@ -51,7 +50,8 @@ public class WrapUpModeHandler {
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_WRAP_UP, result.question(), orderIndex);
+                interviewId, QuestionType.RESUME_WRAP_UP, result.question(),
+                result.ttsQuestion(), result.modelAnswer(), orderIndex);
 
         boolean exhausted = result.sessionComplete() || remainingMinutes <= 0;
 

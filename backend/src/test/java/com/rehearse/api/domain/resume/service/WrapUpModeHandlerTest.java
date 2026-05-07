@@ -11,6 +11,7 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
+import com.rehearse.api.domain.resume.service.ResumeQuestionResultGenerator;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +37,7 @@ class WrapUpModeHandlerTest {
     private WrapUpModeHandler handler;
 
     @Mock
-    private ResumeWrapUpPromptBuilder promptBuilder;
+    private ResumeQuestionResultGenerator resultGenerator;
 
     @Mock
     private ResumeQuestionPersister questionPersister;
@@ -49,7 +50,7 @@ class WrapUpModeHandlerTest {
         state = new InterviewRuntimeState("JUNIOR", null);
         plan = createPlan();
         Mockito.lenient()
-                .when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+                .when(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
                 .thenReturn(1L);
     }
 
@@ -68,7 +69,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("isRetrospective=true 로 호출 시 회고 질문을 포함한 응답을 반환한다")
         void handle_retrospective_returnsWrapUpResponse() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("가장 어려웠던 부분이 뭐였나요?", "가장 어려웠던 부분이 뭐였나요?", "이유", true, false, "model"));
 
             WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of());
@@ -83,7 +84,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("sessionComplete=true 이면 followUpExhausted=true 를 반환한다")
         void handle_sessionComplete_exhausted() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마지막 한 마디", "마지막 한 마디", "이유", true, true, "model"));
 
             WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 1L, true, java.util.List.of());
@@ -94,7 +95,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("remainingMinutes=0 이면 followUpExhausted=true 를 반환한다 — hard timeout")
         void handle_zeroRemaining_exhausted() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("질문", "질문", "이유", true, false, "model"));
 
             WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 0L, true, java.util.List.of());
@@ -105,7 +106,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("새 chain/LEVEL_UP/CHAIN_SWITCH 는 발생하지 않는다 — 응답 타입이 RESUME_WRAP_UP 이다")
         void handle_doesNotStartNewChain_typeIsWrapUp() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("마무리 질문", "마무리 질문", "이유", true, false, "model"));
 
             WrapUpModeHandler.WrapUpTurnResult result = handler.handle(1L, state, "답변", createAnalysis(), plan, 2L, true, java.util.List.of());
@@ -122,7 +123,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_blankQuestion_throwsBusinessException() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult("", "", "이유", true, false, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))
@@ -134,7 +135,7 @@ class WrapUpModeHandlerTest {
         @Test
         @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
         void handle_nullQuestion_throwsBusinessException() {
-            given(promptBuilder.build(any(), any(), any(), any(), anyLong(), anyBoolean()))
+            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
                     .willReturn(new WrapUpResult(null, null, "이유", true, false, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))

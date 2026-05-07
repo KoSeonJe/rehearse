@@ -12,6 +12,7 @@ import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder;
+import com.rehearse.api.domain.resume.service.ResumeQuestionResultGenerator;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,7 +48,7 @@ class InterrogationModeHandlerTest {
     private InterrogationModeHandler handler;
 
     @Mock
-    private ResumeChainInterrogatorPromptBuilder promptBuilder;
+    private ResumeQuestionResultGenerator resultGenerator;
 
     @Mock
     private ResumeQuestionPersister questionPersister;
@@ -59,7 +60,7 @@ class InterrogationModeHandlerTest {
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
         plan = createPlan();
-        lenient().when(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+        lenient().when(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
                 .thenReturn(1L);
     }
 
@@ -71,7 +72,7 @@ class InterrogationModeHandlerTest {
         @DisplayName("answer_quality >= 3 AND level < 4 이면 레벨이 올라간다")
         void handle_highQuality_levelsUp() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
@@ -92,7 +93,7 @@ class InterrogationModeHandlerTest {
         @DisplayName("answer_quality <= 2 이면 같은 레벨을 유지한다")
         void handle_lowQuality_staysAtSameLevel() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1, "model"));
 
             handler.handle(1L, state, "모호한 답변", createAnalysis(2), plan, java.util.List.of());
@@ -108,7 +109,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
             state.getChainStateTracker().levelStay();
 
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1, "model"));
 
             handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
@@ -126,7 +127,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
             state.getChainStateTracker().levelStay();
 
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 4, "model"));
 
             handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
@@ -143,7 +144,7 @@ class InterrogationModeHandlerTest {
         @DisplayName("CHAIN_SWITCH 결정 시 현재 chain 이 완료 처리된다")
         void handle_chainSwitch_completesCurrentChain() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("다음 주제", "다음 주제", "이유", "CHAIN_SWITCH", 1, "model"));
 
             handler.handle(1L, state, "모릅니다", createAnalysis(1), plan, java.util.List.of());
@@ -181,7 +182,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             int levelBefore = state.getChainStateTracker().getCurrentLevel();
             int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
@@ -191,7 +192,7 @@ class InterrogationModeHandlerTest {
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
             assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
-            verify(questionPersister, never()).persist(anyLong(), any(), any(), anyInt());
+            verify(questionPersister, never()).persist(anyLong(), any(), any(), any(), any(), anyInt());
         }
 
         @Test
@@ -200,7 +201,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             int levelBefore = state.getChainStateTracker().getCurrentLevel();
             int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
@@ -210,7 +211,7 @@ class InterrogationModeHandlerTest {
 
             assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
             assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
-            verify(questionPersister, never()).persist(anyLong(), any(), any(), anyInt());
+            verify(questionPersister, never()).persist(anyLong(), any(), any(), any(), any(), anyInt());
         }
     }
 
@@ -222,13 +223,13 @@ class InterrogationModeHandlerTest {
         @DisplayName("build 호출 시 plan 에서 currentProjectId 에 매칭되는 ProjectPlan.projectName 을 전달한다")
         void handle_passesProjectNameFromPlan() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             handler.handle(1L, state, "답변", createAnalysis(4), plan, java.util.List.of());
 
             ArgumentCaptor<String> projectNameCaptor = ArgumentCaptor.forClass(String.class);
-            then(promptBuilder).should().build(any(), any(), any(),
+            then(resultGenerator).should().generateInterrogation(any(), any(), any(),
                     projectNameCaptor.capture(),
                     any(), anyInt(), anyInt(), any(), anyInt());
             assertThat(projectNameCaptor.getValue()).isEqualTo("Redis Cache");
@@ -246,7 +247,7 @@ class InterrogationModeHandlerTest {
 
             CountDownLatch llmEntered = new CountDownLatch(1);
             CountDownLatch llmRelease = new CountDownLatch(1);
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willAnswer(inv -> {
                         llmEntered.countDown();
                         // LLM 응답 지연 시뮬: 다른 thread 가 lock 진입할 시간을 벌어준다
@@ -287,11 +288,11 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             int levelBeforeTurn = state.getChainStateTracker().getCurrentLevel();
 
-            given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
                     .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             AtomicInteger levelAtPersist = new AtomicInteger(-1);
-            given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
+            given(questionPersister.persist(anyLong(), any(), any(), any(), any(), anyInt()))
                     .willAnswer(inv -> {
                         // persist 호출 시점에 tracker 가 아직 mutation 안 된 상태인지 캡처
                         levelAtPersist.set(state.getChainStateTracker().getCurrentLevel());
