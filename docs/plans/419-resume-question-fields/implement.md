@@ -91,12 +91,12 @@ feat(BE): QuestionType 매핑 속성 + Question.resume() 6-인자
 ```java
 public record InterrogationResult(
         String question, String ttsQuestion, String reason,
-        String nextAction, String chainAction,
+        String nextAction, int nextLevel,
         String modelAnswer  // 추가
 ) {
     public InterrogationResult withModelAnswer(String newModelAnswer) {
         return new InterrogationResult(question, ttsQuestion, reason,
-                nextAction, chainAction, newModelAnswer);
+                nextAction, nextLevel, newModelAnswer);
     }
 }
 ```
