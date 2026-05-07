@@ -9,7 +9,7 @@ final class ResumeFallbackModelAnswers {
     static final String INTERROGATION =
             "현재 단계 (WHAT/HOW/WHY/TRADEOFF) 에 맞춰 핵심 개념·구현 방식·선택 근거를 구분해 답하고, 마지막에 트레이드오프를 한 줄 덧붙이세요.";
     static final String WRAP_UP =
-            "이번 면접에서 새로 깨달은 점, 이후 보강하고 싶은 주제, 마무리 한마디를 짧게 정리해 회고하세요.";
+            "이번 세션에서 가장 인상 깊었던 깨달음, 다음에 보강하고 싶은 주제, 후속 학습 계획을 짧게 정리하고 마지막 한 마디로 마무리하세요.";
 
     private ResumeFallbackModelAnswers() {}
 }
