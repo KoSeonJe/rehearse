@@ -66,19 +66,19 @@ class QuestionResumeFactoryTest {
     class Rejection {
 
         @Test
-        @DisplayName("MAIN 타입은 resume() 팩토리에서 거부된다")
-        void resume_mainType_throws() {
+        @DisplayName("TECH_MAIN 타입은 resume() 팩토리에서 거부된다")
+        void resume_techMainType_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, QuestionType.MAIN, "유효한 질문", "tts", "ma", 0))
+                    Question.resume(null, QuestionType.TECH_MAIN, "유효한 질문", "tts", "ma", 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("RESUME_* 타입만 허용");
         }
 
         @Test
-        @DisplayName("FOLLOWUP 타입은 resume() 팩토리에서 거부된다")
-        void resume_followupType_throws() {
+        @DisplayName("BEHAVIORAL_FOLLOWUP 타입은 resume() 팩토리에서 거부된다")
+        void resume_behavioralFollowUpType_throws() {
             assertThatThrownBy(() ->
-                    Question.resume(null, QuestionType.FOLLOWUP, "유효한 질문", "tts", "ma", 0))
+                    Question.resume(null, QuestionType.BEHAVIORAL_FOLLOWUP, "유효한 질문", "tts", "ma", 0))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("RESUME_* 타입만 허용");
         }

@@ -88,7 +88,7 @@ class RubricScorerTest {
                 .build();
 
         question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("테스트 질문")
                 .feedbackPerspective(FeedbackPerspective.TECHNICAL)
                 .orderIndex(0)

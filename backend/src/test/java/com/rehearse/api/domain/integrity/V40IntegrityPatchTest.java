@@ -114,7 +114,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
             em.persist(questionSet);
 
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("Spring IoC에 대해 설명하세요.")
                     .orderIndex(0)
                     .build();

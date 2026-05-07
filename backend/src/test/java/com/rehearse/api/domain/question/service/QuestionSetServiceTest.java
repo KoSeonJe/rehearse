@@ -311,7 +311,7 @@ class QuestionSetServiceTest {
             ReflectionTestUtils.setField(questionSet, "id", 1L);
 
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("Java의 GC 동작 원리를 설명하세요.")
                     .modelAnswer("Generational GC 기반으로 동작합니다.")
                     .orderIndex(0)
@@ -488,7 +488,7 @@ class QuestionSetServiceTest {
 
     private Question createQuestion(Long id) {
         Question question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("Java의 GC 동작 원리를 설명하세요.")
                 .modelAnswer("Generational GC 기반으로 동작합니다.")
                 .orderIndex(1)
@@ -499,7 +499,7 @@ class QuestionSetServiceTest {
 
     private Question createFollowupQuestion(Long id) {
         Question question = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
+                .questionType(QuestionType.TECH_FOLLOWUP)
                 .questionText("GC 튜닝 경험이 있으신가요?")
                 .modelAnswer("G1GC 튜닝 사례를 설명합니다.")
                 .orderIndex(2)

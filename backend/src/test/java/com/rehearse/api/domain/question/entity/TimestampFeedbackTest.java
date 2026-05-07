@@ -38,7 +38,7 @@ class TimestampFeedbackTest {
         void build_withAllFields_createsTimestampFeedback() {
             // given
             Question question = Question.builder()
-                    .questionType(QuestionType.MAIN)
+                    .questionType(QuestionType.TECH_MAIN)
                     .questionText("Spring AOP에 대해 설명하세요.")
                     .orderIndex(0)
                     .build();

@@ -51,27 +51,6 @@ class QuestionDetailResponseTest {
             assertThat(response.getReferenceType()).isEqualTo(ReferenceType.GUIDE);
         }
 
-        @Test
-        @DisplayName("MAIN sentinel + BEHAVIORAL 카테고리 → GUIDE 폴백")
-        void mainSentinel_behavioralCategory_fallsBackGuide() {
-            Question question = build(QuestionType.MAIN);
-
-            QuestionDetailResponse response =
-                    QuestionDetailResponse.from(question, QuestionSetCategory.BEHAVIORAL);
-
-            assertThat(response.getReferenceType()).isEqualTo(ReferenceType.GUIDE);
-        }
-
-        @Test
-        @DisplayName("MAIN sentinel + CS 카테고리 → MODEL_ANSWER 폴백")
-        void mainSentinel_csCategory_fallsBackModelAnswer() {
-            Question question = build(QuestionType.MAIN);
-
-            QuestionDetailResponse response =
-                    QuestionDetailResponse.from(question, QuestionSetCategory.CS_FUNDAMENTAL);
-
-            assertThat(response.getReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-        }
     }
 
     @Test

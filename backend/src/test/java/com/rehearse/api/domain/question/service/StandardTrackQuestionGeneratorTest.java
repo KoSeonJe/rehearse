@@ -166,10 +166,8 @@ class StandardTrackQuestionGeneratorTest {
 
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.BEHAVIORAL_MAIN);
-            assertThat(q.getQuestionType().referenceTypeOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(ReferenceType.GUIDE);
-            assertThat(q.getQuestionType().feedbackPerspectiveOrFallback(QuestionSetCategory.BEHAVIORAL))
-                    .isEqualTo(FeedbackPerspective.BEHAVIORAL);
+            assertThat(q.getQuestionType().referenceType()).isEqualTo(ReferenceType.GUIDE);
+            assertThat(q.getQuestionType().feedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
         }
 
         @Test
@@ -183,10 +181,8 @@ class StandardTrackQuestionGeneratorTest {
 
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
-            assertThat(q.getQuestionType().referenceTypeOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
-                    .isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(q.getQuestionType().feedbackPerspectiveOrFallback(QuestionSetCategory.CS_FUNDAMENTAL))
-                    .isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(q.getQuestionType().referenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
+            assertThat(q.getQuestionType().feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
         }
 
         @Test

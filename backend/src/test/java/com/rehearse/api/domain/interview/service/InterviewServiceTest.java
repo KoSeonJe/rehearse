@@ -301,7 +301,7 @@ class InterviewServiceTest {
         ReflectionTestUtils.setField(qs, "id", 10L);
 
         Question mainQuestion = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("HashMap과 TreeMap의 차이점은?")
                 .orderIndex(0)
                 .build();
