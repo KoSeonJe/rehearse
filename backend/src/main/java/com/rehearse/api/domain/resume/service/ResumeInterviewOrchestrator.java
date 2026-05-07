@@ -220,13 +220,17 @@ public class ResumeInterviewOrchestrator {
     }
 
     private void validateResponseQuestionId(Long interviewId, long turnIndex, ResumeMode mode, TurnHandlerResult result) {
-        Long handlerId = result.questionId();
-        Long responseId = result.response().getQuestionId();
-        if (responseId != null && responseId.equals(handlerId)) {
+        Long handlerQuestionId = result.questionId();
+        Long responseQuestionId = result.response().getQuestionId();
+        if (responseQuestionId == null) {
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-missing handlerQuestionId={} turnIndex={}",
+                    interviewId, mode.name().toLowerCase(), handlerQuestionId, turnIndex);
             return;
         }
-        log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-mismatch handlerQuestionId={} responseQuestionId={} turnIndex={}",
-                interviewId, mode.name().toLowerCase(), handlerId, responseId, turnIndex);
+        if (!responseQuestionId.equals(handlerQuestionId)) {
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-mismatch handlerQuestionId={} responseQuestionId={} turnIndex={}",
+                    interviewId, mode.name().toLowerCase(), handlerQuestionId, responseQuestionId, turnIndex);
+        }
     }
 
     private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}

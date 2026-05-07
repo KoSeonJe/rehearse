@@ -319,8 +319,8 @@ class ResumeInterviewOrchestratorTest {
         }
 
         @Test
-        @DisplayName("응답 DTO questionId 가 handler 와 mismatch 면 WARN 로그를 남기고 publish 는 진행한다")
-        void processUserTurn_responseQuestionIdMismatch_logsWarnAndPublishes() {
+        @DisplayName("응답 DTO questionId 가 null 이면 missing WARN 로그를 남기고 publish 는 진행한다")
+        void processUserTurn_responseQuestionIdMissing_logsWarnAndPublishes() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
                     .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
             given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
@@ -333,16 +333,44 @@ class ResumeInterviewOrchestratorTest {
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(warnMessages())
-                    .as("mismatch WARN 발생")
-                    .anyMatch(m -> m.contains("response-questionid-mismatch")
-                            && m.contains("handlerQuestionId=99")
-                            && m.contains("responseQuestionId=null"));
+                    .as("missing WARN 발생")
+                    .anyMatch(m -> m.contains("response-questionid-missing")
+                            && m.contains("handlerQuestionId=99"));
+            assertThat(warnMessages())
+                    .as("missing 케이스에서는 mismatch WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-mismatch"));
             then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
                     any(), anyInt(), eq(skeleton), any(), eq(99L));
         }
 
         @Test
-        @DisplayName("정상 흐름에서 response.questionId == handler.questionId 이면 mismatch WARN 미발생")
+        @DisplayName("응답 DTO questionId 가 handler 와 다르면 mismatch WARN 로그를 남기고 publish 는 진행한다")
+        void processUserTurn_responseQuestionIdMismatch_logsWarnAndPublishes() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().questionId(7L).question("Q").presentToUser(true).build(),
+                            false, 99L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            assertThat(warnMessages())
+                    .as("mismatch WARN 발생")
+                    .anyMatch(m -> m.contains("response-questionid-mismatch")
+                            && m.contains("handlerQuestionId=99")
+                            && m.contains("responseQuestionId=7"));
+            assertThat(warnMessages())
+                    .as("mismatch 케이스에서는 missing WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-missing"));
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
+                    any(), anyInt(), eq(skeleton), any(), eq(99L));
+        }
+
+        @Test
+        @DisplayName("정상 흐름에서 response.questionId == handler.questionId 이면 missing/mismatch WARN 미발생")
         void processUserTurn_responseQuestionIdMatches_doesNotLogWarn() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
                     .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
@@ -356,8 +384,9 @@ class ResumeInterviewOrchestratorTest {
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(warnMessages())
-                    .as("정상 매칭 케이스 — mismatch WARN 미발생")
-                    .noneMatch(m -> m.contains("response-questionid-mismatch"));
+                    .as("정상 매칭 케이스 — questionId WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-mismatch")
+                            || m.contains("response-questionid-missing"));
         }
 
         private List<String> warnMessages() {

@@ -240,6 +240,9 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
             assertThat(response.getQuestionId())
                     .as("응답 DTO 가 자기 질문 ID 를 보유해야 FE 매핑 정상")
                     .isNotNull();
+            assertThat(response.getType())
+                    .as("RESUME 트랙 type 접두어 유지 — PLAYGROUND/INTERROGATION 분기 모두 허용")
+                    .startsWith("RESUME_");
             assertThat(response.getQuestion()).isNotBlank();
 
             assertThat(logAppender.list.stream()
@@ -248,6 +251,46 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
                     .toList())
                     .as("정상 흐름 — mismatch WARN 미발생")
                     .noneMatch(m -> m.contains("response-questionid-mismatch"));
+        } finally {
+            orchestratorLogger.detachAppender(logAppender);
+            logAppender.stop();
+        }
+    }
+
+    @Test
+    @DisplayName("RESUME INTERROGATION turn 응답 DTO questionId 보유 + type RESUME_INTERROGATION_* + WARN 미발생 (Issue #433 회귀)")
+    void interrogationTurn_responseCarriesQuestionIdAndInterrogationType() {
+        Long interviewId = persistInterviewAndInitState();
+        runtimeStateCache.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
+
+        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+        ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
+        logAppender.start();
+        orchestratorLogger.addAppender(logAppender);
+        try {
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    interviewId, 30, "Redis 의 데이터 구조 선택 근거를 설명해주세요", "기본은 String, 정렬이 필요하면 ZSET 을 사용했습니다.",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            assertThat(response.getQuestionId())
+                    .as("INTERROGATION turn 응답 DTO 가 자기 질문 ID 를 보유해야 FE 매핑 정상")
+                    .isNotNull();
+            assertThat(response.getType())
+                    .as("INTERROGATION turn 응답 type 은 RESUME_INTERROGATION 접두어 유지")
+                    .startsWith("RESUME_INTERROGATION");
+
+            assertThat(logAppender.list.stream()
+                    .filter(event -> event.getLevel() == Level.WARN)
+                    .map(ILoggingEvent::getFormattedMessage)
+                    .toList())
+                    .as("정상 흐름 — questionId 누락/불일치 WARN 미발생")
+                    .noneMatch(m -> m.contains("response-questionid-missing")
+                            || m.contains("response-questionid-mismatch"));
         } finally {
             orchestratorLogger.detachAppender(logAppender);
             logAppender.stop();
