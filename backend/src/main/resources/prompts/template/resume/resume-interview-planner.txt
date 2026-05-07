@@ -28,6 +28,12 @@ ALLOWED_CHAIN_IDS:
    - 30분: 1~2문장, 핵심 1~2개
    - 45/60분: 2~3문장, 배경 + 결정 + 이유로 풍부하게
 
+### Playground opener_question 톤 (강제)
+- Playground = 응시자 맥락 파악 / 자유 회고 단계. opener_question 은 intro 톤만.
+- 금지: "기술적 결정", "트레이드오프", "메커니즘", "어떻게 동작", "왜 그렇게 설계", "내부 원리" 류 narrow 기술 심문 어휘.
+- 허용: "설명", "역할", "맡으셨", "흐름", "인상 깊은 / 어려웠던 경험" 류 intro / 감정·서사 oriented 어휘.
+- project_name 명시된 경우 opener_question 자체에 자연스럽게 포함 (예: "{project_name} 프로젝트에서 어떤 역할을 맡으셨나요?").
+
 ### 출력 스키마 (JSON, strict)
 - session_plan_id (string, "plan_" prefix)
 - duration_hint_min (number, 입력 그대로)
@@ -79,7 +85,7 @@ projects: [
       "project_name": "__example_name__",
       "priority": 1,
       "playground_phase": {
-        "opener_question": "이 프로젝트에서 가장 어려웠던 기술적 결정을 설명해주세요.",
+        "opener_question": "__example_name__ 프로젝트에서 어떤 역할을 맡으셨고, 전체 흐름을 자유롭게 소개해주세요.",
         "expected_claims_coverage": ["__example_proj___c1"]
       },
       "interrogation_phase": {
