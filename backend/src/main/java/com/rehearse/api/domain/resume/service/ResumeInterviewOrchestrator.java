@@ -104,6 +104,7 @@ public class ResumeInterviewOrchestrator {
             return handlerResult.response();
         }
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
+        validateResponseQuestionId(interviewId, turnIndex, currentMode, handlerResult);
 
         turnEventPublisher.publish(interviewId, turnIndex, analysis, currentMode,
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
@@ -216,6 +217,16 @@ public class ResumeInterviewOrchestrator {
         log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={} type={}",
                 interviewId, mode.name().toLowerCase(), turnIndex, result.response().getType());
         throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
+    }
+
+    private void validateResponseQuestionId(Long interviewId, long turnIndex, ResumeMode mode, TurnHandlerResult result) {
+        Long handlerId = result.questionId();
+        Long responseId = result.response().getQuestionId();
+        if (responseId != null && responseId.equals(handlerId)) {
+            return;
+        }
+        log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-mismatch handlerQuestionId={} responseQuestionId={} turnIndex={}",
+                interviewId, mode.name().toLowerCase(), handlerId, responseId, turnIndex);
     }
 
     private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}
