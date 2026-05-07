@@ -9,7 +9,6 @@ import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
-import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -187,53 +186,6 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
     }
 
     @Nested
-    @DisplayName("generateWrapUp - wrap-up modelAnswer 검증")
-    class WrapUp {
-
-        @Test
-        @DisplayName("정상 modelAnswer 반환 시 1회 호출 + 결과 그대로 반환")
-        void wrapUp_validModelAnswer_returnsAsIs() {
-            given(resilientAiClient.chat(any()))
-                    .willReturn(wrapUpChatResponse("정상 가이드 답변입니다.", true, false));
-
-            WrapUpResult actual = generator.generateWrapUp(
-                    1L, state, List.of(), "summary", 5L, true);
-
-            assertThat(actual.modelAnswer()).isEqualTo("정상 가이드 답변입니다.");
-            then(resilientAiClient).should(times(1)).chat(any());
-        }
-
-        @Test
-        @DisplayName("1차 modelAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
-        void wrapUp_firstBlankSecondValid_retriesOnce() {
-            given(resilientAiClient.chat(any()))
-                    .willReturn(wrapUpChatResponse(null, true, false),
-                            wrapUpChatResponse("재시도 가이드 답변", true, false));
-
-            WrapUpResult actual = generator.generateWrapUp(
-                    1L, state, List.of(), "summary", 5L, true);
-
-            assertThat(actual.modelAnswer()).isEqualTo("재시도 가이드 답변");
-            then(resilientAiClient).should(times(2)).chat(any());
-        }
-
-        @Test
-        @DisplayName("1차 + 2차 모두 modelAnswer blank 이면 폴백 텍스트가 적용된다 (sessionComplete 보존)")
-        void wrapUp_bothBlank_appliesFallback() {
-            given(resilientAiClient.chat(any()))
-                    .willReturn(wrapUpChatResponse("", true, true),
-                            wrapUpChatResponse(" ", true, false));
-
-            WrapUpResult actual = generator.generateWrapUp(
-                    1L, state, List.of(), "summary", 5L, true);
-
-            assertThat(actual.modelAnswer()).isEqualTo(ResumeFallbackModelAnswers.WRAP_UP);
-            assertThat(actual.sessionComplete()).isFalse();
-            then(resilientAiClient).should(times(2)).chat(any());
-        }
-    }
-
-    @Nested
     @DisplayName("question blank → 1회 retry → 그래도 blank 면 BusinessException(RESPONSE_INVALID) 을 던진다")
     class QuestionBlankThrow {
 
@@ -259,20 +211,6 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
 
             assertThatThrownBy(() -> generator.generateInterrogation(
                     1L, state, List.of(), "Redis", "topic", 1, 4, "answer", 0))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode()).isEqualTo("AI_007"));
-            then(resilientAiClient).should(times(2)).chat(any());
-        }
-
-        @Test
-        @DisplayName("wrap-up: question 1차 + 2차 모두 blank 면 RESPONSE_INVALID 를 던진다")
-        void wrapUp_bothQuestionBlank_throwsBusinessException() {
-            given(resilientAiClient.chat(any()))
-                    .willReturn(wrapUpChatResponseWithQuestion("", "model"),
-                            wrapUpChatResponseWithQuestion(null, "model"));
-
-            assertThatThrownBy(() -> generator.generateWrapUp(
-                    1L, state, List.of(), "summary", 5L, true))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode()).isEqualTo("AI_007"));
             then(resilientAiClient).should(times(2)).chat(any());
@@ -350,29 +288,6 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
                   "model_answer": %s
                 }
                 """.formatted(jsonValue(question), nextAction, nextLevel, jsonValue(modelAnswer));
-        return chatResponse(json);
-    }
-
-    private static ChatResponse wrapUpChatResponse(String modelAnswer, boolean isWrapUpQuestion, boolean sessionComplete) {
-        return wrapUpChatResponseFull("회고 질문 한 줄", modelAnswer, isWrapUpQuestion, sessionComplete);
-    }
-
-    private static ChatResponse wrapUpChatResponseWithQuestion(String question, String modelAnswer) {
-        return wrapUpChatResponseFull(question, modelAnswer, true, false);
-    }
-
-    private static ChatResponse wrapUpChatResponseFull(
-            String question, String modelAnswer, boolean isWrapUpQuestion, boolean sessionComplete) {
-        String json = """
-                {
-                  "question": %s,
-                  "tts_question": "회고 질문 한 줄",
-                  "reason": "마무리",
-                  "is_wrap_up_question": %s,
-                  "session_complete": %s,
-                  "model_answer": %s
-                }
-                """.formatted(jsonValue(question), isWrapUpQuestion, sessionComplete, jsonValue(modelAnswer));
         return chatResponse(json);
     }
 

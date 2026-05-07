@@ -124,24 +124,6 @@ class FocusLayerTest {
         }
 
         @Test
-        @DisplayName("resume_wrap_up: sessionSummary + remainingMinutes 가 프래그먼트에 포함되며 PROJECT_NAME 블록은 emit 되지 않는다")
-        void resume_wrap_up_renders_expected_fragment_when_hints_present() {
-            FocusHints hints = new FocusHints.ResumeWrapUpHints(
-                    "세션 요약본", 5, true
-            );
-
-            List<ChatMessage> result = focusLayer.build(req("resume_wrap_up", hints));
-
-            assertThat(result).hasSize(1);
-            String content = result.get(0).content();
-            assertThat(content).doesNotContain("<<<PROJECT_NAME>>>");
-            assertThat(content).contains("세션 요약본");
-            assertThat(content).contains("REMAINING_MINUTES: 5");
-            assertThat(content).contains("IS_RETROSPECTIVE: true");
-            assertThat(content).contains("WRAP_UP");
-        }
-
-        @Test
         @DisplayName("L4 출력은 USER 메시지이며 cacheControl=false 이어야 한다")
         void outputs_non_cached_user_message() {
             List<ChatMessage> result = focusLayer.build(

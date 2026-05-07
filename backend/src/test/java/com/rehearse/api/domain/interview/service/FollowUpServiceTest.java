@@ -359,13 +359,13 @@ class FollowUpServiceTest {
             InterviewPlan plan = mock(InterviewPlan.class);
             given(interviewPlanStore.findByInterviewId(1L)).willReturn(Optional.of(plan));
 
-            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean()))
                     .willReturn(FollowUpResponse.builder().question("이력서 질문").presentToUser(true).build());
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
             assertThat(response.getQuestion()).isEqualTo("이력서 질문");
-            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any());
+            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean());
             then(audioTurnAnalyzer).shouldHaveNoInteractions();
             then(followUpQuestionWriter).shouldHaveNoInteractions();
         }
@@ -396,13 +396,13 @@ class FollowUpServiceTest {
                 return null;
             }).given(runtimeStateStore).update(eq(1L), any());
 
-            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean()))
                     .willReturn(FollowUpResponse.builder().question("재로드 후 이력서 질문").presentToUser(true).build());
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
             assertThat(response.getQuestion()).isEqualTo("재로드 후 이력서 질문");
-            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any());
+            then(resumeOrchestrator).should().processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean());
             then(audioTurnAnalyzer).shouldHaveNoInteractions();
         }
 
@@ -432,7 +432,7 @@ class FollowUpServiceTest {
                 return null;
             }).given(runtimeStateStore).update(eq(1L), any());
 
-            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any()))
+            given(resumeOrchestrator.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean()))
                     .willReturn(FollowUpResponse.builder().question("복구된 plan 질문").presentToUser(true).build());
 
             FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
@@ -440,7 +440,7 @@ class FollowUpServiceTest {
             assertThat(response.getQuestion()).isEqualTo("복구된 plan 질문");
             then(interviewPlanStore).should().save(1L, regenerated);
             then(resumeOrchestrator).should().processUserTurn(
-                    eq(1L), eq(30), any(), any(), any(), eq(skeleton), eq(regenerated));
+                    eq(1L), eq(30), any(), any(), any(), eq(skeleton), eq(regenerated), eq(false));
         }
 
         @Test

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("QuestionType - 단일 출처 매핑 + sub-type")
 class QuestionTypeTest {
@@ -33,13 +34,6 @@ class QuestionTypeTest {
         void resumeInterrogation_mapsToGuideAndTechnical() {
             assertThat(QuestionType.RESUME_INTERROGATION.referenceType()).isEqualTo(ReferenceType.GUIDE);
             assertThat(QuestionType.RESUME_INTERROGATION.feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
-        }
-
-        @Test
-        @DisplayName("RESUME_WRAP_UP 는 (GUIDE, BEHAVIORAL) 로 매핑된다")
-        void resumeWrapUp_mapsToGuideAndBehavioral() {
-            assertThat(QuestionType.RESUME_WRAP_UP.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.RESUME_WRAP_UP.feedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
         }
     }
 
@@ -126,12 +120,11 @@ class QuestionTypeTest {
         }
 
         @Test
-        @DisplayName("isResume 은 RESUME_* 4종에 대해 true, 그 외 false")
+        @DisplayName("isResume 은 RESUME_* 3종에 대해 true, 그 외 false")
         void isResume_trueOnlyForResumeTypes() {
             assertThat(QuestionType.RESUME_OPENER.isResume()).isTrue();
             assertThat(QuestionType.RESUME_PLAYGROUND.isResume()).isTrue();
             assertThat(QuestionType.RESUME_INTERROGATION.isResume()).isTrue();
-            assertThat(QuestionType.RESUME_WRAP_UP.isResume()).isTrue();
             assertThat(QuestionType.TECH_MAIN.isResume()).isFalse();
             assertThat(QuestionType.MAIN.isResume()).isFalse();
         }
@@ -175,6 +168,29 @@ class QuestionTypeTest {
                     .isEqualTo(ReferenceType.MODEL_ANSWER);
             assertThat(QuestionType.MAIN.feedbackPerspectiveOrFallback(QuestionSetCategory.RESUME_BASED))
                     .isEqualTo(FeedbackPerspective.TECHNICAL);
+        }
+    }
+
+    @Nested
+    @DisplayName("RESUME_WRAP_UP 은 enum 에서 제거되었다 (FSM 2단계 단순화)")
+    class WrapUpRemoval {
+
+        @Test
+        @DisplayName("RESUME_WRAP_UP 이름으로 valueOf 호출 시 IllegalArgumentException 을 던진다")
+        void valueOf_resumeWrapUp_throws() {
+            assertThatThrownBy(() -> QuestionType.valueOf("RESUME_WRAP_UP"))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("values() 에 RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION 만 RESUME_* 로 잔존한다")
+        void values_containsOnlyThreeResumeTypes() {
+            assertThat(QuestionType.values())
+                    .filteredOn(t -> t.name().startsWith("RESUME_"))
+                    .containsExactlyInAnyOrder(
+                            QuestionType.RESUME_OPENER,
+                            QuestionType.RESUME_PLAYGROUND,
+                            QuestionType.RESUME_INTERROGATION);
         }
     }
 }

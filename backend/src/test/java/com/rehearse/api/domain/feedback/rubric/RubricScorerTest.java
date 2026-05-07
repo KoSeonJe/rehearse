@@ -145,25 +145,6 @@ class RubricScorerTest {
             assertThat(result.scoredDimensions()).containsExactlyInAnyOrderElementsOf(expectedDims);
         }
 
-        @Test
-        @DisplayName("WRAP_UP mode → D10만 채점 요청")
-        void score_wrapUpMode_onlyD10() {
-            Rubric rubric = createResumeRubric();
-            given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
-            ChatRequest mockRequest = mockChatRequest();
-            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("chain_depth")), any(), any(), any(), any()))
-                    .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("chain_depth"))))
-                    .willReturn(new RubricScoringResult("resume-v1", List.of("chain_depth"),
-                            Map.of("chain_depth", DimensionScore.of(3, "L4까지 도달", "트레이드오프 비교")), null));
-
-            RubricScoringResult result = rubricScorer.score(
-                    question, questionSet, resumeInterview, "회고 답변",
-                    analysis, ResumeMode.WRAP_UP, 4, null
-            );
-
-            assertThat(result.scoredDimensions()).containsExactly("chain_depth");
-        }
     }
 
     @Nested

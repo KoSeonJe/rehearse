@@ -43,7 +43,7 @@ import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ResumeInterviewOrchestrator - FSM 라우팅")
+@DisplayName("ResumeInterviewOrchestrator - FSM 라우팅 (PLAYGROUND/INTERROGATION 2단계)")
 class ResumeInterviewOrchestratorTest {
 
     @InjectMocks
@@ -55,8 +55,6 @@ class ResumeInterviewOrchestratorTest {
     private PlaygroundModeHandler playgroundHandler;
     @Mock
     private InterrogationModeHandler interrogationHandler;
-    @Mock
-    private WrapUpModeHandler wrapUpHandler;
     @Mock
     private ClockWatcher clockWatcher;
     @Mock
@@ -86,9 +84,6 @@ class ResumeInterviewOrchestratorTest {
         }).when(runtimeStateStore).update(anyLong(), any());
         lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_BASED)))
                 .thenReturn(java.util.Optional.empty());
-        // 기본: policy 가 현재 mode 그대로 반환, hard timeout 없음
-        lenient().when(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), anyLong(), any()))
-                .thenAnswer(inv -> inv.getArgument(2));
         lenient().when(modeTransitionPolicy.isHardTimeoutExceeded(anyInt(), anyLong())).thenReturn(false);
     }
 
@@ -106,59 +101,12 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 11L));
 
-            FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getQuestion()).isEqualTo("Q");
             then(playgroundHandler).should().handle(any(), any(), any(), any(), any(), any(), any());
         }
-    }
-
-    @Nested
-    @DisplayName("WRAP_UP 자동 전이 (정책 위임)")
-    class WrapUpTransition {
-
-        @Test
-        @DisplayName("policy 가 WRAP_UP 으로 전이를 알리면 wrapUpHandler 가 호출된다")
-        void processUserTurn_policyAdvancesToWrapUp_routesToWrapUpHandler() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(1L);
-            given(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), eq(1L), any()))
-                    .willAnswer(inv -> {
-                        state.transitionTo(ResumeMode.WRAP_UP);
-                        return ResumeMode.WRAP_UP;
-                    });
-            given(wrapUpHandler.handle(any(), any(), any(), any(), any(), anyLong(), anyBoolean(), any()))
-                    .willReturn(new WrapUpModeHandler.WrapUpTurnResult(
-                            FollowUpResponse.builder().question("마무리").presentToUser(true).build(), 12L));
-
-            FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
-
-            assertThat(response.getQuestion()).isEqualTo("마무리");
-            then(wrapUpHandler).should().handle(any(), any(), any(), any(), any(), anyLong(), anyBoolean(), any());
-        }
-
-        @Test
-        @DisplayName("hard timeout 초과 시 RESUME_HARD_TIMEOUT 응답이 반환된다")
-        void processUserTurn_hardTimeoutExceeded_returnsHardTimeoutResponse() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
-            given(modeTransitionPolicy.advanceToWrapUpIfDue(anyLong(), anyLong(), any()))
-                    .willReturn(ResumeMode.WRAP_UP);
-            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
-
-            FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
-
-            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
-            assertThat(response.isFollowUpExhausted()).isTrue();
-            then(wrapUpHandler).shouldHaveNoInteractions();
-        }
-    }
-
-    @Nested
-    @DisplayName("모드별 라우팅")
-    class ModeRouting {
 
         @Test
         @DisplayName("mode=INTERROGATION 이면 interrogationHandler 로 라우팅된다")
@@ -171,11 +119,71 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 13L));
 
-            FollowUpResponse response = orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getQuestion()).isEqualTo("L2 질문");
             then(interrogationHandler).should().handle(any(), any(), any(), any(), any(), any());
             then(playgroundHandler).shouldHaveNoInteractions();
+        }
+    }
+
+    @Nested
+    @DisplayName("종료 분기")
+    class TerminationBranches {
+
+        @Test
+        @DisplayName("hard timeout 초과 시 RESUME_HARD_TIMEOUT 응답이 반환된다")
+        void processUserTurn_hardTimeoutExceeded_returnsHardTimeoutResponse() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
+            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
+            assertThat(response.isFollowUpExhausted()).isTrue();
+            assertThat(response.isSkip()).isTrue();
+            assertThat(response.isPresentToUser()).isFalse();
+            then(playgroundHandler).shouldHaveNoInteractions();
+            then(interrogationHandler).shouldHaveNoInteractions();
+            then(turnEventPublisher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("terminate=true 신호 시 답변 분석은 수행하되 핸들러 dispatch / publish 없이 종료 응답을 반환한다")
+        void processUserTurn_terminateTrue_skipsDispatchAndPublish() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(5L);
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
+
+            assertThat(response.isFollowUpExhausted()).isTrue();
+            assertThat(response.isSkip()).isTrue();
+            assertThat(response.isPresentToUser()).isFalse();
+            assertThat(response.getType()).isNull();
+            then(turnAnalysisPipeline).should().analyze(any(), anyLong(), any(), any(), any());
+            then(playgroundHandler).shouldHaveNoInteractions();
+            then(interrogationHandler).shouldHaveNoInteractions();
+            then(turnEventPublisher).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("hard timeout 이 우선 — terminate=true 와 동시 발생 시 RESUME_HARD_TIMEOUT 으로 응답")
+        void processUserTurn_hardTimeoutAndTerminate_hardTimeoutWins() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
+            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
+
+            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
         }
     }
 
@@ -251,7 +259,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 14L));
 
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             then(clockWatcher).should().markStart(1L);
         }
@@ -271,7 +279,8 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 42L));
 
-            orchestrator.processUserTurn(1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan);
+            orchestrator.processUserTurn(
+                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false);
 
             ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
             ArgumentCaptor<String> answerCaptor = ArgumentCaptor.forClass(String.class);
@@ -295,7 +304,7 @@ class ResumeInterviewOrchestratorTest {
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
             assertThatThrownBy(() -> orchestrator.processUserTurn(
-                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan))
+                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false))
                     .isInstanceOf(BusinessException.class);
 
             then(turnEventPublisher).shouldHaveNoInteractions();
@@ -318,7 +327,7 @@ class ResumeInterviewOrchestratorTest {
                                     .build(), null));
 
             FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan);
+                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false);
 
             assertThat(response.isFollowUpExhausted()).isTrue();
             then(turnEventPublisher).shouldHaveNoInteractions();
@@ -326,7 +335,7 @@ class ResumeInterviewOrchestratorTest {
     }
 
     @Nested
-    @DisplayName("컨텍스트 토큰 예산 초과 graceful 종료 (P1-2)")
+    @DisplayName("컨텍스트 토큰 예산 초과 graceful 종료")
     class ContextBudgetExceeded {
 
         @Test
@@ -339,7 +348,7 @@ class ResumeInterviewOrchestratorTest {
                     .willThrow(new BusinessException(AiErrorCode.CONTEXT_BUDGET_EXCEEDED));
 
             FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan);
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getType()).isEqualTo("CONTEXT_BUDGET_EXCEEDED");
             assertThat(response.isFollowUpExhausted()).isTrue();
@@ -358,7 +367,7 @@ class ResumeInterviewOrchestratorTest {
                     .willThrow(new BusinessException(AiErrorCode.RESPONSE_INVALID));
 
             assertThatThrownBy(() -> orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan))
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo(AiErrorCode.RESPONSE_INVALID.getCode()));
@@ -401,7 +410,7 @@ class ResumeInterviewOrchestratorTest {
                                     .type("RESUME_INTERROGATION_EXHAUSTED")
                                     .build(), null));
 
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan);
+            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             ILoggingEvent warn = findWarn(appender);
             assertThat(warn.getLevel()).isEqualTo(Level.WARN);
@@ -411,6 +420,42 @@ class ResumeInterviewOrchestratorTest {
             assertThat(formatted).contains("track=RESUME");
             assertThat(formatted).contains("stage=interrogation");
             assertThat(formatted).contains("reason=publish-skip");
+        }
+
+        @Test
+        @DisplayName("FE-signaled terminate 분기 진입 시 INFO 로그가 기록된다")
+        void terminate_logsFeSignaledInfo() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(5L);
+            targetLogger.setLevel(Level.INFO);
+
+            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
+
+            ILoggingEvent info = appender.list.stream()
+                    .filter(e -> e.getLevel() == Level.INFO)
+                    .filter(e -> e.getFormattedMessage().contains("FE-signaled terminate"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("FE-signaled terminate INFO 로그 미발견"));
+            assertThat(info.getFormattedMessage()).contains("interviewId=1");
+        }
+
+        @Test
+        @DisplayName("hard timeout backstop 분기 진입 시 WARN 로그가 기록된다")
+        void hardTimeout_logsBackstopWarn() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
+            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
+
+            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            ILoggingEvent warn = appender.list.stream()
+                    .filter(e -> e.getLevel() == Level.WARN)
+                    .filter(e -> e.getFormattedMessage().contains("hard timeout backstop"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("hard timeout backstop WARN 로그 미발견"));
+            assertThat(warn.getFormattedMessage()).contains("interviewId=1");
         }
 
         private ILoggingEvent findWarn(ListAppender<ILoggingEvent> appender) {
