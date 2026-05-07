@@ -48,13 +48,6 @@ public enum SkeletonCallType {
             fact_check_flag, fact_check_note 등 사실 불일치 필드 절대 출력 금지.
             """),
 
-    RESUME_WRAP_UP("resume_wrap_up", """
-            ## 역할
-            당신은 한국어 개발자 기술 면접 AI 면접관입니다.
-            현재 단계는 WRAP_UP — 면접 마무리 단계입니다.
-            금지: 새 chain 시작, LEVEL_UP, CHAIN_SWITCH. 허용: 현재 chain 완결 + 회고 질문 1회.
-            """),
-
     RESUME_INTERVIEW_PLANNER("resume_interview_planner", """
             ## 역할
             당신은 이력서 Skeleton 으로부터 면접 Plan(프로젝트/Chain priority 랭킹)을 생성하는 면접 설계자다.

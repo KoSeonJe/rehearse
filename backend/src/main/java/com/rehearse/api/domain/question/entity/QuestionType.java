@@ -10,7 +10,6 @@ public enum QuestionType {
     RESUME_OPENER(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
     RESUME_PLAYGROUND(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
     RESUME_INTERROGATION(ReferenceType.GUIDE, FeedbackPerspective.TECHNICAL),
-    RESUME_WRAP_UP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
     MAIN(null, null),
     FOLLOWUP(null, null);
 
@@ -40,7 +39,7 @@ public enum QuestionType {
 
     public boolean isResume() {
         return this == RESUME_OPENER || this == RESUME_PLAYGROUND
-                || this == RESUME_INTERROGATION || this == RESUME_WRAP_UP;
+                || this == RESUME_INTERROGATION;
     }
 
     public ReferenceType referenceTypeOrFallback(QuestionSetCategory category) {

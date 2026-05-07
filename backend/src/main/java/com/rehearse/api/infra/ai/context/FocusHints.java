@@ -12,7 +12,6 @@ public sealed interface FocusHints
                 FocusHints.ResumePlaygroundOpenerHints,
                 FocusHints.ResumePlaygroundResponderHints,
                 FocusHints.ResumeChainInterrogatorHints,
-                FocusHints.ResumeWrapUpHints,
                 FocusHints.EmptyHints {
 
     record AnswerAnalyzerHints(String mainQuestion, String userAnswer, String personaDepthHint) implements FocusHints {}
@@ -36,12 +35,6 @@ public sealed interface FocusHints
             int answerQuality,
             String userAnswer,
             int consecutiveStayCount
-    ) implements FocusHints {}
-
-    record ResumeWrapUpHints(
-            String sessionSummary,
-            long remainingMinutes,
-            boolean isRetrospective
     ) implements FocusHints {}
 
     record EmptyHints() implements FocusHints {

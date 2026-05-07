@@ -26,7 +26,6 @@ public class FocusLayer implements ContextLayer {
     static final int CAP_RESUME_PLAYGROUND_OPENER = 600;
     static final int CAP_RESUME_PLAYGROUND_RESPONDER = 1000;
     static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
-    static final int CAP_RESUME_WRAP_UP = 600;
 
     // chars/4 토큰 휴리스틱 ±20% 오차 흡수 마진
     private static final double SAFETY_MARGIN = 0.9;
@@ -48,7 +47,6 @@ public class FocusLayer implements ContextLayer {
             case FocusHints.ResumePlaygroundOpenerHints h -> render(buildResumePlaygroundOpener(h), CAP_RESUME_PLAYGROUND_OPENER, callType);
             case FocusHints.ResumePlaygroundResponderHints h -> render(buildResumePlaygroundResponder(h), CAP_RESUME_PLAYGROUND_RESPONDER, callType);
             case FocusHints.ResumeChainInterrogatorHints h -> render(buildResumeChainInterrogator(h), CAP_RESUME_CHAIN_INTERROGATOR, callType);
-            case FocusHints.ResumeWrapUpHints h -> render(buildResumeWrapUp(h), CAP_RESUME_WRAP_UP, callType);
             case FocusHints.EmptyHints ignored -> handleEmpty(callType);
         };
     }
@@ -84,13 +82,6 @@ public class FocusLayer implements ContextLayer {
                "CONSECUTIVE_STAY_COUNT: " + h.consecutiveStayCount() + "\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "위 chain 상태에서 LEVEL_UP/LEVEL_STAY/CHAIN_SWITCH 결정과 다음 질문을 JSON 한 객체로만 응답하세요.";
-    }
-
-    private String buildResumeWrapUp(FocusHints.ResumeWrapUpHints h) {
-        return "<<<SESSION_SUMMARY>>>\n" + nz(h.sessionSummary()) + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
-               "REMAINING_MINUTES: " + h.remainingMinutes() + "\n" +
-               "IS_RETROSPECTIVE: " + h.isRetrospective() + "\n\n" +
-               "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요.";
     }
 
     private List<ChatMessage> render(String fragment, int cap, String callType) {
