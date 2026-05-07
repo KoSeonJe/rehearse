@@ -48,12 +48,12 @@ docker exec -i rehearse-db mysql -u rehearse -p'<password>' --default-character-
 | `devops-aws-k8s.sql` | AWS_K8S (INFRA_CICD + CLOUD) | ~180 |
 | `fullstack-react-spring.sql` | REACT_SPRING | ~90 |
 
-## 스키마 (V20 이후)
+## 스키마 (V46 이후)
 
 ```sql
 INSERT IGNORE INTO question_pool
-  (cache_key, content, category, model_answer, reference_type, is_active, created_at)
-VALUES ('{cache_key}', '{질문}', '{카테고리}', '{모범답변}', 'MODEL_ANSWER', TRUE, NOW());
+  (cache_key, content, tts_content, category, model_answer, is_active, created_at)
+VALUES ('{cache_key}', '{질문}', '{tts_질문}', '{카테고리}', '{모범답변}', TRUE, NOW());
 ```
 
-- `reference_type`: `MODEL_ANSWER` (기술 질문) 또는 `GUIDE` (행동 면접, STAR 가이드)
+- 분류 메타 (`reference_type`, `feedback_perspective`) 는 `QuestionType` enum 단일 소스. 컬럼 제거됨 (V46).

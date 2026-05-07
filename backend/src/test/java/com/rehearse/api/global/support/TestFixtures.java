@@ -57,16 +57,16 @@ public final class TestFixtures {
 
     public static QuestionPool createQuestionPool() {
         return QuestionPool.create("backend:cs:junior", "Spring IoC 컨테이너에 대해 설명하세요.",
-                null, null, null, null);
+                null, null, null);
     }
 
     public static QuestionPool createQuestionPool(String cacheKey, String content) {
-        return QuestionPool.create(cacheKey, content, null, null, null, null);
+        return QuestionPool.create(cacheKey, content, null, null, null);
     }
 
     public static QuestionPool createQuestionPool(String cacheKey, String content,
                                                   String ttsContent, String category) {
-        return QuestionPool.create(cacheKey, content, ttsContent, category, null, null);
+        return QuestionPool.create(cacheKey, content, ttsContent, category, null);
     }
 
     // ── QuestionSet ──

@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.feedback.rubric;
 
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
@@ -96,7 +95,7 @@ class RubricScoringEventListenerTest {
 
             then(questionScorePersister).should().saveRubric(
                     eq(10L), eq(1L),
-                    eq("concept-cs-fundamental-v1"), eq(null), eq("TECHNICAL"),
+                    eq("concept-cs-fundamental-v1"), eq(null),
                     any()
             );
         }
@@ -120,7 +119,7 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any());
         }
     }
 
@@ -163,7 +162,7 @@ class RubricScoringEventListenerTest {
             listener.on(event);
 
             then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
-            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
 
@@ -186,7 +185,7 @@ class RubricScoringEventListenerTest {
             listener.on(event);
 
             then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
-            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any(), any());
+            then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
     }
@@ -206,7 +205,6 @@ class RubricScoringEventListenerTest {
         Question question = Question.builder()
                 .questionType(QuestionType.TECH_MAIN)
                 .questionText("테스트 질문")
-                .feedbackPerspective(FeedbackPerspective.TECHNICAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(question, "id", id);
