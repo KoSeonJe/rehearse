@@ -155,6 +155,35 @@ LATEST_TAG=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || echo "v0
 
 **첫 릴리즈 처리:** `git describe` 가 실패하면 `LATEST_TAG=없음`으로 간주하고 `v0.1.0` 을 기본 제안으로 내민다.
 
+### Step 2.5: Deploy Notes 확인 (필수)
+
+릴리즈 PR 생성 전 `docs/deploy-notes/${NEW_VERSION}.md` 존재 확인:
+
+```bash
+DEPLOY_NOTES="docs/deploy-notes/${NEW_VERSION}.md"
+if [ -f "$DEPLOY_NOTES" ]; then
+  echo "✓ deploy-notes 발견: $DEPLOY_NOTES"
+  cat "$DEPLOY_NOTES"
+else
+  echo "ⓘ deploy-notes 없음 — 1회성 운영 작업 / 참고사항 X"
+fi
+```
+
+**역할**:
+- `docs/deploy-notes/v{X.Y.Z}.md` = 해당 버전 릴리즈 시점 1회성 작업 (DB backfill / 운영 SQL / 시크릿 갱신 / 인프라 변경 등) + 참고사항.
+- 파일 존재 시 → 릴리즈 PR 본문 "## 영향 범위 & 리스크" 섹션 / "## 배포 체크리스트" 에 본문 요약 / 링크 반영. 누락 금지.
+- 파일 부재 시 → 일반 릴리즈 진행 (코드 변경만).
+
+**작성 시점**:
+- 일반: 1회성 작업 필요 PR 머지 직후 작성 (변경 범위 인지 시점).
+- 누가: 변경 PR 작업자가 머지 후 즉시 작성 (handoff / 잊혀지기 전).
+- 위치: `docs/deploy-notes/v{다음_릴리즈_버전}.md`.
+
+**Step 4 (릴리즈 PR 생성) 영향**:
+- PR 본문 "## 영향 범위 & 리스크" 섹션에 deploy-notes 본문 요약 포함.
+- "## 배포 체크리스트" 에 1회성 작업 항목 추가 (예: `- [ ] backfill SQL 실행 (docs/deploy-notes/v0.1.6.md)`).
+- "## 롤백 방법" 에 deploy-notes 의 롤백 절차 반영.
+
 ### Step 3: 앱 버전 파일 동기화 (선택·권장)
 
 **frontend `package.json`:**
