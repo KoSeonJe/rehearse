@@ -19,7 +19,7 @@ public enum ResumeErrorCode implements ErrorCode {
     PROJECT_NOT_FOUND_IN_SKELETON(HttpStatus.INTERNAL_SERVER_ERROR, "RESUME_009", "Skeleton에서 projectId 에 해당하는 프로젝트를 찾을 수 없습니다."),
     INTERVIEW_PLAN_ALREADY_ASSIGNED(HttpStatus.CONFLICT, "RESUME_010", "이미 interview 에 할당된 plan 입니다."),
     RESUME_PLAN_NOT_READY(HttpStatus.CONFLICT, "RESUME_011", "이력서 분석/면접 플랜 준비가 완료되지 않았습니다."),
-    PROJECT_NAME_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "RESUME_012", "Project 명칭이 유효하지 않습니다.");
+    QUESTION_ID_MISSING(HttpStatus.INTERNAL_SERVER_ERROR, "RESUME_012", "이력서 면접 질문 식별자가 누락되었습니다.");
 
     private final HttpStatus status;
     private final String code;
