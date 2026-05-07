@@ -259,12 +259,9 @@ export type FollowUpType =
   | 'CLARIFICATION'
   | 'CHALLENGE'
   | 'APPLICATION'
-  | 'OFF_TOPIC_REDIRECT'
-  | 'CLARIFY_REESTABLISH'
   | 'CLARIFY_FALLBACK'
   | 'SCAFFOLD'
   | 'REVEAL_AND_MOVE_ON'
-  | 'GIVE_UP_FALLBACK'
 
 export interface FollowUpExchange {
   question: string
@@ -288,12 +285,9 @@ export interface FollowUpResponse {
   type: FollowUpType
   answerText?: string
   modelAnswer?: string | null
-  // DB 저장 생략 신호. AI 자체 skip(답변 불충분) + 의도 분기(OFF_TOPIC/CLARIFY/GIVE_UP) 둘 다 true.
   skip: boolean
   skipReason?: string | null
-  // FE 화면 렌더 신호. AI 자체 skip=false / 의도 분기=true. 두 케이스 분리용.
   presentToUser?: boolean
-  // BE 정책이 다음 호출 가능 여부를 echo. true 면 추가 꼬리질문 호출 안 함.
   followUpExhausted?: boolean
 }
 
