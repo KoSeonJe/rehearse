@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.entity;
 
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 
 import java.util.List;
@@ -21,16 +20,7 @@ public record Rubric(
             boolean mustReach1All
     ) {}
 
-    public List<String> selectDimensions(IntentType intent, ResumeMode resumeMode) {
-        if (intent == IntentType.CLARIFY_REQUEST) {
-            List<String> dims = perTurnRules.get("on_intent_clarify");
-            return dims != null ? dims : List.of();
-        }
-        if (intent == IntentType.GIVE_UP) {
-            List<String> dims = perTurnRules.get("on_intent_give_up");
-            return dims != null ? dims : List.of();
-        }
-
+    public List<String> selectDimensions(ResumeMode resumeMode) {
         if (resumeMode != null) {
             String modeKey = switch (resumeMode) {
                 case PLAYGROUND -> "on_playground_mode";

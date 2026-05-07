@@ -4,13 +4,9 @@ import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.service.IntentDispatcher;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
-import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
 import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
@@ -38,7 +34,6 @@ import java.util.List;
 public class ResumeInterviewOrchestrator {
 
     private final TurnAnalysisPipeline turnAnalysisPipeline;
-    private final IntentDispatcher intentDispatcher;
     private final PlaygroundModeHandler playgroundHandler;
     private final InterrogationModeHandler interrogationHandler;
     private final WrapUpModeHandler wrapUpHandler;
@@ -79,12 +74,6 @@ public class ResumeInterviewOrchestrator {
         TurnAnalysisResult turnResult = turnAnalysisPipeline.analyze(
                 interviewId, turnIndex, questionContent, answerText, previousExchanges);
 
-        IntentResult intent = turnResult.intent();
-        if (intent.type() != IntentType.ANSWER) {
-            log.info("[ResumeOrchestrator] non-answer intent: interviewId={}, intent={}", interviewId, intent.type());
-            return handleNonAnswerIntent(interviewId, questionContent, answerText, intent, previousExchanges);
-        }
-
         AnswerAnalysis analysis = turnResult.answerAnalysis();
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
         long remainingMinutes = clockWatcher.remainingMinutes(interviewId, durationMinutes);
@@ -107,13 +96,13 @@ public class ResumeInterviewOrchestrator {
                 skeleton, plan, remainingMinutes, previousExchanges);
 
         if (shouldSkipTurnCompletedEvent(handlerResult)) {
-            log.debug("[정상 skip] Resume TurnCompletedEvent 발행 대상 아님. interviewId={}, turnIndex={}, mode={}",
-                    interviewId, turnIndex, currentMode);
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=publish-skip turnIndex={}",
+                    interviewId, currentMode, turnIndex);
             return handlerResult.response();
         }
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
 
-        turnEventPublisher.publish(interviewId, turnIndex, analysis, intent, currentMode,
+        turnEventPublisher.publish(interviewId, turnIndex, analysis, currentMode,
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
 
         return handlerResult.response();
@@ -205,17 +194,6 @@ public class ResumeInterviewOrchestrator {
                 .build();
     }
 
-    private FollowUpResponse handleNonAnswerIntent(
-            Long interviewId, String questionContent, String answerText,
-            IntentResult intent, List<FollowUpExchange> previousExchanges
-    ) {
-        int turnIndex = previousExchanges != null ? previousExchanges.size() : 0;
-        IntentBranchInput input = new IntentBranchInput(
-                interviewId, null, questionContent, answerText, turnIndex, previousExchanges
-        );
-        return intentDispatcher.dispatch(intent.type(), input);
-    }
-
     private boolean shouldSkipTurnCompletedEvent(TurnHandlerResult result) {
         FollowUpResponse response = result.response();
         return result.questionId() == null
@@ -227,8 +205,8 @@ public class ResumeInterviewOrchestrator {
         if (result.questionId() != null) {
             return;
         }
-        log.warn("[결함 skip] Resume handler questionId 누락. interviewId={}, turnIndex={}, mode={}, type={}",
-                interviewId, turnIndex, mode, result.response().getType());
+        log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={} type={}",
+                interviewId, mode, turnIndex, result.response().getType());
         throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
     }
 

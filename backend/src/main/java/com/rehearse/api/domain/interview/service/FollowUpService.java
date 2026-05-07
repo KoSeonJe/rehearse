@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.interview.entity.IntentBranchInput;
 import static org.springframework.transaction.annotation.Propagation.*;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
@@ -9,14 +8,12 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
 import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
@@ -46,7 +43,6 @@ public class FollowUpService {
 
     private final AudioTurnAnalyzer audioTurnAnalyzer;
     private final FollowUpQuestionWriter followUpQuestionWriter;
-    private final IntentDispatcher intentDispatcher;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final InterviewRuntimeStateCache runtimeStateStore;
     private final AiCallMetrics aiCallMetrics;
@@ -76,31 +72,10 @@ public class FollowUpService {
                 id, resolveTurnId(context), audioFile,
                 request.getQuestionContent(), context.mainReferenceType(), askedPerspectives);
 
-        if (turn.intent().type() != IntentType.ANSWER) {
-            return handleNonAnswerIntent(id, context, request, turn);
-        }
         if (turn.answerAnalysis().recommendedNextAction() == RecommendedNextAction.SKIP) {
             return handleAnalyzerSkip(id, context, request, turn);
         }
         return generateAndSaveFollowUp(id, context, request, turn, askedPerspectives);
-    }
-
-    private FollowUpResponse handleNonAnswerIntent(
-            Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn
-    ) {
-        IntentType intentType = turn.intent().type();
-        log.info("[FollowUp] intent != ANSWER 분기: interviewId={}, questionSetId={}, intent={}, confidence={}",
-                id, request.getQuestionSetId(), intentType, turn.intent().confidence());
-        aiCallMetrics.incrementFollowUpSkip("intent_" + intentType.name().toLowerCase());
-
-        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-        IntentBranchInput input = new IntentBranchInput(
-                id, context, request.getQuestionContent(), turn.answerText(),
-                turnIndex, request.getPreviousExchanges());
-        FollowUpResponse response = intentDispatcher.dispatch(intentType, input);
-        followUpTransactionHandler.publishTurnCompletedEvent(
-                id, context, turn, context.currentMainQuestionId(), turnIndex);
-        return response;
     }
 
     private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn) {
@@ -108,6 +83,8 @@ public class FollowUpService {
                 id, request.getQuestionSetId());
         aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
         int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+        log.warn("[진행차단진단] interviewId={} track=STANDARD stage=standard-followup reason=analyzer-skip turnIndex={}",
+                id, turnIndex);
         followUpTransactionHandler.publishTurnCompletedEvent(
                 id, context, turn, context.currentMainQuestionId(), turnIndex);
         return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
@@ -131,6 +108,8 @@ public class FollowUpService {
                     id, request.getQuestionSetId(), stepB.getSkipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
             int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+            log.warn("[진행차단진단] interviewId={} track=STANDARD stage=standard-followup reason=step-b-skip turnIndex={}",
+                    id, turnIndex);
             followUpTransactionHandler.publishTurnCompletedEvent(
                     id, context, turn, context.currentMainQuestionId(), turnIndex);
             return FollowUpResponse.aiSkip(answerText, stepB.getSkipReason());
@@ -187,7 +166,6 @@ public class FollowUpService {
         if (state.getResumeSkeletonCache() != null) {
             return true;
         }
-        // Caffeine evict 후 재초기화된 state는 skeleton=null → Interview 엔티티로 1차 판정
         Interview interview = interviewFinder.findById(interviewId);
         if (!interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
             return false;

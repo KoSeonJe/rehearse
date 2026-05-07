@@ -2,7 +2,6 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Perspective;
-import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
@@ -77,7 +76,7 @@ public class AnswerAnalyzer {
                 response, AnswerAnalysis.class, aiClient, chatRequest);
 
         AnswerAnalysis withTurnId = parsed.withTurnId(turnId);
-        AnswerAnalysis guarded = applyL1FalseNegativeGuard(withTurnId);
+        AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
 
         runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));
 
@@ -87,15 +86,6 @@ public class AnswerAnalyzer {
         }
 
         return guarded;
-    }
-
-    private AnswerAnalysis applyL1FalseNegativeGuard(AnswerAnalysis analysis) {
-        boolean noClaims = analysis.claims().isEmpty();
-        boolean lowQuality = analysis.answerQuality() <= 1;
-        if (noClaims && lowQuality && analysis.recommendedNextAction() != RecommendedNextAction.CLARIFICATION) {
-            return analysis.withRecommendedNextAction(RecommendedNextAction.CLARIFICATION);
-        }
-        return analysis;
     }
 
     private static String toReferenceLabel(ReferenceType refType) {

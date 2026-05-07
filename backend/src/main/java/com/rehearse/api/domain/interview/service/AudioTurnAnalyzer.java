@@ -91,7 +91,7 @@ public class AudioTurnAnalyzer {
         AnswerAnalysis withTurnId = viaAudio.answerAnalysis() != null
                 ? viaAudio.answerAnalysis().withTurnId(turnId)
                 : AnswerAnalysis.empty(turnId);
-        AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard(viaAudio.intent().type());
+        AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
         runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));
         if (guarded.recommendedNextAction() != withTurnId.recommendedNextAction()) {
             log.info("[AudioTurnAnalyzer] L1 FN 가드 적용: interviewId={}, turnId={}, override→CLARIFICATION",

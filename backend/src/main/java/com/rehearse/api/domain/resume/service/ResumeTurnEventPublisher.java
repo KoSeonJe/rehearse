@@ -2,7 +2,6 @@ package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.IntentResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.questionset.entity.QuestionSet;
@@ -27,11 +26,11 @@ public class ResumeTurnEventPublisher {
 
     @Transactional(readOnly = true)
     public void publish(Long interviewId, long turnIndex, AnswerAnalysis analysis,
-                        IntentResult intent, ResumeMode currentMode, int currentChainLevel,
+                        ResumeMode currentMode, int currentChainLevel,
                         ResumeSkeleton skeleton, String userAnswer, Long questionId) {
         if (questionId == null) {
-            log.warn("[결함 skip] Resume TurnCompletedEvent 발행 skip. questionId null. interviewId={}, turnIndex={}, mode={}",
-                    interviewId, turnIndex, currentMode);
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={}",
+                    interviewId, currentMode, turnIndex);
             return;
         }
         try {
@@ -41,7 +40,7 @@ public class ResumeTurnEventPublisher {
                     interviewId, turnIndex, interview.getUserId(),
                     questionId, questionSet != null ? questionSet.getId() : null,
                     userAnswer != null ? userAnswer : "",
-                    analysis, intent.type(), interview.getLevel(),
+                    analysis, interview.getLevel(),
                     currentMode, currentChainLevel, skeleton
             );
             eventPublisher.publishEvent(event);
