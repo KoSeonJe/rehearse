@@ -72,7 +72,7 @@ class InterrogationModeHandlerTest {
         void handle_highQuality_levelsUp() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             InterrogationTurnResult result = handler.handle(1L, state, "좋은 답변", createAnalysis(4), plan, java.util.List.of());
             FollowUpResponse response = result.response();
@@ -93,7 +93,7 @@ class InterrogationModeHandlerTest {
         void handle_lowQuality_staysAtSameLevel() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1));
+                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1, "model"));
 
             handler.handle(1L, state, "모호한 답변", createAnalysis(2), plan, java.util.List.of());
 
@@ -109,7 +109,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
 
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1));
+                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 1, "model"));
 
             handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
 
@@ -127,7 +127,7 @@ class InterrogationModeHandlerTest {
             state.getChainStateTracker().levelStay();
 
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 4));
+                    .willReturn(new InterrogationResult("재질문", "재질문", "이유", "LEVEL_STAY", 4, "model"));
 
             handler.handle(1L, state, "또 모호한 답변", createAnalysis(1), plan, java.util.List.of());
 
@@ -144,7 +144,7 @@ class InterrogationModeHandlerTest {
         void handle_chainSwitch_completesCurrentChain() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("다음 주제", "다음 주제", "이유", "CHAIN_SWITCH", 1));
+                    .willReturn(new InterrogationResult("다음 주제", "다음 주제", "이유", "CHAIN_SWITCH", 1, "model"));
 
             handler.handle(1L, state, "모릅니다", createAnalysis(1), plan, java.util.List.of());
 
@@ -182,7 +182,7 @@ class InterrogationModeHandlerTest {
             int levelBefore = state.getChainStateTracker().getCurrentLevel();
             int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1));
+                    .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
@@ -201,7 +201,7 @@ class InterrogationModeHandlerTest {
             int levelBefore = state.getChainStateTracker().getCurrentLevel();
             int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1));
+                    .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1, "model"));
 
             assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
                     .isInstanceOf(BusinessException.class)
@@ -223,7 +223,7 @@ class InterrogationModeHandlerTest {
         void handle_passesProjectNameFromPlan() {
             state.getChainStateTracker().initChain("proj1", "proj1::redis");
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             handler.handle(1L, state, "답변", createAnalysis(4), plan, java.util.List.of());
 
@@ -251,7 +251,7 @@ class InterrogationModeHandlerTest {
                         llmEntered.countDown();
                         // LLM 응답 지연 시뮬: 다른 thread 가 lock 진입할 시간을 벌어준다
                         llmRelease.await(2, TimeUnit.SECONDS);
-                        return new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2);
+                        return new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model");
                     });
 
             ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -288,7 +288,7 @@ class InterrogationModeHandlerTest {
             int levelBeforeTurn = state.getChainStateTracker().getCurrentLevel();
 
             given(promptBuilder.build(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2));
+                    .willReturn(new InterrogationResult("L2 질문", "L2 질문", "이유", "LEVEL_UP", 2, "model"));
 
             AtomicInteger levelAtPersist = new AtomicInteger(-1);
             given(questionPersister.persist(anyLong(), any(), any(), anyInt()))
