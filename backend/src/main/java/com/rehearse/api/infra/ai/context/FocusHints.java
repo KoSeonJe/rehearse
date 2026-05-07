@@ -7,26 +7,17 @@ import java.util.List;
  * EmptyHints 는 compaction_summarizer 등 hint 가 없는 경우용 명시 sentinel.
  */
 public sealed interface FocusHints
-        permits FocusHints.IntentClassifierHints,
-                FocusHints.AnswerAnalyzerHints,
+        permits FocusHints.AnswerAnalyzerHints,
                 FocusHints.FollowUpGeneratorV3Hints,
-                FocusHints.ClarifyResponseHints,
-                FocusHints.GiveUpResponseHints,
                 FocusHints.ResumePlaygroundOpenerHints,
                 FocusHints.ResumePlaygroundResponderHints,
                 FocusHints.ResumeChainInterrogatorHints,
                 FocusHints.ResumeWrapUpHints,
                 FocusHints.EmptyHints {
 
-    record IntentClassifierHints(String mainQuestion, String userUtterance) implements FocusHints {}
-
     record AnswerAnalyzerHints(String mainQuestion, String userAnswer, String personaDepthHint) implements FocusHints {}
 
     record FollowUpGeneratorV3Hints(String answerAnalysisJson, List<String> askedPerspectives) implements FocusHints {}
-
-    record ClarifyResponseHints(String mainQuestion, String userUtterance) implements FocusHints {}
-
-    record GiveUpResponseHints(String mainQuestion, String userUtterance, String personaDepthHint) implements FocusHints {}
 
     record ResumePlaygroundOpenerHints(String projectInfo, String openerQuestion) implements FocusHints {}
 

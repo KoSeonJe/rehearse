@@ -21,11 +21,8 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class FocusLayer implements ContextLayer {
 
-    static final int CAP_INTENT_CLASSIFIER = 300;
     static final int CAP_ANSWER_ANALYZER = 800;
     static final int CAP_FOLLOW_UP_GENERATOR_V3 = 1000;
-    static final int CAP_CLARIFY_RESPONSE = 400;
-    static final int CAP_GIVEUP_RESPONSE = 400;
     static final int CAP_RESUME_PLAYGROUND_OPENER = 600;
     static final int CAP_RESUME_PLAYGROUND_RESPONDER = 1000;
     static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
@@ -46,11 +43,8 @@ public class FocusLayer implements ContextLayer {
         FocusHints hints = req.focusHints();
         String callType = req.callType();
         return switch (hints) {
-            case FocusHints.IntentClassifierHints h -> render(buildIntentClassifier(h), CAP_INTENT_CLASSIFIER, callType);
             case FocusHints.AnswerAnalyzerHints h -> render(buildAnswerAnalyzer(h), CAP_ANSWER_ANALYZER, callType);
             case FocusHints.FollowUpGeneratorV3Hints h -> render(buildFollowUpGeneratorV3(h), CAP_FOLLOW_UP_GENERATOR_V3, callType);
-            case FocusHints.ClarifyResponseHints h -> render(buildClarifyResponse(h), CAP_CLARIFY_RESPONSE, callType);
-            case FocusHints.GiveUpResponseHints h -> render(buildGiveUpResponse(h), CAP_GIVEUP_RESPONSE, callType);
             case FocusHints.ResumePlaygroundOpenerHints h -> render(buildResumePlaygroundOpener(h), CAP_RESUME_PLAYGROUND_OPENER, callType);
             case FocusHints.ResumePlaygroundResponderHints h -> render(buildResumePlaygroundResponder(h), CAP_RESUME_PLAYGROUND_RESPONDER, callType);
             case FocusHints.ResumeChainInterrogatorHints h -> render(buildResumeChainInterrogator(h), CAP_RESUME_CHAIN_INTERROGATOR, callType);
@@ -180,12 +174,6 @@ public class FocusLayer implements ContextLayer {
         return fragment.substring(0, headBudget) + fragment.substring(fragment.length() - tailKeep);
     }
 
-    private String buildIntentClassifier(FocusHints.IntentClassifierHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
-               "<<<USER_UTTERANCE>>>\n" + nz(h.userUtterance()) + "\n<<<END_USER_UTTERANCE>>>\n\n" +
-               "위 답변의 의도를 분류하세요.";
-    }
-
     private String buildAnswerAnalyzer(FocusHints.AnswerAnalyzerHints h) {
         return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
@@ -197,19 +185,6 @@ public class FocusLayer implements ContextLayer {
         return "ANSWER_ANALYSIS:\n" + nz(h.answerAnalysisJson()) + "\n\n" +
                "asked_perspectives: " + formatList(h.askedPerspectives()) + "\n\n" +
                "위 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요.";
-    }
-
-    private String buildClarifyResponse(FocusHints.ClarifyResponseHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
-               "<<<USER_UTTERANCE>>>\n" + nz(h.userUtterance()) + "\n<<<END_USER_UTTERANCE>>>\n\n" +
-               "위 응시자가 질문 의미를 이해하지 못했습니다. 질문을 더 쉬운 말로 재설명하고 힌트 1개를 제공하세요.";
-    }
-
-    private String buildGiveUpResponse(FocusHints.GiveUpResponseHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
-               "<<<USER_UTTERANCE>>>\n" + nz(h.userUtterance()) + "\n<<<END_USER_UTTERANCE>>>\n\n" +
-               "PERSONA_GREETING_HINT: " + nz(h.personaDepthHint()) + "\n\n" +
-               "응시자가 포기 의사를 밝혔습니다. SCAFFOLD 또는 REVEAL_AND_MOVE_ON 모드를 선택하여 적절히 응답하세요.";
     }
 
     private static String nz(String v) {

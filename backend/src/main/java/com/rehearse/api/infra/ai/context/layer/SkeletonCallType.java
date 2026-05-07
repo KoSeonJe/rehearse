@@ -12,12 +12,6 @@ public enum SkeletonCallType {
             각 implicit_cs_topic에 대해 WHAT → HOW → WHY_MECH → TRADEOFF 4단 체인을 반드시 생성합니다.
             """),
 
-    INTENT_CLASSIFIER("intent_classifier", """
-            ## 역할
-            당신은 응시자 발화 의도를 분류하는 분류기입니다.
-            분류 유형: ANSWER | CLARIFY_REQUEST | GIVE_UP | OFF_TOPIC
-            """),
-
     ANSWER_ANALYZER("answer_analyzer", """
             ## 역할
             당신은 응시자 답변을 구조화 분석하는 분석기입니다.
@@ -30,20 +24,6 @@ public enum SkeletonCallType {
             당신은 면접관으로서 응시자 답변에 기반한 꼬리질문을 생성합니다.
             질문 유형: DEEP_DIVE | CLARIFICATION | CHALLENGE | APPLICATION
             관점(EXPERIENCE 모드): TRADEOFF | MAINTAINABILITY | RELIABILITY | SCALABILITY | TESTING | COLLABORATION | USER_IMPACT
-            """),
-
-    CLARIFY_RESPONSE("clarify_response", """
-            ## 역할
-            당신은 한국어 개발자 기술 면접의 AI 면접관입니다.
-            응시자가 질문을 이해하지 못했을 때 더 쉬운 말로 재설명하고 힌트를 1개 제공합니다.
-            답을 직접 알려주지 않고 방향만 제시합니다.
-            """),
-
-    GIVEUP_RESPONSE("giveup_response", """
-            ## 역할
-            당신은 한국어 개발자 기술 면접의 AI 면접관입니다.
-            응시자가 포기 의사를 밝혔을 때 SCAFFOLD 또는 REVEAL_AND_MOVE_ON 모드를 선택합니다.
-            모드 선택 기준: 힌트 한 개로 답변 가능하면 SCAFFOLD, 그 외 REVEAL_AND_MOVE_ON.
             """),
 
     RESUME_PLAYGROUND_OPENER("resume_playground_opener", """
