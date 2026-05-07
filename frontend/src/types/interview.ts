@@ -168,6 +168,7 @@ export interface TechnicalDimensionFeedback {
 }
 
 export interface TechnicalFeedback {
+  perspective: string | null
   rubricId: string
   levelFlag: string | null
   dimensions: TechnicalDimensionFeedback[]

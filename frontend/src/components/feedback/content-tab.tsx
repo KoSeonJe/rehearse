@@ -4,13 +4,29 @@ interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
 }
 
+const PERSPECTIVE_LABEL: Record<string, string> = {
+  TECHNICAL: '기술 피드백',
+  EXPERIENCE: '경험 평가',
+}
+
 const formatScore = (score: number | null): string => {
   if (score === null) return '평가 제외'
   return `${score}점`
 }
 
+const resolveLabel = (perspective: string | null): string | null => {
+  if (perspective === null) return null
+  return PERSPECTIVE_LABEL[perspective] ?? null
+}
+
 const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
-  if (technicalFeedback === null || technicalFeedback.dimensions.length === 0) {
+  const label = technicalFeedback === null ? null : resolveLabel(technicalFeedback.perspective)
+  const isEmpty =
+    technicalFeedback === null ||
+    technicalFeedback.dimensions.length === 0 ||
+    label === null
+
+  if (isEmpty) {
     return (
       <div className="px-6 py-10 text-center">
         <p className="text-[15px] font-bold text-gray-900">
@@ -26,7 +42,7 @@ const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
   return (
     <div className="space-y-4 px-6 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[15px] font-bold text-gray-900">기술 피드백</p>
+        <p className="text-[15px] font-bold text-gray-900">{label}</p>
         <span className="font-tabular text-[12px] font-medium text-gray-400">
           {technicalFeedback.rubricId}
         </span>
