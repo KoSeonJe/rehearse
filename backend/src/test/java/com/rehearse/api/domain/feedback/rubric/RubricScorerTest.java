@@ -13,7 +13,6 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
@@ -22,7 +21,6 @@ import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.adapter.RubricScoringAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.prompt.RubricScorerPromptBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -100,51 +98,6 @@ class RubricScorerTest {
     }
 
     @Nested
-    @DisplayName("CLARIFY intent")
-    class ClarifyIntent {
-
-        @Test
-        @DisplayName("CLARIFY intent 시 empty RubricScore 반환")
-        void score_clarifyIntent_returnsEmpty() {
-            Rubric rubric = createResumeRubric();
-            given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
-
-            RubricScoringResult result = rubricScorer.score(
-                    question, questionSet, resumeInterview, "잘 모르겠어요",
-                    analysis, IntentType.CLARIFY_REQUEST, ResumeMode.INTERROGATION, 2, null
-            );
-
-            assertThat(result.isEmpty()).isTrue();
-            assertThat(result.rubricId()).isEqualTo("resume-v1");
-        }
-    }
-
-    @Nested
-    @DisplayName("GIVE_UP intent")
-    class GiveUpIntent {
-
-        @Test
-        @DisplayName("GIVE_UP intent 시 D8만 채점")
-        void score_giveUpIntent_onlyD8() {
-            Rubric rubric = createResumeRubric();
-            given(rubricLoader.resolveFor(any(), any(), any())).willReturn(rubric);
-            ChatRequest mockRequest = mockChatRequest();
-            given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("recovery_from_gaps")), any(), any(), any(), any()))
-                    .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("recovery_from_gaps"))))
-                    .willReturn(new RubricScoringResult("resume-v1", List.of("recovery_from_gaps"),
-                            Map.of("recovery_from_gaps", DimensionScore.of(2, "모른다고 인정했음", "잘 모르겠어요")), null));
-
-            RubricScoringResult result = rubricScorer.score(
-                    question, questionSet, resumeInterview, "잘 모르겠습니다",
-                    analysis, IntentType.GIVE_UP, ResumeMode.INTERROGATION, 2, null
-            );
-
-            assertThat(result.scoredDimensions()).containsExactly("recovery_from_gaps");
-        }
-    }
-
-    @Nested
     @DisplayName("Resume Track mode-aware")
     class ResumeModeAware {
 
@@ -162,7 +115,7 @@ class RubricScorerTest {
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "TPS 10000을 달성했습니다",
-                    analysis, IntentType.ANSWER, ResumeMode.PLAYGROUND, 1, null
+                    analysis, ResumeMode.PLAYGROUND, 1, null
             );
 
             assertThat(result.scoredDimensions()).containsExactly("experience_concreteness");
@@ -186,7 +139,7 @@ class RubricScorerTest {
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "상세한 답변",
-                    analysis, IntentType.ANSWER, ResumeMode.INTERROGATION, 2, null
+                    analysis, ResumeMode.INTERROGATION, 2, null
             );
 
             assertThat(result.scoredDimensions()).containsExactlyInAnyOrderElementsOf(expectedDims);
@@ -206,7 +159,7 @@ class RubricScorerTest {
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, resumeInterview, "회고 답변",
-                    analysis, IntentType.ANSWER, ResumeMode.WRAP_UP, 4, null
+                    analysis, ResumeMode.WRAP_UP, 4, null
             );
 
             assertThat(result.scoredDimensions()).containsExactly("chain_depth");
@@ -218,8 +171,8 @@ class RubricScorerTest {
     class StandardTrack {
 
         @Test
-        @DisplayName("ANSWER intent, mode=null → on_intent_answer 차원 채점")
-        void score_answerIntent_noMode_usesIntentAnswerDimensions() {
+        @DisplayName("mode=null → on_intent_answer 차원 채점")
+        void score_noMode_usesIntentAnswerDimensions() {
             Rubric csFundamentalRubric = createCsRubric();
             given(rubricLoader.resolveFor(any(), any(), any())).willReturn(csFundamentalRubric);
             List<String> expectedDims = List.of("technical_depth", "reasoning_communication", "conceptual_accuracy", "recovery_from_gaps");
@@ -235,7 +188,7 @@ class RubricScorerTest {
 
             RubricScoringResult result = rubricScorer.score(
                     question, questionSet, standardInterview, "상세한 기술 답변",
-                    analysis, IntentType.ANSWER, null, null, null
+                    analysis, null, null, null
             );
 
             assertThat(result.scoredDimensions()).containsExactlyInAnyOrderElementsOf(expectedDims);
@@ -254,8 +207,6 @@ class RubricScorerTest {
                         new DimensionRef("chain_depth", 0.20)
                 ),
                 Map.of(
-                        "on_intent_clarify", List.of(),
-                        "on_intent_give_up", List.of("recovery_from_gaps"),
                         "on_playground_mode", List.of("experience_concreteness"),
                         "on_interrogation_mode", List.of("technical_depth", "reasoning_communication", "factual_consistency", "chain_depth"),
                         "on_wrap_up_mode", List.of("chain_depth")
@@ -275,8 +226,6 @@ class RubricScorerTest {
                         new DimensionRef("recovery_from_gaps", 0.15)
                 ),
                 Map.of(
-                        "on_intent_clarify", List.of(),
-                        "on_intent_give_up", List.of("recovery_from_gaps"),
                         "on_intent_answer", List.of("technical_depth", "reasoning_communication", "conceptual_accuracy", "recovery_from_gaps")
                 ),
                 Map.of()

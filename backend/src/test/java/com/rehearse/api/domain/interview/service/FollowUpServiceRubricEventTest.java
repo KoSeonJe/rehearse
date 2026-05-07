@@ -11,8 +11,6 @@ import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -49,7 +47,6 @@ class FollowUpServiceRubricEventTest {
 
     @Mock private AudioTurnAnalyzer audioTurnAnalyzer;
     @Mock private FollowUpQuestionWriter followUpQuestionWriter;
-    @Mock private IntentDispatcher intentDispatcher;
     @Mock private FollowUpTransactionHandler followUpTransactionHandler;
     @Mock private InterviewRuntimeStateCache runtimeStateStore;
     @Mock private AiCallMetrics aiCallMetrics;
@@ -64,7 +61,7 @@ class FollowUpServiceRubricEventTest {
     @BeforeEach
     void setUp() {
         followUpService = new FollowUpService(
-                audioTurnAnalyzer, followUpQuestionWriter, intentDispatcher,
+                audioTurnAnalyzer, followUpQuestionWriter,
                 followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
                 resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
                 resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
@@ -90,8 +87,7 @@ class FollowUpServiceRubricEventTest {
 
         AnswerAnalysis analysis = new AnswerAnalysis(
                 0L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE);
-        TurnAnalysisResult turn = new TurnAnalysisResult(
-                "답변 텍스트", IntentResult.of(IntentType.ANSWER, 0.9, "answer"), analysis);
+        TurnAnalysisResult turn = new TurnAnalysisResult("답변 텍스트", analysis);
         given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any())).willReturn(turn);
 
         GeneratedFollowUp followUp = buildFollowUp("다음 질문");

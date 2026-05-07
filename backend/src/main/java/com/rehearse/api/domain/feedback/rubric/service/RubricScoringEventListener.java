@@ -44,13 +44,13 @@ public class RubricScoringEventListener {
             RubricScoringResult score = rubricScorer.score(
                     question, questionSet, interview,
                     event.userAnswer(), event.analysis(),
-                    event.intent(), event.resumeMode(),
+                    event.resumeMode(),
                     event.currentChainLevel(), event.resumeSkeleton()
             );
 
             if (score.isEmpty()) {
-                log.debug("[정상 skip] RubricScore empty. intent={}, interviewId={}, turnIndex={}, questionId={}",
-                        event.intent(), interviewId, turnIndex, event.questionId());
+                log.debug("[정상 skip] RubricScore empty. interviewId={}, turnIndex={}, questionId={}",
+                        interviewId, turnIndex, event.questionId());
                 return;
             }
 

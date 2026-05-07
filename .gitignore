@@ -73,8 +73,5 @@ lambda/**/*.zip
 !.claude/skills/**
 .claude.local.md
 
-# === 계획 문서 (개인 작업 노트, 레포 추적 안 함) ===
-docs/plans/
-
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/

@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;
-import com.rehearse.api.domain.interview.entity.IntentResult;
-import com.rehearse.api.domain.interview.entity.IntentType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -81,12 +78,11 @@ class AudioTurnAnalyzerTest {
     }
 
     @Test
-    @DisplayName("ANSWER intent + 유효 분석 → TurnAnalysisResult 그대로 반환 + 캐시 기록")
-    void analyze_answerIntent_returnsParsedResult() {
+    @DisplayName("유효 분석 → TurnAnalysisResult 그대로 반환 + 캐시 기록")
+    void analyze_returnsParsedResult() {
         String json = """
                 {
                   "answer_text": "JVM 힙은 Young/Old 세대로 분리됩니다.",
-                  "intent": {"type":"ANSWER", "confidence":0.95, "reasoning":"GC 답변"},
                   "answer_analysis": {
                     "claims": [{"text":"Young/Old 분리", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"}],
                     "missing_perspectives": ["TRADEOFF"],
@@ -102,20 +98,17 @@ class AudioTurnAnalyzerTest {
                 1L, 50L, AUDIO, "JVM GC 설명", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.answerText()).isEqualTo("JVM 힙은 Young/Old 세대로 분리됩니다.");
-        assertThat(result.intent().type()).isEqualTo(IntentType.ANSWER);
-        assertThat(result.intent().confidence()).isEqualTo(0.95);
         assertThat(result.answerAnalysis().turnId()).isEqualTo(50L);
         assertThat(result.answerAnalysis().recommendedNextAction()).isEqualTo(RecommendedNextAction.DEEP_DIVE);
         then(runtimeStateStore).should().update(any(), any());
     }
 
     @Test
-    @DisplayName("L1 FN 가드: ANSWER + claims=[] + quality<=1 → recommended_next_action 을 CLARIFICATION 으로 override")
+    @DisplayName("L1 FN 가드: claims=[] + quality<=1 → recommended_next_action 을 CLARIFICATION 으로 override")
     void analyze_l1FnGuard_overridesToClarification() {
         String json = """
                 {
                   "answer_text": "음... 잘 모르겠어요.",
-                  "intent": {"type":"ANSWER", "confidence":0.55, "reasoning":"답변 시도 있으나 내용 없음"},
                   "answer_analysis": {
                     "claims": [],
                     "missing_perspectives": ["TRADEOFF"],
@@ -134,31 +127,6 @@ class AudioTurnAnalyzerTest {
     }
 
     @Test
-    @DisplayName("intent != ANSWER (OFF_TOPIC) → L1 FN 가드 미적용, 원본 분석 유지")
-    void analyze_offTopicIntent_skipsGuard() {
-        String json = """
-                {
-                  "answer_text": "시간 얼마나 남았어요?",
-                  "intent": {"type":"OFF_TOPIC", "confidence":0.99, "reasoning":"메타 발화"},
-                  "answer_analysis": {
-                    "claims": [],
-                    "missing_perspectives": [],
-                    "unstated_assumptions": [],
-                    "answer_quality": 1,
-                    "recommended_next_action": "CLARIFICATION"
-                  }
-                }
-                """;
-        given(aiClient.chatWithAudio(any(ChatRequest.class), any())).willReturn(jsonResponse(json));
-
-        TurnAnalysisResult result = audioTurnAnalyzer.analyze(
-                1L, 50L, AUDIO, "HashMap 충돌", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
-
-        assertThat(result.intent().type()).isEqualTo(IntentType.OFF_TOPIC);
-        assertThat(result.answerAnalysis().recommendedNextAction()).isEqualTo(RecommendedNextAction.CLARIFICATION);
-    }
-
-    @Test
     @DisplayName("audio chat 인프라 오류 → TextFallback 위임 + 카운터 증가")
     void analyze_audioChatFailed_delegatesToTextFallback() {
         willThrow(new AudioChatFallbackRequiredException("audio chat 인프라 오류"))
@@ -166,7 +134,6 @@ class AudioTurnAnalyzerTest {
 
         TurnAnalysisResult fallback = new TurnAnalysisResult(
                 "페이징 설명",
-                IntentResult.of(IntentType.ANSWER, 0.9, "fallback"),
                 new AnswerAnalysis(50L, List.of(), List.of(), List.of(), 2, RecommendedNextAction.DEEP_DIVE));
         given(textFallbackTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any()))
                 .willReturn(fallback);
@@ -175,10 +142,8 @@ class AudioTurnAnalyzerTest {
                 1L, 50L, AUDIO, "페이징?", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
 
         assertThat(result.answerText()).isEqualTo("페이징 설명");
-        assertThat(result.intent().type()).isEqualTo(IntentType.ANSWER);
         then(textFallbackTurnAnalyzer).should().analyze(any(), any(), any(), any(), any(), any());
         then(aiCallMetrics).should().incrementFollowUpSkip("audio_chat_fallback_to_stt");
-        // commit() 은 fallback 경로에서 bypass 되어야 함 — runtimeStateStore.update 미호출
         then(runtimeStateStore).shouldHaveNoInteractions();
     }
 

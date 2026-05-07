@@ -19,8 +19,6 @@ uses_dimensions:
     weight: 0.20
 
 per_turn_rules:
-  on_intent_clarify: []
-  on_intent_give_up: [recovery_from_gaps]
   on_intent_answer:  [technical_depth, reasoning_communication, recovery_from_gaps]
 
 level_expectations:

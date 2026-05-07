@@ -56,6 +56,11 @@ fact_check_flag, fact_check_note, factual_inconsistency, resume_mismatch, incons
 {{CONSECUTIVE_STAY_COUNT}}
 <<<END_CONSECUTIVE_STAY_COUNT>>>
 
+## 엣지 응답 처리 지시
+- 응시자가 "모르겠다" / "기억 안 난다" / "패스" 류로 답하면 동일 레벨 질문 반복 금지. 한 단계 쉬운 각도로 재질문하거나 CHAIN_SWITCH 로 다음 chain 으로 전환하세요.
+- 응시자 발화가 chain 주제와 무관(잡담, 메타 발화)하면 chain 맥락으로 redirect 후 다음 적절한 질문 생성.
+- 위 두 케이스 모두 면접관 페르소나로 흡수 — 별도 분기/스킵 없이 자연스러운 심문 흐름 유지.
+
 ## 지시
 위 컨텍스트를 바탕으로 결정 트리를 적용해 next_action을 결정하고, 해당 레벨에 맞는 질문을 생성하세요.
 LEVEL_STAY 연속 횟수가 2 초과이면 LEVEL_UP 또는 CHAIN_SWITCH 중 적절한 것을 선택하세요.

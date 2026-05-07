@@ -138,7 +138,7 @@ public class FollowUpTransactionHandler {
                     interviewId, (long) turnIndex, interview.getUserId(),
                     questionId, context.questionSetId(),
                     turn.answerText(), turn.answerAnalysis(),
-                    turn.intent().type(), context.level()
+                    context.level()
             );
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
