@@ -173,49 +173,6 @@ class InterrogationModeHandlerTest {
     }
 
     @Nested
-    @DisplayName("LLM 응답 검증")
-    class LlmResponseValidation {
-
-        @Test
-        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 lock 밖에서 던지고 tracker state 가 변하지 않는다")
-        void handle_blankQuestion_throwsBusinessException_andDoesNotMutateTracker() {
-            state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            int levelBefore = state.getChainStateTracker().getCurrentLevel();
-            int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
-            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult("", "", "이유", "LEVEL_STAY", 1, "model"));
-
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
-
-            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
-            assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
-            verify(questionPersister, never()).persist(anyLong(), any(), any(), any(), any(), anyInt());
-        }
-
-        @Test
-        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 lock 밖에서 던지고 tracker state 가 변하지 않는다")
-        void handle_nullQuestion_throwsBusinessException_andDoesNotMutateTracker() {
-            state.getChainStateTracker().initChain("proj1", "proj1::redis");
-            int levelBefore = state.getChainStateTracker().getCurrentLevel();
-            int stayBefore = state.getChainStateTracker().getConsecutiveLevelStayCount();
-            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
-                    .willReturn(new InterrogationResult(null, null, "이유", "LEVEL_STAY", 1, "model"));
-
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(3), plan, java.util.List.of()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
-
-            assertThat(state.getChainStateTracker().getCurrentLevel()).isEqualTo(levelBefore);
-            assertThat(state.getChainStateTracker().getConsecutiveLevelStayCount()).isEqualTo(stayBefore);
-            verify(questionPersister, never()).persist(anyLong(), any(), any(), any(), any(), anyInt());
-        }
-    }
-
-    @Nested
     @DisplayName("projectName 컨텍스트 주입")
     class ProjectNameInjection {
 

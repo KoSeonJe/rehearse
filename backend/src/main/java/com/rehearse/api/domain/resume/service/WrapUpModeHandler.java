@@ -7,8 +7,6 @@ import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
-import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,14 +37,6 @@ public class WrapUpModeHandler {
 
         log.info("[WrapUpHandler] 회고 질문 생성: interviewId={}, remainingMin={}, isRetrospective={}",
                 interviewId, remainingMinutes, isRetrospective);
-
-        if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        if (ResumeFallbackQuestions.WRAP_UP.equals(result.question())) {
-            log.warn("[WrapUpHandler] 안전 폴백 사용 감지: interviewId={}, isRetrospective={}",
-                    interviewId, isRetrospective);
-        }
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(

@@ -166,29 +166,6 @@ class PlaygroundModeHandlerTest {
             assertThat(result.questionId()).isEqualTo(1L);
         }
 
-        @Test
-        @DisplayName("handleOpener 에서 LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handleOpener_blankQuestion_throwsBusinessException() {
-            given(resultGenerator.generateOpener(any(), any(), any(), any()))
-                    .willReturn(new PlaygroundOpenerResult("", "", "오프너", "model"));
-
-            assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
-        }
-
-        @Test
-        @DisplayName("handleOpener 에서 LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handleOpener_nullQuestion_throwsBusinessException() {
-            given(resultGenerator.generateOpener(any(), any(), any(), any()))
-                    .willReturn(new PlaygroundOpenerResult(null, null, "오프너", "model"));
-
-            assertThatThrownBy(() -> handler.handleOpener(1L, state, skeleton, plan))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
-        }
     }
 
     @Nested

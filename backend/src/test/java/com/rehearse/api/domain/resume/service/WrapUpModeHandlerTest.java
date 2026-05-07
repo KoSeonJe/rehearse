@@ -9,9 +9,6 @@ import com.rehearse.api.domain.resume.entity.InterrogationPhase;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
-import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
-import com.rehearse.api.domain.resume.service.ResumeQuestionResultGenerator;
 import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -113,35 +110,6 @@ class WrapUpModeHandlerTest {
 
             assertThat(result.response().getType()).isEqualTo("RESUME_WRAP_UP");
             assertThat(state.getChainStateTracker().hasActiveChain()).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("LLM 응답 검증")
-    class LlmResponseValidation {
-
-        @Test
-        @DisplayName("LLM 이 빈 question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handle_blankQuestion_throwsBusinessException() {
-            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
-                    .willReturn(new WrapUpResult("", "", "이유", true, false, "model"));
-
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
-        }
-
-        @Test
-        @DisplayName("LLM 이 null question 을 반환하면 BusinessException(RESPONSE_INVALID) 을 던진다")
-        void handle_nullQuestion_throwsBusinessException() {
-            given(resultGenerator.generateWrapUp(any(), any(), any(), any(), anyLong(), anyBoolean()))
-                    .willReturn(new WrapUpResult(null, null, "이유", true, false, "model"));
-
-            assertThatThrownBy(() -> handler.handle(1L, state, "답변", createAnalysis(), plan, 3L, true, java.util.List.of()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo("AI_007"));
         }
     }
 

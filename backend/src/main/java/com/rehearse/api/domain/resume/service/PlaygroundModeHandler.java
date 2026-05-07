@@ -40,14 +40,6 @@ public class PlaygroundModeHandler {
 
         PlaygroundOpenerResult result = resultGenerator.generateOpener(interviewId, state, project, firstPlan.playgroundPhase());
 
-        if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        if (ResumeFallbackQuestions.OPENER.equals(result.question())) {
-            log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(opener): interviewId={}, projectId={}",
-                    interviewId, firstPlan.projectId());
-        }
-
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
                 interviewId, QuestionType.RESUME_OPENER, result.question(),
@@ -91,10 +83,6 @@ public class PlaygroundModeHandler {
 
         Long questionId = null;
         if (!questionBlank) {
-            if (ResumeFallbackQuestions.PLAYGROUND_RESPONDER.equals(result.question())) {
-                log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(responder): interviewId={}, turnCount={}",
-                        interviewId, turnCount + 1);
-            }
             int orderIndex = state.nextResumeOrderIndex();
             questionId = questionPersister.persist(
                     interviewId, QuestionType.RESUME_PLAYGROUND, result.question(),

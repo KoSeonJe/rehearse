@@ -11,7 +11,6 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,14 +52,6 @@ public class InterrogationModeHandler {
                 snapshot.chainTopic(), snapshot.currentLevel(),
                 snapshot.answerQuality(), userAnswer, snapshot.consecutiveStay()
         );
-
-        if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        if (ResumeFallbackQuestions.INTERROGATION.equals(result.question())) {
-            log.warn("[InterrogationHandler] 안전 폴백 사용 감지: interviewId={}, chainId={}, level={}",
-                    interviewId, snapshot.chainTopic(), snapshot.currentLevel());
-        }
 
         // Phase 3: DB persist + tracker 상태 변경 (lock 안, 원자 묶음)
         return tracker.withLock(() -> {
