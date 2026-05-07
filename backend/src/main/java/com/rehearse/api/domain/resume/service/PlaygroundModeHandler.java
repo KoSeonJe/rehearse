@@ -14,7 +14,6 @@ import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +28,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PlaygroundModeHandler {
 
-    private final ResumePlaygroundPromptBuilder promptBuilder;
+    private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
 
     public OpenerResult handleOpener(
@@ -39,19 +38,12 @@ public class PlaygroundModeHandler {
         ProjectPlan firstPlan = plan.projectPlans().get(0);
         Project project = findProject(skeleton, firstPlan.projectId());
 
-        PlaygroundOpenerResult result = promptBuilder.buildOpener(interviewId, state, project, firstPlan.playgroundPhase());
-
-        if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        if (ResumeFallbackQuestions.OPENER.equals(result.question())) {
-            log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(opener): interviewId={}, projectId={}",
-                    interviewId, firstPlan.projectId());
-        }
+        PlaygroundOpenerResult result = resultGenerator.generateOpener(interviewId, state, project, firstPlan.playgroundPhase());
 
         int orderIndex = state.nextResumeOrderIndex();
         Long questionId = questionPersister.persist(
-                interviewId, QuestionType.RESUME_OPENER, result.question(), orderIndex);
+                interviewId, QuestionType.RESUME_OPENER, result.question(),
+                result.ttsQuestion(), result.modelAnswer(), orderIndex);
 
         log.info("[PlaygroundHandler] 오프너 생성: interviewId={}, projectId={}, questionId={}",
                 interviewId, firstPlan.projectId(), questionId);
@@ -75,7 +67,7 @@ public class PlaygroundModeHandler {
         int turnCount = state.getPlaygroundTurns().get();
         int cumulativeLength = accumulateLength(state, userAnswer);
 
-        PlaygroundResponderResult result = promptBuilder.buildResponder(
+        PlaygroundResponderResult result = resultGenerator.generatePlaygroundResponder(
                 interviewId, state, previousExchanges,
                 project, userAnswer, expectedClaims, turnCount, cumulativeLength
         );
@@ -91,13 +83,10 @@ public class PlaygroundModeHandler {
 
         Long questionId = null;
         if (!questionBlank) {
-            if (ResumeFallbackQuestions.PLAYGROUND_RESPONDER.equals(result.question())) {
-                log.warn("[PlaygroundHandler] 안전 폴백 사용 감지(responder): interviewId={}, turnCount={}",
-                        interviewId, turnCount + 1);
-            }
             int orderIndex = state.nextResumeOrderIndex();
             questionId = questionPersister.persist(
-                    interviewId, QuestionType.RESUME_PLAYGROUND, result.question(), orderIndex);
+                    interviewId, QuestionType.RESUME_PLAYGROUND, result.question(),
+                    result.ttsQuestion(), result.modelAnswer(), orderIndex);
         }
 
         if (shouldSwitch) {

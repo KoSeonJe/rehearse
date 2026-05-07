@@ -6,8 +6,8 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import org.springframework.stereotype.Component;
 

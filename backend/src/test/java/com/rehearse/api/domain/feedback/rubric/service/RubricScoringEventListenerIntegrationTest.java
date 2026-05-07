@@ -19,9 +19,9 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.service.ResumeTurnEventPublisher;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
@@ -179,7 +179,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         questionSetRepository.saveAndFlush(questionSet);
 
         Question question = questionType.name().startsWith("RESUME_")
-                ? Question.resume(questionSet, questionType, "프로젝트 경험을 설명해주세요.", 0)
+                ? Question.resume(questionSet, questionType, "프로젝트 경험을 설명해주세요.", null, null, 0)
                 : Question.builder()
                 .questionType(questionType)
                 .questionText("HashMap과 TreeMap의 차이점은?")

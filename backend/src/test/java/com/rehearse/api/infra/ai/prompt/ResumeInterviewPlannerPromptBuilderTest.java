@@ -85,4 +85,36 @@ class ResumeInterviewPlannerPromptBuilderTest {
         assertThat(userMessage).contains("max_turns");
         assertThat(userMessage).contains("estimated_duration_min");
     }
+
+    @Test
+    @DisplayName("build_systemMessage_contains_playground_opener_tone_guide — Playground intro 톤 가이드 헤더 + narrow 기술 심문 금지 어휘 포함")
+    void build_systemMessage_contains_playground_opener_tone_guide() {
+        ChatRequest request = builder.build(null, 30, "MID", "resume_interview_planner");
+
+        String userMessage = request.messages().get(0).content();
+        assertThat(userMessage)
+                .contains("Playground opener_question 톤")
+                .contains("narrow 기술 심문");
+    }
+
+    @Test
+    @DisplayName("build_fewshot_opener_question_uses_intro_tone — few-shot opener_question 이 intro 톤 (역할/맡으셨/소개 1+) + narrow 어휘 부재")
+    void build_fewshot_opener_question_uses_intro_tone() {
+        ChatRequest request = builder.build(null, 30, "MID", "resume_interview_planner");
+
+        String userMessage = request.messages().get(0).content();
+        String fewshotOpenerLine = extractFewshotOpenerLine(userMessage);
+        assertThat(fewshotOpenerLine)
+                .containsAnyOf("역할", "맡으셨", "소개");
+        assertThat(fewshotOpenerLine)
+                .doesNotContain("기술적 결정")
+                .doesNotContain("트레이드오프");
+    }
+
+    private static String extractFewshotOpenerLine(String userMessage) {
+        return userMessage.lines()
+                .filter(line -> line.contains("\"opener_question\""))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("few-shot opener_question 라인 누락"));
+    }
 }

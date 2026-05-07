@@ -68,25 +68,34 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
     private static String formatProjectInfo(Project project) {
         String name = project.projectName();
         String safeName = (name == null || name.isBlank()) ? "" : name;
-        return "projectId: " + project.projectId()
-                + "\nprojectName: " + safeName
-                + "\nclaims: " + project.claims().size() + "개"
-                + "\nimplicitCsTopics: " + project.implicitCsTopics().size() + "개";
+        return "projectName: " + safeName;
     }
 
     public record PlaygroundOpenerResult(
             String question,
             @JsonProperty("tts_question") String ttsQuestion,
-            String reason
-    ) {}
+            String reason,
+            @JsonProperty("model_answer") String modelAnswer
+    ) {
+        public PlaygroundOpenerResult withModelAnswer(String newModelAnswer) {
+            return new PlaygroundOpenerResult(question, ttsQuestion, reason, newModelAnswer);
+        }
+    }
 
     public record PlaygroundResponderResult(
             String question,
             @JsonProperty("tts_question") String ttsQuestion,
             String reason,
             @JsonProperty("should_switch_to_interrogation") boolean shouldSwitchToInterrogation,
-            @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet
+            @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet,
+            @JsonProperty("model_answer") String modelAnswer
     ) {
+        public PlaygroundResponderResult withModelAnswer(String newModelAnswer) {
+            return new PlaygroundResponderResult(
+                    question, ttsQuestion, reason,
+                    shouldSwitchToInterrogation, switchConditionsMet, newModelAnswer);
+        }
+
         public record SwitchConditions(
                 @JsonProperty("a_covered") boolean aCovered,
                 @JsonProperty("b_length_ok") boolean bLengthOk,

@@ -87,7 +87,7 @@ class FocusLayerTest {
         @DisplayName("resume_playground_responder: projectInfo + expectedClaims + userAnswer 가 프래그먼트에 포함된다")
         void resume_playground_responder_renders_expected_fragment_when_hints_present() {
             FocusHints hints = new FocusHints.ResumePlaygroundResponderHints(
-                    "projectId: p1\nprojectName: 결제 시스템\nclaims: 3개\nimplicitCsTopics: 2개",
+                    "projectName: 결제 시스템",
                     "동시성 제어 경험", "낙관락으로 처리했습니다.", 3, 240
             );
 

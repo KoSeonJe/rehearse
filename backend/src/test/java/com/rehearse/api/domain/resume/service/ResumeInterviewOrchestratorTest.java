@@ -11,8 +11,8 @@ import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.InterrogationPhase;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -216,8 +216,8 @@ class ResumeInterviewOrchestratorTest {
         @Test
         @DisplayName("이미 RESUME_OPENER 가 있으면 재생성 없이 기존 텍스트로 응답을 반환한다")
         void startSession_existingOpener_reusesWithoutCallingHandleOpener() {
-            com.rehearse.api.domain.questionset.entity.QuestionSet qs =
-                    com.rehearse.api.domain.questionset.entity.QuestionSet.builder()
+            com.rehearse.api.domain.question.entity.QuestionSet qs =
+                    com.rehearse.api.domain.question.entity.QuestionSet.builder()
                             .category(QuestionSetCategory.RESUME_BASED)
                             .orderIndex(0)
                             .build();
@@ -226,6 +226,8 @@ class ResumeInterviewOrchestratorTest {
                             qs,
                             com.rehearse.api.domain.question.entity.QuestionType.RESUME_OPENER,
                             "기존 opener 질문입니다",
+                            null,
+                            null,
                             0);
             qs.addQuestion(existingOpener);
             given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))

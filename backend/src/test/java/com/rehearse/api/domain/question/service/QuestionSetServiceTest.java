@@ -1,0 +1,510 @@
+package com.rehearse.api.domain.question.service;
+
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
+import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
+import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
+import com.rehearse.api.domain.file.entity.FileMetadata;
+import com.rehearse.api.domain.file.entity.FileType;
+import com.rehearse.api.domain.file.repository.FileMetadataRepository;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.question.dto.QuestionsWithAnswersResponse;
+import com.rehearse.api.domain.question.dto.SaveAnswersRequest;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionAnswer;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.question.dto.QuestionSetStatusResponse;
+import com.rehearse.api.domain.question.dto.UploadUrlRequest;
+import com.rehearse.api.domain.question.dto.UploadUrlResponse;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.aws.S3KeyGenerator;
+import com.rehearse.api.infra.aws.S3Service;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
+
+@ExtendWith(MockitoExtension.class)
+class QuestionSetServiceTest {
+
+    @InjectMocks
+    private QuestionSetService questionSetService;
+
+    @Mock
+    private QuestionSetRepository questionSetRepository;
+
+    @Mock
+    private QuestionRepository questionRepository;
+
+    @Mock
+    private QuestionAnswerRepository answerRepository;
+
+    @Mock
+    private QuestionSetFeedbackRepository feedbackRepository;
+
+    @Mock
+    private QuestionScoreRepository questionScoreRepository;
+
+    @Mock
+    private QuestionScoreDimensionRepository questionScoreDimensionRepository;
+
+    @Mock
+    private FileMetadataRepository fileMetadataRepository;
+
+    @Mock
+    private QuestionSetAnalysisRepository analysisRepository;
+
+    @Mock
+    private S3Service s3Service;
+
+    @Mock
+    private S3KeyGenerator s3KeyGenerator;
+
+    @Nested
+    @DisplayName("saveAnswers 메서드")
+    class SaveAnswers {
+
+        @Test
+        @DisplayName("saveAnswers: 답변 구간이 저장되고 질문세트 상태가 PENDING_UPLOAD로 변경된다")
+        void saveAnswers_success() {
+            // given
+            QuestionSet questionSet = createQuestionSet(1L);
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.empty());
+            given(analysisRepository.save(any(QuestionSetAnalysis.class))).willAnswer(inv -> inv.getArgument(0));
+
+            Question question = createQuestion(10L);
+            given(questionRepository.findById(10L)).willReturn(Optional.of(question));
+            given(answerRepository.saveAll(anyList())).willAnswer(inv -> inv.getArgument(0));
+
+            SaveAnswersRequest request = new SaveAnswersRequest();
+            SaveAnswersRequest.AnswerTimestamp timestamp = new SaveAnswersRequest.AnswerTimestamp();
+            ReflectionTestUtils.setField(timestamp, "questionId", 10L);
+            ReflectionTestUtils.setField(timestamp, "startMs", 0L);
+            ReflectionTestUtils.setField(timestamp, "endMs", 5000L);
+            ReflectionTestUtils.setField(request, "answers", List.of(timestamp));
+
+            // when
+            questionSetService.saveAnswers(1L, request);
+
+            // then
+            var inOrder = inOrder(answerRepository);
+            then(answerRepository).should(inOrder).deleteByQuestionSetId(1L);
+            then(answerRepository).should(inOrder).flush();
+            then(answerRepository).should(inOrder).saveAll(anyList());
+            then(analysisRepository).should().save(any(QuestionSetAnalysis.class));
+        }
+
+        @Test
+        @DisplayName("saveAnswers: 동일 questionSetId 로 두 번 호출해도 멱등적으로 동작한다 (중복 행 누적 방지)")
+        void saveAnswers_idempotent() {
+            // given
+            QuestionSet questionSet = createQuestionSet(1L);
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(analysisRepository.findByQuestionSetId(1L)).willReturn(Optional.empty());
+            given(analysisRepository.save(any(QuestionSetAnalysis.class))).willAnswer(inv -> inv.getArgument(0));
+
+            Question question = createQuestion(10L);
+            given(questionRepository.findById(10L)).willReturn(Optional.of(question));
+            given(answerRepository.saveAll(anyList())).willAnswer(inv -> inv.getArgument(0));
+
+            SaveAnswersRequest request = new SaveAnswersRequest();
+            SaveAnswersRequest.AnswerTimestamp timestamp = new SaveAnswersRequest.AnswerTimestamp();
+            ReflectionTestUtils.setField(timestamp, "questionId", 10L);
+            ReflectionTestUtils.setField(timestamp, "startMs", 0L);
+            ReflectionTestUtils.setField(timestamp, "endMs", 5000L);
+            ReflectionTestUtils.setField(request, "answers", List.of(timestamp));
+
+            // when
+            questionSetService.saveAnswers(1L, request);
+            questionSetService.saveAnswers(1L, request);
+
+            // then
+            then(answerRepository).should(times(2)).deleteByQuestionSetId(1L);
+            then(answerRepository).should(times(2)).saveAll(anyList());
+        }
+
+        @Test
+        @DisplayName("saveAnswers: 존재하지 않는 질문세트 ID로 요청하면 BusinessException이 발생한다")
+        void saveAnswers_questionSetNotFound() {
+            // given
+            given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
+
+            SaveAnswersRequest request = new SaveAnswersRequest();
+            ReflectionTestUtils.setField(request, "answers", List.of());
+
+            // when & then
+            assertThatThrownBy(() -> questionSetService.saveAnswers(999L, request))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                        assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.NOT_FOUND.getCode());
+                    });
+        }
+    }
+
+    @Nested
+    @DisplayName("generateUploadUrl 메서드")
+    class GenerateUploadUrl {
+
+        @Test
+        @DisplayName("generateUploadUrl: S3 키가 생성되고 FileMetadata가 저장된 뒤 Presigned URL이 반환된다")
+        void generateUploadUrl_success() {
+            // given
+            QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.PENDING_UPLOAD);
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(s3Service.getBucket()).willReturn("test-bucket");
+            given(s3KeyGenerator.generateRawVideoKey(5L, 1L))
+                    .willReturn("interviews/raw/2026/04/12/5/1/abcdef012345.webm");
+            given(s3Service.generatePutPresignedUrl(anyString(), anyString()))
+                    .willReturn("https://s3.example.com/presigned-put");
+
+            given(fileMetadataRepository.save(any(FileMetadata.class))).willAnswer(inv -> {
+                FileMetadata saved = inv.getArgument(0);
+                ReflectionTestUtils.setField(saved, "id", 100L);
+                return saved;
+            });
+
+            UploadUrlRequest request = new UploadUrlRequest();
+            ReflectionTestUtils.setField(request, "contentType", "video/webm");
+
+            // when
+            UploadUrlResponse response = questionSetService.generateUploadUrl(5L, 1L, request);
+
+            // then
+            assertThat(response.getUploadUrl()).isEqualTo("https://s3.example.com/presigned-put");
+            assertThat(response.getS3Key()).isEqualTo("interviews/raw/2026/04/12/5/1/abcdef012345.webm");
+            assertThat(response.getFileMetadataId()).isEqualTo(100L);
+            then(fileMetadataRepository).should().save(any(FileMetadata.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("getStatus 메서드")
+    class GetStatus {
+
+        @Test
+        @DisplayName("getStatus: 질문세트 분석 상태가 정상 반환된다")
+        void getStatus_success() {
+            // given
+            QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.ANALYZING);
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+
+            // when
+            QuestionSetStatusResponse response = questionSetService.getStatus(1L);
+
+            // then
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getAnalysisStatus()).isEqualTo(AnalysisStatus.ANALYZING);
+        }
+
+        @Test
+        @DisplayName("getStatus: 존재하지 않는 질문세트 ID로 요청하면 BusinessException이 발생한다")
+        void getStatus_notFound() {
+            // given
+            given(questionSetRepository.findById(999L)).willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> questionSetService.getStatus(999L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                        assertThat(be.getCode()).isEqualTo(QuestionSetErrorCode.NOT_FOUND.getCode());
+                    });
+        }
+    }
+
+    @Nested
+    @DisplayName("getFeedback 메서드")
+    class GetFeedback {
+
+        @Test
+        @DisplayName("getFeedback: 피드백과 스트리밍 URL이 포함된 응답이 반환된다")
+        void getFeedback_success() {
+            // given
+            FileMetadata fileMetadata = FileMetadata.builder()
+                    .fileType(FileType.VIDEO)
+                    .s3Key("videos/5/qs_1.webm")
+                    .bucket("test-bucket")
+                    .contentType("video/webm")
+                    .build();
+            ReflectionTestUtils.setField(fileMetadata, "streamingS3Key", "videos/5/qs_1.mp4");
+
+            QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.COMPLETED);
+            ReflectionTestUtils.setField(questionSet, "fileMetadata", fileMetadata);
+
+            QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                    .questionSet(questionSet)
+                    .questionSetComment("전반적으로 좋은 답변입니다.")
+                    .build();
+            ReflectionTestUtils.setField(feedback, "id", 50L);
+
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.of(feedback));
+            given(s3Service.generateGetPresignedUrl("videos/5/qs_1.mp4"))
+                    .willReturn("https://s3.example.com/streaming");
+            given(s3Service.generateGetPresignedUrl("videos/5/qs_1.webm"))
+                    .willReturn("https://s3.example.com/fallback");
+            // when
+            QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
+
+            // then
+            assertThat(response.getId()).isEqualTo(50L);
+            assertThat(response.getQuestionSetComment()).isEqualTo("전반적으로 좋은 답변입니다.");
+            assertThat(response.getStreamingUrl()).isEqualTo("https://s3.example.com/streaming");
+            assertThat(response.getFallbackUrl()).isEqualTo("https://s3.example.com/fallback");
+        }
+
+        @Test
+        @DisplayName("getFeedback: 답변 카드에 같은 question_id의 기술 점수 피드백을 포함한다")
+        void getFeedback_includesTechnicalFeedbackPerTimestamp() {
+            // given
+            Interview interview = Interview.builder()
+                    .userId(1L)
+                    .position(Position.BACKEND)
+                    .level(InterviewLevel.MID)
+                    .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                    .durationMinutes(30)
+                    .build();
+            ReflectionTestUtils.setField(interview, "id", 99L);
+
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(questionSet, "id", 1L);
+
+            Question question = Question.builder()
+                    .questionType(QuestionType.MAIN)
+                    .questionText("Java의 GC 동작 원리를 설명하세요.")
+                    .modelAnswer("Generational GC 기반으로 동작합니다.")
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(question, "id", 10L);
+
+            TimestampFeedback timestampFeedback = TimestampFeedback.builder()
+                    .question(question)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .transcript("GC는 young 영역과 old 영역을 나눠 관리합니다.")
+                    .isAnalyzed(true)
+                    .build();
+
+            QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                    .questionSet(questionSet)
+                    .questionSetComment("전반적으로 좋은 답변입니다.")
+                    .build();
+            ReflectionTestUtils.setField(feedback, "id", 50L);
+            feedback.addTimestampFeedback(timestampFeedback);
+
+            QuestionScore questionScore = QuestionScore.builder()
+                    .questionId(10L)
+                    .interviewId(99L)
+                    .rubricId("cs-v1")
+                    .levelFlag("MID_EXPECTATION_MET")
+                    .build();
+            ReflectionTestUtils.setField(questionScore, "id", 200L);
+
+            QuestionScoreDimension dimension = QuestionScoreDimension.builder()
+                    .questionScoreId(200L)
+                    .dimensionRef("conceptual_accuracy")
+                    .score(3)
+                    .observation("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.")
+                    .evidenceQuote("young 영역과 old 영역을 나눠 관리")
+                    .build();
+
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.of(feedback));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
+                    .willReturn(List.of(questionScore));
+            given(questionScoreDimensionRepository.findByQuestionScoreId(200L))
+                    .willReturn(List.of(dimension));
+
+            // when
+            QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
+
+            // then
+            assertThat(response.getTimestampFeedbacks()).hasSize(1);
+            var technicalFeedback = response.getTimestampFeedbacks().getFirst().getTechnicalFeedback();
+            assertThat(technicalFeedback).isNotNull();
+            assertThat(technicalFeedback.getRubricId()).isEqualTo("cs-v1");
+            assertThat(technicalFeedback.getLevelFlag()).isEqualTo("MID_EXPECTATION_MET");
+            assertThat(technicalFeedback.getDimensions()).hasSize(1);
+            assertThat(technicalFeedback.getDimensions().getFirst().getDimension()).isEqualTo("conceptual_accuracy");
+            assertThat(technicalFeedback.getDimensions().getFirst().getScore()).isEqualTo(3);
+            assertThat(technicalFeedback.getDimensions().getFirst().getObservation())
+                    .isEqualTo("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.");
+            assertThat(technicalFeedback.getDimensions().getFirst().getEvidenceQuote())
+                    .isEqualTo("young 영역과 old 영역을 나눠 관리");
+        }
+
+        @Test
+        @DisplayName("getFeedback: 피드백이 존재하지 않으면 BusinessException이 발생한다")
+        void getFeedback_feedbackNotFound() {
+            // given
+            QuestionSet questionSet = createQuestionSetWithAnalysis(1L, AnalysisStatus.COMPLETED);
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.empty());
+
+            // when & then
+            assertThatThrownBy(() -> questionSetService.getFeedback(1L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                        assertThat(be.getCode()).isEqualTo(FeedbackErrorCode.FEEDBACK_NOT_FOUND.getCode());
+                    });
+        }
+    }
+
+    @Nested
+    @DisplayName("getQuestionsWithAnswers 메서드")
+    class GetQuestionsWithAnswers {
+
+        @Test
+        @DisplayName("getQuestionsWithAnswers: 질문과 답변 타임스탬프가 매핑된 응답이 반환된다")
+        void getQuestionsWithAnswers_success() {
+            // given
+            Question question = createQuestion(10L);
+            QuestionAnswer answer = QuestionAnswer.builder()
+                    .question(question)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .build();
+
+            given(questionRepository.findByQuestionSetIdOrderByOrderIndex(1L))
+                    .willReturn(List.of(question));
+            given(answerRepository.findByQuestionSetIdWithQuestion(1L))
+                    .willReturn(List.of(answer));
+
+            // when
+            QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(1L);
+
+            // then
+            assertThat(response.getQuestions()).hasSize(1);
+            assertThat(response.getQuestions().get(0).getQuestionId()).isEqualTo(10L);
+            assertThat(response.getQuestions().get(0).getStartMs()).isEqualTo(0L);
+            assertThat(response.getQuestions().get(0).getEndMs()).isEqualTo(5000L);
+        }
+
+        @Test
+        @DisplayName("getQuestionsWithAnswers: 답변 없는 질문(MAIN/FOLLOWUP 공통)은 결과에서 제외된다")
+        void getQuestionsWithAnswers_filtersUnanswered() {
+            // given
+            Question answeredMain = createQuestion(10L);
+            Question unansweredMain = createQuestion(11L);
+            Question answeredFollowup = createFollowupQuestion(20L);
+            Question unansweredFollowup = createFollowupQuestion(30L);
+
+            QuestionAnswer mainAnswer = QuestionAnswer.builder()
+                    .question(answeredMain)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .build();
+            QuestionAnswer followupAnswer = QuestionAnswer.builder()
+                    .question(answeredFollowup)
+                    .startMs(5000L)
+                    .endMs(10000L)
+                    .build();
+
+            given(questionRepository.findByQuestionSetIdOrderByOrderIndex(1L))
+                    .willReturn(List.of(answeredMain, unansweredMain, answeredFollowup, unansweredFollowup));
+            given(answerRepository.findByQuestionSetIdWithQuestion(1L))
+                    .willReturn(List.of(mainAnswer, followupAnswer));
+
+            // when
+            QuestionsWithAnswersResponse response = questionSetService.getQuestionsWithAnswers(1L);
+
+            // then
+            assertThat(response.getQuestions()).hasSize(2);
+            assertThat(response.getQuestions())
+                    .extracting(QuestionsWithAnswersResponse.QuestionWithAnswer::getQuestionId)
+                    .containsExactly(10L, 20L);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // helpers
+    // ----------------------------------------------------------------
+
+    private QuestionSet createQuestionSet(Long id) {
+        QuestionSet questionSet = QuestionSet.builder()
+                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .orderIndex(1)
+                .build();
+        ReflectionTestUtils.setField(questionSet, "id", id);
+        return questionSet;
+    }
+
+    private QuestionSet createQuestionSetWithAnalysis(Long id, AnalysisStatus status) {
+        QuestionSet questionSet = createQuestionSet(id);
+        QuestionSetAnalysis analysis = QuestionSetAnalysis.builder()
+                .questionSet(questionSet)
+                .build();
+        if (status != AnalysisStatus.PENDING) {
+            ReflectionTestUtils.setField(analysis, "analysisStatus", status);
+        }
+        ReflectionTestUtils.setField(questionSet, "analysis", analysis);
+        return questionSet;
+    }
+
+    private Question createQuestion(Long id) {
+        Question question = Question.builder()
+                .questionType(QuestionType.MAIN)
+                .questionText("Java의 GC 동작 원리를 설명하세요.")
+                .modelAnswer("Generational GC 기반으로 동작합니다.")
+                .orderIndex(1)
+                .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        return question;
+    }
+
+    private Question createFollowupQuestion(Long id) {
+        Question question = Question.builder()
+                .questionType(QuestionType.FOLLOWUP)
+                .questionText("GC 튜닝 경험이 있으신가요?")
+                .modelAnswer("G1GC 튜닝 사례를 설명합니다.")
+                .orderIndex(2)
+                .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        return question;
+    }
+}

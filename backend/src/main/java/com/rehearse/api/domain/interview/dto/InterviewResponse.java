@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.interview.dto;
 
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.dto.QuestionSetResponse;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.dto.QuestionSetResponse;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import lombok.Builder;
 import lombok.Getter;
 

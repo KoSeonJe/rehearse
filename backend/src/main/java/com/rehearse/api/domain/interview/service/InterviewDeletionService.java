@@ -1,12 +1,12 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

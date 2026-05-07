@@ -49,4 +49,4 @@
 | `com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener` | TurnCompletedEvent 비동기 처리 | called-by |
 | `com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister` | nonverbal rubric 저장 | called-by |
 | `com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInputAssembler` | session synthesis 입력 집계 | called-by |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService#getFeedback` | 응답 조립 | called-by |
+| `com.rehearse.api.domain.question.service.QuestionSetService#getFeedback` | 응답 조립 | called-by |

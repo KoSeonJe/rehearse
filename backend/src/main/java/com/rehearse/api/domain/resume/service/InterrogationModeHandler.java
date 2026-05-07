@@ -11,8 +11,6 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.InterrogationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class InterrogationModeHandler {
 
-    private final ResumeChainInterrogatorPromptBuilder promptBuilder;
+    private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
 
     public InterrogationTurnResult handle(
@@ -48,25 +46,18 @@ public class InterrogationModeHandler {
 
         // Phase 2: LLM 호출 + 응답 검증 (lock 밖)
         String projectName = resolveProjectName(plan, snapshot.currentProjectId());
-        InterrogationResult result = promptBuilder.build(
+        InterrogationResult result = resultGenerator.generateInterrogation(
                 interviewId, state, previousExchanges,
                 projectName,
                 snapshot.chainTopic(), snapshot.currentLevel(),
                 snapshot.answerQuality(), userAnswer, snapshot.consecutiveStay()
         );
 
-        if (result.question() == null || result.question().isBlank()) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        if (ResumeFallbackQuestions.INTERROGATION.equals(result.question())) {
-            log.warn("[InterrogationHandler] 안전 폴백 사용 감지: interviewId={}, chainId={}, level={}",
-                    interviewId, snapshot.chainTopic(), snapshot.currentLevel());
-        }
-
         // Phase 3: DB persist + tracker 상태 변경 (lock 안, 원자 묶음)
         return tracker.withLock(() -> {
             Long questionId = questionPersister.persist(
-                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(), snapshot.orderIndex());
+                    interviewId, QuestionType.RESUME_INTERROGATION, result.question(),
+                    result.ttsQuestion(), result.modelAnswer(), snapshot.orderIndex());
             applyDecision(tracker, result, snapshot.answerQuality(), snapshot.currentLevel());
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, snapshot.chainTopic(), snapshot.currentLevel(), result.nextAction());

@@ -2,11 +2,11 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.questionset.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.exception.QuestionErrorCode;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.global.exception.BusinessException;
 import org.springframework.stereotype.Component;
 

@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 
 import java.util.Map;
 

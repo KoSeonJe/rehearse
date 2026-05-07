@@ -84,7 +84,7 @@
 ### 6. 이벤트 발행
 - `QuestionGenerationRequestedEvent` 발행:
   - 페이로드: `interviewId`, `userId`, `position`, `positionDetail`, `level`, `interviewTypes`, `csSubTopics`, `resumeText`, `resumeFileHash`, `durationMinutes`, `techStack`
-- 외부 도메인 (`questionset` 등) 의 `@TransactionalEventListener(AFTER_COMMIT)` 가 비동기 질문 생성 수행 (본 도메인 책임 외).
+- `question` 등 외부 도메인의 `@TransactionalEventListener(AFTER_COMMIT)` 가 비동기 질문 생성 수행 (본 도메인 책임 외).
 
 ### 7. 응답
 - 201 + `InterviewResponse.from(saved, [])` (questionSets 빈 리스트)

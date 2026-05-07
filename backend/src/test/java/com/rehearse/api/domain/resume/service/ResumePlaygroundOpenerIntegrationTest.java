@@ -19,8 +19,10 @@ import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
+import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -93,7 +95,10 @@ class ResumePlaygroundOpenerIntegrationTest {
 
         assertThat(userFragment.content())
                 .contains("projectName: " + explicitName)
-                .doesNotContain("projectName: null");
+                .doesNotContain("projectName: null")
+                .doesNotContain("projectId:")
+                .doesNotContain("claims:")
+                .doesNotContain("implicitCsTopics:");
     }
 
     @Test
@@ -113,8 +118,42 @@ class ResumePlaygroundOpenerIntegrationTest {
                 .orElseThrow(() -> new AssertionError("L4 USER fragment 누락"));
 
         assertThat(userFragment.content())
-                .contains("projectName: \n")
-                .doesNotContain("projectName: null");
+                .contains("projectName:")
+                .doesNotContain("projectName: null")
+                .doesNotContain("projectId:")
+                .doesNotContain("claims:")
+                .doesNotContain("implicitCsTopics:");
+    }
+
+    @Test
+    @DisplayName("buildResponder 호출 시 L4 USER fragment PROJECT_INFO 슬롯도 projectName 1라인만 포함한다 (카운트 라벨 부재)")
+    void responder_invocation_propagates_simplified_project_info() {
+        TestContext ctx = newContext();
+        given(ctx.parser.parseOrRetry(any(), any(), any(), any()))
+                .willReturn(new PlaygroundResponderResult(
+                        "후속 질문", "후속 질문", "이유", false,
+                        new PlaygroundResponderResult.SwitchConditions(false, false, false, false),
+                        null));
+
+        String explicitName = "검색 인덱싱 파이프라인";
+        Project project = new Project("proj-responder", explicitName, List.of(), List.of());
+
+        ctx.builder.buildResponder(
+                123L, ctx.state, List.<FollowUpExchange>of(),
+                project, "방금 그 부분 더 말씀해주세요.", List.of("c1", "c2"),
+                1, 120);
+
+        List<ChatMessage> messages = capturedMessages(ctx);
+        ChatMessage userFragment = messages.stream()
+                .filter(m -> m.role() == ChatMessage.Role.USER && m.content().contains("<<<PROJECT_INFO>>>"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("L4 USER fragment 누락"));
+
+        assertThat(userFragment.content())
+                .contains("projectName: " + explicitName)
+                .doesNotContain("projectId:")
+                .doesNotContain("claims:")
+                .doesNotContain("implicitCsTopics:");
     }
 
     private static TestContext newContext() {
@@ -140,7 +179,7 @@ class ResumePlaygroundOpenerIntegrationTest {
                 ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
         given(aiClient.chat(any())).willReturn(stub);
         given(parser.parseOrRetry(any(), any(), any(), any()))
-                .willReturn(new PlaygroundOpenerResult("q", "q", "r"));
+                .willReturn(new PlaygroundOpenerResult("q", "q", "r", "m"));
 
         ResumePlaygroundPromptBuilder builder = new ResumePlaygroundPromptBuilder(
                 aiClient, parser, contextBuilder, "gpt-4o-mini", 0.7, 800);
@@ -148,7 +187,7 @@ class ResumePlaygroundOpenerIntegrationTest {
         ResumeSkeleton skeleton = new ResumeSkeleton("r1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
 
-        return new TestContext(builder, aiClient, state);
+        return new TestContext(builder, aiClient, parser, state);
     }
 
     private static List<ChatMessage> capturedMessages(TestContext ctx) {
@@ -160,6 +199,7 @@ class ResumePlaygroundOpenerIntegrationTest {
     private record TestContext(
             ResumePlaygroundPromptBuilder builder,
             AiClient aiClient,
+            AiResponseParser parser,
             InterviewRuntimeState state
     ) {}
 }
