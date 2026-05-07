@@ -61,7 +61,7 @@ public class InterrogationModeHandler {
             applyDecision(tracker, result, snapshot.answerQuality(), snapshot.currentLevel());
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, snapshot.chainTopic(), snapshot.currentLevel(), result.nextAction());
-            return new InterrogationTurnResult(buildResponse(result, tracker.getCurrentLevel()), questionId);
+            return new InterrogationTurnResult(buildResponse(result, tracker.getCurrentLevel(), questionId), questionId);
         });
     }
 
@@ -122,8 +122,9 @@ public class InterrogationModeHandler {
         }
     }
 
-    private FollowUpResponse buildResponse(InterrogationResult result, int currentLevel) {
+    private FollowUpResponse buildResponse(InterrogationResult result, int currentLevel, Long questionId) {
         return FollowUpResponse.builder()
+                .questionId(questionId)
                 .question(result.question())
                 .ttsQuestion(result.ttsQuestion())
                 .reason(result.reason())

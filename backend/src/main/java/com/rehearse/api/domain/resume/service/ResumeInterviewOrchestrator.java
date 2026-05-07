@@ -126,6 +126,7 @@ public class ResumeInterviewOrchestrator {
             com.rehearse.api.domain.question.entity.Question opener = existingOpener.get();
             log.info("[ResumeOrchestrator] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
             return FollowUpResponse.builder()
+                    .questionId(opener.getId())
                     .question(opener.getQuestionText())
                     .ttsQuestion(opener.getTtsText())
                     .presentToUser(true)
