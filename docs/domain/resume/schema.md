@@ -91,7 +91,7 @@ resume 도메인은 **`question`, `question_set`** 에 직접 INSERT. `ResumeQue
 
 | 테이블 | 도메인 | resume 의 사용 |
 |-------|--------|---------------|
-| `question_set` | questionset | `category=RESUME_BASED` 1행을 `find or create` (V44 으로 인터뷰당 RESUME_BASED 1행 UNIQUE) |
+| `question_set` | question | `category=RESUME_BASED` 1행을 `find or create` (V44 으로 인터뷰당 RESUME_BASED 1행 UNIQUE) |
 | `question` | question | FSM 단계별 INSERT — `RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP` (V35 chk_question_track_meta_v2 로 CHECK 강제, V41 강화) |
 | `interview` | interview | `interview_types` 에 `RESUME_BASED` 포함 시 트랙 진입. resume_skeleton.interview_id / interview_plan.interview_id FK 부모 |
 
@@ -121,8 +121,8 @@ resume 도메인은 **`question`, `question_set`** 에 직접 INSERT. `ResumeQue
 | `com.rehearse.api.domain.question.service.QuestionGenerationService` | resume 트랙 분기 라우팅 (interview type 기반) | called-by |
 | `com.rehearse.api.domain.question.entity.Question / QuestionType` | `QuestionType` enum 4종 사용 (`RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP`). `Question.resume(...)` factory 강제 | persister write |
 | `com.rehearse.api.domain.question.repository.QuestionRepository` | `ResumeQuestionPersister` 경유 INSERT (`QuestionSet.questions` collection 미갱신 — Issue #408) | persister |
-| `com.rehearse.api.domain.questionset.entity.QuestionSet / QuestionSetCategory.RESUME_BASED` | 인터뷰당 RESUME_BASED set 1행 (V44 UNIQUE) | persister write |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | `findByInterviewIdAndCategory`, `countByInterviewId` 으로 캐시 / orderIndex 산출 | reads + writes |
+| `com.rehearse.api.domain.question.entity.QuestionSet / QuestionSetCategory.RESUME_BASED` | 인터뷰당 RESUME_BASED set 1행 (V44 UNIQUE) | persister write |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | `findByInterviewIdAndCategory`, `countByInterviewId` 으로 캐시 / orderIndex 산출 | reads + writes |
 | `com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent` | `ofResumeTrack(...)` 팩토리. resumeMode / currentChainLevel / resumeSkeleton 페이로드 포함 (resume entity 2종 import) | event-publisher (`ResumeTurnEventPublisher` 발행) |
 | `com.rehearse.api.infra.ai.AiClient` (=`ResilientAiClient`) | LLM 단일 진입점. OpenAI primary (내부 retry 2회) + Claude fallback (내부 retry 3회). `CLIENT_ERROR / PARSE_FAILED` 즉시 throw (fallback X). worst path 5회 외부 호출 | calls |
 | `com.rehearse.api.infra.ai.AiResponseParser` | `parseOrRetry` — 1차 실패 시 schema-hint 1회 재호출 → 실패 시 `PARSE_FAILED` | calls |

@@ -70,5 +70,5 @@ QuestionSetFeedback 산하 1턴 (= 질문 1개 답변 1개) 단위 피드백. ro
 | `com.rehearse.api.domain.feedback.mapper.TimestampFeedbackMapper` | DTO→Entity + JSON 직렬화 | persister |
 | `com.rehearse.api.domain.feedback.service.TimestampFeedbackBatch` | Question resolve + null 허용 | persister |
 | `com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark` | 북마크 | called-by — cross-domain consumer |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService#getFeedback` | 응답 조립 | called-by |
+| `com.rehearse.api.domain.question.service.QuestionSetService#getFeedback` | 응답 조립 | called-by |
 | `com.rehearse.api.domain.interview.service.InterviewDeletionService` | 명시 삭제 순서 | called-by |

@@ -44,7 +44,7 @@ QuestionSet (= 질문 세트 1회 녹화 단위) 의 분석 결과 헤더. row 1
 
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
-| `com.rehearse.api.domain.questionset.entity.QuestionSet` | 세트 본체 | 1:1 owner — `question_set_id` FK |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService#getFeedback` | 응답 조립 | called-by — feedback + score 합성 |
+| `com.rehearse.api.domain.question.entity.QuestionSet` | 세트 본체 | 1:1 owner — `question_set_id` FK |
+| `com.rehearse.api.domain.question.service.QuestionSetService#getFeedback` | 응답 조립 | called-by — feedback + score 합성 |
 | `com.rehearse.api.domain.feedback.service.QuestionSetFeedbackPersister` | 저장 오케스트레이터 | persister |
 | `com.rehearse.api.domain.interview.service.InterviewDeletionService` | 인터뷰 삭제 | called-by — FK 순서 명시 삭제 |

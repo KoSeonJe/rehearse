@@ -5,7 +5,6 @@
 > 관련 테이블: `question_set` (read) / `question` (read) / `question_answer` (write — DELETE + INSERT) / `question_set_analysis` (write — `analysis_status` 전이)
 > 관련 외부 의존: 없음 (S3 업로드는 `/upload-url` 별도 엔드포인트)
 
-> ⚠️ **패키지 분리 상태** (Issue #405). controller 는 `domain/questionset/`, request DTO 는 `domain/question/dto/`, service 는 `domain/questionset/service/QuestionSetService.saveAnswers` — 두 패키지에 걸쳐 있다. 통합 후 본 문서 갱신은 별도 작업.
 
 ---
 
@@ -124,12 +123,12 @@ IN_PROGRESS / COMPLETED → PENDING_UPLOAD  ⚠️ 의도적 미설계 (FSM 가�
 
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
-| `com.rehearse.api.domain.questionset.controller.QuestionSetController` | HTTP 진입 | controller |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService` | 트랜잭션 경계 + 비즈 로직 | app service |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | `question_set` 조회 | persister |
-| `com.rehearse.api.domain.questionset.entity.QuestionSet` | 부모 엔티티 | aggregate root |
-| `com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis` | `analysis_status` 보유 | child aggregate |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository` | analysis row 조회 / 생성 | persister |
+| `com.rehearse.api.domain.question.controller.QuestionSetController` | HTTP 진입 | controller |
+| `com.rehearse.api.domain.question.service.QuestionSetService` | 트랜잭션 경계 + 비즈 로직 | app service |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | `question_set` 조회 | persister |
+| `com.rehearse.api.domain.question.entity.QuestionSet` | 부모 엔티티 | aggregate root |
+| `com.rehearse.api.domain.question.entity.QuestionSetAnalysis` | `analysis_status` 보유 | child aggregate |
+| `com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository` | analysis row 조회 / 생성 | persister |
 | `com.rehearse.api.domain.question.dto.SaveAnswersRequest` | 요청 DTO (validation 포함) | input |
 | `com.rehearse.api.domain.question.entity.Question` | 답변 매핑 대상 질문 | read |
 | `com.rehearse.api.domain.question.repository.QuestionRepository` | question 조회 | persister |

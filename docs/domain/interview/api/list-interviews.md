@@ -133,8 +133,8 @@ JWT 만 필요. 입력 없음.
 
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
-| `com.rehearse.api.domain.questionset.repository.QuestionSetRepository` | questionSets fetch | calls — `findByInterviewIdWithQuestions` |
-| `com.rehearse.api.domain.questionset.dto.QuestionSetResponse` | 단건 응답 변환 | calls — `from(QuestionSet)` |
+| `com.rehearse.api.domain.question.repository.QuestionSetRepository` | questionSets fetch | calls — `findByInterviewIdWithQuestions` |
+| `com.rehearse.api.domain.question.dto.QuestionSetResponse` | 단건 응답 변환 | calls — `from(QuestionSet)` |
 | `org.springframework.data.domain.Page` / `Pageable` / `PageRequest` | 페이지네이션 | calls |
 
 ---

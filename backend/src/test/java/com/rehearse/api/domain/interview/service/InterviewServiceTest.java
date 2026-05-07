@@ -4,11 +4,11 @@ import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
 import com.rehearse.api.global.config.InterviewProperties;
@@ -50,7 +50,7 @@ class InterviewServiceTest {
     private QuestionSetRepository questionSetRepository;
 
     @Mock
-    private com.rehearse.api.domain.questionset.service.QuestionSetService questionSetService;
+    private com.rehearse.api.domain.question.service.QuestionSetService questionSetService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
