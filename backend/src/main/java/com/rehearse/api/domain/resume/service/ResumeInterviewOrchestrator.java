@@ -104,6 +104,7 @@ public class ResumeInterviewOrchestrator {
             return handlerResult.response();
         }
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
+        validateResponseQuestionId(interviewId, turnIndex, currentMode, handlerResult);
 
         turnEventPublisher.publish(interviewId, turnIndex, analysis, currentMode,
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
@@ -126,6 +127,7 @@ public class ResumeInterviewOrchestrator {
             com.rehearse.api.domain.question.entity.Question opener = existingOpener.get();
             log.info("[ResumeOrchestrator] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
             return FollowUpResponse.builder()
+                    .questionId(opener.getId())
                     .question(opener.getQuestionText())
                     .ttsQuestion(opener.getTtsText())
                     .presentToUser(true)
@@ -215,6 +217,20 @@ public class ResumeInterviewOrchestrator {
         log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={} type={}",
                 interviewId, mode.name().toLowerCase(), turnIndex, result.response().getType());
         throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
+    }
+
+    private void validateResponseQuestionId(Long interviewId, long turnIndex, ResumeMode mode, TurnHandlerResult result) {
+        Long handlerQuestionId = result.questionId();
+        Long responseQuestionId = result.response().getQuestionId();
+        if (responseQuestionId == null) {
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-missing handlerQuestionId={} turnIndex={}",
+                    interviewId, mode.name().toLowerCase(), handlerQuestionId, turnIndex);
+            return;
+        }
+        if (!responseQuestionId.equals(handlerQuestionId)) {
+            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-mismatch handlerQuestionId={} responseQuestionId={} turnIndex={}",
+                    interviewId, mode.name().toLowerCase(), handlerQuestionId, responseQuestionId, turnIndex);
+        }
     }
 
     private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}

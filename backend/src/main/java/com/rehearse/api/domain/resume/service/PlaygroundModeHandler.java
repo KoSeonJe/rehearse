@@ -49,7 +49,7 @@ public class PlaygroundModeHandler {
                 interviewId, firstPlan.projectId(), questionId);
         state.getPlaygroundTurns().incrementAndGet();
 
-        FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), false);
+        FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), false, questionId);
         return new OpenerResult(response, questionId);
     }
 
@@ -93,7 +93,7 @@ public class PlaygroundModeHandler {
             log.info("[PlaygroundHandler] Interrogation 전환 결정: interviewId={}, turnCount={}", interviewId, turnCount + 1);
         }
 
-        FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), shouldSwitch);
+        FollowUpResponse response = buildResponse(result.question(), result.ttsQuestion(), result.reason(), shouldSwitch, questionId);
         return new PlaygroundTurnResult(response, shouldSwitch, questionId);
     }
 
@@ -129,8 +129,9 @@ public class PlaygroundModeHandler {
                 .orElseThrow(() -> new BusinessException(ResumeErrorCode.PROJECT_NOT_FOUND_IN_SKELETON));
     }
 
-    private FollowUpResponse buildResponse(String question, String ttsQuestion, String reason, boolean transitioned) {
+    private FollowUpResponse buildResponse(String question, String ttsQuestion, String reason, boolean transitioned, Long questionId) {
         return FollowUpResponse.builder()
+                .questionId(questionId)
                 .question(question)
                 .ttsQuestion(ttsQuestion)
                 .reason(reason)
