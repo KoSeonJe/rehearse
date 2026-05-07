@@ -107,7 +107,7 @@
   |---------|-----|
   | `intent_classifier` | 300 |
   | `clarify_response` / `giveup_response` | 400 |
-  | `resume_playground_opener` / `resume_wrap_up` | 600 |
+  | `resume_playground_opener` | 600 |
   | `answer_analyzer` | 800 |
   | `follow_up_generator_v3` / `resume_playground_responder` | 1000 |
   | `resume_chain_interrogator` | 1200 |

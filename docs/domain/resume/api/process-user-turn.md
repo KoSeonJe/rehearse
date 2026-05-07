@@ -26,7 +26,7 @@
 | 필드 | 타입 | 의미 |
 |------|------|------|
 | `questionId` | Long | 생성된 다음 질문 PK (또는 종료 시 null) |
-| `questionText` | string | 다음 질문 또는 wrap-up 멘트 |
+| `questionText` | string | 다음 질문 (종료 응답 시 null) |
 | `mode` | enum | 응답 시점 mode (`PLAYGROUND` / `INTERROGATION`) |
 | `followUpExhausted` | bool | hard timeout / FE 종료 신호 / context budget 초과 시 true |
 
