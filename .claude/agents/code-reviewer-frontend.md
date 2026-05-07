@@ -42,6 +42,20 @@ Frontend 변경 코드 리뷰 전담. **구현 금지**. 발견 → 보고 → �
 
 위 룰 자동 prepend. 디자인 / UI diff 포함 시 `frontend/DESIGN.md` 추가 `Read`. 변경 파일 도메인은 필요 시 `Read`.
 
+## 리뷰 시야 (Required, Blocking)
+
+**diff 라인만 보고 판단 금지**. 변경 라인은 빙산 일각 — 전체 컴포넌트 트리 / 훅 / store / 라우트 흐름 맥락에서 평가해야 stale closure·리렌더·페칭 결함 보임.
+
+리뷰 착수 전 **반드시** 다음 순서로 시야 확보:
+
+1. **변경 파일 전체 Read** — diff hunk 외 파일 시작~끝. 컴포넌트 길이 / 훅 책임 / props 흐름 / 기존 패턴 확인.
+2. **호출 경로 추적** — 변경된 컴포넌트 / 훅 사용처 (`Grep`) / 부모 트리 / 라우트 진입점 / 의존 store. 리렌더 / props drilling / 회귀 후보.
+3. **도메인 폴더 구조** — `components/{domain}/` `hooks/` `stores/` `api/` 관계 파악. co-location / 결합도 / 아키텍처 일탈 판단 근거.
+4. **유사 / 인접 코드 패턴** — 같은 도메인 다른 컴포넌트 / 다른 도메인 같은 케이스 구현. 컨벤션 일탈 / 중복 / Composition 기회 식별.
+5. **테스트 / 라우트 / 타입 동반 변경** — 코드만 보면 놓침. test / `routes.tsx` / `api/*.ts` 타입 / `tailwind.config` / `vite.config` 같이 검토.
+
+이 단계 스킵 시 보이는 결함 = "변경 라인 자체 버그" 만. 보이지 않는 결함 = 부모 리렌더 폭증 / query key 충돌 / store selector 전체 구독 / 라우트 회귀. **시야 부족 리뷰 = P0 누락 위험**.
+
 ## 리뷰 두 축
 
 ### 축 1: 룰 위배

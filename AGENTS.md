@@ -21,6 +21,8 @@
 @.claude/rules/security.md
 @.claude/rules/plan-mode.md
 @.claude/rules/branch-pr.md
+@.claude/rules/reporting.md
+@.claude/rules/simplicity.md
 
 ## Project Overview
 
@@ -104,54 +106,6 @@ cd analysis && pytest tests/test_vision_analyzer.py     # 단일 파일
 ```
 
 환경 전제조건 상세: `docs/guides/GETTING_STARTED.md`.
-
-## 작업 후 보고
-
-모든 agent / 메인 세션 공통. 작업 완료 / 중단 시 변경 요약 외 **발견 사항 + 사용자 결정 필요 항목** 별도 처리. "문제 없음" 으로 묻어두지 말 것.
-
-### 1. 발견 사항 보고 (텍스트)
-
-후속 결정에 사용자 판단 불필요한 단순 발견은 텍스트 보고.
-
-- 미수정 결정 (예: 과거 문서 / 역사 기록 / scope 외 파일) — 무엇을 / 왜 / 추후 어떻게 할지
-- 가능 추정 / 미확인 가정 — 검증 필요 항목
-- 발견된 다른 위반 / 불일치 (현재 작업 범위 외)
-- 마이그레이션 필요 항목 (현재 코드와 새 컨벤션 갭 등)
-
-형식:
-```
-**발견 사항**:
-- {내용} — {조치 / 보류 사유 / 사용자 결정 필요 여부}
-```
-
-### 2. 사용자 결정 필요 → `AskUserQuestion` 도구 사용 (Blocking)
-
-다음 케이스 = **`AskUserQuestion` 도구로 선택지 제시**. 텍스트 나열 X. 자유서술 받기 X.
-
-- trade-off 결정 (옵션 비등 / NF 결정: 확장성·정합성·성능·동시성)
-- 영향 범위 큰 변경 (공개 API 시그니처 / 이벤트 페이로드 / 마이그레이션 backfill)
-- spec 미커버 / 컨벤션 미커버 케이스
-- 발견 사항 중 후속 작업 분기 필요 (수정 / 보류 / 별도 PR)
-- 요구사항 모호 / 누락
-
-**원칙**:
-- 옵션 2-4개. 자유서술 회피.
-- 첫 자리 = 추천 옵션. 라벨에 `(추천)` 명시.
-- 각 옵션 = trade-off 한 줄 (장 / 단 / 채택 사유).
-- 사용자 답변 받기 전 후속 작업 / 코드 변경 금지 (Blocking).
-
-**예시**:
-```
-question: "동시성 모델 결정 — 어떻게 진행할까요?"
-options:
-  - "낙관락 (추천) — 충돌 적은 도메인. 재시도 로직 단순"
-  - "비관락 — 충돌 잦은 도메인. select for update 비용"
-  - "이벤트 직렬화 — 강순서 보장. 큐 인프라 필요"
-```
-
-`AskUserQuestion` 도구 부재 환경에서만 텍스트 fallback (옵션 + 추천 + 사유 동일 형식).
-
-발견 즉시 표면화. "일단 해보고" / "CI 통과" / "단순함" 우회 금지.
 
 ## Spec-Driven Work
 

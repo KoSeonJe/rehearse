@@ -225,13 +225,14 @@ Phase 누적 후 체크:
 2. FE 시작 시점 — BE 선행 권장. mock 으로 병렬 진행 가능?
 ```
 
-`결정 필요` 만 `AskUserQuestion`:
+`결정 필요` 만 `AskUserQuestion`. 질문 작성 룰 = `.claude/rules/reporting.md` "질문 친절도" 준수 (맥락 1-2줄 / 약어 풀이 / 사용자 관점 차이).
 
 ```
-question: "tasks/ 분리 여부?"
+question: "Task 상세를 별도 파일로 쪼갤까요?
+  (배경: 현재 implement.md 가 Task N개 / 본문 N줄. 분리 임계 (8 Task 또는 50줄+) 초과. 가독성 vs 파일 수 trade-off)"
 options:
-  - "분리 — implement*.md = 표 + 링크, 상세는 tasks/ (추천 — 가독성)"
-  - "유지 — 단일 파일 (단점: 50줄+ 가독성 ↓)"
+  - "분리 (추천) — implement*.md = Task 목차 + 링크, 상세는 tasks/be-NN-*.md. 사유: 다음 세션이 필요한 Task 만 열어 읽기 좋음"
+  - "단일 유지 — 한 파일에 다 보임. 단점: 스크롤 길어짐 / Task 간 점프 비용 ↑"
 ```
 
 수정 시 해당 Phase 만 재작성 후 재브리핑.

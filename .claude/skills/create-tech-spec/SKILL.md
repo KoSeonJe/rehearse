@@ -211,14 +211,15 @@ Architecture + 영향 범위 기반:
 1. 백필 전략 — 기존 인터뷰 1만건 intent_score NULL. 어떻게?
 ```
 
-`결정 필요` 만 `AskUserQuestion`:
+`결정 필요` 만 `AskUserQuestion`. 질문 작성 룰 = `.claude/rules/reporting.md` "질문 친절도" 준수 (맥락 1-2줄 / 약어 풀이 / 사용자 관점 차이).
 
 ```
-question: "백필 전략?"
+question: "기존 인터뷰 1만건 intent_score 백필 — 어떻게 채울까요?
+  (배경: intent_score = 답변 의도 점수 신규 컬럼. 기존 row 는 NULL. 조회 화면에서 NULL 처리 분기 필요)"
 options:
-  - "NULL 허용 + 신규만 채움 (추천 — 단순, 회귀 적음)"
-  - "배치 스크립트로 일괄 백필 (단점: 비용 N$ + 시간)"
-  - "lazy 채움 (조회 시 계산) (단점: 1회 latency)"
+  - "NULL 허용 + 신규만 채움 (추천) — 화면에 'N/A' 표시. 비용 0. 사유: 과거 인터뷰는 분석 가치 낮음 (현 사용자 메모 근거)"
+  - "배치 스크립트 일괄 백필 — 모든 row 점수 채움. 단점: LLM 호출비 ~N$ + 작업 시간 N시간"
+  - "lazy 채움 — 조회 시 계산 후 저장. 첫 조회만 latency +Ns. 단점: 인기 인터뷰만 채워짐 (편향)"
 ```
 
 수정 시 해당 섹션 재작성 후 재브리핑.
