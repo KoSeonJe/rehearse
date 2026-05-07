@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

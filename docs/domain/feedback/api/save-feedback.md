@@ -109,7 +109,7 @@ SessionFeedback (간접): (없음) → PRELIMINARY (InterviewCompletedEvent 시)
 | `com.rehearse.api.domain.feedback.mapper.TimestampFeedbackMapper` | DTO→Entity (JSON 직렬화) | calls |
 | `com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister` | nonverbal rubric 저장 | calls |
 | `com.rehearse.api.domain.feedback.score.service.QuestionScorePersister` | upsert (idempotent) | calls |
-| `com.rehearse.api.domain.questionset.entity.QuestionSetAnalysis` | 진척 상태 | persister |
+| `com.rehearse.api.domain.question.entity.QuestionSetAnalysis` | 진척 상태 | persister |
 | `com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent` | 종합 트리거 | event-publisher |
 
 ---

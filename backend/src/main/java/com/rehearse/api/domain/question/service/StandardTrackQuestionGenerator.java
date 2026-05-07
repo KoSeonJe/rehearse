@@ -6,7 +6,7 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.QuestionDistribution;
 import com.rehearse.api.domain.question.entity.QuestionPool;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.prompt.QuestionCountCalculator;
 import jakarta.annotation.PreDestroy;

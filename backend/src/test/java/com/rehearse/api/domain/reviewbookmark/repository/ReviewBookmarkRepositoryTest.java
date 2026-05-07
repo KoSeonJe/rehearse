@@ -3,7 +3,7 @@ package com.rehearse.api.domain.reviewbookmark.repository;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
@@ -27,7 +27,7 @@ import com.rehearse.api.domain.reviewbookmark.dto.BookmarkIdPair;
 import java.util.List;
 import java.util.Optional;
 
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

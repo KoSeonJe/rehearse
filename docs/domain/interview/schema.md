@@ -156,11 +156,11 @@ JPA `@ElementCollection<String>` — CS 세부 주제 (예: 운영체제 / 네�
 | 패키지 / 클래스 | 역할 | 관계 |
 |----------------|------|------|
 | `com.rehearse.api.domain.user.entity.User` | 사용자 엔티티 (FK 대상) | called-by — `interview.user_id` FK |
-| `com.rehearse.api.domain.questionset.entity.QuestionSet` | 면접의 질문 세트 (1:N) | calls — `QuestionSetRepository.findByInterviewIdWithQuestions` (Query / Deletion) |
-| `com.rehearse.api.domain.questionset.service.QuestionSetService` | 질문세트 스킵 처리 | calls — `InterviewService.skipRemainingQuestionSets` |
+| `com.rehearse.api.domain.question.entity.QuestionSet` | 면접의 질문 세트 (1:N) | calls — `QuestionSetRepository.findByInterviewIdWithQuestions` (Query / Deletion) |
+| `com.rehearse.api.domain.question.service.QuestionSetService` | 질문세트 스킵 처리 | calls — `InterviewService.skipRemainingQuestionSets` |
 | `com.rehearse.api.domain.question.repository.QuestionAnswerRepository` | 답변 정리 | calls — `InterviewDeletionService` (CASCADE 보완) |
 | `com.rehearse.api.domain.feedback.repository.{Timestamp,QuestionSet}FeedbackRepository` | 피드백 정리 | calls — `InterviewDeletionService` |
-| `com.rehearse.api.domain.questionset.repository.QuestionSetAnalysisRepository` | 분석 결과 정리 | calls — `InterviewDeletionService` |
+| `com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository` | 분석 결과 정리 | calls — `InterviewDeletionService` |
 | `com.rehearse.api.domain.resume.entity.{ResumeSkeleton, InterviewPlan}` | 이력서 트랙 캐시 객체 | reads — `InterviewRuntimeState` 보유 |
 | `com.rehearse.api.domain.resume.service.{ResumeInterviewOrchestrator, ResumeSkeletonPersister, InterviewPlanPersister, ResumeInterviewPlanner}` | 이력서 트랙 분기 | calls — `FollowUpService.delegateToResumeOrchestrator` |
 | `com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent` | 턴 완료 이벤트 | event-publisher — `FollowUpService.publishTurnCompletedEvent` |

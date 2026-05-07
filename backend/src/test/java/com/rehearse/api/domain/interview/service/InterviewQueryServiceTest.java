@@ -3,7 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
