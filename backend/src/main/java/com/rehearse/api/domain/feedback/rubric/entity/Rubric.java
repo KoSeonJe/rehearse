@@ -25,7 +25,6 @@ public record Rubric(
             String modeKey = switch (resumeMode) {
                 case PLAYGROUND -> "on_playground_mode";
                 case INTERROGATION -> "on_interrogation_mode";
-                case WRAP_UP -> "on_wrap_up_mode";
             };
             List<String> modeDims = perTurnRules.get(modeKey);
             if (modeDims != null) {

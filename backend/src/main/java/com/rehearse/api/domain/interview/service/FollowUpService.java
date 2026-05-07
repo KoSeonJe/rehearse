@@ -187,7 +187,8 @@ public class FollowUpService {
         return resumeOrchestrator.processUserTurn(
                 interviewId, durationMinutes,
                 request.getQuestionContent(), request.getAnswerText(),
-                request.getPreviousExchanges(), skeleton, plan
+                request.getPreviousExchanges(), skeleton, plan,
+                request.isTerminate()
         );
     }
 

@@ -25,8 +25,9 @@ import java.util.List;
 
 /**
  * 이력서 면접 트랙 메인 진입점.
- * PLAYGROUND → INTERROGATION → WRAP_UP 3단계 FSM을 orchestrate한다.
+ * PLAYGROUND → INTERROGATION 2단계 FSM을 orchestrate한다.
  * LLM 호출은 트랜잭션 외부에서 수행한다 (@Transactional 제거 — 호출자가 NOT_SUPPORTED propagation으로 진입).
+ * 종료 시점은 사용자 답변 액션에 동봉된 terminate 신호 또는 hard timeout backstop.
  */
 @Slf4j
 @Service
@@ -36,7 +37,6 @@ public class ResumeInterviewOrchestrator {
     private final TurnAnalysisPipeline turnAnalysisPipeline;
     private final PlaygroundModeHandler playgroundHandler;
     private final InterrogationModeHandler interrogationHandler;
-    private final WrapUpModeHandler wrapUpHandler;
     private final ClockWatcher clockWatcher;
     private final InterviewRuntimeStateCache runtimeStateStore;
     private final ResumeModeTransitionPolicy modeTransitionPolicy;
@@ -47,12 +47,13 @@ public class ResumeInterviewOrchestrator {
             Long interviewId, int durationMinutes,
             String questionContent, String answerText,
             List<FollowUpExchange> previousExchanges,
-            ResumeSkeleton skeleton, InterviewPlan plan
+            ResumeSkeleton skeleton, InterviewPlan plan,
+            boolean terminate
     ) {
         try {
             return processUserTurnInternal(
                     interviewId, durationMinutes, questionContent, answerText,
-                    previousExchanges, skeleton, plan);
+                    previousExchanges, skeleton, plan, terminate);
         } catch (BusinessException e) {
             if (e.getErrorCode() == AiErrorCode.CONTEXT_BUDGET_EXCEEDED) {
                 log.warn("[ResumeOrchestrator] 컨텍스트 토큰 예산 초과 → graceful 종료: interviewId={}", interviewId);
@@ -66,34 +67,36 @@ public class ResumeInterviewOrchestrator {
             Long interviewId, int durationMinutes,
             String questionContent, String answerText,
             List<FollowUpExchange> previousExchanges,
-            ResumeSkeleton skeleton, InterviewPlan plan
+            ResumeSkeleton skeleton, InterviewPlan plan,
+            boolean terminate
     ) {
         clockWatcher.markStart(interviewId);
 
         long turnIndex = previousExchanges != null ? previousExchanges.size() : 0;
         TurnAnalysisResult turnResult = turnAnalysisPipeline.analyze(
                 interviewId, turnIndex, questionContent, answerText, previousExchanges);
-
         AnswerAnalysis analysis = turnResult.answerAnalysis();
-        InterviewRuntimeState state = runtimeStateStore.get(interviewId);
+
         long remainingMinutes = clockWatcher.remainingMinutes(interviewId, durationMinutes);
 
-        ResumeMode currentMode = modeTransitionPolicy.advanceToWrapUpIfDue(
-                interviewId, remainingMinutes, state.getResumeMode());
-
-        if (currentMode == ResumeMode.WRAP_UP
-                && modeTransitionPolicy.isHardTimeoutExceeded(durationMinutes, remainingMinutes)) {
-            log.warn("[ResumeOrchestrator] hard timeout 초과 → 강제 종료: interviewId={}", interviewId);
+        if (modeTransitionPolicy.isHardTimeoutExceeded(durationMinutes, remainingMinutes)) {
+            log.warn("[ResumeOrchestrator] hard timeout backstop: interviewId={}", interviewId);
             return hardTimeoutResponse();
         }
 
+        if (terminate) {
+            log.info("[ResumeOrchestrator] FE-signaled terminate: interviewId={}, lastQuestionAnalyzed=true", interviewId);
+            return terminateResponse();
+        }
+
         InterviewRuntimeState currentState = runtimeStateStore.get(interviewId);
+        ResumeMode currentMode = currentState.getResumeMode();
         ChainStateTracker chainTracker = currentState.getChainStateTracker();
         int currentChainLevel = chainTracker != null ? chainTracker.getCurrentLevel() : 1;
 
         TurnHandlerResult handlerResult = dispatchByMode(
                 currentMode, interviewId, currentState, answerText, analysis,
-                skeleton, plan, remainingMinutes, previousExchanges);
+                skeleton, plan, previousExchanges);
 
         if (shouldSkipTurnCompletedEvent(handlerResult)) {
             log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=publish-skip turnIndex={}",
@@ -139,7 +142,7 @@ public class ResumeInterviewOrchestrator {
     private TurnHandlerResult dispatchByMode(
             ResumeMode mode, Long interviewId, InterviewRuntimeState state,
             String answerText, AnswerAnalysis analysis,
-            ResumeSkeleton skeleton, InterviewPlan plan, long remainingMinutes,
+            ResumeSkeleton skeleton, InterviewPlan plan,
             List<FollowUpExchange> previousExchanges
     ) {
         return switch (mode) {
@@ -147,11 +150,6 @@ public class ResumeInterviewOrchestrator {
             case INTERROGATION -> {
                 InterrogationTurnResult r =
                         interrogationHandler.handle(interviewId, state, answerText, analysis, plan, previousExchanges);
-                yield new TurnHandlerResult(r.response(), r.questionId());
-            }
-            case WRAP_UP -> {
-                WrapUpModeHandler.WrapUpTurnResult r =
-                        wrapUpHandler.handle(interviewId, state, answerText, analysis, plan, remainingMinutes, true, previousExchanges);
                 yield new TurnHandlerResult(r.response(), r.questionId());
             }
         };
@@ -182,6 +180,14 @@ public class ResumeInterviewOrchestrator {
                 .skip(true)
                 .presentToUser(false)
                 .type("RESUME_HARD_TIMEOUT")
+                .build();
+    }
+
+    private FollowUpResponse terminateResponse() {
+        return FollowUpResponse.builder()
+                .followUpExhausted(true)
+                .skip(true)
+                .presentToUser(false)
                 .build();
     }
 
