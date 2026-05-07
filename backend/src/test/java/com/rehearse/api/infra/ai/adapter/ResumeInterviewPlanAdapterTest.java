@@ -13,7 +13,6 @@ import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -312,20 +311,17 @@ class ResumeInterviewPlanAdapterTest {
         }
 
         @Test
-        @DisplayName("skeleton 미제공 + planner projectName 부재 시 PROJECT_NAME_INVALID (안전망)")
-        void throws_invariant_violation_when_both_names_blank() {
-            // given
+        @DisplayName("skeleton 미제공 + planner projectName 부재 시 그대로 null 통과 (다운스트림 prompt 가 open question 으로 처리)")
+        void passes_null_project_name_when_skeleton_absent_and_planner_blank() {
             GeneratedInterviewPlan raw = new GeneratedInterviewPlan(
                     "plan_test", 1,
                     List.of(projectWithName("p1", 1, null, "p1::Redis"))
             );
             given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
 
-            // when / then
-            assertThatThrownBy(() -> adapter.execute(request, 30))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                            .isEqualTo(ResumeErrorCode.PROJECT_NAME_INVALID.getCode()));
+            InterviewPlan result = adapter.execute(request, 30);
+
+            assertThat(result.projectPlans().get(0).projectName()).isNull();
         }
 
         private List<String> warnMessages() {

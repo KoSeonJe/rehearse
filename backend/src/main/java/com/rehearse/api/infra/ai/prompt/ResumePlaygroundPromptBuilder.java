@@ -66,8 +66,10 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
     }
 
     private static String formatProjectInfo(Project project) {
+        String name = project.projectName();
+        String safeName = (name == null || name.isBlank()) ? "" : name;
         return "projectId: " + project.projectId()
-                + "\nprojectName: " + project.projectName()
+                + "\nprojectName: " + safeName
                 + "\nclaims: " + project.claims().size() + "개"
                 + "\nimplicitCsTopics: " + project.implicitCsTopics().size() + "개";
     }

@@ -13,9 +13,6 @@ public record Project(
         if (projectId == null || projectId.isBlank()) {
             throw new IllegalArgumentException("projectId 는 필수입니다.");
         }
-        if (projectName == null || projectName.isBlank()) {
-            throw new IllegalArgumentException("projectName 은 필수입니다.");
-        }
         claims = claims == null ? List.of() : List.copyOf(claims);
         implicitCsTopics = implicitCsTopics == null ? List.of() : List.copyOf(implicitCsTopics);
     }

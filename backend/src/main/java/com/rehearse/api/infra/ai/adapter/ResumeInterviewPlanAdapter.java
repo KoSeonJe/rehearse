@@ -7,7 +7,6 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -140,11 +139,7 @@ public class ResumeInterviewPlanAdapter {
         String llmName = raw.projectName();
 
         if (skeletonName == null || skeletonName.isBlank()) {
-            if (llmName != null && !llmName.isBlank()) {
-                return llmName;
-            }
-            log.error("projectName invariant 위반: projectId={}", raw.projectId());
-            throw new BusinessException(ResumeErrorCode.PROJECT_NAME_INVALID);
+            return (llmName != null && !llmName.isBlank()) ? llmName : skeletonName;
         }
 
         if (llmName != null && !llmName.isBlank() && !skeletonName.equals(llmName)) {

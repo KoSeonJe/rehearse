@@ -8,10 +8,9 @@
    - high: 문제 해결 스토리, 명확한 임팩트 메트릭
    - medium: 아키텍처 선택 근거, 기술 의사결정
    - low: 일반적인 구현 사항, 흔한 기술 스택 나열
-5. **project_name 필수**:
+5. **project_name 처리**:
    - 이력서에 명시된 프로젝트명이 있으면 그대로 사용 (번역·요약·줄임 금지).
-   - 명시 명칭이 없으면 해당 프로젝트의 claims를 요약한 짧은 한국어 명사구(10~20자)로 생성. 예: "주문 API 캐싱 프로젝트", "결제 시스템 안정화".
-   - 빈 문자열·null 금지. 모든 projects 항목에 반드시 포함.
+   - 명시 명칭이 없으면 빈 문자열 또는 null 로 둘 것. 임의 명칭 생성·요약·hallucinate 금지.
 
 ## 출력 스키마 (JSON 객체 하나만 출력, 마크다운 금지)
 ```json
@@ -22,7 +21,7 @@
   "projects": [
     {
       "project_id": "p1",
-      "project_name": "이력서 명시 명칭 또는 claims 요약 한국어 명사구(10~20자)",
+      "project_name": "이력서 명시 명칭 (없으면 빈 문자열 또는 null)",
       "claims": [
         {
           "claim_id": "p1_c1",
@@ -65,7 +64,7 @@
 
 ## 예시
 
-### 예시 1: 프로젝트명 미명시 → claims 요약 명칭 생성
+### 예시 1: 프로젝트명 미명시 → project_name 은 빈 문자열 (요약 명칭 생성 금지)
 
 이력서 스니펫:
 "주문 조회 API p95 응답 800ms → Redis Cache-Aside + TTL 5분으로 120ms 달성. JPA fetch join으로 N+1 문제 해결."
@@ -79,7 +78,7 @@
   "projects": [
     {
       "project_id": "p1",
-      "project_name": "주문 API 캐싱 성능 개선",
+      "project_name": "",
       "claims": [
         {
           "claim_id": "p1_c1",

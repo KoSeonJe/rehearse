@@ -46,11 +46,11 @@ class ProjectPlanTest {
     }
 
     @Test
-    @DisplayName("projectName 이 null 이면 예외가 발생한다")
-    void projectPlan_projectName_null_reject() {
-        assertThatThrownBy(() -> new ProjectPlan("p1", null, 1, playgroundPhase(), interrogationPhase()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("projectName 은 필수입니다");
+    @DisplayName("projectName 이 null 이어도 ProjectPlan 이 생성된다 — extractor 부재 명칭 통과")
+    void projectPlan_projectName_null_allowed() {
+        ProjectPlan plan = new ProjectPlan("p1", null, 1, playgroundPhase(), interrogationPhase());
+
+        assertThat(plan.projectName()).isNull();
     }
 
     @Test

@@ -63,23 +63,23 @@ class ProjectTest {
     }
 
     @Nested
-    @DisplayName("projectName invariant")
-    class ProjectNameInvariant {
+    @DisplayName("projectName 부재 허용 (LLM 에 open question 위임)")
+    class ProjectNameOptional {
 
         @Test
-        @DisplayName("projectName 이 null 이면 예외가 발생한다")
-        void throw_when_projectName_null() {
-            assertThatThrownBy(() -> new Project("p1", null, List.of(), List.of()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("projectName");
+        @DisplayName("projectName 이 null 이어도 Project 가 생성된다 — extractor 가 명칭 hallucinate 하지 않도록 허용")
+        void allow_null_projectName() {
+            Project project = new Project("p1", null, List.of(), List.of());
+
+            assertThat(project.projectName()).isNull();
         }
 
         @Test
-        @DisplayName("projectName 이 공백이면 예외가 발생한다")
-        void throw_when_projectName_blank() {
-            assertThatThrownBy(() -> new Project("p1", "   ", List.of(), List.of()))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("projectName");
+        @DisplayName("projectName 이 공백이어도 Project 가 생성된다 — 다운스트림 prompt 가 open question 으로 전환")
+        void allow_blank_projectName() {
+            Project project = new Project("p1", "   ", List.of(), List.of());
+
+            assertThat(project.projectName()).isEqualTo("   ");
         }
     }
 }

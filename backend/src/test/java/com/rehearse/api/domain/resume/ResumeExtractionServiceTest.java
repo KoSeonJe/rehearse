@@ -147,8 +147,8 @@ class ResumeExtractionServiceTest {
     }
 
     @Test
-    @DisplayName("general 단일 프로젝트에서 명칭 부재 시 placeholder 가 주입된다")
-    void extract_assigns_placeholder_when_single_general_project_missing_name() {
+    @DisplayName("명칭 부재 시 placeholder 주입 없이 그대로 통과한다 — LLM hallucinate 차단")
+    void extract_passes_blank_project_name_through_without_placeholder() {
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
@@ -158,12 +158,12 @@ class ResumeExtractionServiceTest {
         ResumeSkeleton result = service.extract("이력서", "hash");
 
         assertThat(result.projects()).hasSize(1);
-        assertThat(result.projects().get(0).projectName()).isEqualTo("프로젝트 1");
+        assertThat(result.projects().get(0).projectName()).isEqualTo("  ");
     }
 
     @Test
-    @DisplayName("다수 프로젝트 중 일부 명칭 부재 시 부재 항목만 인덱스 placeholder 로 대체한다")
-    void extract_fills_only_missing_names_with_index_placeholder() {
+    @DisplayName("다수 프로젝트 중 일부 명칭 부재 시 명시 항목만 보존하고 부재 항목은 그대로 통과한다")
+    void extract_preserves_explicit_names_and_passes_missing_through() {
         given(promptBuilder.buildSystemPrompt()).willReturn("system");
         given(promptBuilder.buildUserPrompt(any())).willReturn("user");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockChatResponse());
@@ -174,7 +174,7 @@ class ResumeExtractionServiceTest {
 
         assertThat(result.projects())
                 .extracting(Project::projectName)
-                .containsExactly("쿠폰 발급 시스템", "프로젝트 2", "사내 모니터링 대시보드");
+                .containsExactly("쿠폰 발급 시스템", null, "사내 모니터링 대시보드");
     }
 
 

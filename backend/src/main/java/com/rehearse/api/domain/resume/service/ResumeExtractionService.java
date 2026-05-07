@@ -38,7 +38,6 @@ public class ResumeExtractionService {
     private static final double MIN_CONFIDENCE_THRESHOLD = 0.3;
     private static final double TEMPERATURE = 0.2;
     private static final int MAX_TOKENS = 4096;
-    private static final String PROJECT_NAME_PLACEHOLDER_PREFIX = "프로젝트 ";
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
@@ -53,7 +52,7 @@ public class ResumeExtractionService {
 
         ResumeSkeleton skeleton = toDomain(raw, fileHash);
         long named = skeleton.projects().stream()
-                .filter(p -> !p.projectName().startsWith(PROJECT_NAME_PLACEHOLDER_PREFIX))
+                .filter(p -> p.projectName() != null && !p.projectName().isBlank())
                 .count();
         log.info("이력서 추출 완료: resumeId={}, projects={}, named={}, level={}",
                 skeleton.resumeId(), skeleton.projects().size(), named, skeleton.candidateLevel());
@@ -95,23 +94,16 @@ public class ResumeExtractionService {
             return List.of();
         }
         List<Project> projects = new ArrayList<>(rawProjects.size());
-        for (int i = 0; i < rawProjects.size(); i++) {
-            projects.add(mapProject(rawProjects.get(i), i));
+        for (ExtractedProject raw : rawProjects) {
+            projects.add(mapProject(raw));
         }
         return List.copyOf(projects);
     }
 
-    private Project mapProject(ExtractedProject raw, int index) {
+    private Project mapProject(ExtractedProject raw) {
         List<ResumeClaim> claims = mapClaims(raw.getClaims());
         List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
-        String name = raw.getProjectName();
-        if (name == null || name.isBlank()) {
-            int fallbackIndex = index + 1;
-            name = PROJECT_NAME_PLACEHOLDER_PREFIX + fallbackIndex;
-            log.warn("[ResumeExtraction] projectName 부재 → placeholder 주입: projectId={}, fallbackIndex={}",
-                    raw.getProjectId(), fallbackIndex);
-        }
-        return new Project(raw.getProjectId(), name, claims, chains);
+        return new Project(raw.getProjectId(), raw.getProjectName(), claims, chains);
     }
 
     private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {
