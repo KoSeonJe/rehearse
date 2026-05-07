@@ -18,7 +18,7 @@
 | `questionSetId` | Long | 세트 |
 | `userAnswer` | string | 답변 텍스트 |
 | `answerAnalysis` | object | 직전 분석 (clarity 등) |
-| `intent` | enum | FOLLOW_UP / CLARIFY_REQUEST / GIVE_UP / PLAYGROUND / INTERROGATION / WRAP_UP 등 |
+| `intent` | enum | FOLLOW_UP / CLARIFY_REQUEST / GIVE_UP / PLAYGROUND / INTERROGATION 등 |
 | `level` | enum | InterviewLevel |
 | `resumeMode?` | enum | resume 트랙일 때 |
 | `currentChainLevel?` | int | resume 깊이 |
@@ -39,7 +39,7 @@
 - `RubricCatalog.resolveFor(question, questionSet, interview)` — `RubricFamily.MappingRule` 체인 (resumeTrack → category → feedbackPerspective → defaultRubricId)
 - `Rubric.selectDimensions(intent, resumeMode)` — switch:
   - `CLARIFY_REQUEST` / `GIVE_UP` → 빈 dimensions → **persist skip**
-  - `PLAYGROUND` / `INTERROGATION` / `WRAP_UP` → per_turn_rules YAML 분기
+  - `PLAYGROUND` / `INTERROGATION` → per_turn_rules YAML 분기
   - 그 외 → 기본 dimension set
 
 ### 4. 외부 호출

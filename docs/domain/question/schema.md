@@ -22,7 +22,7 @@
 ## question
 
 ### 성격
-질문 1개 = 1행. MAIN (메인 질문, 사전 생성 또는 AI 생성) / FOLLOWUP (CS 트랙 꼬리질문, 런타임 생성) / RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP (이력서 트랙 FSM 단계별 발화).
+질문 1개 = 1행. MAIN (메인 질문, 사전 생성 또는 AI 생성) / FOLLOWUP (CS 트랙 꼬리질문, 런타임 생성) / RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION (이력서 트랙 FSM 단계별 발화).
 
 ### 컬럼
 
@@ -30,7 +30,7 @@
 |------|------|-----|------|
 | `id` | BIGINT | PK, AUTO_INCREMENT | 식별자 |
 | `question_set_id` | BIGINT | FK → `question_set.id` ON DELETE CASCADE, NOT NULL | 부모 질문 세트 |
-| `question_type` | VARCHAR(20) | NOT NULL | `QuestionType` enum (`MAIN` / `FOLLOWUP` / `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION` / `RESUME_WRAP_UP`) |
+| `question_type` | VARCHAR(20) | NOT NULL | `QuestionType` enum (`MAIN` / `FOLLOWUP` / `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION`) |
 | `question_text` | TEXT | NOT NULL, blank 불가 (`Question` 생성자) | 질문 본문 |
 | `tts_text` | TEXT | NULL | TTS 친화 변형 (`Question.ttsText`) |
 | `model_answer` | TEXT | NULL | 모범답안 |

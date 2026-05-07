@@ -11,8 +11,6 @@ import com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder.Int
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
-import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder;
-import com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder.WrapUpResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,11 +25,9 @@ public class ResumeQuestionResultGenerator {
     private static final String MODE_OPENER = "OPENER";
     private static final String MODE_PLAYGROUND = "PLAYGROUND";
     private static final String MODE_INTERROGATION = "INTERROGATION";
-    private static final String MODE_WRAP_UP = "WRAP_UP";
 
     private final ResumePlaygroundPromptBuilder playgroundPromptBuilder;
     private final ResumeChainInterrogatorPromptBuilder chainInterrogatorPromptBuilder;
-    private final ResumeWrapUpPromptBuilder wrapUpPromptBuilder;
 
     public PlaygroundOpenerResult generateOpener(
             Long interviewId, InterviewRuntimeState state,
@@ -96,28 +92,6 @@ public class ResumeQuestionResultGenerator {
         if (isBlank(result.modelAnswer())) {
             warnModelAnswerFallback(interviewId, MODE_INTERROGATION);
             return result.withModelAnswer(ResumeFallbackModelAnswers.INTERROGATION);
-        }
-        return result;
-    }
-
-    public WrapUpResult generateWrapUp(
-            Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> previousExchanges,
-            String sessionSummary, long remainingMinutes, boolean isRetrospective
-    ) {
-        WrapUpResult first = wrapUpPromptBuilder.build(
-                interviewId, state, previousExchanges, sessionSummary, remainingMinutes, isRetrospective);
-        WrapUpResult result = first;
-        if (needsRetry(first.modelAnswer(), first.question())) {
-            result = wrapUpPromptBuilder.build(
-                    interviewId, state, previousExchanges, sessionSummary, remainingMinutes, isRetrospective);
-        }
-        if (isBlank(result.question())) {
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-        warnIfQuestionFallback(interviewId, MODE_WRAP_UP, result.question(), ResumeFallbackQuestions.WRAP_UP);
-        if (isBlank(result.modelAnswer())) {
-            warnModelAnswerFallback(interviewId, MODE_WRAP_UP);
-            return result.withModelAnswer(ResumeFallbackModelAnswers.WRAP_UP);
         }
         return result;
     }

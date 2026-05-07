@@ -22,6 +22,7 @@
 | part.body | `answerText` | string | optional | 클라이언트 STT 결과 (이력서 트랙에서 사용) |
 | part.body | `nonVerbalSummary` | string | optional | 비언어 요약 |
 | part.body | `previousExchanges` | array | optional | 이전 라운드 [{question, answer, followUpType, selectedPerspective}] |
+| part.body | `terminate` | bool | optional, default `false` | RESUME 트랙 전용. FE 시계 잔여 ≤ 0 + 답변 완료 제출 시점에 `true` 동봉. BE 는 답변 분석만 수행 + 신규 question INSERT skip → `followUpExhausted=true` 응답 |
 | part | `audio` | multipart | **required** (CS 트랙) | 답변 오디오. 비어있으면 `INTERVIEW_006` |
 
 ---
@@ -100,7 +101,7 @@
 - `delegateToResumeOrchestrator`:
   - `resolveResumeSkeleton` (cache → store → `RESUME_PLAN_NOT_READY` if 없음)
   - `resolveInterviewPlan` (caffeine → DB → `ResumeInterviewPlanner.plan(skeleton, durationMinutes)` 신규 생성 후 저장)
-  - `ResumeInterviewOrchestrator.processUserTurn(...)` — 이력서 도메인이 FSM 처리 (PLAYGROUND / INTERROGATION / WRAP_UP)
+  - `ResumeInterviewOrchestrator.processUserTurn(...)` — 이력서 도메인이 FSM 처리 (PLAYGROUND / INTERROGATION). 종료 분기는 FE `terminate=true` 또는 hard timeout backstop
 
 #### 4-B. CS 트랙 (기본)
 
@@ -176,7 +177,7 @@ MAIN(orderIndex=0)
   └── (FOLLOWUP orderIndex=2)   // CS: max 2 라운드 도달 → exhausted=true
 ```
 
-이력서 트랙은 `ResumeInterviewOrchestrator` FSM 이 `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION` / `RESUME_WRAP_UP` 별도 흐름 관리.
+이력서 트랙은 `ResumeInterviewOrchestrator` FSM 이 `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION` 흐름 관리. 종료는 `FollowUpRequest.terminate=true` (FE 시계 만료 시 동봉) 또는 hard timeout backstop (`elapsed ≥ duration + 10분`) 으로 분기.
 
 ---
 

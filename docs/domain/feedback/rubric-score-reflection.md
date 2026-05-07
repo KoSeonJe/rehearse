@@ -67,7 +67,7 @@
 | intent / mode | 동작 |
 |---------------|------|
 | `CLARIFY_REQUEST` / `GIVE_UP` | 빈 dimension 리스트 → **persist skip** (정상) |
-| `PLAYGROUND` / `INTERROGATION` / `WRAP_UP` (resumeMode) | `per_turn_rules` YAML 분기 (e.g. `on_playground_mode`, `on_wrap_up_mode`) |
+| `PLAYGROUND` / `INTERROGATION` (resumeMode) | `per_turn_rules` YAML 분기 (e.g. `on_playground_mode`) |
 | 그 외 | rubric 의 `uses_dimensions` 전체 |
 
 ### 1.5 LLM 호출 + 파싱

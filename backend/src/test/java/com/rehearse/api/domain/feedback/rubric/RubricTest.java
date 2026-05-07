@@ -52,18 +52,6 @@ class RubricTest {
         }
 
         @Test
-        @DisplayName("WRAP_UP mode → on_wrap_up_mode 차원 반환")
-        void wrap_up_mode_returns_correct_dims() {
-            Rubric rubric = rubricWith(Map.of(
-                    "on_wrap_up_mode", List.of("chain_depth")
-            ));
-
-            List<String> result = rubric.selectDimensions(ResumeMode.WRAP_UP);
-
-            assertThat(result).containsExactly("chain_depth");
-        }
-
-        @Test
         @DisplayName("resumeMode에 해당 키 없으면 on_intent_answer fallback")
         void resume_mode_missing_key_falls_back_to_intent_answer() {
             Rubric rubric = rubricWith(Map.of(

@@ -83,7 +83,6 @@ rehearse:
     max-tokens: 800
     playground-max-turns: 3
     chain-max-depth: 4
-    wrap-up-threshold-min: 2
     hard-timeout-min: 10
   rubric-scorer:
     model: ${RUBRIC_SCORER_MODEL:gpt-4o-mini}

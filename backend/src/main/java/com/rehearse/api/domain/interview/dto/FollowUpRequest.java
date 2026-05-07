@@ -24,6 +24,8 @@ public class FollowUpRequest {
 
     private List<FollowUpExchange> previousExchanges;
 
+    private boolean terminate;
+
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
