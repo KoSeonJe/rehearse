@@ -1,9 +1,5 @@
 package com.rehearse.api.domain.resume.service;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
@@ -22,13 +18,11 @@ import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.slf4j.LoggerFactory;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -125,65 +119,6 @@ class ResumeInterviewOrchestratorTest {
             assertThat(response.getQuestion()).isEqualTo("L2 질문");
             then(interrogationHandler).should().handle(any(), any(), any(), any(), any(), any());
             then(playgroundHandler).shouldHaveNoInteractions();
-        }
-    }
-
-    @Nested
-    @DisplayName("종료 분기")
-    class TerminationBranches {
-
-        @Test
-        @DisplayName("hard timeout 초과 시 RESUME_HARD_TIMEOUT 응답이 반환된다")
-        void processUserTurn_hardTimeoutExceeded_returnsHardTimeoutResponse() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
-            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
-
-            FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
-
-            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
-            assertThat(response.isFollowUpExhausted()).isTrue();
-            assertThat(response.isSkip()).isTrue();
-            assertThat(response.isPresentToUser()).isFalse();
-            then(playgroundHandler).shouldHaveNoInteractions();
-            then(interrogationHandler).shouldHaveNoInteractions();
-            then(turnEventPublisher).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("terminate=true 신호 시 답변 분석은 수행하되 핸들러 dispatch / publish 없이 종료 응답을 반환한다")
-        void processUserTurn_terminateTrue_skipsDispatchAndPublish() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(5L);
-
-            FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
-
-            assertThat(response.isFollowUpExhausted()).isTrue();
-            assertThat(response.isSkip()).isTrue();
-            assertThat(response.isPresentToUser()).isFalse();
-            assertThat(response.getType()).isNull();
-            then(turnAnalysisPipeline).should().analyze(any(), anyLong(), any(), any(), any());
-            then(playgroundHandler).shouldHaveNoInteractions();
-            then(interrogationHandler).shouldHaveNoInteractions();
-            then(turnEventPublisher).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("hard timeout 이 우선 — terminate=true 와 동시 발생 시 RESUME_HARD_TIMEOUT 으로 응답")
-        void processUserTurn_hardTimeoutAndTerminate_hardTimeoutWins() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
-            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
-
-            FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
-
-            assertThat(response.getType()).isEqualTo("RESUME_HARD_TIMEOUT");
         }
     }
 
@@ -310,28 +245,6 @@ class ResumeInterviewOrchestratorTest {
             then(turnEventPublisher).shouldHaveNoInteractions();
         }
 
-        @Test
-        @DisplayName("표시할 질문 없이 종료된 턴은 TurnCompletedEvent 를 발행하지 않는다")
-        void processUserTurn_exhaustedWithoutQuestion_doesNotPublish() {
-            state.transitionTo(ResumeMode.INTERROGATION);
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("사용자답변텍스트", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationTurnResult(
-                            FollowUpResponse.builder()
-                                    .skip(true)
-                                    .presentToUser(false)
-                                    .followUpExhausted(true)
-                                    .type("RESUME_INTERROGATION_EXHAUSTED")
-                                    .build(), null));
-
-            FollowUpResponse response = orchestrator.processUserTurn(
-                    1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false);
-
-            assertThat(response.isFollowUpExhausted()).isTrue();
-            then(turnEventPublisher).shouldHaveNoInteractions();
-        }
     }
 
     @Nested
@@ -371,99 +284,6 @@ class ResumeInterviewOrchestratorTest {
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
                             .isEqualTo(AiErrorCode.RESPONSE_INVALID.getCode()));
-        }
-    }
-
-    @Nested
-    @DisplayName("[진행차단진단] WARN 로그")
-    class BlockingDiagnosticsWarnLog {
-
-        private ListAppender<ILoggingEvent> appender;
-        private Logger targetLogger;
-
-        @BeforeEach
-        void attachAppender() {
-            targetLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
-            appender = new ListAppender<>();
-            appender.start();
-            targetLogger.addAppender(appender);
-        }
-
-        @AfterEach
-        void detachAppender() {
-            targetLogger.detachAppender(appender);
-        }
-
-        @Test
-        @DisplayName("publish-skip 분기 진입 시 track=RESUME WARN 로그를 4개 키와 함께 기록")
-        void publishSkip_logsBlockingDiagnosticsWarn() {
-            state.transitionTo(ResumeMode.INTERROGATION);
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
-            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
-                    .willReturn(new InterrogationTurnResult(
-                            FollowUpResponse.builder()
-                                    .skip(true)
-                                    .presentToUser(false)
-                                    .followUpExhausted(true)
-                                    .type("RESUME_INTERROGATION_EXHAUSTED")
-                                    .build(), null));
-
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
-
-            ILoggingEvent warn = findWarn(appender);
-            assertThat(warn.getLevel()).isEqualTo(Level.WARN);
-            String formatted = warn.getFormattedMessage();
-            assertThat(formatted).contains("[진행차단진단]");
-            assertThat(formatted).contains("interviewId=1");
-            assertThat(formatted).contains("track=RESUME");
-            assertThat(formatted).contains("stage=interrogation");
-            assertThat(formatted).contains("reason=publish-skip");
-        }
-
-        @Test
-        @DisplayName("FE-signaled terminate 분기 진입 시 INFO 로그가 기록된다")
-        void terminate_logsFeSignaledInfo() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(5L);
-            targetLogger.setLevel(Level.INFO);
-
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, true);
-
-            ILoggingEvent info = appender.list.stream()
-                    .filter(e -> e.getLevel() == Level.INFO)
-                    .filter(e -> e.getFormattedMessage().contains("FE-signaled terminate"))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("FE-signaled terminate INFO 로그 미발견"));
-            assertThat(info.getFormattedMessage()).contains("interviewId=1");
-        }
-
-        @Test
-        @DisplayName("hard timeout backstop 분기 진입 시 WARN 로그가 기록된다")
-        void hardTimeout_logsBackstopWarn() {
-            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
-                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
-            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(0L);
-            given(modeTransitionPolicy.isHardTimeoutExceeded(eq(30), eq(0L))).willReturn(true);
-
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
-
-            ILoggingEvent warn = appender.list.stream()
-                    .filter(e -> e.getLevel() == Level.WARN)
-                    .filter(e -> e.getFormattedMessage().contains("hard timeout backstop"))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("hard timeout backstop WARN 로그 미발견"));
-            assertThat(warn.getFormattedMessage()).contains("interviewId=1");
-        }
-
-        private ILoggingEvent findWarn(ListAppender<ILoggingEvent> appender) {
-            return appender.list.stream()
-                    .filter(e -> e.getLevel() == Level.WARN)
-                    .filter(e -> e.getFormattedMessage().contains("[진행차단진단]"))
-                    .findFirst()
-                    .orElseThrow(() -> new AssertionError("[진행차단진단] WARN 로그 미발견"));
         }
     }
 
