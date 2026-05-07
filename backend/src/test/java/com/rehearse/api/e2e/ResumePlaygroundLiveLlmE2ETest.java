@@ -6,8 +6,10 @@ import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundOpenerResult;
+import com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder.PlaygroundResponderResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +51,7 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("buildOpener 가 실제 OpenAI 응답으로 PlaygroundOpenerResult 를 채운다")
+    @DisplayName("buildOpener 가 실제 OpenAI 응답으로 PlaygroundOpenerResult 를 채운다 + AC1/AC2/AC3 Opener 톤 단언")
     void buildOpener_returns_non_blank_question_from_live_openai() {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-1", "hash", CandidateLevel.MID, "backend", List.of(), null);
@@ -63,5 +65,45 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
         assertThat(result).isNotNull();
         assertThat(result.question()).isNotBlank();
         assertThat(result.ttsQuestion()).isNotBlank();
+
+        assertThat(result.question())
+                .as("AC1 — projectName 호명")
+                .contains("Live 테스트 프로젝트");
+        assertThat(result.question())
+                .as("AC2 — narrow 기술 심문 어휘 부재")
+                .doesNotContain("기술적 결정")
+                .doesNotContain("트레이드오프")
+                .doesNotContain("메커니즘")
+                .doesNotContain("어떻게 동작");
+        assertThat(result.question())
+                .as("AC3 Opener — intro 의도 어휘군 1+ 매치")
+                .containsAnyOf("역할", "맡으셨", "설명", "소개");
+    }
+
+    @Test
+    @DisplayName("buildResponder 가 실제 OpenAI 응답으로 감정·서사 oriented 후속 질문을 채운다 + AC2/AC3 Responder 톤 단언")
+    void buildResponder_returns_emotion_oriented_question_from_live_openai() {
+        ResumeSkeleton skeleton = new ResumeSkeleton(
+                "live-resume-2", "hash", CandidateLevel.MID, "backend", List.of(), null);
+        InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
+        Project project = new Project("proj-live-2", "Live 테스트 프로젝트", List.of(), List.of());
+        String userAnswer = "이 프로젝트에서 결제 게이트웨이 연동을 담당했고, 트래픽 급증 상황에서 안정화 작업을 했습니다.";
+
+        PlaygroundResponderResult result = builder.buildResponder(
+                9998L, state, List.<FollowUpExchange>of(),
+                project, userAnswer, List.of("결제 게이트웨이", "트래픽 안정화"),
+                1, userAnswer.length());
+
+        assertThat(result).isNotNull();
+        assertThat(result.question()).isNotBlank();
+        assertThat(result.question())
+                .as("AC2 — narrow 기술 심문 어휘 부재")
+                .doesNotContain("기술적 결정")
+                .doesNotContain("트레이드오프")
+                .doesNotContain("메커니즘")
+                .doesNotContain("어떻게 동작");
+        assertThat(result.question())
+                .as("AC3 Responder — 감정·서사 의도 어휘군 1+ 매치")
+                .containsAnyOf("어려웠던", "기억", "인상", "경험");
     }
 }
