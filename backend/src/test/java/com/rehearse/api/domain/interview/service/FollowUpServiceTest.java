@@ -194,7 +194,7 @@ class FollowUpServiceTest {
                     .willReturn(stepBQuestion("Step B 가 만든 꼬리질문"));
 
             Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
+                    .questionType(QuestionType.TECH_FOLLOWUP).questionText("Step B 가 만든 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 100L);
             given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));
@@ -218,7 +218,7 @@ class FollowUpServiceTest {
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("Q2"));
 
             Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP).questionText("Q2").orderIndex(2).build();
+                    .questionType(QuestionType.TECH_FOLLOWUP).questionText("Q2").orderIndex(2).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 200L);
             given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(eq(1L), any(FollowUpContext.class), any(GeneratedFollowUp.class), any(TurnAnalysisResult.class)))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 2));
@@ -483,7 +483,7 @@ class FollowUpServiceTest {
             given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBQuestion("CS 꼬리질문"));
 
             Question savedQuestion = Question.builder()
-                    .questionType(QuestionType.FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
+                    .questionType(QuestionType.TECH_FOLLOWUP).questionText("CS 꼬리질문").orderIndex(1).build();
             ReflectionTestUtils.setField(savedQuestion, "id", 99L);
             given(followUpTransactionHandler.saveFollowUpResultAndPublishEvent(any(), any(), any(), any()))
                     .willReturn(new FollowUpSaveResult(savedQuestion, 1));

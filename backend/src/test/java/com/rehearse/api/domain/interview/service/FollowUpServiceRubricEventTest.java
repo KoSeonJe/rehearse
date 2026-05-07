@@ -94,7 +94,7 @@ class FollowUpServiceRubricEventTest {
         given(followUpQuestionWriter.write(any(), any(), any())).willReturn(followUp);
 
         Question savedQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
+                .questionType(QuestionType.TECH_FOLLOWUP)
                 .questionText("다음 질문")
                 .orderIndex(1)
                 .build();

@@ -137,10 +137,10 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
 
         @Test
-        @DisplayName("MAIN sentinel + CS 카테고리 → feedback_perspective=TECHNICAL 폴백 (P0-1 회귀)")
-        void mainSentinel_csCategory_fallsBackTechnical() {
+        @DisplayName("TECH_MAIN + CS 카테고리 → feedback_perspective=TECHNICAL 적재")
+        void techMain_csCategory_persistsTechnical() {
             InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL,
-                    QuestionType.MAIN);
+                    QuestionType.TECH_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
             followUpTransactionHandler.publishTurnCompletedEvent(
@@ -152,10 +152,10 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
 
         @Test
-        @DisplayName("MAIN sentinel + BEHAVIORAL 카테고리 → feedback_perspective=BEHAVIORAL 폴백 (P0-1 회귀)")
-        void mainSentinel_behavioralCategory_fallsBackBehavioral() {
+        @DisplayName("BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → feedback_perspective=BEHAVIORAL 적재")
+        void behavioralMain_behavioralCategory_persistsBehavioral() {
             InterviewData data = persistInterview(QuestionSetCategory.BEHAVIORAL, InterviewType.BEHAVIORAL,
-                    QuestionType.MAIN);
+                    QuestionType.BEHAVIORAL_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
             followUpTransactionHandler.publishTurnCompletedEvent(
@@ -185,7 +185,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("analyzer_skip 분기는 publish 후 question_score 를 적재한다")
         void analyzerSkip_publishesAndPersists() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
+            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.SKIP));
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
@@ -197,7 +197,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("step_b_skip 분기는 publish 후 question_score 를 적재한다")
         void stepBSkip_publishesAndPersists() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.MAIN);
+            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.DEEP_DIVE));
             given(resilientAiClient.chat(any())).willReturn(stepBSkipResponse(), rubricResponse());
 

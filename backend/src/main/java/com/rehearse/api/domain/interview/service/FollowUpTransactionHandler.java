@@ -76,8 +76,10 @@ public class FollowUpTransactionHandler {
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
         QuestionSetCategory category = questionSet.getCategory();
         return findMainQuestion(questionSet)
-                .map(q -> q.getQuestionType().referenceTypeOrFallback(category))
-                .orElseGet(() -> QuestionType.MAIN.referenceTypeOrFallback(category));
+                .map(q -> q.getQuestionType().referenceType())
+                .orElseGet(() -> category == QuestionSetCategory.BEHAVIORAL
+                        ? ReferenceType.GUIDE
+                        : ReferenceType.MODEL_ANSWER);
     }
 
     private Optional<Question> findMainQuestion(QuestionSet questionSet) {
@@ -127,17 +129,13 @@ public class FollowUpTransactionHandler {
         QuestionType mainType = findMainQuestion(questionSet)
                 .map(Question::getQuestionType)
                 .orElse(null);
-        return followUpTypeOf(mainType, questionSet.getCategory());
-    }
-
-    private QuestionType followUpTypeOf(QuestionType mainType, QuestionSetCategory category) {
         if (mainType == QuestionType.TECH_MAIN) {
             return QuestionType.TECH_FOLLOWUP;
         }
         if (mainType == QuestionType.BEHAVIORAL_MAIN) {
             return QuestionType.BEHAVIORAL_FOLLOWUP;
         }
-        return category == QuestionSetCategory.BEHAVIORAL
+        return questionSet.getCategory() == QuestionSetCategory.BEHAVIORAL
                 ? QuestionType.BEHAVIORAL_FOLLOWUP
                 : QuestionType.TECH_FOLLOWUP;
     }
