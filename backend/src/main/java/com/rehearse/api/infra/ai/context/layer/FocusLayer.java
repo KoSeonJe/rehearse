@@ -93,8 +93,7 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildResumeWrapUp(FocusHints.ResumeWrapUpHints h) {
-        return "<<<PROJECT_NAME>>>\n" + nz(h.projectName()) + "\n<<<END_PROJECT_NAME>>>\n\n" +
-               "<<<SESSION_SUMMARY>>>\n" + nz(h.sessionSummary()) + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
+        return "<<<SESSION_SUMMARY>>>\n" + nz(h.sessionSummary()) + "\n<<<END_SESSION_SUMMARY>>>\n\n" +
                "REMAINING_MINUTES: " + h.remainingMinutes() + "\n" +
                "IS_RETROSPECTIVE: " + h.isRetrospective() + "\n\n" +
                "WRAP_UP 단계 회고/마무리 질문을 JSON 한 객체로만 응답하세요.";

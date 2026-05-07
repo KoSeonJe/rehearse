@@ -32,12 +32,11 @@ public class ResumeWrapUpPromptBuilder extends AbstractResumeJsonPromptBuilder {
 
     public WrapUpResult build(
             Long interviewId, InterviewRuntimeState state, List<FollowUpExchange> exchanges,
-            String projectName, String sessionSummary, long remainingMinutes, boolean isRetrospective
+            String sessionSummary, long remainingMinutes, boolean isRetrospective
     ) {
         return executeJson(
                 CALL_TYPE, interviewId, state, exchanges,
                 new FocusHints.ResumeWrapUpHints(
-                        projectName != null ? projectName : "",
                         sessionSummary != null ? sessionSummary : "",
                         remainingMinutes,
                         isRetrospective

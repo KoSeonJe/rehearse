@@ -48,7 +48,6 @@ public sealed interface FocusHints
     ) implements FocusHints {}
 
     record ResumeWrapUpHints(
-            String projectName,
             String sessionSummary,
             long remainingMinutes,
             boolean isRetrospective
