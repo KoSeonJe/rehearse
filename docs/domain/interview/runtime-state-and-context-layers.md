@@ -135,7 +135,7 @@
 | `compactedDialogueSummaries` | `ConcurrentHashMap<Integer, String>` | windowEnd → 요약 텍스트 | 한 번 만들면 재사용 | L3 |
 | `compactionInFlight` | `ConcurrentHashMap.newKeySet<Integer>` | async compaction 중복 발화 차단 | `Set.add` atomic = 진입 게이트 | L3 / [`DialogueCompactor`](../../../backend/src/main/java/com/rehearse/api/infra/ai/context/compaction/DialogueCompactor.java) |
 | `startedAt` | `volatile Instant` | 면접 시작 시각 | 1회 set | 시계 기반 분기 (`ClockWatcher`) |
-| `resumeMode` | `volatile ResumeMode` | PLAYGROUND / INTERROGATION / WRAPUP | 단순 swap | resume 트랙 분기 |
+| `resumeMode` | `volatile ResumeMode` | PLAYGROUND / INTERROGATION (2-state) | 단순 swap | resume 트랙 분기 |
 | `chainStateTracker` | [`ChainStateTracker`](../../../backend/src/main/java/com/rehearse/api/domain/resume/entity/ChainStateTracker.java) (객체) | chain 진행 상태 머신 | 자체 `ReentrantLock` 보유 | resume 트랙 chain 결정 |
 
 ### 3-1. [`ChainStateTracker`](../../../backend/src/main/java/com/rehearse/api/domain/resume/entity/ChainStateTracker.java) (state machine)

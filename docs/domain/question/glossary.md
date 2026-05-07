@@ -11,7 +11,7 @@
 `QuestionType`:
 - `MAIN` — 메인 질문. 사전 생성 (풀 / AI 생성).
 - `FOLLOWUP` — CS 트랙 꼬리질문. 런타임 생성. `(question_set_id, order_index)` UNIQUE 로 동시 INSERT race 차단.
-- `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION` / `RESUME_WRAP_UP` — 이력서 트랙 FSM 단계별 발화. `Question.resume(...)` 팩토리 전용.
+- `RESUME_OPENER` / `RESUME_PLAYGROUND` / `RESUME_INTERROGATION` — 이력서 트랙 FSM 단계별 발화. `Question.resume(...)` 팩토리 전용.
 
 ### QuestionSet (질문 세트)
 

@@ -68,7 +68,7 @@
 4. `ResumeInterviewOrchestrator.startSession(interviewId, durationMinutes ?: DEFAULT_DURATION_MIN(=30), skeleton, plan)` — 이력서 트랙 FSM 시작 (질문 row 1개 생성: RESUME_OPENER 또는 등가)
 5. `transactionHandler.saveResults(interviewId, List.of())` — 빈 questionSets 로 호출 → `Interview.completeQuestionGeneration()` 만 수행 (질문은 FSM 이 별도 INSERT)
 
-> RESUME 트랙은 사전 N개 생성하지 않는다. FSM 이 PLAYGROUND / INTERROGATION / WRAP_UP 단계별 question 을 런타임에 생성. V44 UNIQUE `(category=RESUME_BASED, interview_id)` 가 question_set 1행 강제.
+> RESUME 트랙은 사전 N개 생성하지 않는다. FSM 이 PLAYGROUND / INTERROGATION 단계별 question 을 런타임에 생성. V44 UNIQUE `(category=RESUME_BASED, interview_id)` 가 question_set 1행 강제.
 
 #### 3-B. 표준 트랙 (`StandardTrackQuestionGenerator.generate`)
 

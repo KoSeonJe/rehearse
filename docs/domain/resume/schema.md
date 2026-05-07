@@ -9,7 +9,7 @@
 | `resume_skeleton` | 인터뷰 1건당 LLM 추출 이력서 골격 1행 (projects / claims / implicitCsTopics 포함 JSON) | — (1:1 with interview) |
 | `interview_plan` | 인터뷰 1건당 ProjectPlan 리스트 1행 (Playground / Interrogation phase 메타) | — (1:1 with interview) |
 
-> resume 트랙의 **질문 자체는 `question` 테이블** (외부 도메인) 에 저장. 단 `RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP` 4종은 resume FSM 산출. `question_set` (외부 도메인) 의 `RESUME_BASED` 카테고리도 인터뷰당 1행 (V44 unique).
+> resume 트랙의 **질문 자체는 `question` 테이블** (외부 도메인) 에 저장. 단 `RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION` 3종은 resume FSM 산출. `question_set` (외부 도메인) 의 `RESUME_BASED` 카테고리도 인터뷰당 1행 (V44 unique).
 
 ---
 
@@ -92,7 +92,7 @@ resume 도메인은 **`question`, `question_set`** 에 직접 INSERT. `ResumeQue
 | 테이블 | 도메인 | resume 의 사용 |
 |-------|--------|---------------|
 | `question_set` | question | `category=RESUME_BASED` 1행을 `find or create` (V44 으로 인터뷰당 RESUME_BASED 1행 UNIQUE) |
-| `question` | question | FSM 단계별 INSERT — `RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP` (V35 chk_question_track_meta_v2 로 CHECK 강제, V41 강화) |
+| `question` | question | FSM 단계별 INSERT — `RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION` (V42 로 chk_question_track_meta_v2 + chain_id / chain_step_type / project_id 컬럼 DROP — application enum 만 신뢰) |
 | `interview` | interview | `interview_types` 에 `RESUME_BASED` 포함 시 트랙 진입. resume_skeleton.interview_id / interview_plan.interview_id FK 부모 |
 
 > 외부 테이블 DDL 변경 (V41 / V44) 이 resume 트랙 제약과 직결 — 이 도메인 정책 갱신 시 함께 검토.
@@ -119,7 +119,7 @@ resume 도메인은 **`question`, `question_set`** 에 직접 INSERT. `ResumeQue
 | `com.rehearse.api.domain.interview.service.FollowUpService` | resume 트랙 진입 라우터. `isResumeTrack()` 판정 후 `resumeOrchestrator.processUserTurn` 위임 | called-by — resume 진입점 |
 | `com.rehearse.api.domain.question.service.ResumeTrackInitiator` | `RESUME_BASED` interview type 시 `QuestionGenerationService` 가 호출 → `ResumePlanPreparationService.prepare` + `runtimeStateStore.getOrInit` + `ResumeInterviewOrchestrator.startSession` 트리거 | called-by — 사전준비 진입점 |
 | `com.rehearse.api.domain.question.service.QuestionGenerationService` | resume 트랙 분기 라우팅 (interview type 기반) | called-by |
-| `com.rehearse.api.domain.question.entity.Question / QuestionType` | `QuestionType` enum 4종 사용 (`RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION / RESUME_WRAP_UP`). `Question.resume(...)` factory 강제 | persister write |
+| `com.rehearse.api.domain.question.entity.Question / QuestionType` | `QuestionType` enum 3종 사용 (`RESUME_OPENER / RESUME_PLAYGROUND / RESUME_INTERROGATION`). `Question.resume(...)` factory 강제 | persister write |
 | `com.rehearse.api.domain.question.repository.QuestionRepository` | `ResumeQuestionPersister` 경유 INSERT (`QuestionSet.questions` collection 미갱신 — Issue #408) | persister |
 | `com.rehearse.api.domain.question.entity.QuestionSet / QuestionSetCategory.RESUME_BASED` | 인터뷰당 RESUME_BASED set 1행 (V44 UNIQUE) | persister write |
 | `com.rehearse.api.domain.question.repository.QuestionSetRepository` | `findByInterviewIdAndCategory`, `countByInterviewId` 으로 캐시 / orderIndex 산출 | reads + writes |
@@ -132,8 +132,7 @@ resume 도메인은 **`question`, `question_set`** 에 직접 INSERT. `ResumeQue
 | `com.rehearse.api.infra.ai.prompt.ResumeInterviewPlannerPromptBuilder` | Planner prompt — yml `rehearse.resume-planner.{model:gpt-4o-mini, temperature:0.3, max-tokens:2048}` | calls |
 | `com.rehearse.api.infra.ai.prompt.ResumePlaygroundPromptBuilder` | Opener / Responder JSON prompt + parse | calls |
 | `com.rehearse.api.infra.ai.prompt.ResumeChainInterrogatorPromptBuilder` | Interrogation level 진행 prompt + nextAction 결정 | calls |
-| `com.rehearse.api.infra.ai.prompt.ResumeWrapUpPromptBuilder` | WrapUp 회고 prompt | calls |
-| `com.rehearse.api.infra.ai.context.layer.SkeletonCallType` | `RESUME_EXTRACTOR / RESUME_PLAYGROUND_OPENER / RESUME_PLAYGROUND_RESPONDER / RESUME_CHAIN_INTERROGATOR / RESUME_WRAP_UP / RESUME_INTERVIEW_PLANNER` callType label (관찰성) | enum value |
+| `com.rehearse.api.infra.ai.context.layer.SkeletonCallType` | `RESUME_EXTRACTOR / RESUME_PLAYGROUND_OPENER / RESUME_PLAYGROUND_RESPONDER / RESUME_CHAIN_INTERROGATOR / RESUME_INTERVIEW_PLANNER` callType label (관찰성) | enum value |
 | `com.rehearse.api.infra.ai.metrics.AiCallMetrics` | `rehearse.ai.call.duration` Timer + `rehearse.ai.parse.fail.total` Counter + token counters | metrics |
 | `com.rehearse.api.global.util.FileHasher` | resume file SHA-256 hash (캐시 키) | calls |
 | `com.rehearse.api.global.exception.BusinessException` + `ResumeErrorCode` (RESUME_001~011) + `ResumePlannerErrorCode` (RESUME_PLANNER_001~003) | 도메인 예외 | error mapping |
