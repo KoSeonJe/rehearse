@@ -44,6 +44,10 @@ interface InterviewState {
   greetingCompleted: boolean
   autoTransitionMessage: string | null
   interviewEvents: InterviewEvent[]
+
+  // 면접 시간 (durationMinutes) 만료 여부. InterviewTimer 가 onTimeExpired 시 true 로 set.
+  // 답변 도중 만료된 경우 즉시 종료하지 않고 다음 답변 제출 시점에 follow-up payload 로 terminate 신호.
+  isTimeOverdue: boolean
 }
 
 interface InterviewActions {
@@ -73,6 +77,7 @@ interface InterviewActions {
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
   addInterviewEvent: (event: InterviewEvent) => void
+  setTimeOverdue: (overdue: boolean) => void
   reset: () => void
 }
 
@@ -115,6 +120,8 @@ const initialState: InterviewState = {
   greetingCompleted: false,
   autoTransitionMessage: null,
   interviewEvents: [],
+
+  isTimeOverdue: false,
 }
 
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
@@ -285,6 +292,8 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     const { interviewEvents } = get()
     set({ interviewEvents: [...interviewEvents, event] })
   },
+
+  setTimeOverdue: (overdue) => set({ isTimeOverdue: overdue }),
 
   reset: () => {
     const prevUrl = get().videoBlobUrl
