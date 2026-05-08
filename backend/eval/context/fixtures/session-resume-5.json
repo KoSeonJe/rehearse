@@ -1,0 +1,47 @@
+{
+  "interview_id": 2005,
+  "level": "MID",
+  "track": "RESUME",
+  "call_type": "resume_chain_interrogator",
+  "runtimeState": {
+    "currentLevel": "L3",
+    "playgroundTurns": 3,
+    "coveredClaims": [
+      "Redisson 분산락으로 결제 동시성 제어",
+      "락 획득 실패 시 short backoff 재시도",
+      "락 TTL 은 평균 결제 처리 시간의 2배"
+    ],
+    "activeChain": [201, 202],
+    "chainStateTracker": {
+      "currentChainId": 202,
+      "currentChainTopic": "결제 동시성 제어 - 분산락 메커니즘",
+      "currentLevel": "L3",
+      "consecutiveStayCount": 0
+    }
+  },
+  "focusHints": {
+    "projectName": "결제 시스템 리뉴얼",
+    "currentChain": "topic=결제 동시성 제어 - 분산락 메커니즘 / levelsToCover=[L1=현상, L2=구현, L3=내부 메커니즘, L4=trade-off] / coveredLevels=[L1, L2]",
+    "currentLevel": "L3",
+    "answerQuality": 3,
+    "consecutiveStayCount": 0,
+    "userAnswer": "Redisson 분산락은 내부적으로 Redis Lua 스크립트로 SETNX + TTL 을 원자적으로 실행합니다. 클라이언트가 잠금 갱신을 위해 watchdog 스레드로 주기적으로 TTL 을 연장하고, 락 획득 실패 시 pub/sub 구독으로 해제 알림을 받아 재시도 비용을 줄입니다. 그래서 폴링 기반 SETNX 보다 평균 latency 가 30% 낮았습니다."
+  },
+  "exchanges": [
+    {
+      "q": "결제 동시성 제어를 어떻게 잡으셨고 왜 그렇게 하셨나요?",
+      "a": "Redisson 분산락으로 주문 ID 단위 락을 걸었습니다. SETNX + TTL 자체는 직접 구현도 가능했지만 운영 안정성 위해 검증된 라이브러리를 골랐습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "락 획득 실패 케이스는 어떻게 다루셨나요?",
+      "a": "최대 3회 short backoff 재시도 후에도 실패면 422 응답으로 사용자에게 즉시 알림을 줬습니다. 재시도 간격은 50ms / 100ms / 200ms 점증으로 잡았습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "Redisson 의 분산락이 내부적으로 어떻게 동작하는지 설명해주실 수 있나요?",
+      "a": "Redisson 분산락은 내부적으로 Redis Lua 스크립트로 SETNX + TTL 을 원자적으로 실행합니다. 클라이언트가 잠금 갱신을 위해 watchdog 스레드로 주기적으로 TTL 을 연장하고, 락 획득 실패 시 pub/sub 구독으로 해제 알림을 받아 재시도 비용을 줄입니다. 그래서 폴링 기반 SETNX 보다 평균 latency 가 30% 낮았습니다.",
+      "selectedPerspective": null
+    }
+  ]
+}
