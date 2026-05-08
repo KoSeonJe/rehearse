@@ -64,8 +64,10 @@ public class PlaygroundModeHandler {
         if (modeTransitionPolicy.isPlaygroundHardCapReached(turnCount)) {
             log.info("[PlaygroundHandler] hard cap 도달 → INTERROGATION 강제 전환: interviewId={}, turnCount={}, threshold={}",
                     interviewId, turnCount, modeTransitionPolicy.getPlaygroundMaxTurns());
-            FollowUpResponse response = buildResponse(null, null, null, true, null);
-            return new PlaygroundTurnResult(response, true, null);
+            boolean switchedToInterrogation = true;
+            Long questionId = null;
+            FollowUpResponse response = buildResponse(null, null, null, switchedToInterrogation, questionId);
+            return new PlaygroundTurnResult(response, switchedToInterrogation, questionId);
         }
 
         ProjectPlan currentPlan = resolveCurrentPlan(plan);
