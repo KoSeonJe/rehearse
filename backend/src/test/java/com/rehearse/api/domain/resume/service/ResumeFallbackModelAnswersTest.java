@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ResumeFallbackModelAnswers - 분량 / 톤 / 가이드 톤 부재 / 구조 단서 가드")
+@DisplayName("ResumeFallbackModelAnswers - 분량 / 가이드 톤 / 1인칭 placeholder 부재 / 구조 단서 가드")
 class ResumeFallbackModelAnswersTest {
 
     @Nested
@@ -33,34 +33,34 @@ class ResumeFallbackModelAnswersTest {
     }
 
     @Nested
-    @DisplayName("톤 검증 - 1인칭 답변 예시 어미 1+ 매치")
-    class FirstPersonTone {
+    @DisplayName("가이드 톤 - LLM 실패 시 사용자 컨텍스트 모름. 답변 짤 단서 권유 톤만")
+    class GuideTone {
 
         @Test
-        @DisplayName("all_fallbacks_use_first_person_answer_tone — 3 상수 모두 1인칭 답변 예시 어미 1+ 매치")
-        void all_fallbacks_use_first_person_answer_tone() {
+        @DisplayName("all_fallbacks_use_guide_tone — 3 상수 모두 권유 / 안내 어미 1+ 매치")
+        void all_fallbacks_use_guide_tone() {
             assertThat(ResumeFallbackModelAnswers.OPENER)
-                    .containsAnyOf("했습니다", "경험이 있습니다", "을 진행했습니다", "을 적용했습니다", "을 측정했습니다");
+                    .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
             assertThat(ResumeFallbackModelAnswers.PLAYGROUND)
-                    .containsAnyOf("했습니다", "경험이 있습니다", "을 진행했습니다", "을 적용했습니다", "을 측정했습니다");
+                    .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
             assertThat(ResumeFallbackModelAnswers.INTERROGATION)
-                    .containsAnyOf("했습니다", "경험이 있습니다", "을 진행했습니다", "을 적용했습니다", "을 측정했습니다");
+                    .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
         }
     }
 
     @Nested
-    @DisplayName("가이드 톤 부재 - 금지 어구 0건")
-    class NoGuideTone {
+    @DisplayName("1인칭 placeholder 부재 - 거짓 답변 예시 금지 (사용자 컨텍스트 무관 placeholder 출력 금지)")
+    class NoFirstPersonPlaceholder {
 
         @Test
-        @DisplayName("all_fallbacks_forbid_guide_tone_phrases — 3 상수 모두 가이드 톤 어구 0건")
-        void all_fallbacks_forbid_guide_tone_phrases() {
+        @DisplayName("all_fallbacks_forbid_first_person_placeholder — 3 상수 모두 1인칭 답변 어미 0건")
+        void all_fallbacks_forbid_first_person_placeholder() {
             assertThat(ResumeFallbackModelAnswers.OPENER)
-                    .doesNotContain("해보세요", "하면 좋습니다", "이야기해보세요", "설명해보세요");
+                    .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
             assertThat(ResumeFallbackModelAnswers.PLAYGROUND)
-                    .doesNotContain("해보세요", "하면 좋습니다", "이야기해보세요", "설명해보세요");
+                    .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
             assertThat(ResumeFallbackModelAnswers.INTERROGATION)
-                    .doesNotContain("해보세요", "하면 좋습니다", "이야기해보세요", "설명해보세요");
+                    .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
         }
     }
 
