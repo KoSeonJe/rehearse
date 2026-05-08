@@ -100,6 +100,136 @@ class ResumePlaygroundPromptTemplateTest {
         }
     }
 
+    @Nested
+    @DisplayName("model_answer 정의 라인 - 분량 / 톤 / 구조 단서")
+    class ModelAnswerDefinitionLine {
+
+        @Test
+        @DisplayName("opener_template_defines_model_answer_length_200_to_300 — opener model_answer 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
+        void opener_template_defines_model_answer_length_200_to_300() {
+            String template = loadResource(OPENER_PATH);
+
+            assertThat(template)
+                    .contains("200~300자")
+                    .contains("3~5줄")
+                    .contains("1인칭 모범답변 예시")
+                    .doesNotContain("50~200자");
+        }
+
+        @Test
+        @DisplayName("opener_template_requires_structure_signal — opener 정의에 STAR / 결정 근거 / 트레이드오프 / 학습 4 구조 단서 어휘 포함")
+        void opener_template_requires_structure_signal() {
+            String template = loadResource(OPENER_PATH);
+
+            assertThat(template)
+                    .contains("STAR")
+                    .contains("Situation")
+                    .contains("Task")
+                    .contains("Action")
+                    .contains("Result")
+                    .contains("결정 근거")
+                    .contains("트레이드오프")
+                    .contains("학습");
+        }
+
+        @Test
+        @DisplayName("responder_template_defines_model_answer_length_200_to_300 — responder model_answer 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
+        void responder_template_defines_model_answer_length_200_to_300() {
+            String template = loadResource(RESPONDER_PATH);
+
+            assertThat(template)
+                    .contains("200~300자")
+                    .contains("3~5줄")
+                    .contains("1인칭 모범답변 예시")
+                    .doesNotContain("50~200자");
+        }
+
+        @Test
+        @DisplayName("responder_template_requires_user_answer_keyword_reuse — responder 정의 라인이 직전 발화 / 핵심 명사 / 재인용 키워드를 포함")
+        void responder_template_requires_user_answer_keyword_reuse() {
+            String template = loadResource(RESPONDER_PATH);
+
+            assertThat(template)
+                    .contains("직전 발화")
+                    .contains("핵심 명사")
+                    .contains("재인용");
+        }
+
+        @Test
+        @DisplayName("responder_template_requires_structure_signal — responder 정의에 STAR / 결정 근거 / 트레이드오프 / 학습 4 구조 단서 어휘 포함")
+        void responder_template_requires_structure_signal() {
+            String template = loadResource(RESPONDER_PATH);
+
+            assertThat(template)
+                    .contains("STAR")
+                    .contains("Situation")
+                    .contains("Task")
+                    .contains("Action")
+                    .contains("Result")
+                    .contains("결정 근거")
+                    .contains("트레이드오프")
+                    .contains("학습");
+        }
+    }
+
+    @Nested
+    @DisplayName("model_answer 자가검증 라인 - 길이 / 톤 / projectName / 지시 표현 / 구조 단서")
+    class ModelAnswerSelfValidationLine {
+
+        @Test
+        @DisplayName("opener_template_forbids_guide_tone_in_model_answer — opener 자가검증이 가이드 톤 어구 금지를 명시")
+        void opener_template_forbids_guide_tone_in_model_answer() {
+            String template = loadResource(OPENER_PATH);
+
+            assertThat(template)
+                    .contains("~해보세요")
+                    .contains("~하면 좋습니다")
+                    .contains("폐기 후 재작성");
+        }
+
+        @Test
+        @DisplayName("opener_template_requires_project_context_keyword — opener 자가검증이 projectName 명시 + 지시 표현 단독 금지를 명시")
+        void opener_template_requires_project_context_keyword() {
+            String template = loadResource(OPENER_PATH);
+
+            assertThat(template)
+                    .contains("projectName")
+                    .contains("지시 표현")
+                    .contains("단독");
+        }
+
+        @Test
+        @DisplayName("opener_template_self_validation_specifies_length_check — opener 자가검증이 200~300자 길이 검증 라인을 명시")
+        void opener_template_self_validation_specifies_length_check() {
+            String template = loadResource(OPENER_PATH);
+
+            assertThat(template)
+                    .contains("200~300자 범위인지 확인");
+        }
+
+        @Test
+        @DisplayName("responder_template_forbids_guide_tone_in_model_answer — responder 자가검증이 가이드 톤 어구 금지를 명시")
+        void responder_template_forbids_guide_tone_in_model_answer() {
+            String template = loadResource(RESPONDER_PATH);
+
+            assertThat(template)
+                    .contains("~해보세요")
+                    .contains("~하면 좋습니다")
+                    .contains("폐기 후 재작성");
+        }
+
+        @Test
+        @DisplayName("responder_template_self_validation_requires_keyword_reuse — responder 자가검증이 USER_ANSWER 핵심 명사 재인용 검증 라인을 명시")
+        void responder_template_self_validation_requires_keyword_reuse() {
+            String template = loadResource(RESPONDER_PATH);
+
+            assertThat(template)
+                    .contains("USER_ANSWER")
+                    .contains("핵심 명사")
+                    .contains("재인용");
+        }
+    }
+
     private static String loadResource(String path) {
         try (InputStream stream = ResumePlaygroundPromptTemplateTest.class.getResourceAsStream(path)) {
             if (stream == null) {

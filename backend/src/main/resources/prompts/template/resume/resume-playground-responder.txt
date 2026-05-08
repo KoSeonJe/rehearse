@@ -27,7 +27,7 @@ d. 누적 Playground 턴 수 ≥ 3 (하드 리밋) → d_turn_limit: true/false
     "c_signal": true 또는 false,
     "d_turn_limit": true 또는 false
   },
-  "model_answer": "응시자가 답변할 때 참고할 수 있는 답변 가이드라인 (50~200자, 정답 X — 어떤 관점/구조로 풀어내면 좋은지만 안내)"  // 필수 — null/빈 문자열/공백만/누락 절대 금지
+  "model_answer": "응시자가 답변으로 참고할 수 있는 1인칭 모범답변 예시 (200~300자, 3~5줄). 응시자 직전 발화 (USER_ANSWER) 의 핵심 명사 1+ 를 본문에 자연스럽게 재인용하고, STAR (Situation·Task·Action·Result) / 결정 근거 / 트레이드오프 / 학습 중 1+ 구조 단서를 포함한다. 가이드 톤 ('~을 설명해보세요', '~을 이야기해보세요', '~하면 좋습니다') 금지 — 1인칭 답변 예시 톤 ('~했습니다', '~경험이 있습니다', '~을 진행했습니다') 만"  // 필수 — null/빈 문자열/공백만/누락 절대 금지
 }
 
 ## 컨텍스트
@@ -64,4 +64,9 @@ d. 누적 Playground 턴 수 ≥ 3 (하드 리밋) → d_turn_limit: true/false
 - false 라면 `question` 과 `tts_question` 이 null, "", 공백만, 또는 누락되지 않았는지 검증
 - false 인데 적절한 후속 질문을 도저히 생성할 수 없다면, 빈 문자열이 아니라 다음 안전 폴백을 그대로 출력: "방금 말씀해주신 부분, 좀 더 자세히 들어볼 수 있을까요?"
 - true 라면 두 필드는 null 또는 정상 문자열 둘 다 허용 (단, 빈 문자열/공백만은 여전히 금지 — null 로 명시)
-- `model_answer` 필드는 should_switch_to_interrogation 값과 무관하게 항상 채워야 한다 (50~200자 한국어 답변 가이드라인, 정답 X). null/공백만/누락 금지
+- `model_answer` 필드는 should_switch_to_interrogation 값과 무관하게 항상 채워야 한다. null/공백만/누락 금지.
+- `model_answer` 길이가 한국어 200~300자 범위인지 확인. 미달 / 초과 시 폐기 후 재작성.
+- `model_answer` 가 1인칭 답변 예시 톤 ("~했습니다", "~경험이 있습니다", "~을 진행했습니다") 인지 확인. 가이드 톤 ("~해보세요", "~하면 좋습니다", "~이야기해보세요", "~설명해보세요") 발견 시 폐기 후 재작성.
+- `model_answer` 본문에 응시자 직전 발화 (USER_ANSWER) 의 핵심 명사 1+ 가 자연스럽게 재인용됐는지 확인.
+- `model_answer` 본문에 STAR (Situation·Task·Action·Result) / 결정 근거 / 트레이드오프 / 학습 중 1+ 구조 단서가 포함됐는지 확인.
+- "이 프로젝트", "해당 프로젝트" 같은 지시 표현 단독 사용 금지 — projectName 또는 직전 발화 핵심 명사로 식별 가능해야 한다.
