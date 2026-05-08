@@ -1,12 +1,12 @@
-import type { TechnicalFeedback } from '@/types/interview'
+import type { FeedbackPerspective, TechnicalFeedback } from '@/types/interview'
 
 interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
 }
 
-const PERSPECTIVE_LABEL: Record<string, string> = {
-  TECHNICAL: '기술 피드백',
-  EXPERIENCE: '경험 평가',
+interface PerspectiveCopy {
+  title: string
+  emptyMessage: string
 }
 
 const formatScore = (score: number | null): string => {
@@ -14,24 +14,30 @@ const formatScore = (score: number | null): string => {
   return `${score}점`
 }
 
-const resolveLabel = (perspective: string | null): string | null => {
-  if (perspective === null) return null
-  return PERSPECTIVE_LABEL[perspective] ?? null
+const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy => {
+  switch (perspective) {
+    case 'TECHNICAL':
+      return { title: '기술 피드백', emptyMessage: '기술 피드백은 아직 준비 중입니다.' }
+    case 'EXPERIENCE':
+      return { title: '경험 평가', emptyMessage: '경험 평가는 아직 준비 중입니다.' }
+    case 'BEHAVIORAL':
+    case null:
+      return { title: '기술 피드백', emptyMessage: '해당 턴은 평가 대상이 아닙니다.' }
+  }
 }
 
 const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
-  const label = technicalFeedback === null ? null : resolveLabel(technicalFeedback.perspective)
-  const isEmpty =
-    technicalFeedback === null ||
-    technicalFeedback.dimensions.length === 0 ||
-    label === null
+  const copy = resolveCopy(technicalFeedback?.perspective ?? null)
+  const isCardable =
+    technicalFeedback !== null &&
+    technicalFeedback.dimensions.length > 0 &&
+    (technicalFeedback.perspective === 'TECHNICAL' ||
+      technicalFeedback.perspective === 'EXPERIENCE')
 
-  if (isEmpty) {
+  if (!isCardable) {
     return (
       <div className="px-6 py-10 text-center">
-        <p className="text-[15px] font-bold text-gray-900">
-          기술 피드백은 아직 준비 중입니다
-        </p>
+        <p className="text-[15px] font-bold text-gray-900">{copy.emptyMessage}</p>
         <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
           답변 내용 분석이 완료되면 이 구간에 표시됩니다.
         </p>
@@ -42,7 +48,7 @@ const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
   return (
     <div className="space-y-4 px-6 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[15px] font-bold text-gray-900">{label}</p>
+        <p className="text-[15px] font-bold text-gray-900">{copy.title}</p>
         <span className="font-tabular text-[12px] font-medium text-gray-400">
           {technicalFeedback.rubricId}
         </span>
