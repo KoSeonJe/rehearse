@@ -1,38 +1,95 @@
-// @vitest-environment node
-import { renderToStaticMarkup } from 'react-dom/server'
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import ContentTab from '@/components/feedback/content-tab'
+import type { TechnicalFeedback } from '@/types/interview'
+
+const buildFeedback = (overrides: Partial<TechnicalFeedback>): TechnicalFeedback => ({
+  perspective: 'TECHNICAL',
+  rubricId: 'cs-v1',
+  levelFlag: 'MID_EXPECTATION_MET',
+  dimensions: [
+    {
+      dimension: 'conceptual_accuracy',
+      score: 3,
+      observation: '세대별 GC 구조를 언급해 개념 정확도가 좋습니다.',
+      evidenceQuote: 'young 영역과 old 영역을 나눠 관리',
+    },
+  ],
+  ...overrides,
+})
 
 describe('ContentTab', () => {
-  it('shows timestamp technical rubric feedback for the answer', () => {
-    const html = renderToStaticMarkup(
+  it('TECHNICAL perspective → "기술 피드백" 라벨 + dimensions 노출', () => {
+    render(<ContentTab technicalFeedback={buildFeedback({ perspective: 'TECHNICAL' })} />)
+
+    expect(screen.getByText('기술 피드백')).toBeInTheDocument()
+    expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
+    expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
+    expect(screen.getByText('3점')).toBeInTheDocument()
+    expect(
+      screen.getByText('세대별 GC 구조를 언급해 개념 정확도가 좋습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.getByText('young 영역과 old 영역을 나눠 관리')).toBeInTheDocument()
+    expect(screen.queryByText('기술 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
+  })
+
+  it('EXPERIENCE perspective → "경험 평가" 라벨 + dimensions 노출', () => {
+    render(
       <ContentTab
-        technicalFeedback={{
-          rubricId: 'cs-v1',
-          levelFlag: 'MID_EXPECTATION_MET',
+        technicalFeedback={buildFeedback({
+          perspective: 'EXPERIENCE',
+          rubricId: 'resume-v1',
           dimensions: [
             {
-              dimension: 'conceptual_accuracy',
-              score: 3,
-              observation: '세대별 GC 구조를 언급해 개념 정확도가 좋습니다.',
-              evidenceQuote: 'young 영역과 old 영역을 나눠 관리',
+              dimension: 'experience_concreteness',
+              score: 1,
+              observation: '구체 수치 / 결과가 부족합니다.',
+              evidenceQuote: null,
             },
           ],
-        }}
+        })}
       />,
     )
 
-    expect(html).toContain('기술 피드백')
-    expect(html).toContain('conceptual_accuracy')
-    expect(html).toContain('3점')
-    expect(html).toContain('세대별 GC 구조를 언급해 개념 정확도가 좋습니다.')
-    expect(html).toContain('young 영역과 old 영역을 나눠 관리')
-    expect(html).not.toContain('내용 피드백은 코치 노트에서 확인하세요')
+    expect(screen.getByText('경험 평가')).toBeInTheDocument()
+    expect(screen.queryByText('기술 피드백')).not.toBeInTheDocument()
+    expect(screen.getByText('experience_concreteness')).toBeInTheDocument()
+    expect(screen.getByText('1점')).toBeInTheDocument()
+    expect(screen.getByText('구체 수치 / 결과가 부족합니다.')).toBeInTheDocument()
   })
 
-  it('shows a pending state when technical feedback is not ready', () => {
-    const html = renderToStaticMarkup(<ContentTab technicalFeedback={null} />)
+  it('BEHAVIORAL perspective → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildFeedback({
+          perspective: 'BEHAVIORAL',
+          dimensions: [
+            {
+              dimension: 'collaboration',
+              score: 2,
+              observation: '협업 사례 묘사가 추상적입니다.',
+              evidenceQuote: null,
+            },
+          ],
+        })}
+      />,
+    )
 
-    expect(html).toContain('기술 피드백은 아직 준비 중입니다')
+    expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
+    expect(screen.queryByText('collaboration')).not.toBeInTheDocument()
+    expect(screen.queryByText('기술 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
+  })
+
+  it('perspective null → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
+    render(<ContentTab technicalFeedback={buildFeedback({ perspective: null })} />)
+
+    expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
+    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
+  })
+
+  it('technicalFeedback === null → "해당 턴은 평가 대상이 아닙니다." fallback (회귀)', () => {
+    render(<ContentTab technicalFeedback={null} />)
+
+    expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
   })
 })

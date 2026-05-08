@@ -167,7 +167,10 @@ export interface TechnicalDimensionFeedback {
   evidenceQuote: string | null
 }
 
+export type FeedbackPerspective = 'TECHNICAL' | 'EXPERIENCE' | 'BEHAVIORAL'
+
 export interface TechnicalFeedback {
+  perspective: FeedbackPerspective | null
   rubricId: string
   levelFlag: string | null
   dimensions: TechnicalDimensionFeedback[]
