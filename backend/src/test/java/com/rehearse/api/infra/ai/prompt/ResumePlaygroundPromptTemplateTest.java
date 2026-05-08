@@ -105,14 +105,14 @@ class ResumePlaygroundPromptTemplateTest {
     class ModelAnswerDefinitionLine {
 
         @Test
-        @DisplayName("opener_template_defines_model_answer_length_200_to_300 — opener model_answer 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
+        @DisplayName("opener_template_defines_model_answer_length_200_to_300 — opener model_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
         void opener_template_defines_model_answer_length_200_to_300() {
             String template = loadResource(OPENER_PATH);
 
             assertThat(template)
                     .contains("200~300자")
                     .contains("3~5줄")
-                    .contains("1인칭 모범답변 예시")
+                    .contains("참고할 수 있는 가이드")
                     .doesNotContain("50~200자");
         }
 
@@ -133,14 +133,14 @@ class ResumePlaygroundPromptTemplateTest {
         }
 
         @Test
-        @DisplayName("responder_template_defines_model_answer_length_200_to_300 — responder model_answer 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
+        @DisplayName("responder_template_defines_model_answer_length_200_to_300 — responder model_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
         void responder_template_defines_model_answer_length_200_to_300() {
             String template = loadResource(RESPONDER_PATH);
 
             assertThat(template)
                     .contains("200~300자")
                     .contains("3~5줄")
-                    .contains("1인칭 모범답변 예시")
+                    .contains("참고할 수 있는 가이드")
                     .doesNotContain("50~200자");
         }
 
@@ -177,13 +177,13 @@ class ResumePlaygroundPromptTemplateTest {
     class ModelAnswerSelfValidationLine {
 
         @Test
-        @DisplayName("opener_template_forbids_guide_tone_in_model_answer — opener 자가검증이 가이드 톤 어구 금지를 명시")
-        void opener_template_forbids_guide_tone_in_model_answer() {
+        @DisplayName("opener_template_forbids_first_person_in_model_answer — opener 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
+        void opener_template_forbids_first_person_in_model_answer() {
             String template = loadResource(OPENER_PATH);
 
             assertThat(template)
-                    .contains("~해보세요")
-                    .contains("~하면 좋습니다")
+                    .contains("저는 ~ 했습니다")
+                    .contains("거짓 placeholder")
                     .contains("폐기 후 재작성");
         }
 
@@ -208,13 +208,13 @@ class ResumePlaygroundPromptTemplateTest {
         }
 
         @Test
-        @DisplayName("responder_template_forbids_guide_tone_in_model_answer — responder 자가검증이 가이드 톤 어구 금지를 명시")
-        void responder_template_forbids_guide_tone_in_model_answer() {
+        @DisplayName("responder_template_forbids_first_person_in_model_answer — responder 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
+        void responder_template_forbids_first_person_in_model_answer() {
             String template = loadResource(RESPONDER_PATH);
 
             assertThat(template)
-                    .contains("~해보세요")
-                    .contains("~하면 좋습니다")
+                    .contains("저는 ~했습니다")
+                    .contains("거짓 placeholder")
                     .contains("폐기 후 재작성");
         }
 

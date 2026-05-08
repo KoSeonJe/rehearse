@@ -60,10 +60,10 @@ PM 수준 high-level. **HOW 침범 금지** — tech-spec 영역.
 
 ## 수용 기준 (Acceptance Criteria)
 
-- [ ] RESUME OPENER 모범답변 분량 = 200~300자 / 3~5줄. 1인칭 답변 예시 톤 ("~했습니다", "~경험이 있습니다") — 가이드 톤 ("~해보세요") 사용 0건
+- [ ] RESUME OPENER 모범답변 분량 = 200~300자 / 3~5줄. **답변 구조 권유 가이드 톤** ("~ 구조가 효과적입니다", "~을 정리하세요", "~ 마무리하면") — 1인칭 답변 예시 ("저는 ~했습니다") 0건. 응시자 본인 경험은 본인만 정확히 알기에 거짓 placeholder 위험
 - [ ] RESUME OPENER 모범답변 = 응시자 이력서 projectName / 역할 / 기술 키워드 명시 (지시 표현 "이 프로젝트" / "해당 프로젝트" 단독 사용 0건)
-- [ ] RESUME PLAYGROUND 모범답변 = 응시자 직전 발화의 핵심 명사 1+ 재인용
-- [ ] RESUME INTERROGATION 모범답변 = 현재 chain topic + 레벨 (L1 WHAT / L2 HOW / L3 WHY_MECH / L4 TRADEOFF) 맥락 반영. 레벨에 맞는 깊이로 답변 구조 단서 포함
+- [ ] RESUME PLAYGROUND 모범답변 = 응시자 직전 발화의 핵심 명사 1+ 재인용. **가이드 톤** (OPENER 와 동일 — 거짓 1인칭 placeholder 위험으로 권유 톤 강제)
+- [ ] RESUME INTERROGATION 모범답변 = 현재 chain topic + 레벨 (L1 WHAT / L2 HOW / L3 WHY_MECH / L4 TRADEOFF) 맥락 반영한 **1인칭 답변 예시 톤** ("~했습니다", "~경험이 있습니다"). chain 안에서는 직전 응시자 발화 + topic 이 LLM 에 전달되어 구체 placeholder 생성 가능 (OPENER/PLAYGROUND 와 분기되는 사유)
 - [ ] 모든 모드 모범답변 = 답변 구조 단서 1+ 포함 (STAR / 결정 근거 / 트레이드오프 / 학습 중 1+)
 - [ ] fallback 상수 3개 (`ResumeFallbackModelAnswers.OPENER / PLAYGROUND / INTERROGATION`) 분량 (200~300자) 유지 · 톤 = **가이드** (LLM 실패 시 사용자 컨텍스트 모름 → 거짓 1인칭 답변 placeholder 금지. 답변 구조 / 관점 권유 톤만). 답변 구조 단서 (STAR / 결정 근거 / 트레이드오프 / 학습) 1+ 명시
 - [ ] eval/context 셋 5+ 케이스 before/after 정량 (분량 / 가이드 톤 어구 출현 / 맥락 키워드 / 구조 단서 포함) + 정성 (LLM-as-judge) 비교 리포트 산출
