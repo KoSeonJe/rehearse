@@ -24,6 +24,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class InterrogationModeHandler {
 
+    private static final int DEFAULT_ANSWER_QUALITY = 2;
+
     private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
 
@@ -78,7 +80,7 @@ public class InterrogationModeHandler {
             tracker.initChain(chain.projectId(), chain.chainId());
             log.info("[InterrogationHandler] 새 chain 시작: interviewId={}, chainId={}", interviewId, chain.chainId());
         }
-        int answerQuality = analysis != null ? analysis.answerQuality() : 2;
+        int answerQuality = analysis != null ? analysis.answerQuality() : DEFAULT_ANSWER_QUALITY;
         int orderIndex = state.nextResumeOrderIndex();
         return Optional.of(new ChainStateTrackerSnapshot(
                 tracker.getCurrentChainId(),
@@ -112,7 +114,7 @@ public class InterrogationModeHandler {
         }
         boolean stayLimitExceeded = tracker.levelStay();
         if (stayLimitExceeded) {
-            if (currentLevel < 4) {
+            if (currentLevel < ChainStateTracker.MAX_LEVEL) {
                 tracker.levelUp();
                 log.info("[InterrogationHandler] LEVEL_STAY 한계 초과 → 강제 LEVEL_UP: level={}", currentLevel + 1);
             } else {

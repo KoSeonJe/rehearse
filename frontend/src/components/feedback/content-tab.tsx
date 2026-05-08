@@ -26,6 +26,7 @@ const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy =
     case 'EXPERIENCE':
       return { title: '경험 평가', emptyMessage: '경험 평가는 아직 준비 중입니다.' }
     case 'BEHAVIORAL':
+      return { title: '경험/협업', emptyMessage: '경험/협업 피드백은 아직 준비 중입니다.' }
     case null:
       return FALLBACK_COPY
     default:
@@ -39,7 +40,8 @@ const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
     technicalFeedback !== null &&
     technicalFeedback.dimensions.length > 0 &&
     (technicalFeedback.perspective === 'TECHNICAL' ||
-      technicalFeedback.perspective === 'EXPERIENCE')
+      technicalFeedback.perspective === 'EXPERIENCE' ||
+      technicalFeedback.perspective === 'BEHAVIORAL')
 
   if (!isCardable) {
     return (

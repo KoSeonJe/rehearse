@@ -2,7 +2,9 @@ package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionSetCategory;
@@ -29,8 +31,10 @@ public class ResumeTurnEventPublisher {
                         ResumeMode currentMode, int currentChainLevel,
                         ResumeSkeleton skeleton, String userAnswer, Long questionId) {
         if (questionId == null) {
-            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={}",
-                    interviewId, currentMode.name().toLowerCase(), turnIndex);
+            log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} turnIndex={}",
+                    interviewId, InterviewTrack.RESUME.logLabel(),
+                    currentMode.name().toLowerCase(),
+                    BlockReason.QUESTION_ID_MISSING.logValue(), turnIndex);
             return;
         }
         try {
