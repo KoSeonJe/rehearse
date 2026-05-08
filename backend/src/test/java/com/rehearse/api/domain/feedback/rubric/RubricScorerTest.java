@@ -6,7 +6,6 @@ import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -90,7 +89,6 @@ class RubricScorerTest {
         question = Question.builder()
                 .questionType(QuestionType.TECH_MAIN)
                 .questionText("테스트 질문")
-                .feedbackPerspective(FeedbackPerspective.TECHNICAL)
                 .orderIndex(0)
                 .build();
 

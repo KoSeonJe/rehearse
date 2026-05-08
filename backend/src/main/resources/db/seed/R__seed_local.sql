@@ -37,12 +37,12 @@ VALUES (1, 1, 'CS_FUNDAMENTAL', 0, 1, NOW(), NOW())
 ON DUPLICATE KEY UPDATE id = id;
 
 -- 질문
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (1, 1, 'TECH_MAIN', 'JPA의 영속성 컨텍스트에 대해 설명해주세요.', '영속성 컨텍스트는 엔티티를 영구 저장하는 환경으로, 1차 캐시, 변경 감지, 지연 로딩 등의 기능을 제공합니다.', 'MODEL_ANSWER', 'TECHNICAL', 0)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (1, 1, 'TECH_MAIN', 'JPA의 영속성 컨텍스트에 대해 설명해주세요.', '영속성 컨텍스트는 엔티티를 영구 저장하는 환경으로, 1차 캐시, 변경 감지, 지연 로딩 등의 기능을 제공합니다.', 0)
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (2, 1, 'TECH_MAIN', '트랜잭션 격리 수준에 대해 설명해주세요.', 'READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE 4단계가 있으며, MySQL 기본값은 REPEATABLE READ입니다.', 'MODEL_ANSWER', 'TECHNICAL', 1)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (2, 1, 'TECH_MAIN', '트랜잭션 격리 수준에 대해 설명해주세요.', 'READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE 4단계가 있으며, MySQL 기본값은 REPEATABLE READ입니다.', 1)
 ON DUPLICATE KEY UPDATE id = id;
 
 -- 질문세트 분석
@@ -131,16 +131,16 @@ INSERT INTO question_set (id, interview_id, category, order_index, file_metadata
 VALUES (3, 2, 'BEHAVIORAL', 1, 3, DATE_SUB(NOW(), INTERVAL 3 DAY), DATE_SUB(NOW(), INTERVAL 3 DAY))
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (3, 2, 'TECH_MAIN', 'React의 Virtual DOM 동작 원리와 Reconciliation 과정을 설명해주세요.', 'Virtual DOM은 메모리에 UI의 가상 표현을 유지하고, 상태 변경 시 새 Virtual DOM 트리를 생성한 뒤 이전 트리와 비교(diffing)하여 최소한의 실제 DOM 조작만 수행합니다.', 'MODEL_ANSWER', 'TECHNICAL', 0)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (3, 2, 'TECH_MAIN', 'React의 Virtual DOM 동작 원리와 Reconciliation 과정을 설명해주세요.', 'Virtual DOM은 메모리에 UI의 가상 표현을 유지하고, 상태 변경 시 새 Virtual DOM 트리를 생성한 뒤 이전 트리와 비교(diffing)하여 최소한의 실제 DOM 조작만 수행합니다.', 0)
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (4, 2, 'TECH_MAIN', 'useEffect와 useLayoutEffect의 차이점을 실무 관점에서 설명해주세요.', 'useEffect는 브라우저 페인트 이후 비동기로 실행되고, useLayoutEffect는 DOM 변경 후 페인트 이전에 동기적으로 실행됩니다. 레이아웃 측정이나 깜빡임 방지가 필요할 때 useLayoutEffect를 사용합니다.', 'MODEL_ANSWER', 'TECHNICAL', 1)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (4, 2, 'TECH_MAIN', 'useEffect와 useLayoutEffect의 차이점을 실무 관점에서 설명해주세요.', 'useEffect는 브라우저 페인트 이후 비동기로 실행되고, useLayoutEffect는 DOM 변경 후 페인트 이전에 동기적으로 실행됩니다. 레이아웃 측정이나 깜빡임 방지가 필요할 때 useLayoutEffect를 사용합니다.', 1)
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (5, 3, 'BEHAVIORAL_MAIN', '팀에서 기술적 의견 충돌이 있었던 경험과 어떻게 해결했는지 설명해주세요.', NULL, NULL, 'BEHAVIORAL', 0)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (5, 3, 'BEHAVIORAL_MAIN', '팀에서 기술적 의견 충돌이 있었던 경험과 어떻게 해결했는지 설명해주세요.', NULL, 0)
 ON DUPLICATE KEY UPDATE id = id;
 
 INSERT INTO question_set_analysis (id, question_set_id, analysis_status, convert_status, is_verbal_completed, is_nonverbal_completed, created_at, updated_at)
@@ -241,12 +241,12 @@ INSERT INTO question_set (id, interview_id, category, order_index, file_metadata
 VALUES (4, 3, 'SYSTEM_DESIGN', 0, 4, DATE_SUB(NOW(), INTERVAL 7 DAY), DATE_SUB(NOW(), INTERVAL 7 DAY))
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (6, 4, 'TECH_MAIN', '대규모 트래픽을 처리하는 URL 단축 서비스를 설계해주세요.', '해시 기반 키 생성, Base62 인코딩, 읽기 캐시(Redis), 수평 확장 가능한 DB 샤딩, 301/302 리다이렉트 전략, 분석용 비동기 이벤트 처리 등을 고려해야 합니다.', 'MODEL_ANSWER', 'TECHNICAL', 0)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (6, 4, 'TECH_MAIN', '대규모 트래픽을 처리하는 URL 단축 서비스를 설계해주세요.', '해시 기반 키 생성, Base62 인코딩, 읽기 캐시(Redis), 수평 확장 가능한 DB 샤딩, 301/302 리다이렉트 전략, 분석용 비동기 이벤트 처리 등을 고려해야 합니다.', 0)
 ON DUPLICATE KEY UPDATE id = id;
 
-INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, reference_type, feedback_perspective, order_index)
-VALUES (7, 4, 'TECH_MAIN', '채팅 시스템의 메시지 전달 보장을 어떻게 설계하시겠습니까?', 'At-least-once 전달 + 클라이언트 중복 제거(idempotency key), 메시지 큐(Kafka), 읽음 확인 프로토콜, 오프라인 사용자를 위한 저장 후 전달 패턴을 설계합니다.', 'MODEL_ANSWER', 'TECHNICAL', 1)
+INSERT INTO question (id, question_set_id, question_type, question_text, model_answer, order_index)
+VALUES (7, 4, 'TECH_MAIN', '채팅 시스템의 메시지 전달 보장을 어떻게 설계하시겠습니까?', 'At-least-once 전달 + 클라이언트 중복 제거(idempotency key), 메시지 큐(Kafka), 읽음 확인 프로토콜, 오프라인 사용자를 위한 저장 후 전달 패턴을 설계합니다.', 1)
 ON DUPLICATE KEY UPDATE id = id;
 
 INSERT INTO question_set_analysis (id, question_set_id, analysis_status, convert_status, is_verbal_completed, is_nonverbal_completed, created_at, updated_at)

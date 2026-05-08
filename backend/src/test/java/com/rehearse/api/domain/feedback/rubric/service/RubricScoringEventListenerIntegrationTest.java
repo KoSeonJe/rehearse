@@ -108,65 +108,6 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
 
         @Test
-        @DisplayName("TECH_MAIN 적재 시 feedback_perspective=TECHNICAL 로 영속된다 (P0-1 회귀)")
-        void techMain_persistsTechnicalPerspective() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
-            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
-
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
-
-            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
-            assertThat(score.getFeedbackPerspective()).isEqualTo("TECHNICAL");
-        }
-
-        @Test
-        @DisplayName("BEHAVIORAL_MAIN 적재 시 feedback_perspective=BEHAVIORAL 로 영속된다 (P0-1 회귀)")
-        void behavioralMain_persistsBehavioralPerspective() {
-            InterviewData data = persistInterview(QuestionSetCategory.BEHAVIORAL, InterviewType.BEHAVIORAL,
-                    QuestionType.BEHAVIORAL_MAIN);
-            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
-
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
-
-            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
-            assertThat(score.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
-        }
-
-        @Test
-        @DisplayName("TECH_MAIN + CS 카테고리 → feedback_perspective=TECHNICAL 적재")
-        void techMain_csCategory_persistsTechnical() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL,
-                    QuestionType.TECH_MAIN);
-            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
-
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
-
-            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
-            assertThat(score.getFeedbackPerspective()).isEqualTo("TECHNICAL");
-        }
-
-        @Test
-        @DisplayName("BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → feedback_perspective=BEHAVIORAL 적재")
-        void behavioralMain_behavioralCategory_persistsBehavioral() {
-            InterviewData data = persistInterview(QuestionSetCategory.BEHAVIORAL, InterviewType.BEHAVIORAL,
-                    QuestionType.BEHAVIORAL_MAIN);
-            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
-
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
-
-            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
-            assertThat(score.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
-        }
-
-        @Test
         @DisplayName("RESUME_BASED 1턴 정상 publish 는 question_score 를 적재한다")
         void resumeAnswer_persistsQuestionScore() {
             InterviewData data = persistInterview(QuestionSetCategory.RESUME_BASED, InterviewType.RESUME_BASED,
@@ -242,7 +183,6 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
                 : Question.builder()
                 .questionType(questionType)
                 .questionText("HashMap과 TreeMap의 차이점은?")
-                .referenceType(ReferenceType.MODEL_ANSWER)
                 .orderIndex(0)
                 .build();
         questionSet.addQuestion(question);

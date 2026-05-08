@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,8 +39,6 @@ class QuestionTest {
                     .questionText("꼬리 질문입니다.")
                     .ttsText("꼬리 질문 TTS 텍스트입니다.")
                     .modelAnswer("모범 답안입니다.")
-                    .referenceType(ReferenceType.MODEL_ANSWER)
-                    .feedbackPerspective(FeedbackPerspective.TECHNICAL)
                     .orderIndex(1)
                     .questionPool(pool)
                     .build();
@@ -49,8 +46,6 @@ class QuestionTest {
             assertThat(question.getQuestionType()).isEqualTo(QuestionType.TECH_FOLLOWUP);
             assertThat(question.getTtsText()).isEqualTo("꼬리 질문 TTS 텍스트입니다.");
             assertThat(question.getModelAnswer()).isEqualTo("모범 답안입니다.");
-            assertThat(question.getReferenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(question.getFeedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
             assertThat(question.getOrderIndex()).isEqualTo(1);
             assertThat(question.getQuestionPool()).isSameAs(pool);
         }

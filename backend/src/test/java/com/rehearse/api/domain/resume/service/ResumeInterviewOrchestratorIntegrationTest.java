@@ -35,6 +35,7 @@ import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +52,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.reset;
 
 @DisplayName("ResumeInterviewOrchestrator Service Integration - WRAP_UP 제거 후 종료 분기 통합 검증")
@@ -84,6 +86,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
     void resetMockAndPolicy() {
         reset(resilientAiClient);
         ReflectionTestUtils.setField(modeTransitionPolicy, "hardTimeoutMin", 10L);
+        ReflectionTestUtils.setField(modeTransitionPolicy, "playgroundMaxTurns", 3);
         ReflectionTestUtils.setField(clockWatcher, "clock", Clock.systemDefaultZone());
     }
 
@@ -323,6 +326,89 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
         assertThat(questionCount).isZero();
     }
 
+    @Nested
+    @DisplayName("PLAYGROUND hard cap (#434)")
+    class PlaygroundHardCap {
+
+        @Test
+        @DisplayName("누적 턴 수가 임계값에 도달하면 LLM 호출 없이 INTERROGATION 으로 강제 전환된다")
+        void transitionsToInterrogation_when_playgroundTurnsReachHardCap() {
+            Long interviewId = persistInterviewAndInitState();
+            runtimeStateCache.update(interviewId, s -> s.getPlaygroundTurns().set(3));
+
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", "Redis 기반 캐시 시스템을 구축했습니다.",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            assertThat(response.getType()).startsWith("RESUME_INTERROGATION");
+            assertThat(response.getQuestion()).isNotBlank();
+            assertThat(response.getQuestionId()).isNotNull();
+
+            InterviewRuntimeState state = runtimeStateCache.get(interviewId);
+            assertThat(state.getResumeMode()).isEqualTo(ResumeMode.INTERROGATION);
+
+            assertThat(callTypeCount("resume_playground_responder")).isZero();
+            assertThat(callTypeCount("resume_chain_interrogator")).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("LLM 이 임계값 이전에 자가 전환 신호를 보내면 기존 흐름대로 INTERROGATION 으로 전이한다")
+        void keepsLlmDrivenTransition_when_responderSignalsSwitchEarly() {
+            Long interviewId = persistInterviewAndInitState();
+
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), true);
+            });
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", "Redis 기반 캐시 시스템을 구축했습니다.",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            assertThat(response.getType()).startsWith("RESUME_INTERROGATION");
+            InterviewRuntimeState state = runtimeStateCache.get(interviewId);
+            assertThat(state.getResumeMode()).isEqualTo(ResumeMode.INTERROGATION);
+
+            assertThat(callTypeCount("resume_playground_responder")).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("누적 턴 수가 임계값 미만이고 LLM 신호가 없으면 워밍업 단계가 유지된다")
+        void staysInPlayground_when_belowCapAndNoSwitchSignal() {
+            Long interviewId = persistInterviewAndInitState();
+
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            FollowUpResponse response = orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", "Redis 기반 캐시 시스템을 구축했습니다.",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            assertThat(response.getType()).isEqualTo("RESUME_PLAYGROUND");
+            assertThat(response.getQuestion()).isNotBlank();
+
+            InterviewRuntimeState state = runtimeStateCache.get(interviewId);
+            assertThat(state.getResumeMode()).isEqualTo(ResumeMode.PLAYGROUND);
+
+            assertThat(callTypeCount("resume_playground_responder")).isEqualTo(1);
+        }
+
+        private long callTypeCount(String callType) {
+            return mockingDetails(resilientAiClient).getInvocations().stream()
+                    .filter(inv -> "chat".equals(inv.getMethod().getName()))
+                    .map(inv -> (ChatRequest) inv.getArgument(0))
+                    .filter(req -> req != null && callType.equals(req.callType()))
+                    .count();
+        }
+    }
+
     private Long persistInterviewAndInitState() {
         User user = userRepository.saveAndFlush(User.builder()
                 .email("orchestrator-int-" + System.nanoTime() + "@example.com")
@@ -334,6 +420,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
         Interview interview = TestFixtures.createInterview(
                 user.getId(), Position.BACKEND, InterviewLevel.JUNIOR, List.of(InterviewType.RESUME_BASED));
         interviewRepository.saveAndFlush(interview);
+        runtimeStateCache.evict(interview.getId());
         runtimeStateCache.getOrInit(interview.getId(),
                 () -> InterviewRuntimeState.seed("JUNIOR", createSkeleton(), createPlan()));
         return interview.getId();

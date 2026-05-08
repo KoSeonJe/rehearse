@@ -227,10 +227,12 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     private Question buildQuestion(FeedbackPerspective perspective) {
+        QuestionType type = perspective == FeedbackPerspective.BEHAVIORAL
+                ? QuestionType.BEHAVIORAL_MAIN
+                : QuestionType.TECH_MAIN;
         return Question.builder()
-                .questionType(QuestionType.TECH_MAIN)
+                .questionType(type)
                 .questionText("테스트 질문")
-                .feedbackPerspective(perspective)
                 .orderIndex(0)
                 .build();
     }

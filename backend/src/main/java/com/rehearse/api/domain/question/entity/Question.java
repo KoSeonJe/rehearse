@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -35,14 +33,6 @@ public class Question {
     @Column(columnDefinition = "TEXT")
     private String modelAnswer;
 
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private ReferenceType referenceType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 20)
-    private FeedbackPerspective feedbackPerspective;
-
     @Column(nullable = false)
     private int orderIndex;
 
@@ -52,8 +42,7 @@ public class Question {
 
     @Builder
     public Question(QuestionType questionType, String questionText,
-                    String ttsText, String modelAnswer, ReferenceType referenceType,
-                    FeedbackPerspective feedbackPerspective,
+                    String ttsText, String modelAnswer,
                     int orderIndex, QuestionPool questionPool) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(questionType);
@@ -61,8 +50,6 @@ public class Question {
         this.questionText = questionText;
         this.ttsText = ttsText;
         this.modelAnswer = modelAnswer;
-        this.referenceType = referenceType;
-        this.feedbackPerspective = feedbackPerspective;
         this.orderIndex = orderIndex;
         this.questionPool = questionPool;
     }

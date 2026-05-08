@@ -27,8 +27,5 @@ public class GeneratedQuestion {
     @JsonProperty("model_answer")
     private String modelAnswer;
 
-    @JsonProperty("reference_type")
-    private String referenceType;
-
     private String followUpStrategy;
 }

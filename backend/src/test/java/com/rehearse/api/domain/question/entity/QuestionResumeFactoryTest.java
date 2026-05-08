@@ -34,21 +34,6 @@ class QuestionResumeFactoryTest {
         }
 
         @Test
-        @DisplayName("RESUME 트랙은 referenceType / feedbackPerspective 컬럼이 NULL 로 유지된다 (Option X)")
-        void resume_resumeType_keepsNullColumns() {
-            Question q = Question.resume(
-                    null, QuestionType.RESUME_INTERROGATION,
-                    "구체적인 구현 방식이 어떻게 됐나요?",
-                    "구체적인 구현 방식이 어떻게 됐나요",
-                    "Redis pipeline 사용 시 RTT 절감 원리 및 적용 시 주의점을 설명합니다.",
-                    3
-            );
-
-            assertThat(q.getReferenceType()).isNull();
-            assertThat(q.getFeedbackPerspective()).isNull();
-        }
-
-        @Test
         @DisplayName("ttsText / modelAnswer 가 null 로 들어와도 entity 생성은 성공한다 (DB 컬럼 nullable)")
         void resume_nullTtsAndModelAnswer_allowed() {
             Question q = Question.resume(

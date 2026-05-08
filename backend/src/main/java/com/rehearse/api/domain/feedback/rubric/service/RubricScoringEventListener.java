@@ -54,13 +54,9 @@ public class RubricScoringEventListener {
                 return;
             }
 
-            String feedbackPerspective = question.getQuestionType()
-                    .feedbackPerspective()
-                    .name();
-
             questionScorePersister.saveRubric(
                     question.getId(), interviewId,
-                    score.rubricId(), score.levelFlag(), feedbackPerspective,
+                    score.rubricId(), score.levelFlag(),
                     score.dimensionScores()
             );
 

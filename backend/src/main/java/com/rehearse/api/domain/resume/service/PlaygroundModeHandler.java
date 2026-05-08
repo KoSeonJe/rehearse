@@ -30,6 +30,7 @@ public class PlaygroundModeHandler {
 
     private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
+    private final ResumeModeTransitionPolicy modeTransitionPolicy;
 
     public OpenerResult handleOpener(
             Long interviewId, InterviewRuntimeState state,
@@ -59,12 +60,21 @@ public class PlaygroundModeHandler {
             ResumeSkeleton skeleton, InterviewPlan plan,
             List<FollowUpExchange> previousExchanges
     ) {
+        int turnCount = state.getPlaygroundTurns().get();
+        if (modeTransitionPolicy.isPlaygroundHardCapReached(turnCount)) {
+            log.info("[PlaygroundHandler] hard cap 도달 → INTERROGATION 강제 전환: interviewId={}, turnCount={}, threshold={}",
+                    interviewId, turnCount, modeTransitionPolicy.getPlaygroundMaxTurns());
+            boolean switchedToInterrogation = true;
+            Long questionId = null;
+            FollowUpResponse response = buildResponse(null, null, null, switchedToInterrogation, questionId);
+            return new PlaygroundTurnResult(response, switchedToInterrogation, questionId);
+        }
+
         ProjectPlan currentPlan = resolveCurrentPlan(plan);
         PlaygroundPhase phase = currentPlan.playgroundPhase();
         List<String> expectedClaims = phase.expectedClaimsCoverage();
         Project project = findProject(skeleton, currentPlan.projectId());
 
-        int turnCount = state.getPlaygroundTurns().get();
         int cumulativeLength = accumulateLength(state, userAnswer);
 
         PlaygroundResponderResult result = resultGenerator.generatePlaygroundResponder(
