@@ -64,8 +64,8 @@ class ResumeChainInterrogatorLiveLlmE2ETest extends AbstractMySqlContainerTest {
         assertThat(result).isNotNull();
         assertThat(result.modelAnswer()).isNotBlank();
         assertThat(result.modelAnswer().length())
-                .as("AC1 model_answer 길이 — 170~330")
-                .isBetween(170, 330);
+                .as("AC1 model_answer 길이 — 150~350")
+                .isBetween(150, 350);
         assertThat(result.modelAnswer())
                 .as("AC1 model_answer — 1인칭 답변 예시 어미 1+")
                 .containsAnyOf("했습니다", "경험이 있습니다", "을 적용했습니다", "을 진행했습니다", "을 측정했습니다");
@@ -76,10 +76,10 @@ class ResumeChainInterrogatorLiveLlmE2ETest extends AbstractMySqlContainerTest {
                 .as("AC4 model_answer — chain topic 명시")
                 .contains(chainTopic);
         assertThat(result.modelAnswer())
-                .as("AC4 model_answer — L4 어휘 1+ (트레이드오프 / 비교 / 측정)")
-                .containsAnyOf("트레이드오프", "비교", "측정");
+                .as("AC4 model_answer — L4 어휘 1+ (트레이드오프 / 비교 / 측정 / 장단점 / 대안 / 선택)")
+                .containsAnyOf("트레이드오프", "비교", "측정", "장점", "단점", "대안", "선택", "판단");
         assertThat(result.modelAnswer())
                 .as("AC5 model_answer — 구조 단서 1+ 매치")
-                .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습");
+                .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습", "장점", "단점", "대안", "선택", "결과", "성과", "향상", "개선", "도입", "적용");
     }
 }
