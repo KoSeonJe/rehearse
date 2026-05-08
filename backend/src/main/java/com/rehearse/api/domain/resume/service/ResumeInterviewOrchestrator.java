@@ -3,7 +3,9 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
+import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
@@ -99,8 +101,10 @@ public class ResumeInterviewOrchestrator {
                 skeleton, plan, previousExchanges);
 
         if (shouldSkipTurnCompletedEvent(handlerResult)) {
-            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=publish-skip turnIndex={}",
-                    interviewId, currentMode.name().toLowerCase(), turnIndex);
+            log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} turnIndex={}",
+                    interviewId, InterviewTrack.RESUME.logLabel(),
+                    currentMode.name().toLowerCase(),
+                    BlockReason.PUBLISH_SKIP.logValue(), turnIndex);
             return handlerResult.response();
         }
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
@@ -214,8 +218,10 @@ public class ResumeInterviewOrchestrator {
         if (result.questionId() != null) {
             return;
         }
-        log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=questionId-missing turnIndex={} type={}",
-                interviewId, mode.name().toLowerCase(), turnIndex, result.response().getType());
+        log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} turnIndex={} type={}",
+                interviewId, InterviewTrack.RESUME.logLabel(),
+                mode.name().toLowerCase(),
+                BlockReason.QUESTION_ID_MISSING.logValue(), turnIndex, result.response().getType());
         throw new BusinessException(ResumeErrorCode.QUESTION_ID_MISSING);
     }
 
@@ -223,13 +229,18 @@ public class ResumeInterviewOrchestrator {
         Long handlerQuestionId = result.questionId();
         Long responseQuestionId = result.response().getQuestionId();
         if (responseQuestionId == null) {
-            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-missing handlerQuestionId={} turnIndex={}",
-                    interviewId, mode.name().toLowerCase(), handlerQuestionId, turnIndex);
+            log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} handlerQuestionId={} turnIndex={}",
+                    interviewId, InterviewTrack.RESUME.logLabel(),
+                    mode.name().toLowerCase(),
+                    BlockReason.RESPONSE_QUESTION_ID_MISSING.logValue(), handlerQuestionId, turnIndex);
             return;
         }
         if (!responseQuestionId.equals(handlerQuestionId)) {
-            log.warn("[진행차단진단] interviewId={} track=RESUME stage={} reason=response-questionid-mismatch handlerQuestionId={} responseQuestionId={} turnIndex={}",
-                    interviewId, mode.name().toLowerCase(), handlerQuestionId, responseQuestionId, turnIndex);
+            log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} handlerQuestionId={} responseQuestionId={} turnIndex={}",
+                    interviewId, InterviewTrack.RESUME.logLabel(),
+                    mode.name().toLowerCase(),
+                    BlockReason.RESPONSE_QUESTION_ID_MISMATCH.logValue(),
+                    handlerQuestionId, responseQuestionId, turnIndex);
         }
     }
 

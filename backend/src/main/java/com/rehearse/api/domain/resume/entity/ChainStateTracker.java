@@ -26,6 +26,7 @@ import lombok.AccessLevel;
 public class ChainStateTracker {
 
     private static final int LEVEL_STAY_MAX_TURNS = 2;
+    public static final int MAX_LEVEL = 4;
 
     private final ReentrantLock lock = new ReentrantLock();
 
@@ -63,7 +64,7 @@ public class ChainStateTracker {
     }
 
     public void levelUp() {
-        if (currentLevel >= 4) {
+        if (currentLevel >= MAX_LEVEL) {
             return;
         }
         currentLevel++;
@@ -88,7 +89,7 @@ public class ChainStateTracker {
     }
 
     public boolean isChainComplete() {
-        return currentLevel > 4;
+        return currentLevel > MAX_LEVEL;
     }
 
     public boolean isCompleted(String chainId) {
