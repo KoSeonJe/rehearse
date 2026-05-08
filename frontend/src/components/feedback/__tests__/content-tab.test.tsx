@@ -58,26 +58,33 @@ describe('ContentTab', () => {
     expect(screen.getByText('구체 수치 / 결과가 부족합니다.')).toBeInTheDocument()
   })
 
-  it('BEHAVIORAL perspective → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
+  it('BEHAVIORAL perspective → "경험/협업" 라벨 + dimensions 노출', () => {
     render(
       <ContentTab
         technicalFeedback={buildFeedback({
           perspective: 'BEHAVIORAL',
+          rubricId: 'experience-collaboration-rubric',
           dimensions: [
             {
-              dimension: 'collaboration',
+              dimension: 'collaboration_awareness',
               score: 2,
               observation: '협업 사례 묘사가 추상적입니다.',
-              evidenceQuote: null,
+              evidenceQuote: '팀과 잘 맞췄어요',
             },
           ],
         })}
       />,
     )
 
-    expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
-    expect(screen.queryByText('collaboration')).not.toBeInTheDocument()
-    expect(screen.queryByText('기술 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
+    expect(screen.getByText('경험/협업')).toBeInTheDocument()
+    expect(screen.queryByText('기술 피드백')).not.toBeInTheDocument()
+    expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
+    expect(screen.getByText('collaboration_awareness')).toBeInTheDocument()
+    expect(screen.getByText('2점')).toBeInTheDocument()
+    expect(screen.getByText('협업 사례 묘사가 추상적입니다.')).toBeInTheDocument()
+    expect(screen.getByText('팀과 잘 맞췄어요')).toBeInTheDocument()
+    expect(screen.queryByText('해당 턴은 평가 대상이 아닙니다.')).not.toBeInTheDocument()
+    expect(screen.queryByText('경험/협업 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
   })
 
   it('perspective null → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
