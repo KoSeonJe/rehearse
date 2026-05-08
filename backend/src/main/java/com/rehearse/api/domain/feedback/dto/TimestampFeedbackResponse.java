@@ -73,6 +73,7 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class TechnicalFeedback {
+        private final String perspective;
         private final String rubricId;
         private final String levelFlag;
         private final List<TechnicalDimensionFeedback> dimensions;
@@ -128,7 +129,7 @@ public class TimestampFeedbackResponse {
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
                 .delivery(delivery)
-                .technicalFeedback(toTechnicalFeedback(questionScore, dimensions))
+                .technicalFeedback(toTechnicalFeedback(question, questionScore, dimensions))
                 .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
@@ -144,11 +145,16 @@ public class TimestampFeedbackResponse {
         }
     }
 
-    private static TechnicalFeedback toTechnicalFeedback(QuestionScore questionScore,
+    private static TechnicalFeedback toTechnicalFeedback(Question question,
+                                                          QuestionScore questionScore,
                                                           List<QuestionScoreDimension> dimensions) {
         if (questionScore == null || dimensions == null || dimensions.isEmpty()) {
             return null;
         }
+
+        String perspective = (question != null && question.getQuestionType() != null)
+                ? question.getQuestionType().feedbackPerspective().name()
+                : null;
 
         List<TechnicalDimensionFeedback> dimFeedbacks = dimensions.stream()
                 .sorted(Comparator.comparing(QuestionScoreDimension::getDimensionRef))
@@ -161,6 +167,7 @@ public class TimestampFeedbackResponse {
                 .toList();
 
         return TechnicalFeedback.builder()
+                .perspective(perspective)
                 .rubricId(questionScore.getRubricId())
                 .levelFlag(questionScore.getLevelFlag())
                 .dimensions(dimFeedbacks)
