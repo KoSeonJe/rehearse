@@ -14,6 +14,11 @@ const formatScore = (score: number | null): string => {
   return `${score}점`
 }
 
+const FALLBACK_COPY: PerspectiveCopy = {
+  title: '기술 피드백',
+  emptyMessage: '해당 턴은 평가 대상이 아닙니다.',
+}
+
 const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy => {
   switch (perspective) {
     case 'TECHNICAL':
@@ -22,7 +27,9 @@ const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy =
       return { title: '경험 평가', emptyMessage: '경험 평가는 아직 준비 중입니다.' }
     case 'BEHAVIORAL':
     case null:
-      return { title: '기술 피드백', emptyMessage: '해당 턴은 평가 대상이 아닙니다.' }
+      return FALLBACK_COPY
+    default:
+      return FALLBACK_COPY
   }
 }
 
