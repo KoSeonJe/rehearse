@@ -33,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-@DisplayName("InterrogationModeHandler Service Integration - 4 필드 적재 검증")
+@DisplayName("InterrogationModeHandler Service Integration - 적재 검증")
 class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport {
 
     @Autowired
@@ -49,8 +49,8 @@ class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport 
     private ResilientAiClient resilientAiClient;
 
     @Test
-    @DisplayName("handle 호출 시 RESUME_INTERROGATION row 가 4 필드 정합 적재된다 (tts_text/model_answer 적재, reference_type/feedback_perspective NULL)")
-    void handle_persistsAllFourFields() {
+    @DisplayName("handle 호출 시 RESUME_INTERROGATION row 가 tts_text/model_answer 정합 적재된다")
+    void handle_persistsAllFields() {
         Long interviewId = persistInterview();
         InterviewPlan plan = createPlan();
         InterviewRuntimeState state = new InterviewRuntimeState("JUNIOR", null);
@@ -61,13 +61,11 @@ class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport 
 
         assertThat(result.questionId()).isNotNull();
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer, reference_type, feedback_perspective FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_INTERROGATION");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
         assertThat((String) row.get("model_answer")).isNotBlank();
-        assertThat(row.get("reference_type")).isNull();
-        assertThat(row.get("feedback_perspective")).isNull();
     }
 
     private Long persistInterview() {

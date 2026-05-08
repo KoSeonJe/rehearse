@@ -120,8 +120,7 @@ public class QuestionPoolService {
                         gq.getContent(),
                         gq.getTtsContent(),
                         gq.getCategory(),
-                        gq.getModelAnswer(),
-                        gq.getReferenceType()))
+                        gq.getModelAnswer()))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {

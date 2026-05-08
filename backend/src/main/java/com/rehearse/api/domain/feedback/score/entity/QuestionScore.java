@@ -30,9 +30,6 @@ public class QuestionScore {
     @Column(name = "rubric_id", nullable = false, length = 64)
     private String rubricId;
 
-    @Column(name = "feedback_perspective", length = 32)
-    private String feedbackPerspective;
-
     @Column(name = "level_flag", length = 16)
     private String levelFlag;
 
@@ -41,12 +38,10 @@ public class QuestionScore {
     private LocalDateTime createdAt;
 
     @Builder
-    public QuestionScore(Long questionId, Long interviewId, String rubricId,
-                         String feedbackPerspective, String levelFlag) {
+    public QuestionScore(Long questionId, Long interviewId, String rubricId, String levelFlag) {
         this.questionId = questionId;
         this.interviewId = interviewId;
         this.rubricId = rubricId;
-        this.feedbackPerspective = feedbackPerspective;
         this.levelFlag = levelFlag;
     }
 }

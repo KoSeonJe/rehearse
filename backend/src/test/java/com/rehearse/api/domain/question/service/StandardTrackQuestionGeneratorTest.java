@@ -11,14 +11,12 @@ import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -48,18 +46,8 @@ class StandardTrackQuestionGeneratorTest {
         generator = new StandardTrackQuestionGenerator(cacheableProvider, freshProvider, assembler);
     }
 
-    private QuestionPool makePool(String content, String referenceType) {
-        return QuestionPool.create("key:cs:junior", content, null, null, null, referenceType);
-    }
-
-    private GeneratedQuestion makeGenerated(String content, String questionCategory, String referenceType) {
-        GeneratedQuestion gq = new GeneratedQuestion();
-        ReflectionTestUtils.setField(gq, "content", content);
-        ReflectionTestUtils.setField(gq, "ttsContent", null);
-        ReflectionTestUtils.setField(gq, "questionCategory", questionCategory);
-        ReflectionTestUtils.setField(gq, "modelAnswer", null);
-        ReflectionTestUtils.setField(gq, "referenceType", referenceType);
-        return gq;
+    private QuestionPool makePool(String content) {
+        return QuestionPool.create("key:cs:junior", content, null, null, null);
     }
 
     @Nested
@@ -71,9 +59,9 @@ class StandardTrackQuestionGeneratorTest {
         void multiCacheableTypes_callsCacheableProviderForEachType() {
             List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL);
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("CS 질문", "MODEL_ANSWER")));
+                    .willReturn(List.of(makePool("CS 질문")));
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("자기소개", "GUIDE")));
+                    .willReturn(List.of(makePool("자기소개")));
 
             generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     types, List.of(), null, 30, TechStack.JAVA_SPRING);
@@ -87,7 +75,7 @@ class StandardTrackQuestionGeneratorTest {
         @DisplayName("cacheable 타입만 있을 때 FreshProvider 는 호출되지 않는다")
         void cacheableOnly_doesNotCallFreshProvider() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("CS 질문", "MODEL_ANSWER")));
+                    .willReturn(List.of(makePool("CS 질문")));
 
             generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
@@ -121,7 +109,7 @@ class StandardTrackQuestionGeneratorTest {
         @DisplayName("여러 QuestionSet 의 orderIndex 가 0부터 순차적으로 재배정된다")
         void multipleQuestionSets_orderIndexReassigned() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("Q1", "MODEL_ANSWER"), makePool("Q2", "GUIDE")));
+                    .willReturn(List.of(makePool("Q1"), makePool("Q2")));
 
             List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
@@ -141,7 +129,7 @@ class StandardTrackQuestionGeneratorTest {
         void nullTechStack_usesPositionDefault() {
             given(cacheableProvider.provide(anyLong(), any(), any(), eq(TechStack.JAVA_SPRING),
                     eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("CS 질문", "MODEL_ANSWER")));
+                    .willReturn(List.of(makePool("CS 질문")));
 
             generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, null);
@@ -152,14 +140,14 @@ class StandardTrackQuestionGeneratorTest {
     }
 
     @Nested
-    @DisplayName("QuestionSet 구조 - sub-type 결정 + column null 적재")
+    @DisplayName("QuestionSet 구조 - sub-type 결정")
     class QuestionSetStructure {
 
         @Test
         @DisplayName("BEHAVIORAL 타입은 BEHAVIORAL_MAIN 으로 적재되고 enum 환원 시 (GUIDE, BEHAVIORAL)")
         void behavioralType_assignsBehavioralMain() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("자기소개", "GUIDE")));
+                    .willReturn(List.of(makePool("자기소개")));
 
             List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     List.of(InterviewType.BEHAVIORAL), List.of(), null, 30, TechStack.JAVA_SPRING);
@@ -174,7 +162,7 @@ class StandardTrackQuestionGeneratorTest {
         @DisplayName("CS_FUNDAMENTAL 타입은 TECH_MAIN 으로 적재되고 enum 환원 시 (MODEL_ANSWER, TECHNICAL)")
         void csFundamental_assignsTechMain() {
             given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("OS 스케줄링", "MODEL_ANSWER")));
+                    .willReturn(List.of(makePool("OS 스케줄링")));
 
             List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
@@ -183,20 +171,6 @@ class StandardTrackQuestionGeneratorTest {
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
             assertThat(q.getQuestionType().referenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
             assertThat(q.getQuestionType().feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
-        }
-
-        @Test
-        @DisplayName("Phase 1 - referenceType / feedbackPerspective 컬럼 적재가 중단되어 null 이다")
-        void columns_nullPersisted() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("CS 질문", "MODEL_ANSWER")));
-
-            List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
-
-            Question q = result.get(0).getQuestions().get(0);
-            assertThat(q.getReferenceType()).isNull();
-            assertThat(q.getFeedbackPerspective()).isNull();
         }
     }
 }
