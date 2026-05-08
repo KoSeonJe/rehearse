@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.question.dto;
 
 import com.rehearse.api.domain.question.entity.AnalysisStatus;
-import com.rehearse.api.domain.question.dto.QuestionDetailResponse;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +20,7 @@ public class QuestionSetResponse {
 
     public static QuestionSetResponse from(QuestionSet questionSet) {
         List<QuestionDetailResponse> questionDetails = questionSet.getQuestions().stream()
-                .map(q -> QuestionDetailResponse.from(q, questionSet.getCategory()))
+                .map(QuestionDetailResponse::from)
                 .toList();
 
         AnalysisStatus status = questionSet.getEffectiveAnalysisStatus();
