@@ -3,10 +3,12 @@ package com.rehearse.api.domain.interview.service;
 import static org.springframework.transaction.annotation.Propagation.*;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
+import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
@@ -83,8 +85,9 @@ public class FollowUpService {
                 id, request.getQuestionSetId());
         aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
         int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-        log.warn("[진행차단진단] interviewId={} track=STANDARD stage=standard-followup reason=analyzer-skip turnIndex={}",
-                id, turnIndex);
+        log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
+                id, InterviewTrack.CS.logLabel(),
+                BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
         followUpTransactionHandler.publishTurnCompletedEvent(
                 id, context, turn, context.currentMainQuestionId(), turnIndex);
         return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
@@ -108,8 +111,9 @@ public class FollowUpService {
                     id, request.getQuestionSetId(), stepB.getSkipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
             int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-            log.warn("[진행차단진단] interviewId={} track=STANDARD stage=standard-followup reason=step-b-skip turnIndex={}",
-                    id, turnIndex);
+            log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
+                    id, InterviewTrack.CS.logLabel(),
+                    BlockReason.STEP_B_SKIP.logValue(), turnIndex);
             followUpTransactionHandler.publishTurnCompletedEvent(
                     id, context, turn, context.currentMainQuestionId(), turnIndex);
             return FollowUpResponse.aiSkip(answerText, stepB.getSkipReason());
