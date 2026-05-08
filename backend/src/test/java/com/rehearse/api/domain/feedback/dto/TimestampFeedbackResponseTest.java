@@ -1,10 +1,17 @@
 package com.rehearse.api.domain.feedback.dto;
 
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -66,6 +73,67 @@ class TimestampFeedbackResponseTest {
             assertThat(block.getPositive()).isEqualTo(legacy);
             assertThat(block.getNegative()).isNull();
             assertThat(block.getSuggestion()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("technicalFeedback.perspective 매핑")
+    class TechnicalPerspectiveMapping {
+
+        @Test
+        @DisplayName("RESUME_PLAYGROUND 질문은 perspective=EXPERIENCE 로 노출된다")
+        void perspective_EXPERIENCE_when_RESUME_PLAYGROUND() {
+            // given
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_PLAYGROUND);
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+            QuestionScore score = TestFixtures.createQuestionScore(1L, "resume-v1", null);
+            List<QuestionScoreDimension> dims = List.of(
+                    TestFixtures.createQuestionScoreDimension(1L, "experience_concreteness", 1, "vague")
+            );
+
+            // when
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, score, dims);
+
+            // then
+            assertThat(response.getTechnicalFeedback()).isNotNull();
+            assertThat(response.getTechnicalFeedback().getPerspective()).isEqualTo("EXPERIENCE");
+        }
+
+        @Test
+        @DisplayName("RESUME_INTERROGATION 질문은 perspective=TECHNICAL 로 노출된다")
+        void perspective_TECHNICAL_when_RESUME_INTERROGATION() {
+            // given
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+            QuestionScore score = TestFixtures.createQuestionScore(2L, "tech-v1", "L1");
+            List<QuestionScoreDimension> dims = List.of(
+                    TestFixtures.createQuestionScoreDimension(2L, "clarity", 2, "ok")
+            );
+
+            // when
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, score, dims);
+
+            // then
+            assertThat(response.getTechnicalFeedback()).isNotNull();
+            assertThat(response.getTechnicalFeedback().getPerspective()).isEqualTo("TECHNICAL");
+        }
+
+        @Test
+        @DisplayName("Question 메타가 null 이면 perspective 는 null 로 노출된다")
+        void perspective_null_when_question_null() {
+            // given
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(null);
+            QuestionScore score = TestFixtures.createQuestionScore(3L, "tech-v1", null);
+            List<QuestionScoreDimension> dims = List.of(
+                    TestFixtures.createQuestionScoreDimension(3L, "clarity", 0, null)
+            );
+
+            // when
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, score, dims);
+
+            // then
+            assertThat(response.getTechnicalFeedback()).isNotNull();
+            assertThat(response.getTechnicalFeedback().getPerspective()).isNull();
         }
     }
 }
