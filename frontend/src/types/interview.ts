@@ -167,10 +167,10 @@ export interface TechnicalDimensionFeedback {
   evidenceQuote: string | null
 }
 
-export type FeedbackPerspective = 'TECHNICAL' | 'EXPERIENCE' | 'BEHAVIORAL'
+export type RubricCategory = 'TECHNICAL' | 'EXPERIENCE' | 'BEHAVIORAL'
 
 export interface TechnicalFeedback {
-  perspective: FeedbackPerspective | null
+  rubricCategory: RubricCategory | null
   rubricId: string
   levelFlag: string | null
   dimensions: TechnicalDimensionFeedback[]
@@ -262,7 +262,7 @@ export type FollowUpType =
 
 export interface FollowUpExchange {
   question: string
-  answer: string
+  answerText: string
   type: FollowUpType
   followUpType?: FollowUpType
 }
@@ -271,7 +271,7 @@ export interface FollowUpRequest {
   questionSetId: number
   questionContent: string
   answerText?: string
-  previousExchanges?: Array<{ question: string; answer: string; followUpType?: FollowUpType }>
+  previousExchanges?: Array<{ question: string; answerText: string; followUpType?: FollowUpType }>
   // 사용자 시간 만료 후 답변 완료 시점에 면접 종료 의사 신호 — BE 가 followUpExhausted=true 응답
   terminate?: boolean
 }
