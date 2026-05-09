@@ -52,7 +52,7 @@ docker exec -i rehearse-db mysql -u rehearse -p'<password>' --default-character-
 
 ```sql
 INSERT IGNORE INTO question_pool
-  (cache_key, content, tts_content, category, model_answer, is_active, created_at)
+  (cache_key, content, tts_content, category, best_answer, is_active, created_at)
 VALUES ('{cache_key}', '{질문}', '{tts_질문}', '{카테고리}', '{모범답변}', TRUE, NOW());
 ```
 

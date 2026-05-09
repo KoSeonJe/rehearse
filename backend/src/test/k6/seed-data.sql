@@ -76,7 +76,7 @@ CREATE PROCEDURE seed_questions()
 BEGIN
   DECLARE i INT DEFAULT 1;
   WHILE i <= 50000 DO
-    INSERT INTO question (question_set_id, question_type, question_text, model_answer, order_index)
+    INSERT INTO question (question_set_id, question_type, question_text, best_answer, order_index)
     VALUES (i, 'MAIN', '정렬 알고리즘의 종류와 각각의 시간복잡도를 설명해주세요.', '퀵정렬은 평균 O(n log n), 병합정렬은 항상 O(n log n)입니다.', 0);
     IF i % 5000 = 0 THEN
       COMMIT;

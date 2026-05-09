@@ -44,7 +44,7 @@ CLAUDE_RESPONSE = json.dumps({
                 "question": "그 함수의 시간복잡도를 어떻게 분석하셨나요?",
                 "reason": "답변에서 제시한 알고리즘의 효율성 검증",
                 "type": "DEEP_DIVE",
-                "modelAnswer": "이진 탐색은 O(log n) 시간복잡도를 가집니다."
+                "bestAnswer": "이진 탐색은 O(log n) 시간복잡도를 가집니다."
             })
         }
     ],
