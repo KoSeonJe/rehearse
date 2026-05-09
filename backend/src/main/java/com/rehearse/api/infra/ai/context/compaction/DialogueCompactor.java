@@ -99,7 +99,7 @@ public class DialogueCompactor {
             turns.add(Map.of(
                     "turn", i + 1,
                     "q", ex.getQuestion() != null ? ex.getQuestion() : "",
-                    "a", ex.getAnswer() != null ? ex.getAnswer() : ""
+                    "a", ex.getAnswerText() != null ? ex.getAnswerText() : ""
             ));
         }
         try {

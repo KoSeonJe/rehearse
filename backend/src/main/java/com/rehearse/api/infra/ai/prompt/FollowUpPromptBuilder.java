@@ -148,7 +148,7 @@ public class FollowUpPromptBuilder {
             for (int i = 0; i < req.previousExchanges().size(); i++) {
                 var ex = req.previousExchanges().get(i);
                 sb.append("[").append(i + 1).append("] Q: ").append(ex.getQuestion()).append("\n");
-                sb.append("[").append(i + 1).append("] A:\n<<<USER_ANSWER>>>\n").append(ex.getAnswer()).append("\n<<<END_USER_ANSWER>>>\n");
+                sb.append("[").append(i + 1).append("] A:\n<<<USER_ANSWER>>>\n").append(ex.getAnswerText()).append("\n<<<END_USER_ANSWER>>>\n");
             }
         }
 
