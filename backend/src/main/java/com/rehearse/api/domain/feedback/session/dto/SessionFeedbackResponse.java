@@ -1,16 +1,18 @@
 package com.rehearse.api.domain.feedback.session.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedback;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedbackStatus;
-import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Builder
@@ -19,11 +21,11 @@ public class SessionFeedbackResponse {
     private final Long id;
     private final Long interviewId;
     private final SessionFeedbackStatus status;
-    private final GeneratedSessionFeedback.OverallSection overall;
-    private final List<GeneratedSessionFeedback.StrengthItem> strengths;
-    private final List<GeneratedSessionFeedback.GapItem> gaps;
-    private final GeneratedSessionFeedback.DeliverySection delivery;
-    private final List<GeneratedSessionFeedback.WeekPlanItem> weekPlan;
+    private final OverallSection overall;
+    private final List<StrengthItem> strengths;
+    private final List<GapItem> gaps;
+    private final DeliverySection delivery;
+    private final List<WeekPlanItem> weekPlan;
     private final String coverage;
     private final boolean deliveryRetryable;
     private final String lastFailureReason;
@@ -58,4 +60,42 @@ public class SessionFeedbackResponse {
             return null;
         }
     }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record OverallSection(
+            @JsonProperty("dimension_scores") Map<String, Double> dimensionScores,
+            @JsonProperty("level_assessment") String levelAssessment,
+            String narrative,
+            String coverage
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record StrengthItem(
+            String dimension,
+            String observation,
+            @JsonProperty("why_matters") String whyMatters
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record GapItem(
+            String dimension,
+            String observation,
+            @JsonProperty("level_gap") String levelGap,
+            @JsonProperty("concrete_action") String concreteAction
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record DeliverySection(
+            @JsonProperty("filler_words") String fillerWords,
+            @JsonProperty("tone_pattern") String tonePattern,
+            String action
+    ) {}
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record WeekPlanItem(
+            int priority,
+            String topic,
+            List<String> resources,
+            String practice
+    ) {}
 }
