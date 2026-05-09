@@ -4,7 +4,7 @@
 #
 # 입력 컨텍스트 필드:
 #   resumeTrack: boolean               (Interview.hasResumeSkeleton())
-#   category: QuestionSetCategory      (CS_FUNDAMENTAL / BEHAVIORAL / RESUME_BASED / LANGUAGE_FRAMEWORK / ...)
+#   category: InterviewType            (CS_FUNDAMENTAL / BEHAVIORAL / RESUME_BASED / LANGUAGE_FRAMEWORK / ...)
 #   feedbackPerspective: FeedbackPerspective (TECHNICAL / BEHAVIORAL / EXPERIENCE)
 #
 # when 절의 값은 단일값 또는 배열. 배열이면 OR 매칭.

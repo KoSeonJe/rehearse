@@ -11,7 +11,6 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -67,7 +66,7 @@ public class RubricLoader implements RubricCatalog {
 
     public Rubric resolveFor(Question question, QuestionSet questionSet, Interview interview) {
         boolean resumeTrack = interview.getInterviewTypes().contains(InterviewType.RESUME_BASED);
-        QuestionSetCategory category = questionSet.getCategory();
+        InterviewType category = questionSet.getCategory();
         RubricCategory perspective = question.getQuestionType().rubricCategory();
 
         RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);

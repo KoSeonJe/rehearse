@@ -7,7 +7,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,7 +39,7 @@ class ResumeTrackPolicyTest {
         Interview interview = resumeInterview();
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex(0)
                 .build();
         for (int i = 0; i < 10; i++) {
@@ -61,7 +60,7 @@ class ResumeTrackPolicyTest {
         Interview interview = resumeInterview();
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex(0)
                 .build();
 

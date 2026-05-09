@@ -7,7 +7,7 @@ import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainReference;
 import com.rehearse.api.domain.resume.entity.InterrogationPhase;
@@ -82,7 +82,7 @@ class ResumeInterviewOrchestratorTest {
             mutator.accept(state);
             return null;
         }).when(runtimeStateStore).update(anyLong(), any());
-        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(QuestionSetCategory.RESUME_BASED)))
+        lenient().when(questionSetRepository.findByInterviewIdAndCategory(anyLong(), eq(InterviewType.RESUME_BASED)))
                 .thenReturn(java.util.Optional.empty());
         lenient().when(modeTransitionPolicy.isHardTimeoutExceeded(anyInt(), anyLong())).thenReturn(false);
     }
@@ -167,7 +167,7 @@ class ResumeInterviewOrchestratorTest {
         void startSession_existingOpener_reusesWithoutCallingHandleOpener() {
             com.rehearse.api.domain.question.entity.QuestionSet qs =
                     com.rehearse.api.domain.question.entity.QuestionSet.builder()
-                            .category(QuestionSetCategory.RESUME_BASED)
+                            .category(InterviewType.RESUME_BASED)
                             .orderIndex(0)
                             .build();
             com.rehearse.api.domain.question.entity.Question existingOpener =
@@ -180,7 +180,7 @@ class ResumeInterviewOrchestratorTest {
                             0);
             org.springframework.test.util.ReflectionTestUtils.setField(existingOpener, "id", 7777L);
             qs.addQuestion(existingOpener);
-            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(QuestionSetCategory.RESUME_BASED)))
+            given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(InterviewType.RESUME_BASED)))
                     .willReturn(java.util.Optional.of(qs));
 
             FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);

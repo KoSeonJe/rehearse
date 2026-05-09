@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.question.dto;
 
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,7 +19,7 @@ public class AnswerResponse {
     private final long startMs;
     private final long endMs;
 
-    public static AnswerResponse from(QuestionAnswer answer, QuestionSetCategory category) {
+    public static AnswerResponse from(QuestionAnswer answer, InterviewType category) {
         var question = answer.getQuestion();
         String perspective = question.getQuestionType()
                 .rubricCategory()

@@ -15,7 +15,6 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.adapter.RubricScoringAdapter;
@@ -82,7 +81,7 @@ class RubricScorerTest {
 
         questionSet = QuestionSet.builder()
                 .interview(standardInterview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex(0)
                 .build();
 

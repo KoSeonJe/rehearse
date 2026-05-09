@@ -27,7 +27,7 @@ import com.rehearse.api.domain.reviewbookmark.dto.BookmarkIdPair;
 import java.util.List;
 import java.util.Optional;
 
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -68,7 +68,7 @@ class ReviewBookmarkRepositoryTest extends AbstractMySqlContainerTest {
 
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         entityManager.persist(questionSet);

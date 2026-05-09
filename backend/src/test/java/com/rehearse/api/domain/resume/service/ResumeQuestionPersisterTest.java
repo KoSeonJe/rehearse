@@ -6,7 +6,7 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ class ResumeQuestionPersisterTest {
         long interviewId = 19L;
         Interview interview = Interview.builder().build();
         given(interviewFinder.findById(interviewId)).willReturn(interview);
-        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED)))
+        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(InterviewType.RESUME_BASED)))
                 .willReturn(Optional.empty());
         given(questionSetRepository.countByInterviewId(interviewId)).willReturn(0L);
         given(questionSetRepository.save(any(QuestionSet.class)))
@@ -57,9 +57,9 @@ class ResumeQuestionPersisterTest {
 
         ArgumentCaptor<QuestionSet> captor = ArgumentCaptor.forClass(QuestionSet.class);
         then(questionSetRepository).should().save(captor.capture());
-        assertThat(captor.getValue().getCategory()).isEqualTo(QuestionSetCategory.RESUME_BASED);
+        assertThat(captor.getValue().getCategory()).isEqualTo(InterviewType.RESUME_BASED);
         then(questionSetRepository).should()
-                .findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED));
+                .findByInterviewIdAndCategory(eq(interviewId), eq(InterviewType.RESUME_BASED));
     }
 
     @Test
@@ -67,10 +67,10 @@ class ResumeQuestionPersisterTest {
     void persist_reuses_existing_resume_based_question_set() {
         long interviewId = 19L;
         QuestionSet existing = QuestionSet.builder()
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex(0)
                 .build();
-        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(QuestionSetCategory.RESUME_BASED)))
+        given(questionSetRepository.findByInterviewIdAndCategory(eq(interviewId), eq(InterviewType.RESUME_BASED)))
                 .willReturn(Optional.of(existing));
         given(questionRepository.save(any(Question.class)))
                 .willAnswer(inv -> inv.getArgument(0));

@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.entity;
 
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 
 import java.util.List;
 import java.util.Map;
@@ -62,7 +62,7 @@ public class RubricFamily {
 
     public record RubricResolutionContext(
             boolean resumeTrack,
-            QuestionSetCategory category,
+            InterviewType category,
             RubricCategory feedbackPerspective
     ) {}
 }

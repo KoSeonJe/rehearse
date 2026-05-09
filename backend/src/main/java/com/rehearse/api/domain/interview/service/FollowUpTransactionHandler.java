@@ -5,11 +5,11 @@ import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
@@ -74,10 +74,10 @@ public class FollowUpTransactionHandler {
     }
 
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
-        QuestionSetCategory category = questionSet.getCategory();
+        InterviewType category = questionSet.getCategory();
         return findMainQuestion(questionSet)
                 .map(q -> q.getQuestionType().referenceType())
-                .orElseGet(() -> category == QuestionSetCategory.BEHAVIORAL
+                .orElseGet(() -> category == InterviewType.BEHAVIORAL
                         ? ReferenceType.GUIDE
                         : ReferenceType.MODEL_ANSWER);
     }
@@ -94,7 +94,7 @@ public class FollowUpTransactionHandler {
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
         // RESUME 트랙은 ResumeInterviewOrchestrator path 일임. 본 핸들러 진입 시 = 흐름 결함.
-        if (questionSet.getCategory() == QuestionSetCategory.RESUME_BASED) {
+        if (questionSet.getCategory() == InterviewType.RESUME_BASED) {
             throw new IllegalStateException(
                     "RESUME 트랙은 FollowUpTransactionHandler.saveFollowUpResult 를 호출할 수 없다. questionSetId="
                             + questionSetId);
@@ -135,7 +135,7 @@ public class FollowUpTransactionHandler {
         if (mainType == QuestionType.BEHAVIORAL_MAIN) {
             return QuestionType.BEHAVIORAL_FOLLOWUP;
         }
-        return questionSet.getCategory() == QuestionSetCategory.BEHAVIORAL
+        return questionSet.getCategory() == InterviewType.BEHAVIORAL
                 ? QuestionType.BEHAVIORAL_FOLLOWUP
                 : QuestionType.TECH_FOLLOWUP;
     }

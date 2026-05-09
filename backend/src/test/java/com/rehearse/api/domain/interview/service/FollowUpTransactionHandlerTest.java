@@ -12,7 +12,7 @@ import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
@@ -72,7 +72,7 @@ class FollowUpTransactionHandlerTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.TECH_MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
+                    interview, QuestionType.TECH_MAIN, InterviewType.CS_FUNDAMENTAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
             given(turnPolicy.getMaxFollowUpRounds()).willReturn(2);
@@ -97,7 +97,7 @@ class FollowUpTransactionHandlerTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.BEHAVIORAL_MAIN, QuestionSetCategory.BEHAVIORAL);
+                    interview, QuestionType.BEHAVIORAL_MAIN, InterviewType.BEHAVIORAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
@@ -116,7 +116,7 @@ class FollowUpTransactionHandlerTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.BEHAVIORAL_MAIN, QuestionSetCategory.BEHAVIORAL);
+                    interview, QuestionType.BEHAVIORAL_MAIN, InterviewType.BEHAVIORAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
@@ -135,7 +135,7 @@ class FollowUpTransactionHandlerTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.TECH_MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
+                    interview, QuestionType.TECH_MAIN, InterviewType.CS_FUNDAMENTAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(turnPolicyResolver.resolve(interview)).willReturn(turnPolicy);
 
@@ -241,7 +241,7 @@ class FollowUpTransactionHandlerTest {
         void saveFollowUpResult_techMain_persistsTechFollowUp() {
             Interview interview = createInProgressInterview();
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.TECH_MAIN, QuestionSetCategory.CS_FUNDAMENTAL);
+                    interview, QuestionType.TECH_MAIN, InterviewType.CS_FUNDAMENTAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -262,7 +262,7 @@ class FollowUpTransactionHandlerTest {
         void saveFollowUpResult_behavioralMain_persistsBehavioralFollowUp() {
             Interview interview = createInProgressInterview();
             QuestionSet questionSet = createQuestionSetWithSubTypeMain(
-                    interview, QuestionType.BEHAVIORAL_MAIN, QuestionSetCategory.BEHAVIORAL);
+                    interview, QuestionType.BEHAVIORAL_MAIN, InterviewType.BEHAVIORAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
@@ -390,7 +390,7 @@ class FollowUpTransactionHandlerTest {
     private QuestionSet createQuestionSetWithMainQuestion(Interview interview) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 10L);
@@ -406,7 +406,7 @@ class FollowUpTransactionHandlerTest {
 
     private QuestionSet createQuestionSetWithSubTypeMain(Interview interview,
                                                           QuestionType mainType,
-                                                          QuestionSetCategory category) {
+                                                          InterviewType category) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
                 .category(category)
