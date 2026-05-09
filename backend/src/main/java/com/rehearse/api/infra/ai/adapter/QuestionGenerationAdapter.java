@@ -1,10 +1,8 @@
 package com.rehearse.api.infra.ai.adapter;
 
-import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.*;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -40,9 +38,6 @@ public class QuestionGenerationAdapter {
         GeneratedQuestionsWrapper wrapper = responseParser.parseOrRetry(
                 response, GeneratedQuestionsWrapper.class, client, chatRequest);
 
-        if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
-        return wrapper.getQuestions();
+        return wrapper.questions();
     }
 }

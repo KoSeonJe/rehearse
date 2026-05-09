@@ -113,6 +113,17 @@ class ClaudeApiClientTest {
                 "질문 내용", "답변 내용", null, null, null);
     }
 
+    private GeneratedQuestion sampleQuestion() {
+        return new GeneratedQuestion(
+                "질문", "tts", "category", 1, "criteria", "CS_FUNDAMENTAL", "model", "strategy");
+    }
+
+    private GeneratedFollowUp sampleFollowUp() {
+        return new GeneratedFollowUp(
+                false, null, "후속 질문", "tts", "reason", "DEEP_DIVE",
+                "model", "답변", 0, null);
+    }
+
     // -----------------------------------------------------------------------
     // GenerateQuestions
     // -----------------------------------------------------------------------
@@ -132,9 +143,8 @@ class ClaudeApiClientTest {
             ClaudeResponse response = validResponse("{\"questions\":[]}");
             stubRestClientChain(response);
 
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of(question));
+            GeneratedQuestion question = sampleQuestion();
+            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(question));
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
                     .willReturn(wrapper);
 
@@ -143,52 +153,6 @@ class ClaudeApiClientTest {
 
             // then
             assertThat(result).hasSize(1).containsExactly(question);
-        }
-
-        @Test
-        @DisplayName("빈 questions 리스트를 반환하면 PARSE_FAILED 예외가 발생한다")
-        void generateQuestions_emptyQuestions_throwsParseFailed() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            ClaudeResponse response = validResponse("{}");
-            stubRestClientChain(response);
-
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of());
-            given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
-                    .willReturn(wrapper);
-
-            // when & then
-            assertThatThrownBy(() -> claudeApiClient.generateQuestions(request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode())
-                            .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
-        }
-
-        @Test
-        @DisplayName("null questions를 반환하면 PARSE_FAILED 예외가 발생한다")
-        void generateQuestions_nullQuestions_throwsParseFailed() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            ClaudeResponse response = validResponse("{}");
-            stubRestClientChain(response);
-
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(null);
-            given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
-                    .willReturn(wrapper);
-
-            // when & then
-            assertThatThrownBy(() -> claudeApiClient.generateQuestions(request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode())
-                            .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
         }
 
         @Test
@@ -202,9 +166,7 @@ class ClaudeApiClientTest {
             ClaudeResponse response = validResponse("{}");
             stubRestClientChain(response);
 
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of(question));
+            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
                     .willReturn(wrapper);
 
@@ -236,7 +198,7 @@ class ClaudeApiClientTest {
             ClaudeResponse response = validResponse("{\"question\":\"후속 질문\"}");
             stubRestClientChain(response);
 
-            GeneratedFollowUp followUp = mock(GeneratedFollowUp.class);
+            GeneratedFollowUp followUp = sampleFollowUp();
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedFollowUp.class)))
                     .willReturn(followUp);
 
@@ -258,7 +220,7 @@ class ClaudeApiClientTest {
             ClaudeResponse response = validResponse("{\"question\":\"후속\"}");
             stubRestClientChain(response);
 
-            GeneratedFollowUp followUp = mock(GeneratedFollowUp.class);
+            GeneratedFollowUp followUp = sampleFollowUp();
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedFollowUp.class)))
                     .willReturn(followUp);
 
@@ -326,9 +288,8 @@ class ClaudeApiClientTest {
                     .willThrow(new ResourceAccessException("timeout"))
                     .willReturn(response);
 
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of(question));
+            GeneratedQuestion question = sampleQuestion();
+            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(question));
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
                     .willReturn(wrapper);
 
@@ -489,9 +450,7 @@ class ClaudeApiClientTest {
             given(response.getStopReason()).willReturn("max_tokens");
             stubRestClientChain(response);
 
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of(question));
+            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
                     .willReturn(wrapper);
 
@@ -523,9 +482,7 @@ class ClaudeApiClientTest {
             given(usage.getCacheReadInputTokens()).willReturn(5);
             stubRestClientChain(response);
 
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
-            GeneratedQuestionsWrapper wrapper = mock(GeneratedQuestionsWrapper.class);
-            given(wrapper.getQuestions()).willReturn(List.of(question));
+            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
             given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
                     .willReturn(wrapper);
 

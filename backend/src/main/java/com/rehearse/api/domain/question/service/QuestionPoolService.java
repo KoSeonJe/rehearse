@@ -117,10 +117,10 @@ public class QuestionPoolService {
         List<QuestionPool> pools = generated.stream()
                 .map(gq -> QuestionPool.create(
                         cacheKey,
-                        gq.getContent(),
-                        gq.getTtsContent(),
-                        gq.getCategory(),
-                        gq.getBestAnswer()))
+                        gq.content(),
+                        gq.ttsContent(),
+                        gq.category(),
+                        gq.bestAnswer()))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {

@@ -11,6 +11,18 @@ public record GeneratedInterviewPlan(
         @JsonProperty("project_plans") List<GeneratedProjectPlan> projectPlans
 ) {
 
+    public GeneratedInterviewPlan {
+        if (sessionPlanId == null || sessionPlanId.isBlank()) {
+            throw new IllegalArgumentException(
+                    "GeneratedInterviewPlan.sessionPlanId 는 비어있을 수 없습니다.");
+        }
+        if (projectPlans == null || projectPlans.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "GeneratedInterviewPlan.projectPlans 는 비어있을 수 없습니다.");
+        }
+        projectPlans = List.copyOf(projectPlans);
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GeneratedProjectPlan(
             @JsonProperty("project_id") String projectId,
@@ -24,13 +36,22 @@ public record GeneratedInterviewPlan(
     public record GeneratedPlaygroundPhase(
             @JsonProperty("opener_question") String openerQuestion,
             @JsonProperty("expected_claims_coverage") List<String> expectedClaimsCoverage
-    ) {}
+    ) {
+        public GeneratedPlaygroundPhase {
+            expectedClaimsCoverage = expectedClaimsCoverage != null ? List.copyOf(expectedClaimsCoverage) : List.of();
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GeneratedInterrogationPhase(
             @JsonProperty("primary_chains") List<GeneratedChainRef> primaryChains,
             @JsonProperty("backup_chains") List<GeneratedChainRef> backupChains
-    ) {}
+    ) {
+        public GeneratedInterrogationPhase {
+            primaryChains = primaryChains != null ? List.copyOf(primaryChains) : List.of();
+            backupChains = backupChains != null ? List.copyOf(backupChains) : List.of();
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record GeneratedChainRef(
@@ -38,5 +59,9 @@ public record GeneratedInterviewPlan(
             String topic,
             int priority,
             @JsonProperty("levels_to_cover") List<Integer> levelsToCover
-    ) {}
+    ) {
+        public GeneratedChainRef {
+            levelsToCover = levelsToCover != null ? List.copyOf(levelsToCover) : List.of();
+        }
+    }
 }

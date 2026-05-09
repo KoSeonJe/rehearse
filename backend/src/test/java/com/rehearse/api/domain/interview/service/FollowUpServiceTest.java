@@ -141,31 +141,15 @@ class FollowUpServiceTest {
     }
 
     private static GeneratedFollowUp stepBQuestion(String question) {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(f, "question", question);
-        ReflectionTestUtils.setField(f, "ttsQuestion", question);
-        ReflectionTestUtils.setField(f, "reason", "r");
-        ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
-        ReflectionTestUtils.setField(f, "bestAnswer", "m");
-        ReflectionTestUtils.setField(f, "answerText", "x");
-        ReflectionTestUtils.setField(f, "selectedAnswerFeedbackPerspective", "RELIABILITY");
-        ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
-        return f;
+        return new GeneratedFollowUp(
+                Boolean.FALSE, null, question, question, "r", "DEEP_DIVE",
+                "m", "x", null, "RELIABILITY");
     }
 
     private static GeneratedFollowUp stepBSkip(String reason) {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(f, "skip", Boolean.TRUE);
-        ReflectionTestUtils.setField(f, "skipReason", reason);
-        return f;
-    }
-
-    private static GeneratedFollowUp stepBBlankQuestion() {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(f, "question", "  ");
-        ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
-        ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
-        return f;
+        return new GeneratedFollowUp(
+                Boolean.TRUE, reason, null, null, null, null,
+                null, null, null, null);
     }
 
     private static MockMultipartFile audio() {
@@ -256,21 +240,6 @@ class FollowUpServiceTest {
 
             then(followUpTransactionHandler).should()
                     .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
-        }
-
-        @Test
-        @DisplayName("Step B 응답이 skip=false 인데 question 이 비어 있으면 PARSE_FAILED")
-        void generateFollowUp_stepBNonSkipWithBlankQuestion_throwsParseFailed() {
-            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
-            given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
-                    .willReturn(turn("답변", analysisOf(RecommendedNextAction.DEEP_DIVE)));
-            given(followUpQuestionWriter.write(any(), any(), any())).willReturn(stepBBlankQuestion());
-
-            assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("AI_005"));
-            then(followUpTransactionHandler).should(never())
-                    .saveFollowUpResultAndPublishEvent(anyLong(), any(), any(), any());
         }
 
         @Test
