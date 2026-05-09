@@ -64,7 +64,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
 - 단 하나의 초점만 다루는 질문을 생성하세요. 복합 질문(A 그리고 B?) 금지.
 - **답변 속 개념과 무관한 일반 지식 질문 금지**. 지원자가 설명한 개념의 연장선에서 물어야 합니다.
 - 이전 후속 질문과 같은 하위 주제를 반복하지 마세요.
-- `modelAnswer`는 해당 개념의 핵심을 2~4문장으로 작성하세요.
+- `bestAnswer`는 해당 개념의 핵심을 2~4문장으로 작성하세요.
 
 ## 엣지 응답 처리 지시
 
@@ -155,7 +155,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
   "tts_question": "TTS가 자연스럽게 읽을 수 있도록 변환한 질문",
   "reason": "depth_score 2짜리 claim[0] 을 메커니즘 레벨로 심화",
   "type": "DEEP_DIVE",
-  "model_answer": "해당 개념의 핵심 설명 (2~4문장)"
+  "best_answer": "해당 개념의 핵심 설명 (2~4문장)"
 }
 ```
 
@@ -171,7 +171,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
   "tts_question": null,
   "reason": null,
   "type": null,
-  "model_answer": null
+  "best_answer": null
 }
 ```
 

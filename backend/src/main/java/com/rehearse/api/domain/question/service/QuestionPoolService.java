@@ -120,7 +120,7 @@ public class QuestionPoolService {
                         gq.getContent(),
                         gq.getTtsContent(),
                         gq.getCategory(),
-                        gq.getModelAnswer()))
+                        gq.getBestAnswer()))
                 .collect(Collectors.toList());
 
         if (shouldSaveToPool(cacheKey)) {

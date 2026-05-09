@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.resume.service;
 
-final class ResumeFallbackModelAnswers {
+final class ResumeFallbackBestAnswers {
 
     static final String OPENER =
             "이번 답변은 본인 프로젝트의 핵심 역할과 주요 성과를 시간 순으로 풀어내는 구조가 효과적입니다. "
@@ -20,5 +20,5 @@ final class ResumeFallbackModelAnswers {
                     + "비교 (TRADEOFF) 단계는 측정값 기반 트레이드오프와 다른 후보와의 비교를 짚는 구조가 효과적입니다. "
                     + "STAR 구조와 함께 그 경험에서 얻은 학습 한 줄로 마무리하세요.";
 
-    private ResumeFallbackModelAnswers() {}
+    private ResumeFallbackBestAnswers() {}
 }

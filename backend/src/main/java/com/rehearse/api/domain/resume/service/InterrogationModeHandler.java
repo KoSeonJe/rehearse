@@ -59,7 +59,7 @@ public class InterrogationModeHandler {
         return tracker.withLock(() -> {
             Long questionId = questionPersister.persist(
                     interviewId, QuestionType.RESUME_INTERROGATION, result.question(),
-                    result.ttsQuestion(), result.modelAnswer(), snapshot.orderIndex());
+                    result.ttsQuestion(), result.bestAnswer(), snapshot.orderIndex());
             applyDecision(tracker, result, snapshot.answerQuality(), snapshot.currentLevel());
             log.info("[InterrogationHandler] turn 처리: interviewId={}, chainId={}, level={}, action={}",
                     interviewId, snapshot.chainTopic(), snapshot.currentLevel(), result.nextAction());

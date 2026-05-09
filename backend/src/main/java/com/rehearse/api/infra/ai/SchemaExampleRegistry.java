@@ -37,7 +37,7 @@ public class SchemaExampleRegistry {
               "ttsQuestion": "TTS 변환된 질문",
               "reason": "선택 근거 한 줄",
               "type": "DEEP_DIVE",
-              "modelAnswer": "참고 답변 2~4문장"
+              "best_answer": "참고 답변 2~4문장"
             }
             """;
 
