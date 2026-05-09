@@ -15,7 +15,7 @@ class AskedPerspectivesTest {
 
     private static FollowUpExchange exchange(String perspective) {
         FollowUpExchange e = new FollowUpExchange();
-        ReflectionTestUtils.setField(e, "selectedPerspective", perspective);
+        ReflectionTestUtils.setField(e, "selectedAnswerFeedbackPerspective", perspective);
         return e;
     }
 

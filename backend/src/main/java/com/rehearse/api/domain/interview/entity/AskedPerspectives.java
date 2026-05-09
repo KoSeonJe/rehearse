@@ -17,7 +17,7 @@ public record AskedPerspectives(List<AnswerFeedbackPerspective> values) {
             return new AskedPerspectives(List.of());
         }
         return new AskedPerspectives(exchanges.stream()
-                .map(FollowUpExchange::getSelectedPerspective)
+                .map(FollowUpExchange::getSelectedAnswerFeedbackPerspective)
                 .filter(Objects::nonNull)
                 .map(AskedPerspectives::parse)
                 .filter(Optional::isPresent)

@@ -148,7 +148,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
         ReflectionTestUtils.setField(f, "modelAnswer", "m");
         ReflectionTestUtils.setField(f, "answerText", "x");
-        ReflectionTestUtils.setField(f, "selectedPerspective", "RELIABILITY");
+        ReflectionTestUtils.setField(f, "selectedAnswerFeedbackPerspective", "RELIABILITY");
         ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);
         return f;
     }
@@ -204,7 +204,7 @@ class FollowUpServiceTest {
             assertThat(response.getQuestionId()).isEqualTo(100L);
             assertThat(response.getQuestion()).isEqualTo("Step B 가 만든 꼬리질문");
             assertThat(response.getType()).isEqualTo("DEEP_DIVE");
-            assertThat(response.getSelectedPerspective()).isEqualTo("RELIABILITY");
+            assertThat(response.getSelectedAnswerFeedbackPerspective()).isEqualTo("RELIABILITY");
             assertThat(response.isFollowUpExhausted()).isFalse();
             then(followUpQuestionWriter).should().write(any(), any(), any());
         }

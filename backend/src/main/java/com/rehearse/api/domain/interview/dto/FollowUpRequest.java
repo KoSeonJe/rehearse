@@ -33,7 +33,7 @@ public class FollowUpRequest {
         private String question;
         private String answerText;
         private String followUpType;
-        private String selectedPerspective;
+        private String selectedAnswerFeedbackPerspective;
 
         public FollowUpExchange(String question, String answerText) {
             this(question, answerText, null, null);
