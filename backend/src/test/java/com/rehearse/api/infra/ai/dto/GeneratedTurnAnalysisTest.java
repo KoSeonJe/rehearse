@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("GeneratedTurnAnalysis - LLM 응답 매핑 시점 검증 + toDomain")
 class GeneratedTurnAnalysisTest {
@@ -37,17 +36,12 @@ class GeneratedTurnAnalysisTest {
             GeneratedTurnAnalysis g = new GeneratedTurnAnalysis(null, sampleAnalysis());
             assertThat(g.answerText()).isEqualTo("");
         }
-    }
-
-    @Nested
-    @DisplayName("매핑 거절")
-    class Rejection {
 
         @Test
-        @DisplayName("answerAnalysis 가 null 이면 거절한다")
-        void should_reject_when_answer_analysis_null() {
-            assertThatThrownBy(() -> new GeneratedTurnAnalysis("text", null))
-                    .isInstanceOf(IllegalArgumentException.class);
+        @DisplayName("answerAnalysis null 통과 — toDomain() 시점에 empty 분석으로 fallback")
+        void should_allow_null_answer_analysis_for_silent_fallback() {
+            GeneratedTurnAnalysis g = new GeneratedTurnAnalysis("text", null);
+            assertThat(g.answerAnalysis()).isNull();
         }
     }
 
@@ -62,6 +56,19 @@ class GeneratedTurnAnalysisTest {
             TurnAnalysisResult domain = g.toDomain();
             assertThat(domain.answerText()).isEqualTo("answer");
             assertThat(domain.answerAnalysis().answerQuality()).isEqualTo(3);
+        }
+
+        @Test
+        @DisplayName("answerAnalysis 가 null 이면 AnswerAnalysis.empty(0) 로 silent fallback")
+        void should_fallback_to_empty_when_answer_analysis_null() {
+            GeneratedTurnAnalysis g = new GeneratedTurnAnalysis("text", null);
+            TurnAnalysisResult domain = g.toDomain();
+            assertThat(domain.answerText()).isEqualTo("text");
+            assertThat(domain.answerAnalysis()).isNotNull();
+            assertThat(domain.answerAnalysis().turnId()).isEqualTo(0L);
+            assertThat(domain.answerAnalysis().answerQuality()).isEqualTo(1);
+            assertThat(domain.answerAnalysis().recommendedNextAction())
+                    .isEqualTo(RecommendedNextAction.CLARIFICATION);
         }
     }
 }

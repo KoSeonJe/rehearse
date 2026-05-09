@@ -176,4 +176,25 @@ class AudioTurnAnalyzerTest {
                 null, 50L, AUDIO, "질문", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty()))
                 .isInstanceOf(IllegalArgumentException.class);
     }
+
+    @Test
+    @DisplayName("LLM 이 answer_analysis 누락 시 empty 분석으로 silent 진행 — 인터뷰 흐름 유지")
+    void analyze_missingAnswerAnalysis_silentlyFallsBackToEmpty() {
+        String json = """
+                {
+                  "answer_text": "음... 잘 모르겠어요."
+                }
+                """;
+        given(aiClient.chatWithAudio(any(ChatRequest.class), any())).willReturn(jsonResponse(json));
+
+        TurnAnalysisResult result = audioTurnAnalyzer.analyze(
+                1L, 50L, AUDIO, "질문", ReferenceType.MODEL_ANSWER, AskedPerspectives.empty());
+
+        assertThat(result.answerText()).isEqualTo("음... 잘 모르겠어요.");
+        assertThat(result.answerAnalysis()).isNotNull();
+        assertThat(result.answerAnalysis().turnId()).isEqualTo(50L);
+        assertThat(result.answerAnalysis().recommendedNextAction())
+                .isEqualTo(RecommendedNextAction.CLARIFICATION);
+        then(runtimeStateStore).should().update(any(), any());
+    }
 }

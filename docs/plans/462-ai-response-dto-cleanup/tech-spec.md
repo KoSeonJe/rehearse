@@ -174,7 +174,7 @@ public record AnswerAnalysis(
 | Generated 클래스 | 필수 필드 | range / enum | null → empty | 도메인 객체 분리 |
 |---|---|---|---|---|
 | `GeneratedAnswerAnalysis` | `recommendedNextAction` | `answerQuality` 1-5 | claims / missing / assumptions null → `List.of()` | `AnswerAnalysis` |
-| `GeneratedTurnAnalysis` | `answerAnalysis` (null 거절) | — | `answerText` null → `""` | `TurnAnalysisResult` |
+| `GeneratedTurnAnalysis` | — (`answerAnalysis null` 통과, `toDomain()` 시 `AnswerAnalysis.empty(0L)`) | — | `answerText` null → `""` | `TurnAnalysisResult` |
 | `GeneratedFollowUp` | `skip == false` 시 `question` non-blank (skip 분기 보존) | — (type 등 enum 검증 X — 기존 동작 유지) | — | — |
 | `GeneratedQuestion` | `content` non-blank, `questionCategory` non-blank | — | — | — |
 | `GeneratedQuestionsWrapper` | `questions` non-empty | — | questions null → 거절 | — |
@@ -189,6 +189,8 @@ public record AnswerAnalysis(
 > **GeneratedRubricScoring 검증 완화 사유** — `RubricScoringAdapter.buildFallbackScore` 가 LLM 빈 `dimensionScores` 응답을 `notApplicable` 맵으로 fallback 처리 (운영 정책). compact constructor 에서 non-empty 강제 시 검증 거절 → Jackson wrap → `parseOrRetry` schema retry → 2차 실패 시 `BusinessException(AI_PARSE_FAILED)` = **기존 fallback 우회 = 행위 변경 = 비스코프 침범**. 따라서 `dimensionScores` non-empty 는 검증 룰 제외, score range (1-3) 만 검증 적용. fallback 정책은 adapter 책임 그대로.
 >
 > **GeneratedFollowUp 검증 완화 사유** — `skip=true` 케이스는 `question` 비어도 정상 흐름 (질문 생략 분기). compact constructor 에서 무조건 question non-blank 강제 시 skip 응답 거절 = 행위 변경. `skip=false` 일 때만 question non-blank 검증.
+>
+> **GeneratedTurnAnalysis silent fallback 보존 사유** — 이전 `TurnAnalysisResult.fromJson` (`@JsonCreator`) 가 LLM `answer_analysis` 누락 응답 시 `AnswerAnalysis.empty(0L)` 로 silent 진행하던 동작을 `Generated*` 분리 후에도 보존. compact constructor 에서 `answerAnalysis null` 거절 시 BusinessException → 인터뷰 흐름 차단 = 행위 변경 = 비스코프 침범. 따라서 `answerAnalysis null` 통과 + `toDomain()` 시점에 `AnswerAnalysis.empty(0L)` 로 fallback (turnId 은 `AudioTurnAnalyzer.commit` 의 `withTurnId` 가 덮어씀).
 
 ### class → record 전환 영향 (실측)
 
@@ -251,7 +253,7 @@ DB 스키마 변경 **없음**.
 ### Domain Unit (Generated* 검증)
 
 - [ ] `GeneratedAnswerAnalysis` — 정상 / `answerQuality < 1` 또는 `> 5` 거절 / `recommendedNextAction == null` 거절 / null list → empty / `toDomain()` 등가성
-- [ ] `GeneratedTurnAnalysis` — 정상 / `answerAnalysis == null` 거절 / `toDomain()`
+- [ ] `GeneratedTurnAnalysis` — 정상 / `answerAnalysis null` 통과 / `toDomain()` 시 `answerAnalysis null` → `AnswerAnalysis.empty(0L)` silent fallback
 - [ ] `GeneratedRubricScoring` — 정상 / `dimensionScores` 빈 거절 / 각 `score` range 거절 / `toDomain()`
 - [ ] `GeneratedSessionFeedback` — 정상 / nested 5종 누락 거절 (cardinality 는 parser 잔존)
 - [ ] `GeneratedCompactionSummary` — 정상 / null list → empty / `toCompactString()` 호환
