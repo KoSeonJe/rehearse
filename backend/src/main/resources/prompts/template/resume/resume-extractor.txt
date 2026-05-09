@@ -11,6 +11,12 @@
 5. **project_name 처리**:
    - 이력서에 명시된 프로젝트명이 있으면 그대로 사용 (번역·요약·줄임 금지).
    - 명시 명칭이 없으면 빈 문자열 또는 null 로 둘 것. 임의 명칭 생성·요약·hallucinate 금지.
+6. **프로젝트 메타 4종 추출 (필수)**: 각 프로젝트에 대해 면접 깊이 직결 정보를 별도 키로 추출.
+   - `tech_stack`: 사용 기술 (배열, 이력서 명시 어휘 그대로). 예: ["Spring Boot", "Redis", "MySQL"]
+   - `role`: 본인 역할 1줄 (이력서에 명시된 담당 범위만). 예: "백엔드 단독 / API + 캐시 레이어 설계"
+   - `architecture`: 시스템 구성 한 문장 (~80자). 예: "Spring Boot REST API + Redis Cache-Aside + MySQL"
+   - `decisions`: 결정 사유 배열 (각 element = "X vs Y → X 채택, 사유 1줄" 형식). 예: ["Memcached vs Redis → Redis 채택, TTL 정책 필요"]
+   - 이력서에 정보가 부재한 메타는 빈 문자열 / 빈 배열로 둘 것. 추측·합성·보강 금지.
 
 ## 출력 스키마 (JSON 객체 하나만 출력, 마크다운 금지)
 ```json
@@ -22,13 +28,15 @@
     {
       "project_id": "p1",
       "project_name": "이력서 명시 명칭 (없으면 빈 문자열 또는 null)",
+      "tech_stack": ["사용 기술 어휘"],
+      "role": "본인 역할 1줄",
+      "architecture": "시스템 구성 한 문장",
+      "decisions": ["X vs Y → X 채택, 사유 1줄"],
       "claims": [
         {
-          "claim_id": "p1_c1",
           "text": "이력서에 명시된 원문 또는 요약",
           "claim_type": "PROBLEM_SOLVING|ARCHITECTURE_CHOICE|IMPLEMENTATION|IMPACT_METRIC",
-          "priority": "high|medium|low",
-          "depth_hooks": ["심화 질문에 활용 가능한 키워드 1~3개"]
+          "priority": "high|medium|low"
         }
       ],
       "implicit_cs_topics": [
@@ -46,9 +54,9 @@
     }
   ],
   "interrogation_priority_map": {
-    "high": ["claim_id 목록"],
-    "medium": ["claim_id 목록"],
-    "low": ["claim_id 목록"]
+    "high": ["claim text 목록"],
+    "medium": ["claim text 목록"],
+    "low": ["claim text 목록"]
   }
 }
 ```
@@ -67,7 +75,7 @@
 ### 예시 1: 프로젝트명 미명시 → project_name 은 빈 문자열 (요약 명칭 생성 금지)
 
 이력서 스니펫:
-"주문 조회 API p95 응답 800ms → Redis Cache-Aside + TTL 5분으로 120ms 달성. JPA fetch join으로 N+1 문제 해결."
+"주문 조회 API p95 응답 800ms → Redis Cache-Aside + TTL 5분으로 120ms 달성. JPA fetch join으로 N+1 문제 해결. Spring Boot 백엔드 단독 담당. Memcached 대신 Redis 선택 (TTL 정책 필요)."
 
 출력:
 ```json
@@ -79,20 +87,20 @@
     {
       "project_id": "p1",
       "project_name": "",
+      "tech_stack": ["Spring Boot", "Redis", "MySQL", "JPA"],
+      "role": "백엔드 단독 / API + 캐시 레이어 설계",
+      "architecture": "Spring Boot REST API + Redis Cache-Aside + MySQL",
+      "decisions": ["Memcached vs Redis → Redis 채택, TTL 정책 필요"],
       "claims": [
         {
-          "claim_id": "p1_c1",
           "text": "Redis Cache-Aside + TTL 5분으로 주문 조회 p95 800ms → 120ms 달성",
           "claim_type": "IMPACT_METRIC",
-          "priority": "high",
-          "depth_hooks": ["Cache-Aside 패턴", "TTL 설정 기준", "캐시 일관성"]
+          "priority": "high"
         },
         {
-          "claim_id": "p1_c2",
           "text": "JPA fetch join으로 N+1 문제 해결",
           "claim_type": "PROBLEM_SOLVING",
-          "priority": "medium",
-          "depth_hooks": ["N+1 발생 원인", "fetch join vs @BatchSize 트레이드오프"]
+          "priority": "medium"
         }
       ],
       "implicit_cs_topics": [
@@ -110,8 +118,8 @@
     }
   ],
   "interrogation_priority_map": {
-    "high": ["p1_c1"],
-    "medium": ["p1_c2"],
+    "high": ["Redis Cache-Aside + TTL 5분으로 주문 조회 p95 800ms → 120ms 달성"],
+    "medium": ["JPA fetch join으로 N+1 문제 해결"],
     "low": []
   }
 }
@@ -125,8 +133,8 @@
 출력 projects 배열만:
 ```json
 "projects": [
-  { "project_id": "p1", "project_name": "쿠폰 발급 시스템", "claims": [...], "implicit_cs_topics": [...] },
-  { "project_id": "p2", "project_name": "사내 모니터링 대시보드", "claims": [...], "implicit_cs_topics": [...] }
+  { "project_id": "p1", "project_name": "쿠폰 발급 시스템", "tech_stack": [...], "role": "...", "architecture": "...", "decisions": [...], "claims": [...], "implicit_cs_topics": [...] },
+  { "project_id": "p2", "project_name": "사내 모니터링 대시보드", "tech_stack": [...], "role": "...", "architecture": "...", "decisions": [...], "claims": [...], "implicit_cs_topics": [...] }
 ]
 ```
-(claims / implicit_cs_topics 구조는 예시 1과 동일. 명시 명칭이 있을 때는 그대로 사용한다.)
+(claims / implicit_cs_topics / 메타 4종 구조는 예시 1과 동일. 명시 명칭이 있을 때는 그대로 사용한다.)

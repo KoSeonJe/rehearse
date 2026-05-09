@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.rehearse.api.domain.resume.entity.Project;
+import com.rehearse.api.domain.resume.entity.ResumeClaim;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.ResumeExtractionService;
 import com.rehearse.api.global.support.AbstractMySqlContainerTest;
@@ -97,6 +98,74 @@ class ResumeExtractorLiveTest extends AbstractMySqlContainerTest {
                             || p.projectName().contains("주문"));
             assertThat(explicitNamePresent)
                     .as("이력서 명시 명칭의 핵심 어휘 (캐싱 / 결제 / 주문) 가 추출 결과에 포함되어야 한다")
+                    .isTrue();
+        }
+    }
+
+    @Nested
+    @DisplayName("Live extractor — 메타 4종 + claim 적재")
+    class MetaAndClaimExtraction {
+
+        @Test
+        @DisplayName("백엔드 이력서 → tech_stack / role / architecture / decisions / claims 모두 의미 있게 채워진다")
+        void extracts_meta_fields_and_claims_for_backend_resume() {
+            String resumeText = """
+                    경력 2년차 백엔드 개발자 (Java/Spring)
+
+                    ## 주문 조회 캐싱 개선 프로젝트 (2024.01 - 2024.06)
+                    - 역할: 백엔드 단독 / API 레이어 + 캐시 레이어 설계
+                    - 기술: Spring Boot 3.x, Redis 7, MySQL 8, JPA, JUnit 5
+                    - 아키텍처: Spring Boot REST API + Redis Cache-Aside + MySQL primary
+
+                    ### 성과
+                    - 주문 조회 API p95 응답시간 800ms → 120ms 단축 (Redis Cache-Aside 도입)
+                    - JPA fetch join 으로 N+1 문제 해결
+                    - TTL 5분 정책 + cache stampede 방어 (single-flight)
+
+                    ### 의사결정
+                    - Memcached vs Redis → Redis 채택 (TTL 정책 / Lua 스크립트 필요)
+                    - Cache-Aside vs Write-Through → Cache-Aside 채택 (쓰기 빈도 낮음, 일관성 단순화)
+                    """;
+            String fileHash = "live-meta-test-hash-" + System.currentTimeMillis();
+
+            ResumeSkeleton skeleton = extractionService.extract(resumeText, fileHash);
+
+            assertThat(skeleton).isNotNull();
+            assertThat(skeleton.projects()).isNotEmpty();
+
+            Project project = skeleton.projects().get(0);
+
+            assertThat(project.techStack())
+                    .as("tech_stack 은 이력서 명시 어휘를 1개 이상 포함해야 한다 (Spring / Redis / MySQL / JPA)")
+                    .anyMatch(s -> s.toLowerCase().contains("spring")
+                            || s.toLowerCase().contains("redis")
+                            || s.toLowerCase().contains("mysql")
+                            || s.toLowerCase().contains("jpa"));
+
+            assertThat(project.role())
+                    .as("role 은 non-blank 이며 '백엔드' 어휘를 포함해야 한다")
+                    .isNotBlank()
+                    .contains("백엔드");
+
+            assertThat(project.architecture())
+                    .as("architecture 는 non-blank 이며 'Redis' 또는 'Cache' 어휘를 포함해야 한다")
+                    .isNotBlank()
+                    .matches(s -> s.toLowerCase().contains("redis") || s.toLowerCase().contains("cache"));
+
+            assertThat(project.decisions())
+                    .as("decisions 는 1개 이상 'Redis' 또는 'Cache-Aside' 결정을 포함해야 한다")
+                    .anyMatch(d -> d.toLowerCase().contains("redis") || d.toLowerCase().contains("cache-aside"));
+
+            assertThat(project.claims())
+                    .as("claims 는 1개 이상 추출되어야 하며 모두 non-blank text 보유")
+                    .isNotEmpty()
+                    .allSatisfy(c -> assertThat(c.text()).isNotBlank());
+
+            boolean impactClaimPresent = project.claims().stream()
+                    .map(ResumeClaim::text)
+                    .anyMatch(t -> t.contains("800") || t.contains("120") || t.contains("응답"));
+            assertThat(impactClaimPresent)
+                    .as("성과 claim text 에 정량 어휘 (800 / 120 / 응답) 중 하나가 포함되어야 한다")
                     .isTrue();
         }
     }
