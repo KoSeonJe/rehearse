@@ -111,7 +111,8 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
         ChainStep whyMech = new ChainStep(3, StepType.WHY_MECH, "왜 Redis 인가?");
         ChainStep tradeoff = new ChainStep(4, StepType.TRADEOFF, "트레이드오프?");
         InterrogationChain chain = new InterrogationChain("Redis 캐싱", 0.9, List.of(what, how, whyMech, tradeoff));
-        Project project = new Project("proj1", "Redis 캐싱 프로젝트", List.of(), List.of(chain));
+        Project project = new Project("proj1", "Redis 캐싱 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of(chain));
         return new ResumeSkeleton("resume1", "hash", null, "backend", List.of(project), java.util.Map.of());
     }
 

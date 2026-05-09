@@ -1,10 +1,12 @@
 package com.rehearse.api.domain.resume.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 
 import java.util.List;
 import java.util.Map;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record ResumeSkeleton(
         String resumeId,
         String fileHash,

@@ -21,12 +21,20 @@ class ProjectTest {
             Project project = new Project(
                     "p1",
                     "주문 API 캐싱 프로젝트",
+                    List.of("Spring Boot", "Redis"),
+                    "백엔드 단독",
+                    "Spring + Redis Cache-Aside",
+                    List.of("Memcached vs Redis → Redis 채택"),
                     List.of(),
                     List.of()
             );
 
             assertThat(project.projectId()).isEqualTo("p1");
             assertThat(project.projectName()).isEqualTo("주문 API 캐싱 프로젝트");
+            assertThat(project.techStack()).containsExactly("Spring Boot", "Redis");
+            assertThat(project.role()).isEqualTo("백엔드 단독");
+            assertThat(project.architecture()).isEqualTo("Spring + Redis Cache-Aside");
+            assertThat(project.decisions()).containsExactly("Memcached vs Redis → Redis 채택");
             assertThat(project.claims()).isEmpty();
             assertThat(project.implicitCsTopics()).isEmpty();
         }
@@ -34,10 +42,23 @@ class ProjectTest {
         @Test
         @DisplayName("claims / implicitCsTopics 가 null 이어도 빈 리스트로 정규화된다")
         void normalize_null_collections_to_empty() {
-            Project project = new Project("p1", "이름", null, null);
+            Project project = new Project("p1", "이름",
+                    List.of(), "", "", List.of(), null, null);
 
             assertThat(project.claims()).isEmpty();
             assertThat(project.implicitCsTopics()).isEmpty();
+        }
+
+        @Test
+        @DisplayName("메타 4종 (techStack/role/architecture/decisions) 이 null 이어도 정규화된다 — 운영 row 호환")
+        void normalize_null_meta_fields() {
+            Project project = new Project("p1", "이름",
+                    null, null, null, null, List.of(), List.of());
+
+            assertThat(project.techStack()).isEmpty();
+            assertThat(project.role()).isEmpty();
+            assertThat(project.architecture()).isEmpty();
+            assertThat(project.decisions()).isEmpty();
         }
     }
 
@@ -48,7 +69,8 @@ class ProjectTest {
         @Test
         @DisplayName("projectId 가 null 이면 예외가 발생한다")
         void throw_when_projectId_null() {
-            assertThatThrownBy(() -> new Project(null, "이름", List.of(), List.of()))
+            assertThatThrownBy(() -> new Project(null, "이름",
+                    List.of(), "", "", List.of(), List.of(), List.of()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("projectId");
         }
@@ -56,7 +78,8 @@ class ProjectTest {
         @Test
         @DisplayName("projectId 가 공백이면 예외가 발생한다")
         void throw_when_projectId_blank() {
-            assertThatThrownBy(() -> new Project("   ", "이름", List.of(), List.of()))
+            assertThatThrownBy(() -> new Project("   ", "이름",
+                    List.of(), "", "", List.of(), List.of(), List.of()))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("projectId");
         }
@@ -69,7 +92,8 @@ class ProjectTest {
         @Test
         @DisplayName("projectName 이 null 이어도 Project 가 생성된다 — extractor 가 명칭 hallucinate 하지 않도록 허용")
         void allow_null_projectName() {
-            Project project = new Project("p1", null, List.of(), List.of());
+            Project project = new Project("p1", null,
+                    List.of(), "", "", List.of(), List.of(), List.of());
 
             assertThat(project.projectName()).isNull();
         }
@@ -77,7 +101,8 @@ class ProjectTest {
         @Test
         @DisplayName("projectName 이 공백이어도 Project 가 생성된다 — 다운스트림 prompt 가 open question 으로 전환")
         void allow_blank_projectName() {
-            Project project = new Project("p1", "   ", List.of(), List.of());
+            Project project = new Project("p1", "   ",
+                    List.of(), "", "", List.of(), List.of(), List.of());
 
             assertThat(project.projectName()).isEqualTo("   ");
         }

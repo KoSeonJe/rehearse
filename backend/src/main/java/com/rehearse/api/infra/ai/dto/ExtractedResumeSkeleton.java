@@ -37,6 +37,15 @@ public class ExtractedResumeSkeleton {
         @JsonProperty("project_name")
         private String projectName;
 
+        @JsonProperty("tech_stack")
+        private List<String> techStack;
+
+        private String role;
+
+        private String architecture;
+
+        private List<String> decisions;
+
         private List<ExtractedClaim> claims;
 
         @JsonProperty("implicit_cs_topics")
@@ -48,18 +57,12 @@ public class ExtractedResumeSkeleton {
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class ExtractedClaim {
 
-        @JsonProperty("claim_id")
-        private String claimId;
-
         private String text;
 
         @JsonProperty("claim_type")
         private String claimType;
 
         private String priority;
-
-        @JsonProperty("depth_hooks")
-        private List<String> depthHooks;
     }
 
     @Getter

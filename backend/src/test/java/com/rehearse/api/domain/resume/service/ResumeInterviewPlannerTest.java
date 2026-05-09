@@ -117,16 +117,17 @@ class ResumeInterviewPlannerTest {
                 new ChainStep(4, StepType.TRADEOFF, "T")
         );
         List<ResumeClaim> claims = List.of(
-                new ResumeClaim("p1_c1", "claim", ClaimType.IMPLEMENTATION, Priority.HIGH, List.of())
+                new ResumeClaim("claim", ClaimType.IMPLEMENTATION, Priority.HIGH)
         );
-        Project project = new Project("p1", "Redis 캐싱 프로젝트", claims, List.of(new InterrogationChain("Redis", 0.9, steps)));
+        Project project = new Project("p1", "Redis 캐싱 프로젝트",
+                List.of(), "", "", List.of(), claims, List.of(new InterrogationChain("Redis", 0.9, steps)));
         return new ResumeSkeleton("r1", "h1", CandidateLevel.JUNIOR, "backend", List.of(project), Map.of());
     }
 
     private InterviewPlan createFixturePlan(int durationMin) {
         ChainReference chain = new ChainReference("p1::Redis", "Redis", 1, List.of(1, 2));
         InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
-        PlaygroundPhase playground = new PlaygroundPhase("opener", List.of("p1_c1"));
+        PlaygroundPhase playground = new PlaygroundPhase("opener", List.of("claim"));
         ProjectPlan project = new ProjectPlan("p1", "Project A", 1, playground, interrogation);
         return new InterviewPlan("plan_test", List.of(project));
     }

@@ -103,7 +103,16 @@ public class ResumeExtractionService {
     private Project mapProject(ExtractedProject raw) {
         List<ResumeClaim> claims = mapClaims(raw.getClaims());
         List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
-        return new Project(raw.getProjectId(), raw.getProjectName(), claims, chains);
+        return new Project(
+                raw.getProjectId(),
+                raw.getProjectName(),
+                raw.getTechStack(),
+                raw.getRole(),
+                raw.getArchitecture(),
+                raw.getDecisions(),
+                claims,
+                chains
+        );
     }
 
     private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {
@@ -111,17 +120,16 @@ public class ResumeExtractionService {
             return List.of();
         }
         return rawClaims.stream()
+                .filter(c -> c.getText() != null && !c.getText().isBlank())
                 .map(this::mapClaim)
                 .toList();
     }
 
     private ResumeClaim mapClaim(ExtractedClaim raw) {
         return new ResumeClaim(
-                raw.getClaimId(),
                 raw.getText(),
                 ClaimType.fromOrDefault(raw.getClaimType(), ClaimType.IMPLEMENTATION),
-                Priority.fromOrDefault(raw.getPriority(), Priority.MEDIUM),
-                raw.getDepthHooks() != null ? raw.getDepthHooks() : List.of()
+                Priority.fromOrDefault(raw.getPriority(), Priority.MEDIUM)
         );
     }
 
