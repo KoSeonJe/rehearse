@@ -22,7 +22,7 @@ public class AnswerResponse {
     public static AnswerResponse from(QuestionAnswer answer, QuestionSetCategory category) {
         var question = answer.getQuestion();
         String perspective = question.getQuestionType()
-                .feedbackPerspective()
+                .rubricCategory()
                 .name();
 
         return AnswerResponse.builder()

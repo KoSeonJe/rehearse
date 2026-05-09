@@ -153,7 +153,7 @@ public class TimestampFeedbackResponse {
         }
 
         String perspective = (question != null && question.getQuestionType() != null)
-                ? question.getQuestionType().feedbackPerspective().name()
+                ? question.getQuestionType().rubricCategory().name()
                 : null;
 
         List<TechnicalDimensionFeedback> dimFeedbacks = dimensions.stream()

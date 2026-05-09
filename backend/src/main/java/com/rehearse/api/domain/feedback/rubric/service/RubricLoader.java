@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.MappingRule;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.RubricResolutionContext;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -68,7 +68,7 @@ public class RubricLoader implements RubricCatalog {
     public Rubric resolveFor(Question question, QuestionSet questionSet, Interview interview) {
         boolean resumeTrack = interview.getInterviewTypes().contains(InterviewType.RESUME_BASED);
         QuestionSetCategory category = questionSet.getCategory();
-        FeedbackPerspective perspective = question.getQuestionType().feedbackPerspective();
+        RubricCategory perspective = question.getQuestionType().rubricCategory();
 
         RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);
         String rubricId = family.resolve(ctx);
