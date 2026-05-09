@@ -11,7 +11,7 @@ export interface ReviewBookmarkListItem {
   id: number
   timestampFeedbackId: number
   questionText: string | null
-  modelAnswer: string | null
+  bestAnswer: string | null
   transcript: string | null
   coachingImprovement: string | null
   interviewType: string

@@ -65,7 +65,7 @@ export interface QuestionDetail {
   questionType: QuestionType
   questionText: string
   ttsText?: string | null
-  modelAnswer: string | null
+  bestAnswer: string | null
   orderIndex: number
 }
 
@@ -113,7 +113,7 @@ export interface QuestionWithAnswer {
   questionId: number
   questionType: string
   questionText: string
-  modelAnswer: string | null
+  bestAnswer: string | null
   startMs: number | null
   endMs: number | null
 }
@@ -181,7 +181,7 @@ export interface TimestampFeedback {
   questionId: number | null
   questionType: string | null
   questionText: string | null
-  modelAnswer: string | null
+  bestAnswer: string | null
   startMs: number
   endMs: number
   transcript: string | null
@@ -283,7 +283,7 @@ export interface FollowUpResponse {
   reason: string
   type: FollowUpType
   answerText?: string
-  modelAnswer?: string | null
+  bestAnswer?: string | null
   skip: boolean
   skipReason?: string | null
   followUpExhausted?: boolean
