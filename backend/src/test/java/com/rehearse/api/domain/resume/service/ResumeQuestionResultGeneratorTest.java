@@ -42,7 +42,8 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
     @BeforeEach
     void setUp() {
         state = new InterviewRuntimeState("JUNIOR", null);
-        project = new Project("proj1", "Redis 캐싱 프로젝트", List.of(), List.of());
+        project = new Project("proj1", "Redis 캐싱 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of());
         phase = new PlaygroundPhase("프로젝트 소개해주세요", List.of("c1"));
     }
 

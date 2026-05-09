@@ -175,8 +175,9 @@ public class RubricScorerPromptBuilder {
             for (var project : resumeSkeleton.projects()) {
                 sb.append("### Project: ").append(project.projectId()).append("\n");
                 if (project.claims() != null) {
-                    for (var claim : project.claims()) {
-                        sb.append("- [").append(claim.claimId()).append("] ").append(claim.text()).append("\n");
+                    for (int i = 0; i < project.claims().size(); i++) {
+                        var claim = project.claims().get(i);
+                        sb.append("- [").append(i + 1).append("] ").append(claim.text()).append("\n");
                     }
                 }
             }

@@ -46,7 +46,8 @@ class ResumePlaygroundOpenerIntegrationTest {
     void opener_invocation_assembles_all_four_layers() {
         TestContext ctx = newContext();
 
-        Project project = new Project("proj-1", "샘플 프로젝트", List.of(), List.of());
+        Project project = new Project("proj-1", "샘플 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase("프로젝트에 대해 자유롭게 소개해주세요.", List.of("c1", "c2"));
 
         ctx.builder.buildOpener(42L, ctx.state, project, phase);
@@ -82,7 +83,8 @@ class ResumePlaygroundOpenerIntegrationTest {
         TestContext ctx = newContext();
 
         String explicitName = "결제 시스템 안정화 프로젝트";
-        Project project = new Project("proj-explicit", explicitName, List.of(), List.of());
+        Project project = new Project("proj-explicit", explicitName,
+                List.of(), "", "", List.of(), List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase("프로젝트 흐름 소개해주세요.", List.of());
 
         ctx.builder.buildOpener(99L, ctx.state, project, phase);
@@ -106,7 +108,8 @@ class ResumePlaygroundOpenerIntegrationTest {
     void opener_invocation_passes_blank_project_name_through_without_hallucination() {
         TestContext ctx = newContext();
 
-        Project project = new Project("proj-blank", null, List.of(), List.of());
+        Project project = new Project("proj-blank", null,
+                List.of(), "", "", List.of(), List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase("자유롭게 이야기해주세요.", List.of());
 
         ctx.builder.buildOpener(7L, ctx.state, project, phase);
@@ -136,7 +139,8 @@ class ResumePlaygroundOpenerIntegrationTest {
                         null));
 
         String explicitName = "검색 인덱싱 파이프라인";
-        Project project = new Project("proj-responder", explicitName, List.of(), List.of());
+        Project project = new Project("proj-responder", explicitName,
+                List.of(), "", "", List.of(), List.of(), List.of());
 
         ctx.builder.buildResponder(
                 123L, ctx.state, List.<FollowUpExchange>of(),

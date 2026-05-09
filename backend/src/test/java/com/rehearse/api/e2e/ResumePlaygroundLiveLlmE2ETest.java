@@ -56,7 +56,8 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-1", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-live-1", "Live 테스트 프로젝트", List.of(), List.of());
+        Project project = new Project("proj-live-1", "Live 테스트 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of());
         PlaygroundPhase phase = new PlaygroundPhase(
                 "프로젝트에 대해 자유롭게 소개해주세요.", List.of("기술 스택", "주요 의사결정"));
 
@@ -105,7 +106,8 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-2", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-live-2", "Live 테스트 프로젝트", List.of(), List.of());
+        Project project = new Project("proj-live-2", "Live 테스트 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of());
         String userAnswer = "이 프로젝트에서 결제 게이트웨이 연동을 담당했고, 트래픽 급증 상황에서 안정화 작업을 했습니다.";
 
         PlaygroundResponderResult result = builder.buildResponder(
@@ -132,7 +134,8 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-3", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
-        Project project = new Project("proj-live-3", "Live 테스트 프로젝트", List.of(), List.of());
+        Project project = new Project("proj-live-3", "Live 테스트 프로젝트",
+                List.of(), "", "", List.of(), List.of(), List.of());
         String userAnswer = "결제 시스템에서 동시성 문제를 해결한 경험이 있습니다. 락 전략을 비교해 분산락으로 결정했습니다.";
 
         PlaygroundResponderResult result = builder.buildResponder(
