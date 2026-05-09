@@ -22,17 +22,17 @@ class QuestionPoolTest {
             String content = "Spring IoC 컨테이너에 대해 설명하세요.";
             String ttsContent = "Spring IoC 컨테이너에 대해 설명하세요.";
             String category = "CS";
-            String modelAnswer = "IoC는 제어의 역전을 의미합니다.";
+            String bestAnswer = "IoC는 제어의 역전을 의미합니다.";
 
             // when
-            QuestionPool pool = QuestionPool.create(cacheKey, content, ttsContent, category, modelAnswer);
+            QuestionPool pool = QuestionPool.create(cacheKey, content, ttsContent, category, bestAnswer);
 
             // then
             assertThat(pool.getCacheKey()).isEqualTo(cacheKey);
             assertThat(pool.getContent()).isEqualTo(content);
             assertThat(pool.getTtsContent()).isEqualTo(ttsContent);
             assertThat(pool.getCategory()).isEqualTo(category);
-            assertThat(pool.getModelAnswer()).isEqualTo(modelAnswer);
+            assertThat(pool.getBestAnswer()).isEqualTo(bestAnswer);
             assertThat(pool.isActive()).isTrue();
         }
 
@@ -90,7 +90,7 @@ class QuestionPoolTest {
             assertThat(pool).isNotNull();
             assertThat(pool.getTtsContent()).isNull();
             assertThat(pool.getCategory()).isNull();
-            assertThat(pool.getModelAnswer()).isNull();
+            assertThat(pool.getBestAnswer()).isNull();
         }
     }
 

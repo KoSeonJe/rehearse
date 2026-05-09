@@ -26,7 +26,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
-@DisplayName("ResumeQuestionResultGenerator Service Integration - modelAnswer 검증 / 1회 retry / 폴백")
+@DisplayName("ResumeQuestionResultGenerator Service Integration - bestAnswer 검증 / 1회 retry / 폴백")
 class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
 
     @Autowired
@@ -48,54 +48,54 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
     }
 
     @Nested
-    @DisplayName("generateOpener - opener modelAnswer 검증")
+    @DisplayName("generateOpener - opener bestAnswer 검증")
     class Opener {
 
         @Test
-        @DisplayName("정상 modelAnswer 반환 시 1회 호출 + 결과 그대로 반환")
+        @DisplayName("정상 bestAnswer 반환 시 1회 호출 + 결과 그대로 반환")
         void opener_validModelAnswer_returnsAsIs() {
             given(resilientAiClient.chat(any()))
                     .willReturn(openerChatResponse("정상 가이드 답변입니다."));
 
             PlaygroundOpenerResult actual = generator.generateOpener(1L, state, project, phase);
 
-            assertThat(actual.modelAnswer()).isEqualTo("정상 가이드 답변입니다.");
+            assertThat(actual.bestAnswer()).isEqualTo("정상 가이드 답변입니다.");
             assertThat(actual.question()).isEqualTo("Redis 프로젝트 소개해주세요");
             then(resilientAiClient).should(times(1)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 modelAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
+        @DisplayName("1차 bestAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
         void opener_firstBlankSecondValid_retriesOnce() {
             given(resilientAiClient.chat(any()))
                     .willReturn(openerChatResponse(" "), openerChatResponse("재시도 가이드 답변"));
 
             PlaygroundOpenerResult actual = generator.generateOpener(1L, state, project, phase);
 
-            assertThat(actual.modelAnswer()).isEqualTo("재시도 가이드 답변");
+            assertThat(actual.bestAnswer()).isEqualTo("재시도 가이드 답변");
             then(resilientAiClient).should(times(2)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 + 2차 모두 modelAnswer blank 이면 폴백 텍스트가 적용된다")
+        @DisplayName("1차 + 2차 모두 bestAnswer blank 이면 폴백 텍스트가 적용된다")
         void opener_bothBlank_appliesFallback() {
             given(resilientAiClient.chat(any()))
                     .willReturn(openerChatResponse(null), openerChatResponse(""));
 
             PlaygroundOpenerResult actual = generator.generateOpener(1L, state, project, phase);
 
-            assertThat(actual.modelAnswer()).isEqualTo(ResumeFallbackModelAnswers.OPENER);
+            assertThat(actual.bestAnswer()).isEqualTo(ResumeFallbackBestAnswers.OPENER);
             assertThat(actual.question()).isEqualTo("Redis 프로젝트 소개해주세요");
             then(resilientAiClient).should(times(2)).chat(any());
         }
     }
 
     @Nested
-    @DisplayName("generatePlaygroundResponder - responder modelAnswer 검증")
+    @DisplayName("generatePlaygroundResponder - responder bestAnswer 검증")
     class Responder {
 
         @Test
-        @DisplayName("정상 modelAnswer 반환 시 1회 호출 + 결과 그대로 반환")
+        @DisplayName("정상 bestAnswer 반환 시 1회 호출 + 결과 그대로 반환")
         void responder_validModelAnswer_returnsAsIs() {
             given(resilientAiClient.chat(any()))
                     .willReturn(responderChatResponse("정상 가이드 답변입니다.", false));
@@ -103,12 +103,12 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             PlaygroundResponderResult actual = generator.generatePlaygroundResponder(
                     1L, state, List.of(), project, "answer", List.of(), 0, 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo("정상 가이드 답변입니다.");
+            assertThat(actual.bestAnswer()).isEqualTo("정상 가이드 답변입니다.");
             then(resilientAiClient).should(times(1)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 modelAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
+        @DisplayName("1차 bestAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
         void responder_firstBlankSecondValid_retriesOnce() {
             given(resilientAiClient.chat(any()))
                     .willReturn(responderChatResponse(null, false),
@@ -117,12 +117,12 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             PlaygroundResponderResult actual = generator.generatePlaygroundResponder(
                     1L, state, List.of(), project, "answer", List.of(), 0, 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo("재시도 가이드 답변");
+            assertThat(actual.bestAnswer()).isEqualTo("재시도 가이드 답변");
             then(resilientAiClient).should(times(2)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 + 2차 모두 modelAnswer blank 이면 폴백 텍스트가 적용된다 (다른 필드 보존)")
+        @DisplayName("1차 + 2차 모두 bestAnswer blank 이면 폴백 텍스트가 적용된다 (다른 필드 보존)")
         void responder_bothBlank_appliesFallback() {
             given(resilientAiClient.chat(any()))
                     .willReturn(responderChatResponse("", true), responderChatResponse(" ", true));
@@ -130,18 +130,18 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             PlaygroundResponderResult actual = generator.generatePlaygroundResponder(
                     1L, state, List.of(), project, "answer", List.of(), 0, 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo(ResumeFallbackModelAnswers.PLAYGROUND);
+            assertThat(actual.bestAnswer()).isEqualTo(ResumeFallbackBestAnswers.PLAYGROUND);
             assertThat(actual.shouldSwitchToInterrogation()).isTrue();
             then(resilientAiClient).should(times(2)).chat(any());
         }
     }
 
     @Nested
-    @DisplayName("generateInterrogation - interrogation modelAnswer 검증")
+    @DisplayName("generateInterrogation - interrogation bestAnswer 검증")
     class Interrogation {
 
         @Test
-        @DisplayName("정상 modelAnswer 반환 시 1회 호출 + 결과 그대로 반환")
+        @DisplayName("정상 bestAnswer 반환 시 1회 호출 + 결과 그대로 반환")
         void interrogation_validModelAnswer_returnsAsIs() {
             given(resilientAiClient.chat(any()))
                     .willReturn(interrogationChatResponse("정상 가이드 답변입니다.", "LEVEL_UP", 2));
@@ -149,13 +149,13 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             InterrogationResult actual = generator.generateInterrogation(
                     1L, state, List.of(), "Redis", "topic", 1, 4, "answer", 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo("정상 가이드 답변입니다.");
+            assertThat(actual.bestAnswer()).isEqualTo("정상 가이드 답변입니다.");
             assertThat(actual.nextAction()).isEqualTo("LEVEL_UP");
             then(resilientAiClient).should(times(1)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 modelAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
+        @DisplayName("1차 bestAnswer blank + 2차 정상 시 2회 호출 + 2차 결과 반환")
         void interrogation_firstBlankSecondValid_retriesOnce() {
             given(resilientAiClient.chat(any()))
                     .willReturn(interrogationChatResponse("", "LEVEL_STAY", 1),
@@ -164,13 +164,13 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             InterrogationResult actual = generator.generateInterrogation(
                     1L, state, List.of(), "Redis", "topic", 1, 4, "answer", 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo("재시도 가이드 답변");
+            assertThat(actual.bestAnswer()).isEqualTo("재시도 가이드 답변");
             assertThat(actual.nextAction()).isEqualTo("LEVEL_UP");
             then(resilientAiClient).should(times(2)).chat(any());
         }
 
         @Test
-        @DisplayName("1차 + 2차 모두 modelAnswer blank 이면 폴백 텍스트가 적용된다 (next_action / level 보존)")
+        @DisplayName("1차 + 2차 모두 bestAnswer blank 이면 폴백 텍스트가 적용된다 (next_action / level 보존)")
         void interrogation_bothBlank_appliesFallback() {
             given(resilientAiClient.chat(any()))
                     .willReturn(interrogationChatResponse(null, "LEVEL_STAY", 1),
@@ -179,7 +179,7 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             InterrogationResult actual = generator.generateInterrogation(
                     1L, state, List.of(), "Redis", "topic", 1, 4, "answer", 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo(ResumeFallbackModelAnswers.INTERROGATION);
+            assertThat(actual.bestAnswer()).isEqualTo(ResumeFallbackBestAnswers.INTERROGATION);
             assertThat(actual.nextAction()).isEqualTo("CHAIN_SWITCH");
             assertThat(actual.isChainSwitch()).isTrue();
             then(resilientAiClient).should(times(2)).chat(any());
@@ -227,35 +227,35 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
             PlaygroundResponderResult actual = generator.generatePlaygroundResponder(
                     1L, state, List.of(), project, "answer", List.of(), 0, 0);
 
-            assertThat(actual.modelAnswer()).isEqualTo("정상 가이드");
+            assertThat(actual.bestAnswer()).isEqualTo("정상 가이드");
             assertThat(actual.question()).isNull();
             assertThat(actual.shouldSwitchToInterrogation()).isTrue();
             then(resilientAiClient).should(times(2)).chat(any());
         }
     }
 
-    private static ChatResponse openerChatResponse(String modelAnswer) {
-        return openerChatResponseWithQuestion("Redis 프로젝트 소개해주세요", modelAnswer);
+    private static ChatResponse openerChatResponse(String bestAnswer) {
+        return openerChatResponseWithQuestion("Redis 프로젝트 소개해주세요", bestAnswer);
     }
 
-    private static ChatResponse openerChatResponseWithQuestion(String question, String modelAnswer) {
+    private static ChatResponse openerChatResponseWithQuestion(String question, String bestAnswer) {
         String json = """
                 {
                   "question": %s,
                   "tts_question": "Redis 프로젝트 소개해 주세요",
                   "reason": "오프너",
-                  "model_answer": %s
+                  "best_answer": %s
                 }
-                """.formatted(jsonValue(question), jsonValue(modelAnswer));
+                """.formatted(jsonValue(question), jsonValue(bestAnswer));
         return chatResponse(json);
     }
 
-    private static ChatResponse responderChatResponse(String modelAnswer, boolean shouldSwitch) {
-        return responderChatResponseWithQuestion("그 결정의 근거가 뭔가요", modelAnswer, shouldSwitch);
+    private static ChatResponse responderChatResponse(String bestAnswer, boolean shouldSwitch) {
+        return responderChatResponseWithQuestion("그 결정의 근거가 뭔가요", bestAnswer, shouldSwitch);
     }
 
     private static ChatResponse responderChatResponseWithQuestion(
-            String question, String modelAnswer, boolean shouldSwitch) {
+            String question, String bestAnswer, boolean shouldSwitch) {
         String json = """
                 {
                   "question": %s,
@@ -263,22 +263,22 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
                   "reason": "근거 추적",
                   "should_switch_to_interrogation": %s,
                   "switch_conditions_met": {"a_covered": false, "b_length_ok": false, "c_signal": false, "d_turn_limit": false},
-                  "model_answer": %s
+                  "best_answer": %s
                 }
-                """.formatted(jsonValue(question), shouldSwitch, jsonValue(modelAnswer));
+                """.formatted(jsonValue(question), shouldSwitch, jsonValue(bestAnswer));
         return chatResponse(json);
     }
 
-    private static ChatResponse interrogationChatResponse(String modelAnswer, String nextAction, int nextLevel) {
-        return interrogationChatResponseFull("L2 질문", modelAnswer, nextAction, nextLevel);
+    private static ChatResponse interrogationChatResponse(String bestAnswer, String nextAction, int nextLevel) {
+        return interrogationChatResponseFull("L2 질문", bestAnswer, nextAction, nextLevel);
     }
 
-    private static ChatResponse interrogationChatResponseWithQuestion(String question, String modelAnswer) {
-        return interrogationChatResponseFull(question, modelAnswer, "LEVEL_STAY", 1);
+    private static ChatResponse interrogationChatResponseWithQuestion(String question, String bestAnswer) {
+        return interrogationChatResponseFull(question, bestAnswer, "LEVEL_STAY", 1);
     }
 
     private static ChatResponse interrogationChatResponseFull(
-            String question, String modelAnswer, String nextAction, int nextLevel) {
+            String question, String bestAnswer, String nextAction, int nextLevel) {
         String json = """
                 {
                   "question": %s,
@@ -286,9 +286,9 @@ class ResumeQuestionResultGeneratorTest extends ServiceIntegrationSupport {
                   "reason": "Why-Mech 단계 진입",
                   "next_action": "%s",
                   "next_level": %d,
-                  "model_answer": %s
+                  "best_answer": %s
                 }
-                """.formatted(jsonValue(question), nextAction, nextLevel, jsonValue(modelAnswer));
+                """.formatted(jsonValue(question), nextAction, nextLevel, jsonValue(bestAnswer));
         return chatResponse(json);
     }
 

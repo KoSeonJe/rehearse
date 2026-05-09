@@ -6,12 +6,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("InterrogationResult.withModelAnswer - 폴백 적용 시 modelAnswer 만 교체")
+@DisplayName("InterrogationResult.withBestAnswer - 폴백 적용 시 bestAnswer 만 교체")
 class InterrogationResultTest {
 
     @Test
-    @DisplayName("withModelAnswer 호출 시 modelAnswer 만 교체되고 다른 필드 / next_action 도우미는 보존된다")
-    void withModelAnswer_replacesOnlyModelAnswer_preservesOtherFields() {
+    @DisplayName("withBestAnswer 호출 시 bestAnswer 만 교체되고 다른 필드 / next_action 도우미는 보존된다")
+    void withBestAnswer_replacesOnlyModelAnswer_preservesOtherFields() {
         InterrogationResult original = new InterrogationResult(
                 "구체적 구현 방식을 설명해주세요",
                 "구체적 구현 방식을 설명해 주세요",
@@ -21,9 +21,9 @@ class InterrogationResultTest {
                 "원래 가이드"
         );
 
-        InterrogationResult replaced = original.withModelAnswer("폴백 가이드");
+        InterrogationResult replaced = original.withBestAnswer("폴백 가이드");
 
-        assertThat(replaced.modelAnswer()).isEqualTo("폴백 가이드");
+        assertThat(replaced.bestAnswer()).isEqualTo("폴백 가이드");
         assertThat(replaced.question()).isEqualTo(original.question());
         assertThat(replaced.ttsQuestion()).isEqualTo(original.ttsQuestion());
         assertThat(replaced.reason()).isEqualTo(original.reason());

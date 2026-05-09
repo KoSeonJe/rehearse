@@ -130,7 +130,7 @@ class ReviewBookmarkQueryServiceTest {
             // then
             assertThat(result).hasSize(1);
             assertThat(result.get(0).questionText()).isNull();
-            assertThat(result.get(0).modelAnswer()).isNull();
+            assertThat(result.get(0).bestAnswer()).isNull();
         }
     }
 
@@ -189,7 +189,7 @@ class ReviewBookmarkQueryServiceTest {
         Question question = Question.builder()
                 .questionType(QuestionType.TECH_MAIN)
                 .questionText("자기소개를 해주세요.")
-                .modelAnswer("모범 답변입니다.")
+                .bestAnswer("모범 답변입니다.")
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(question, "id", 1L);

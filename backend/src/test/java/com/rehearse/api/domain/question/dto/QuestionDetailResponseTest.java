@@ -12,7 +12,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class QuestionDetailResponseTest {
 
     @Test
-    @DisplayName("기본 필드 (id / questionType / questionText / modelAnswer / ttsText / orderIndex) 매핑")
+    @DisplayName("기본 필드 (id / questionType / questionText / bestAnswer / ttsText / orderIndex) 매핑")
     void from_mapsCoreFields() {
         Question question = build(QuestionType.TECH_MAIN);
 
@@ -21,7 +21,7 @@ class QuestionDetailResponseTest {
         assertThat(response.getId()).isEqualTo(10L);
         assertThat(response.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
         assertThat(response.getQuestionText()).isEqualTo("질문 텍스트");
-        assertThat(response.getModelAnswer()).isEqualTo("모범답변");
+        assertThat(response.getBestAnswer()).isEqualTo("모범답변");
         assertThat(response.getTtsText()).isEqualTo("tts 텍스트");
         assertThat(response.getOrderIndex()).isZero();
     }
@@ -30,7 +30,7 @@ class QuestionDetailResponseTest {
         Question question = Question.builder()
                 .questionType(type)
                 .questionText("질문 텍스트")
-                .modelAnswer("모범답변")
+                .bestAnswer("모범답변")
                 .ttsText("tts 텍스트")
                 .orderIndex(0)
                 .build();

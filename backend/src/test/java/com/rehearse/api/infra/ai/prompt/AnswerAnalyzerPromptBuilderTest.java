@@ -35,8 +35,8 @@ class AnswerAnalyzerPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("user_prompt_uses_model_answer_label_when_reference_is_model_answer")
-    void user_prompt_uses_model_answer_label_when_reference_is_model_answer() {
+    @DisplayName("user_prompt_uses_best_answer_label_when_reference_is_best_answer")
+    void user_prompt_uses_best_answer_label_when_reference_is_best_answer() {
         String user = builder.buildUserPrompt(
                 "GC를 설명해주세요.",
                 ReferenceType.MODEL_ANSWER,
@@ -67,8 +67,8 @@ class AnswerAnalyzerPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("user_prompt_defaults_to_model_answer_when_reference_is_null")
-    void user_prompt_defaults_to_model_answer_when_reference_is_null() {
+    @DisplayName("user_prompt_defaults_to_best_answer_when_reference_is_null")
+    void user_prompt_defaults_to_best_answer_when_reference_is_null() {
         String user = builder.buildUserPrompt("Q", null, "A", null);
 
         assertThat(user).contains("QUESTION_REFERENCE_TYPE: MODEL_ANSWER");

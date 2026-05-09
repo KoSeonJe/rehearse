@@ -58,7 +58,7 @@ class FollowUpPromptBuilderTest {
 
         @Test
         @DisplayName("MODEL_ANSWER 모드 system prompt는 경험 전제 프레이밍을 절대 금지하고 DEEP_DIVE/CLARIFICATION만 허용한다")
-        void buildSystemPrompt_modelAnswerMode_forbidsExperienceFraming() {
+        void buildSystemPrompt_csReferenceType_forbidsExperienceFraming() {
             // given
             FollowUpGenerationRequest req = new FollowUpGenerationRequest(
                     Position.BACKEND,

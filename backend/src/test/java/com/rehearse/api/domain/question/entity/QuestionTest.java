@@ -38,14 +38,14 @@ class QuestionTest {
                     .questionType(QuestionType.TECH_FOLLOWUP)
                     .questionText("꼬리 질문입니다.")
                     .ttsText("꼬리 질문 TTS 텍스트입니다.")
-                    .modelAnswer("모범 답안입니다.")
+                    .bestAnswer("모범 답안입니다.")
                     .orderIndex(1)
                     .questionPool(pool)
                     .build();
 
             assertThat(question.getQuestionType()).isEqualTo(QuestionType.TECH_FOLLOWUP);
             assertThat(question.getTtsText()).isEqualTo("꼬리 질문 TTS 텍스트입니다.");
-            assertThat(question.getModelAnswer()).isEqualTo("모범 답안입니다.");
+            assertThat(question.getBestAnswer()).isEqualTo("모범 답안입니다.");
             assertThat(question.getOrderIndex()).isEqualTo(1);
             assertThat(question.getQuestionPool()).isSameAs(pool);
         }

@@ -49,7 +49,7 @@ class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport 
     private ResilientAiClient resilientAiClient;
 
     @Test
-    @DisplayName("handle 호출 시 RESUME_INTERROGATION row 가 tts_text/model_answer 정합 적재된다")
+    @DisplayName("handle 호출 시 RESUME_INTERROGATION row 가 tts_text/best_answer 정합 적재된다")
     void handle_persistsAllFields() {
         Long interviewId = persistInterview();
         InterviewPlan plan = createPlan();
@@ -61,11 +61,11 @@ class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport 
 
         assertThat(result.questionId()).isNotNull();
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, best_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_INTERROGATION");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
-        assertThat((String) row.get("model_answer")).isNotBlank();
+        assertThat((String) row.get("best_answer")).isNotBlank();
     }
 
     private Long persistInterview() {
@@ -102,7 +102,7 @@ class InterrogationModeHandlerIntegrationTest extends ServiceIntegrationSupport 
                   "reason": "L2 진입",
                   "next_action": "LEVEL_UP",
                   "next_level": 2,
-                  "model_answer": "현재 단계 (WHAT/HOW/WHY/TRADEOFF) 에 맞춰 핵심 개념·구현 방식·선택 근거를 구분해 답하고, 마지막에 트레이드오프를 한 줄 덧붙이세요."
+                  "best_answer": "현재 단계 (WHAT/HOW/WHY/TRADEOFF) 에 맞춰 핵심 개념·구현 방식·선택 근거를 구분해 답하고, 마지막에 트레이드오프를 한 줄 덧붙이세요."
                 }
                 """;
         return new ChatResponse(json, ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
