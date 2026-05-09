@@ -26,7 +26,7 @@ class AnswerResponseTest {
     }
 
     @Nested
-    @DisplayName("feedbackPerspective 환원")
+    @DisplayName("rubricCategory 환원")
     class Perspective {
 
         @Test
@@ -37,7 +37,7 @@ class AnswerResponseTest {
 
             AnswerResponse response = AnswerResponse.from(answer, InterviewType.CS_FUNDAMENTAL);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+            assertThat(response.getRubricCategory()).isEqualTo("TECHNICAL");
         }
 
         @Test
@@ -48,7 +48,7 @@ class AnswerResponseTest {
 
             AnswerResponse response = AnswerResponse.from(answer, InterviewType.BEHAVIORAL);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
+            assertThat(response.getRubricCategory()).isEqualTo("BEHAVIORAL");
         }
 
         @Test
@@ -59,7 +59,7 @@ class AnswerResponseTest {
 
             AnswerResponse response = AnswerResponse.from(answer, InterviewType.RESUME_BASED);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+            assertThat(response.getRubricCategory()).isEqualTo("TECHNICAL");
         }
 
     }

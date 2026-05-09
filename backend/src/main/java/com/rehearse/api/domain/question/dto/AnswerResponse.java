@@ -14,7 +14,7 @@ public class AnswerResponse {
     private final String questionType;
     private final String questionText;
     private final String modelAnswer;
-    private final String feedbackPerspective;
+    private final String rubricCategory;
     private final String difficulty;
     private final long startMs;
     private final long endMs;
@@ -31,7 +31,7 @@ public class AnswerResponse {
                 .questionType(question.getQuestionType().name())
                 .questionText(question.getQuestionText())
                 .modelAnswer(question.getModelAnswer())
-                .feedbackPerspective(perspective)
+                .rubricCategory(perspective)
                 .difficulty("easy")
                 .startMs(answer.getStartMs())
                 .endMs(answer.getEndMs())
