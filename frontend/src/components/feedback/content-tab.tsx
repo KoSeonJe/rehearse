@@ -4,7 +4,7 @@ interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
 }
 
-interface PerspectiveCopy {
+interface RubricCategoryCopy {
   title: string
   emptyMessage: string
 }
@@ -14,12 +14,12 @@ const formatScore = (score: number | null): string => {
   return `${score}점`
 }
 
-const FALLBACK_COPY: PerspectiveCopy = {
+const FALLBACK_COPY: RubricCategoryCopy = {
   title: '기술 피드백',
   emptyMessage: '해당 턴은 평가 대상이 아닙니다.',
 }
 
-const resolveCopy = (rubricCategory: RubricCategory | null): PerspectiveCopy => {
+const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy => {
   switch (rubricCategory) {
     case 'TECHNICAL':
       return { title: '기술 피드백', emptyMessage: '기술 피드백은 아직 준비 중입니다.' }
