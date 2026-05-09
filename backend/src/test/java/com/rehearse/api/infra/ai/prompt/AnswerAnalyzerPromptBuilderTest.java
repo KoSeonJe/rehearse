@@ -35,8 +35,8 @@ class AnswerAnalyzerPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("user_prompt_uses_concept_label_when_reference_is_model_answer")
-    void user_prompt_uses_concept_label_when_reference_is_model_answer() {
+    @DisplayName("user_prompt_uses_model_answer_label_when_reference_is_model_answer")
+    void user_prompt_uses_model_answer_label_when_reference_is_model_answer() {
         String user = builder.buildUserPrompt(
                 "GC를 설명해주세요.",
                 ReferenceType.MODEL_ANSWER,
@@ -44,7 +44,7 @@ class AnswerAnalyzerPromptBuilderTest {
                 List.of()
         );
 
-        assertThat(user).contains("QUESTION_REFERENCE_TYPE: CONCEPT");
+        assertThat(user).contains("QUESTION_REFERENCE_TYPE: MODEL_ANSWER");
         assertThat(user).contains("ASKED_PERSPECTIVES: (없음)");
         assertThat(user).contains("<<<USER_ANSWER>>>");
         assertThat(user).contains("Young/Old 세대 분리합니다.");
@@ -53,8 +53,8 @@ class AnswerAnalyzerPromptBuilderTest {
     }
 
     @Test
-    @DisplayName("user_prompt_uses_experience_label_when_reference_is_guide")
-    void user_prompt_uses_experience_label_when_reference_is_guide() {
+    @DisplayName("user_prompt_uses_guide_label_when_reference_is_guide")
+    void user_prompt_uses_guide_label_when_reference_is_guide() {
         String user = builder.buildUserPrompt(
                 "캐시 도입 경험을 설명해주세요.",
                 ReferenceType.GUIDE,
@@ -62,16 +62,16 @@ class AnswerAnalyzerPromptBuilderTest {
                 List.of(AnswerFeedbackPerspective.TRADEOFF, AnswerFeedbackPerspective.COLLABORATION)
         );
 
-        assertThat(user).contains("QUESTION_REFERENCE_TYPE: EXPERIENCE");
+        assertThat(user).contains("QUESTION_REFERENCE_TYPE: GUIDE");
         assertThat(user).contains("ASKED_PERSPECTIVES: TRADEOFF, COLLABORATION");
     }
 
     @Test
-    @DisplayName("user_prompt_defaults_to_concept_when_reference_is_null")
-    void user_prompt_defaults_to_concept_when_reference_is_null() {
+    @DisplayName("user_prompt_defaults_to_model_answer_when_reference_is_null")
+    void user_prompt_defaults_to_model_answer_when_reference_is_null() {
         String user = builder.buildUserPrompt("Q", null, "A", null);
 
-        assertThat(user).contains("QUESTION_REFERENCE_TYPE: CONCEPT");
+        assertThat(user).contains("QUESTION_REFERENCE_TYPE: MODEL_ANSWER");
         assertThat(user).contains("ASKED_PERSPECTIVES: (없음)");
     }
 

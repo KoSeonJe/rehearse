@@ -69,7 +69,7 @@ TRADEOFF | MAINTAINABILITY | RELIABILITY | SCALABILITY | TESTING | COLLABORATION
 <<<MAIN_QUESTION>>>
 JVM 가비지 컬렉션의 동작 방식을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 [오디오 전사 결과: "JVM은 힙 메모리를 Young Generation과 Old Generation으로 나누고 Young에서 Minor GC가 발생하고 객체가 일정 횟수 살아남으면 Old로 이동합니다."]
 
@@ -93,7 +93,7 @@ ASKED_PERSPECTIVES: (없음)
 <<<MAIN_QUESTION>>>
 B-Tree와 B+Tree의 차이점을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 [오디오 전사 결과: "솔직히 잘 모르겠어요. 다음 질문으로 넘어가도 될까요?"]
 
@@ -114,7 +114,7 @@ ASKED_PERSPECTIVES: (없음)
 <<<MAIN_QUESTION>>>
 HashMap의 해시 충돌 해결 방법을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 [오디오 전사 결과: "시간 얼마나 남았어요? 화장실 다녀와도 될까요?"]
 
@@ -131,11 +131,11 @@ ASKED_PERSPECTIVES: (없음)
 }
 ```
 
-### 예시 4 (EXPERIENCE 모드 — 깊이 있는 답변)
+### 예시 4 (GUIDE 모드 — 깊이 있는 답변)
 <<<MAIN_QUESTION>>>
 프로젝트에서 캐시를 도입한 경험을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: EXPERIENCE
+QUESTION_REFERENCE_TYPE: GUIDE
 ASKED_PERSPECTIVES: TRADEOFF
 [오디오 전사 결과: "주문 조회 API p95가 800ms였는데 Redis 캐시 도입 후 120ms로 떨어졌습니다. TTL 5분 Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다."]
 
@@ -159,7 +159,7 @@ ASKED_PERSPECTIVES: TRADEOFF
 <<<MAIN_QUESTION>>>
 TCP의 3-way handshake 를 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 [오디오 전사 결과: "음... 잘 모르겠어요."]
 

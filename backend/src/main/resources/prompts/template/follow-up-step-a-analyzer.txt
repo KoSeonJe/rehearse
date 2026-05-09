@@ -54,7 +54,7 @@ TRADEOFF | MAINTAINABILITY | RELIABILITY | SCALABILITY | TESTING | COLLABORATION
 <<<MAIN_QUESTION>>>
 JVM 가비지 컬렉션의 동작 방식을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 <<<USER_ANSWER>>>
 가비지 컬렉터는 안 쓰는 객체를 지웁니다.
 <<<END_USER_ANSWER>>>
@@ -66,7 +66,7 @@ ASKED_PERSPECTIVES: (없음)
 <<<MAIN_QUESTION>>>
 DB 트랜잭션 격리수준 4가지를 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 <<<USER_ANSWER>>>
 READ UNCOMMITTED 는 더티리드까지 허용, READ COMMITTED 는 커밋된 것만 읽고 더티리드 차단, REPEATABLE READ 는 같은 트랜잭션 안에서 같은 행을 두 번 읽으면 같은 값이 보장되고, SERIALIZABLE 은 가장 강력해서 팬텀까지 막습니다. 격리수준이 높을수록 락 경합이 늘어 처리량이 떨어집니다.
 <<<END_USER_ANSWER>>>
@@ -78,7 +78,7 @@ ASKED_PERSPECTIVES: (없음)
 <<<MAIN_QUESTION>>>
 HashMap 의 해시 충돌 해결 방식을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 <<<USER_ANSWER>>>
 음... 잘 모르겠어요.
 <<<END_USER_ANSWER>>>
@@ -86,11 +86,11 @@ ASKED_PERSPECTIVES: (없음)
 
 {"turn_id":0,"claims":[],"missing_perspectives":["TRADEOFF","MAINTAINABILITY","RELIABILITY","SCALABILITY","TESTING","COLLABORATION","USER_IMPACT"],"unstated_assumptions":[],"answer_quality":1,"recommended_next_action":"CLARIFICATION"}
 
-### 예시 4 (EXPERIENCE — 이미 다룬 관점 제외)
+### 예시 4 (GUIDE — 이미 다룬 관점 제외)
 <<<MAIN_QUESTION>>>
 프로젝트에서 캐시를 도입한 경험을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: EXPERIENCE
+QUESTION_REFERENCE_TYPE: GUIDE
 <<<USER_ANSWER>>>
 주문 조회 API p95 가 800ms 였는데, Redis 캐시 도입 후 120ms 로 떨어뜨렸습니다. TTL 5분, Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다.
 <<<END_USER_ANSWER>>>
