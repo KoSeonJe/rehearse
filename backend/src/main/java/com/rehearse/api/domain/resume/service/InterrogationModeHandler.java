@@ -24,8 +24,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class InterrogationModeHandler {
 
-    private static final int DEFAULT_ANSWER_QUALITY = 2;
-
     private final ResumeQuestionResultGenerator resultGenerator;
     private final ResumeQuestionPersister questionPersister;
 
@@ -80,7 +78,7 @@ public class InterrogationModeHandler {
             tracker.initChain(chain.projectId(), chain.chainId());
             log.info("[InterrogationHandler] 새 chain 시작: interviewId={}, chainId={}", interviewId, chain.chainId());
         }
-        int answerQuality = analysis != null ? analysis.answerQuality() : DEFAULT_ANSWER_QUALITY;
+        int answerQuality = analysis.answerQuality();
         int orderIndex = state.nextResumeOrderIndex();
         return Optional.of(new ChainStateTrackerSnapshot(
                 tracker.getCurrentChainId(),
