@@ -2,13 +2,13 @@ import { Sparkles } from 'lucide-react'
 
 interface AnswerComparisonViewProps {
   transcript: string | null
-  modelAnswer: string | null
+  bestAnswer: string | null
   coachingImprovement: string | null
 }
 
 export const AnswerComparisonView = ({
   transcript,
-  modelAnswer,
+  bestAnswer,
   coachingImprovement,
 }: AnswerComparisonViewProps) => {
   return (
@@ -34,8 +34,8 @@ export const AnswerComparisonView = ({
           <p className="text-xs font-bold text-text-tertiary mb-2">
             모범 답변
           </p>
-          {modelAnswer !== null && modelAnswer.length > 0 ? (
-            <p className="text-[14px] leading-[1.75] text-text-secondary">{modelAnswer}</p>
+          {bestAnswer !== null && bestAnswer.length > 0 ? (
+            <p className="text-[14px] leading-[1.75] text-text-secondary">{bestAnswer}</p>
           ) : (
             <p className="text-[14px] leading-[1.75] text-text-tertiary italic">
               모범 답변이 제공되지 않은 질문입니다.

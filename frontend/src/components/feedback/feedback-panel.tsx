@@ -37,7 +37,7 @@ interface FeedbackCardProps {
 }
 
 const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTsfId }: FeedbackCardProps) => {
-  const [showModelAnswer, setShowModelAnswer] = useState(false)
+  const [showBestAnswer, setShowBestAnswer] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
   const isDeliveryAvailable =
@@ -93,7 +93,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
       </div>
 
       {/* 답변 텍스트 + 모범답변 */}
-      {(feedback.transcript !== null || question?.modelAnswer) && (
+      {(feedback.transcript !== null || question?.bestAnswer) && (
         <div className="mx-6 mb-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
           {feedback.transcript !== null && (
             <div className="rounded-xl bg-gray-50 p-5">
@@ -112,22 +112,22 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
                 )}
             </div>
           )}
-          {question?.modelAnswer && (
+          {question?.bestAnswer && (
             <div className="rounded-xl bg-blue-50 overflow-hidden">
               <button
-                onClick={() => setShowModelAnswer(!showModelAnswer)}
+                onClick={() => setShowBestAnswer(!showBestAnswer)}
                 className="w-full px-5 py-3 flex items-center justify-between"
               >
                 <span className="text-[13px] font-bold text-blue-500">모범 답변</span>
                 <span className="text-[13px] text-blue-400">
-                  {showModelAnswer ? '접기' : '펼치기'}
+                  {showBestAnswer ? '접기' : '펼치기'}
                 </span>
               </button>
-              {showModelAnswer && (
+              {showBestAnswer && (
                 <div className="px-5 pb-5">
                   <div className="max-h-48 overflow-y-auto">
                     <p className="text-[15px] leading-[1.8] text-blue-700/70">
-                      {question.modelAnswer}
+                      {question.bestAnswer}
                     </p>
                   </div>
                 </div>

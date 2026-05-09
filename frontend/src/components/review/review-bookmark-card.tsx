@@ -147,7 +147,7 @@ export const ReviewBookmarkCard = ({ item, currentStatusFilter }: ReviewBookmark
           <div className="animate-fade-in">
             <AnswerComparisonView
               transcript={item.transcript}
-              modelAnswer={item.modelAnswer}
+              bestAnswer={item.bestAnswer}
               coachingImprovement={item.coachingImprovement}
             />
           </div>
