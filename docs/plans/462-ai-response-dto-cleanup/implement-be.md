@@ -47,11 +47,13 @@
 **리네이밍 (1)**:
 - `infra/ai/dto/ExtractedResumeSkeleton.java` → `GeneratedResumeSkeleton.java`
 
-**검증 추가 (4 — 위치 / 이름 유지)**:
-- `infra/ai/dto/GeneratedFollowUp.java` — `question` non-blank / `intent` enum 유효
-- `infra/ai/dto/GeneratedQuestion.java` — `question` non-blank / `topic` non-blank
-- `infra/ai/dto/GeneratedQuestionsWrapper.java` — `questions` non-empty
-- `infra/ai/dto/GeneratedInterviewPlan.java` — `phases` non-empty / `totalQuestions` ≥ 1
+**검증 추가 (4 — 위치 / 이름 유지, 실측 필드 기준)**:
+- `infra/ai/dto/GeneratedFollowUp.java` — `skip=false` 시 `question` non-blank (skip 분기 보존). 현재 class → record 전환 (Lombok getter → record accessor)
+- `infra/ai/dto/GeneratedQuestion.java` — `content` non-blank / `questionCategory` non-blank. class → record 전환
+- `infra/ai/dto/GeneratedQuestionsWrapper.java` — `questions` non-empty. class → record 전환
+- `infra/ai/dto/GeneratedInterviewPlan.java` — 이미 record. `projectPlans` non-empty / `sessionPlanId` non-blank 검증만 추가
+
+> class → record 전환 시 호출부 getter accessor 변경 (`getQuestion()` → `question()` 등) 41+ 라인. 컴파일러 검출 + sed 일괄 치환. with-style mutator 가 필요한 경우 (예: `withAnswerText`) record 메서드로 재정의.
 
 **삭제** (Phase 3 호출부 갱신 후 제거):
 - `infra/ai/context/compaction/CompactionSummaryResult.java`
@@ -191,7 +193,8 @@ return generated.toDomain();   // → RubricScoringResult
 
 - [ ] `./gradlew test --tests "RubricScoringAdapterTest"` 회귀 통과
 - [ ] **신규 케이스**: 기존 LLM 응답 fixture 1건 → `GeneratedRubricScoring` 매핑 통과 + `toDomain()` 결과 = 기존 raw map 매핑 결과 동등 (`dimensionScores` Map 키/값 / `scoredDimensions` 순서 / `levelFlag`)
-- [ ] **신규 케이스**: 빈 `dimensionScores` LLM 응답 = 매핑 거절 → schema retry 발동
+- [ ] **회귀 케이스**: 빈 `dimensionScores` LLM 응답 = `buildFallbackScore` 정상 진입 (검증 거절 X — fallback 정책 보존)
+- [ ] **신규 케이스**: score range 위반 (예: 0 또는 4) = 매핑 거절 → schema retry 발동 (실 SCORE_MIN/MAX = 1-3)
 
 ### 커밋 메시지
 

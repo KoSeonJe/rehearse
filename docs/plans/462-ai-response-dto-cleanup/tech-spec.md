@@ -175,16 +175,28 @@ public record AnswerAnalysis(
 |---|---|---|---|---|
 | `GeneratedAnswerAnalysis` | `recommendedNextAction` | `answerQuality` 1-5 | claims / missing / assumptions null → `List.of()` | `AnswerAnalysis` |
 | `GeneratedTurnAnalysis` | `answerAnalysis` (null 거절) | — | `answerText` null → `""` | `TurnAnalysisResult` |
-| `GeneratedFollowUp` | `question`, `intent` | `intent` enum 유효 | — | — |
-| `GeneratedQuestion` | `question`, `topic` | — | — | — |
-| `GeneratedQuestionsWrapper` | `questions` non-empty | — | — | — |
-| `GeneratedInterviewPlan` | `phases` non-empty, `totalQuestions` ≥ 1 | — | — | — |
+| `GeneratedFollowUp` | `skip == false` 시 `question` non-blank (skip 분기 보존) | — (type 등 enum 검증 X — 기존 동작 유지) | — | — |
+| `GeneratedQuestion` | `content` non-blank, `questionCategory` non-blank | — | — | — |
+| `GeneratedQuestionsWrapper` | `questions` non-empty | — | questions null → 거절 | — |
+| `GeneratedInterviewPlan` | `projectPlans` non-empty, `sessionPlanId` non-blank | — | nested record list null → `List.of()` | — |
 | `GeneratedResumeSkeleton` | `projects` non-null | — | nested null → empty | (기 `toDomain()` 패턴) |
 | `GeneratedCompactionSummary` | — (모든 필드 optional list) | — | list null → `List.of()` | — (`toCompactString()` 동거) |
-| `GeneratedRubricScoring` | `dimensionScores` non-empty | 각 score 1-5 | — | `RubricScoringResult` |
+| `GeneratedRubricScoring` | — (`dimensionScores` non-empty 검증 **X** — adapter fallback 보존) | 각 score 1-3 (실 SCORE_MIN/MAX) | `dimensionScores` null → `Map.of()`, `scoredDimensions` null → `List.of()` | `RubricScoringResult` |
 | `GeneratedSessionFeedback` | nested 5종 non-null | — | nested list null → empty | — |
 
 > `GeneratedSessionFeedback` 의 cardinality / abstract phrase / cross-category 도메인 룰 = `SessionFeedbackParser` 잔존 (별도 책임).
+>
+> **GeneratedRubricScoring 검증 완화 사유** — `RubricScoringAdapter.buildFallbackScore` 가 LLM 빈 `dimensionScores` 응답을 `notApplicable` 맵으로 fallback 처리 (운영 정책). compact constructor 에서 non-empty 강제 시 검증 거절 → Jackson wrap → `parseOrRetry` schema retry → 2차 실패 시 `BusinessException(AI_PARSE_FAILED)` = **기존 fallback 우회 = 행위 변경 = 비스코프 침범**. 따라서 `dimensionScores` non-empty 는 검증 룰 제외, score range (1-3) 만 검증 적용. fallback 정책은 adapter 책임 그대로.
+>
+> **GeneratedFollowUp 검증 완화 사유** — `skip=true` 케이스는 `question` 비어도 정상 흐름 (질문 생략 분기). compact constructor 에서 무조건 question non-blank 강제 시 skip 응답 거절 = 행위 변경. `skip=false` 일 때만 question non-blank 검증.
+
+### class → record 전환 영향 (실측)
+
+`GeneratedFollowUp` / `GeneratedQuestion` / `GeneratedQuestionsWrapper` 는 현재 **class** (Lombok `@Getter` + `@NoArgsConstructor` 등) 상태. record 전환 시:
+
+- 호출부 getter accessor 변경: `getQuestion()` → `question()` 등 (컴파일러 검출, 약 41+ 라인). 단순 sed 치환 가능.
+- 가변 필드 (예: `withAnswerText` mutator) 가 record incompatible 일 경우 = with-style 헬퍼 record 메서드로 재정의.
+- `GeneratedInterviewPlan` 은 이미 record (sessionPlanId / totalProjects / projectPlans + nested records) → 검증 추가만.
 
 ---
 
@@ -244,7 +256,10 @@ DB 스키마 변경 **없음**.
 - [ ] `GeneratedSessionFeedback` — 정상 / nested 5종 누락 거절 (cardinality 는 parser 잔존)
 - [ ] `GeneratedCompactionSummary` — 정상 / null list → empty / `toCompactString()` 호환
 - [ ] `GeneratedResumeSkeleton` — 정상 / nested record / `toDomain()` 호환
-- [ ] `GeneratedFollowUp` / `GeneratedQuestion` / `GeneratedQuestionsWrapper` / `GeneratedInterviewPlan` — 검증 케이스
+- [ ] `GeneratedFollowUp` — 정상 / `skip=true` + `question=null` 통과 / `skip=false` + `question=blank` 거절
+- [ ] `GeneratedQuestion` — 정상 / `content blank` 거절 / `questionCategory blank` 거절
+- [ ] `GeneratedQuestionsWrapper` — 정상 / `questions null/empty` 거절
+- [ ] `GeneratedInterviewPlan` — 정상 / `projectPlans empty` 거절 / `sessionPlanId blank` 거절 / nested record null list → empty
 
 ### Domain Unit (도메인 객체)
 
@@ -260,7 +275,7 @@ DB 스키마 변경 **없음**.
 
 - [ ] `SchemaExampleRegistryTest` — Generated* 신규 키 등록 / 매핑 갱신
 - [ ] `AiResponseParserTest` **신규 케이스**: compact constructor `IllegalArgumentException` 거절 → Jackson `ValueInstantiationException` wrap → 기존 `JsonProcessingException` catch 자동 흡수 → schema retry 발동 → 2차 응답 정상 시 통과 / 2차 실패 시 `BusinessException(AI_PARSE_FAILED)` 전파. (본 가정이 spec 의 "코드 변경 0" 전제 근거 — 가정 검증 필수)
-- [ ] `RubricScoringAdapterTest` **회귀 케이스**: 기존 LLM 응답 fixture (`backend/src/test/resources/.../rubric-scoring-*.json` 등) 1건 그대로 `GeneratedRubricScoring` record 매핑 통과 + `toDomain()` 결과가 기존 raw map 매핑 결과와 동등 (`dimensionScores` Map 키/값 / `scoredDimensions` 순서 / `levelFlag` 포함). LLM 이 빈 dimensionScores 반환 케이스 = 검증 실패 → schema retry 발동 (정상 동작)
+- [ ] `RubricScoringAdapterTest` **회귀 케이스**: 기존 LLM 응답 fixture (`backend/src/test/resources/.../rubric-scoring-*.json` 등) 1건 그대로 `GeneratedRubricScoring` record 매핑 통과 + `toDomain()` 결과가 기존 raw map 매핑 결과와 동등 (`dimensionScores` Map 키/값 / `scoredDimensions` 순서 / `levelFlag` 포함). 빈 `dimensionScores` 응답 = `buildFallbackScore` 진입 정상 동작 (검증 거절 X, fallback 정책 그대로)
 
 ### ArchUnit (구조 룰)
 
