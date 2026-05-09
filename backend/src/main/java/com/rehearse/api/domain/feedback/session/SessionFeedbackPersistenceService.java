@@ -2,7 +2,7 @@ package com.rehearse.api.domain.feedback.session;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedback;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackErrorCode;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
@@ -35,7 +35,7 @@ public class SessionFeedbackPersistenceService {
     }
 
     @Transactional
-    public void persistPreliminary(Long interviewId, SessionFeedbackPayload payload, String coverage) {
+    public void persistPreliminary(Long interviewId, GeneratedSessionFeedback payload, String coverage) {
         if (sessionFeedbackRepository.findByInterviewId(interviewId).isPresent()) {
             log.debug("SessionFeedback 이미 존재 — skip (idempotent): interviewId={}", interviewId);
             return;
@@ -54,7 +54,7 @@ public class SessionFeedbackPersistenceService {
     }
 
     @Transactional
-    public void persistEnriched(Long interviewId, SessionFeedbackPayload payload, String coverage) {
+    public void persistEnriched(Long interviewId, GeneratedSessionFeedback payload, String coverage) {
         SessionFeedback feedback = sessionFeedbackRepository.findByInterviewId(interviewId)
                 .orElseThrow(() -> new BusinessException(SessionFeedbackErrorCode.NOT_FOUND));
         feedback.applyDeliveryEnrichment(serialize(payload.delivery()));

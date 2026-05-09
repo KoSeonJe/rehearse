@@ -116,18 +116,6 @@ class ResumeInterviewPlanAdapterTest {
     }
 
     @Test
-    @DisplayName("execute_INVALID_PLAN_when_project_plans_null")
-    void execute_throws_invalid_plan_when_project_plans_null() {
-        GeneratedInterviewPlan raw = new GeneratedInterviewPlan("plan_test", 0, null);
-        given(aiResponseParser.parseOrRetry(any(), any(), any(), any())).willReturn(raw);
-
-        assertThatThrownBy(() -> adapter.execute(request, 30))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                        .isEqualTo(ResumePlannerErrorCode.INVALID_PLAN.getCode()));
-    }
-
-    @Test
     @DisplayName("execute_with_skeleton_허용되지_않은_chain_id_drop")
     void execute_drops_invalid_chain_ids_when_skeleton_provided() {
         // given

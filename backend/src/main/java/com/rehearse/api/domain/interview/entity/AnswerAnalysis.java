@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.interview.entity;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rehearse.api.domain.interview.entity.TurnAnalysis;
 
 import java.util.List;
@@ -15,27 +13,10 @@ public record AnswerAnalysis(
         RecommendedNextAction recommendedNextAction
 ) implements TurnAnalysis {
 
-    @JsonCreator
-    public AnswerAnalysis(
-            @JsonProperty("turn_id") long turnId,
-            @JsonProperty("claims") List<Claim> claims,
-            @JsonProperty("missing_perspectives") List<AnswerFeedbackPerspective> missingPerspectives,
-            @JsonProperty("unstated_assumptions") List<String> unstatedAssumptions,
-            @JsonProperty("answer_quality") int answerQuality,
-            @JsonProperty("recommended_next_action") RecommendedNextAction recommendedNextAction
-    ) {
-        if (answerQuality < 1 || answerQuality > 5) {
-            throw new IllegalArgumentException("AnswerAnalysis.answerQuality 는 1~5 범위여야 합니다: " + answerQuality);
-        }
-        if (recommendedNextAction == null) {
-            throw new IllegalArgumentException("AnswerAnalysis.recommendedNextAction 는 null 일 수 없습니다.");
-        }
-        this.turnId = turnId;
-        this.claims = claims != null ? List.copyOf(claims) : List.of();
-        this.missingPerspectives = missingPerspectives != null ? List.copyOf(missingPerspectives) : List.of();
-        this.unstatedAssumptions = unstatedAssumptions != null ? List.copyOf(unstatedAssumptions) : List.of();
-        this.answerQuality = answerQuality;
-        this.recommendedNextAction = recommendedNextAction;
+    public AnswerAnalysis {
+        claims = claims != null ? List.copyOf(claims) : List.of();
+        missingPerspectives = missingPerspectives != null ? List.copyOf(missingPerspectives) : List.of();
+        unstatedAssumptions = unstatedAssumptions != null ? List.copyOf(unstatedAssumptions) : List.of();
     }
 
     public AnswerAnalysis withRecommendedNextAction(RecommendedNextAction newAction) {

@@ -53,8 +53,9 @@ class FollowUpGenerationAdapterTest {
     }
 
     private GeneratedFollowUp stubFollowUp() {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        return f.withAnswerText("답변");
+        return new GeneratedFollowUp(
+                false, null, "후속 질문", "tts", "reason", "DEEP_DIVE",
+                "model", "답변", 0, null);
     }
 
     @Test

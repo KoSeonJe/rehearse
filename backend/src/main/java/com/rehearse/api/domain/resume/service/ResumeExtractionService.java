@@ -16,11 +16,11 @@ import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton;
-import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedChainStep;
-import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedClaim;
-import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedImplicitCsTopic;
-import com.rehearse.api.infra.ai.dto.ExtractedResumeSkeleton.ExtractedProject;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedChainStep;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedClaim;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedImplicitCsTopic;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedProject;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.prompt.ResumeExtractorPromptBuilder;
 import java.util.ArrayList;
@@ -47,8 +47,8 @@ public class ResumeExtractionService {
         ChatRequest request = buildChatRequest(normalizedResumeText);
         ChatResponse response = aiClient.chat(request);
 
-        ExtractedResumeSkeleton raw = aiResponseParser.parseOrRetry(
-                response, ExtractedResumeSkeleton.class, aiClient, request);
+        GeneratedResumeSkeleton raw = aiResponseParser.parseOrRetry(
+                response, GeneratedResumeSkeleton.class, aiClient, request);
 
         ResumeSkeleton skeleton = toDomain(raw, fileHash);
         long named = skeleton.projects().stream()
@@ -73,93 +73,93 @@ public class ResumeExtractionService {
                 .build();
     }
 
-    private ResumeSkeleton toDomain(ExtractedResumeSkeleton raw, String fileHash) {
-        List<Project> projects = mapProjects(raw.getProjects());
-        Map<String, List<String>> priorityMap = raw.getInterrogationPriorityMap() != null
-                ? raw.getInterrogationPriorityMap()
+    private ResumeSkeleton toDomain(GeneratedResumeSkeleton raw, String fileHash) {
+        List<Project> projects = mapProjects(raw.projects());
+        Map<String, List<String>> priorityMap = raw.interrogationPriorityMap() != null
+                ? raw.interrogationPriorityMap()
                 : Map.of();
 
         return new ResumeSkeleton(
-                raw.getResumeId(),
+                raw.resumeId(),
                 fileHash,
-                parseCandidateLevel(raw.getCandidateLevel()),
-                raw.getTargetDomain(),
+                parseCandidateLevel(raw.candidateLevel()),
+                raw.targetDomain(),
                 projects,
                 priorityMap
         );
     }
 
-    private List<Project> mapProjects(List<ExtractedProject> rawProjects) {
+    private List<Project> mapProjects(List<GeneratedProject> rawProjects) {
         if (rawProjects == null) {
             return List.of();
         }
         List<Project> projects = new ArrayList<>(rawProjects.size());
-        for (ExtractedProject raw : rawProjects) {
+        for (GeneratedProject raw : rawProjects) {
             projects.add(mapProject(raw));
         }
         return List.copyOf(projects);
     }
 
-    private Project mapProject(ExtractedProject raw) {
-        List<ResumeClaim> claims = mapClaims(raw.getClaims());
-        List<InterrogationChain> chains = mapChains(raw.getImplicitCsTopics());
+    private Project mapProject(GeneratedProject raw) {
+        List<ResumeClaim> claims = mapClaims(raw.claims());
+        List<InterrogationChain> chains = mapChains(raw.implicitCsTopics());
         return new Project(
-                raw.getProjectId(),
-                raw.getProjectName(),
-                raw.getTechStack(),
-                raw.getRole(),
-                raw.getArchitecture(),
-                raw.getDecisions(),
+                raw.projectId(),
+                raw.projectName(),
+                raw.techStack(),
+                raw.role(),
+                raw.architecture(),
+                raw.decisions(),
                 claims,
                 chains
         );
     }
 
-    private List<ResumeClaim> mapClaims(List<ExtractedClaim> rawClaims) {
+    private List<ResumeClaim> mapClaims(List<GeneratedClaim> rawClaims) {
         if (rawClaims == null) {
             return List.of();
         }
         return rawClaims.stream()
-                .filter(c -> c.getText() != null && !c.getText().isBlank())
+                .filter(c -> c.text() != null && !c.text().isBlank())
                 .map(this::mapClaim)
                 .toList();
     }
 
-    private ResumeClaim mapClaim(ExtractedClaim raw) {
+    private ResumeClaim mapClaim(GeneratedClaim raw) {
         return new ResumeClaim(
-                raw.getText(),
-                ClaimType.fromOrDefault(raw.getClaimType(), ClaimType.IMPLEMENTATION),
-                Priority.fromOrDefault(raw.getPriority(), Priority.MEDIUM)
+                raw.text(),
+                ClaimType.fromOrDefault(raw.claimType(), ClaimType.IMPLEMENTATION),
+                Priority.fromOrDefault(raw.priority(), Priority.MEDIUM)
         );
     }
 
-    private List<InterrogationChain> mapChains(List<ExtractedImplicitCsTopic> rawTopics) {
+    private List<InterrogationChain> mapChains(List<GeneratedImplicitCsTopic> rawTopics) {
         if (rawTopics == null) {
             return List.of();
         }
         return rawTopics.stream()
-                .filter(t -> t.getConfidence() >= MIN_CONFIDENCE_THRESHOLD)
+                .filter(t -> t.confidence() >= MIN_CONFIDENCE_THRESHOLD)
                 .map(this::mapChain)
                 .filter(chain -> chain != null)
                 .toList();
     }
 
-    private InterrogationChain mapChain(ExtractedImplicitCsTopic raw) {
-        List<ChainStep> steps = mapChainSteps(raw.getInterrogationChain());
+    private InterrogationChain mapChain(GeneratedImplicitCsTopic raw) {
+        List<ChainStep> steps = mapChainSteps(raw.interrogationChain());
         try {
-            return new InterrogationChain(raw.getTopic(), raw.getConfidence(), steps);
+            return new InterrogationChain(raw.topic(), raw.confidence(), steps);
         } catch (IllegalArgumentException e) {
-            log.warn("InterrogationChain invariant 위반으로 드롭: topic={}, reason={}", raw.getTopic(), e.getMessage());
+            log.warn("InterrogationChain invariant 위반으로 드롭: topic={}, reason={}", raw.topic(), e.getMessage());
             return null;
         }
     }
 
-    private List<ChainStep> mapChainSteps(List<ExtractedChainStep> rawSteps) {
+    private List<ChainStep> mapChainSteps(List<GeneratedChainStep> rawSteps) {
         if (rawSteps == null) {
             return List.of();
         }
         return rawSteps.stream()
-                .map(s -> new ChainStep(s.getLevel(), StepType.fromOrDefault(s.getType(), StepType.WHAT), s.getQuestion()))
+                .map(s -> new ChainStep(s.level(), StepType.fromOrDefault(s.type(), StepType.WHAT), s.question()))
                 .toList();
     }
 

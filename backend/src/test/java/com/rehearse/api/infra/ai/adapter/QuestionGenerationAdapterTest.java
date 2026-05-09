@@ -50,6 +50,11 @@ class QuestionGenerationAdapterTest {
                 Set.of(InterviewType.CS_FUNDAMENTAL), null, null, 30, null);
     }
 
+    private GeneratedQuestion sampleQuestion() {
+        return new GeneratedQuestion(
+                "질문", "tts", "category", 1, "criteria", "CS_FUNDAMENTAL", "model", "strategy");
+    }
+
     @Test
     @DisplayName("adapt() 호출 시 AiClient.chat() 이 한 번 호출된다")
     void adapt_callsAiClientChat() {
@@ -63,17 +68,7 @@ class QuestionGenerationAdapterTest {
                 "openai", "gpt-4o-mini", false, false);
         given(aiClient.chat(any(ChatRequest.class))).willReturn(mockResponse);
 
-        // Use a real wrapper with questions to pass the null check
-        GeneratedQuestion question = new GeneratedQuestion();
-        GeneratedQuestionsWrapper realWrapper = new GeneratedQuestionsWrapper();
-        java.lang.reflect.Field f;
-        try {
-            f = GeneratedQuestionsWrapper.class.getDeclaredField("questions");
-            f.setAccessible(true);
-            f.set(realWrapper, List.of(question));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        GeneratedQuestionsWrapper realWrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
         given(responseParser.parseOrRetry(any(), eq(GeneratedQuestionsWrapper.class), eq(aiClient), any()))
                 .willReturn(realWrapper);
 
@@ -98,14 +93,7 @@ class QuestionGenerationAdapterTest {
                 ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
         given(aiClient.chat(captor.capture())).willReturn(mockResponse);
 
-        GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper();
-        try {
-            var f = GeneratedQuestionsWrapper.class.getDeclaredField("questions");
-            f.setAccessible(true);
-            f.set(wrapper, List.of(new GeneratedQuestion()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
         given(responseParser.parseOrRetry(any(), eq(GeneratedQuestionsWrapper.class), eq(aiClient), any()))
                 .willReturn(wrapper);
 
@@ -131,14 +119,7 @@ class QuestionGenerationAdapterTest {
                 ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
         given(aiClient.chat(captor.capture())).willReturn(mockResponse);
 
-        GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper();
-        try {
-            var f = GeneratedQuestionsWrapper.class.getDeclaredField("questions");
-            f.setAccessible(true);
-            f.set(wrapper, List.of(new GeneratedQuestion()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(sampleQuestion()));
         given(responseParser.parseOrRetry(any(), eq(GeneratedQuestionsWrapper.class), eq(aiClient), any()))
                 .willReturn(wrapper);
 

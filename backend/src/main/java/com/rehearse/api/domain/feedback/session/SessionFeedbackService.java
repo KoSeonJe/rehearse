@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.session;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackResponse;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedback;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedbackStatus;
@@ -46,7 +46,7 @@ public class SessionFeedbackService {
             return;
         }
         SessionFeedbackInput input = persistenceService.assembleInput(interviewId);
-        SessionFeedbackPayload payload = synthesizer.synthesize(input);
+        GeneratedSessionFeedback payload = synthesizer.synthesize(input);
         persistenceService.persistPreliminary(interviewId, payload, input.coverage());
     }
 
@@ -69,7 +69,7 @@ public class SessionFeedbackService {
     private void enrichDeliveryInternal(Long interviewId, String deliveryJson, String visionJson, String nonverbalAggregateJson) {
         SessionFeedbackInput input = persistenceService.assembleInputWithDelivery(
                 interviewId, deliveryJson, visionJson, nonverbalAggregateJson);
-        SessionFeedbackPayload payload = synthesizer.synthesize(input);
+        GeneratedSessionFeedback payload = synthesizer.synthesize(input);
         persistenceService.persistEnriched(interviewId, payload, input.coverage());
     }
 

@@ -17,9 +17,9 @@ public class QuestionSetAssembler {
     }
 
     public QuestionSet fromGenerated(GeneratedQuestion generated) {
-        InterviewType category = resolveCategory(generated.getQuestionCategory());
-        return assemble(category, generated.getContent(), generated.getTtsContent(),
-                generated.getBestAnswer(), null);
+        InterviewType category = resolveCategory(generated.questionCategory());
+        return assemble(category, generated.content(), generated.ttsContent(),
+                generated.bestAnswer(), null);
     }
 
     private QuestionSet assemble(InterviewType category, String questionText,

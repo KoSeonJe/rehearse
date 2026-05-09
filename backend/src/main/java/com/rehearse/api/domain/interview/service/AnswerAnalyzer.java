@@ -13,6 +13,7 @@ import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.prompt.PromptFormatters;
 import lombok.RequiredArgsConstructor;
@@ -73,10 +74,10 @@ public class AnswerAnalyzer {
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);
-        AnswerAnalysis parsed = aiResponseParser.parseOrRetry(
-                response, AnswerAnalysis.class, aiClient, chatRequest);
+        GeneratedAnswerAnalysis parsed = aiResponseParser.parseOrRetry(
+                response, GeneratedAnswerAnalysis.class, aiClient, chatRequest);
 
-        AnswerAnalysis withTurnId = parsed.withTurnId(turnId);
+        AnswerAnalysis withTurnId = parsed.toDomain().withTurnId(turnId);
         AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
 
         runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));

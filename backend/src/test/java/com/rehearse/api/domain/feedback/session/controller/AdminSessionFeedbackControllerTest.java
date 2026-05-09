@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.feedback.session.controller;
 
 import com.rehearse.api.domain.feedback.session.SessionFeedbackService;
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
 import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackResponse;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedbackStatus;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackBusyException;

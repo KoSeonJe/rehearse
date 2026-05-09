@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedRubricScoring;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,9 +33,6 @@ public class RubricScoringAdapter {
         return parseRubricScore(response, client, request, rubric, dimensionsToScore);
     }
 
-    private static final int SCORE_MIN = 1;
-    private static final int SCORE_MAX = 3;
-
     private RubricScoringResult parseRubricScore(
             ChatResponse response, AiClient client, ChatRequest request,
             Rubric rubric, List<String> dimensionsToScore
@@ -42,13 +40,14 @@ public class RubricScoringAdapter {
         try {
             String json = responseParser.extractJson(response.content());
             Map<String, DimensionScore> scores = parseDimensionScores(json, dimensionsToScore);
+            GeneratedRubricScoring generated = buildGenerated(rubric.rubricId(), dimensionsToScore, scores);
 
-            if (hasMissingEvidenceQuote(scores, dimensionsToScore)) {
+            if (hasMissingEvidenceQuote(generated.dimensionScores(), dimensionsToScore)) {
                 log.warn("evidence_quote 누락 차원 존재 — schema retry 1회 시도");
                 return retryForEvidenceQuote(client, request, rubric, dimensionsToScore);
             }
 
-            return buildRubricScore(rubric.rubricId(), dimensionsToScore, scores);
+            return generated.toDomain();
         } catch (Exception firstEx) {
             log.warn("RubricScore 1차 파싱 실패, 재호출 시도: {}", firstEx.getMessage());
             try {
@@ -56,7 +55,7 @@ public class RubricScoringAdapter {
                         request.withSchemaRetryHint(firstEx.getMessage(), buildSchemaExample(dimensionsToScore)));
                 String retryJson = responseParser.extractJson(retryResponse.content());
                 Map<String, DimensionScore> scores = parseDimensionScores(retryJson, dimensionsToScore);
-                return buildRubricScore(rubric.rubricId(), dimensionsToScore, scores);
+                return buildGenerated(rubric.rubricId(), dimensionsToScore, scores).toDomain();
             } catch (Exception secondEx) {
                 log.error("RubricScore 2차 파싱도 실패: {}", secondEx.getMessage());
                 return buildFallbackScore(rubric.rubricId(), dimensionsToScore, "파싱 실패: " + secondEx.getMessage());
@@ -79,7 +78,6 @@ public class RubricScoringAdapter {
             String retryJson = responseParser.extractJson(retryResponse.content());
             Map<String, DimensionScore> retryScores = parseDimensionScores(retryJson, dimensionsToScore);
 
-            // 재시도 후에도 evidence_quote null이면 score null + observation에 사유 기록
             Map<String, DimensionScore> finalScores = new HashMap<>(retryScores);
             for (String dim : dimensionsToScore) {
                 DimensionScore ds = finalScores.get(dim);
@@ -88,7 +86,7 @@ public class RubricScoringAdapter {
                             ds.observation() + " [evidence_quote 누락으로 score 무효화]", null));
                 }
             }
-            return buildRubricScore(rubric.rubricId(), dimensionsToScore, finalScores);
+            return buildGenerated(rubric.rubricId(), dimensionsToScore, finalScores).toDomain();
         } catch (Exception e) {
             log.error("evidence_quote retry 실패: {}", e.getMessage());
             return buildFallbackScore(rubric.rubricId(), dimensionsToScore, "evidence_quote retry 실패: " + e.getMessage());
@@ -107,7 +105,7 @@ public class RubricScoringAdapter {
                 result.put(dim, DimensionScore.notApplicable("LLM 응답에 차원 없음"));
                 continue;
             }
-            Integer score = parseAndValidateScore(dim, entry);
+            Integer score = entry.get("score") == null ? null : ((Number) entry.get("score")).intValue();
             String observation = (String) entry.getOrDefault("observation", "");
             String evidenceQuote = (String) entry.get("evidence_quote");
             result.put(dim, DimensionScore.of(score, observation, evidenceQuote));
@@ -122,19 +120,7 @@ public class RubricScoringAdapter {
         return result;
     }
 
-    private Integer parseAndValidateScore(String dim, Map<String, Object> entry) {
-        if (entry.get("score") == null) {
-            return null;
-        }
-        int score = ((Number) entry.get("score")).intValue();
-        if (score < SCORE_MIN || score > SCORE_MAX) {
-            log.warn("차원 {} score={} 범위(1~3) 초과 — null 처리", dim, score);
-            return null;
-        }
-        return score;
-    }
-
-    private RubricScoringResult buildRubricScore(
+    private GeneratedRubricScoring buildGenerated(
             String rubricId, List<String> dimensionsToScore, Map<String, DimensionScore> scores
     ) {
         List<String> scored = new ArrayList<>();
@@ -144,7 +130,7 @@ public class RubricScoringAdapter {
                 scored.add(dim);
             }
         }
-        return new RubricScoringResult(rubricId, List.copyOf(scored), Map.copyOf(scores), null);
+        return new GeneratedRubricScoring(rubricId, scored, scores, null);
     }
 
     private RubricScoringResult buildFallbackScore(String rubricId, List<String> dimensionsToScore, String reason) {

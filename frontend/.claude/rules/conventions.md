@@ -11,6 +11,28 @@ React 18 + TS strict + Tailwind + Zustand + TanStack Query 특화.
 - **시점 분리**: 조건 분기 = early return → ternary → `&&`. 중첩 ternary 금지.
 - **조건 이름**: 복합 조건은 boolean 변수 추출. `is/has/should/can` 접두사.
 - **함수 1책임**: UI / 비즈 / 부수효과 혼재 금지. 커스텀 훅 추출.
+  - **한 함수 = 한 책임**. 다중 책임 결합 금지. 이름의 `And`/`Or` (`fetchAndTransform`, `saveOrSync`) = 분리 신호.
+  - **`catch (e)` 안에 다중 의미 분기 금지** — 네트워크 실패와 파싱 실패를 한 catch 흐름으로 묶지 말 것. 동일 의미 예외만 묶기. 의미 다르면 try 블록 분리 또는 `instanceof` 분기 후 각각 호출.
+  - **신호 (Smell)**: 한 훅이 두 종류의 `useEffect` 부수효과 (페치 + 분석 이벤트 발송) 동시 보유 → 훅 분리 후보.
+
+```ts
+// ❌ 다중 책임
+async function loadInterview() {
+  try {
+    const data = await api.getInterview(id);
+    return parseInterview(data);
+  } catch (e) {
+    // 네트워크 실패 + 파싱 실패 한 흐름 — 의미 다른 예외 묶임
+    showToast('인터뷰 불러오기 실패');
+    return null;
+  }
+}
+
+// ✅ 책임 분리
+async function fetchInterview() { return api.getInterview(id); }       // 네트워크
+function parseInterview(raw) { return InterviewSchema.parse(raw); }    // 파싱
+// 호출부에서 조립 + 각 단계 에러 의미별 처리
+```
 
 ```tsx
 // ✅ early return + 매직 상수

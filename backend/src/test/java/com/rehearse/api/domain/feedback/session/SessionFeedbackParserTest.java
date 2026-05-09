@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.feedback.session;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackParser;

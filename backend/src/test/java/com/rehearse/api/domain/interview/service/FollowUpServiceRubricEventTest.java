@@ -109,13 +109,9 @@ class FollowUpServiceRubricEventTest {
     }
 
     private GeneratedFollowUp buildFollowUp(String question) {
-        GeneratedFollowUp f = new GeneratedFollowUp();
-        ReflectionTestUtils.setField(f, "question", question);
-        ReflectionTestUtils.setField(f, "ttsQuestion", question);
-        ReflectionTestUtils.setField(f, "reason", "테스트");
-        ReflectionTestUtils.setField(f, "type", "CONCEPTUAL");
-        ReflectionTestUtils.setField(f, "skip", false);
-        return f;
+        return new GeneratedFollowUp(
+                false, null, question, question, "테스트", "CONCEPTUAL",
+                null, null, null, null);
     }
 
     private FollowUpRequest buildRequest() {

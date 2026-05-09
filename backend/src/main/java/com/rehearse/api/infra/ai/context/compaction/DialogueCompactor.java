@@ -11,6 +11,7 @@ import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedCompactionSummary;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -78,8 +79,8 @@ public class DialogueCompactor {
                     .build();
 
             ChatResponse response = aiClient.chat(chatRequest);
-            CompactionSummaryResult result = aiResponseParser.parseOrRetry(
-                    response, CompactionSummaryResult.class, aiClient, chatRequest);
+            GeneratedCompactionSummary result = aiResponseParser.parseOrRetry(
+                    response, GeneratedCompactionSummary.class, aiClient, chatRequest);
 
             String summary = result.toCompactString();
             state.putCompactedSummary(windowEnd, summary);

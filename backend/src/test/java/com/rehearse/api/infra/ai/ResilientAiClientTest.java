@@ -64,6 +64,17 @@ class ResilientAiClientTest {
         return new MockMultipartFile("audio", "test.webm", "audio/webm", new byte[]{1, 2, 3});
     }
 
+    private GeneratedQuestion sampleQuestion() {
+        return new GeneratedQuestion(
+                "질문", "tts", "category", 1, "criteria", "CS_FUNDAMENTAL", "model", "strategy");
+    }
+
+    private GeneratedFollowUp sampleFollowUp() {
+        return new GeneratedFollowUp(
+                false, null, "후속 질문", "tts", "reason", "DEEP_DIVE",
+                "model", "답변", 0, null);
+    }
+
     private ResilientAiClient resilientClient(OpenAiClient oa, ClaudeApiClient ca, SttService stt) {
         SimpleMeterRegistry reg = new SimpleMeterRegistry();
         AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
@@ -109,7 +120,7 @@ class ResilientAiClientTest {
         void generateQuestions_delegatesToAdapter() {
             ResilientAiClient client = resilientClient(openAiClient, claudeApiClient, sttService);
             QuestionGenerationRequest req = questionRequest();
-            GeneratedQuestion question = mock(GeneratedQuestion.class);
+            GeneratedQuestion question = sampleQuestion();
             given(questionAdapter.adapt(eq(client), eq(req))).willReturn(List.of(question));
 
             List<GeneratedQuestion> result = client.generateQuestions(req);
@@ -123,7 +134,7 @@ class ResilientAiClientTest {
         void generateFollowUp_delegatesToAdapter() {
             ResilientAiClient client = resilientClient(openAiClient, claudeApiClient, sttService);
             FollowUpGenerationRequest req = followUpRequest();
-            GeneratedFollowUp followUp = mock(GeneratedFollowUp.class);
+            GeneratedFollowUp followUp = sampleFollowUp();
             given(followUpAdapter.adapt(eq(client), eq(req))).willReturn(followUp);
 
             GeneratedFollowUp result = client.generateFollowUpQuestion(req);
@@ -138,7 +149,7 @@ class ResilientAiClientTest {
             ResilientAiClient client = resilientClient(openAiClient, claudeApiClient, sttService);
             MultipartFile audio = audioFile();
             FollowUpGenerationRequest req = followUpRequest();
-            GeneratedFollowUp followUp = mock(GeneratedFollowUp.class);
+            GeneratedFollowUp followUp = sampleFollowUp();
             given(followUpAdapter.adaptWithAudio(eq(client), eq(audio), eq(req), eq(sttService)))
                     .willReturn(followUp);
 

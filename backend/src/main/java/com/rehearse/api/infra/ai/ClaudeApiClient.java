@@ -161,11 +161,7 @@ public class ClaudeApiClient {
         String text = callClaudeApi(systemPrompt, userPrompt, MAX_TOKENS_QUESTION, 0.9);
         GeneratedQuestionsWrapper wrapper = responseParser.parseJsonResponse(text, GeneratedQuestionsWrapper.class);
 
-        if (wrapper.getQuestions() == null || wrapper.getQuestions().isEmpty()) {
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
-
-        return wrapper.getQuestions();
+        return wrapper.questions();
     }
 
     @RateLimiter(name = "claude-api")

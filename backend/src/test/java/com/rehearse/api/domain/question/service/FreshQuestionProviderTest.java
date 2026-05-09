@@ -16,7 +16,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -153,11 +152,9 @@ class FreshQuestionProviderTest {
 
     private List<GeneratedQuestion> makeQuestions(int count) {
         return java.util.stream.IntStream.rangeClosed(1, count)
-                .mapToObj(i -> {
-                    GeneratedQuestion gq = new GeneratedQuestion();
-                    ReflectionTestUtils.setField(gq, "content", "질문" + i);
-                    return gq;
-                })
+                .mapToObj(i -> new GeneratedQuestion(
+                        "질문" + i, "tts", "category", i, "criteria",
+                        "CS_FUNDAMENTAL", "model", "strategy"))
                 .toList();
     }
 }

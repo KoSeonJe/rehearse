@@ -21,7 +21,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -338,9 +337,8 @@ class CacheableQuestionProviderTest {
     // ──────────────────────────────────────────────
 
     private GeneratedQuestion makeGeneratedQuestion(String content) {
-        GeneratedQuestion gq = new GeneratedQuestion();
-        ReflectionTestUtils.setField(gq, "content", content);
-        ReflectionTestUtils.setField(gq, "category", "운영체제");
-        return gq;
+        return new GeneratedQuestion(
+                content, "tts", "운영체제", 1, "criteria",
+                "CS_FUNDAMENTAL", "model", "strategy");
     }
 }

@@ -42,15 +42,6 @@ class AnswerAnalysisTest {
     }
 
     @Test
-    @DisplayName("answer_analysis_rejects_quality_outside_1_to_5")
-    void answer_analysis_rejects_quality_outside_1_to_5() {
-        assertThatThrownBy(() -> new AnswerAnalysis(1L, List.of(), List.of(), List.of(), 0, RecommendedNextAction.SKIP))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> new AnswerAnalysis(1L, List.of(), List.of(), List.of(), 6, RecommendedNextAction.SKIP))
-                .isInstanceOf(IllegalArgumentException.class);
-    }
-
-    @Test
     @DisplayName("answer_analysis_normalizes_null_lists_to_empty")
     void answer_analysis_normalizes_null_lists_to_empty() {
         AnswerAnalysis a = new AnswerAnalysis(1L, null, null, null, 3, RecommendedNextAction.DEEP_DIVE);

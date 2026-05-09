@@ -214,9 +214,7 @@ class FollowUpTransactionHandlerTest {
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
-            ReflectionTestUtils.setField(followUp, "bestAnswer", "체이닝과 오픈 어드레싱");
+            GeneratedFollowUp followUp = followUpOf("해시 충돌 해결 방법은?", "체이닝과 오픈 어드레싱");
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.TECH_FOLLOWUP)
@@ -244,8 +242,7 @@ class FollowUpTransactionHandlerTest {
                     interview, QuestionType.TECH_MAIN, InterviewType.CS_FUNDAMENTAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "꼬리질문");
+            GeneratedFollowUp followUp = followUpOf("꼬리질문", "model");
 
             given(questionRepository.saveAndFlush(any(Question.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
@@ -265,8 +262,7 @@ class FollowUpTransactionHandlerTest {
                     interview, QuestionType.BEHAVIORAL_MAIN, InterviewType.BEHAVIORAL);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "꼬리질문");
+            GeneratedFollowUp followUp = followUpOf("꼬리질문", "model");
 
             given(questionRepository.saveAndFlush(any(Question.class)))
                     .willAnswer(invocation -> invocation.getArgument(0));
@@ -286,8 +282,7 @@ class FollowUpTransactionHandlerTest {
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
             given(interviewFinder.findById(1L)).willReturn(interview);
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
+            GeneratedFollowUp followUp = followUpOf("해시 충돌 해결 방법은?", "model");
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.TECH_FOLLOWUP)
@@ -329,8 +324,7 @@ class FollowUpTransactionHandlerTest {
             QuestionSet questionSet = createQuestionSetWithFollowUps(interview, 1);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "두 번째 꼬리질문");
+            GeneratedFollowUp followUp = followUpOf("두 번째 꼬리질문", "model");
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.TECH_FOLLOWUP).questionText("두 번째 꼬리질문").orderIndex(2).build();
@@ -350,8 +344,7 @@ class FollowUpTransactionHandlerTest {
             QuestionSet questionSet = createQuestionSetWithMainQuestion(interview);
             given(questionSetRepository.findById(10L)).willReturn(Optional.of(questionSet));
 
-            GeneratedFollowUp followUp = new GeneratedFollowUp();
-            ReflectionTestUtils.setField(followUp, "question", "중복 꼬리질문");
+            GeneratedFollowUp followUp = followUpOf("중복 꼬리질문", "model");
 
             given(questionRepository.saveAndFlush(any(Question.class)))
                     .willThrow(new org.springframework.dao.DataIntegrityViolationException("Duplicate entry"));
@@ -452,5 +445,11 @@ class FollowUpTransactionHandlerTest {
         ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
         then(eventPublisher).should().publishEvent(captor.capture());
         return captor.getValue();
+    }
+
+    private GeneratedFollowUp followUpOf(String question, String modelAnswer) {
+        return new GeneratedFollowUp(
+                false, null, question, "tts", "reason", "DEEP_DIVE",
+                modelAnswer, "답변", 0, null);
     }
 }

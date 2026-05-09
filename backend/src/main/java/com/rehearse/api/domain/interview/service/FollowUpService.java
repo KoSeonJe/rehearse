@@ -29,7 +29,6 @@ import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +107,7 @@ public class FollowUpService {
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
-                    id, request.getQuestionSetId(), stepB.getSkipReason());
+                    id, request.getQuestionSetId(), stepB.skipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
             int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
             log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
@@ -116,9 +115,8 @@ public class FollowUpService {
                     BlockReason.STEP_B_SKIP.logValue(), turnIndex);
             followUpTransactionHandler.publishTurnCompletedEvent(
                     id, context, turn, context.currentMainQuestionId(), turnIndex);
-            return FollowUpResponse.aiSkip(answerText, stepB.getSkipReason());
+            return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
         }
-        ensureQuestionPresent(id, request.getQuestionSetId(), stepB);
 
         FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResultAndPublishEvent(
                 id, context, stepB, turn);
@@ -126,18 +124,10 @@ public class FollowUpService {
 
         log.info("REALTIME 후속 질문 생성 완료(v3): interviewId={}, questionSetId={}, questionId={}, type={}, perspective={}, targetClaim={}, exhausted={}",
                 id, request.getQuestionSetId(), saveResult.question().getId(),
-                stepB.getType(), stepB.getSelectedAnswerFeedbackPerspective(),
-                stepB.getTargetClaimIdx(), exhausted);
+                stepB.type(), stepB.selectedAnswerFeedbackPerspective(),
+                stepB.targetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
-    }
-
-    private static void ensureQuestionPresent(Long id, Long questionSetId, GeneratedFollowUp stepB) {
-        if (stepB.getQuestion() == null || stepB.getQuestion().isBlank()) {
-            log.warn("Step B 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
-                    id, questionSetId);
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
     }
 
     private static Long resolveTurnId(FollowUpContext context) {
@@ -150,16 +140,16 @@ public class FollowUpService {
     private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
-                .question(followUp.getQuestion())
-                .ttsQuestion(followUp.getTtsQuestion())
-                .reason(followUp.getReason())
-                .type(followUp.getType())
-                .answerText(followUp.getAnswerText())
+                .question(followUp.question())
+                .ttsQuestion(followUp.ttsQuestion())
+                .reason(followUp.reason())
+                .type(followUp.type())
+                .answerText(followUp.answerText())
                 .bestAnswer(savedQuestion.getBestAnswer())
                 .skip(false)
                 .presentToUser(true)
                 .followUpExhausted(exhausted)
-                .selectedAnswerFeedbackPerspective(followUp.getSelectedAnswerFeedbackPerspective())
+                .selectedAnswerFeedbackPerspective(followUp.selectedAnswerFeedbackPerspective())
                 .build();
     }
 
