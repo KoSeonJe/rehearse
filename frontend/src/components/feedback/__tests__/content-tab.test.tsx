@@ -4,7 +4,7 @@ import ContentTab from '@/components/feedback/content-tab'
 import type { TechnicalFeedback } from '@/types/interview'
 
 const buildFeedback = (overrides: Partial<TechnicalFeedback>): TechnicalFeedback => ({
-  perspective: 'TECHNICAL',
+  rubricCategory: 'TECHNICAL',
   rubricId: 'cs-v1',
   levelFlag: 'MID_EXPECTATION_MET',
   dimensions: [
@@ -19,8 +19,8 @@ const buildFeedback = (overrides: Partial<TechnicalFeedback>): TechnicalFeedback
 })
 
 describe('ContentTab', () => {
-  it('TECHNICAL perspective → "기술 피드백" 라벨 + dimensions 노출', () => {
-    render(<ContentTab technicalFeedback={buildFeedback({ perspective: 'TECHNICAL' })} />)
+  it('TECHNICAL 카테고리 → "기술 피드백" 라벨 + dimensions 노출', () => {
+    render(<ContentTab technicalFeedback={buildFeedback({ rubricCategory: 'TECHNICAL' })} />)
 
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
@@ -33,11 +33,11 @@ describe('ContentTab', () => {
     expect(screen.queryByText('기술 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
   })
 
-  it('EXPERIENCE perspective → "경험 평가" 라벨 + dimensions 노출', () => {
+  it('EXPERIENCE 카테고리 → "경험 평가" 라벨 + dimensions 노출', () => {
     render(
       <ContentTab
         technicalFeedback={buildFeedback({
-          perspective: 'EXPERIENCE',
+          rubricCategory: 'EXPERIENCE',
           rubricId: 'resume-v1',
           dimensions: [
             {
@@ -58,11 +58,11 @@ describe('ContentTab', () => {
     expect(screen.getByText('구체 수치 / 결과가 부족합니다.')).toBeInTheDocument()
   })
 
-  it('BEHAVIORAL perspective → "경험/협업" 라벨 + dimensions 노출', () => {
+  it('BEHAVIORAL 카테고리 → "경험/협업" 라벨 + dimensions 노출', () => {
     render(
       <ContentTab
         technicalFeedback={buildFeedback({
-          perspective: 'BEHAVIORAL',
+          rubricCategory: 'BEHAVIORAL',
           rubricId: 'experience-collaboration-rubric',
           dimensions: [
             {
@@ -87,8 +87,8 @@ describe('ContentTab', () => {
     expect(screen.queryByText('경험/협업 피드백은 아직 준비 중입니다.')).not.toBeInTheDocument()
   })
 
-  it('perspective null → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
-    render(<ContentTab technicalFeedback={buildFeedback({ perspective: null })} />)
+  it('rubricCategory null → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
+    render(<ContentTab technicalFeedback={buildFeedback({ rubricCategory: null })} />)
 
     expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
     expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()

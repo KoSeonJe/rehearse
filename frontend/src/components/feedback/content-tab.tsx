@@ -1,4 +1,4 @@
-import type { FeedbackPerspective, TechnicalFeedback } from '@/types/interview'
+import type { RubricCategory, TechnicalFeedback } from '@/types/interview'
 
 interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
@@ -19,8 +19,8 @@ const FALLBACK_COPY: PerspectiveCopy = {
   emptyMessage: '해당 턴은 평가 대상이 아닙니다.',
 }
 
-const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy => {
-  switch (perspective) {
+const resolveCopy = (rubricCategory: RubricCategory | null): PerspectiveCopy => {
+  switch (rubricCategory) {
     case 'TECHNICAL':
       return { title: '기술 피드백', emptyMessage: '기술 피드백은 아직 준비 중입니다.' }
     case 'EXPERIENCE':
@@ -35,13 +35,13 @@ const resolveCopy = (perspective: FeedbackPerspective | null): PerspectiveCopy =
 }
 
 const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
-  const copy = resolveCopy(technicalFeedback?.perspective ?? null)
+  const copy = resolveCopy(technicalFeedback?.rubricCategory ?? null)
   const isCardable =
     technicalFeedback !== null &&
     technicalFeedback.dimensions.length > 0 &&
-    (technicalFeedback.perspective === 'TECHNICAL' ||
-      technicalFeedback.perspective === 'EXPERIENCE' ||
-      technicalFeedback.perspective === 'BEHAVIORAL')
+    (technicalFeedback.rubricCategory === 'TECHNICAL' ||
+      technicalFeedback.rubricCategory === 'EXPERIENCE' ||
+      technicalFeedback.rubricCategory === 'BEHAVIORAL')
 
   if (!isCardable) {
     return (
