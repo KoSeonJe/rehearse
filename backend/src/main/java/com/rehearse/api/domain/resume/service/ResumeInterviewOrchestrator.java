@@ -173,6 +173,7 @@ public class ResumeInterviewOrchestrator {
         if (result.switchedToInterrogation()) {
             runtimeStateStore.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
             InterviewRuntimeState refreshed = runtimeStateStore.get(interviewId);
+            // invariant: analyzer 가 비-null 반환. 미래 회귀 시 graceful 안전망.
             AnswerAnalysis safeAnalysis = analysis != null ? analysis : AnswerAnalysis.empty(0L);
             if (analysis == null) {
                 log.warn("[ResumeOrchestrator] analysis null on mode transition — empty() fallback. interviewId={}",

@@ -436,7 +436,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
         }
 
         @Test
-        @DisplayName("hard cap 모드 전환 시 chain prompt ANSWER_QUALITY 가 empty() 의 1 (분석 불가→명료화 정책)")
+        @DisplayName("hard cap 모드 전환 시 정상 analysis 의 ANSWER_QUALITY 가 chain prompt 에 plumbed (DEFAULT_ANSWER_QUALITY=2 가짜 평균값 차단)")
         void modeTransition_emptyAnalysisPropagatesQuality1() {
             Long interviewId = persistInterviewAndInitState();
             runtimeStateCache.update(interviewId, s -> s.getPlaygroundTurns().set(3));
@@ -450,9 +450,6 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
                     interviewId, 30, "프로젝트를 소개해주세요.", "직전 답변",
                     List.of(), createSkeleton(), createPlan(), false);
 
-            // hard cap path = answer_analyzer 호출 후 PLAYGROUND turn 그대로 진행 → 실제로는 analyzer 가
-            // quality 3 을 반환 (chatResponseFor 의 answer_analyzer mock). 따라서 "정책 정합" 검증은
-            // "analysis 가 실제 분석값으로 plumbed (DEFAULT_ANSWER_QUALITY=2 의 가짜 평균값 X)" 으로 표현.
             String chainPromptBody = capturePromptBody("resume_chain_interrogator");
             assertThat(chainPromptBody)
                     .as("ANSWER_QUALITY 영역이 mock analyzer 의 실제 반환값(3) 을 반영 — 가짜 평균값 2 가 아님")
