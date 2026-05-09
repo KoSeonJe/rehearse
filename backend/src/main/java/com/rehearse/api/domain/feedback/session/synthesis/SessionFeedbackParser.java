@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,8 +38,8 @@ public class SessionFeedbackParser {
 
     private final ObjectMapper objectMapper;
 
-    public SessionFeedbackPayload parse(String json, SessionFeedbackInput input) {
-        SessionFeedbackPayload payload = deserialize(json);
+    public GeneratedSessionFeedback parse(String json, SessionFeedbackInput input) {
+        GeneratedSessionFeedback payload = deserialize(json);
         validateCardinality(payload, input);
         validateNoAbstractPhrases(payload);
         validateContentDeliverySourceSeparation(payload, input);
@@ -47,9 +47,17 @@ public class SessionFeedbackParser {
         return payload;
     }
 
-    private SessionFeedbackPayload deserialize(String json) {
+    private GeneratedSessionFeedback deserialize(String json) {
         try {
-            return objectMapper.readValue(json, SessionFeedbackPayload.class);
+            return objectMapper.readValue(json, GeneratedSessionFeedback.class);
+        } catch (com.fasterxml.jackson.databind.exc.ValueInstantiationException e) {
+            Throwable cause = e.getCause();
+            String causeMsg = cause != null ? cause.getMessage() : e.getMessage();
+            log.warn("SessionFeedback record invariant 위반: {}", causeMsg);
+            if (causeMsg != null && causeMsg.contains("overall")) {
+                throw new SessionFeedbackParseException("section=overall 누락");
+            }
+            throw new SessionFeedbackParseException("JSON 구조 불일치: " + causeMsg);
         } catch (Exception e) {
             log.warn("SessionFeedback JSON 역직렬화 실패: {}", e.getMessage());
             throw new SessionFeedbackParseException("JSON 구조 불일치: " + e.getMessage());
@@ -57,7 +65,7 @@ public class SessionFeedbackParser {
     }
 
     // F5-4: 5섹션 cardinality 검증
-    private void validateCardinality(SessionFeedbackPayload payload, SessionFeedbackInput input) {
+    private void validateCardinality(GeneratedSessionFeedback payload, SessionFeedbackInput input) {
         if (payload.overall() == null) {
             throw new SessionFeedbackParseException("section=overall 누락");
         }
@@ -76,7 +84,7 @@ public class SessionFeedbackParser {
         }
     }
 
-    private void validateNoAbstractPhrases(SessionFeedbackPayload payload) {
+    private void validateNoAbstractPhrases(GeneratedSessionFeedback payload) {
         String fullText = extractAllObservationText(payload);
         for (Pattern pattern : ABSTRACT_PATTERNS) {
             if (pattern.matcher(fullText).find()) {
@@ -86,7 +94,7 @@ public class SessionFeedbackParser {
         }
     }
 
-    private void validateContentDeliverySourceSeparation(SessionFeedbackPayload payload, SessionFeedbackInput input) {
+    private void validateContentDeliverySourceSeparation(GeneratedSessionFeedback payload, SessionFeedbackInput input) {
         String deliveryText = buildDeliverySourceText(input);
         if (!deliveryText.isBlank() && hasSignificantOverlap(buildContentObservationText(payload), deliveryText)) {
             log.warn("Content 섹션에 Delivery 소스 텍스트 교차 참조 감지 — 재시도 필요");
@@ -103,7 +111,7 @@ public class SessionFeedbackParser {
     }
 
     // F5-5: cross-category narrative 검증
-    private void validateCrossCategoryNarrative(SessionFeedbackPayload payload, SessionFeedbackInput input) {
+    private void validateCrossCategoryNarrative(GeneratedSessionFeedback payload, SessionFeedbackInput input) {
         if (input.scoresByCategory() == null || input.scoresByCategory().size() < 2) {
             return;
         }
@@ -121,7 +129,7 @@ public class SessionFeedbackParser {
         }
     }
 
-    private String extractAllObservationText(SessionFeedbackPayload payload) {
+    private String extractAllObservationText(GeneratedSessionFeedback payload) {
         StringBuilder sb = new StringBuilder();
         if (payload.overall() != null && payload.overall().narrative() != null) {
             sb.append(payload.overall().narrative());
@@ -141,7 +149,7 @@ public class SessionFeedbackParser {
         return sb.toString();
     }
 
-    private String buildContentObservationText(SessionFeedbackPayload payload) {
+    private String buildContentObservationText(GeneratedSessionFeedback payload) {
         StringBuilder sb = new StringBuilder();
         if (payload.strengths() != null) {
             payload.strengths().forEach(s -> {
@@ -156,7 +164,7 @@ public class SessionFeedbackParser {
         return sb.toString();
     }
 
-    private String buildDeliveryObservationText(SessionFeedbackPayload payload) {
+    private String buildDeliveryObservationText(GeneratedSessionFeedback payload) {
         if (payload.delivery() == null) return "";
         StringBuilder sb = new StringBuilder();
         if (payload.delivery().fillerWords() != null) sb.append(payload.delivery().fillerWords()).append(" ");

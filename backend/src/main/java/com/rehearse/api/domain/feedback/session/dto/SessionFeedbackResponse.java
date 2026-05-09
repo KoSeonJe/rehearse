@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedback;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedbackStatus;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,11 +19,11 @@ public class SessionFeedbackResponse {
     private final Long id;
     private final Long interviewId;
     private final SessionFeedbackStatus status;
-    private final SessionFeedbackPayload.OverallSection overall;
-    private final List<SessionFeedbackPayload.StrengthItem> strengths;
-    private final List<SessionFeedbackPayload.GapItem> gaps;
-    private final SessionFeedbackPayload.DeliverySection delivery;
-    private final List<SessionFeedbackPayload.WeekPlanItem> weekPlan;
+    private final GeneratedSessionFeedback.OverallSection overall;
+    private final List<GeneratedSessionFeedback.StrengthItem> strengths;
+    private final List<GeneratedSessionFeedback.GapItem> gaps;
+    private final GeneratedSessionFeedback.DeliverySection delivery;
+    private final List<GeneratedSessionFeedback.WeekPlanItem> weekPlan;
     private final String coverage;
     private final boolean deliveryRetryable;
     private final String lastFailureReason;

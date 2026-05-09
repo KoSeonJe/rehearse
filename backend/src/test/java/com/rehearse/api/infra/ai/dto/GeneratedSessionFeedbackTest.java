@@ -59,11 +59,11 @@ class GeneratedSessionFeedbackTest {
         }
 
         @Test
-        @DisplayName("delivery 가 null 이면 거절한다")
-        void should_reject_when_delivery_null() {
-            assertThatThrownBy(() -> new GeneratedSessionFeedback(
-                    overall(), List.of(), List.of(), null, List.of()))
-                    .isInstanceOf(IllegalArgumentException.class);
+        @DisplayName("delivery null 은 허용된다 (delivery 입력 없는 케이스 — parser 가 cardinality 검증)")
+        void should_allow_when_delivery_null() {
+            GeneratedSessionFeedback g = new GeneratedSessionFeedback(
+                    overall(), List.of(), List.of(), null, List.of());
+            assertThat(g.delivery()).isNull();
         }
     }
 }

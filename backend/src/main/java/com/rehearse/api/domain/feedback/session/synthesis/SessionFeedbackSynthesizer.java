@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
-import com.rehearse.api.domain.feedback.session.dto.SessionFeedbackPayload;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -18,7 +18,7 @@ public class SessionFeedbackSynthesizer {
     private final SessionFeedbackSynthesizerPromptBuilder promptBuilder;
     private final SessionFeedbackParser parser;
 
-    public SessionFeedbackPayload synthesize(SessionFeedbackInput input) {
+    public GeneratedSessionFeedback synthesize(SessionFeedbackInput input) {
         var request = promptBuilder.build(input);
         ChatResponse response = aiClient.chat(request);
         String json = response.content();

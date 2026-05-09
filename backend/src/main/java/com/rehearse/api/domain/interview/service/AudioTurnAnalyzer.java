@@ -12,6 +12,7 @@ import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedTurnAnalysis;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
@@ -84,13 +85,12 @@ public class AudioTurnAnalyzer {
 
         ChatResponse response = aiClient.chatWithAudio(chatRequest, audio);
         // parseOrRetry 는 retry 시 text-only chat 호출 → audio 컨텍스트 손실. audio 경로는 단발 파싱만.
-        return aiResponseParser.parseJsonResponse(response.content(), TurnAnalysisResult.class);
+        GeneratedTurnAnalysis raw = aiResponseParser.parseJsonResponse(response.content(), GeneratedTurnAnalysis.class);
+        return raw.toDomain();
     }
 
     private TurnAnalysisResult commit(Long interviewId, Long turnId, TurnAnalysisResult viaAudio) {
-        AnswerAnalysis withTurnId = viaAudio.answerAnalysis() != null
-                ? viaAudio.answerAnalysis().withTurnId(turnId)
-                : AnswerAnalysis.empty(turnId);
+        AnswerAnalysis withTurnId = viaAudio.answerAnalysis().withTurnId(turnId);
         AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
         runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));
         if (guarded.recommendedNextAction() != withTurnId.recommendedNextAction()) {

@@ -11,6 +11,7 @@ import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedCompactionSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,7 @@ class DialogueCompactorTest {
     @DisplayName("compacts_window_and_stores_summary_when_called")
     void compacts_window_and_stores_summary_when_called() {
         InterviewRuntimeState state = freshState();
-        CompactionSummaryResult summaryResult = new CompactionSummaryResult(
+        GeneratedCompactionSummary summaryResult = new GeneratedCompactionSummary(
                 List.of("GC"),
                 List.of("STW 발생 시 처리량 손실"),
                 List.of("기본 → 트레이드오프"),
@@ -79,7 +80,7 @@ class DialogueCompactorTest {
         );
         ChatResponse response = stubResponse("{\"covered_topics\":[\"GC\"]}");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(response);
-        given(aiResponseParser.parseOrRetry(eq(response), eq(CompactionSummaryResult.class), eq(aiClient), any()))
+        given(aiResponseParser.parseOrRetry(eq(response), eq(GeneratedCompactionSummary.class), eq(aiClient), any()))
                 .willReturn(summaryResult);
 
         // @Async has no effect without Spring proxy — executes synchronously in test
@@ -117,12 +118,12 @@ class DialogueCompactorTest {
     @DisplayName("marks_finished_after_completion")
     void marks_finished_after_completion() {
         InterviewRuntimeState state = freshState();
-        CompactionSummaryResult summaryResult = new CompactionSummaryResult(
+        GeneratedCompactionSummary summaryResult = new GeneratedCompactionSummary(
                 List.of("topic"), List.of(), List.of(), List.of(), List.of()
         );
         ChatResponse response = stubResponse("{\"covered_topics\":[\"topic\"]}");
         given(aiClient.chat(any(ChatRequest.class))).willReturn(response);
-        given(aiResponseParser.parseOrRetry(eq(response), eq(CompactionSummaryResult.class), eq(aiClient), any()))
+        given(aiResponseParser.parseOrRetry(eq(response), eq(GeneratedCompactionSummary.class), eq(aiClient), any()))
                 .willReturn(summaryResult);
 
         compactor.compactAsync(1L, 2, sampleExchanges(), state);

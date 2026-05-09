@@ -19,9 +19,6 @@ public record GeneratedSessionFeedback(
         if (overall == null) {
             throw new IllegalArgumentException("GeneratedSessionFeedback.overall 는 null 일 수 없습니다.");
         }
-        if (delivery == null) {
-            throw new IllegalArgumentException("GeneratedSessionFeedback.delivery 는 null 일 수 없습니다.");
-        }
         strengths = strengths != null ? List.copyOf(strengths) : List.of();
         gaps = gaps != null ? List.copyOf(gaps) : List.of();
         weekPlan = weekPlan != null ? List.copyOf(weekPlan) : List.of();
