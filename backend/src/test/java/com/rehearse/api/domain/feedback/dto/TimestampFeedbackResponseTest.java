@@ -77,12 +77,12 @@ class TimestampFeedbackResponseTest {
     }
 
     @Nested
-    @DisplayName("technicalFeedback.perspective 매핑")
-    class TechnicalPerspectiveMapping {
+    @DisplayName("technicalFeedback.rubricCategory 매핑")
+    class TechnicalRubricCategoryMapping {
 
         @Test
-        @DisplayName("RESUME_PLAYGROUND 질문은 perspective=EXPERIENCE 로 노출된다")
-        void perspective_EXPERIENCE_when_RESUME_PLAYGROUND() {
+        @DisplayName("RESUME_PLAYGROUND 질문은 rubricCategory=EXPERIENCE 로 노출된다")
+        void rubricCategory_EXPERIENCE_when_RESUME_PLAYGROUND() {
             // given
             Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_PLAYGROUND);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
@@ -96,12 +96,12 @@ class TimestampFeedbackResponseTest {
 
             // then
             assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getPerspective()).isEqualTo("EXPERIENCE");
+            assertThat(response.getTechnicalFeedback().getRubricCategory()).isEqualTo("EXPERIENCE");
         }
 
         @Test
-        @DisplayName("RESUME_INTERROGATION 질문은 perspective=TECHNICAL 로 노출된다")
-        void perspective_TECHNICAL_when_RESUME_INTERROGATION() {
+        @DisplayName("RESUME_INTERROGATION 질문은 rubricCategory=TECHNICAL 로 노출된다")
+        void rubricCategory_TECHNICAL_when_RESUME_INTERROGATION() {
             // given
             Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
@@ -115,12 +115,12 @@ class TimestampFeedbackResponseTest {
 
             // then
             assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getPerspective()).isEqualTo("TECHNICAL");
+            assertThat(response.getTechnicalFeedback().getRubricCategory()).isEqualTo("TECHNICAL");
         }
 
         @Test
-        @DisplayName("Question 메타가 null 이면 perspective 는 null 로 노출된다")
-        void perspective_null_when_question_null() {
+        @DisplayName("Question 메타가 null 이면 rubricCategory 는 null 로 노출된다")
+        void rubricCategory_null_when_question_null() {
             // given
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(null);
             QuestionScore score = TestFixtures.createQuestionScore(3L, "tech-v1", null);
@@ -133,7 +133,7 @@ class TimestampFeedbackResponseTest {
 
             // then
             assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getPerspective()).isNull();
+            assertThat(response.getTechnicalFeedback().getRubricCategory()).isNull();
         }
     }
 }

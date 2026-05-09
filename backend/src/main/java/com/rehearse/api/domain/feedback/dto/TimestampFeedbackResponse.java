@@ -73,7 +73,7 @@ public class TimestampFeedbackResponse {
     @Getter
     @Builder
     public static class TechnicalFeedback {
-        private final String perspective;
+        private final String rubricCategory;
         private final String rubricId;
         private final String levelFlag;
         private final List<TechnicalDimensionFeedback> dimensions;
@@ -167,7 +167,7 @@ public class TimestampFeedbackResponse {
                 .toList();
 
         return TechnicalFeedback.builder()
-                .perspective(perspective)
+                .rubricCategory(perspective)
                 .rubricId(questionScore.getRubricId())
                 .levelFlag(questionScore.getLevelFlag())
                 .dimensions(dimFeedbacks)
