@@ -102,7 +102,7 @@ public class DialogueHistoryLayer implements ContextLayer {
         List<ChatMessage> messages = new ArrayList<>(exchanges.size() * 2);
         for (FollowUpExchange ex : exchanges) {
             messages.add(ChatMessage.of(ChatMessage.Role.USER, ex.getQuestion()));
-            messages.add(ChatMessage.of(ChatMessage.Role.ASSISTANT, ex.getAnswer()));
+            messages.add(ChatMessage.of(ChatMessage.Role.ASSISTANT, ex.getAnswerText()));
         }
         return messages;
     }

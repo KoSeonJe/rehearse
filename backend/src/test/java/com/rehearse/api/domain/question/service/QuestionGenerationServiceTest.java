@@ -5,7 +5,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -82,7 +81,7 @@ class QuestionGenerationServiceTest {
         void nonResumeTypes_routesToStandardGenerator() {
             List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL);
             List<QuestionSet> generated = List.of(
-                    QuestionSet.builder().category(QuestionSetCategory.CS_FUNDAMENTAL).orderIndex(0).build());
+                    QuestionSet.builder().category(InterviewType.CS_FUNDAMENTAL).orderIndex(0).build());
             given(standardTrackGenerator.generate(
                     eq(1L), eq(1L), eq(Position.BACKEND), eq(InterviewLevel.JUNIOR),
                     eq(types), any(), any(), eq(30), eq(TechStack.JAVA_SPRING)))

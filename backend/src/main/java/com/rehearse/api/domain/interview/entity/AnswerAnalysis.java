@@ -9,7 +9,7 @@ import java.util.List;
 public record AnswerAnalysis(
         long turnId,
         List<Claim> claims,
-        List<Perspective> missingPerspectives,
+        List<AnswerFeedbackPerspective> missingPerspectives,
         List<String> unstatedAssumptions,
         int answerQuality,
         RecommendedNextAction recommendedNextAction
@@ -19,7 +19,7 @@ public record AnswerAnalysis(
     public AnswerAnalysis(
             @JsonProperty("turn_id") long turnId,
             @JsonProperty("claims") List<Claim> claims,
-            @JsonProperty("missing_perspectives") List<Perspective> missingPerspectives,
+            @JsonProperty("missing_perspectives") List<AnswerFeedbackPerspective> missingPerspectives,
             @JsonProperty("unstated_assumptions") List<String> unstatedAssumptions,
             @JsonProperty("answer_quality") int answerQuality,
             @JsonProperty("recommended_next_action") RecommendedNextAction recommendedNextAction

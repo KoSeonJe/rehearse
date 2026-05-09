@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -12,28 +12,28 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class QuestionTypeTest {
 
     @Nested
-    @DisplayName("RESUME_* 타입은 referenceType / feedbackPerspective 매핑이 결정성 있게 정의된다")
+    @DisplayName("RESUME_* 타입은 referenceType / rubricCategory 매핑이 결정성 있게 정의된다")
     class ResumeTypes {
 
         @Test
         @DisplayName("RESUME_OPENER 는 (GUIDE, EXPERIENCE) 로 매핑된다")
         void resumeOpener_mapsToGuideAndExperience() {
             assertThat(QuestionType.RESUME_OPENER.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.RESUME_OPENER.feedbackPerspective()).isEqualTo(FeedbackPerspective.EXPERIENCE);
+            assertThat(QuestionType.RESUME_OPENER.rubricCategory()).isEqualTo(RubricCategory.EXPERIENCE);
         }
 
         @Test
         @DisplayName("RESUME_PLAYGROUND 는 (GUIDE, EXPERIENCE) 로 매핑된다")
         void resumePlayground_mapsToGuideAndExperience() {
             assertThat(QuestionType.RESUME_PLAYGROUND.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.RESUME_PLAYGROUND.feedbackPerspective()).isEqualTo(FeedbackPerspective.EXPERIENCE);
+            assertThat(QuestionType.RESUME_PLAYGROUND.rubricCategory()).isEqualTo(RubricCategory.EXPERIENCE);
         }
 
         @Test
         @DisplayName("RESUME_INTERROGATION 는 (GUIDE, TECHNICAL) 로 매핑된다")
         void resumeInterrogation_mapsToGuideAndTechnical() {
             assertThat(QuestionType.RESUME_INTERROGATION.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.RESUME_INTERROGATION.feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(QuestionType.RESUME_INTERROGATION.rubricCategory()).isEqualTo(RubricCategory.TECHNICAL);
         }
     }
 
@@ -45,28 +45,28 @@ class QuestionTypeTest {
         @DisplayName("TECH_MAIN 은 (MODEL_ANSWER, TECHNICAL) 로 매핑된다")
         void techMain_mapsToModelAnswerAndTechnical() {
             assertThat(QuestionType.TECH_MAIN.referenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(QuestionType.TECH_MAIN.feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(QuestionType.TECH_MAIN.rubricCategory()).isEqualTo(RubricCategory.TECHNICAL);
         }
 
         @Test
         @DisplayName("TECH_FOLLOWUP 은 (MODEL_ANSWER, TECHNICAL) 로 매핑된다")
         void techFollowUp_mapsToModelAnswerAndTechnical() {
             assertThat(QuestionType.TECH_FOLLOWUP.referenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(QuestionType.TECH_FOLLOWUP.feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(QuestionType.TECH_FOLLOWUP.rubricCategory()).isEqualTo(RubricCategory.TECHNICAL);
         }
 
         @Test
         @DisplayName("BEHAVIORAL_MAIN 은 (GUIDE, BEHAVIORAL) 로 매핑된다")
         void behavioralMain_mapsToGuideAndBehavioral() {
             assertThat(QuestionType.BEHAVIORAL_MAIN.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.BEHAVIORAL_MAIN.feedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
+            assertThat(QuestionType.BEHAVIORAL_MAIN.rubricCategory()).isEqualTo(RubricCategory.BEHAVIORAL);
         }
 
         @Test
         @DisplayName("BEHAVIORAL_FOLLOWUP 은 (GUIDE, BEHAVIORAL) 로 매핑된다")
         void behavioralFollowUp_mapsToGuideAndBehavioral() {
             assertThat(QuestionType.BEHAVIORAL_FOLLOWUP.referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(QuestionType.BEHAVIORAL_FOLLOWUP.feedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
+            assertThat(QuestionType.BEHAVIORAL_FOLLOWUP.rubricCategory()).isEqualTo(RubricCategory.BEHAVIORAL);
         }
     }
 

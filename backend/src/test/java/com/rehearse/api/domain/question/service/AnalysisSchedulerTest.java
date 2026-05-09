@@ -12,7 +12,7 @@ import com.rehearse.api.domain.question.entity.ConvertStatus;
 import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -208,7 +208,7 @@ class AnalysisSchedulerTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
 

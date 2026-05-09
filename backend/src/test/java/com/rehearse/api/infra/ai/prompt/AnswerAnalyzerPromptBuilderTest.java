@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -59,7 +59,7 @@ class AnswerAnalyzerPromptBuilderTest {
                 "캐시 도입 경험을 설명해주세요.",
                 ReferenceType.GUIDE,
                 "Redis Cache-Aside 적용",
-                List.of(Perspective.TRADEOFF, Perspective.COLLABORATION)
+                List.of(AnswerFeedbackPerspective.TRADEOFF, AnswerFeedbackPerspective.COLLABORATION)
         );
 
         assertThat(user).contains("QUESTION_REFERENCE_TYPE: EXPERIENCE");

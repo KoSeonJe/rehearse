@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
@@ -14,6 +14,7 @@ import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.prompt.PromptFormatters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,15 +42,15 @@ public class AnswerAnalyzer {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         if (interviewId == null || turnId == null) {
             throw new IllegalArgumentException("interviewId/turnId 는 null 일 수 없습니다.");
         }
 
         InterviewRuntimeState runtimeState = runtimeStateStore.get(interviewId);
-        String personaDepthHint = toReferenceLabel(questionReferenceType);
-        String askedPerspectivesStr = formatPerspectives(askedPerspectives);
+        String personaDepthHint = PromptFormatters.toReferenceLabel(questionReferenceType);
+        String askedPerspectivesStr = PromptFormatters.formatPerspectives(askedPerspectives);
 
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
@@ -86,24 +87,5 @@ public class AnswerAnalyzer {
         }
 
         return guarded;
-    }
-
-    private static String toReferenceLabel(ReferenceType refType) {
-        if (refType == null) {
-            return "CONCEPT";
-        }
-        return switch (refType) {
-            case GUIDE -> "EXPERIENCE";
-            case MODEL_ANSWER -> "CONCEPT";
-        };
-    }
-
-    private static String formatPerspectives(List<Perspective> askedPerspectives) {
-        if (askedPerspectives == null || askedPerspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return askedPerspectives.stream()
-                .map(Enum::name)
-                .collect(java.util.stream.Collectors.joining(", "));
     }
 }

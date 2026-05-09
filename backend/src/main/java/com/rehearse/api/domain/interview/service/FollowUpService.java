@@ -126,7 +126,7 @@ public class FollowUpService {
 
         log.info("REALTIME 후속 질문 생성 완료(v3): interviewId={}, questionSetId={}, questionId={}, type={}, perspective={}, targetClaim={}, exhausted={}",
                 id, request.getQuestionSetId(), saveResult.question().getId(),
-                stepB.getType(), stepB.getSelectedPerspective(),
+                stepB.getType(), stepB.getSelectedAnswerFeedbackPerspective(),
                 stepB.getTargetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
@@ -159,7 +159,7 @@ public class FollowUpService {
                 .skip(false)
                 .presentToUser(true)
                 .followUpExhausted(exhausted)
-                .selectedPerspective(followUp.getSelectedPerspective())
+                .selectedAnswerFeedbackPerspective(followUp.getSelectedAnswerFeedbackPerspective())
                 .build();
     }
 

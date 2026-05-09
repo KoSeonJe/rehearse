@@ -1,30 +1,30 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 
 public enum QuestionType {
-    TECH_MAIN(ReferenceType.MODEL_ANSWER, FeedbackPerspective.TECHNICAL),
-    TECH_FOLLOWUP(ReferenceType.MODEL_ANSWER, FeedbackPerspective.TECHNICAL),
-    BEHAVIORAL_MAIN(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
-    BEHAVIORAL_FOLLOWUP(ReferenceType.GUIDE, FeedbackPerspective.BEHAVIORAL),
-    RESUME_OPENER(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
-    RESUME_PLAYGROUND(ReferenceType.GUIDE, FeedbackPerspective.EXPERIENCE),
-    RESUME_INTERROGATION(ReferenceType.GUIDE, FeedbackPerspective.TECHNICAL);
+    TECH_MAIN(ReferenceType.MODEL_ANSWER, RubricCategory.TECHNICAL),
+    TECH_FOLLOWUP(ReferenceType.MODEL_ANSWER, RubricCategory.TECHNICAL),
+    BEHAVIORAL_MAIN(ReferenceType.GUIDE, RubricCategory.BEHAVIORAL),
+    BEHAVIORAL_FOLLOWUP(ReferenceType.GUIDE, RubricCategory.BEHAVIORAL),
+    RESUME_OPENER(ReferenceType.GUIDE, RubricCategory.EXPERIENCE),
+    RESUME_PLAYGROUND(ReferenceType.GUIDE, RubricCategory.EXPERIENCE),
+    RESUME_INTERROGATION(ReferenceType.GUIDE, RubricCategory.TECHNICAL);
 
     private final ReferenceType referenceType;
-    private final FeedbackPerspective feedbackPerspective;
+    private final RubricCategory rubricCategory;
 
-    QuestionType(ReferenceType referenceType, FeedbackPerspective feedbackPerspective) {
+    QuestionType(ReferenceType referenceType, RubricCategory rubricCategory) {
         this.referenceType = referenceType;
-        this.feedbackPerspective = feedbackPerspective;
+        this.rubricCategory = rubricCategory;
     }
 
     public ReferenceType referenceType() {
         return referenceType;
     }
 
-    public FeedbackPerspective feedbackPerspective() {
-        return feedbackPerspective;
+    public RubricCategory rubricCategory() {
+        return rubricCategory;
     }
 
     public boolean isFollowUp() {

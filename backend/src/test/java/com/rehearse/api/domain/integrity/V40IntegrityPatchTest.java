@@ -9,7 +9,6 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
@@ -108,7 +107,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
             // given: 전체 계층 구성
             QuestionSet questionSet = QuestionSet.builder()
                     .interview(savedInterview)
-                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                    .category(InterviewType.CS_FUNDAMENTAL)
                     .orderIndex(0)
                     .build();
             em.persist(questionSet);
@@ -179,7 +178,7 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
         void setUpFeedback() {
             QuestionSet questionSet = QuestionSet.builder()
                     .interview(savedInterview)
-                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                    .category(InterviewType.CS_FUNDAMENTAL)
                     .orderIndex(0)
                     .build();
             em.persist(questionSet);

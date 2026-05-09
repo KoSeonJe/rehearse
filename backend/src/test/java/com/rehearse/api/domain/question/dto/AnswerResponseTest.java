@@ -2,7 +2,7 @@ package com.rehearse.api.domain.question.dto;
 
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,13 +20,13 @@ class AnswerResponseTest {
         Question question = buildQuestion(QuestionType.TECH_MAIN);
         QuestionAnswer answer = buildAnswer(question);
 
-        AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.CS_FUNDAMENTAL);
+        AnswerResponse response = AnswerResponse.from(answer, InterviewType.CS_FUNDAMENTAL);
 
         assertThat(response.getDifficulty()).isEqualTo("easy");
     }
 
     @Nested
-    @DisplayName("feedbackPerspective 환원")
+    @DisplayName("rubricCategory 환원")
     class Perspective {
 
         @Test
@@ -35,9 +35,9 @@ class AnswerResponseTest {
             Question question = buildQuestion(QuestionType.TECH_MAIN);
             QuestionAnswer answer = buildAnswer(question);
 
-            AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.CS_FUNDAMENTAL);
+            AnswerResponse response = AnswerResponse.from(answer, InterviewType.CS_FUNDAMENTAL);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+            assertThat(response.getRubricCategory()).isEqualTo("TECHNICAL");
         }
 
         @Test
@@ -46,9 +46,9 @@ class AnswerResponseTest {
             Question question = buildQuestion(QuestionType.BEHAVIORAL_MAIN);
             QuestionAnswer answer = buildAnswer(question);
 
-            AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.BEHAVIORAL);
+            AnswerResponse response = AnswerResponse.from(answer, InterviewType.BEHAVIORAL);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("BEHAVIORAL");
+            assertThat(response.getRubricCategory()).isEqualTo("BEHAVIORAL");
         }
 
         @Test
@@ -57,9 +57,9 @@ class AnswerResponseTest {
             Question question = buildQuestion(QuestionType.RESUME_INTERROGATION);
             QuestionAnswer answer = buildAnswer(question);
 
-            AnswerResponse response = AnswerResponse.from(answer, QuestionSetCategory.RESUME_BASED);
+            AnswerResponse response = AnswerResponse.from(answer, InterviewType.RESUME_BASED);
 
-            assertThat(response.getFeedbackPerspective()).isEqualTo("TECHNICAL");
+            assertThat(response.getRubricCategory()).isEqualTo("TECHNICAL");
         }
 
     }

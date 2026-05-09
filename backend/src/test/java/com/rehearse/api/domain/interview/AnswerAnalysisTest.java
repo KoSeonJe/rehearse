@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview;
 
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
@@ -74,12 +74,12 @@ class AnswerAnalysisTest {
     @Test
     @DisplayName("with_turn_id_returns_new_instance_with_other_fields_preserved")
     void with_turn_id_returns_new_instance_with_other_fields_preserved() {
-        AnswerAnalysis original = new AnswerAnalysis(0L, List.of(), List.of(Perspective.TRADEOFF), List.of(), 4, RecommendedNextAction.SKIP);
+        AnswerAnalysis original = new AnswerAnalysis(0L, List.of(), List.of(AnswerFeedbackPerspective.TRADEOFF), List.of(), 4, RecommendedNextAction.SKIP);
 
         AnswerAnalysis updated = original.withTurnId(42L);
 
         assertThat(updated.turnId()).isEqualTo(42L);
-        assertThat(updated.missingPerspectives()).containsExactly(Perspective.TRADEOFF);
+        assertThat(updated.missingPerspectives()).containsExactly(AnswerFeedbackPerspective.TRADEOFF);
         assertThat(updated.answerQuality()).isEqualTo(4);
     }
 }

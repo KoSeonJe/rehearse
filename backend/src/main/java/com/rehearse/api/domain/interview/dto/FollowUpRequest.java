@@ -31,16 +31,16 @@ public class FollowUpRequest {
     @AllArgsConstructor
     public static class FollowUpExchange {
         private String question;
-        private String answer;
+        private String answerText;
         private String followUpType;
-        private String selectedPerspective;
+        private String selectedAnswerFeedbackPerspective;
 
-        public FollowUpExchange(String question, String answer) {
-            this(question, answer, null, null);
+        public FollowUpExchange(String question, String answerText) {
+            this(question, answerText, null, null);
         }
 
-        public FollowUpExchange(String question, String answer, String followUpType) {
-            this(question, answer, followUpType, null);
+        public FollowUpExchange(String question, String answerText, String followUpType) {
+            this(question, answerText, followUpType, null);
         }
     }
 }

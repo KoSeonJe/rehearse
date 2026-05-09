@@ -2,7 +2,7 @@ package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
@@ -94,16 +94,16 @@ public class FollowUpPromptBuilder {
     public String buildUserPromptWithAnalysis(
             FollowUpGenerationRequest req,
             AnswerAnalysis analysis,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         StringBuilder sb = new StringBuilder(buildUserPromptInternal(req, req.answerText(),
                 "아래 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요."));
         sb.append("\n\nANSWER_ANALYSIS:\n");
         sb.append(formatClaims(analysis.claims()));
-        sb.append("- missing_perspectives: ").append(formatPerspectives(analysis.missingPerspectives())).append("\n");
+        sb.append("- missing_perspectives: ").append(PromptFormatters.formatPerspectives(analysis.missingPerspectives())).append("\n");
         sb.append("- unstated_assumptions: ").append(formatStrings(analysis.unstatedAssumptions())).append("\n");
         sb.append("- recommended_next_action: ").append(analysis.recommendedNextAction().name()).append("\n");
-        sb.append("- asked_perspectives: ").append(formatPerspectives(askedPerspectives)).append("\n");
+        sb.append("- asked_perspectives: ").append(PromptFormatters.formatPerspectives(askedPerspectives)).append("\n");
         return sb.toString();
     }
 
@@ -121,13 +121,6 @@ public class FollowUpPromptBuilder {
               .append("\n");
         }
         return sb.toString();
-    }
-
-    private static String formatPerspectives(List<Perspective> perspectives) {
-        if (perspectives == null || perspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return perspectives.stream().map(Enum::name).collect(Collectors.joining(", "));
     }
 
     private static String formatStrings(List<String> values) {
@@ -155,7 +148,7 @@ public class FollowUpPromptBuilder {
             for (int i = 0; i < req.previousExchanges().size(); i++) {
                 var ex = req.previousExchanges().get(i);
                 sb.append("[").append(i + 1).append("] Q: ").append(ex.getQuestion()).append("\n");
-                sb.append("[").append(i + 1).append("] A:\n<<<USER_ANSWER>>>\n").append(ex.getAnswer()).append("\n<<<END_USER_ANSWER>>>\n");
+                sb.append("[").append(i + 1).append("] A:\n<<<USER_ANSWER>>>\n").append(ex.getAnswerText()).append("\n<<<END_USER_ANSWER>>>\n");
             }
         }
 

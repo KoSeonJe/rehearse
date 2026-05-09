@@ -1,13 +1,12 @@
 package com.rehearse.api.domain.question.service;
 
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionPool;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
@@ -155,7 +154,7 @@ class StandardTrackQuestionGeneratorTest {
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.BEHAVIORAL_MAIN);
             assertThat(q.getQuestionType().referenceType()).isEqualTo(ReferenceType.GUIDE);
-            assertThat(q.getQuestionType().feedbackPerspective()).isEqualTo(FeedbackPerspective.BEHAVIORAL);
+            assertThat(q.getQuestionType().rubricCategory()).isEqualTo(RubricCategory.BEHAVIORAL);
         }
 
         @Test
@@ -170,7 +169,7 @@ class StandardTrackQuestionGeneratorTest {
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
             assertThat(q.getQuestionType().referenceType()).isEqualTo(ReferenceType.MODEL_ANSWER);
-            assertThat(q.getQuestionType().feedbackPerspective()).isEqualTo(FeedbackPerspective.TECHNICAL);
+            assertThat(q.getQuestionType().rubricCategory()).isEqualTo(RubricCategory.TECHNICAL);
         }
     }
 }

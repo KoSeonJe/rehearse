@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.question.dto;
 
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,15 +14,15 @@ public class AnswerResponse {
     private final String questionType;
     private final String questionText;
     private final String modelAnswer;
-    private final String feedbackPerspective;
+    private final String rubricCategory;
     private final String difficulty;
     private final long startMs;
     private final long endMs;
 
-    public static AnswerResponse from(QuestionAnswer answer, QuestionSetCategory category) {
+    public static AnswerResponse from(QuestionAnswer answer, InterviewType category) {
         var question = answer.getQuestion();
         String perspective = question.getQuestionType()
-                .feedbackPerspective()
+                .rubricCategory()
                 .name();
 
         return AnswerResponse.builder()
@@ -31,7 +31,7 @@ public class AnswerResponse {
                 .questionType(question.getQuestionType().name())
                 .questionText(question.getQuestionText())
                 .modelAnswer(question.getModelAnswer())
-                .feedbackPerspective(perspective)
+                .rubricCategory(perspective)
                 .difficulty("easy")
                 .startMs(answer.getStartMs())
                 .endMs(answer.getEndMs())

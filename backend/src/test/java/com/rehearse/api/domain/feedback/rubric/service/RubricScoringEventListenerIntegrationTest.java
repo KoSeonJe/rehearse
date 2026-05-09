@@ -20,7 +20,6 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.service.ResumeTurnEventPublisher;
@@ -95,7 +94,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("정상 1턴 STANDARD 답변은 question_score 와 dimension 을 적재한다")
         void standardAnswer_persistsQuestionScore() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
             followUpTransactionHandler.publishTurnCompletedEvent(
@@ -110,7 +109,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("RESUME_BASED 1턴 정상 publish 는 question_score 를 적재한다")
         void resumeAnswer_persistsQuestionScore() {
-            InterviewData data = persistInterview(QuestionSetCategory.RESUME_BASED, InterviewType.RESUME_BASED,
+            InterviewData data = persistInterview(InterviewType.RESUME_BASED, InterviewType.RESUME_BASED,
                     QuestionType.RESUME_PLAYGROUND);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
@@ -126,7 +125,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("analyzer_skip 분기는 publish 후 question_score 를 적재한다")
         void analyzerSkip_publishesAndPersists() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.SKIP));
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
@@ -138,7 +137,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("step_b_skip 분기는 publish 후 question_score 를 적재한다")
         void stepBSkip_publishesAndPersists() {
-            InterviewData data = persistInterview(QuestionSetCategory.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chatWithAudio(any(), any())).willReturn(analyzerResponse(RecommendedNextAction.DEEP_DIVE));
             given(resilientAiClient.chat(any())).willReturn(stepBSkipResponse(), rubricResponse());
 
@@ -150,7 +149,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         @Test
         @DisplayName("Resume publish 시 questionId null 은 발행 skip 되어 question_score 를 적재하지 않는다")
         void resumeNullQuestionId_skipsPublish() {
-            InterviewData data = persistInterview(QuestionSetCategory.RESUME_BASED, InterviewType.RESUME_BASED,
+            InterviewData data = persistInterview(InterviewType.RESUME_BASED, InterviewType.RESUME_BASED,
                     QuestionType.RESUME_PLAYGROUND);
 
             resumeTurnEventPublisher.publish(
@@ -162,7 +161,7 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
     }
 
-    private InterviewData persistInterview(QuestionSetCategory category, InterviewType type, QuestionType questionType) {
+    private InterviewData persistInterview(InterviewType category, InterviewType type, QuestionType questionType) {
         User user = userRepository.saveAndFlush(User.builder()
                 .email("test@example.com")
                 .name("테스터")

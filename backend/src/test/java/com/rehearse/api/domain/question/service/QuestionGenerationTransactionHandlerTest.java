@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.service.QuestionGenerationTransactionHandler;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.global.support.TestFixtures;
@@ -105,8 +105,8 @@ class QuestionGenerationTransactionHandlerTest {
             interview.startQuestionGeneration();
             given(interviewRepository.findById(1L)).willReturn(Optional.of(interview));
 
-            QuestionSet qs1 = TestFixtures.createQuestionSet(interview, QuestionSetCategory.CS_FUNDAMENTAL, 0);
-            QuestionSet qs2 = TestFixtures.createQuestionSet(interview, QuestionSetCategory.BEHAVIORAL, 1);
+            QuestionSet qs1 = TestFixtures.createQuestionSet(interview, InterviewType.CS_FUNDAMENTAL, 0);
+            QuestionSet qs2 = TestFixtures.createQuestionSet(interview, InterviewType.BEHAVIORAL, 1);
             List<QuestionSet> questionSets = List.of(qs1, qs2);
             given(questionSetRepository.saveAll(any())).willReturn(questionSets);
 

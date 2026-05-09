@@ -33,7 +33,7 @@ public class GeneratedFollowUp {
     private Integer targetClaimIdx;
 
     @JsonProperty("selected_perspective")
-    private String selectedPerspective;
+    private String selectedAnswerFeedbackPerspective;
 
     /** AI가 답변 불충분으로 후속질문 생성을 건너뛰도록 신호한 경우 true. */
     public boolean isSkipped() {
@@ -52,7 +52,7 @@ public class GeneratedFollowUp {
         copy.modelAnswer = this.modelAnswer;
         copy.answerText = answerText;
         copy.targetClaimIdx = this.targetClaimIdx;
-        copy.selectedPerspective = this.selectedPerspective;
+        copy.selectedAnswerFeedbackPerspective = this.selectedAnswerFeedbackPerspective;
         return copy;
     }
 }
