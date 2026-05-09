@@ -2,9 +2,13 @@ package com.rehearse.api.infra.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.rehearse.api.domain.feedback.session.vo.DeliverySection;
+import com.rehearse.api.domain.feedback.session.vo.GapItem;
+import com.rehearse.api.domain.feedback.session.vo.OverallSection;
+import com.rehearse.api.domain.feedback.session.vo.StrengthItem;
+import com.rehearse.api.domain.feedback.session.vo.WeekPlanItem;
 
 import java.util.List;
-import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GeneratedSessionFeedback(
@@ -23,42 +27,4 @@ public record GeneratedSessionFeedback(
         gaps = gaps != null ? List.copyOf(gaps) : List.of();
         weekPlan = weekPlan != null ? List.copyOf(weekPlan) : List.of();
     }
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record OverallSection(
-            @JsonProperty("dimension_scores") Map<String, Double> dimensionScores,
-            @JsonProperty("level_assessment") String levelAssessment,
-            String narrative,
-            String coverage
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record StrengthItem(
-            String dimension,
-            String observation,
-            @JsonProperty("why_matters") String whyMatters
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record GapItem(
-            String dimension,
-            String observation,
-            @JsonProperty("level_gap") String levelGap,
-            @JsonProperty("concrete_action") String concreteAction
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record DeliverySection(
-            @JsonProperty("filler_words") String fillerWords,
-            @JsonProperty("tone_pattern") String tonePattern,
-            String action
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record WeekPlanItem(
-            int priority,
-            String topic,
-            List<String> resources,
-            String practice
-    ) {}
 }

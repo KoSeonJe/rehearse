@@ -1,5 +1,7 @@
 package com.rehearse.api.infra.ai.dto;
 
+import com.rehearse.api.domain.feedback.session.vo.DeliverySection;
+import com.rehearse.api.domain.feedback.session.vo.OverallSection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -13,13 +15,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("GeneratedSessionFeedback - LLM 응답 매핑 시점 검증")
 class GeneratedSessionFeedbackTest {
 
-    private GeneratedSessionFeedback.OverallSection overall() {
-        return new GeneratedSessionFeedback.OverallSection(
-                Map.of("clarity", 0.7), "L2", "narr", "cov");
+    private OverallSection overall() {
+        return new OverallSection(Map.of("clarity", 0.7), "L2", "narr", "cov");
     }
 
-    private GeneratedSessionFeedback.DeliverySection delivery() {
-        return new GeneratedSessionFeedback.DeliverySection("음", "안정적", "느리게 말하기");
+    private DeliverySection delivery() {
+        return new DeliverySection("음", "안정적", "느리게 말하기");
     }
 
     @Nested
