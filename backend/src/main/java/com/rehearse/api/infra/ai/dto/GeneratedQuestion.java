@@ -24,8 +24,8 @@ public class GeneratedQuestion {
     @JsonProperty("question_category")
     private String questionCategory;
 
-    @JsonProperty("model_answer")
-    private String modelAnswer;
+    @JsonProperty("best_answer")
+    private String bestAnswer;
 
     private String followUpStrategy;
 }

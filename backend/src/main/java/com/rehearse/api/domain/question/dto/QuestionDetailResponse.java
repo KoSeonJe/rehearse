@@ -13,7 +13,7 @@ public class QuestionDetailResponse {
     private final QuestionType questionType;
     private final String questionText;
     private final String ttsText;
-    private final String modelAnswer;
+    private final String bestAnswer;
     private final int orderIndex;
 
     public static QuestionDetailResponse from(Question question) {
@@ -22,7 +22,7 @@ public class QuestionDetailResponse {
                 .questionType(question.getQuestionType())
                 .questionText(question.getQuestionText())
                 .ttsText(question.getTtsText())
-                .modelAnswer(question.getModelAnswer())
+                .bestAnswer(question.getBestAnswer())
                 .orderIndex(question.getOrderIndex())
                 .build();
     }

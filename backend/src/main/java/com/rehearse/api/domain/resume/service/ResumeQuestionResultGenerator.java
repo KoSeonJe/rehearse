@@ -35,16 +35,16 @@ public class ResumeQuestionResultGenerator {
     ) {
         PlaygroundOpenerResult first = playgroundPromptBuilder.buildOpener(interviewId, state, project, phase);
         PlaygroundOpenerResult result = first;
-        if (needsRetry(first.modelAnswer(), first.question())) {
+        if (needsRetry(first.bestAnswer(), first.question())) {
             result = playgroundPromptBuilder.buildOpener(interviewId, state, project, phase);
         }
         if (isBlank(result.question())) {
             throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
         }
         warnIfQuestionFallback(interviewId, MODE_OPENER, result.question(), ResumeFallbackQuestions.OPENER);
-        if (isBlank(result.modelAnswer())) {
-            warnModelAnswerFallback(interviewId, MODE_OPENER);
-            return result.withModelAnswer(ResumeFallbackModelAnswers.OPENER);
+        if (isBlank(result.bestAnswer())) {
+            warnBestAnswerFallback(interviewId, MODE_OPENER);
+            return result.withBestAnswer(ResumeFallbackBestAnswers.OPENER);
         }
         return result;
     }
@@ -58,15 +58,15 @@ public class ResumeQuestionResultGenerator {
                 interviewId, state, previousExchanges, project, userAnswer,
                 expectedClaims, playgroundTurnCount, cumulativeLength);
         PlaygroundResponderResult result = first;
-        if (needsRetry(first.modelAnswer(), first.question())) {
+        if (needsRetry(first.bestAnswer(), first.question())) {
             result = playgroundPromptBuilder.buildResponder(
                     interviewId, state, previousExchanges, project, userAnswer,
                     expectedClaims, playgroundTurnCount, cumulativeLength);
         }
         warnIfQuestionFallback(interviewId, MODE_PLAYGROUND, result.question(), ResumeFallbackQuestions.PLAYGROUND_RESPONDER);
-        if (isBlank(result.modelAnswer())) {
-            warnModelAnswerFallback(interviewId, MODE_PLAYGROUND);
-            return result.withModelAnswer(ResumeFallbackModelAnswers.PLAYGROUND);
+        if (isBlank(result.bestAnswer())) {
+            warnBestAnswerFallback(interviewId, MODE_PLAYGROUND);
+            return result.withBestAnswer(ResumeFallbackBestAnswers.PLAYGROUND);
         }
         return result;
     }
@@ -80,7 +80,7 @@ public class ResumeQuestionResultGenerator {
                 interviewId, state, previousExchanges, projectName,
                 chainTopic, currentLevel, answerQuality, userAnswer, consecutiveStayCount);
         InterrogationResult result = first;
-        if (needsRetry(first.modelAnswer(), first.question())) {
+        if (needsRetry(first.bestAnswer(), first.question())) {
             result = chainInterrogatorPromptBuilder.build(
                     interviewId, state, previousExchanges, projectName,
                     chainTopic, currentLevel, answerQuality, userAnswer, consecutiveStayCount);
@@ -89,9 +89,9 @@ public class ResumeQuestionResultGenerator {
             throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
         }
         warnIfQuestionFallback(interviewId, MODE_INTERROGATION, result.question(), ResumeFallbackQuestions.INTERROGATION);
-        if (isBlank(result.modelAnswer())) {
-            warnModelAnswerFallback(interviewId, MODE_INTERROGATION);
-            return result.withModelAnswer(ResumeFallbackModelAnswers.INTERROGATION);
+        if (isBlank(result.bestAnswer())) {
+            warnBestAnswerFallback(interviewId, MODE_INTERROGATION);
+            return result.withBestAnswer(ResumeFallbackBestAnswers.INTERROGATION);
         }
         return result;
     }
@@ -100,12 +100,12 @@ public class ResumeQuestionResultGenerator {
         return value == null || value.isBlank();
     }
 
-    private static boolean needsRetry(String modelAnswer, String question) {
-        return isBlank(modelAnswer) || isBlank(question);
+    private static boolean needsRetry(String bestAnswer, String question) {
+        return isBlank(bestAnswer) || isBlank(question);
     }
 
-    private static void warnModelAnswerFallback(Long interviewId, String mode) {
-        log.warn("[ResumeQuestionResultGenerator] modelAnswer 폴백 적용: interviewId={}, mode={}",
+    private static void warnBestAnswerFallback(Long interviewId, String mode) {
+        log.warn("[ResumeQuestionResultGenerator] bestAnswer 폴백 적용: interviewId={}, mode={}",
                 interviewId, mode);
     }
 

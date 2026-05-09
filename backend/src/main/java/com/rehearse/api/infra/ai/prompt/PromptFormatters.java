@@ -21,11 +21,8 @@ public final class PromptFormatters {
 
     public static String toReferenceLabel(ReferenceType refType) {
         if (refType == null) {
-            return "CONCEPT";
+            return "MODEL_ANSWER";
         }
-        return switch (refType) {
-            case GUIDE -> "EXPERIENCE";
-            case MODEL_ANSWER -> "CONCEPT";
-        };
+        return refType.name();
     }
 }

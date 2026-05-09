@@ -146,7 +146,7 @@ class FollowUpServiceTest {
         ReflectionTestUtils.setField(f, "ttsQuestion", question);
         ReflectionTestUtils.setField(f, "reason", "r");
         ReflectionTestUtils.setField(f, "type", "DEEP_DIVE");
-        ReflectionTestUtils.setField(f, "modelAnswer", "m");
+        ReflectionTestUtils.setField(f, "bestAnswer", "m");
         ReflectionTestUtils.setField(f, "answerText", "x");
         ReflectionTestUtils.setField(f, "selectedAnswerFeedbackPerspective", "RELIABILITY");
         ReflectionTestUtils.setField(f, "skip", Boolean.FALSE);

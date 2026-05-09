@@ -51,7 +51,7 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("buildOpener 가 실제 OpenAI 응답으로 PlaygroundOpenerResult 를 채운다 + AC1/AC2/AC3 Opener 톤 + model_answer 분량/톤/맥락/구조 단언")
+    @DisplayName("buildOpener 가 실제 OpenAI 응답으로 PlaygroundOpenerResult 를 채운다 + AC1/AC2/AC3 Opener 톤 + best_answer 분량/톤/맥락/구조 단언")
     void buildOpener_returns_non_blank_question_from_live_openai() {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-1", "hash", CandidateLevel.MID, "backend", List.of(), null);
@@ -80,23 +80,23 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
                 .as("AC3 Opener — intro 의도 어휘군 1+ 매치")
                 .containsAnyOf("역할", "맡으셨", "설명", "소개", "이야기", "경험", "프로젝트");
 
-        assertThat(result.modelAnswer())
-                .as("AC1 model_answer — 200~300자 (LLM 비결정 ±50 완충)")
+        assertThat(result.bestAnswer())
+                .as("AC1 best_answer — 200~300자 (LLM 비결정 ±50 완충)")
                 .isNotNull();
-        assertThat(result.modelAnswer().length())
-                .as("AC1 model_answer 길이 — 150~350")
+        assertThat(result.bestAnswer().length())
+                .as("AC1 best_answer 길이 — 150~350")
                 .isBetween(150, 350);
-        assertThat(result.modelAnswer())
-                .as("AC1 model_answer — 가이드 톤 권유 어구 1+")
+        assertThat(result.bestAnswer())
+                .as("AC1 best_answer — 가이드 톤 권유 어구 1+")
                 .containsAnyOf("효과적입니다", "구조가", "마무리하면", "정리하세요", "짚어주세요", "서술하세요", "마무리하세요");
-        assertThat(result.modelAnswer())
-                .as("AC1 model_answer — 1인칭 답변 예시 어미 부재 (거짓 placeholder 위험)")
+        assertThat(result.bestAnswer())
+                .as("AC1 best_answer — 1인칭 답변 예시 어미 부재 (거짓 placeholder 위험)")
                 .doesNotContain("저는 ", "경험이 있습니다");
-        assertThat(result.modelAnswer())
-                .as("AC2 model_answer — projectName 명시")
+        assertThat(result.bestAnswer())
+                .as("AC2 best_answer — projectName 명시")
                 .contains("Live 테스트 프로젝트");
-        assertThat(result.modelAnswer())
-                .as("AC5 model_answer — 구조 단서 1+ 매치")
+        assertThat(result.bestAnswer())
+                .as("AC5 best_answer — 구조 단서 1+ 매치")
                 .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습", "장점", "단점", "대안", "선택", "결과", "성과", "향상", "개선", "도입", "적용");
     }
 
@@ -129,8 +129,8 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("buildResponder model_answer 가 USER_ANSWER 핵심 명사 1+ 재인용 + AC1/AC5 분량/가이드 톤/구조 단언")
-    void buildResponder_returns_guide_tone_model_answer_from_live_openai() {
+    @DisplayName("buildResponder best_answer 가 USER_ANSWER 핵심 명사 1+ 재인용 + AC1/AC5 분량/가이드 톤/구조 단언")
+    void buildResponder_returns_guide_tone_best_answer_from_live_openai() {
         ResumeSkeleton skeleton = new ResumeSkeleton(
                 "live-resume-3", "hash", CandidateLevel.MID, "backend", List.of(), null);
         InterviewRuntimeState state = new InterviewRuntimeState("MID", skeleton);
@@ -144,21 +144,21 @@ class ResumePlaygroundLiveLlmE2ETest extends AbstractMySqlContainerTest {
                 1, userAnswer.length());
 
         assertThat(result).isNotNull();
-        assertThat(result.modelAnswer()).isNotBlank();
-        assertThat(result.modelAnswer().length())
-                .as("AC1 model_answer 길이 — 150~350")
+        assertThat(result.bestAnswer()).isNotBlank();
+        assertThat(result.bestAnswer().length())
+                .as("AC1 best_answer 길이 — 150~350")
                 .isBetween(150, 350);
-        assertThat(result.modelAnswer())
-                .as("AC1 model_answer — 가이드 톤 권유 어구 1+")
+        assertThat(result.bestAnswer())
+                .as("AC1 best_answer — 가이드 톤 권유 어구 1+")
                 .containsAnyOf("효과적입니다", "구조가", "마무리하면", "정리하세요", "짚어주세요", "서술하세요", "마무리하세요");
-        assertThat(result.modelAnswer())
-                .as("AC1 model_answer — 1인칭 답변 예시 어미 부재 (거짓 placeholder 위험)")
+        assertThat(result.bestAnswer())
+                .as("AC1 best_answer — 1인칭 답변 예시 어미 부재 (거짓 placeholder 위험)")
                 .doesNotContain("저는 ", "경험이 있습니다");
-        assertThat(result.modelAnswer())
-                .as("AC3 model_answer — USER_ANSWER 핵심 명사 1+ 재인용")
+        assertThat(result.bestAnswer())
+                .as("AC3 best_answer — USER_ANSWER 핵심 명사 1+ 재인용")
                 .containsAnyOf("결제 시스템", "동시성", "분산락");
-        assertThat(result.modelAnswer())
-                .as("AC5 model_answer — 구조 단서 1+ 매치")
+        assertThat(result.bestAnswer())
+                .as("AC5 best_answer — 구조 단서 1+ 매치")
                 .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습", "장점", "단점", "대안", "선택", "결과", "성과", "향상", "개선", "도입", "적용");
     }
 }

@@ -107,7 +107,7 @@ public class FollowUpTransactionHandler {
                 .questionType(followUpType)
                 .questionText(followUp.getQuestion())
                 .ttsText(followUp.getTtsQuestion())
-                .modelAnswer(followUp.getModelAnswer())
+                .bestAnswer(followUp.getBestAnswer())
                 .orderIndex(orderIndex)
                 .build();
 

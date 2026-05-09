@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("Question.resume() 팩토리 - 6-인자 시그니처 (ttsText / modelAnswer 적재)")
+@DisplayName("Question.resume() 팩토리 - 6-인자 시그니처 (ttsText / bestAnswer 적재)")
 class QuestionResumeFactoryTest {
 
     @Nested
@@ -15,7 +15,7 @@ class QuestionResumeFactoryTest {
     class Success {
 
         @Test
-        @DisplayName("RESUME_OPENER 타입 + 모든 인자 채워서 호출 시 ttsText / modelAnswer 가 적재된다")
+        @DisplayName("RESUME_OPENER 타입 + 모든 인자 채워서 호출 시 ttsText / bestAnswer 가 적재된다")
         void resume_validArgs_persistsTtsAndModelAnswer() {
             Question q = Question.resume(
                     null,
@@ -28,13 +28,13 @@ class QuestionResumeFactoryTest {
 
             assertThat(q.getQuestionText()).isEqualTo("프로젝트를 소개해주세요.");
             assertThat(q.getTtsText()).isEqualTo("프로젝트를 소개해 주세요");
-            assertThat(q.getModelAnswer()).isEqualTo("STAR 기법을 사용해 프로젝트의 핵심 경험과 결과를 소개합니다.");
+            assertThat(q.getBestAnswer()).isEqualTo("STAR 기법을 사용해 프로젝트의 핵심 경험과 결과를 소개합니다.");
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
             assertThat(q.getOrderIndex()).isZero();
         }
 
         @Test
-        @DisplayName("ttsText / modelAnswer 가 null 로 들어와도 entity 생성은 성공한다 (DB 컬럼 nullable)")
+        @DisplayName("ttsText / bestAnswer 가 null 로 들어와도 entity 생성은 성공한다 (DB 컬럼 nullable)")
         void resume_nullTtsAndModelAnswer_allowed() {
             Question q = Question.resume(
                     null, QuestionType.RESUME_PLAYGROUND, "유효한 질문",
@@ -42,7 +42,7 @@ class QuestionResumeFactoryTest {
             );
 
             assertThat(q.getTtsText()).isNull();
-            assertThat(q.getModelAnswer()).isNull();
+            assertThat(q.getBestAnswer()).isNull();
         }
     }
 

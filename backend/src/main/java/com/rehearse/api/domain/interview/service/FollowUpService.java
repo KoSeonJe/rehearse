@@ -155,7 +155,7 @@ public class FollowUpService {
                 .reason(followUp.getReason())
                 .type(followUp.getType())
                 .answerText(followUp.getAnswerText())
-                .modelAnswer(savedQuestion.getModelAnswer())
+                .bestAnswer(savedQuestion.getBestAnswer())
                 .skip(false)
                 .presentToUser(true)
                 .followUpExhausted(exhausted)

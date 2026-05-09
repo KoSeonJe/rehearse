@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ResumeFallbackModelAnswers - 분량 / 가이드 톤 / 1인칭 placeholder 부재 / 구조 단서 가드")
-class ResumeFallbackModelAnswersTest {
+@DisplayName("ResumeFallbackBestAnswers - 분량 / 가이드 톤 / 1인칭 placeholder 부재 / 구조 단서 가드")
+class ResumeFallbackBestAnswersTest {
 
     @Nested
     @DisplayName("분량 검증 - 한국어 200~300자 범위")
@@ -16,19 +16,19 @@ class ResumeFallbackModelAnswersTest {
         @Test
         @DisplayName("opener_fallback_length_within_200_to_300_chars — OPENER 상수 길이 200~300자 범위")
         void opener_fallback_length_within_200_to_300_chars() {
-            assertThat(ResumeFallbackModelAnswers.OPENER.length()).isBetween(200, 300);
+            assertThat(ResumeFallbackBestAnswers.OPENER.length()).isBetween(200, 300);
         }
 
         @Test
         @DisplayName("playground_fallback_length_within_200_to_300_chars — PLAYGROUND 상수 길이 200~300자 범위")
         void playground_fallback_length_within_200_to_300_chars() {
-            assertThat(ResumeFallbackModelAnswers.PLAYGROUND.length()).isBetween(200, 300);
+            assertThat(ResumeFallbackBestAnswers.PLAYGROUND.length()).isBetween(200, 300);
         }
 
         @Test
         @DisplayName("interrogation_fallback_length_within_200_to_300_chars — INTERROGATION 상수 길이 200~300자 범위")
         void interrogation_fallback_length_within_200_to_300_chars() {
-            assertThat(ResumeFallbackModelAnswers.INTERROGATION.length()).isBetween(200, 300);
+            assertThat(ResumeFallbackBestAnswers.INTERROGATION.length()).isBetween(200, 300);
         }
     }
 
@@ -39,11 +39,11 @@ class ResumeFallbackModelAnswersTest {
         @Test
         @DisplayName("all_fallbacks_use_guide_tone — 3 상수 모두 권유 / 안내 어미 1+ 매치")
         void all_fallbacks_use_guide_tone() {
-            assertThat(ResumeFallbackModelAnswers.OPENER)
+            assertThat(ResumeFallbackBestAnswers.OPENER)
                     .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
-            assertThat(ResumeFallbackModelAnswers.PLAYGROUND)
+            assertThat(ResumeFallbackBestAnswers.PLAYGROUND)
                     .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
-            assertThat(ResumeFallbackModelAnswers.INTERROGATION)
+            assertThat(ResumeFallbackBestAnswers.INTERROGATION)
                     .containsAnyOf("효과적입니다", "구조가", "마무리하면", "서술하세요", "정리하세요", "마무리하세요");
         }
     }
@@ -55,11 +55,11 @@ class ResumeFallbackModelAnswersTest {
         @Test
         @DisplayName("all_fallbacks_forbid_first_person_placeholder — 3 상수 모두 1인칭 답변 어미 0건")
         void all_fallbacks_forbid_first_person_placeholder() {
-            assertThat(ResumeFallbackModelAnswers.OPENER)
+            assertThat(ResumeFallbackBestAnswers.OPENER)
                     .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
-            assertThat(ResumeFallbackModelAnswers.PLAYGROUND)
+            assertThat(ResumeFallbackBestAnswers.PLAYGROUND)
                     .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
-            assertThat(ResumeFallbackModelAnswers.INTERROGATION)
+            assertThat(ResumeFallbackBestAnswers.INTERROGATION)
                     .doesNotContain("저는 ", "본인이 직접 수행했습니다", "경험이 있습니다");
         }
     }
@@ -71,11 +71,11 @@ class ResumeFallbackModelAnswersTest {
         @Test
         @DisplayName("all_fallbacks_include_structure_signal — 3 상수 모두 구조 단서 어휘 1+ 매치")
         void all_fallbacks_include_structure_signal() {
-            assertThat(ResumeFallbackModelAnswers.OPENER)
+            assertThat(ResumeFallbackBestAnswers.OPENER)
                     .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습");
-            assertThat(ResumeFallbackModelAnswers.PLAYGROUND)
+            assertThat(ResumeFallbackBestAnswers.PLAYGROUND)
                     .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습");
-            assertThat(ResumeFallbackModelAnswers.INTERROGATION)
+            assertThat(ResumeFallbackBestAnswers.INTERROGATION)
                     .containsAnyOf("STAR", "Situation", "Task", "Action", "Result", "결정", "근거", "트레이드오프", "학습");
         }
     }

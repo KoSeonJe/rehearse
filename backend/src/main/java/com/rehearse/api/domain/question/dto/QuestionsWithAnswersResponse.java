@@ -21,7 +21,7 @@ public class QuestionsWithAnswersResponse {
         private final Long questionId;
         private final String questionType;
         private final String questionText;
-        private final String modelAnswer;
+        private final String bestAnswer;
         private final Long startMs;
         private final Long endMs;
     }
@@ -39,7 +39,7 @@ public class QuestionsWithAnswersResponse {
                             .questionId(q.getId())
                             .questionType(q.getQuestionType().name())
                             .questionText(q.getQuestionText())
-                            .modelAnswer(q.getModelAnswer())
+                            .bestAnswer(q.getBestAnswer())
                             .startMs(answer != null ? answer.getStartMs() : null)
                             .endMs(answer != null ? answer.getEndMs() : null)
                             .build();

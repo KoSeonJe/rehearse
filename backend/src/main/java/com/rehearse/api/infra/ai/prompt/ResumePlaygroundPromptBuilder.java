@@ -75,10 +75,10 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
             String question,
             @JsonProperty("tts_question") String ttsQuestion,
             String reason,
-            @JsonProperty("model_answer") String modelAnswer
+            @JsonProperty("best_answer") String bestAnswer
     ) {
-        public PlaygroundOpenerResult withModelAnswer(String newModelAnswer) {
-            return new PlaygroundOpenerResult(question, ttsQuestion, reason, newModelAnswer);
+        public PlaygroundOpenerResult withBestAnswer(String newBestAnswer) {
+            return new PlaygroundOpenerResult(question, ttsQuestion, reason, newBestAnswer);
         }
     }
 
@@ -88,12 +88,12 @@ public class ResumePlaygroundPromptBuilder extends AbstractResumeJsonPromptBuild
             String reason,
             @JsonProperty("should_switch_to_interrogation") boolean shouldSwitchToInterrogation,
             @JsonProperty("switch_conditions_met") SwitchConditions switchConditionsMet,
-            @JsonProperty("model_answer") String modelAnswer
+            @JsonProperty("best_answer") String bestAnswer
     ) {
-        public PlaygroundResponderResult withModelAnswer(String newModelAnswer) {
+        public PlaygroundResponderResult withBestAnswer(String newBestAnswer) {
             return new PlaygroundResponderResult(
                     question, ttsQuestion, reason,
-                    shouldSwitchToInterrogation, switchConditionsMet, newModelAnswer);
+                    shouldSwitchToInterrogation, switchConditionsMet, newBestAnswer);
         }
 
         public record SwitchConditions(

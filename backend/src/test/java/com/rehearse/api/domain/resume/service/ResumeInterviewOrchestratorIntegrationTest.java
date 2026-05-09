@@ -489,7 +489,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
                       "reason": "근거 추적",
                       "should_switch_to_interrogation": %s,
                       "switch_conditions_met": {"a_covered": %s, "b_length_ok": %s, "c_signal": %s, "d_turn_limit": %s},
-                      "model_answer": "방금 답변 중 결정적인 선택을 짧게 풀어내고 결과까지 잇는 게 좋습니다."
+                      "best_answer": "방금 답변 중 결정적인 선택을 짧게 풀어내고 결과까지 잇는 게 좋습니다."
                     }
                     """.formatted(
                     switchToInterrogation ? "Redis 데이터 구조 선택 근거를 설명해주세요" : "그 결정이 왜 Redis 였나요?",
@@ -501,7 +501,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
                       "reason": "L2 진입",
                       "next_action": "LEVEL_UP",
                       "next_level": 2,
-                      "model_answer": "현재 단계에 맞춰 핵심 개념과 선택 근거를 한 문단으로 정리하세요."
+                      "best_answer": "현재 단계에 맞춰 핵심 개념과 선택 근거를 한 문단으로 정리하세요."
                     }
                     """;
             case "rubric_scorer" -> """

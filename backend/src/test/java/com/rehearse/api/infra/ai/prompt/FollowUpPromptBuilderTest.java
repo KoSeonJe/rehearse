@@ -57,8 +57,8 @@ class FollowUpPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("CONCEPT 모드(MODEL_ANSWER) system prompt는 경험 전제 프레이밍을 절대 금지하고 DEEP_DIVE/CLARIFICATION만 허용한다")
-        void buildSystemPrompt_conceptMode_forbidsExperienceFraming() {
+        @DisplayName("MODEL_ANSWER 모드 system prompt는 경험 전제 프레이밍을 절대 금지하고 DEEP_DIVE/CLARIFICATION만 허용한다")
+        void buildSystemPrompt_csReferenceType_forbidsExperienceFraming() {
             // given
             FollowUpGenerationRequest req = new FollowUpGenerationRequest(
                     Position.BACKEND,
@@ -88,8 +88,8 @@ class FollowUpPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("EXPERIENCE 모드(GUIDE) system prompt는 기존 Perspective 7종과 CHALLENGE/APPLICATION 유형을 포함한다")
-        void buildSystemPrompt_experienceMode_containsPerspectives() {
+        @DisplayName("GUIDE 모드 system prompt는 기존 Perspective 7종과 CHALLENGE/APPLICATION 유형을 포함한다")
+        void buildSystemPrompt_guideMode_containsPerspectives() {
             // given
             FollowUpGenerationRequest req = new FollowUpGenerationRequest(
                     Position.BACKEND,
@@ -124,8 +124,8 @@ class FollowUpPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("mainReferenceType이 null인 경우 안전한 기본값인 CONCEPT 모드로 폴백한다")
-        void buildSystemPrompt_nullReferenceType_fallsBackToConceptMode() {
+        @DisplayName("mainReferenceType이 null인 경우 안전한 기본값인 MODEL_ANSWER 모드로 폴백한다")
+        void buildSystemPrompt_nullReferenceType_fallsBackToModelAnswerMode() {
             // given
             FollowUpGenerationRequest req = new FollowUpGenerationRequest(
                     Position.BACKEND,
