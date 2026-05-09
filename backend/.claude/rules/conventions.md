@@ -117,6 +117,28 @@ com.rehearse.api/
 
 - Entity 직접 반환 금지 — 모든 응답 Response DTO 변환.
 
+## 메서드 단일 책임 (SRP)
+
+- **한 메서드 = 한 책임**. 다중 책임 결합 금지.
+- **`catch (A | B)` 다중 예외 처리 금지** — 서로 다른 의미의 예외 (예: 파싱 실패 vs 검증 실패) 한 catch 절에서 묶지 말 것. 예외 의미가 같은 경우 (`UnknownHostException | ConnectException` = 네트워크 도달 실패) 만 허용.
+- **이름의 `And`/`Or` 의심**. `parseAndValidate`, `saveOrUpdate` = 책임 둘. 메서드 분리 → 호출부에서 조립. 단순 조립자 (`fetchUser` = `findById` + `mapToDto`) 는 허용.
+- **신호 (Smell)**: 메서드 본문 내 두 if 분기가 각각 다른 사이드이펙트 / 다른 도메인 호출 → 분리 후보.
+
+```java
+// ❌ 다중 책임 (catch or)
+try {
+    return objectMapper.readValue(json, clazz);
+} catch (JsonProcessingException | IllegalArgumentException e) {
+    return retryWithSchemaHint(...);  // 파싱 실패 + 검증 실패 한 흐름 처리
+}
+
+// ✅ 책임 분리
+ParsedXxx parsed = parseOrRetry(json, clazz);          // JSON 파싱 + parse retry
+return validateOrRetry(parsed, clazz, json);           // 검증 + validation retry
+```
+
+- **예외 정책 동일 시**: 두 책임 catch 흐름이 우연히 동작 같다는 이유로 묶지 말 것. 책임이 다르면 메서드 분리 + 정책 변경 시 독립 진화 가능.
+
 ## DTO 패턴
 
 - **Request**: `@Getter` + `@NoArgsConstructor` + 필드 Bean Validation 어노테이션.
