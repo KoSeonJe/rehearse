@@ -3,9 +3,9 @@ package com.rehearse.api.infra.ai.context;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
+import com.rehearse.api.infra.ai.prompt.PromptFormatters;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Serializes AnswerAnalysis to the structured text format consumed by FocusLayer
@@ -21,10 +21,10 @@ public final class AnswerAnalysisJsonRenderer {
     public static String render(AnswerAnalysis analysis, List<AnswerFeedbackPerspective> askedPerspectives) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatClaims(analysis.claims()));
-        sb.append("- missing_perspectives: ").append(formatPerspectives(analysis.missingPerspectives())).append("\n");
+        sb.append("- missing_perspectives: ").append(PromptFormatters.formatPerspectives(analysis.missingPerspectives())).append("\n");
         sb.append("- unstated_assumptions: ").append(formatStrings(analysis.unstatedAssumptions())).append("\n");
         sb.append("- recommended_next_action: ").append(analysis.recommendedNextAction().name()).append("\n");
-        sb.append("- asked_perspectives: ").append(formatPerspectives(askedPerspectives)).append("\n");
+        sb.append("- asked_perspectives: ").append(PromptFormatters.formatPerspectives(askedPerspectives)).append("\n");
         return sb.toString();
     }
 
@@ -42,13 +42,6 @@ public final class AnswerAnalysisJsonRenderer {
               .append("\n");
         }
         return sb.toString();
-    }
-
-    private static String formatPerspectives(List<AnswerFeedbackPerspective> perspectives) {
-        if (perspectives == null || perspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return perspectives.stream().map(Enum::name).collect(Collectors.joining(", "));
     }
 
     private static String formatStrings(List<String> values) {

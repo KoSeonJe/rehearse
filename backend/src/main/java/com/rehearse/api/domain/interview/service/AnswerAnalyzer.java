@@ -14,6 +14,7 @@ import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.prompt.PromptFormatters;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,8 +49,8 @@ public class AnswerAnalyzer {
         }
 
         InterviewRuntimeState runtimeState = runtimeStateStore.get(interviewId);
-        String personaDepthHint = toReferenceLabel(questionReferenceType);
-        String askedPerspectivesStr = formatPerspectives(askedPerspectives);
+        String personaDepthHint = PromptFormatters.toReferenceLabel(questionReferenceType);
+        String askedPerspectivesStr = PromptFormatters.formatPerspectives(askedPerspectives);
 
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
@@ -86,24 +87,5 @@ public class AnswerAnalyzer {
         }
 
         return guarded;
-    }
-
-    private static String toReferenceLabel(ReferenceType refType) {
-        if (refType == null) {
-            return "CONCEPT";
-        }
-        return switch (refType) {
-            case GUIDE -> "EXPERIENCE";
-            case MODEL_ANSWER -> "CONCEPT";
-        };
-    }
-
-    private static String formatPerspectives(List<AnswerFeedbackPerspective> askedPerspectives) {
-        if (askedPerspectives == null || askedPerspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return askedPerspectives.stream()
-                .map(Enum::name)
-                .collect(java.util.stream.Collectors.joining(", "));
     }
 }

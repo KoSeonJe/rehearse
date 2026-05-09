@@ -100,10 +100,10 @@ public class FollowUpPromptBuilder {
                 "아래 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요."));
         sb.append("\n\nANSWER_ANALYSIS:\n");
         sb.append(formatClaims(analysis.claims()));
-        sb.append("- missing_perspectives: ").append(formatPerspectives(analysis.missingPerspectives())).append("\n");
+        sb.append("- missing_perspectives: ").append(PromptFormatters.formatPerspectives(analysis.missingPerspectives())).append("\n");
         sb.append("- unstated_assumptions: ").append(formatStrings(analysis.unstatedAssumptions())).append("\n");
         sb.append("- recommended_next_action: ").append(analysis.recommendedNextAction().name()).append("\n");
-        sb.append("- asked_perspectives: ").append(formatPerspectives(askedPerspectives)).append("\n");
+        sb.append("- asked_perspectives: ").append(PromptFormatters.formatPerspectives(askedPerspectives)).append("\n");
         return sb.toString();
     }
 
@@ -121,13 +121,6 @@ public class FollowUpPromptBuilder {
               .append("\n");
         }
         return sb.toString();
-    }
-
-    private static String formatPerspectives(List<AnswerFeedbackPerspective> perspectives) {
-        if (perspectives == null || perspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return perspectives.stream().map(Enum::name).collect(Collectors.joining(", "));
     }
 
     private static String formatStrings(List<String> values) {
