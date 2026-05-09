@@ -216,6 +216,46 @@ class InterrogationModeHandlerTest {
     }
 
     @Nested
+    @DisplayName("AnswerAnalysis empty() fallback (#466 모드 전환 정합성)")
+    class AnalysisEmptyFallback {
+
+        @Test
+        @DisplayName("AnswerAnalysis.empty() 가 들어오면 answerQuality=1 로 LLM 에 전달된다 (가짜 평균값 차단)")
+        void handle_emptyAnalysis_passesQuality1ToGenerator() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("L1 질문", "L1 질문", "이유", "LEVEL_STAY", 1, "model"));
+
+            handler.handle(1L, state, "직전 답변", AnswerAnalysis.empty(0L), plan, java.util.List.of());
+
+            ArgumentCaptor<Integer> answerQualityCaptor = ArgumentCaptor.forClass(Integer.class);
+            then(resultGenerator).should().generateInterrogation(any(), any(), any(), any(), any(),
+                    anyInt(), answerQualityCaptor.capture(), any(), anyInt());
+            assertThat(answerQualityCaptor.getValue())
+                    .as("empty() = answerQuality 1 (분석 불가 → 명료화 정책 정합)")
+                    .isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("AnswerAnalysis.empty() 가 들어오면 직전 답변 텍스트가 그대로 generator 에 전달된다")
+        void handle_emptyAnalysis_passesUserAnswerVerbatim() {
+            state.getChainStateTracker().initChain("proj1", "proj1::redis");
+            given(resultGenerator.generateInterrogation(any(), any(), any(), any(), any(), anyInt(), anyInt(), any(), anyInt()))
+                    .willReturn(new InterrogationResult("L1 질문", "L1 질문", "이유", "LEVEL_STAY", 1, "model"));
+
+            String userAnswer = "직전 PLAYGROUND 답변 텍스트";
+            handler.handle(1L, state, userAnswer, AnswerAnalysis.empty(0L), plan, java.util.List.of());
+
+            ArgumentCaptor<String> userAnswerCaptor = ArgumentCaptor.forClass(String.class);
+            then(resultGenerator).should().generateInterrogation(any(), any(), any(), any(), any(),
+                    anyInt(), anyInt(), userAnswerCaptor.capture(), anyInt());
+            assertThat(userAnswerCaptor.getValue())
+                    .as("직전 답변 silent drop 방지 — answerText 가 generator 에 전달")
+                    .isEqualTo(userAnswer);
+        }
+    }
+
+    @Nested
     @DisplayName("Lock 경계 (P1-3)")
     class LockBoundary {
 

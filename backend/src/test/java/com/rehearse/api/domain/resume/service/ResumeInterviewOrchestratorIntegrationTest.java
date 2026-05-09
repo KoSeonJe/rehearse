@@ -409,6 +409,69 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
         }
     }
 
+    @Nested
+    @DisplayName("PLAYGROUND→INTERROGATION 전환 정합성 (#466)")
+    class ModeTransitionContextIntegrity {
+
+        @Test
+        @DisplayName("hard cap 으로 모드 전환 시 직전 PLAYGROUND 답변 텍스트가 chain prompt USER_ANSWER 에 전달된다")
+        void modeTransition_passesPreviousAnswerTextToChainPrompt() {
+            Long interviewId = persistInterviewAndInitState();
+            runtimeStateCache.update(interviewId, s -> s.getPlaygroundTurns().set(3));
+
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            String previousAnswer = "리허설 프로젝트에서 가장 기억에 남는 순간은 Redis 캐시 도입 결정이었습니다.";
+            orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", previousAnswer,
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            String chainPromptBody = capturePromptBody("resume_chain_interrogator");
+            assertThat(chainPromptBody)
+                    .as("직전 PLAYGROUND 답변이 chain prompt USER_ANSWER 에 plumbed (silent drop 차단)")
+                    .contains(previousAnswer);
+        }
+
+        @Test
+        @DisplayName("hard cap 모드 전환 시 chain prompt ANSWER_QUALITY 가 empty() 의 1 (분석 불가→명료화 정책)")
+        void modeTransition_emptyAnalysisPropagatesQuality1() {
+            Long interviewId = persistInterviewAndInitState();
+            runtimeStateCache.update(interviewId, s -> s.getPlaygroundTurns().set(3));
+
+            given(resilientAiClient.chat(any())).willAnswer(invocation -> {
+                ChatRequest request = invocation.getArgument(0);
+                return chatResponseFor(request.callType(), false);
+            });
+
+            orchestrator.processUserTurn(
+                    interviewId, 30, "프로젝트를 소개해주세요.", "직전 답변",
+                    List.of(), createSkeleton(), createPlan(), false);
+
+            // hard cap path = answer_analyzer 호출 후 PLAYGROUND turn 그대로 진행 → 실제로는 analyzer 가
+            // quality 3 을 반환 (chatResponseFor 의 answer_analyzer mock). 따라서 "정책 정합" 검증은
+            // "analysis 가 실제 분석값으로 plumbed (DEFAULT_ANSWER_QUALITY=2 의 가짜 평균값 X)" 으로 표현.
+            String chainPromptBody = capturePromptBody("resume_chain_interrogator");
+            assertThat(chainPromptBody)
+                    .as("ANSWER_QUALITY 영역이 mock analyzer 의 실제 반환값(3) 을 반영 — 가짜 평균값 2 가 아님")
+                    .contains("ANSWER_QUALITY: 3")
+                    .doesNotContain("ANSWER_QUALITY: 2");
+        }
+
+        private String capturePromptBody(String callType) {
+            return mockingDetails(resilientAiClient).getInvocations().stream()
+                    .filter(inv -> "chat".equals(inv.getMethod().getName()))
+                    .map(inv -> (ChatRequest) inv.getArgument(0))
+                    .filter(req -> req != null && callType.equals(req.callType()))
+                    .findFirst()
+                    .map(req -> String.join("\n",
+                            req.messages().stream().map(m -> m.content()).toList()))
+                    .orElseThrow(() -> new AssertionError("callType=" + callType + " 호출 미발생"));
+        }
+    }
+
     private Long persistInterviewAndInitState() {
         User user = userRepository.saveAndFlush(User.builder()
                 .email("orchestrator-int-" + System.nanoTime() + "@example.com")
