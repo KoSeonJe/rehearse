@@ -2,7 +2,7 @@ package com.rehearse.api.infra.ai.context;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,7 +18,7 @@ public final class AnswerAnalysisJsonRenderer {
 
     private AnswerAnalysisJsonRenderer() {}
 
-    public static String render(AnswerAnalysis analysis, List<Perspective> askedPerspectives) {
+    public static String render(AnswerAnalysis analysis, List<AnswerFeedbackPerspective> askedPerspectives) {
         StringBuilder sb = new StringBuilder();
         sb.append(formatClaims(analysis.claims()));
         sb.append("- missing_perspectives: ").append(formatPerspectives(analysis.missingPerspectives())).append("\n");
@@ -44,7 +44,7 @@ public final class AnswerAnalysisJsonRenderer {
         return sb.toString();
     }
 
-    private static String formatPerspectives(List<Perspective> perspectives) {
+    private static String formatPerspectives(List<AnswerFeedbackPerspective> perspectives) {
         if (perspectives == null || perspectives.isEmpty()) {
             return "(없음)";
         }

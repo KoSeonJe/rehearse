@@ -7,7 +7,7 @@ import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
@@ -130,7 +130,7 @@ class FollowUpServiceTest {
         return new AnswerAnalysis(
                 50L,
                 List.of(new Claim("핵심 주장", 3, EvidenceStrength.WEAK, "topic")),
-                List.of(Perspective.RELIABILITY),
+                List.of(AnswerFeedbackPerspective.RELIABILITY),
                 List.of("가정"),
                 3,
                 action);

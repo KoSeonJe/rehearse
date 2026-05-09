@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -40,7 +40,7 @@ public class AnswerAnalyzerPromptBuilder {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("<<<MAIN_QUESTION>>>\n")
@@ -67,7 +67,7 @@ public class AnswerAnalyzerPromptBuilder {
         };
     }
 
-    private static String formatPerspectives(List<Perspective> askedPerspectives) {
+    private static String formatPerspectives(List<AnswerFeedbackPerspective> askedPerspectives) {
         if (askedPerspectives == null || askedPerspectives.isEmpty()) {
             return "(없음)";
         }

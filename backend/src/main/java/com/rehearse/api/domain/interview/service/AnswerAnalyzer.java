@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
@@ -41,7 +41,7 @@ public class AnswerAnalyzer {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         if (interviewId == null || turnId == null) {
             throw new IllegalArgumentException("interviewId/turnId 는 null 일 수 없습니다.");
@@ -98,7 +98,7 @@ public class AnswerAnalyzer {
         };
     }
 
-    private static String formatPerspectives(List<Perspective> askedPerspectives) {
+    private static String formatPerspectives(List<AnswerFeedbackPerspective> askedPerspectives) {
         if (askedPerspectives == null || askedPerspectives.isEmpty()) {
             return "(없음)";
         }

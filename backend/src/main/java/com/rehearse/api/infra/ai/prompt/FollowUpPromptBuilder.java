@@ -2,7 +2,7 @@ package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
@@ -94,7 +94,7 @@ public class FollowUpPromptBuilder {
     public String buildUserPromptWithAnalysis(
             FollowUpGenerationRequest req,
             AnswerAnalysis analysis,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         StringBuilder sb = new StringBuilder(buildUserPromptInternal(req, req.answerText(),
                 "아래 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요."));
@@ -123,7 +123,7 @@ public class FollowUpPromptBuilder {
         return sb.toString();
     }
 
-    private static String formatPerspectives(List<Perspective> perspectives) {
+    private static String formatPerspectives(List<AnswerFeedbackPerspective> perspectives) {
         if (perspectives == null || perspectives.isEmpty()) {
             return "(없음)";
         }
