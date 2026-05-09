@@ -1,7 +1,9 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
+import com.rehearse.api.infra.ai.dto.GeneratedCompactionSummary;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -41,9 +43,43 @@ public class SchemaExampleRegistry {
             }
             """;
 
+    private static final String GENERATED_SESSION_FEEDBACK_EXAMPLE = """
+            {
+              "overall": {
+                "dimension_scores": {"problem_framing": 2.5},
+                "level_assessment": "주니어 기대치 충족",
+                "narrative": "CS 개념에서 탄탄하지만 경험 질문에서 구체화 부족",
+                "coverage": "all turns scored"
+              },
+              "strengths": [
+                {"dimension": "problem_framing", "observation": "turn 1에서 명확", "why_matters": "소통"}
+              ],
+              "gaps": [
+                {"dimension": "technical_depth", "observation": "turn 2 근거 부족",
+                 "level_gap": "미드 미달", "concrete_action": "CS 기초 복습"}
+              ],
+              "delivery": {"filler_words": "없음", "tone_pattern": "안정", "action": "유지"},
+              "week_plan": [
+                {"priority": 1, "topic": "자료구조", "resources": ["CTCI"], "practice": "1문제"}
+              ]
+            }
+            """;
+
+    private static final String GENERATED_COMPACTION_SUMMARY_EXAMPLE = """
+            {
+              "covered_topics": ["GC"],
+              "key_insights": ["STW 발생 시 처리량 손실"],
+              "progression": ["기본 → 트레이드오프"],
+              "perspectives_covered": ["TRADEOFF"],
+              "open_questions": []
+            }
+            """;
+
     private final Map<Class<?>, String> examples = Map.of(
-            AnswerAnalysis.class, ANSWER_ANALYSIS_EXAMPLE,
-            GeneratedFollowUp.class, GENERATED_FOLLOW_UP_EXAMPLE
+            GeneratedAnswerAnalysis.class, ANSWER_ANALYSIS_EXAMPLE,
+            GeneratedFollowUp.class, GENERATED_FOLLOW_UP_EXAMPLE,
+            GeneratedSessionFeedback.class, GENERATED_SESSION_FEEDBACK_EXAMPLE,
+            GeneratedCompactionSummary.class, GENERATED_COMPACTION_SUMMARY_EXAMPLE
     );
 
     public String exampleFor(Class<?> clazz) {

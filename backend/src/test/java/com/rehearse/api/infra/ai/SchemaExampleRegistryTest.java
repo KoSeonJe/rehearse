@@ -1,9 +1,11 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
+import com.rehearse.api.infra.ai.dto.GeneratedCompactionSummary;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,9 +18,9 @@ class SchemaExampleRegistryTest {
     private final SchemaExampleRegistry registry = new SchemaExampleRegistry();
 
     @Test
-    @DisplayName("AnswerAnalysis 스키마 예시는 claims 객체 배열 형태를 명시한다")
-    void answerAnalysis_exampleShowsClaimsObjectShape() {
-        String example = registry.exampleFor(AnswerAnalysis.class);
+    @DisplayName("GeneratedAnswerAnalysis 스키마 예시는 claims 객체 배열 형태를 명시한다")
+    void generatedAnswerAnalysis_exampleShowsClaimsObjectShape() {
+        String example = registry.exampleFor(GeneratedAnswerAnalysis.class);
 
         assertThat(example).isNotNull();
         assertThat(example).contains("\"claims\"");
@@ -39,6 +41,29 @@ class SchemaExampleRegistryTest {
     }
 
     @Test
+    @DisplayName("GeneratedSessionFeedback 스키마 예시는 5섹션을 포함한다")
+    void generatedSessionFeedback_exampleShowsFiveSections() {
+        String example = registry.exampleFor(GeneratedSessionFeedback.class);
+
+        assertThat(example).isNotNull();
+        assertThat(example).contains("\"overall\"");
+        assertThat(example).contains("\"strengths\"");
+        assertThat(example).contains("\"gaps\"");
+        assertThat(example).contains("\"delivery\"");
+        assertThat(example).contains("\"week_plan\"");
+    }
+
+    @Test
+    @DisplayName("GeneratedCompactionSummary 스키마 예시는 covered_topics 등 필수 필드를 포함한다")
+    void generatedCompactionSummary_exampleShowsRequiredFields() {
+        String example = registry.exampleFor(GeneratedCompactionSummary.class);
+
+        assertThat(example).isNotNull();
+        assertThat(example).contains("\"covered_topics\"");
+        assertThat(example).contains("\"key_insights\"");
+    }
+
+    @Test
     @DisplayName("등록되지 않은 클래스는 null 반환")
     void unknownClass_returnsNull() {
         String example = registry.exampleFor(Object.class);
@@ -53,7 +78,7 @@ class SchemaExampleRegistryTest {
                 .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, "원본")))
                 .callType("answer_analyzer")
                 .build();
-        String example = registry.exampleFor(AnswerAnalysis.class);
+        String example = registry.exampleFor(GeneratedAnswerAnalysis.class);
 
         ChatRequest retryReq = req.withSchemaRetryHint("Cannot construct instance of Claim", example);
 
