@@ -31,7 +31,7 @@ public class Question {
     private String ttsText;
 
     @Column(columnDefinition = "TEXT")
-    private String modelAnswer;
+    private String bestAnswer;
 
     @Column(nullable = false)
     private int orderIndex;
@@ -42,20 +42,20 @@ public class Question {
 
     @Builder
     public Question(QuestionType questionType, String questionText,
-                    String ttsText, String modelAnswer,
+                    String ttsText, String bestAnswer,
                     int orderIndex, QuestionPool questionPool) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(questionType);
         this.questionType = questionType;
         this.questionText = questionText;
         this.ttsText = ttsText;
-        this.modelAnswer = modelAnswer;
+        this.bestAnswer = bestAnswer;
         this.orderIndex = orderIndex;
         this.questionPool = questionPool;
     }
 
     public static Question resume(QuestionSet questionSet, QuestionType type,
-                                   String questionText, String ttsText, String modelAnswer,
+                                   String questionText, String ttsText, String bestAnswer,
                                    int orderIndex) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(type);
@@ -67,7 +67,7 @@ public class Question {
         q.questionType = type;
         q.questionText = questionText;
         q.ttsText = ttsText;
-        q.modelAnswer = modelAnswer;
+        q.bestAnswer = bestAnswer;
         q.orderIndex = orderIndex;
         return q;
     }

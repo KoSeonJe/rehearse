@@ -34,7 +34,7 @@ public class QuestionPool {
     private String category;
 
     @Column(columnDefinition = "TEXT")
-    private String modelAnswer;
+    private String bestAnswer;
 
     @Column(nullable = false)
     private boolean isActive;
@@ -45,17 +45,17 @@ public class QuestionPool {
 
     @Builder(access = AccessLevel.PRIVATE)
     private QuestionPool(String cacheKey, String content, String ttsContent,
-                         String category, String modelAnswer) {
+                         String category, String bestAnswer) {
         this.cacheKey = cacheKey;
         this.content = content;
         this.ttsContent = ttsContent;
         this.category = category;
-        this.modelAnswer = modelAnswer;
+        this.bestAnswer = bestAnswer;
         this.isActive = true;
     }
 
     public static QuestionPool create(String cacheKey, String content, String ttsContent,
-            String category, String modelAnswer) {
+            String category, String bestAnswer) {
         if (cacheKey == null || cacheKey.isBlank()) {
             throw new IllegalArgumentException("cacheKey는 필수입니다");
         }
@@ -67,7 +67,7 @@ public class QuestionPool {
                 .content(content)
                 .ttsContent(ttsContent)
                 .category(category)
-                .modelAnswer(modelAnswer)
+                .bestAnswer(bestAnswer)
                 .build();
     }
 
