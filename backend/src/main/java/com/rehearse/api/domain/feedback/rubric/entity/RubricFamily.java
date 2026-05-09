@@ -37,7 +37,7 @@ public class RubricFamily {
     public record MappingRule(
             Boolean resumeTrack,
             List<String> categories,
-            String feedbackPerspective,
+            String rubricCategory,
             String use
     ) {
         public boolean matches(RubricResolutionContext ctx) {
@@ -50,11 +50,11 @@ public class RubricFamily {
                 }
                 return categories.contains(ctx.category().name());
             }
-            if (feedbackPerspective != null) {
-                if (ctx.feedbackPerspective() == null) {
+            if (rubricCategory != null) {
+                if (ctx.rubricCategory() == null) {
                     return false;
                 }
-                return feedbackPerspective.equals(ctx.feedbackPerspective().name());
+                return rubricCategory.equals(ctx.rubricCategory().name());
             }
             return false;
         }
@@ -63,6 +63,6 @@ public class RubricFamily {
     public record RubricResolutionContext(
             boolean resumeTrack,
             InterviewType category,
-            RubricCategory feedbackPerspective
+            RubricCategory rubricCategory
     ) {}
 }

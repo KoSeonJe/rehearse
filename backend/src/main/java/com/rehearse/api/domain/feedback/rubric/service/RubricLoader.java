@@ -165,7 +165,7 @@ public class RubricLoader implements RubricCatalog {
 
                 Boolean resumeTrack = null;
                 List<String> categories = null;
-                String feedbackPerspective = null;
+                String rubricCategory = null;
 
                 if (when.containsKey("resumeTrack")) {
                     resumeTrack = (Boolean) when.get("resumeTrack");
@@ -176,11 +176,11 @@ public class RubricLoader implements RubricCatalog {
                     } else {
                         categories = List.of(catVal.toString());
                     }
-                } else if (when.containsKey("feedbackPerspective")) {
-                    feedbackPerspective = when.get("feedbackPerspective").toString();
+                } else if (when.containsKey("rubricCategory")) {
+                    rubricCategory = when.get("rubricCategory").toString();
                 }
 
-                rules.add(new MappingRule(resumeTrack, categories, feedbackPerspective, use));
+                rules.add(new MappingRule(resumeTrack, categories, rubricCategory, use));
             }
         }
         return new MappingResult(rules, defaultId);
