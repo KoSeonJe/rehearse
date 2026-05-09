@@ -13,17 +13,17 @@ public class QuestionSetAssembler {
 
     public QuestionSet fromPool(InterviewType type, QuestionPool pool) {
         return assemble(type, pool.getContent(), pool.getTtsContent(),
-                pool.getModelAnswer(), pool);
+                pool.getBestAnswer(), pool);
     }
 
     public QuestionSet fromGenerated(GeneratedQuestion generated) {
         InterviewType category = resolveCategory(generated.getQuestionCategory());
         return assemble(category, generated.getContent(), generated.getTtsContent(),
-                generated.getModelAnswer(), null);
+                generated.getBestAnswer(), null);
     }
 
     private QuestionSet assemble(InterviewType category, String questionText,
-                                 String ttsText, String modelAnswer, QuestionPool poolRef) {
+                                 String ttsText, String bestAnswer, QuestionPool poolRef) {
         QuestionSet qs = QuestionSet.builder()
                 .category(category)
                 .orderIndex(0)
@@ -33,7 +33,7 @@ public class QuestionSetAssembler {
                 .questionType(mainTypeOf(category))
                 .questionText(questionText)
                 .ttsText(ttsText)
-                .modelAnswer(modelAnswer)
+                .bestAnswer(bestAnswer)
                 .orderIndex(0)
                 .questionPool(poolRef)
                 .build();

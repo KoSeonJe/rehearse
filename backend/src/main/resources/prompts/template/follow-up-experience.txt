@@ -79,7 +79,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
 - **답변과 무관한 일반 지식 질문 금지**. 답변 속 구체 키워드를 인용하지 않고 교과서 지식만 묻는 질문은 "내 답변을 안 듣고 있다"는 인상을 줍니다.
 - **억지 질문 금지**. 질문 거리가 애매하면 skip하세요.
 - 인용 대상은 항상 **가장 최근 답변 = "현재 답변"**입니다. "이전 후속" 섹션은 중복 회피용 참고일 뿐 인용 대상이 아닙니다.
-- `modelAnswer`는 핵심 개념 + 실무 적용 관점에서 2~4문장으로 작성하세요.
+- `bestAnswer`는 핵심 개념 + 실무 적용 관점에서 2~4문장으로 작성하세요.
 
 ## 엣지 응답 처리 지시
 
@@ -179,7 +179,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
   "tts_question": "TTS가 자연스럽게 읽을 수 있도록 변환한 질문",
   "reason": "claim[1] 의 evidence_strength=WEAK 부분을 RELIABILITY 관점으로 확장",
   "type": "CHALLENGE",
-  "model_answer": "모범답변 또는 답변 가이드 (2~4문장)"
+  "best_answer": "모범답변 또는 답변 가이드 (2~4문장)"
 }
 ```
 
@@ -195,7 +195,7 @@ user prompt 마지막에 다음 형식의 분석 결과가 주어집니다 (Step
   "tts_question": null,
   "reason": null,
   "type": null,
-  "model_answer": null
+  "best_answer": null
 }
 ```
 

@@ -52,7 +52,7 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
     private ResilientAiClient resilientAiClient;
 
     @Test
-    @DisplayName("handleOpener 호출 시 RESUME_OPENER row 가 tts_text/model_answer 적재된다")
+    @DisplayName("handleOpener 호출 시 RESUME_OPENER row 가 tts_text/best_answer 적재된다")
     void handleOpener_persistsAllFields() {
         Long interviewId = persistInterview();
         ResumeSkeleton skeleton = createSkeleton();
@@ -63,11 +63,11 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
         PlaygroundModeHandler.OpenerResult result = handler.handleOpener(interviewId, state, skeleton, plan);
 
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, best_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_OPENER");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
-        assertThat((String) row.get("model_answer")).isNotBlank();
+        assertThat((String) row.get("best_answer")).isNotBlank();
     }
 
     @Test
@@ -84,11 +84,11 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(result.questionId()).isNotNull();
         Map<String, Object> row = jdbcTemplate.queryForMap(
-                "SELECT question_type, tts_text, model_answer FROM question WHERE id = ?",
+                "SELECT question_type, tts_text, best_answer FROM question WHERE id = ?",
                 result.questionId());
         assertThat(row.get("question_type")).isEqualTo("RESUME_PLAYGROUND");
         assertThat((String) row.get("tts_text")).hasSizeGreaterThanOrEqualTo(10);
-        assertThat((String) row.get("model_answer")).isNotBlank();
+        assertThat((String) row.get("best_answer")).isNotBlank();
     }
 
     private Long persistInterview() {
@@ -130,7 +130,7 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
                   "question": "Redis 캐싱 프로젝트 소개해주세요",
                   "tts_question": "Redis 캐싱 프로젝트 소개해 주세요",
                   "reason": "오프너 시작",
-                  "model_answer": "프로젝트의 배경, 본인 역할, 가장 인상 깊었던 기술적/비기술적 경험을 STAR 구조로 1~2문단 정리하세요."
+                  "best_answer": "프로젝트의 배경, 본인 역할, 가장 인상 깊었던 기술적/비기술적 경험을 STAR 구조로 1~2문단 정리하세요."
                 }
                 """;
         return new ChatResponse(json, ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);
@@ -144,7 +144,7 @@ class PlaygroundModeHandlerIntegrationTest extends ServiceIntegrationSupport {
                   "reason": "근거 추적",
                   "should_switch_to_interrogation": false,
                   "switch_conditions_met": {"a_covered": false, "b_length_ok": false, "c_signal": false, "d_turn_limit": false},
-                  "model_answer": "방금 답변 중 가장 결정적이었던 선택과 그 근거를 짧은 일화로 풀어내고, 결과·배운 점까지 한 줄로 잇는 게 좋습니다."
+                  "best_answer": "방금 답변 중 가장 결정적이었던 선택과 그 근거를 짧은 일화로 풀어내고, 결과·배운 점까지 한 줄로 잇는 게 좋습니다."
                 }
                 """;
         return new ChatResponse(json, ChatResponse.Usage.empty(), "openai", "gpt-4o-mini", false, false);

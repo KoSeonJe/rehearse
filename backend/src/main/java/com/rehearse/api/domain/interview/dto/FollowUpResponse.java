@@ -13,7 +13,7 @@ public class FollowUpResponse {
     private final String reason;
     private final String type;
     private final String answerText;
-    private final String modelAnswer;
+    private final String bestAnswer;
     private final boolean skip;
     private final String skipReason;
     // FE 렌더링 신호. AI 자체 skip(답변 불충분)=false. 정상 답변 분기=true.

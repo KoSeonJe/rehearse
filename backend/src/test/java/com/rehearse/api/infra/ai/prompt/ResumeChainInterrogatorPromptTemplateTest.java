@@ -10,18 +10,18 @@ import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("Resume Chain Interrogator 프롬프트 템플릿 - model_answer 분량 / 톤 / 레벨 깊이 가드")
+@DisplayName("Resume Chain Interrogator 프롬프트 템플릿 - best_answer 분량 / 톤 / 레벨 깊이 가드")
 class ResumeChainInterrogatorPromptTemplateTest {
 
     private static final String INTERROGATOR_PATH = "/prompts/template/resume/resume-chain-interrogator.txt";
 
     @Nested
-    @DisplayName("model_answer 정의 라인")
+    @DisplayName("best_answer 정의 라인")
     class ModelAnswerDefinitionLine {
 
         @Test
-        @DisplayName("interrogator_template_defines_model_answer_length_200_to_300 — 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
-        void interrogator_template_defines_model_answer_length_200_to_300() {
+        @DisplayName("interrogator_template_defines_best_answer_length_200_to_300 — 정의가 200~300자 / 3~5줄 / 1인칭 모범답변 예시 키워드 포함")
+        void interrogator_template_defines_best_answer_length_200_to_300() {
             String template = loadResource(INTERROGATOR_PATH);
 
             assertThat(template)
@@ -61,7 +61,7 @@ class ResumeChainInterrogatorPromptTemplateTest {
     }
 
     @Nested
-    @DisplayName("model_answer 자가검증 라인")
+    @DisplayName("best_answer 자가검증 라인")
     class ModelAnswerSelfValidationLine {
 
         @Test

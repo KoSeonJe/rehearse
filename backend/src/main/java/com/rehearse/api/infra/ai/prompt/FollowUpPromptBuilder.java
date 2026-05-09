@@ -62,9 +62,9 @@ public class FollowUpPromptBuilder {
 
     /**
      * 메인 질문의 referenceType에 따라 후속질문 템플릿을 분기한다.
-     * - GUIDE       → 이력서·경험 기반 질문 → EXPERIENCE 모드
-     * - MODEL_ANSWER or null → CS 개념 설명형 또는 안전 기본값 → CONCEPT 모드
-     * 기본값을 CONCEPT로 잡는 이유: 경험 전제 프레이밍이 잘못 나가는 어색함이
+     * - GUIDE       → 이력서·경험 기반 질문 → GUIDE 모드
+     * - MODEL_ANSWER or null → CS 개념 설명형 또는 안전 기본값 → MODEL_ANSWER 모드
+     * 기본값을 MODEL_ANSWER로 잡는 이유: 경험 전제 프레이밍이 잘못 나가는 어색함이
      * 개념 질문 누락보다 사용자에게 더 부정적이기 때문.
      */
     private String resolveTemplate(ReferenceType mainReferenceType) {

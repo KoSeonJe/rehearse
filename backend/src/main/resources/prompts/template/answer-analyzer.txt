@@ -70,11 +70,11 @@ TRADEOFF | MAINTAINABILITY | RELIABILITY | SCALABILITY | TESTING | COLLABORATION
 
 ## few-shot 예시
 
-### 예시 1 (CONCEPT, depth_score 2~3)
+### 예시 1 (MODEL_ANSWER, depth_score 2~3)
 <<<MAIN_QUESTION>>>
 JVM 가비지 컬렉션의 동작 방식을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 <<<USER_ANSWER>>>
 JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하며 일정 횟수 살아남으면 Old 로 이동합니다.
@@ -93,11 +93,11 @@ JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하�
 }
 ```
 
-### 예시 2 (EXPERIENCE, 깊은 답변)
+### 예시 2 (GUIDE, 깊은 답변)
 <<<MAIN_QUESTION>>>
 프로젝트에서 캐시를 도입한 경험을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: EXPERIENCE
+QUESTION_REFERENCE_TYPE: GUIDE
 ASKED_PERSPECTIVES: TRADEOFF
 <<<USER_ANSWER>>>
 주문 조회 API p95 가 800ms 였는데 Redis 캐시 도입 후 120ms 로 떨어졌습니다. TTL 5분 Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다.
@@ -120,7 +120,7 @@ ASKED_PERSPECTIVES: TRADEOFF
 <<<MAIN_QUESTION>>>
 TCP 의 3-way handshake 를 설명해주세요.
 <<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: CONCEPT
+QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 ASKED_PERSPECTIVES: (없음)
 <<<USER_ANSWER>>>
 음... 잘 모르겠어요.

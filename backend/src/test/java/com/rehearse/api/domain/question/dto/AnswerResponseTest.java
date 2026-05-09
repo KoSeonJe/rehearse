@@ -68,7 +68,7 @@ class AnswerResponseTest {
         Question question = Question.builder()
                 .questionType(type)
                 .questionText("질문")
-                .modelAnswer("모범답변")
+                .bestAnswer("모범답변")
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(question, "id", 10L);

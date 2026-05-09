@@ -23,8 +23,8 @@ public class GeneratedFollowUp {
     private String reason;
     private String type;
 
-    @JsonProperty("model_answer")
-    private String modelAnswer;
+    @JsonProperty("best_answer")
+    private String bestAnswer;
 
     @JsonProperty("answer_text")
     private String answerText;
@@ -49,7 +49,7 @@ public class GeneratedFollowUp {
         copy.ttsQuestion = this.ttsQuestion;
         copy.reason = this.reason;
         copy.type = this.type;
-        copy.modelAnswer = this.modelAnswer;
+        copy.bestAnswer = this.bestAnswer;
         copy.answerText = answerText;
         copy.targetClaimIdx = this.targetClaimIdx;
         copy.selectedAnswerFeedbackPerspective = this.selectedAnswerFeedbackPerspective;

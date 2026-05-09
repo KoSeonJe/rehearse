@@ -101,12 +101,12 @@ class ResumePlaygroundPromptTemplateTest {
     }
 
     @Nested
-    @DisplayName("model_answer 정의 라인 - 분량 / 톤 / 구조 단서")
+    @DisplayName("best_answer 정의 라인 - 분량 / 톤 / 구조 단서")
     class ModelAnswerDefinitionLine {
 
         @Test
-        @DisplayName("opener_template_defines_model_answer_length_200_to_300 — opener model_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
-        void opener_template_defines_model_answer_length_200_to_300() {
+        @DisplayName("opener_template_defines_best_answer_length_200_to_300 — opener best_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
+        void opener_template_defines_best_answer_length_200_to_300() {
             String template = loadResource(OPENER_PATH);
 
             assertThat(template)
@@ -133,8 +133,8 @@ class ResumePlaygroundPromptTemplateTest {
         }
 
         @Test
-        @DisplayName("responder_template_defines_model_answer_length_200_to_300 — responder model_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
-        void responder_template_defines_model_answer_length_200_to_300() {
+        @DisplayName("responder_template_defines_best_answer_length_200_to_300 — responder best_answer 정의가 200~300자 / 3~5줄 / 가이드 키워드 포함")
+        void responder_template_defines_best_answer_length_200_to_300() {
             String template = loadResource(RESPONDER_PATH);
 
             assertThat(template)
@@ -173,12 +173,12 @@ class ResumePlaygroundPromptTemplateTest {
     }
 
     @Nested
-    @DisplayName("model_answer 자가검증 라인 - 길이 / 톤 / projectName / 지시 표현 / 구조 단서")
+    @DisplayName("best_answer 자가검증 라인 - 길이 / 톤 / projectName / 지시 표현 / 구조 단서")
     class ModelAnswerSelfValidationLine {
 
         @Test
-        @DisplayName("opener_template_forbids_first_person_in_model_answer — opener 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
-        void opener_template_forbids_first_person_in_model_answer() {
+        @DisplayName("opener_template_forbids_first_person_in_best_answer — opener 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
+        void opener_template_forbids_first_person_in_best_answer() {
             String template = loadResource(OPENER_PATH);
 
             assertThat(template)
@@ -208,8 +208,8 @@ class ResumePlaygroundPromptTemplateTest {
         }
 
         @Test
-        @DisplayName("responder_template_forbids_first_person_in_model_answer — responder 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
-        void responder_template_forbids_first_person_in_model_answer() {
+        @DisplayName("responder_template_forbids_first_person_in_best_answer — responder 자가검증이 1인칭 답변 예시 금지를 명시 (거짓 placeholder 위험)")
+        void responder_template_forbids_first_person_in_best_answer() {
             String template = loadResource(RESPONDER_PATH);
 
             assertThat(template)

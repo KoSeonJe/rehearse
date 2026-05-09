@@ -216,7 +216,7 @@ class FollowUpTransactionHandlerTest {
 
             GeneratedFollowUp followUp = new GeneratedFollowUp();
             ReflectionTestUtils.setField(followUp, "question", "해시 충돌 해결 방법은?");
-            ReflectionTestUtils.setField(followUp, "modelAnswer", "체이닝과 오픈 어드레싱");
+            ReflectionTestUtils.setField(followUp, "bestAnswer", "체이닝과 오픈 어드레싱");
 
             Question savedQuestion = Question.builder()
                     .questionType(QuestionType.TECH_FOLLOWUP)
