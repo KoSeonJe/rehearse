@@ -6,7 +6,7 @@ import com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -113,7 +113,7 @@ class QuestionSetFeedbackPersisterTest {
         Interview interview = mock(Interview.class);
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(qs, "id", id);

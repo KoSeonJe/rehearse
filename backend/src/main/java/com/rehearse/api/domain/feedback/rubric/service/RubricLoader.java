@@ -4,14 +4,13 @@ import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.MappingRule;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.RubricResolutionContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -67,8 +66,8 @@ public class RubricLoader implements RubricCatalog {
 
     public Rubric resolveFor(Question question, QuestionSet questionSet, Interview interview) {
         boolean resumeTrack = interview.getInterviewTypes().contains(InterviewType.RESUME_BASED);
-        QuestionSetCategory category = questionSet.getCategory();
-        FeedbackPerspective perspective = question.getQuestionType().feedbackPerspective();
+        InterviewType category = questionSet.getCategory();
+        RubricCategory perspective = question.getQuestionType().rubricCategory();
 
         RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);
         String rubricId = family.resolve(ctx);
@@ -166,7 +165,7 @@ public class RubricLoader implements RubricCatalog {
 
                 Boolean resumeTrack = null;
                 List<String> categories = null;
-                String feedbackPerspective = null;
+                String rubricCategory = null;
 
                 if (when.containsKey("resumeTrack")) {
                     resumeTrack = (Boolean) when.get("resumeTrack");
@@ -177,11 +176,11 @@ public class RubricLoader implements RubricCatalog {
                     } else {
                         categories = List.of(catVal.toString());
                     }
-                } else if (when.containsKey("feedbackPerspective")) {
-                    feedbackPerspective = when.get("feedbackPerspective").toString();
+                } else if (when.containsKey("rubricCategory")) {
+                    rubricCategory = when.get("rubricCategory").toString();
                 }
 
-                rules.add(new MappingRule(resumeTrack, categories, feedbackPerspective, use));
+                rules.add(new MappingRule(resumeTrack, categories, rubricCategory, use));
             }
         }
         return new MappingResult(rules, defaultId);

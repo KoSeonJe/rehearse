@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.entity;
 
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,7 @@ class AskedPerspectivesTest {
 
     private static FollowUpExchange exchange(String perspective) {
         FollowUpExchange e = new FollowUpExchange();
-        ReflectionTestUtils.setField(e, "selectedPerspective", perspective);
+        ReflectionTestUtils.setField(e, "selectedAnswerFeedbackPerspective", perspective);
         return e;
     }
 
@@ -39,7 +39,7 @@ class AskedPerspectivesTest {
     void from_validValues_parsedAndDistinct() {
         AskedPerspectives result = AskedPerspectives.from(List.of(
                 exchange("TRADEOFF"), exchange("RELIABILITY"), exchange("TRADEOFF")));
-        assertThat(result.values()).containsExactly(Perspective.TRADEOFF, Perspective.RELIABILITY);
+        assertThat(result.values()).containsExactly(AnswerFeedbackPerspective.TRADEOFF, AnswerFeedbackPerspective.RELIABILITY);
     }
 
     @Test
@@ -47,7 +47,7 @@ class AskedPerspectivesTest {
     void from_lowercaseWithWhitespace_normalized() {
         AskedPerspectives result = AskedPerspectives.from(List.of(
                 exchange("  tradeoff  "), exchange("reliability")));
-        assertThat(result.values()).containsExactly(Perspective.TRADEOFF, Perspective.RELIABILITY);
+        assertThat(result.values()).containsExactly(AnswerFeedbackPerspective.TRADEOFF, AnswerFeedbackPerspective.RELIABILITY);
     }
 
     @Test
@@ -55,7 +55,7 @@ class AskedPerspectivesTest {
     void from_invalidValue_ignored() {
         AskedPerspectives result = AskedPerspectives.from(List.of(
                 exchange("UNKNOWN"), exchange("TRADEOFF"), exchange(null), exchange("")));
-        assertThat(result.values()).containsExactly(Perspective.TRADEOFF);
+        assertThat(result.values()).containsExactly(AnswerFeedbackPerspective.TRADEOFF);
     }
 
     @Test

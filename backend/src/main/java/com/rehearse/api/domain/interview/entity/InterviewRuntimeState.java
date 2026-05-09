@@ -125,8 +125,8 @@ public class InterviewRuntimeState {
         List<String> recentClaims = recentClaims(50);
         List<Long> chainSnapshot = List.copyOf(activeChain);
         // asked_perspectives cannot be derived from InterviewRuntimeState: AnswerAnalysis stores
-        // missingPerspectives (what was NOT asked), not selectedPerspective (what was chosen by the
-        // generator). The selectedPerspective lives only in FollowUpRequest.FollowUpExchange
+        // missingPerspectives (what was NOT asked), not selectedAnswerFeedbackPerspective (what was chosen by the
+        // generator). The selectedAnswerFeedbackPerspective lives only in FollowUpRequest.FollowUpExchange
         // (a request-time DTO). L3/L4 layers receive previousExchanges directly and should derive
         // asked_perspectives there.
         return new SessionStateSnapshot(

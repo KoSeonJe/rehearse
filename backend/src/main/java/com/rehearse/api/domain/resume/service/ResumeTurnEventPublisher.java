@@ -5,9 +5,9 @@ import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewTrack;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
@@ -59,7 +59,7 @@ public class ResumeTurnEventPublisher {
             return null;
         }
         return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                .findByInterviewIdAndCategory(interviewId, InterviewType.RESUME_BASED)
                 .orElse(null);
     }
 }

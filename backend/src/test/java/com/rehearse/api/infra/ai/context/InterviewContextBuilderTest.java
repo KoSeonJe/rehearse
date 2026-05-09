@@ -120,7 +120,7 @@ class InterviewContextBuilderTest {
         List<ChatMessage> l3Messages = new ArrayList<>();
         for (FollowUpExchange ex : exchanges) {
             l3Messages.add(ChatMessage.of(ChatMessage.Role.USER, ex.getQuestion()));
-            l3Messages.add(ChatMessage.of(ChatMessage.Role.ASSISTANT, ex.getAnswer()));
+            l3Messages.add(ChatMessage.of(ChatMessage.Role.ASSISTANT, ex.getAnswerText()));
         }
         // L4: ~800 chars = ~200 tokens
         String l4Content = "c".repeat(800);

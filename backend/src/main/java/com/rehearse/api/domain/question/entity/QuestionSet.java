@@ -2,6 +2,7 @@ package com.rehearse.api.domain.question.entity;
 
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -34,7 +35,7 @@ public class QuestionSet {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private QuestionSetCategory category;
+    private InterviewType category;
 
     @Column(nullable = false)
     private int orderIndex;
@@ -59,7 +60,7 @@ public class QuestionSet {
     private List<Question> questions = new ArrayList<>();
 
     @Builder
-    public QuestionSet(Interview interview, QuestionSetCategory category, int orderIndex) {
+    public QuestionSet(Interview interview, InterviewType category, int orderIndex) {
         this.interview = interview;
         this.category = category;
         this.orderIndex = orderIndex;

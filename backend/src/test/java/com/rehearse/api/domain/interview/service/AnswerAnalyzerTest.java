@@ -5,7 +5,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.EvidenceStrength;
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
@@ -108,7 +108,7 @@ class AnswerAnalyzerTest {
         assertThat(result.claims()).hasSize(1);
         assertThat(result.claims().get(0).depthScore()).isEqualTo(3);
         assertThat(result.claims().get(0).evidenceStrength()).isEqualTo(EvidenceStrength.WEAK);
-        assertThat(result.missingPerspectives()).containsExactly(Perspective.TRADEOFF, Perspective.RELIABILITY);
+        assertThat(result.missingPerspectives()).containsExactly(AnswerFeedbackPerspective.TRADEOFF, AnswerFeedbackPerspective.RELIABILITY);
         assertThat(result.answerQuality()).isEqualTo(3);
         assertThat(result.recommendedNextAction()).isEqualTo(RecommendedNextAction.DEEP_DIVE);
 

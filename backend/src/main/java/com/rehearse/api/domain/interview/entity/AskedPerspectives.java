@@ -1,13 +1,12 @@
 package com.rehearse.api.domain.interview.entity;
 
-import com.rehearse.api.domain.interview.entity.Perspective;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public record AskedPerspectives(List<Perspective> values) {
+public record AskedPerspectives(List<AnswerFeedbackPerspective> values) {
 
     public AskedPerspectives {
         values = values != null ? List.copyOf(values) : List.of();
@@ -18,7 +17,7 @@ public record AskedPerspectives(List<Perspective> values) {
             return new AskedPerspectives(List.of());
         }
         return new AskedPerspectives(exchanges.stream()
-                .map(FollowUpExchange::getSelectedPerspective)
+                .map(FollowUpExchange::getSelectedAnswerFeedbackPerspective)
                 .filter(Objects::nonNull)
                 .map(AskedPerspectives::parse)
                 .filter(Optional::isPresent)
@@ -35,12 +34,12 @@ public record AskedPerspectives(List<Perspective> values) {
         return values.isEmpty();
     }
 
-    private static Optional<Perspective> parse(String raw) {
+    private static Optional<AnswerFeedbackPerspective> parse(String raw) {
         if (raw == null || raw.isBlank()) {
             return Optional.empty();
         }
         try {
-            return Optional.of(Perspective.valueOf(raw.trim().toUpperCase()));
+            return Optional.of(AnswerFeedbackPerspective.valueOf(raw.trim().toUpperCase()));
         } catch (IllegalArgumentException ignored) {
             return Optional.empty();
         }

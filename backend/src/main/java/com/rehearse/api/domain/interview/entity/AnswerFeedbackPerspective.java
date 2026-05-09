@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.entity;
 
-public enum Perspective {
+public enum AnswerFeedbackPerspective {
     TRADEOFF,
     MAINTAINABILITY,
     RELIABILITY,

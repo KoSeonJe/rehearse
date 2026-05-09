@@ -13,7 +13,6 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
@@ -224,7 +223,7 @@ class RubricScoringEventListenerTest {
     private QuestionSet createQuestionSet(Interview interview) {
         return QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
     }

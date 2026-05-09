@@ -3,7 +3,7 @@ package com.rehearse.api.domain.feedback.rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
-import com.rehearse.api.domain.feedback.entity.FeedbackPerspective;
+import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
@@ -11,7 +11,6 @@ import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,11 +56,11 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @ParameterizedTest(name = "category={0}")
-    @EnumSource(QuestionSetCategory.class)
-    @DisplayName("모든 QuestionSetCategory 에 대해 매핑 실패 없음 (standard track)")
-    void resolveFor_allCategories_neverNull(QuestionSetCategory category) {
+    @EnumSource(InterviewType.class)
+    @DisplayName("모든 InterviewType 에 대해 매핑 실패 없음 (standard track)")
+    void resolveFor_allCategories_neverNull(InterviewType category) {
         QuestionSet questionSet = buildQuestionSet(category);
-        Question question = buildQuestion(FeedbackPerspective.TECHNICAL);
+        Question question = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(question, questionSet, standardInterview);
 
@@ -70,11 +69,11 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @ParameterizedTest(name = "category={0}")
-    @EnumSource(QuestionSetCategory.class)
+    @EnumSource(InterviewType.class)
     @DisplayName("Resume Track은 category 관계없이 resume-v1 매핑")
-    void resolveFor_resumeTrack_alwaysResumeRubric(QuestionSetCategory category) {
+    void resolveFor_resumeTrack_alwaysResumeRubric(InterviewType category) {
         QuestionSet questionSet = buildQuestionSet(category);
-        Question question = buildQuestion(FeedbackPerspective.TECHNICAL);
+        Question question = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(question, questionSet, resumeInterview);
 
@@ -84,8 +83,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("CS_FUNDAMENTAL → concept-cs-fundamental-v1 매핑")
     void resolveFor_csFundamental_correctRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.CS_FUNDAMENTAL);
-        Question q = buildQuestion(FeedbackPerspective.TECHNICAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.CS_FUNDAMENTAL);
+        Question q = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
@@ -95,8 +94,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("LANGUAGE_FRAMEWORK → concept-lang-framework-v1 매핑")
     void resolveFor_languageFramework_correctRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.LANGUAGE_FRAMEWORK);
-        Question q = buildQuestion(FeedbackPerspective.TECHNICAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.LANGUAGE_FRAMEWORK);
+        Question q = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
@@ -106,8 +105,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("UI_FRAMEWORK → concept-lang-framework-v1 매핑")
     void resolveFor_uiFramework_correctRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.UI_FRAMEWORK);
-        Question q = buildQuestion(FeedbackPerspective.TECHNICAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.UI_FRAMEWORK);
+        Question q = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
@@ -117,8 +116,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("BEHAVIORAL → experience-collaboration-v1 매핑")
     void resolveFor_behavioral_correctRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.BEHAVIORAL);
-        Question q = buildQuestion(FeedbackPerspective.BEHAVIORAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.BEHAVIORAL);
+        Question q = buildQuestion(RubricCategory.BEHAVIORAL);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
@@ -128,8 +127,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("SYSTEM_DESIGN → fallback-generic-v1 매핑")
     void resolveFor_systemDesign_fallbackRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.SYSTEM_DESIGN);
-        Question q = buildQuestion(FeedbackPerspective.TECHNICAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.SYSTEM_DESIGN);
+        Question q = buildQuestion(RubricCategory.TECHNICAL);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 
@@ -139,7 +138,7 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("RESUME_PLAYGROUND (EXPERIENCE perspective) + standard interview + SYSTEM_DESIGN → experience-technical-v1 매핑")
     void resolveFor_experiencePerspective_correctRubric() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.SYSTEM_DESIGN);
+        QuestionSet qs = buildQuestionSet(InterviewType.SYSTEM_DESIGN);
         Question q = buildQuestionWithType(QuestionType.RESUME_PLAYGROUND);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
@@ -150,7 +149,7 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("TECH_MAIN + CS 카테고리 → enum perspective TECHNICAL 매핑 (P0-2 회귀)")
     void resolveFor_techMain_csCategory_usesEnumPerspective() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.CS_FUNDAMENTAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.CS_FUNDAMENTAL);
         Question q = buildQuestionWithType(QuestionType.TECH_MAIN);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
@@ -161,7 +160,7 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → enum perspective BEHAVIORAL 매핑 (P0-2 회귀)")
     void resolveFor_behavioralMain_behavioralCategory_usesEnumPerspective() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.BEHAVIORAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.BEHAVIORAL);
         Question q = buildQuestionWithType(QuestionType.BEHAVIORAL_MAIN);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
@@ -172,7 +171,7 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     @Test
     @DisplayName("BEHAVIORAL_MAIN + BEHAVIORAL 카테고리 → experience-collaboration-v1 매핑")
     void resolveFor_behavioralMain_behavioralCategory_resolvesExperience() {
-        QuestionSet qs = buildQuestionSet(QuestionSetCategory.BEHAVIORAL);
+        QuestionSet qs = buildQuestionSet(InterviewType.BEHAVIORAL);
         Question q = buildQuestionWithType(QuestionType.BEHAVIORAL_MAIN);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
@@ -211,7 +210,7 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
         assertThat(rubricLoader.getDimension("composure").name()).isEqualTo("압박 안정성");
     }
 
-    private QuestionSet buildQuestionSet(QuestionSetCategory category) {
+    private QuestionSet buildQuestionSet(InterviewType category) {
         Interview tempInterview = Interview.builder()
                 .userId(1L)
                 .position(Position.BACKEND)
@@ -226,8 +225,8 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
                 .build();
     }
 
-    private Question buildQuestion(FeedbackPerspective perspective) {
-        QuestionType type = perspective == FeedbackPerspective.BEHAVIORAL
+    private Question buildQuestion(RubricCategory perspective) {
+        QuestionType type = perspective == RubricCategory.BEHAVIORAL
                 ? QuestionType.BEHAVIORAL_MAIN
                 : QuestionType.TECH_MAIN;
         return Question.builder()

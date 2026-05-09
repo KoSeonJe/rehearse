@@ -1,12 +1,12 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +35,7 @@ public class ResumeQuestionPersister {
 
     private QuestionSet findOrCreateQuestionSet(Long interviewId) {
         return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                .findByInterviewIdAndCategory(interviewId, InterviewType.RESUME_BASED)
                 .orElseGet(() -> createQuestionSet(interviewId));
     }
 
@@ -44,7 +44,7 @@ public class ResumeQuestionPersister {
         long existingCount = questionSetRepository.countByInterviewId(interviewId);
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex((int) existingCount)
                 .build();
         questionSetRepository.save(questionSet);

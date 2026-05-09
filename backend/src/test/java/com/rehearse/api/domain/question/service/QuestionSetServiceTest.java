@@ -30,7 +30,6 @@ import com.rehearse.api.domain.question.dto.QuestionSetStatusResponse;
 import com.rehearse.api.domain.question.dto.UploadUrlRequest;
 import com.rehearse.api.domain.question.dto.UploadUrlResponse;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
@@ -305,7 +304,7 @@ class QuestionSetServiceTest {
 
             QuestionSet questionSet = QuestionSet.builder()
                     .interview(interview)
-                    .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                    .category(InterviewType.CS_FUNDAMENTAL)
                     .orderIndex(0)
                     .build();
             ReflectionTestUtils.setField(questionSet, "id", 1L);
@@ -467,7 +466,7 @@ class QuestionSetServiceTest {
 
     private QuestionSet createQuestionSet(Long id) {
         QuestionSet questionSet = QuestionSet.builder()
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);

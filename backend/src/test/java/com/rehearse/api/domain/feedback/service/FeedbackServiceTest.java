@@ -6,7 +6,7 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.question.entity.AnalysisStatus;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
@@ -211,7 +211,7 @@ class FeedbackServiceTest {
         lenient().when(interview.getId()).thenReturn(100L);
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(1)
                 .build();
         ReflectionTestUtils.setField(questionSet, "id", id);

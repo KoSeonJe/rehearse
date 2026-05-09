@@ -1,6 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.entity.Perspective;
+import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -40,39 +39,20 @@ public class AnswerAnalyzerPromptBuilder {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            List<Perspective> askedPerspectives
+            List<AnswerFeedbackPerspective> askedPerspectives
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("<<<MAIN_QUESTION>>>\n")
           .append(mainQuestion != null ? mainQuestion : "(없음)")
           .append("\n<<<END_MAIN_QUESTION>>>\n");
-        sb.append("QUESTION_REFERENCE_TYPE: ").append(toReferenceLabel(questionReferenceType)).append("\n");
+        sb.append("QUESTION_REFERENCE_TYPE: ").append(PromptFormatters.toReferenceLabel(questionReferenceType)).append("\n");
         sb.append("<<<USER_ANSWER>>>\n")
           .append(userAnswer != null ? userAnswer : "(없음)")
           .append("\n<<<END_USER_ANSWER>>>\n");
         sb.append("ASKED_PERSPECTIVES: ")
-          .append(formatPerspectives(askedPerspectives))
+          .append(PromptFormatters.formatPerspectives(askedPerspectives))
           .append("\n");
         sb.append("\n위 답변을 분석해 JSON 한 객체로만 응답하세요.");
         return sb.toString();
-    }
-
-    private static String toReferenceLabel(ReferenceType refType) {
-        if (refType == null) {
-            return "CONCEPT";
-        }
-        return switch (refType) {
-            case GUIDE -> "EXPERIENCE";
-            case MODEL_ANSWER -> "CONCEPT";
-        };
-    }
-
-    private static String formatPerspectives(List<Perspective> askedPerspectives) {
-        if (askedPerspectives == null || askedPerspectives.isEmpty()) {
-            return "(없음)";
-        }
-        return askedPerspectives.stream()
-                .map(Enum::name)
-                .collect(Collectors.joining(", "));
     }
 }

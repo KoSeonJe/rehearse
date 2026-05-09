@@ -6,11 +6,11 @@ import com.rehearse.api.domain.interview.dto.FollowUpRequest.FollowUpExchange;
 import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewTrack;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -122,7 +122,7 @@ public class ResumeInterviewOrchestrator {
     ) {
         java.util.Optional<com.rehearse.api.domain.question.entity.Question> existingOpener =
                 questionSetRepository
-                        .findByInterviewIdAndCategory(interviewId, QuestionSetCategory.RESUME_BASED)
+                        .findByInterviewIdAndCategory(interviewId, InterviewType.RESUME_BASED)
                         .flatMap(qs -> qs.getQuestions().stream()
                                 .filter(q -> q.getQuestionType() == QuestionType.RESUME_OPENER)
                                 .findFirst());

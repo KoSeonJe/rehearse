@@ -11,7 +11,6 @@ import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionSetCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 
@@ -78,12 +77,12 @@ public final class TestFixtures {
     public static QuestionSet createQuestionSet(Interview interview) {
         return QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
     }
 
-    public static QuestionSet createQuestionSet(Interview interview, QuestionSetCategory category,
+    public static QuestionSet createQuestionSet(Interview interview, InterviewType category,
                                                 int orderIndex) {
         return QuestionSet.builder()
                 .interview(interview)

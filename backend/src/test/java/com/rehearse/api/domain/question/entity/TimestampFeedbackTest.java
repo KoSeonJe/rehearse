@@ -2,6 +2,7 @@ package com.rehearse.api.domain.question.entity;
 
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import org.junit.jupiter.api.DisplayName;
@@ -118,7 +119,7 @@ class TimestampFeedbackTest {
     private QuestionSet createQuestionSet() {
         return QuestionSet.builder()
                 .interview(com.rehearse.api.global.support.TestFixtures.createInterview())
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
     }
