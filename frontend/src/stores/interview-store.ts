@@ -220,7 +220,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       ...existing,
       {
         question: currentFollowUp.question,
-        answer: answerText,
+        answerText,
         type: currentFollowUp.type,
         followUpType: currentFollowUp.type,
       },

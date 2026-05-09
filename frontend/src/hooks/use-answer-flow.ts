@@ -341,7 +341,7 @@ export const useAnswerFlow = ({
         const history = updatedState.followUpHistory.get(state.currentQuestionIndex) ?? []
         const previousExchanges = history.map((e) => ({
           question: e.question,
-          answer: e.answer,
+          answerText: e.answerText,
           followUpType: e.followUpType ?? e.type,
         }))
 
