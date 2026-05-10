@@ -20,7 +20,12 @@ const buildFeedback = (overrides: Partial<TechnicalFeedback>): TechnicalFeedback
 
 describe('ContentTab', () => {
   it('TECHNICAL 카테고리 → "기술 피드백" 라벨 + dimensions 노출', () => {
-    render(<ContentTab technicalFeedback={buildFeedback({ rubricCategory: 'TECHNICAL' })} />)
+    render(
+      <ContentTab
+        technicalFeedback={buildFeedback({ rubricCategory: 'TECHNICAL' })}
+        questionType="MAIN"
+      />,
+    )
 
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
@@ -48,6 +53,7 @@ describe('ContentTab', () => {
             },
           ],
         })}
+        questionType="RESUME_PLAYGROUND"
       />,
     )
 
@@ -73,6 +79,7 @@ describe('ContentTab', () => {
             },
           ],
         })}
+        questionType="MAIN"
       />,
     )
 
@@ -88,15 +95,82 @@ describe('ContentTab', () => {
   })
 
   it('rubricCategory null → "해당 턴은 평가 대상이 아닙니다." fallback', () => {
-    render(<ContentTab technicalFeedback={buildFeedback({ rubricCategory: null })} />)
+    render(
+      <ContentTab
+        technicalFeedback={buildFeedback({ rubricCategory: null })}
+        questionType="MAIN"
+      />,
+    )
 
     expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
     expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
   })
 
   it('technicalFeedback === null → "해당 턴은 평가 대상이 아닙니다." fallback (회귀)', () => {
-    render(<ContentTab technicalFeedback={null} />)
+    render(<ContentTab technicalFeedback={null} questionType="MAIN" />)
 
     expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
+  })
+
+  it('questionType="RESUME_OPENER" + technicalFeedback=null → OPENER 안내 카드 노출', () => {
+    render(<ContentTab technicalFeedback={null} questionType="RESUME_OPENER" />)
+
+    expect(screen.getByText('이 단계는 채점 대상이 아닙니다.')).toBeInTheDocument()
+    expect(
+      screen.getByText('면접 도입 단계 답변은 점수 채점에 사용되지 않습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('해당 턴은 평가 대상이 아닙니다.')).not.toBeInTheDocument()
+  })
+
+  it('questionType="RESUME_PLAYGROUND" + technicalFeedback=null → 기존 결함성 fallback 유지', () => {
+    render(<ContentTab technicalFeedback={null} questionType="RESUME_PLAYGROUND" />)
+
+    expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
+    expect(screen.queryByText('이 단계는 채점 대상이 아닙니다.')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('면접 도입 단계 답변은 점수 채점에 사용되지 않습니다.'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('questionType="RESUME_INTERROGATION" + technicalFeedback 정상 → dimension 카드 회귀', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildFeedback({
+          rubricCategory: 'EXPERIENCE',
+          rubricId: 'resume-rubric',
+          dimensions: [
+            {
+              dimension: 'technical_depth',
+              score: 4,
+              observation: '아키텍처 트레이드오프를 구체적으로 설명했습니다.',
+              evidenceQuote: 'CQRS 적용으로 read 부하 분리',
+            },
+          ],
+        })}
+        questionType="RESUME_INTERROGATION"
+      />,
+    )
+
+    expect(screen.getByText('경험 평가')).toBeInTheDocument()
+    expect(screen.getByText('technical_depth')).toBeInTheDocument()
+    expect(screen.getByText('4점')).toBeInTheDocument()
+    expect(
+      screen.getByText('아키텍처 트레이드오프를 구체적으로 설명했습니다.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('이 단계는 채점 대상이 아닙니다.')).not.toBeInTheDocument()
+  })
+
+  it('questionType="TECH_MAIN" + TECHNICAL technicalFeedback 정상 → TECHNICAL 카테고리 카드 회귀', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildFeedback({ rubricCategory: 'TECHNICAL' })}
+        questionType="TECH_MAIN"
+      />,
+    )
+
+    expect(screen.getByText('기술 피드백')).toBeInTheDocument()
+    expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
+    expect(screen.getByText('3점')).toBeInTheDocument()
+    expect(screen.queryByText('이 단계는 채점 대상이 아닙니다.')).not.toBeInTheDocument()
   })
 })

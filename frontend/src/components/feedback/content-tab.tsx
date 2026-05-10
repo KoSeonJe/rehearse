@@ -2,6 +2,7 @@ import type { RubricCategory, TechnicalFeedback } from '@/types/interview'
 
 interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
+  questionType: string | null
 }
 
 interface RubricCategoryCopy {
@@ -19,6 +20,13 @@ const FALLBACK_COPY: RubricCategoryCopy = {
   emptyMessage: '해당 턴은 평가 대상이 아닙니다.',
 }
 
+const OPENER_COPY = {
+  emptyMessage: '이 단계는 채점 대상이 아닙니다.',
+  secondary: '면접 도입 단계 답변은 점수 채점에 사용되지 않습니다.',
+} as const
+
+const RESUME_OPENER_QUESTION_TYPE = 'RESUME_OPENER'
+
 const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy => {
   switch (rubricCategory) {
     case 'TECHNICAL':
@@ -34,7 +42,18 @@ const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy 
   }
 }
 
-const ContentTab = ({ technicalFeedback }: ContentTabProps) => {
+const ContentTab = ({ technicalFeedback, questionType }: ContentTabProps) => {
+  if (questionType === RESUME_OPENER_QUESTION_TYPE) {
+    return (
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] font-bold text-gray-900">{OPENER_COPY.emptyMessage}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
+          {OPENER_COPY.secondary}
+        </p>
+      </div>
+    )
+  }
+
   const copy = resolveCopy(technicalFeedback?.rubricCategory ?? null)
   const isCardable =
     technicalFeedback !== null &&
