@@ -62,6 +62,13 @@ public class NonverbalScorePersister {
                 difficulty
         );
         if (!score.hasAnyScore()) {
+            if (item.getNonverbalScore() == null) {
+                log.info("[정상 skip] Nonverbal payloadNull. interviewId={}, questionId={}",
+                        interview.getId(), question.getId());
+            } else {
+                log.warn("[결함 skip] Nonverbal scoreEmpty. interviewId={}, questionId={}, payload={}",
+                        interview.getId(), question.getId(), item.getNonverbalScore());
+            }
             return;
         }
 
