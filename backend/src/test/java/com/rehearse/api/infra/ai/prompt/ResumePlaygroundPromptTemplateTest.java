@@ -86,7 +86,7 @@ class ResumePlaygroundPromptTemplateTest {
             String template = loadResource(OPENER_PATH);
 
             assertThat(template)
-                    .contains("이 프로젝트에서 가장 인상 깊었던 경험을 자유롭게 이야기해주세요.");
+                    .contains("이 프로젝트에 대해 간단히 설명해주시고, 어떤 역할을 맡으셨는지 말씀해주세요.");
         }
 
         @Test
