@@ -45,26 +45,6 @@ public class ResumeInterviewService {
     private final ResumeModeTransitionPolicy modeTransitionPolicy;
     private final ResumeTurnEventPublisher turnEventPublisher;
     private final QuestionSetRepository questionSetRepository;
-    private final ResumeInterviewPlanner resumeInterviewPlanner;
-    private final InterviewPlanPersister interviewPlanPersister;
-    private final InterviewPlanRuntimeCache interviewPlanRuntimeCache;
-
-    @Transactional
-    public InterviewPlan ensureInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
-        InterviewPlan cached = interviewPlanRuntimeCache.read(interviewId);
-        if (cached != null) {
-            return cached;
-        }
-
-        InterviewPlan plan = interviewPlanPersister.findByInterviewId(interviewId)
-                .orElseGet(() -> {
-                    InterviewPlan generated = resumeInterviewPlanner.plan(skeleton, durationMinutes);
-                    interviewPlanPersister.save(interviewId, generated);
-                    return generated;
-                });
-        interviewPlanRuntimeCache.write(interviewId, plan);
-        return plan;
-    }
 
     public FollowUpResponse processUserTurn(
             Long interviewId, int durationMinutes,

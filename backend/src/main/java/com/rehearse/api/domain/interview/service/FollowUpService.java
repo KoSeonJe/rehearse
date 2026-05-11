@@ -109,7 +109,7 @@ public class FollowUpService {
         ResumeSkeleton skeleton = resolveResumeSkeleton(interviewId);
         int durationMinutes = interview.getDurationMinutes();
         InterviewPlan plan = resumeFinder.findInterviewPlan(interviewId)
-                .orElseGet(() -> resumeInterviewService.ensureInterviewPlan(interviewId, skeleton, durationMinutes));
+                .orElseThrow(() -> new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY));
 
         return resumeInterviewService.processUserTurn(
                 interviewId, durationMinutes,

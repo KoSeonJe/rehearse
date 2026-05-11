@@ -362,8 +362,8 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("plan 부재 시 ResumeInterviewService.ensureInterviewPlan 1회 호출 후 위임한다")
-        void generateFollowUp_resumeTrack_planMissing_callsEnsureInterviewPlan() {
+        @DisplayName("plan 부재 시 RESUME_PLAN_NOT_READY BusinessException 을 던진다 (자가복구 폐기)")
+        void generateFollowUp_resumeTrack_planMissing_throwsPlanNotReady() {
             ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
             InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", skeleton);
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
@@ -375,43 +375,17 @@ class FollowUpServiceTest {
             given(interviewFinder.findById(1L)).willReturn(interview);
 
             given(resumeFinder.findInterviewPlan(1L)).willReturn(Optional.empty());
-            InterviewPlan ensured = mock(InterviewPlan.class);
-            given(resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30)).willReturn(ensured);
 
-            given(resumeInterviewService.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean()))
-                    .willReturn(FollowUpResponse.builder().question("복구된 plan 질문").presentToUser(true).build());
-
-            FollowUpResponse response = followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
-
-            assertThat(response.getQuestion()).isEqualTo("복구된 plan 질문");
-            then(resumeInterviewService).should().ensureInterviewPlan(1L, skeleton, 30);
-            then(resumeInterviewService).should().processUserTurn(
-                    eq(1L), eq(30), any(), any(), any(), eq(skeleton), eq(ensured), eq(false));
-        }
-
-        @Test
-        @DisplayName("plan 존재 시 ResumeInterviewService.ensureInterviewPlan 미호출")
-        void generateFollowUp_resumeTrack_planExists_skipsEnsureInterviewPlan() {
-            ResumeSkeleton skeleton = new ResumeSkeleton("r1", "h1", null, "backend", List.of(), java.util.Map.of());
-            InterviewRuntimeState resumeState = new InterviewRuntimeState("JUNIOR", skeleton);
-            given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 3));
-            given(runtimeStateStore.getOrInit(any(), any())).willReturn(resumeState);
-            given(runtimeStateStore.get(1L)).willReturn(resumeState);
-
-            Interview interview = mock(Interview.class);
-            given(interview.getDurationMinutes()).willReturn(30);
-            given(interviewFinder.findById(1L)).willReturn(interview);
-
-            InterviewPlan plan = mock(InterviewPlan.class);
-            given(resumeFinder.findInterviewPlan(1L)).willReturn(Optional.of(plan));
-
-            given(resumeInterviewService.processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean()))
-                    .willReturn(FollowUpResponse.builder().question("이력서 질문").presentToUser(true).build());
-
-            followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
+            assertThatThrownBy(() -> followUpService.generateFollowUp(1L, 1L, request("질문"), audio()))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
+                        assertThat(be.getCode()).isEqualTo("RESUME_011");
+                    });
 
             then(resumeInterviewService).should(org.mockito.Mockito.never())
-                    .ensureInterviewPlan(any(), any(), anyInt());
+                    .processUserTurn(any(), anyInt(), any(), any(), any(), any(), any(), anyBoolean());
         }
 
         @Test

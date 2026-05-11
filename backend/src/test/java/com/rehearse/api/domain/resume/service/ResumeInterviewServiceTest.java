@@ -65,12 +65,6 @@ class ResumeInterviewServiceTest {
     private ResumeTurnEventPublisher turnEventPublisher;
     @Mock
     private QuestionSetRepository questionSetRepository;
-    @Mock
-    private ResumeInterviewPlanner resumeInterviewPlanner;
-    @Mock
-    private InterviewPlanPersister interviewPlanPersister;
-    @Mock
-    private InterviewPlanRuntimeCache interviewPlanRuntimeCache;
 
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
@@ -470,50 +464,6 @@ class ResumeInterviewServiceTest {
                     .filter(event -> event.getLevel() == Level.WARN)
                     .map(ILoggingEvent::getFormattedMessage)
                     .toList();
-        }
-    }
-
-    @Nested
-    @DisplayName("ensureInterviewPlan 메서드")
-    class EnsureInterviewPlan {
-
-        @Test
-        @DisplayName("runtime cache hit 시 cache 값을 반환하고 Persister/Planner 호출하지 않는다")
-        void returns_cached_plan() {
-            given(interviewPlanRuntimeCache.read(1L)).willReturn(plan);
-
-            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
-
-            assertThat(result).isSameAs(plan);
-            then(interviewPlanPersister).shouldHaveNoInteractions();
-            then(resumeInterviewPlanner).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("cache miss + DB 존재 시 DB plan 반환 + cache 갱신")
-        void returns_db_plan_when_cache_miss_and_db_present() {
-            given(interviewPlanRuntimeCache.read(1L)).willReturn(null);
-            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(plan));
-
-            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
-
-            assertThat(result).isSameAs(plan);
-            then(resumeInterviewPlanner).shouldHaveNoInteractions();
-            then(interviewPlanRuntimeCache).should().write(1L, plan);
-        }
-
-        @Test
-        @DisplayName("cache miss + DB 부재 시 Planner 호출 + DB save + cache 갱신")
-        void generates_plan_when_both_absent() {
-            given(interviewPlanRuntimeCache.read(1L)).willReturn(null);
-            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.empty());
-            given(resumeInterviewPlanner.plan(skeleton, 30)).willReturn(plan);
-
-            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
-
-            assertThat(result).isSameAs(plan);
-            then(interviewPlanPersister).should().save(1L, plan);
-            then(interviewPlanRuntimeCache).should().write(1L, plan);
         }
     }
 

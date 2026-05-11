@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -29,6 +30,10 @@ public class InterviewRuntimeStateCache {
                     "InterviewRuntimeState not initialized for interviewId=" + interviewId);
         }
         return state;
+    }
+
+    public Optional<InterviewRuntimeState> getIfPresent(Long interviewId) {
+        return Optional.ofNullable(cache.getIfPresent(interviewId));
     }
 
     public void update(Long interviewId, Consumer<InterviewRuntimeState> mutator) {

@@ -14,7 +14,9 @@ public class InterviewPlanRuntimeCache {
     private final InterviewRuntimeStateCache runtimeStateStore;
 
     public InterviewPlan read(Long interviewId) {
-        return runtimeStateStore.get(interviewId).getInterviewPlanCache();
+        return runtimeStateStore.getIfPresent(interviewId)
+                .map(state -> state.getInterviewPlanCache())
+                .orElse(null);
     }
 
     public void write(Long interviewId, InterviewPlan plan) {
