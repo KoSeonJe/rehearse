@@ -3,33 +3,24 @@ package com.rehearse.api.domain.interview.service;
 import static org.springframework.transaction.annotation.Propagation.*;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.entity.InterviewTrack;
-import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;
-import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.resume.service.ResumeFinder;
 import com.rehearse.api.domain.resume.service.ResumeInterviewService;
-import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
-import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
-import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -46,14 +37,12 @@ public class FollowUpService {
     private final FollowUpQuestionWriter followUpQuestionWriter;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final InterviewRuntimeStateCache runtimeStateStore;
-    private final AiCallMetrics aiCallMetrics;
-    private final ResumeInterviewService resumeInterviewService;
-    private final ResumeSkeletonPersister resumeSkeletonStore;
-    private final InterviewPlanPersister interviewPlanStore;
-    private final ResumeSkeletonRuntimeCache resumeSkeletonCache;
-    private final InterviewPlanRuntimeCache interviewPlanCache;
-    private final ResumeInterviewPlanner resumeInterviewPlanner;
     private final InterviewFinder interviewFinder;
+    private final ResumeFinder resumeFinder;
+    private final ResumeInterviewService resumeInterviewService;
+    private final ResumeRoutePolicy resumeRoutePolicy;
+    private final FollowUpSkipHandler followUpSkipHandler;
+    private final FollowUpResponseBuilder followUpResponseBuilder;
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -63,9 +52,10 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
         InterviewRuntimeState state = runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
+        Interview interview = interviewFinder.findById(id);
 
-        if (isResumeTrack(id, state)) {
-            return delegateToResumeOrchestrator(id, request);
+        if (resumeRoutePolicy.isResumeTrack(state, interview)) {
+            return delegateToResumeFlow(id, interview, request);
         }
 
         AskedPerspectives askedPerspectives = AskedPerspectives.from(request.getPreviousExchanges());
@@ -74,22 +64,9 @@ public class FollowUpService {
                 request.getQuestionContent(), context.mainReferenceType(), askedPerspectives);
 
         if (turn.answerAnalysis().recommendedNextAction() == RecommendedNextAction.SKIP) {
-            return handleAnalyzerSkip(id, context, request, turn);
+            return followUpSkipHandler.handleAnalyzerSkip(id, context, request, turn);
         }
         return generateAndSaveFollowUp(id, context, request, turn, askedPerspectives);
-    }
-
-    private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn) {
-        log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
-                id, request.getQuestionSetId());
-        aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
-        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-        log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
-                id, InterviewTrack.CS.logLabel(),
-                BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
-        followUpTransactionHandler.publishTurnCompletedEvent(
-                id, context, turn, context.currentMainQuestionId(), turnIndex);
-        return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
     }
 
     private FollowUpResponse generateAndSaveFollowUp(
@@ -106,16 +83,7 @@ public class FollowUpService {
         GeneratedFollowUp stepB = followUpQuestionWriter.write(stepBReq, analysis, askedPerspectives);
 
         if (stepB.isSkipped()) {
-            log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
-                    id, request.getQuestionSetId(), stepB.skipReason());
-            aiCallMetrics.incrementFollowUpSkip("step_b_skip");
-            int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-            log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
-                    id, InterviewTrack.CS.logLabel(),
-                    BlockReason.STEP_B_SKIP.logValue(), turnIndex);
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    id, context, turn, context.currentMainQuestionId(), turnIndex);
-            return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
+            return followUpSkipHandler.handleStepBSkip(id, context, request, turn, stepB.skipReason());
         }
 
         FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResultAndPublishEvent(
@@ -127,7 +95,7 @@ public class FollowUpService {
                 stepB.type(), stepB.selectedAnswerFeedbackPerspective(),
                 stepB.targetClaimIdx(), exhausted);
 
-        return buildAnswerResponse(stepB, saveResult.question(), exhausted);
+        return followUpResponseBuilder.buildAnswerResponse(stepB, saveResult.question(), exhausted);
     }
 
     private static Long resolveTurnId(FollowUpContext context) {
@@ -137,46 +105,11 @@ public class FollowUpService {
         return (long) context.nextOrderIndex();
     }
 
-    private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
-        return FollowUpResponse.builder()
-                .questionId(savedQuestion.getId())
-                .question(followUp.question())
-                .ttsQuestion(followUp.ttsQuestion())
-                .reason(followUp.reason())
-                .type(followUp.type())
-                .answerText(followUp.answerText())
-                .bestAnswer(savedQuestion.getBestAnswer())
-                .skip(false)
-                .presentToUser(true)
-                .followUpExhausted(exhausted)
-                .selectedAnswerFeedbackPerspective(followUp.selectedAnswerFeedbackPerspective())
-                .build();
-    }
-
-    private boolean isResumeTrack(Long interviewId, InterviewRuntimeState state) {
-        if (state == null) {
-            return false;
-        }
-        if (state.getResumeSkeletonCache() != null) {
-            return true;
-        }
-        Interview interview = interviewFinder.findById(interviewId);
-        if (!interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
-            return false;
-        }
-        resumeSkeletonStore.findByInterviewId(interviewId).ifPresent(skeleton ->
-                runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(skeleton))
-        );
-        return true;
-    }
-
-    private FollowUpResponse delegateToResumeOrchestrator(Long interviewId, FollowUpRequest request) {
-        InterviewRuntimeState state = runtimeStateStore.get(interviewId);
-        ResumeSkeleton skeleton = resolveResumeSkeleton(interviewId, state);
-
-        Interview interview = interviewFinder.findById(interviewId);
+    private FollowUpResponse delegateToResumeFlow(Long interviewId, Interview interview, FollowUpRequest request) {
+        ResumeSkeleton skeleton = resolveResumeSkeleton(interviewId);
         int durationMinutes = interview.getDurationMinutes();
-        InterviewPlan plan = resolveInterviewPlan(interviewId, skeleton, durationMinutes);
+        InterviewPlan plan = resumeFinder.findInterviewPlan(interviewId)
+                .orElseGet(() -> resumeInterviewService.ensureInterviewPlan(interviewId, skeleton, durationMinutes));
 
         return resumeInterviewService.processUserTurn(
                 interviewId, durationMinutes,
@@ -186,34 +119,15 @@ public class FollowUpService {
         );
     }
 
-    private ResumeSkeleton resolveResumeSkeleton(Long interviewId, InterviewRuntimeState state) {
-        if (state == null) {
-            throw new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY);
-        }
-        ResumeSkeleton skeleton = state.getResumeSkeletonCache();
-        if (skeleton != null) {
-            return skeleton;
+    private ResumeSkeleton resolveResumeSkeleton(Long interviewId) {
+        InterviewRuntimeState state = runtimeStateStore.get(interviewId);
+        if (state != null && state.getResumeSkeletonCache() != null) {
+            return state.getResumeSkeletonCache();
         }
 
-        skeleton = resumeSkeletonStore.findByInterviewId(interviewId)
+        ResumeSkeleton skeleton = resumeFinder.findSkeletonByInterviewId(interviewId)
                 .orElseThrow(() -> new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY));
-        ResumeSkeleton finalSkeleton = skeleton;
-        runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(finalSkeleton));
+        runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(skeleton));
         return skeleton;
-    }
-
-    private InterviewPlan resolveInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
-        InterviewPlan plan = interviewPlanCache.read(interviewId);
-        if (plan != null) {
-            return plan;
-        }
-
-        plan = interviewPlanStore.findByInterviewId(interviewId).orElse(null);
-        if (plan == null) {
-            plan = resumeInterviewPlanner.plan(skeleton, durationMinutes);
-            interviewPlanStore.save(interviewId, plan);
-        }
-        interviewPlanCache.write(interviewId, plan);
-        return plan;
     }
 }
