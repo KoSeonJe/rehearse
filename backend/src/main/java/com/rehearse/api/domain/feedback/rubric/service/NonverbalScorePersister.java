@@ -66,8 +66,12 @@ public class NonverbalScorePersister {
                 log.info("[정상 skip] Nonverbal payloadNull. interviewId={}, questionId={}",
                         interview.getId(), question.getId());
             } else {
-                log.warn("[결함 skip] Nonverbal scoreEmpty. interviewId={}, questionId={}, payload={}",
-                        interview.getId(), question.getId(), item.getNonverbalScore());
+                SaveFeedbackRequest.NonverbalScore payload = item.getNonverbalScore();
+                log.warn("[결함 skip] Nonverbal scoreEmpty. interviewId={}, questionId={}, "
+                                + "fluency={}, confidenceTone={}, eyeContactPosture={}, composure={}",
+                        interview.getId(), question.getId(),
+                        payload.getFluency(), payload.getConfidenceTone(),
+                        payload.getEyeContactPosture(), payload.getComposure());
             }
             return;
         }

@@ -148,10 +148,14 @@ class NonverbalScorePersisterTest {
 
             then(questionScorePersister).should(never()).saveNonverbal(anyLong(), anyLong(), any());
             assertThat(warnMessages())
-                    .as("[결함 skip] scoreEmpty WARN 로그 발생")
+                    .as("[결함 skip] scoreEmpty WARN 로그 발생 + 4 dimension 값 노출")
                     .anyMatch(m -> m.contains("[결함 skip] Nonverbal scoreEmpty")
                             && m.contains("interviewId=" + INTERVIEW_ID)
-                            && m.contains("questionId=" + QUESTION_ID));
+                            && m.contains("questionId=" + QUESTION_ID)
+                            && m.contains("fluency=")
+                            && m.contains("confidenceTone=")
+                            && m.contains("eyeContactPosture=")
+                            && m.contains("composure="));
             assertThat(infoMessages())
                     .as("정상 skip 로그 미발생")
                     .noneMatch(m -> m.contains("[정상 skip]"));
