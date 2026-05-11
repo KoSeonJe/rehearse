@@ -72,6 +72,85 @@ class InterviewServiceTest {
     );
 
     @Nested
+    @DisplayName("getInterview 메서드")
+    class GetInterview {
+
+        @Test
+        @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
+        void getInterview_notFound() {
+            given(interviewFinder.findById(999L))
+                    .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
+
+            assertThatThrownBy(() -> interviewService.getInterview(999L, 1L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> {
+                        BusinessException be = (BusinessException) ex;
+                        assertThat(be.getStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+                        assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
+                    });
+        }
+
+        @Test
+        @DisplayName("면접 세션 조회 성공")
+        void getInterview_success() {
+            Interview interview = createMockInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+
+            InterviewResponse response = interviewService.getInterview(1L, 1L);
+
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getPosition()).isEqualTo(Position.BACKEND);
+            assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
+            assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
+        }
+
+        @Test
+        @DisplayName("소유자가 다른 면접 세션 조회 시 INTERVIEW_NOT_FOUND BusinessException이 발생한다")
+        void getInterview_differentOwner_notFound() {
+            Interview interview = createMockInterview();
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            assertThatThrownBy(() -> interviewService.getInterview(1L, 2L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
+        }
+    }
+
+    @Nested
+    @DisplayName("getInterviewByPublicId 메서드")
+    class GetInterviewByPublicId {
+
+        @Test
+        @DisplayName("본인 publicId 조회 성공")
+        void getInterviewByPublicId_owner_success() {
+            Interview interview = createMockInterview();
+            String publicId = "test-public-uuid";
+            ReflectionTestUtils.setField(interview, "publicId", publicId);
+            given(interviewFinder.findByPublicId(publicId)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+
+            InterviewResponse response = interviewService.getInterviewByPublicId(publicId, 1L);
+
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getInterviewTypes()).containsExactly(InterviewType.CS_FUNDAMENTAL);
+        }
+
+        @Test
+        @DisplayName("타 유저 publicId 조회 시 INTERVIEW_NOT_FOUND 예외")
+        void getInterviewByPublicId_otherUser_notFound() {
+            String publicId = "test-public-uuid";
+            Interview interview = createMockInterview();
+            ReflectionTestUtils.setField(interview, "publicId", publicId);
+            given(interviewFinder.findByPublicId(publicId)).willReturn(interview);
+
+            assertThatThrownBy(() -> interviewService.getInterviewByPublicId(publicId, 2L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
+        }
+    }
+
+    @Nested
     @DisplayName("updateStatus 메서드")
     class UpdateStatus {
 

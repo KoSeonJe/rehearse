@@ -7,7 +7,6 @@ import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
-import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.domain.interview.validation.AudioValidator;
@@ -61,9 +60,6 @@ class InterviewControllerTest {
 
     @MockitoBean
     private InterviewCreationService interviewCreationService;
-
-    @MockitoBean
-    private InterviewQueryService interviewQueryService;
 
     @MockitoBean
     private InterviewService interviewService;
@@ -173,7 +169,7 @@ class InterviewControllerTest {
         void getInterview_success() throws Exception {
             // given
             InterviewResponse response = createMockInterviewResponse();
-            given(interviewQueryService.getInterview(eq(1L), any())).willReturn(response);
+            given(interviewService.getInterview(eq(1L), any())).willReturn(response);
 
             // when & then
             mockMvc.perform(get("/api/v1/interviews/1"))
@@ -187,7 +183,7 @@ class InterviewControllerTest {
         @DisplayName("존재하지 않는 세션 404")
         void getInterview_notFound() throws Exception {
             // given
-            given(interviewQueryService.getInterview(eq(999L), any()))
+            given(interviewService.getInterview(eq(999L), any()))
                     .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
             // when & then
@@ -205,7 +201,7 @@ class InterviewControllerTest {
         @DisplayName("본인 publicId 조회 성공 (200)")
         void getInterviewByPublicId_owner_success() throws Exception {
             InterviewResponse response = createMockInterviewResponse();
-            given(interviewQueryService.getInterviewByPublicId(eq("test-uuid"), eq(1L))).willReturn(response);
+            given(interviewService.getInterviewByPublicId(eq("test-uuid"), eq(1L))).willReturn(response);
 
             mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid"))
                     .andExpect(status().isOk())
@@ -216,7 +212,7 @@ class InterviewControllerTest {
         @Test
         @DisplayName("타 유저 publicId 조회 시 404 INTERVIEW_NOT_FOUND (정보 노출 방지)")
         void getInterviewByPublicId_otherUser_notFound() throws Exception {
-            given(interviewQueryService.getInterviewByPublicId(eq("test-uuid"), eq(1L)))
+            given(interviewService.getInterviewByPublicId(eq("test-uuid"), eq(1L)))
                     .willThrow(new BusinessException(InterviewErrorCode.NOT_FOUND));
 
             mockMvc.perform(get("/api/v1/interviews/by-public-id/test-uuid"))

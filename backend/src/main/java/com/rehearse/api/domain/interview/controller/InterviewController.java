@@ -4,7 +4,6 @@ import com.rehearse.api.domain.interview.dto.*;
 import com.rehearse.api.domain.interview.service.FollowUpService;
 import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
-import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.domain.interview.validation.AudioValidator;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
@@ -31,7 +30,6 @@ import java.util.concurrent.Executor;
 public class InterviewController {
 
     private final InterviewCreationService interviewCreationService;
-    private final InterviewQueryService interviewQueryService;
     private final InterviewService interviewService;
     private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
@@ -54,14 +52,14 @@ public class InterviewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         int safeSize = Math.min(Math.max(size, 1), 100);
-        Page<InterviewListResponse> response = interviewQueryService.getInterviews(userId, PageRequest.of(page, safeSize));
+        Page<InterviewListResponse> response = interviewService.getInterviews(userId, PageRequest.of(page, safeSize));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<InterviewStatsResponse>> getStats(
             @AuthenticationPrincipal Long userId) {
-        InterviewStatsResponse response = interviewQueryService.getStats(userId);
+        InterviewStatsResponse response = interviewService.getStats(userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -69,7 +67,7 @@ public class InterviewController {
     public ResponseEntity<ApiResponse<InterviewResponse>> getInterview(
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
-        InterviewResponse response = interviewQueryService.getInterview(id, userId);
+        InterviewResponse response = interviewService.getInterview(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -77,7 +75,7 @@ public class InterviewController {
     public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(
             @AuthenticationPrincipal Long userId,
             @PathVariable String publicId) {
-        InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId, userId);
+        InterviewResponse response = interviewService.getInterviewByPublicId(publicId, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
