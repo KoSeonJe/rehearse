@@ -239,6 +239,76 @@ class ResumeInterviewOrchestratorTest {
         }
 
         @Test
+        @DisplayName("PLAYGROUND→INTERROGATION 전환 turn 의 publish mode 는 INTERROGATION 으로 전달된다 (Issue #472)")
+        void processUserTurn_modeSwitch_publishesEffectiveModeAsInterrogation() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("PG 응답").presentToUser(true).build(),
+                            true, 51L));
+            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new InterrogationTurnResult(
+                            FollowUpResponse.builder().question("INT 첫 질문").presentToUser(true).build(), 71L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
+            ArgumentCaptor<Long> qIdCaptor = ArgumentCaptor.forClass(Long.class);
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
+                    modeCaptor.capture(), anyInt(), eq(skeleton), any(), qIdCaptor.capture());
+
+            assertThat(modeCaptor.getValue()).isEqualTo(ResumeMode.INTERROGATION);
+            assertThat(qIdCaptor.getValue()).isEqualTo(71L);
+        }
+
+        @Test
+        @DisplayName("PLAYGROUND→PLAYGROUND 연속 turn 의 publish mode 는 PLAYGROUND 로 유지된다")
+        void processUserTurn_playgroundOnly_publishesPlayground() {
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
+                    .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
+                            FollowUpResponse.builder().question("PG 다음").presentToUser(true).build(),
+                            false, 52L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
+                    modeCaptor.capture(), anyInt(), eq(skeleton), any(), eq(52L));
+
+            assertThat(modeCaptor.getValue()).isEqualTo(ResumeMode.PLAYGROUND);
+            then(interrogationHandler).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("INTERROGATION→INTERROGATION 연속 turn 의 publish mode 는 INTERROGATION 으로 유지된다")
+        void processUserTurn_interrogationOnly_publishesInterrogation() {
+            state.transitionTo(ResumeMode.INTERROGATION);
+            given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))
+                    .willReturn(new TurnAnalysisResult("답변", createAnalysis()));
+            given(clockWatcher.remainingMinutes(anyLong(), anyInt())).willReturn(10L);
+            given(interrogationHandler.handle(any(), any(), any(), any(), any(), any()))
+                    .willReturn(new InterrogationTurnResult(
+                            FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 81L));
+
+            orchestrator.processUserTurn(
+                    1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+
+            ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
+            then(turnEventPublisher).should().publish(eq(1L), anyLong(), any(),
+                    modeCaptor.capture(), anyInt(), eq(skeleton), any(), eq(81L));
+
+            assertThat(modeCaptor.getValue()).isEqualTo(ResumeMode.INTERROGATION);
+            then(playgroundHandler).shouldHaveNoInteractions();
+        }
+
+        @Test
         @DisplayName("표시할 질문이 있는데 questionId 가 없으면 결함으로 예외를 던진다")
         void processUserTurn_presentedQuestionWithoutQuestionId_throwsException() {
             given(turnAnalysisPipeline.analyze(any(), anyLong(), any(), any(), any()))

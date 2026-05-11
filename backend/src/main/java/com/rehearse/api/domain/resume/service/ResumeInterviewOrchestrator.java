@@ -110,7 +110,7 @@ public class ResumeInterviewOrchestrator {
         validateQuestionId(interviewId, turnIndex, currentMode, handlerResult);
         validateResponseQuestionId(interviewId, turnIndex, currentMode, handlerResult);
 
-        turnEventPublisher.publish(interviewId, turnIndex, analysis, currentMode,
+        turnEventPublisher.publish(interviewId, turnIndex, analysis, handlerResult.effectiveMode(),
                 currentChainLevel, skeleton, answerText, handlerResult.questionId());
 
         return handlerResult.response();
@@ -156,7 +156,7 @@ public class ResumeInterviewOrchestrator {
             case INTERROGATION -> {
                 InterrogationTurnResult r =
                         interrogationHandler.handle(interviewId, state, answerText, analysis, plan, previousExchanges);
-                yield new TurnHandlerResult(r.response(), r.questionId());
+                yield new TurnHandlerResult(r.response(), r.questionId(), ResumeMode.INTERROGATION);
             }
         };
     }
@@ -181,9 +181,9 @@ public class ResumeInterviewOrchestrator {
             }
             InterrogationTurnResult interrogationResult =
                     interrogationHandler.handle(interviewId, refreshed, answerText, safeAnalysis, plan, previousExchanges);
-            return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId());
+            return new TurnHandlerResult(interrogationResult.response(), interrogationResult.questionId(), ResumeMode.INTERROGATION);
         }
-        return new TurnHandlerResult(result.response(), result.questionId());
+        return new TurnHandlerResult(result.response(), result.questionId(), ResumeMode.PLAYGROUND);
     }
 
     private FollowUpResponse hardTimeoutResponse() {
@@ -250,5 +250,5 @@ public class ResumeInterviewOrchestrator {
         }
     }
 
-    private record TurnHandlerResult(FollowUpResponse response, Long questionId) {}
+    private record TurnHandlerResult(FollowUpResponse response, Long questionId, ResumeMode effectiveMode) {}
 }
