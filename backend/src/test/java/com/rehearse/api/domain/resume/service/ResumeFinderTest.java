@@ -11,6 +11,9 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
+import com.rehearse.api.domain.resume.repository.InterviewPlanRepository;
+import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -30,10 +33,13 @@ class ResumeFinderTest {
     private ResumeFinder resumeFinder;
 
     @Mock
-    private ResumeSkeletonPersister resumeSkeletonPersister;
+    private ResumeSkeletonRepository resumeSkeletonRepository;
 
     @Mock
-    private InterviewPlanPersister interviewPlanPersister;
+    private ResumeSkeletonCodec resumeSkeletonCodec;
+
+    @Mock
+    private InterviewPlanRepository interviewPlanRepository;
 
     @Mock
     private InterviewPlanRuntimeCache interviewPlanRuntimeCache;
@@ -43,10 +49,14 @@ class ResumeFinderTest {
     class FindSkeleton {
 
         @Test
-        @DisplayName("Persister 가 entity 반환 시 그대로 위임 반환한다")
-        void returns_present_when_persister_has_skeleton() {
+        @DisplayName("Repository 가 entity 반환 시 Codec 으로 역직렬화 후 반환한다")
+        void returns_decoded_skeleton_when_repository_has_entity() {
+            ResumeSkeletonEntity entity = ResumeSkeletonEntity.builder()
+                    .interviewId(1L).fileHash("h").candidateLevel("JUNIOR")
+                    .targetDomain("BACKEND").skeletonJson("{}").build();
             ResumeSkeleton skeleton = createFixtureSkeleton();
-            given(resumeSkeletonPersister.findByInterviewId(1L)).willReturn(Optional.of(skeleton));
+            given(resumeSkeletonRepository.findByInterviewId(1L)).willReturn(Optional.of(entity));
+            given(resumeSkeletonCodec.deserialize(entity)).willReturn(skeleton);
 
             Optional<ResumeSkeleton> result = resumeFinder.findSkeletonByInterviewId(1L);
 
@@ -54,13 +64,14 @@ class ResumeFinderTest {
         }
 
         @Test
-        @DisplayName("Persister 가 부재 반환 시 Optional.empty 를 그대로 위임 반환한다")
-        void returns_empty_when_persister_has_none() {
-            given(resumeSkeletonPersister.findByInterviewId(99L)).willReturn(Optional.empty());
+        @DisplayName("Repository 가 부재 반환 시 Optional.empty 를 반환하고 Codec 은 호출되지 않는다")
+        void returns_empty_when_repository_has_none() {
+            given(resumeSkeletonRepository.findByInterviewId(99L)).willReturn(Optional.empty());
 
             Optional<ResumeSkeleton> result = resumeFinder.findSkeletonByInterviewId(99L);
 
             assertThat(result).isEmpty();
+            then(resumeSkeletonCodec).shouldHaveNoInteractions();
         }
     }
 
@@ -69,23 +80,23 @@ class ResumeFinderTest {
     class FindPlan {
 
         @Test
-        @DisplayName("runtime cache hit 시 cache 값을 반환하고 Persister 는 호출하지 않는다")
-        void returns_cached_plan_and_skips_persister() {
+        @DisplayName("runtime cache hit 시 cache 값을 반환하고 Repository 는 호출하지 않는다")
+        void returns_cached_plan_and_skips_repository() {
             InterviewPlan plan = createFixturePlan();
             given(interviewPlanRuntimeCache.read(1L)).willReturn(plan);
 
             Optional<InterviewPlan> result = resumeFinder.findInterviewPlan(1L);
 
             assertThat(result).contains(plan);
-            then(interviewPlanPersister).shouldHaveNoInteractions();
+            then(interviewPlanRepository).shouldHaveNoInteractions();
         }
 
         @Test
-        @DisplayName("runtime cache miss 시 Persister DB 조회로 fallback 한다")
-        void falls_back_to_persister_when_cache_miss() {
+        @DisplayName("runtime cache miss 시 Repository DB 조회로 fallback 한다")
+        void falls_back_to_repository_when_cache_miss() {
             InterviewPlan plan = createFixturePlan();
             given(interviewPlanRuntimeCache.read(1L)).willReturn(null);
-            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(Optional.of(plan));
+            given(interviewPlanRepository.findByInterviewId(1L)).willReturn(Optional.of(plan));
 
             Optional<InterviewPlan> result = resumeFinder.findInterviewPlan(1L);
 
@@ -93,10 +104,10 @@ class ResumeFinderTest {
         }
 
         @Test
-        @DisplayName("runtime cache miss + Persister 도 부재 시 Optional.empty 를 반환한다")
+        @DisplayName("runtime cache miss + Repository 도 부재 시 Optional.empty 를 반환한다")
         void returns_empty_when_both_absent() {
             given(interviewPlanRuntimeCache.read(99L)).willReturn(null);
-            given(interviewPlanPersister.findByInterviewId(99L)).willReturn(Optional.empty());
+            given(interviewPlanRepository.findByInterviewId(99L)).willReturn(Optional.empty());
 
             Optional<InterviewPlan> result = resumeFinder.findInterviewPlan(99L);
 
