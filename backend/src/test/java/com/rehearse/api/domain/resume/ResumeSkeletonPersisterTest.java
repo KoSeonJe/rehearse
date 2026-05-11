@@ -1,14 +1,11 @@
 package com.rehearse.api.domain.resume;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
-import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonCodec;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,15 +18,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ResumeSkeletonPersister - DB read/write + 직렬화/역직렬화")
+@DisplayName("ResumeSkeletonPersister - DB read/write 위임 (직렬화는 Codec 담당)")
 class ResumeSkeletonPersisterTest {
 
     @InjectMocks
@@ -39,16 +33,16 @@ class ResumeSkeletonPersisterTest {
     private ResumeSkeletonRepository skeletonRepository;
 
     @Mock
-    private ObjectMapper objectMapper;
+    private ResumeSkeletonCodec resumeSkeletonCodec;
 
     @Test
-    @DisplayName("findByInterviewId_returns_deserialized_skeleton_when_entity_exists")
-    void findByInterviewId_returns_deserialized_skeleton_when_entity_exists() throws Exception {
-        ResumeSkeletonEntity entity = createEntity("abc123", "JUNIOR");
-        ResumeSkeleton parsed = createSkeleton("abc123");
+    @DisplayName("findByInterviewId_returns_codec_deserialized_skeleton_when_entity_exists")
+    void findByInterviewId_returns_codec_deserialized_skeleton_when_entity_exists() {
+        ResumeSkeletonEntity entity = createEntity("abc123");
+        ResumeSkeleton skeleton = createSkeleton("abc123");
 
         given(skeletonRepository.findByInterviewId(1L)).willReturn(Optional.of(entity));
-        given(objectMapper.readValue(anyString(), eq(ResumeSkeleton.class))).willReturn(parsed);
+        given(resumeSkeletonCodec.deserialize(entity)).willReturn(skeleton);
 
         Optional<ResumeSkeleton> result = store.findByInterviewId(1L);
 
@@ -67,49 +61,22 @@ class ResumeSkeletonPersisterTest {
     }
 
     @Test
-    @DisplayName("findByInterviewId_throws_business_exception_when_json_is_malformed")
-    void findByInterviewId_throws_business_exception_when_json_is_malformed() throws Exception {
-        ResumeSkeletonEntity entity = createEntity("abc123", "JUNIOR");
-
-        given(skeletonRepository.findByInterviewId(1L)).willReturn(Optional.of(entity));
-        given(objectMapper.readValue(anyString(), eq(ResumeSkeleton.class)))
-                .willThrow(new JsonProcessingException("parse error") {});
-
-        assertThatThrownBy(() -> store.findByInterviewId(1L))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                        .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
-    }
-
-    @Test
-    @DisplayName("save_persists_entity_with_correct_fields")
-    void save_persists_entity_with_correct_fields() throws Exception {
+    @DisplayName("save_codec_로_직렬화_후_repository_저장")
+    void save_persists_entity_with_codec_serialized_json() {
         ResumeSkeleton skeleton = createSkeleton("abc123");
-        given(objectMapper.writeValueAsString(skeleton)).willReturn("{\"fileHash\":\"abc123\"}");
+        given(resumeSkeletonCodec.serialize(skeleton)).willReturn("{\"fileHash\":\"abc123\"}");
 
         store.save(1L, skeleton);
 
+        then(resumeSkeletonCodec).should().serialize(skeleton);
         then(skeletonRepository).should().save(any(ResumeSkeletonEntity.class));
     }
 
-    @Test
-    @DisplayName("save_throws_business_exception_when_serialization_fails")
-    void save_throws_business_exception_when_serialization_fails() throws Exception {
-        ResumeSkeleton skeleton = createSkeleton("abc123");
-        given(objectMapper.writeValueAsString(skeleton))
-                .willThrow(new JsonProcessingException("serialize error") {});
-
-        assertThatThrownBy(() -> store.save(1L, skeleton))
-                .isInstanceOf(BusinessException.class)
-                .satisfies(e -> assertThat(((BusinessException) e).getCode())
-                        .isEqualTo(AiErrorCode.PARSE_FAILED.getCode()));
-    }
-
-    private ResumeSkeletonEntity createEntity(String fileHash, String level) {
+    private ResumeSkeletonEntity createEntity(String fileHash) {
         return ResumeSkeletonEntity.builder()
                 .interviewId(1L)
                 .fileHash(fileHash)
-                .candidateLevel(level)
+                .candidateLevel("JUNIOR")
                 .targetDomain("backend")
                 .skeletonJson("{}")
                 .build();

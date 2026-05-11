@@ -40,7 +40,7 @@ com.rehearse.api/
 - `vo/` 도메인 직속 X → `models/vo/`.
 - 중첩 `domain/` X → `models/entity/`.
 - 도메인 내부 `config/` X → `global/config/` (도메인 무관) 또는 `infra/{ext}/config/` (SDK).
-- Cross-domain: app service → 같은 aggregate **상위 → 하위** 만 (하위 → 상위 금지). Repository 직접 접근 허용. 도메인 간 이벤트 통신 가능.
+- Cross-domain: app service / domain service 는 타 도메인 데이터 조회 시 해당 도메인 **`*Finder` 경유 강제**. 타 도메인 `Repository` / `*Persister` / `*RuntimeCache` / `*Planner` 직접 주입 금지. 타 도메인 write 흐름 필요 시 해당 도메인 App Service 호출. 같은 aggregate **상위 → 하위** 만 (하위 → 상위 금지). 도메인 간 이벤트 통신 가능.
 
 ### Port / Adapter
 
@@ -89,6 +89,7 @@ com.rehearse.api/
 | Adapter | `*Adapter` | `OpenAiAdapter` |
 | Persister | `*Persister` | `ResumeSkeletonPersister` |
 | Runtime cache | `*RuntimeCache` | `InterviewRuntimeStateCache` |
+| Finder | `*Finder` | `InterviewFinder` (cross-domain 조회 진입점) |
 
 ### Entity / DTO / 필드
 
@@ -111,11 +112,117 @@ com.rehearse.api/
 | 계층 | 허용 | 금지 |
 |------|------|------|
 | Controller | HTTP 처리, `@Valid`, App Service 호출 | 비즈로직, Repository 직접 호출 |
-| App Service | 트랜잭션 경계, Domain Service / Repository 조립 | HTTP 객체 의존 (`HttpServletRequest`, `ResponseEntity`), 깊은 비즈로직 |
+| App Service | 트랜잭션 경계, Domain Service / `*Finder` / Repository 조립, 흐름 분기 | HTTP 객체 의존 (`HttpServletRequest`, `ResponseEntity`), 깊은 비즈로직, 타 도메인 Repository / `*Persister` / `*RuntimeCache` / `*Planner` 직접 주입 |
 | Domain Service | 도메인 로직, port 호출 | HTTP / DTO 의존 |
+| Finder | 자기 도메인 단순 lookup (read 전용 cross-domain 진입점) | 비즈로직, write (생성·저장·캐시 갱신), DTO 변환 |
 | Repository | 데이터 접근 | 비즈로직 |
 
 - Entity 직접 반환 금지 — 모든 응답 Response DTO 변환.
+
+## Service 책임 분리
+
+App Service / Domain Service / `*Finder` 의 역할 경계. 모호 시 본 섹션 기준.
+
+### App Service (`*Service`)
+
+- **책임**: 트랜잭션 경계, Domain Service / `*Finder` / Repository 조립, 흐름 분기.
+- **금지**:
+  - HTTP 객체 의존 (`HttpServletRequest`, `ResponseEntity`, `MultipartFile` 직접 처리는 controller 경계).
+  - 깊은 비즈로직 — 메서드 본문에 분기 / 데이터 가공 / 외부 도메인 데이터 직접 fetch 가 혼재하면 책임 명사 Domain Service 추출.
+  - 타 도메인 `Repository` / `*Persister` / `*RuntimeCache` / `*Planner` 직접 주입.
+- **read-only App Service 도 `*Service` 통일** — `*QueryService` 패턴 폐기. 도메인당 App Service 1개 원칙.
+
+### Domain Service (책임 명사)
+
+- **책임**: 단일 책임 도메인 로직. 클래스명 = 책임 명사 (`Generator`, `Coach`, `Policy`, `Pipeline`, `Persister`, `RuntimeCache`, `Writer`, `Analyzer`, `Handler` 등).
+- App Service 가 호출. 자기 도메인 내부에서는 Repository 직접 사용 가능.
+- 도메인 일관 유지 — port 호출 / 자기 도메인 entity 다룸. HTTP / DTO 의존 금지.
+
+### `*Finder` (cross-domain read 진입점)
+
+- **책임**: 자기 도메인 entity read 전용 lookup. 다른 도메인 App / Domain Service 가 본 도메인 데이터 조회 시 본 클래스 경유.
+- **시그니처**:
+  - `findById(Long id)` / `findBy<ColName>(...)` 단순 lookup.
+  - 부재 = `Optional` 반환 (생성 fallback 금지).
+  - 인가 = `findByIdAndValidateOwner(Long id, Long userId)` 권장 (entity.verifyOwnedBy 호출).
+  - entity 반환 — DTO 변환 X.
+- **금지**: 생성 / 저장 / 캐시 갱신 / 비즈로직 / DTO 변환. write 흐름 필요 시 호출자가 해당 도메인 App Service 호출.
+- **자기 도메인 내부 조회**는 `*Finder` 강제 아님 — Repository / Domain Service 자유. `*Finder` 는 cross-domain 시각의 단일 진입점.
+
+### Cross-domain 조회 정책
+
+- 타 도메인 데이터 조회 = **해당 도메인 `*Finder` 경유**.
+- 타 도메인 write 흐름 = **해당 도메인 App Service 호출** (자기가 `*Persister` / `*Planner` 조립 X).
+- `*QueryService` 신설 금지 — read-only App Service 도 `*Service` 통일.
+
+### Before-After 예시
+
+**예시 1: cross-domain Repository 직접 주입 → `*Finder` 경유**
+
+```java
+// ❌ Before — 타 도메인 Repository 직접 주입
+@Service
+@RequiredArgsConstructor
+public class FollowUpService {
+    private final ResumeSkeletonRepository resumeSkeletonRepository; // cross-domain
+    private final InterviewPlanRepository interviewPlanRepository;   // cross-domain
+
+    public FollowUpResponse generateFollowUp(Long interviewId, ...) {
+        ResumeSkeleton skeleton = resumeSkeletonRepository.findByInterviewId(interviewId)
+                .orElseThrow(...);
+        InterviewPlan plan = interviewPlanRepository.findByInterviewId(interviewId)
+                .orElseThrow(...);
+        // ...
+    }
+}
+
+// ✅ After — 타 도메인 *Finder 경유
+@Service
+@RequiredArgsConstructor
+public class FollowUpService {
+    private final ResumeFinder resumeFinder; // resume 도메인 단일 진입점
+
+    public FollowUpResponse generateFollowUp(Long interviewId, ...) {
+        ResumeSkeleton skeleton = resumeFinder.findSkeletonByInterviewId(interviewId)
+                .orElseThrow(...);
+        InterviewPlan plan = resumeFinder.findInterviewPlan(interviewId)
+                .orElseThrow(...);
+        // ...
+    }
+}
+```
+
+**예시 2: 거대 App Service 메서드 → Domain Service 추출**
+
+```java
+// ❌ Before — 본문 안 라우팅 분기 / SKIP 처리 / 응답 조립 혼재
+public FollowUpResponse generateFollowUp(Long interviewId, ...) {
+    InterviewRuntimeState state = runtimeStateStore.findOrInit(interviewId);
+    if (state.getIntent() == IntentType.RESUME && interview.isResumeTrack()) {
+        // Resume 트랙 분기 (15줄)
+    }
+    AnalyzerResult result = audioTurnAnalyzer.analyze(...);
+    if (result.isSkip()) {
+        // SKIP 처리 (10줄)
+        return FollowUpResponse.builder()....build();
+    }
+    // ...
+    return FollowUpResponse.builder()....build();
+}
+
+// ✅ After — 책임 명사 Domain Service 분해
+public FollowUpResponse generateFollowUp(Long interviewId, ...) {
+    InterviewRuntimeState state = runtimeStateStore.findOrInit(interviewId);
+    if (resumeRoutePolicy.isResumeTrack(state, interview)) {
+        return delegateToResumeTrack(interviewId, ...);
+    }
+    AnalyzerResult result = audioTurnAnalyzer.analyze(...);
+    if (result.isSkip()) {
+        return followUpSkipHandler.handle(interviewId, result);
+    }
+    return followUpResponseBuilder.from(followUpQuestionWriter.write(...));
+}
+```
 
 ## 메서드 단일 책임 (SRP)
 

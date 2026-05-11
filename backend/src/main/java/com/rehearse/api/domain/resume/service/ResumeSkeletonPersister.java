@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
@@ -20,17 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class ResumeSkeletonPersister {
 
     private final ResumeSkeletonRepository skeletonRepository;
-    private final ObjectMapper objectMapper;
+    private final ResumeSkeletonCodec resumeSkeletonCodec;
 
     @Transactional(readOnly = true)
     public Optional<ResumeSkeleton> findByInterviewId(Long interviewId) {
         return skeletonRepository.findByInterviewId(interviewId)
-                .map(entity -> deserialize(entity));
+                .map(resumeSkeletonCodec::deserialize);
     }
 
     @Transactional
     public void save(Long interviewId, ResumeSkeleton skeleton) {
-        String skeletonJson = serialize(skeleton);
+        String skeletonJson = resumeSkeletonCodec.serialize(skeleton);
         ResumeSkeletonEntity entity = ResumeSkeletonEntity.builder()
                 .interviewId(interviewId)
                 .fileHash(skeleton.fileHash())
@@ -44,25 +42,6 @@ public class ResumeSkeletonPersister {
             log.warn("이력서 중복 저장 감지, DB 재조회: interviewId={}", interviewId);
             skeletonRepository.findByInterviewId(interviewId)
                     .orElseThrow(() -> new BusinessException(AiErrorCode.PARSE_FAILED));
-        }
-    }
-
-    private ResumeSkeleton deserialize(ResumeSkeletonEntity entity) {
-        try {
-            ResumeSkeleton parsed = objectMapper.readValue(entity.getSkeletonJson(), ResumeSkeleton.class);
-            return ResumeSkeleton.fromEntity(entity, parsed);
-        } catch (JsonProcessingException e) {
-            log.error("DB에서 ResumeSkeleton 역직렬화 실패: interviewId={}", entity.getInterviewId(), e);
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
-    }
-
-    private String serialize(ResumeSkeleton skeleton) {
-        try {
-            return objectMapper.writeValueAsString(skeleton);
-        } catch (JsonProcessingException e) {
-            log.error("ResumeSkeleton 직렬화 실패", e);
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
         }
     }
 }

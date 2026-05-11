@@ -17,6 +17,7 @@ import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,7 +42,7 @@ class InterviewPlanRuntimeCacheTest {
         InterviewRuntimeState state = new InterviewRuntimeState("JUNIOR", null);
         state.setInterviewPlan(plan);
 
-        given(runtimeStateStore.get(1L)).willReturn(state);
+        given(runtimeStateStore.getIfPresent(1L)).willReturn(Optional.of(state));
 
         InterviewPlan result = cache.read(1L);
 
@@ -53,7 +54,7 @@ class InterviewPlanRuntimeCacheTest {
     void read_returns_null_when_plan_not_set_in_runtime_state() {
         InterviewRuntimeState state = new InterviewRuntimeState("JUNIOR", null);
 
-        given(runtimeStateStore.get(1L)).willReturn(state);
+        given(runtimeStateStore.getIfPresent(1L)).willReturn(Optional.of(state));
 
         InterviewPlan result = cache.read(1L);
 
@@ -61,12 +62,13 @@ class InterviewPlanRuntimeCacheTest {
     }
 
     @Test
-    @DisplayName("read_propagates_when_session_not_initialized")
-    void read_throws_when_session_not_initialized() {
-        given(runtimeStateStore.get(1L)).willThrow(new IllegalStateException("not initialized"));
+    @DisplayName("read_null반환_when_session_not_initialized")
+    void read_returns_null_when_session_not_initialized() {
+        given(runtimeStateStore.getIfPresent(1L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> cache.read(1L))
-                .isInstanceOf(IllegalStateException.class);
+        InterviewPlan result = cache.read(1L);
+
+        assertThat(result).isNull();
     }
 
     @Test

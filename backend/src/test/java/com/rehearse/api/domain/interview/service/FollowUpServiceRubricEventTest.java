@@ -14,12 +14,8 @@ import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
-import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
-import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
+import com.rehearse.api.domain.resume.service.ResumeFinder;
+import com.rehearse.api.domain.resume.service.ResumeInterviewService;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,21 +46,21 @@ class FollowUpServiceRubricEventTest {
     @Mock private FollowUpTransactionHandler followUpTransactionHandler;
     @Mock private InterviewRuntimeStateCache runtimeStateStore;
     @Mock private AiCallMetrics aiCallMetrics;
-    @Mock private ResumeInterviewOrchestrator resumeOrchestrator;
-    @Mock private ResumeSkeletonPersister resumeSkeletonStore;
-    @Mock private InterviewPlanPersister interviewPlanStore;
-    @Mock private ResumeSkeletonRuntimeCache resumeSkeletonCache;
-    @Mock private InterviewPlanRuntimeCache interviewPlanCache;
-    @Mock private ResumeInterviewPlanner resumeInterviewPlanner;
     @Mock private InterviewFinder interviewFinder;
+    @Mock private ResumeFinder resumeFinder;
+    @Mock private ResumeInterviewService resumeInterviewService;
+
+    private final ResumeRoutePolicy resumeRoutePolicy = new ResumeRoutePolicy();
+    private final FollowUpResponseBuilder followUpResponseBuilder = new FollowUpResponseBuilder();
 
     @BeforeEach
     void setUp() {
+        FollowUpSkipHandler followUpSkipHandler = new FollowUpSkipHandler(aiCallMetrics, followUpTransactionHandler);
         followUpService = new FollowUpService(
                 audioTurnAnalyzer, followUpQuestionWriter,
-                followUpTransactionHandler, runtimeStateStore, aiCallMetrics,
-                resumeOrchestrator, resumeSkeletonStore, interviewPlanStore,
-                resumeSkeletonCache, interviewPlanCache, resumeInterviewPlanner, interviewFinder);
+                followUpTransactionHandler, runtimeStateStore, interviewFinder,
+                resumeFinder, resumeInterviewService,
+                resumeRoutePolicy, followUpSkipHandler, followUpResponseBuilder);
 
         InterviewRuntimeState state = new InterviewRuntimeState("MID", null);
         lenient().when(runtimeStateStore.getOrInit(any(), any())).thenReturn(state);

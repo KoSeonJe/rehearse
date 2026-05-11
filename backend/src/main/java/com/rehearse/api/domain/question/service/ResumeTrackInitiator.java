@@ -4,7 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.resume.service.PreparedResume;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeInterviewService;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public class ResumeTrackInitiator {
 
     private final QuestionGenerationTransactionHandler transactionHandler;
     private final ResumePlanPreparationService resumePlanPreparationService;
-    private final ResumeInterviewOrchestrator resumeInterviewOrchestrator;
+    private final ResumeInterviewService resumeInterviewService;
     private final InterviewRuntimeStateCache runtimeStateStore;
 
     public void initiate(Long interviewId, InterviewLevel level, String resumeFileHash, String resumeText, Integer durationMinutes) {
@@ -30,7 +30,7 @@ public class ResumeTrackInitiator {
                 () -> InterviewRuntimeState.seed(levelName, prepared.skeleton(), prepared.plan()));
 
         int duration = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MIN;
-        resumeInterviewOrchestrator.startSession(interviewId, duration, prepared.skeleton(), prepared.plan());
+        resumeInterviewService.startSession(interviewId, duration, prepared.skeleton(), prepared.plan());
 
         transactionHandler.saveResults(interviewId, List.of());
     }
