@@ -76,6 +76,22 @@ class ResumeFinderTest {
     }
 
     @Nested
+    @DisplayName("existsSkeletonByInterviewId")
+    class ExistsSkeleton {
+
+        @Test
+        @DisplayName("Repository.existsByInterviewId 결과를 그대로 반환한다 — Codec 미호출")
+        void delegates_existence_check_without_decoding() {
+            given(resumeSkeletonRepository.existsByInterviewId(1L)).willReturn(true);
+
+            boolean result = resumeFinder.existsSkeletonByInterviewId(1L);
+
+            assertThat(result).isTrue();
+            then(resumeSkeletonCodec).shouldHaveNoInteractions();
+        }
+    }
+
+    @Nested
     @DisplayName("findInterviewPlan")
     class FindPlan {
 

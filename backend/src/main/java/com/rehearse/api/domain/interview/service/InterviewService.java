@@ -13,9 +13,9 @@ import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.service.QuestionSetFinder;
 import com.rehearse.api.domain.question.service.QuestionSetService;
-import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
+import com.rehearse.api.domain.resume.service.ResumeFinder;
 import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -43,24 +43,24 @@ public class InterviewService {
 
     private final InterviewFinder interviewFinder;
     private final InterviewRepository interviewRepository;
-    private final QuestionSetRepository questionSetRepository;
+    private final QuestionSetFinder questionSetFinder;
     private final QuestionSetService questionSetService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ResumeSkeletonRepository resumeSkeletonRepository;
+    private final ResumeFinder resumeFinder;
     private final InterviewRetryRecorder interviewRetryRecorder;
     private final InterviewProperties interviewProperties;
 
     public InterviewResponse getInterview(Long id, Long userId) {
         Interview interview = interviewFinder.findById(id);
         interview.validateOwner(userId);
-        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(id);
+        List<QuestionSet> questionSets = questionSetFinder.findByInterviewIdWithQuestions(id);
         return InterviewResponse.from(interview, questionSets);
     }
 
     public InterviewResponse getInterviewByPublicId(String publicId, Long userId) {
         Interview interview = interviewFinder.findByPublicId(publicId);
         interview.validateOwner(userId);
-        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(interview.getId());
+        List<QuestionSet> questionSets = questionSetFinder.findByInterviewIdWithQuestions(interview.getId());
         return InterviewResponse.from(interview, questionSets);
     }
 
@@ -123,7 +123,7 @@ public class InterviewService {
         }
 
         if (interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)
-                && resumeSkeletonRepository.findByInterviewId(id).isEmpty()) {
+                && !resumeFinder.existsSkeletonByInterviewId(id)) {
             log.warn("이력서 면접 재시도 차단 — skeleton 부재: interviewId={}, userId={}", id, userId);
             throw new BusinessException(InterviewErrorCode.RESUME_PLAN_RECOVERY_REQUIRED);
         }
@@ -162,7 +162,7 @@ public class InterviewService {
         log.info("질문 생성 재시도 이벤트 발행: id={}, retryCount={}",
                 id, interview.getQuestionGenRetryCount());
 
-        List<QuestionSet> questionSets = questionSetRepository.findByInterviewIdWithQuestions(id);
+        List<QuestionSet> questionSets = questionSetFinder.findByInterviewIdWithQuestions(id);
         return InterviewResponse.from(interview, questionSets);
     }
 

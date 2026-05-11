@@ -8,9 +8,8 @@ import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.question.repository.QuestionSetRepository;
-import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
-import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
+import com.rehearse.api.domain.question.service.QuestionSetFinder;
+import com.rehearse.api.domain.resume.service.ResumeFinder;
 import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +26,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -47,7 +45,7 @@ class InterviewServiceTest {
     private InterviewRepository interviewRepository;
 
     @Mock
-    private QuestionSetRepository questionSetRepository;
+    private QuestionSetFinder questionSetFinder;
 
     @Mock
     private com.rehearse.api.domain.question.service.QuestionSetService questionSetService;
@@ -56,7 +54,7 @@ class InterviewServiceTest {
     private ApplicationEventPublisher eventPublisher;
 
     @Mock
-    private ResumeSkeletonRepository resumeSkeletonRepository;
+    private ResumeFinder resumeFinder;
 
     @Mock
     private InterviewRetryRecorder interviewRetryRecorder;
@@ -95,7 +93,7 @@ class InterviewServiceTest {
         void getInterview_success() {
             Interview interview = createMockInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+            given(questionSetFinder.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
             InterviewResponse response = interviewService.getInterview(1L, 1L);
 
@@ -128,7 +126,7 @@ class InterviewServiceTest {
             String publicId = "test-public-uuid";
             ReflectionTestUtils.setField(interview, "publicId", publicId);
             given(interviewFinder.findByPublicId(publicId)).willReturn(interview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+            given(questionSetFinder.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
             InterviewResponse response = interviewService.getInterviewByPublicId(publicId, 1L);
 
@@ -245,7 +243,7 @@ class InterviewServiceTest {
             Interview interview = createMockInterview();
             interview.failQuestionGeneration("Claude API timeout");
             given(interviewFinder.findById(1L)).willReturn(interview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
+            given(questionSetFinder.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
 
             // when
             InterviewResponse response = interviewService.retryQuestionGeneration(1L, 1L);
@@ -328,7 +326,7 @@ class InterviewServiceTest {
             ReflectionTestUtils.setField(interview, "userId", 1L);
             interview.failQuestionGeneration("AI 호출 실패");
             given(interviewFinder.findById(1L)).willReturn(interview);
-            given(resumeSkeletonRepository.findByInterviewId(1L)).willReturn(Optional.empty());
+            given(resumeFinder.existsSkeletonByInterviewId(1L)).willReturn(false);
 
             // when & then
             assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L, 1L))
@@ -348,7 +346,7 @@ class InterviewServiceTest {
             Interview interview = createMockInterview();
             interview.failQuestionGeneration("AI timeout");
             given(interviewFinder.findById(1L)).willReturn(interview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
+            given(questionSetFinder.findByInterviewIdWithQuestions(1L)).willReturn(Collections.emptyList());
 
             // when
             interviewService.retryQuestionGeneration(1L, 1L);

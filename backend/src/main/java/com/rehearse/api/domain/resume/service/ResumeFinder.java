@@ -26,6 +26,10 @@ public class ResumeFinder {
                 .map(resumeSkeletonCodec::deserialize);
     }
 
+    public boolean existsSkeletonByInterviewId(Long interviewId) {
+        return resumeSkeletonRepository.existsByInterviewId(interviewId);
+    }
+
     public Optional<InterviewPlan> findInterviewPlan(Long interviewId) {
         InterviewPlan cached = interviewPlanRuntimeCache.read(interviewId);
         if (cached != null) {

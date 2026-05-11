@@ -7,4 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ResumeSkeletonRepository extends JpaRepository<ResumeSkeletonEntity, Long> {
 
     Optional<ResumeSkeletonEntity> findByInterviewId(Long interviewId);
+
+    boolean existsByInterviewId(Long interviewId);
 }
