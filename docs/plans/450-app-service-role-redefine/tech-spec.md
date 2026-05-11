@@ -113,18 +113,18 @@ App Service 가 비즈니스 흐름 + cross-domain 호출 + 데이터 가공 혼
 
 2. ResumeFinder 신설 (resume 도메인) — read 전용
    - 위치: backend/.../resume/service/ResumeFinder.java
-   - 책임: cross-domain read 진입점 (entity 반환). write / 생성 / 캐시 갱신 책임 X.
+   - 책임: cross-domain read 진입점 (entity / VO 반환). write / 생성 / 캐시 갱신 책임 X.
    - 메서드:
-     · findSkeletonByInterviewId(interviewId) → Optional<ResumeSkeleton> (runtime cache miss 시 DB 조회까지만, 신규 생성 X)
-     · findInterviewPlan(interviewId) → Optional<InterviewPlan> (runtime cache + DB 조회만, 생성 fallback X)
-   - 내부 의존 (read 만): ResumeSkeletonRepository, ResumeSkeletonRuntimeCache (read API), InterviewPlanRepository, InterviewPlanRuntimeCache (read API)
-   - write 흐름은 resume App Service 가 담당 — 아래 항목 3 의 `ResumeInterviewOrchestrator` (또는 신설 App Service 메서드) 가 `ResumeInterviewPlanner` / `*Persister` / `*RuntimeCache` write API 조립
+     · findSkeletonByInterviewId(interviewId) → Optional<ResumeSkeleton> (Repository 결과를 `ResumeSkeletonCodec` 으로 역직렬화 후 반환)
+     · existsSkeletonByInterviewId(interviewId) → boolean (존재 확인 전용. Codec 미호출)
+     · findInterviewPlan(interviewId) → Optional<InterviewPlan> (runtime cache → DB Repository fallback. 생성 fallback X)
+   - 내부 의존: `ResumeSkeletonRepository`, `ResumeSkeletonCodec`, `InterviewPlanRepository`, `InterviewPlanRuntimeCache`
+   - Codec 분리 배경: `ResumeSkeleton` 은 VO record, `ResumeSkeletonEntity` 는 JSON String 컬럼 보관 → 역직렬화 책임을 `ResumeSkeletonCodec` 으로 추출 (`ResumeSkeletonPersister` 도 동일 Codec 사용).
+   - InterviewPlanCodec 미신설: `InterviewPlan` Entity 가 `@Convert(ProjectPlanListJsonConverter.class)` 로 JPA 자동 직렬화 처리 → 별도 Codec 불필요 (simplicity).
 
-3. Resume App Service rename + write 진입점 정비 (resume 도메인)
+3. Resume App Service rename (resume 도메인)
    - `ResumeInterviewOrchestrator` → `ResumeInterviewService` rename (컨벤션 일치: App Service = `*Service`)
-   - rename 후 `ensureInterviewPlan(interviewId, skeleton, durationMinutes)` 메서드 추가:
-     · plan 부재 시 ResumeInterviewPlanner 호출 + InterviewPlanPersister.save + InterviewPlanRuntimeCache 갱신
-     · plan 존재 시 그대로 반환
+   - **`ensureInterviewPlan` 메서드 미신설 / 폐기**: plan 은 `ResumePlanPreparationService.prepare()` 가 인터뷰 시작 전 생성하는 invariant 유지. 런타임 자가복구 (cache miss + DB miss → 신규 생성) = 결함 은폐 가능성 ↑ → fail-fast 채택. `FollowUpService` 가 plan 부재 시 `BusinessException(RESUME_PLAN_NOT_READY)` throw.
    - ResumeSkeletonPersister / InterviewPlanPersister / 두 RuntimeCache / ResumeInterviewPlanner 는 resume 도메인 내부 책임 명사 Domain Service 로 유지
 
 4. FollowUpService 책임 추출
@@ -135,7 +135,7 @@ App Service 가 비즈니스 흐름 + cross-domain 호출 + 데이터 가공 혼
      · Resume 라우팅 분기 → ResumeRoutePolicy (신설 Domain Service)
      · 분기 1: Resume 트랙 →
          - skeleton 조회 = ResumeFinder.findSkeletonByInterviewId
-         - plan 조회 = ResumeFinder.findInterviewPlan → Optional.empty 시 ResumeInterviewService.ensureInterviewPlan 호출
+         - plan 조회 = ResumeFinder.findInterviewPlan → Optional.empty 시 `BusinessException(RESUME_PLAN_NOT_READY)` throw (자가복구 X)
          - ResumeInterviewService.processUserTurn 호출
      · 분기 2: 표준 트랙 → audioTurnAnalyzer.analyze → SKIP 분기 또는 followUpQuestionWriter.write
    - 추출 Domain Service:
@@ -250,8 +250,8 @@ App Service 가 비즈니스 흐름 + cross-domain 호출 + 데이터 가공 혼
 ### Post (구현 후)
 - `interview/service/` App Service = `InterviewService` 단일 (조립자 + read API 통합) + Domain Service 책임 명사 다수.
 - `FollowUpService` = 흐름 조립자 한정 (의존 ≤ ~7, cross-domain `*Persister`/`*RuntimeCache`/`*Planner` 직접 주입 0).
-- `resume/service/ResumeInterviewOrchestrator` → `ResumeInterviewService` rename + `ensureInterviewPlan` 메서드 추가. resume 도메인 App Service 명명 컨벤션 일치.
-- `resume/service/ResumeFinder` 신설 (read 전용 cross-domain 진입점).
+- `resume/service/ResumeInterviewOrchestrator` → `ResumeInterviewService` rename. resume 도메인 App Service 명명 컨벤션 일치. `ensureInterviewPlan` 자가복구 메서드는 폐기 — plan invariant 는 `ResumePlanPreparationService.prepare()` 가 인터뷰 시작 전 보장.
+- `resume/service/ResumeFinder` 신설 (read 전용 cross-domain 진입점) + `resume/service/ResumeSkeletonCodec` 분리 (Persister / Finder 공용 JSON ↔ VO 변환).
 - `*QueryService` 패턴 전 도메인 폐기.
 - `conventions.md` "Service 책임 분리" 섹션 신설 + `*Finder` 접미사 표 등재 + cross-domain Repository 금지 룰 강화 + Before-After 예시 2쌍.
 - 전 도메인 cross-domain 조회 = `*Finder` 경유. Repository / `*Persister` / `*RuntimeCache` / `*Planner` 직접 주입 = 0.

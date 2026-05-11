@@ -89,40 +89,51 @@ refactor(BE): InterviewQueryService 를 InterviewService 에 흡수
 
 ---
 
-## Phase 3: `ResumeFinder` 신설 (read 전용)
+## Phase 3: `ResumeFinder` 신설 + `ResumeSkeletonCodec` 분리 (read 전용)
 
-- **구현**: `backend` — resume 도메인 cross-domain read 진입점 신설
+- **구현**: `backend` — resume 도메인 cross-domain read 진입점 신설 + JSON 변환 책임 분리
 
 ### 변경 파일
 - `backend/src/main/java/com/rehearse/api/domain/resume/service/ResumeFinder.java` — 신규
+- `backend/src/main/java/com/rehearse/api/domain/resume/service/ResumeSkeletonCodec.java` — 신규 (JSON ↔ VO 변환 책임)
+- `backend/src/main/java/com/rehearse/api/domain/resume/service/ResumeSkeletonPersister.java` — Codec 위임으로 전환 (인라인 ObjectMapper 호출 제거)
+- `backend/src/main/java/com/rehearse/api/domain/resume/repository/ResumeSkeletonRepository.java` — `existsByInterviewId` 메서드 추가 (존재 확인 시 Codec 미호출 경로)
 - `backend/src/test/java/com/rehearse/api/domain/resume/service/ResumeFinderTest.java` — 신규 (Domain Unit)
 
 ### 핵심 로직 / 변경 요약
 ```java
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ResumeFinder {
     private final ResumeSkeletonRepository resumeSkeletonRepository;
-    private final ResumeSkeletonRuntimeCache resumeSkeletonRuntimeCache;
+    private final ResumeSkeletonCodec resumeSkeletonCodec;
     private final InterviewPlanRepository interviewPlanRepository;
     private final InterviewPlanRuntimeCache interviewPlanRuntimeCache;
 
-    @Transactional(readOnly = true)
     public Optional<ResumeSkeleton> findSkeletonByInterviewId(Long interviewId) {
-        // runtime cache hit → 그대로 / miss → repository.findByInterviewId
+        return resumeSkeletonRepository.findByInterviewId(interviewId)
+                .map(resumeSkeletonCodec::deserialize);
     }
 
-    @Transactional(readOnly = true)
+    public boolean existsSkeletonByInterviewId(Long interviewId) {
+        return resumeSkeletonRepository.existsByInterviewId(interviewId);
+    }
+
     public Optional<InterviewPlan> findInterviewPlan(Long interviewId) {
-        // runtime cache hit → 그대로 / miss → repository.findByInterviewId
+        InterviewPlan cached = interviewPlanRuntimeCache.read(interviewId);
+        if (cached != null) return Optional.of(cached);
+        return interviewPlanRepository.findByInterviewId(interviewId);
     }
 }
 ```
 - **read 전용**. 생성 / 저장 / 캐시 write 흡수 금지 (Phase 1 룰).
+- **InterviewPlanCodec 미신설**: `InterviewPlan` Entity `projectPlans` 필드는 `@Convert(ProjectPlanListJsonConverter.class)` 로 JPA 자동 직렬화 → 별도 Codec 불필요 (simplicity rule).
+- `ResumeSkeletonCodec` 만 신설: `ResumeSkeletonEntity.skeletonJson` String 컬럼 ↔ `ResumeSkeleton` VO record 변환 필요.
 
 ### 의존
 - 선행: Phase 1
-- 외부 의존: 기존 `ResumeSkeletonRepository`, `ResumeSkeletonRuntimeCache` (read API), `InterviewPlanRepository`, `InterviewPlanRuntimeCache` (read API)
+- 외부 의존: 기존 `ResumeSkeletonRepository`, `InterviewPlanRepository`, `InterviewPlanRuntimeCache` (read API)
 
 ### Verification Hook
 - 명령: `./gradlew test --tests "ResumeFinderTest"`
@@ -136,9 +147,9 @@ feat(BE): resume 도메인 ResumeFinder 신설 (cross-domain read 진입점)
 
 ---
 
-## Phase 4: `ResumeInterviewOrchestrator` → `ResumeInterviewService` rename + `ensureInterviewPlan`
+## Phase 4: `ResumeInterviewOrchestrator` → `ResumeInterviewService` rename
 
-- **구현**: `backend` — App Service 명명 컨벤션 일치 + plan write 진입점 정비
+- **구현**: `backend` — App Service 명명 컨벤션 일치 (자가복구 `ensureInterviewPlan` 미신설 / 폐기)
 
 ### 변경 파일
 - `backend/src/main/java/com/rehearse/api/domain/resume/service/ResumeInterviewOrchestrator.java` → `ResumeInterviewService.java` rename
@@ -149,34 +160,25 @@ feat(BE): resume 도메인 ResumeFinder 신설 (cross-domain read 진입점)
 
 ### 핵심 로직 / 변경 요약
 - IDE refactor (rename) 사용. 자동 참조 갱신.
-- `ensureInterviewPlan(interviewId, skeleton, durationMinutes)` 메서드 신설:
-  ```java
-  @Transactional
-  public InterviewPlan ensureInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
-      return interviewPlanRuntimeCache.find(interviewId)
-          .or(() -> interviewPlanRepository.findByInterviewId(interviewId))
-          .orElseGet(() -> {
-              InterviewPlan plan = resumeInterviewPlanner.plan(skeleton, durationMinutes);
-              interviewPlanPersister.save(interviewId, plan);
-              interviewPlanRuntimeCache.put(interviewId, plan);
-              return plan;
-          });
-  }
-  ```
-- 현 `resolveInterviewPlan` 로직 (FollowUpService) → 본 메서드로 이동.
+- **`ensureInterviewPlan` 메서드 미신설** — invariant 기반 fail-fast 채택:
+  - `ResumePlanPreparationService.prepare()` 가 인터뷰 시작 전 plan 생성 보장 (선행 invariant).
+  - 런타임 자가복구는 결함 은폐 가능성 ↑ → `FollowUpService` 가 plan 부재 시 `BusinessException(RESUME_PLAN_NOT_READY)` throw 로 표면화.
+  - `InterviewRuntimeStateCache.getIfPresent(Long) → Optional` 추가 (cross-domain read 용). 기존 `get(Long)` = throw 유지 (자기 도메인 invariant).
+  - `InterviewPlanRuntimeCache.read` = `getIfPresent` 사용 → state 미seed 시 `Optional.empty` 반환 (생성 흐름 호출 X).
 
 ### 의존
 - 선행: Phase 3 (ResumeFinder 신설 후 read/write 경계 명확화)
-- 외부 의존: 기존 `ResumeInterviewPlanner`, `InterviewPlanPersister`, `InterviewPlanRuntimeCache`
+- 외부 의존: 없음 (자가복구 폐기로 `ResumeInterviewPlanner` / `InterviewPlanPersister` 의존 신설 회피)
 
 ### Verification Hook
 - 명령: `./gradlew test --tests "ResumeInterviewServiceTest"` + `rg "ResumeInterviewOrchestrator" backend/src/` = 0건
-- 통과 기준: rename 후 전체 컴파일 + 기존 테스트 green + `ensureInterviewPlan` 신규 케이스 (plan 부재 시 생성 / 존재 시 그대로) 검증
+- 통과 기준: rename 후 전체 컴파일 + 기존 테스트 green
 - 관찰: resume 도메인 manual smoke (Resume 트랙 인터뷰 1회)
 
 ### 커밋 메시지 (예상)
 ```
-refactor(BE): ResumeInterviewOrchestrator → ResumeInterviewService rename + ensureInterviewPlan 추가
+refactor(BE): ResumeInterviewOrchestrator → ResumeInterviewService rename
+refactor(BE): ResumeInterviewService.ensureInterviewPlan 폐기 + 부재 시 BusinessException
 ```
 
 ---
@@ -187,6 +189,8 @@ refactor(BE): ResumeInterviewOrchestrator → ResumeInterviewService rename + en
 
 ### 변경 파일
 - `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpService.java` — 의존 13 → ~7, 책임 추출, `ResumeFinder` + `ResumeInterviewService` 경유로 전환
+- `backend/src/main/java/com/rehearse/api/domain/interview/service/InterviewService.java` — cross-domain `QuestionSetRepository` / `ResumeSkeletonRepository` 제거 → `QuestionSetFinder` / `ResumeFinder` 경유 (`existsSkeletonByInterviewId` 사용)
+- `backend/src/main/java/com/rehearse/api/domain/question/service/QuestionSetFinder.java` — 신규 (Phase 6 예정이었으나 PR1 InterviewService 정리 함께 선행)
 - 신규 Domain Service:
   - `backend/src/main/java/com/rehearse/api/domain/interview/service/ResumeRoutePolicy.java` — `isResumeTrack` 로직
   - `backend/src/main/java/com/rehearse/api/domain/interview/service/FollowUpSkipHandler.java` — analyzer SKIP / Step B SKIP 공통 처리
@@ -194,7 +198,7 @@ refactor(BE): ResumeInterviewOrchestrator → ResumeInterviewService rename + en
 - 테스트:
   - `backend/src/test/java/com/rehearse/api/domain/interview/service/ResumeRoutePolicyTest.java` — Domain Unit
   - `backend/src/test/java/com/rehearse/api/domain/interview/service/FollowUpSkipHandlerTest.java` — Domain Unit
-  - `backend/src/test/java/com/rehearse/api/domain/interview/service/FollowUpServiceTest.java` — Service Integration (회귀 + 신규 분기: plan 부재 시 `ensureInterviewPlan` 호출 1회 / plan 존재 시 미호출)
+  - `backend/src/test/java/com/rehearse/api/domain/interview/service/FollowUpServiceTest.java` — Service Integration (회귀 + 신규 분기: plan 부재 시 `BusinessException(RESUME_PLAN_NOT_READY)` throw)
 
 ### 핵심 로직 / 변경 요약
 - `generateFollowUp()` 흐름 정리:
@@ -202,7 +206,7 @@ refactor(BE): ResumeInterviewOrchestrator → ResumeInterviewService rename + en
   2. context 로드 (followUpTransactionHandler 유지)
   3. runtime state init (runtimeStateStore 유지)
   4. Resume 라우팅 분기 (`ResumeRoutePolicy.isResumeTrack`)
-  5. 분기 1 (Resume): `ResumeFinder.findSkeletonByInterviewId` + `ResumeFinder.findInterviewPlan` → empty 시 `ResumeInterviewService.ensureInterviewPlan` → `ResumeInterviewService.processUserTurn`
+  5. 분기 1 (Resume): `ResumeFinder.findSkeletonByInterviewId` + `ResumeFinder.findInterviewPlan` → empty 시 `BusinessException(RESUME_PLAN_NOT_READY)` throw (자가복구 X) → 정상 시 `ResumeInterviewService.processUserTurn`
   6. 분기 2 (표준): `audioTurnAnalyzer.analyze` → SKIP 분기 (`FollowUpSkipHandler`) 또는 `followUpQuestionWriter.write`
 - 제거 의존: `resumeSkeletonStore`, `interviewPlanStore`, `resumeSkeletonCache`, `interviewPlanCache`, `resumeInterviewPlanner` (5개).
 
@@ -241,7 +245,7 @@ refactor(BE): FollowUpService 책임 추출 + cross-domain 의존 ResumeFinder/S
 
 #### question
 - `backend/.../question/service/QuestionFinder.java` — 신규
-- `backend/.../question/service/QuestionSetFinder.java` — 신규
+- `backend/.../question/service/QuestionSetFinder.java` — PR1 (Phase 5) 에서 선행 신설됨 (InterviewService cross-domain 정리 시점). Phase 6 에서는 잔여 호출처 통합만.
 - `backend/.../question/service/AnalysisScheduler.java` — `fileMetadataRepository` 제거 → `FileFinder` 경유
 - `backend/.../question/service/QuestionGenerationTransactionHandler.java` — `interviewRepository` 제거 → `InterviewFinder` 경유
 - `backend/.../question/service/QuestionSetService.java` — cross-domain Repository 5건 제거 → Finder 경유
