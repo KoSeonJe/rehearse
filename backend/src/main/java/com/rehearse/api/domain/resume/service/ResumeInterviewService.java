@@ -22,6 +22,7 @@ import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -34,7 +35,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ResumeInterviewOrchestrator {
+public class ResumeInterviewService {
 
     private final TurnAnalysisPipeline turnAnalysisPipeline;
     private final PlaygroundModeHandler playgroundHandler;
@@ -44,6 +45,26 @@ public class ResumeInterviewOrchestrator {
     private final ResumeModeTransitionPolicy modeTransitionPolicy;
     private final ResumeTurnEventPublisher turnEventPublisher;
     private final QuestionSetRepository questionSetRepository;
+    private final ResumeInterviewPlanner resumeInterviewPlanner;
+    private final InterviewPlanPersister interviewPlanPersister;
+    private final InterviewPlanRuntimeCache interviewPlanRuntimeCache;
+
+    @Transactional
+    public InterviewPlan ensureInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
+        InterviewPlan cached = interviewPlanRuntimeCache.read(interviewId);
+        if (cached != null) {
+            return cached;
+        }
+
+        InterviewPlan plan = interviewPlanPersister.findByInterviewId(interviewId)
+                .orElseGet(() -> {
+                    InterviewPlan generated = resumeInterviewPlanner.plan(skeleton, durationMinutes);
+                    interviewPlanPersister.save(interviewId, generated);
+                    return generated;
+                });
+        interviewPlanRuntimeCache.write(interviewId, plan);
+        return plan;
+    }
 
     public FollowUpResponse processUserTurn(
             Long interviewId, int durationMinutes,
@@ -58,7 +79,7 @@ public class ResumeInterviewOrchestrator {
                     previousExchanges, skeleton, plan, terminate);
         } catch (BusinessException e) {
             if (e.getErrorCode() == AiErrorCode.CONTEXT_BUDGET_EXCEEDED) {
-                log.warn("[ResumeOrchestrator] 컨텍스트 토큰 예산 초과 → graceful 종료: interviewId={}", interviewId);
+                log.warn("[ResumeInterviewService] 컨텍스트 토큰 예산 초과 → graceful 종료: interviewId={}", interviewId);
                 return contextBudgetExceededResponse();
             }
             throw e;
@@ -82,12 +103,12 @@ public class ResumeInterviewOrchestrator {
         long remainingMinutes = clockWatcher.remainingMinutes(interviewId, durationMinutes);
 
         if (modeTransitionPolicy.isHardTimeoutExceeded(durationMinutes, remainingMinutes)) {
-            log.warn("[ResumeOrchestrator] hard timeout backstop: interviewId={}", interviewId);
+            log.warn("[ResumeInterviewService] hard timeout backstop: interviewId={}", interviewId);
             return hardTimeoutResponse();
         }
 
         if (terminate) {
-            log.info("[ResumeOrchestrator] FE-signaled terminate: interviewId={}, lastQuestionAnalyzed=true", interviewId);
+            log.info("[ResumeInterviewService] FE-signaled terminate: interviewId={}, lastQuestionAnalyzed=true", interviewId);
             return terminateResponse();
         }
 
@@ -129,7 +150,7 @@ public class ResumeInterviewOrchestrator {
 
         if (existingOpener.isPresent()) {
             com.rehearse.api.domain.question.entity.Question opener = existingOpener.get();
-            log.info("[ResumeOrchestrator] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
+            log.info("[ResumeInterviewService] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
             return FollowUpResponse.builder()
                     .questionId(opener.getId())
                     .question(opener.getQuestionText())
@@ -140,7 +161,7 @@ public class ResumeInterviewOrchestrator {
         }
 
         InterviewRuntimeState state = runtimeStateStore.get(interviewId);
-        log.info("[ResumeOrchestrator] 세션 시작: interviewId={}, mode=PLAYGROUND", interviewId);
+        log.info("[ResumeInterviewService] 세션 시작: interviewId={}, mode=PLAYGROUND", interviewId);
         PlaygroundModeHandler.OpenerResult openerResult = playgroundHandler.handleOpener(interviewId, state, skeleton, plan);
         return openerResult.response();
     }
@@ -176,7 +197,7 @@ public class ResumeInterviewOrchestrator {
             // invariant: analyzer 가 비-null 반환. 미래 회귀 시 graceful 안전망.
             AnswerAnalysis safeAnalysis = analysis != null ? analysis : AnswerAnalysis.empty(0L);
             if (analysis == null) {
-                log.warn("[ResumeOrchestrator] analysis null on mode transition — empty() fallback. interviewId={}",
+                log.warn("[ResumeInterviewService] analysis null on mode transition — empty() fallback. interviewId={}",
                         interviewId);
             }
             InterrogationTurnResult interrogationResult =

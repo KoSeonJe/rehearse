@@ -17,7 +17,7 @@ import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.entity.AskedPerspectives;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeInterviewService;
 import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
 import com.rehearse.api.domain.resume.entity.InterviewPlan;
@@ -47,7 +47,7 @@ public class FollowUpService {
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final InterviewRuntimeStateCache runtimeStateStore;
     private final AiCallMetrics aiCallMetrics;
-    private final ResumeInterviewOrchestrator resumeOrchestrator;
+    private final ResumeInterviewService resumeInterviewService;
     private final ResumeSkeletonPersister resumeSkeletonStore;
     private final InterviewPlanPersister interviewPlanStore;
     private final ResumeSkeletonRuntimeCache resumeSkeletonCache;
@@ -178,7 +178,7 @@ public class FollowUpService {
         int durationMinutes = interview.getDurationMinutes();
         InterviewPlan plan = resolveInterviewPlan(interviewId, skeleton, durationMinutes);
 
-        return resumeOrchestrator.processUserTurn(
+        return resumeInterviewService.processUserTurn(
                 interviewId, durationMinutes,
                 request.getQuestionContent(), request.getAnswerText(),
                 request.getPreviousExchanges(), skeleton, plan,

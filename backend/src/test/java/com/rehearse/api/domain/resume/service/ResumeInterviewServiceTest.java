@@ -43,11 +43,11 @@ import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ResumeInterviewOrchestrator - FSM 라우팅 (PLAYGROUND/INTERROGATION 2단계)")
-class ResumeInterviewOrchestratorTest {
+@DisplayName("ResumeInterviewService - FSM 라우팅 (PLAYGROUND/INTERROGATION 2단계)")
+class ResumeInterviewServiceTest {
 
     @InjectMocks
-    private ResumeInterviewOrchestrator orchestrator;
+    private ResumeInterviewService resumeInterviewService;
 
     @Mock
     private TurnAnalysisPipeline turnAnalysisPipeline;
@@ -65,6 +65,12 @@ class ResumeInterviewOrchestratorTest {
     private ResumeTurnEventPublisher turnEventPublisher;
     @Mock
     private QuestionSetRepository questionSetRepository;
+    @Mock
+    private ResumeInterviewPlanner resumeInterviewPlanner;
+    @Mock
+    private InterviewPlanPersister interviewPlanPersister;
+    @Mock
+    private InterviewPlanRuntimeCache interviewPlanRuntimeCache;
 
     private InterviewRuntimeState state;
     private ResumeSkeleton skeleton;
@@ -101,7 +107,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 11L));
 
-            FollowUpResponse response = orchestrator.processUserTurn(
+            FollowUpResponse response = resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getQuestion()).isEqualTo("Q");
@@ -119,7 +125,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 13L));
 
-            FollowUpResponse response = orchestrator.processUserTurn(
+            FollowUpResponse response = resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getQuestion()).isEqualTo("L2 질문");
@@ -143,7 +149,7 @@ class ResumeInterviewOrchestratorTest {
                                     .type("RESUME_OPENER")
                                     .build(), null));
 
-            FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);
+            FollowUpResponse response = resumeInterviewService.startSession(1L, 30, skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("Redis 프로젝트를 소개해주세요");
             assertThat(response.isPresentToUser()).isTrue();
@@ -157,7 +163,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.OpenerResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), null));
 
-            orchestrator.startSession(1L, 30, skeleton, plan);
+            resumeInterviewService.startSession(1L, 30, skeleton, plan);
 
             then(clockWatcher).shouldHaveNoInteractions();
         }
@@ -183,7 +189,7 @@ class ResumeInterviewOrchestratorTest {
             given(questionSetRepository.findByInterviewIdAndCategory(eq(1L), eq(InterviewType.RESUME_BASED)))
                     .willReturn(java.util.Optional.of(qs));
 
-            FollowUpResponse response = orchestrator.startSession(1L, 30, skeleton, plan);
+            FollowUpResponse response = resumeInterviewService.startSession(1L, 30, skeleton, plan);
 
             assertThat(response.getQuestion()).isEqualTo("기존 opener 질문입니다");
             assertThat(response.isPresentToUser()).isTrue();
@@ -204,7 +210,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 14L));
 
-            orchestrator.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
+            resumeInterviewService.processUserTurn(1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             then(clockWatcher).should().markStart(1L);
         }
@@ -224,7 +230,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 42L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false);
 
             ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
@@ -252,7 +258,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("INT 첫 질문").presentToUser(true).build(), 71L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
@@ -275,7 +281,7 @@ class ResumeInterviewOrchestratorTest {
                             FollowUpResponse.builder().question("PG 다음").presentToUser(true).build(),
                             false, 52L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
@@ -297,7 +303,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new InterrogationTurnResult(
                             FollowUpResponse.builder().question("L2 질문").presentToUser(true).build(), 81L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             ArgumentCaptor<ResumeMode> modeCaptor = ArgumentCaptor.forClass(ResumeMode.class);
@@ -318,7 +324,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, null));
 
-            assertThatThrownBy(() -> orchestrator.processUserTurn(
+            assertThatThrownBy(() -> resumeInterviewService.processUserTurn(
                     1L, 30, "질문텍스트", "사용자답변텍스트", List.of(), skeleton, plan, false))
                     .isInstanceOf(BusinessException.class);
 
@@ -340,7 +346,7 @@ class ResumeInterviewOrchestratorTest {
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willThrow(new BusinessException(AiErrorCode.CONTEXT_BUDGET_EXCEEDED));
 
-            FollowUpResponse response = orchestrator.processUserTurn(
+            FollowUpResponse response = resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(response.getType()).isEqualTo("CONTEXT_BUDGET_EXCEEDED");
@@ -359,7 +365,7 @@ class ResumeInterviewOrchestratorTest {
             given(playgroundHandler.handle(any(), any(), any(), any(), any(), any(), any()))
                     .willThrow(new BusinessException(AiErrorCode.RESPONSE_INVALID));
 
-            assertThatThrownBy(() -> orchestrator.processUserTurn(
+            assertThatThrownBy(() -> resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false))
                     .isInstanceOf(BusinessException.class)
                     .satisfies(e -> assertThat(((BusinessException) e).getCode())
@@ -372,19 +378,19 @@ class ResumeInterviewOrchestratorTest {
     class ResponseQuestionIdGuard {
 
         private ListAppender<ILoggingEvent> logAppender;
-        private Logger orchestratorLogger;
+        private Logger resumeInterviewServiceLogger;
 
         @BeforeEach
         void attachLogAppender() {
-            orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+            resumeInterviewServiceLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewService.class);
             logAppender = new ListAppender<>();
             logAppender.start();
-            orchestratorLogger.addAppender(logAppender);
+            resumeInterviewServiceLogger.addAppender(logAppender);
         }
 
         @AfterEach
         void detachLogAppender() {
-            orchestratorLogger.detachAppender(logAppender);
+            resumeInterviewServiceLogger.detachAppender(logAppender);
             logAppender.stop();
         }
 
@@ -399,7 +405,7 @@ class ResumeInterviewOrchestratorTest {
                     .willReturn(new PlaygroundModeHandler.PlaygroundTurnResult(
                             FollowUpResponse.builder().question("Q").presentToUser(true).build(), false, 99L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(warnMessages())
@@ -424,7 +430,7 @@ class ResumeInterviewOrchestratorTest {
                             FollowUpResponse.builder().questionId(7L).question("Q").presentToUser(true).build(),
                             false, 99L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(warnMessages())
@@ -450,7 +456,7 @@ class ResumeInterviewOrchestratorTest {
                             FollowUpResponse.builder().questionId(42L).question("Q").presentToUser(true).build(),
                             false, 42L));
 
-            orchestrator.processUserTurn(
+            resumeInterviewService.processUserTurn(
                     1L, 30, "질문", "답변", List.of(), skeleton, plan, false);
 
             assertThat(warnMessages())
@@ -464,6 +470,50 @@ class ResumeInterviewOrchestratorTest {
                     .filter(event -> event.getLevel() == Level.WARN)
                     .map(ILoggingEvent::getFormattedMessage)
                     .toList();
+        }
+    }
+
+    @Nested
+    @DisplayName("ensureInterviewPlan 메서드")
+    class EnsureInterviewPlan {
+
+        @Test
+        @DisplayName("runtime cache hit 시 cache 값을 반환하고 Persister/Planner 호출하지 않는다")
+        void returns_cached_plan() {
+            given(interviewPlanRuntimeCache.read(1L)).willReturn(plan);
+
+            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
+
+            assertThat(result).isSameAs(plan);
+            then(interviewPlanPersister).shouldHaveNoInteractions();
+            then(resumeInterviewPlanner).shouldHaveNoInteractions();
+        }
+
+        @Test
+        @DisplayName("cache miss + DB 존재 시 DB plan 반환 + cache 갱신")
+        void returns_db_plan_when_cache_miss_and_db_present() {
+            given(interviewPlanRuntimeCache.read(1L)).willReturn(null);
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.of(plan));
+
+            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
+
+            assertThat(result).isSameAs(plan);
+            then(resumeInterviewPlanner).shouldHaveNoInteractions();
+            then(interviewPlanRuntimeCache).should().write(1L, plan);
+        }
+
+        @Test
+        @DisplayName("cache miss + DB 부재 시 Planner 호출 + DB save + cache 갱신")
+        void generates_plan_when_both_absent() {
+            given(interviewPlanRuntimeCache.read(1L)).willReturn(null);
+            given(interviewPlanPersister.findByInterviewId(1L)).willReturn(java.util.Optional.empty());
+            given(resumeInterviewPlanner.plan(skeleton, 30)).willReturn(plan);
+
+            InterviewPlan result = resumeInterviewService.ensureInterviewPlan(1L, skeleton, 30);
+
+            assertThat(result).isSameAs(plan);
+            then(interviewPlanPersister).should().save(1L, plan);
+            then(interviewPlanRuntimeCache).should().write(1L, plan);
         }
     }
 

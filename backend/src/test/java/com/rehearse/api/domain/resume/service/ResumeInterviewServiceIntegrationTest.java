@@ -55,11 +55,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.reset;
 
-@DisplayName("ResumeInterviewOrchestrator Service Integration - WRAP_UP 제거 후 종료 분기 통합 검증")
-class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSupport {
+@DisplayName("ResumeInterviewService Service Integration - WRAP_UP 제거 후 종료 분기 통합 검증")
+class ResumeInterviewServiceIntegrationTest extends ServiceIntegrationSupport {
 
     @Autowired
-    private ResumeInterviewOrchestrator orchestrator;
+    private ResumeInterviewService orchestrator;
 
     @Autowired
     private InterviewRepository interviewRepository;
@@ -226,7 +226,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
     void playgroundTurn_responseCarriesSelfQuestionIdWithoutMismatchWarn() {
         Long interviewId = persistInterviewAndInitState();
 
-        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewService.class);
         ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
         logAppender.start();
         orchestratorLogger.addAppender(logAppender);
@@ -266,7 +266,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
         Long interviewId = persistInterviewAndInitState();
         runtimeStateCache.update(interviewId, s -> s.transitionTo(ResumeMode.INTERROGATION));
 
-        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewOrchestrator.class);
+        Logger orchestratorLogger = (Logger) LoggerFactory.getLogger(ResumeInterviewService.class);
         ListAppender<ILoggingEvent> logAppender = new ListAppender<>();
         logAppender.start();
         orchestratorLogger.addAppender(logAppender);

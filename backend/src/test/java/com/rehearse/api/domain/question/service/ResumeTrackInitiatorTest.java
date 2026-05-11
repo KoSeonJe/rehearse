@@ -11,7 +11,7 @@ import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
 import com.rehearse.api.domain.resume.entity.ProjectPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.PreparedResume;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
+import com.rehearse.api.domain.resume.service.ResumeInterviewService;
 import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class ResumeTrackInitiatorTest {
     @Mock
     private ResumePlanPreparationService resumePlanPreparationService;
     @Mock
-    private ResumeInterviewOrchestrator resumeInterviewOrchestrator;
+    private ResumeInterviewService resumeInterviewService;
     @Mock
     private InterviewRuntimeStateCache runtimeStateStore;
 
@@ -65,16 +65,16 @@ class ResumeTrackInitiatorTest {
         InterviewPlan plan = plan();
         given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서 본문", 30))
                 .willReturn(new PreparedResume(skeleton, plan));
-        given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
+        given(resumeInterviewService.startSession(eq(1L), eq(30), any(), any()))
                 .willReturn(FollowUpResponse.builder().question("opener").presentToUser(true).build());
 
         initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서 본문", 30);
 
         org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(
-                resumePlanPreparationService, runtimeStateStore, resumeInterviewOrchestrator, transactionHandler);
+                resumePlanPreparationService, runtimeStateStore, resumeInterviewService, transactionHandler);
         inOrder.verify(resumePlanPreparationService).prepare(1L, "hash-1", "이력서 본문", 30);
         inOrder.verify(runtimeStateStore).getOrInit(eq(1L), any());
-        inOrder.verify(resumeInterviewOrchestrator).startSession(eq(1L), eq(30), eq(skeleton), eq(plan));
+        inOrder.verify(resumeInterviewService).startSession(eq(1L), eq(30), eq(skeleton), eq(plan));
         inOrder.verify(transactionHandler).saveResults(eq(1L), eq(List.of()));
     }
 
@@ -102,12 +102,12 @@ class ResumeTrackInitiatorTest {
     void initiate_nullDuration_defaultsToThirty() {
         given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서", null))
                 .willReturn(new PreparedResume(skeleton(), plan()));
-        given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
+        given(resumeInterviewService.startSession(eq(1L), eq(30), any(), any()))
                 .willReturn(FollowUpResponse.builder().build());
 
         initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", null);
 
-        then(resumeInterviewOrchestrator).should().startSession(eq(1L), eq(30), any(), any());
+        then(resumeInterviewService).should().startSession(eq(1L), eq(30), any(), any());
     }
 
     @Test
@@ -115,7 +115,7 @@ class ResumeTrackInitiatorTest {
     void initiate_startSessionThrows_propagates() {
         given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서", 30))
                 .willReturn(new PreparedResume(skeleton(), plan()));
-        given(resumeInterviewOrchestrator.startSession(any(), anyInt(), any(), any()))
+        given(resumeInterviewService.startSession(any(), anyInt(), any(), any()))
                 .willThrow(new RuntimeException("AI 호출 실패"));
 
         assertThatThrownBy(() -> initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", 30))

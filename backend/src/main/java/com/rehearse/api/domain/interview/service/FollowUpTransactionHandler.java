@@ -93,7 +93,7 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        // RESUME 트랙은 ResumeInterviewOrchestrator path 일임. 본 핸들러 진입 시 = 흐름 결함.
+        // RESUME 트랙은 ResumeInterviewService path 일임. 본 핸들러 진입 시 = 흐름 결함.
         if (questionSet.getCategory() == InterviewType.RESUME_BASED) {
             throw new IllegalStateException(
                     "RESUME 트랙은 FollowUpTransactionHandler.saveFollowUpResult 를 호출할 수 없다. questionSetId="
