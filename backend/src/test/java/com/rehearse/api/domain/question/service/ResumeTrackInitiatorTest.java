@@ -98,19 +98,6 @@ class ResumeTrackInitiatorTest {
     }
 
     @Test
-    @DisplayName("durationMinutes 가 null 이면 기본값 30 으로 startSession 이 호출된다")
-    void initiate_nullDuration_defaultsToThirty() {
-        given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서", null))
-                .willReturn(new PreparedResume(skeleton(), plan()));
-        given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
-                .willReturn(FollowUpResponse.builder().build());
-
-        initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", null);
-
-        then(resumeInterviewOrchestrator).should().startSession(eq(1L), eq(30), any(), any());
-    }
-
-    @Test
     @DisplayName("startSession 예외는 그대로 전파된다")
     void initiate_startSessionThrows_propagates() {
         given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서", 30))

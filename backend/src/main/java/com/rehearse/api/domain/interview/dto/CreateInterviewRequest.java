@@ -38,5 +38,6 @@ public class CreateInterviewRequest {
     @Max(value = 120, message = "면접 시간은 최대 120분입니다.")
     private Integer durationMinutes;
 
+    @NotNull(message = "기술 스택을 선택해주세요.")
     private TechStack techStack;
 }

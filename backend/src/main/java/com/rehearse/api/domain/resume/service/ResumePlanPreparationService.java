@@ -7,6 +7,7 @@ import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.domain.resume.exception.ResumePlannerErrorCode;
 import com.rehearse.api.domain.resume.service.ResumeReplanLoader.ReplanContext;
 import com.rehearse.api.global.exception.BusinessException;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,10 +17,8 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ResumePlanPreparationService {
 
-    private static final int DEFAULT_DURATION_MINUTES = 30;
-
     private final ResumeIngestionService resumeIngestionService;
-    private final ResumeSkeletonPersister skeletonStore;
+    private final ResumeSkeletonPersister resumeSkeletonPersister;
     private final ResumeInterviewPlanner resumeInterviewPlanner;
     private final InterviewPlanPersister planStore;
     private final ResumeReplanLoader replanLoader;
@@ -31,10 +30,10 @@ public class ResumePlanPreparationService {
     }
 
     private ResumeSkeleton resolveSkeleton(Long interviewId, String resumeFileHash, String normalizedResumeText) {
-        ResumeSkeleton persisted = skeletonStore.findByInterviewId(interviewId).orElse(null);
-        if (persisted != null) {
-            if (resumeFileHash == null || resumeFileHash.equals(persisted.fileHash())) {
-                return persisted;
+        Optional<ResumeSkeleton> persisted = resumeSkeletonPersister.findByInterviewId(interviewId);
+        if (persisted.isPresent()) {
+            if (resumeFileHash == null || resumeFileHash.equals(persisted.get().fileHash())) {
+                return persisted.get();
             }
         }
 
@@ -50,13 +49,9 @@ public class ResumePlanPreparationService {
             return persisted;
         }
 
-        InterviewPlan plan = generatePlan(skeleton, resolveDuration(durationMinutes), interviewId);
+        InterviewPlan plan = generatePlan(skeleton, durationMinutes, interviewId);
         planStore.save(interviewId, plan);
         return plan;
-    }
-
-    private int resolveDuration(Integer durationMinutes) {
-        return durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
     }
 
     public ReplanResponse replan(Long interviewId, Long userId) {
@@ -64,7 +59,7 @@ public class ResumePlanPreparationService {
 
         InterviewPlan freshPlan = generatePlan(
                 context.skeleton(),
-                resolveDuration(context.durationMinutes()),
+                context.durationMinutes(),
                 interviewId);
 
         boolean replaced = planStore.findByInterviewId(interviewId).isPresent();

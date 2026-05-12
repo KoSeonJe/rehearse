@@ -115,28 +115,6 @@ class ResumePlanPreparationServiceTest {
             assertThat(response.replaced()).isFalse();
         }
 
-        @Test
-        @DisplayName("durationMinutes null 인 경우 default 30 적용")
-        void replan_appliesDefaultDuration_whenInterviewDurationNull() {
-            // given
-            ResumeSkeleton skeleton = createSkeleton();
-            InterviewPlan freshPlan = createInterviewPlan("plan-default");
-            InterviewPlan savedPlan = createInterviewPlan("plan-default");
-            ReflectionTestUtils.setField(savedPlan, "id", 400L);
-
-            given(replanLoader.load(INTERVIEW_ID, OWNER_USER_ID))
-                    .willReturn(new ReplanContext(skeleton, null));
-            given(planStore.findByInterviewId(INTERVIEW_ID)).willReturn(Optional.empty());
-            given(resumeInterviewPlanner.plan(eq(skeleton), eq(30))).willReturn(freshPlan);
-            given(planStore.replace(INTERVIEW_ID, freshPlan)).willReturn(savedPlan);
-
-            // when
-            ReplanResponse response = service.replan(INTERVIEW_ID, OWNER_USER_ID);
-
-            // then
-            assertThat(response.planId()).isEqualTo(400L);
-            then(resumeInterviewPlanner).should().plan(skeleton, 30);
-        }
     }
 
     @Nested
