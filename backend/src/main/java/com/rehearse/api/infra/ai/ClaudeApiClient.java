@@ -2,7 +2,6 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
-import com.rehearse.api.infra.ai.dto.claude.CacheControl;
 import com.rehearse.api.infra.ai.dto.claude.ClaudeRequest;
 import com.rehearse.api.infra.ai.dto.claude.ClaudeResponse;
 import com.rehearse.api.infra.ai.dto.claude.SystemContent;
@@ -20,6 +19,9 @@ import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -39,9 +41,6 @@ public class ClaudeApiClient {
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
     private static final double TEMPERATURE_FOLLOW_UP = 0.7;
     private static final String FOLLOW_UP_MODEL = "claude-haiku-4-5-20251001";
-
-    private static final int MAX_RETRY_ATTEMPTS = 3;
-    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
@@ -78,6 +77,12 @@ public class ClaudeApiClient {
             "You MUST respond with a single JSON object only. No prose, no markdown, no code fences.";
 
     @RateLimiter(name = "claude-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 4,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public ChatResponse chat(ChatRequest req) {
         String resolvedModel = (req.modelOverride() != null && !req.modelOverride().isBlank())
                 ? req.modelOverride()
@@ -154,6 +159,12 @@ public class ClaudeApiClient {
     }
 
     @RateLimiter(name = "claude-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 4,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
         String userPrompt = questionPromptBuilder.buildUserPrompt(request);
@@ -165,12 +176,36 @@ public class ClaudeApiClient {
     }
 
     @RateLimiter(name = "claude-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 4,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
 
         String text = callClaudeApiWithModel(FOLLOW_UP_MODEL, systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, TEMPERATURE_FOLLOW_UP);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
+    }
+
+    @Recover
+    public ChatResponse recoverChat(Exception e, ChatRequest req) {
+        log.error("[Claude API] chat 재시도 최종 실패: callType={}", req.callType(), e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public List<GeneratedQuestion> recoverGenerateQuestions(Exception e, QuestionGenerationRequest request) {
+        log.error("[Claude API] generateQuestions 재시도 최종 실패", e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public GeneratedFollowUp recoverGenerateFollowUpQuestion(Exception e, FollowUpGenerationRequest request) {
+        log.error("[Claude API] generateFollowUpQuestion 재시도 최종 실패", e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
@@ -199,66 +234,42 @@ public class ClaudeApiClient {
     }
 
     private ClaudeResponse executeClaudeRequest(ClaudeRequest request, String apiLabel, int maxTokens) {
-        long delayMs = INITIAL_RETRY_DELAY_MS;
+        ClaudeResponse response = restClient.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("x-api-key", apiKey)
+                .header("anthropic-version", ANTHROPIC_VERSION)
+                .body(request)
+                .retrieve()
+                .onStatus(status -> status.value() == 429, (req, res) -> {
+                    log.warn("[{}] Rate Limited (429)", apiLabel);
+                    throw new RetryableApiException(apiLabel + " rate limited (429)");
+                })
+                .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
+                    String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
+                    log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
+                    throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                    log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
+                    throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
+                })
+                .body(ClaudeResponse.class);
 
-        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
-            try {
-                ClaudeResponse response = restClient.post()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("x-api-key", apiKey)
-                        .header("anthropic-version", ANTHROPIC_VERSION)
-                        .body(request)
-                        .retrieve()
-                        .onStatus(status -> status.value() == 429, (req, res) -> {
-                            log.warn("[{}] Rate Limited (429)", apiLabel);
-                            throw new RetryableApiException(apiLabel + " rate limited (429)");
-                        })
-                        .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
-                            String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
-                            log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
-                            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
-                        })
-                        .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                            log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
-                            throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
-                        })
-                        .body(ClaudeResponse.class);
-
-                if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
-                    throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
-                }
-
-                if (response.getUsage() != null) {
-                    var usage = response.getUsage();
-                    log.info("[{}] 토큰 사용량 - input: {}, output: {}, cache_write: {}, cache_read: {}",
-                            apiLabel, usage.getInputTokens(), usage.getOutputTokens(),
-                            usage.getCacheCreationInputTokens(), usage.getCacheReadInputTokens());
-                }
-
-                if ("max_tokens".equals(response.getStopReason())) {
-                    log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림. model={}", apiLabel, maxTokens, request.getModel());
-                }
-
-                return response;
-
-            } catch (BusinessException e) {
-                throw e;
-            } catch (RetryableApiException | RestClientException e) {
-                if (attempt < MAX_RETRY_ATTEMPTS) {
-                    log.info("[{}] 재시도 {}/{}: {}", apiLabel, attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
-                    }
-                    delayMs *= 2;
-                } else {
-                    log.error("[{}] 모든 재시도 실패", apiLabel, e);
-                    throw new BusinessException(AiErrorCode.TIMEOUT);
-                }
-            }
+        if (response == null || response.getContent() == null || response.getContent().isEmpty()) {
+            throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
         }
-        throw new BusinessException(AiErrorCode.TIMEOUT);
+
+        if (response.getUsage() != null) {
+            var usage = response.getUsage();
+            log.info("[{}] 토큰 사용량 - input: {}, output: {}, cache_write: {}, cache_read: {}",
+                    apiLabel, usage.getInputTokens(), usage.getOutputTokens(),
+                    usage.getCacheCreationInputTokens(), usage.getCacheReadInputTokens());
+        }
+
+        if ("max_tokens".equals(response.getStopReason())) {
+            log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림. model={}", apiLabel, maxTokens, request.getModel());
+        }
+
+        return response;
     }
 }

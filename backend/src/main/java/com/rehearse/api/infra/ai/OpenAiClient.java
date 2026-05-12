@@ -16,6 +16,9 @@ import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -38,9 +41,6 @@ public class OpenAiClient {
     private static final int MAX_TOKENS_QUESTION = 8192;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
     private static final double TEMPERATURE_FOLLOW_UP = 0.7;
-
-    private static final int MAX_RETRY_ATTEMPTS = 2;
-    private static final long INITIAL_RETRY_DELAY_MS = 1000;
 
     private static final long MAX_AUDIO_BYTES = 10L * 1024 * 1024;
 
@@ -78,6 +78,12 @@ public class OpenAiClient {
     }
 
     @RateLimiter(name = "openai-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public ChatResponse chat(ChatRequest req) {
         String resolvedModel = resolveModel(req, model);
         int resolvedMaxTokens = (req.maxTokens() != null) ? req.maxTokens() : MAX_TOKENS_FOLLOW_UP;
@@ -87,11 +93,17 @@ public class OpenAiClient {
         Map<String, Object> requestBody = buildRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
 
         String apiLabel = "OpenAI API [" + req.callType() + "]";
-        OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
+        OpenAiResponse openAiResponse = executeOnce(requestBody, apiLabel, resolvedMaxTokens);
         return toChatResponse(openAiResponse, resolvedModel);
     }
 
     @RateLimiter(name = "openai-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public ChatResponse chatWithAudio(ChatRequest req, MultipartFile audioFile) {
         if (audioFile == null || audioFile.isEmpty()) {
             throw new BusinessException(AiErrorCode.CLIENT_ERROR);
@@ -127,11 +139,17 @@ public class OpenAiClient {
         Map<String, Object> requestBody = buildAudioRequestBody(resolvedModel, messages, resolvedMaxTokens, req);
 
         String apiLabel = "OpenAI Audio Chat [" + req.callType() + "]";
-        OpenAiResponse openAiResponse = executeWithRetry(requestBody, apiLabel, resolvedMaxTokens);
+        OpenAiResponse openAiResponse = executeOnce(requestBody, apiLabel, resolvedMaxTokens);
         return toChatResponse(openAiResponse, resolvedModel);
     }
 
     @RateLimiter(name = "openai-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public List<GeneratedQuestion> generateQuestions(QuestionGenerationRequest request) {
         String systemPrompt = questionPromptBuilder.buildSystemPrompt(request);
         String userPrompt = questionPromptBuilder.buildUserPrompt(request);
@@ -143,6 +161,12 @@ public class OpenAiClient {
     }
 
     @RateLimiter(name = "openai-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
@@ -152,6 +176,12 @@ public class OpenAiClient {
     }
 
     @RateLimiter(name = "openai-api")
+    @Retryable(
+            retryFor = {RetryableApiException.class, RestClientException.class},
+            noRetryFor = {BusinessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
+    )
     public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
         String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
         String userPrompt = followUpPromptBuilder.buildUserPromptForAudio(request);
@@ -161,6 +191,37 @@ public class OpenAiClient {
 
         String text = callOpenAiAudioApi(systemPrompt, userPrompt, audioBase64, audioFormat);
         return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
+    }
+
+    @Recover
+    public ChatResponse recoverChat(Exception e, ChatRequest req) {
+        log.error("[OpenAI API] chat 재시도 최종 실패: callType={}", req.callType(), e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public ChatResponse recoverChatWithAudio(Exception e, ChatRequest req, MultipartFile audioFile) {
+        log.error("[OpenAI Audio Chat] chatWithAudio 재시도 최종 실패: callType={}", req.callType(), e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public List<GeneratedQuestion> recoverGenerateQuestions(Exception e, QuestionGenerationRequest request) {
+        log.error("[OpenAI API] generateQuestions 재시도 최종 실패", e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public GeneratedFollowUp recoverGenerateFollowUpQuestion(Exception e, FollowUpGenerationRequest request) {
+        log.error("[OpenAI API] generateFollowUpQuestion 재시도 최종 실패", e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    @Recover
+    public GeneratedFollowUp recoverGenerateFollowUpWithAudio(
+            Exception e, MultipartFile audioFile, FollowUpGenerationRequest request) {
+        log.error("[OpenAI Audio API] generateFollowUpWithAudio 재시도 최종 실패", e);
+        throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 
     // --- private helpers ---
@@ -275,7 +336,7 @@ public class OpenAiClient {
         if (temperature != null) {
             requestBody.put("temperature", temperature);
         }
-        return executeWithRetry(requestBody, "OpenAI API", maxTokens)
+        return executeOnce(requestBody, "OpenAI API", maxTokens)
                 .getChoices().get(0).getMessage().getContent();
     }
 
@@ -286,74 +347,50 @@ public class OpenAiClient {
         );
         Map<String, Object> requestBody = baseRequestBody(audioModel, messages, MAX_TOKENS_FOLLOW_UP, null);
         requestBody.put("temperature", TEMPERATURE_FOLLOW_UP);
-        return executeWithRetry(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP)
+        return executeOnce(requestBody, "OpenAI Audio API", MAX_TOKENS_FOLLOW_UP)
                 .getChoices().get(0).getMessage().getContent();
     }
 
-    private OpenAiResponse executeWithRetry(Object requestBody, String apiLabel, int maxTokens) {
-        long delayMs = INITIAL_RETRY_DELAY_MS;
+    private OpenAiResponse executeOnce(Object requestBody, String apiLabel, int maxTokens) {
+        OpenAiResponse response = restClient.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + apiKey)
+                .body(requestBody)
+                .retrieve()
+                .onStatus(status -> status.value() == 429, (req, res) -> {
+                    log.warn("[{}] Rate Limited (429)", apiLabel);
+                    throw new RetryableApiException(apiLabel + " rate limited (429)");
+                })
+                .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
+                    String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
+                    log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
+                    throw new BusinessException(AiErrorCode.CLIENT_ERROR);
+                })
+                .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
+                    log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
+                    throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
+                })
+                .body(OpenAiResponse.class);
 
-        for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
-            try {
-                OpenAiResponse response = restClient.post()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("Authorization", "Bearer " + apiKey)
-                        .body(requestBody)
-                        .retrieve()
-                        .onStatus(status -> status.value() == 429, (req, res) -> {
-                            log.warn("[{}] Rate Limited (429)", apiLabel);
-                            throw new RetryableApiException(apiLabel + " rate limited (429)");
-                        })
-                        .onStatus(status -> status.is4xxClientError() && status.value() != 429, (req, res) -> {
-                            String body = res.getBody() != null ? new String(res.getBody().readAllBytes()) : "(empty body)";
-                            log.error("[{}] 클라이언트 에러: status={}, body={}", apiLabel, res.getStatusCode(), body);
-                            throw new BusinessException(AiErrorCode.CLIENT_ERROR);
-                        })
-                        .onStatus(HttpStatusCode::is5xxServerError, (req, res) -> {
-                            log.warn("[{}] 서버 에러: status={}", apiLabel, res.getStatusCode());
-                            throw new RetryableApiException(apiLabel + " 서버 에러: " + res.getStatusCode());
-                        })
-                        .body(OpenAiResponse.class);
-
-                if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
-                    throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
-                }
-
-                if (response.getUsage() != null) {
-                    var usage = response.getUsage();
-                    log.info("[{}] 토큰 사용량 - prompt: {}, completion: {}, total: {}",
-                            apiLabel, usage.getPromptTokens(), usage.getCompletionTokens(), usage.getTotalTokens());
-                }
-
-                OpenAiResponse.Choice choice = response.getChoices().get(0);
-                if ("length".equals(choice.getFinishReason())) {
-                    log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림", apiLabel, maxTokens);
-                }
-
-                String content = choice.getMessage() != null ? choice.getMessage().getContent() : null;
-                if (content == null || content.isBlank()) {
-                    throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
-                }
-                return response;
-
-            } catch (BusinessException e) {
-                throw e;
-            } catch (RetryableApiException | RestClientException e) {
-                if (attempt < MAX_RETRY_ATTEMPTS) {
-                    log.info("[{}] 재시도 {}/{}: {}", apiLabel, attempt, MAX_RETRY_ATTEMPTS, e.getMessage());
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new BusinessException(AiErrorCode.SERVER_ERROR);
-                    }
-                    delayMs *= 2;
-                } else {
-                    log.error("[{}] 모든 재시도 실패", apiLabel, e);
-                    throw new BusinessException(AiErrorCode.TIMEOUT);
-                }
-            }
+        if (response == null || response.getChoices() == null || response.getChoices().isEmpty()) {
+            throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
         }
-        throw new BusinessException(AiErrorCode.TIMEOUT);
+
+        if (response.getUsage() != null) {
+            var usage = response.getUsage();
+            log.info("[{}] 토큰 사용량 - prompt: {}, completion: {}, total: {}",
+                    apiLabel, usage.getPromptTokens(), usage.getCompletionTokens(), usage.getTotalTokens());
+        }
+
+        OpenAiResponse.Choice choice = response.getChoices().get(0);
+        if ("length".equals(choice.getFinishReason())) {
+            log.warn("[{}] 응답이 max_tokens({})에 도달하여 잘림", apiLabel, maxTokens);
+        }
+
+        String content = choice.getMessage() != null ? choice.getMessage().getContent() : null;
+        if (content == null || content.isBlank()) {
+            throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
+        }
+        return response;
     }
 }
