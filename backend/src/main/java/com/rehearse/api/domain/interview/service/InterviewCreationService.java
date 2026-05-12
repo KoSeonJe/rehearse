@@ -36,16 +36,15 @@ public class InterviewCreationService {
     @Transactional
     public InterviewResponse createInterview(Long userId, CreateInterviewRequest request, MultipartFile resumeFile) {
         validateResumeExclusivity(request.getInterviewTypes(), resumeFile);
+        if (!request.getTechStack().isAllowedFor(request.getPosition())) {
+            throw new BusinessException(InterviewErrorCode.INVALID_TECH_STACK);
+        }
 
         String resumeText = null;
         String resumeFileHash = null;
         if (resumeFile != null && !resumeFile.isEmpty()) {
             resumeFileHash = fileHasher.hash(readFileBytes(resumeFile));
             resumeText = pdfTextExtractor.extract(resumeFile);
-        }
-
-        if (request.getTechStack() != null && !request.getTechStack().isAllowedFor(request.getPosition())) {
-            throw new BusinessException(InterviewErrorCode.INVALID_TECH_STACK);
         }
 
         Interview interview = Interview.builder()

@@ -15,8 +15,7 @@ public final class QuestionCacheKeyGenerator {
      */
     private static final Set<InterviewType> POSITION_AGNOSTIC_TYPES = Set.of(
             InterviewType.CS_FUNDAMENTAL,
-            InterviewType.BEHAVIORAL,
-            InterviewType.SYSTEM_DESIGN
+            InterviewType.BEHAVIORAL
     );
 
     private QuestionCacheKeyGenerator() {

@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.question.dto.QuestionGenerationCommand;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,9 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
@@ -54,8 +53,7 @@ class QuestionGenerationServiceTest {
 
             then(transactionHandler).should().startGeneration(1L);
             then(resumeTrackInitiator).should().initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", 30);
-            then(standardTrackGenerator).should(never()).generate(
-                    anyLong(), anyLong(), any(), any(), any(), any(), any(), anyInt(), any());
+            then(standardTrackGenerator).should(never()).generate(any(QuestionGenerationCommand.class));
             then(transactionHandler).should(never()).saveResults(anyLong(), any());
         }
 
@@ -82,9 +80,7 @@ class QuestionGenerationServiceTest {
             List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL);
             List<QuestionSet> generated = List.of(
                     QuestionSet.builder().category(InterviewType.CS_FUNDAMENTAL).orderIndex(0).build());
-            given(standardTrackGenerator.generate(
-                    eq(1L), eq(1L), eq(Position.BACKEND), eq(InterviewLevel.JUNIOR),
-                    eq(types), any(), any(), eq(30), eq(TechStack.JAVA_SPRING)))
+            given(standardTrackGenerator.generate(any(QuestionGenerationCommand.class)))
                     .willReturn(generated);
 
             questionGenerationService.generateQuestions(
@@ -94,8 +90,7 @@ class QuestionGenerationServiceTest {
             org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(
                     transactionHandler, standardTrackGenerator);
             inOrder.verify(transactionHandler).startGeneration(1L);
-            inOrder.verify(standardTrackGenerator).generate(
-                    anyLong(), anyLong(), any(), any(), any(), any(), any(), anyInt(), any());
+            inOrder.verify(standardTrackGenerator).generate(any(QuestionGenerationCommand.class));
             inOrder.verify(transactionHandler).saveResults(1L, generated);
             then(resumeTrackInitiator).should(never()).initiate(any(), any(), any(), any(), any());
         }

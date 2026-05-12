@@ -20,40 +20,29 @@ public class QuestionPoolService {
 
     private static final int POOL_SUFFICIENCY_MULTIPLIER = 3;
     private static final double USER_SUFFICIENCY_MULTIPLIER = 2.0;
-    private static final int POOL_SOFT_CAP = 200;
 
     private final QuestionPoolRepository questionPoolRepository;
 
-    public boolean isPoolSufficient(PoolSelectionCriteria criteria) {
-        if (criteria.hasUsedPoolIds()) {
-            List<QuestionPool> candidates = getCandidates(criteria.cacheKey(), criteria.categoryFilter());
-            long availableCount = candidates.stream()
-                    .filter(qp -> !criteria.usedPoolIds().contains(qp.getId()))
-                    .count();
-            return availableCount >= (long) Math.ceil(criteria.requiredCount() * USER_SUFFICIENCY_MULTIPLIER);
-        }
-        if (criteria.hasCategoryFilter()) {
-            long filteredCount = questionPoolRepository
-                    .countByCacheKeyAndIsActiveTrueAndCategoryIn(criteria.cacheKey(), criteria.categoryFilter());
-            return filteredCount >= (long) criteria.requiredCount() * POOL_SUFFICIENCY_MULTIPLIER;
-        }
-        long activeCount = questionPoolRepository.countByCacheKeyAndIsActiveTrue(criteria.cacheKey());
-        return activeCount >= (long) criteria.requiredCount() * POOL_SUFFICIENCY_MULTIPLIER;
-    }
-
-    public boolean shouldSaveToPool(String cacheKey) {
-        long activeCount = questionPoolRepository.countByCacheKeyAndIsActiveTrue(cacheKey);
-        return activeCount < POOL_SOFT_CAP;
-    }
-
-    public List<QuestionPool> selectFromPool(PoolSelectionCriteria criteria) {
+    public Optional<List<QuestionPool>> selectIfSufficient(PoolSelectionCriteria criteria) {
         List<QuestionPool> candidates = getCandidates(criteria.cacheKey(), criteria.categoryFilter());
-        if (criteria.hasUsedPoolIds()) {
-            candidates = candidates.stream()
-                    .filter(qp -> !criteria.usedPoolIds().contains(qp.getId()))
-                    .toList();
+        List<QuestionPool> available = criteria.hasUsedPoolIds()
+                ? candidates.stream()
+                        .filter(qp -> !criteria.usedPoolIds().contains(qp.getId()))
+                        .toList()
+                : candidates;
+
+        long threshold = sufficiencyThreshold(criteria);
+        if (available.size() < threshold) {
+            return Optional.empty();
         }
-        return selectWithCategoryDistribution(candidates, criteria.requiredCount());
+        return Optional.of(selectWithCategoryDistribution(available, criteria.requiredCount()));
+    }
+
+    private long sufficiencyThreshold(PoolSelectionCriteria criteria) {
+        if (criteria.hasUsedPoolIds()) {
+            return (long) Math.ceil(criteria.requiredCount() * USER_SUFFICIENCY_MULTIPLIER);
+        }
+        return (long) criteria.requiredCount() * POOL_SUFFICIENCY_MULTIPLIER;
     }
 
     private List<QuestionPool> getCandidates(String cacheKey, List<String> categoryFilter) {
@@ -113,7 +102,7 @@ public class QuestionPoolService {
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    List<QuestionPool> convertAndCacheIfEligible(String cacheKey, List<GeneratedQuestion> generated) {
+    List<QuestionPool> saveQuestionPools(String cacheKey, List<GeneratedQuestion> generated) {
         List<QuestionPool> pools = generated.stream()
                 .map(gq -> QuestionPool.create(
                         cacheKey,
@@ -122,14 +111,8 @@ public class QuestionPoolService {
                         gq.category(),
                         gq.bestAnswer()))
                 .collect(Collectors.toList());
-
-        if (shouldSaveToPool(cacheKey)) {
-            questionPoolRepository.saveAll(pools);
-            log.info("[POOL] 저장 완료: cacheKey={}, count={}", cacheKey, pools.size());
-        } else {
-            log.info("[POOL] soft cap 도달, DB 저장 생략: cacheKey={}, count={}", cacheKey, pools.size());
-        }
-
+        questionPoolRepository.saveAll(pools);
+        log.info("[POOL] 저장 완료: cacheKey={}, count={}", cacheKey, pools.size());
         return pools;
     }
 }

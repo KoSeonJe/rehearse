@@ -58,6 +58,7 @@ class InterviewCreationServiceTest {
             ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
             ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.CS_FUNDAMENTAL));
             ReflectionTestUtils.setField(request, "durationMinutes", 30);
+            ReflectionTestUtils.setField(request, "techStack", TechStack.JAVA_SPRING);
 
             given(interviewRepository.save(any(Interview.class)))
                     .willAnswer(invocation -> {
@@ -114,6 +115,7 @@ class InterviewCreationServiceTest {
             ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
             ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.RESUME_BASED));
             ReflectionTestUtils.setField(request, "durationMinutes", 30);
+            ReflectionTestUtils.setField(request, "techStack", TechStack.JAVA_SPRING);
 
             MockMultipartFile resumeFile = new MockMultipartFile(
                     "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
@@ -171,6 +173,7 @@ class InterviewCreationServiceTest {
             ReflectionTestUtils.setField(request, "level", InterviewLevel.JUNIOR);
             ReflectionTestUtils.setField(request, "interviewTypes", List.of(InterviewType.RESUME_BASED));
             ReflectionTestUtils.setField(request, "durationMinutes", 30);
+            ReflectionTestUtils.setField(request, "techStack", TechStack.JAVA_SPRING);
 
             MockMultipartFile resumeFile = new MockMultipartFile(
                     "resume", "resume.pdf", "application/pdf", "pdf-content".getBytes());
@@ -192,7 +195,7 @@ class InterviewCreationServiceTest {
             org.mockito.ArgumentCaptor<QuestionGenerationRequestedEvent> eventCaptor =
                     org.mockito.ArgumentCaptor.forClass(QuestionGenerationRequestedEvent.class);
             then(eventPublisher).should().publishEvent(eventCaptor.capture());
-            assertThat(eventCaptor.getValue().getResumeFileHash()).isEqualTo("resume-hash");
+            assertThat(eventCaptor.getValue().resumeFileHash()).isEqualTo("resume-hash");
         }
 
         @Test
@@ -227,6 +230,7 @@ class InterviewCreationServiceTest {
             ReflectionTestUtils.setField(request, "interviewTypes",
                     List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL));
             ReflectionTestUtils.setField(request, "durationMinutes", 30);
+            ReflectionTestUtils.setField(request, "techStack", TechStack.JAVA_SPRING);
 
             given(interviewRepository.save(any(Interview.class)))
                     .willAnswer(invocation -> {

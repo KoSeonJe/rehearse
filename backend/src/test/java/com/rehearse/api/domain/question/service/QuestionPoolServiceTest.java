@@ -2,8 +2,6 @@ package com.rehearse.api.domain.question.service;
 
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.repository.QuestionPoolRepository;
-import com.rehearse.api.domain.question.service.PoolSelectionCriteria;
-import com.rehearse.api.domain.question.service.QuestionPoolService;
 import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -14,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,55 +29,87 @@ class QuestionPoolServiceTest {
     private QuestionPoolRepository questionPoolRepository;
 
     @Nested
-    @DisplayName("isPoolSufficient")
-    class IsPoolSufficient {
+    @DisplayName("selectIfSufficient")
+    class SelectIfSufficient {
 
         @Test
-        @DisplayName("활성 풀 수가 requiredCount × 3 이상이면 true를 반환한다")
-        void sufficient_returnsTrue() {
+        @DisplayName("활성 풀 수가 requiredCount × 3 이상이면 선택 결과를 반환한다")
+        void sufficient_returnsSelection() {
             // given
-            given(questionPoolRepository.countByCacheKeyAndIsActiveTrue("key")).willReturn(9L);
+            List<QuestionPool> candidates = List.of(
+                    TestFixtures.createQuestionPool("key", "Q1"),
+                    TestFixtures.createQuestionPool("key", "Q2"),
+                    TestFixtures.createQuestionPool("key", "Q3"),
+                    TestFixtures.createQuestionPool("key", "Q4"),
+                    TestFixtures.createQuestionPool("key", "Q5"),
+                    TestFixtures.createQuestionPool("key", "Q6"),
+                    TestFixtures.createQuestionPool("key", "Q7"),
+                    TestFixtures.createQuestionPool("key", "Q8"),
+                    TestFixtures.createQuestionPool("key", "Q9")
+            );
+            given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key")).willReturn(candidates);
 
             // when
-            boolean result = questionPoolService.isPoolSufficient(PoolSelectionCriteria.of("key", 3));
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(PoolSelectionCriteria.of("key", 3));
 
             // then
-            assertThat(result).isTrue();
+            assertThat(result).isPresent();
+            assertThat(result.get()).hasSize(3);
         }
 
         @Test
-        @DisplayName("활성 풀 수가 requiredCount × 3 미만이면 false를 반환한다")
-        void insufficient_returnsFalse() {
+        @DisplayName("활성 풀 수가 requiredCount × 3 미만이면 빈 Optional을 반환한다")
+        void insufficient_returnsEmpty() {
             // given
-            given(questionPoolRepository.countByCacheKeyAndIsActiveTrue("key")).willReturn(8L);
+            List<QuestionPool> candidates = List.of(
+                    TestFixtures.createQuestionPool("key", "Q1"),
+                    TestFixtures.createQuestionPool("key", "Q2"),
+                    TestFixtures.createQuestionPool("key", "Q3"),
+                    TestFixtures.createQuestionPool("key", "Q4"),
+                    TestFixtures.createQuestionPool("key", "Q5"),
+                    TestFixtures.createQuestionPool("key", "Q6"),
+                    TestFixtures.createQuestionPool("key", "Q7"),
+                    TestFixtures.createQuestionPool("key", "Q8")
+            );
+            given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key")).willReturn(candidates);
 
             // when
-            boolean result = questionPoolService.isPoolSufficient(PoolSelectionCriteria.of("key", 3));
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(PoolSelectionCriteria.of("key", 3));
 
             // then
-            assertThat(result).isFalse();
+            assertThat(result).isEmpty();
         }
 
         @Test
-        @DisplayName("categoryFilter가 주어지면 카테고리 필터 쿼리에 위임한다")
-        void withCategoryFilter_delegatesToFilteredCount() {
+        @DisplayName("categoryFilter가 주어지면 카테고리 필터 fetch 결과로 충분성을 판단한다")
+        void withCategoryFilter_usesFilteredFetch() {
             // given
             List<String> filter = List.of("OS", "NETWORK");
-            given(questionPoolRepository.countByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter))
-                    .willReturn(6L);
+            List<QuestionPool> filtered = List.of(
+                    TestFixtures.createQuestionPool("key", "Q1", null, "OS"),
+                    TestFixtures.createQuestionPool("key", "Q2", null, "OS"),
+                    TestFixtures.createQuestionPool("key", "Q3", null, "NETWORK"),
+                    TestFixtures.createQuestionPool("key", "Q4", null, "NETWORK"),
+                    TestFixtures.createQuestionPool("key", "Q5", null, "OS"),
+                    TestFixtures.createQuestionPool("key", "Q6", null, "NETWORK")
+            );
+            given(questionPoolRepository.findByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter))
+                    .willReturn(filtered);
 
-            // when
-            boolean result = questionPoolService.isPoolSufficient(new PoolSelectionCriteria("key", 2, filter, null));
+            // when: requiredCount=2 → threshold=6, candidates=6 → 충분
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(
+                    new PoolSelectionCriteria("key", 2, filter, null));
 
             // then
-            assertThat(result).isTrue();
+            assertThat(result).isPresent();
+            assertThat(result.get()).hasSize(2);
             then(questionPoolRepository).should()
-                    .countByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter);
+                    .findByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter);
         }
 
         @Test
-        @DisplayName("usedPoolIds를 제외한 후보 수가 requiredCount × 2 이상이면 true를 반환한다")
-        void withUsedPoolIds_excludesUsedAndChecks() {
+        @DisplayName("usedPoolIds를 제외한 후보 수가 requiredCount × 2 이상이면 선택 결과를 반환한다")
+        void withUsedPoolIds_sufficient_returnsSelection() {
             // given
             QuestionPool q1 = TestFixtures.createQuestionPool("key", "Q1");
             QuestionPool q2 = TestFixtures.createQuestionPool("key", "Q2");
@@ -90,16 +121,19 @@ class QuestionPoolServiceTest {
             given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key"))
                     .willReturn(List.of(q1, q2, q3));
 
-            // when: requiredCount=1, usedPoolIds={1} → 남은 2개 >= ceil(1*2.0)=2 → true
-            boolean result = questionPoolService.isPoolSufficient(new PoolSelectionCriteria("key", 1, null, Set.of(1L)));
+            // when: requiredCount=1, usedPoolIds={1} → 남은 2개 >= ceil(1*2.0)=2 → 충분
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(
+                    new PoolSelectionCriteria("key", 1, null, Set.of(1L)));
 
             // then
-            assertThat(result).isTrue();
+            assertThat(result).isPresent();
+            assertThat(result.get()).hasSize(1);
+            assertThat(result.get()).doesNotContain(q1);
         }
 
         @Test
-        @DisplayName("usedPoolIds를 제외한 후보 수가 requiredCount × 2 미만이면 false를 반환한다")
-        void withUsedPoolIds_insufficient_returnsFalse() {
+        @DisplayName("usedPoolIds를 제외한 후보 수가 requiredCount × 2 미만이면 빈 Optional을 반환한다")
+        void withUsedPoolIds_insufficient_returnsEmpty() {
             // given
             QuestionPool q1 = TestFixtures.createQuestionPool("key", "Q1");
             QuestionPool q2 = TestFixtures.createQuestionPool("key", "Q2");
@@ -109,110 +143,38 @@ class QuestionPoolServiceTest {
             given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key"))
                     .willReturn(List.of(q1, q2));
 
-            // when: requiredCount=2, usedPoolIds={1} → 남은 1개 < ceil(2*2.0)=4 → false
-            boolean result = questionPoolService.isPoolSufficient(new PoolSelectionCriteria("key", 2, null, Set.of(1L)));
+            // when: requiredCount=2, usedPoolIds={1} → 남은 1개 < ceil(2*2.0)=4 → 부족
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(
+                    new PoolSelectionCriteria("key", 2, null, Set.of(1L)));
 
             // then
-            assertThat(result).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("shouldSaveToPool")
-    class ShouldSaveToPool {
-
-        @Test
-        @DisplayName("활성 풀 수가 200 미만이면 저장해야 한다고 판단한다")
-        void belowCap_returnsTrue() {
-            // given
-            given(questionPoolRepository.countByCacheKeyAndIsActiveTrue("key")).willReturn(199L);
-
-            // when
-            boolean result = questionPoolService.shouldSaveToPool("key");
-
-            // then
-            assertThat(result).isTrue();
+            assertThat(result).isEmpty();
         }
 
         @Test
-        @DisplayName("활성 풀 수가 soft cap(200)에 도달하면 저장하지 않는다")
-        void atCap_returnsFalse() {
-            // given
-            given(questionPoolRepository.countByCacheKeyAndIsActiveTrue("key")).willReturn(200L);
-
-            // when
-            boolean result = questionPoolService.shouldSaveToPool("key");
-
-            // then
-            assertThat(result).isFalse();
-        }
-    }
-
-    @Nested
-    @DisplayName("selectFromPool")
-    class SelectFromPool {
-
-        @Test
-        @DisplayName("기본 선택: cacheKey에 해당하는 활성 풀에서 requiredCount만큼 선택한다")
-        void basicSelect_returnsRequiredCount() {
-            // given
-            List<QuestionPool> candidates = List.of(
-                    TestFixtures.createQuestionPool("key", "Q1"),
-                    TestFixtures.createQuestionPool("key", "Q2"),
-                    TestFixtures.createQuestionPool("key", "Q3"),
-                    TestFixtures.createQuestionPool("key", "Q4")
-            );
-            given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key")).willReturn(candidates);
-
-            // when
-            List<QuestionPool> result = questionPoolService.selectFromPool(PoolSelectionCriteria.of("key", 2));
-
-            // then
-            assertThat(result).hasSize(2);
-        }
-
-        @Test
-        @DisplayName("카테고리 필터 선택: 필터에 맞는 후보만 사용하여 선택한다")
-        void withCategoryFilter_usesFilteredCandidates() {
-            // given
-            List<String> filter = List.of("OS");
-            List<QuestionPool> candidates = List.of(
-                    TestFixtures.createQuestionPool("key", "Q-OS-1", null, "OS"),
-                    TestFixtures.createQuestionPool("key", "Q-OS-2", null, "OS"),
-                    TestFixtures.createQuestionPool("key", "Q-OS-3", null, "OS")
-            );
-            given(questionPoolRepository.findByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter))
-                    .willReturn(candidates);
-
-            // when
-            List<QuestionPool> result = questionPoolService.selectFromPool(new PoolSelectionCriteria("key", 2, filter, null));
-
-            // then
-            assertThat(result).hasSize(2);
-            then(questionPoolRepository).should()
-                    .findByCacheKeyAndIsActiveTrueAndCategoryIn("key", filter);
-        }
-
-        @Test
-        @DisplayName("사용된 ID 제외 선택: usedPoolIds에 포함된 항목은 결과에서 제외된다")
-        void withUsedPoolIds_excludesUsed() {
+        @DisplayName("usedPoolIds에 포함된 항목은 선택 결과에서 제외된다")
+        void withUsedPoolIds_excludesUsedFromResult() {
             // given
             QuestionPool q1 = TestFixtures.createQuestionPool("key", "Q1");
             QuestionPool q2 = TestFixtures.createQuestionPool("key", "Q2");
             QuestionPool q3 = TestFixtures.createQuestionPool("key", "Q3");
+            QuestionPool q4 = TestFixtures.createQuestionPool("key", "Q4");
             setId(q1, 1L);
             setId(q2, 2L);
             setId(q3, 3L);
+            setId(q4, 4L);
 
             given(questionPoolRepository.findByCacheKeyAndIsActiveTrue("key"))
-                    .willReturn(List.of(q1, q2, q3));
+                    .willReturn(List.of(q1, q2, q3, q4));
 
-            // when
-            List<QuestionPool> result = questionPoolService.selectFromPool(new PoolSelectionCriteria("key", 2, null, Set.of(1L)));
+            // when: requiredCount=2, usedPoolIds={1} → 남은 3개 >= ceil(2*2.0)=4 ? 3<4 → 부족
+            // requiredCount=1 로 가정해서 충분 케이스 검증
+            Optional<List<QuestionPool>> result = questionPoolService.selectIfSufficient(
+                    new PoolSelectionCriteria("key", 1, null, Set.of(1L)));
 
             // then
-            assertThat(result).hasSize(2);
-            assertThat(result).doesNotContain(q1);
+            assertThat(result).isPresent();
+            assertThat(result.get()).doesNotContain(q1);
         }
     }
 

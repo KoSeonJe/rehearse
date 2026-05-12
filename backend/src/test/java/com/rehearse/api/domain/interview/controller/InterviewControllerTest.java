@@ -99,7 +99,8 @@ class InterviewControllerTest {
                         "position": "BACKEND",
                         "level": "JUNIOR",
                         "interviewTypes": ["CS_FUNDAMENTAL"],
-                        "durationMinutes": 30
+                        "durationMinutes": 30,
+                        "techStack": "JAVA_SPRING"
                     }
                     """;
 

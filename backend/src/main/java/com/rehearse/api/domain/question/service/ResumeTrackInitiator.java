@@ -15,8 +15,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ResumeTrackInitiator {
 
-    private static final int DEFAULT_DURATION_MIN = 30;
-
     private final QuestionGenerationTransactionHandler transactionHandler;
     private final ResumePlanPreparationService resumePlanPreparationService;
     private final ResumeInterviewOrchestrator resumeInterviewOrchestrator;
@@ -25,12 +23,10 @@ public class ResumeTrackInitiator {
     public void initiate(Long interviewId, InterviewLevel level, String resumeFileHash, String resumeText, Integer durationMinutes) {
         PreparedResume prepared = resumePlanPreparationService.prepare(interviewId, resumeFileHash, resumeText, durationMinutes);
 
-        String levelName = level != null ? level.name() : InterviewLevel.JUNIOR.name();
         runtimeStateStore.getOrInit(interviewId,
-                () -> InterviewRuntimeState.seed(levelName, prepared.skeleton(), prepared.plan()));
+                () -> InterviewRuntimeState.seed(level.name(), prepared.skeleton(), prepared.plan()));
 
-        int duration = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MIN;
-        resumeInterviewOrchestrator.startSession(interviewId, duration, prepared.skeleton(), prepared.plan());
+        resumeInterviewOrchestrator.startSession(interviewId, durationMinutes, prepared.skeleton(), prepared.plan());
 
         transactionHandler.saveResults(interviewId, List.of());
     }

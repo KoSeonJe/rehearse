@@ -4,12 +4,9 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.question.dto.GetQuestionPoolCommand;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.domain.question.service.CacheableQuestionProvider;
-import com.rehearse.api.domain.question.service.PoolSelectionCriteria;
-import com.rehearse.api.domain.question.service.QuestionGenerationLock;
-import com.rehearse.api.domain.question.service.QuestionPoolService;
 import com.rehearse.api.global.support.TestFixtures;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
@@ -23,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,10 +34,10 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-class CacheableQuestionProviderTest {
+class StandardQuestionProviderTest {
 
     @InjectMocks
-    private CacheableQuestionProvider cacheableQuestionProvider;
+    private StandardQuestionProvider standardQuestionProvider;
 
     @Mock
     private QuestionPoolService questionPoolService;
@@ -57,6 +55,10 @@ class CacheableQuestionProviderTest {
     private static final InterviewLevel LEVEL = InterviewLevel.JUNIOR;
     private static final TechStack TECH_STACK = TechStack.JAVA_SPRING;
 
+    private static GetQuestionPoolCommand command(Long userId, List<String> csSubTopics) {
+        return new GetQuestionPoolCommand(userId, POSITION, LEVEL, TECH_STACK, csSubTopics);
+    }
+
     @Nested
     @DisplayName("캐시 히트 시나리오")
     class CacheHit {
@@ -66,43 +68,25 @@ class CacheableQuestionProviderTest {
         void poolSufficient_returnsFromPool_withoutAiCall() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             List<QuestionPool> poolQuestions = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "질문1"),
                     TestFixtures.createQuestionPool(cacheKey, "질문2"),
                     TestFixtures.createQuestionPool(cacheKey, "질문3")
             );
 
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(poolQuestions);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.of(poolQuestions));
 
             // when
-            List<QuestionPool> result = cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, null);
+            List<QuestionPool> result = standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, null));
 
             // then
             assertThat(result).hasSize(3);
             then(aiClient).should(never()).generateQuestions(any());
-        }
-
-        @Test
-        @DisplayName("userId가 null이면 usedPoolIds 조회를 스킵하고 빈 Set으로 처리한다")
-        void userIdNull_skipsUsedPoolIdsQuery() {
-            // given
-            String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(List.of(TestFixtures.createQuestionPool(cacheKey, "질문1")));
-
-            // when
-            cacheableQuestionProvider.provide(null, POSITION, LEVEL, TECH_STACK,
-                    InterviewType.CS_FUNDAMENTAL, 3, null);
-
-            // then
-            then(questionRepository).should(never())
-                    .findUsedQuestionPoolIdsByUserIdAndCacheKey(any(), any());
         }
 
         @Test
@@ -113,20 +97,17 @@ class CacheableQuestionProviderTest {
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
             Set<Long> usedIds = Set.of(10L, 20L);
 
-            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(userId, cacheKey))
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
                     .willReturn(usedIds);
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(List.of(TestFixtures.createQuestionPool(cacheKey, "질문1")));
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.of(List.of(TestFixtures.createQuestionPool(cacheKey, "질문1"))));
 
             // when
-            cacheableQuestionProvider.provide(userId, POSITION, LEVEL, TECH_STACK,
-                    InterviewType.CS_FUNDAMENTAL, 3, null);
+            standardQuestionProvider.provide(InterviewType.CS_FUNDAMENTAL, 3, command(userId, null));
 
             // then
             then(questionRepository).should()
-                    .findUsedQuestionPoolIdsByUserIdAndCacheKey(userId, cacheKey);
+                    .findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any());
         }
     }
 
@@ -139,31 +120,34 @@ class CacheableQuestionProviderTest {
         void poolInsufficient_callsAi_savesAndReturns() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             ReentrantLock lock = new ReentrantLock();
             List<GeneratedQuestion> generated = List.of(makeGeneratedQuestion("AI질문1"));
             List<QuestionPool> convertedPool = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "AI질문1")
             );
 
-            // 첫 번째 호출(lock 전): false, 두 번째 호출(lock 후 재확인): false
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(false, false);
-            given(questionGenerationLock.acquire(cacheKey)).willReturn(lock);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            // 첫 번째 호출(lock 전): empty, 두 번째 호출(lock 후 재확인): empty
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.empty(), Optional.empty());
+            given(questionGenerationLock.acquire(any())).willReturn(lock);
             given(aiClient.generateQuestions(any(QuestionGenerationRequest.class)))
                     .willReturn(generated);
-            given(questionPoolService.convertAndCacheIfEligible(eq(cacheKey), eq(generated)))
+            given(questionPoolService.saveQuestionPools(any(), eq(generated)))
                     .willReturn(convertedPool);
             given(questionPoolService.selectWithCategoryDistribution(eq(convertedPool), eq(3)))
                     .willReturn(convertedPool);
 
             // when
-            List<QuestionPool> result = cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, null);
+            List<QuestionPool> result = standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, null));
 
             // then
             assertThat(result).isNotEmpty();
             then(aiClient).should().generateQuestions(any(QuestionGenerationRequest.class));
-            then(questionPoolService).should().convertAndCacheIfEligible(eq(cacheKey), eq(generated));
+            then(questionPoolService).should().saveQuestionPools(any(), eq(generated));
         }
 
         @Test
@@ -171,24 +155,25 @@ class CacheableQuestionProviderTest {
         void lockRelease_calledInFinally_onSuccess() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             ReentrantLock lock = new ReentrantLock();
             List<GeneratedQuestion> generated = List.of(makeGeneratedQuestion("AI질문1"));
             List<QuestionPool> convertedPool = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "AI질문1")
             );
 
-            // 첫 번째 호출(lock 전): false, 두 번째 호출(lock 후 재확인): false
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(false, false);
-            given(questionGenerationLock.acquire(cacheKey)).willReturn(lock);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.empty(), Optional.empty());
+            given(questionGenerationLock.acquire(any())).willReturn(lock);
             given(aiClient.generateQuestions(any())).willReturn(generated);
-            given(questionPoolService.convertAndCacheIfEligible(any(), any())).willReturn(convertedPool);
+            given(questionPoolService.saveQuestionPools(any(), any())).willReturn(convertedPool);
             given(questionPoolService.selectWithCategoryDistribution(any(), anyInt()))
                     .willReturn(convertedPool);
 
             // when
-            cacheableQuestionProvider.provide(null, POSITION, LEVEL, TECH_STACK,
-                    InterviewType.CS_FUNDAMENTAL, 1, null);
+            standardQuestionProvider.provide(InterviewType.CS_FUNDAMENTAL, 1, command(userId, null));
 
             // then
             then(questionGenerationLock).should().release(lock);
@@ -198,19 +183,20 @@ class CacheableQuestionProviderTest {
         @DisplayName("AI 호출 실패 시 예외가 전파되고 Lock이 반드시 해제된다")
         void aiCallFails_exceptionPropagated_lockReleased() {
             // given
-            String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             ReentrantLock lock = new ReentrantLock();
 
-            // 첫 번째 호출(lock 전): false, 두 번째 호출(lock 후 재확인): false
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(false, false);
-            given(questionGenerationLock.acquire(cacheKey)).willReturn(lock);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.empty(), Optional.empty());
+            given(questionGenerationLock.acquire(any())).willReturn(lock);
             given(aiClient.generateQuestions(any(QuestionGenerationRequest.class)))
                     .willThrow(new RuntimeException("AI 서비스 오류"));
 
             // when & then
-            assertThatThrownBy(() -> cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, null))
+            assertThatThrownBy(() -> standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, null)))
                     .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("AI 서비스 오류");
 
@@ -227,23 +213,24 @@ class CacheableQuestionProviderTest {
         void afterLockAcquire_recheck_poolSufficient_noAiCall() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             ReentrantLock lock = new ReentrantLock();
             List<QuestionPool> poolQuestions = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "질문1")
             );
 
-            // 첫 번째 isPoolSufficient 호출(lock 획득 전): false
-            // 두 번째 isPoolSufficient 호출(lock 획득 후 재확인): true
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(false)
-                    .willReturn(true);
-            given(questionGenerationLock.acquire(cacheKey)).willReturn(lock);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(poolQuestions);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            // 첫 번째 selectIfSufficient(lock 획득 전): empty
+            // 두 번째 selectIfSufficient(lock 획득 후 재확인): present
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.empty())
+                    .willReturn(Optional.of(poolQuestions));
+            given(questionGenerationLock.acquire(any())).willReturn(lock);
 
             // when
-            List<QuestionPool> result = cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, null);
+            List<QuestionPool> result = standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, null));
 
             // then
             assertThat(result).isNotEmpty();
@@ -261,26 +248,25 @@ class CacheableQuestionProviderTest {
         void csType_withSubTopics_usesCategoryFilter() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
+            Long userId = 1L;
             List<String> csSubTopics = List.of("OS", "NETWORK");
-            // CsSubTopic.OS → "운영체제", CsSubTopic.NETWORK → "네트워크"
-            List<String> expectedFilter = List.of("운영체제", "네트워크");
             List<QuestionPool> poolQuestions = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "OS질문", null, "운영체제")
             );
 
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(poolQuestions);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.of(poolQuestions));
 
             // when
-            List<QuestionPool> result = cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, csSubTopics);
+            List<QuestionPool> result = standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, csSubTopics));
 
             // then
             assertThat(result).hasSize(1);
             then(questionPoolService).should()
-                    .isPoolSufficient(any(PoolSelectionCriteria.class));
+                    .selectIfSufficient(any(PoolSelectionCriteria.class));
         }
 
         @Test
@@ -288,24 +274,23 @@ class CacheableQuestionProviderTest {
         void csType_nullSubTopics_usesAllCsCategories() {
             // given
             String cacheKey = "JUNIOR:CS_FUNDAMENTAL";
-            // CsSubTopic.allCategoryNames() = ["자료구조", "운영체제", "네트워크", "데이터베이스"]
-            List<String> allCategories = List.of("자료구조", "운영체제", "네트워크", "데이터베이스");
+            Long userId = 1L;
             List<QuestionPool> poolQuestions = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "CS질문")
             );
 
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(poolQuestions);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.of(poolQuestions));
 
             // when
-            cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.CS_FUNDAMENTAL, 3, null);
+            standardQuestionProvider.provide(
+                    InterviewType.CS_FUNDAMENTAL, 3, command(userId, null));
 
             // then
             then(questionPoolService).should()
-                    .isPoolSufficient(any(PoolSelectionCriteria.class));
+                    .selectIfSufficient(any(PoolSelectionCriteria.class));
         }
 
         @Test
@@ -313,22 +298,23 @@ class CacheableQuestionProviderTest {
         void nonCsType_useEmptyCategoryFilter() {
             // given
             String cacheKey = "JUNIOR:BEHAVIORAL";
+            Long userId = 1L;
             List<QuestionPool> poolQuestions = List.of(
                     TestFixtures.createQuestionPool(cacheKey, "인성질문")
             );
 
-            given(questionPoolService.isPoolSufficient(any(PoolSelectionCriteria.class)))
-                    .willReturn(true);
-            given(questionPoolService.selectFromPool(any(PoolSelectionCriteria.class)))
-                    .willReturn(poolQuestions);
+            given(questionRepository.findUsedQuestionPoolIdsByUserIdAndCacheKey(eq(userId), any()))
+                    .willReturn(Set.of());
+            given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
+                    .willReturn(Optional.of(poolQuestions));
 
             // when
-            cacheableQuestionProvider.provide(
-                    null, POSITION, LEVEL, TECH_STACK, InterviewType.BEHAVIORAL, 3, null);
+            standardQuestionProvider.provide(
+                    InterviewType.BEHAVIORAL, 3, command(userId, null));
 
             // then
             then(questionPoolService).should()
-                    .isPoolSufficient(any(PoolSelectionCriteria.class));
+                    .selectIfSufficient(any(PoolSelectionCriteria.class));
         }
     }
 

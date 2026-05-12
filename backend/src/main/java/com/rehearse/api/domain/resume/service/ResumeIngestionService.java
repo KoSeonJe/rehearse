@@ -3,13 +3,9 @@ package com.rehearse.api.domain.resume.service;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.PdfTextExtractor;
-import com.rehearse.api.global.util.FileHasher;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Service
@@ -18,28 +14,8 @@ public class ResumeIngestionService {
 
     private static final int MIN_RESUME_TEXT_LENGTH = 50;
 
-    private final PdfTextExtractor pdfTextExtractor;
     private final ResumeExtractionService extractionService;
-    private final FileHasher fileHasher;
     private final ResumeSkeletonPersister skeletonStore;
-
-    public ResumeSkeleton ingest(Long interviewId, MultipartFile resumeFile) {
-        byte[] fileBytes = readFileBytes(resumeFile);
-        String fileHash = fileHasher.hash(fileBytes);
-
-        ResumeSkeleton fromDb = skeletonStore.findByInterviewId(interviewId)
-                .filter(s -> fileHash.equals(s.fileHash()))
-                .orElse(null);
-        if (fromDb != null) {
-            log.info("이력서 DB 히트: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
-            return fromDb;
-        }
-
-        String normalizedText = pdfTextExtractor.extract(resumeFile);
-        validateExtractedText(normalizedText);
-
-        return extractAndPersist(interviewId, normalizedText, fileHash);
-    }
 
     public ResumeSkeleton ingestExtractedText(Long interviewId, String normalizedText, String fileHash) {
         validateExtractedText(normalizedText);
@@ -56,15 +32,6 @@ public class ResumeIngestionService {
         }
 
         return extractAndPersist(interviewId, normalizedText, fileHash);
-    }
-
-    private byte[] readFileBytes(MultipartFile resumeFile) {
-        try {
-            return resumeFile.getBytes();
-        } catch (IOException e) {
-            log.error("이력서 파일 읽기 실패", e);
-            throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
-        }
     }
 
     private void validateExtractedText(String text) {

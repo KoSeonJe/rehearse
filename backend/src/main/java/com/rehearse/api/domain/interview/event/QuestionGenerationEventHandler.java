@@ -26,14 +26,14 @@ public class QuestionGenerationEventHandler {
     public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
         try {
             questionGenerationService.generateQuestions(
-                    event.getInterviewId(), event.getUserId(), event.getPosition(), event.getLevel(),
-                    event.getInterviewTypes(), toCsSubTopicNames(event.getCsSubTopics()),
-                    event.getResumeText(), event.getResumeFileHash(),
-                    event.getDurationMinutes(), event.getTechStack());
+                    event.interviewId(), event.userId(), event.position(), event.level(),
+                    event.interviewTypes(), toCsSubTopicNames(event.csSubTopics()),
+                    event.resumeText(), event.resumeFileHash(),
+                    event.durationMinutes(), event.techStack());
         } catch (Exception e) {
-            log.error("질문 생성 비동기 작업 실패: interviewId={}", event.getInterviewId(), e);
+            log.error("질문 생성 비동기 작업 실패: interviewId={}", event.interviewId(), e);
             String reason = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
-            transactionHandler.failGeneration(event.getInterviewId(),
+            transactionHandler.failGeneration(event.interviewId(),
                     reason != null ? reason : "알 수 없는 오류");
         }
     }

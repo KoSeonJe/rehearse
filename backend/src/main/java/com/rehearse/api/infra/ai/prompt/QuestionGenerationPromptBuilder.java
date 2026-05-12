@@ -39,8 +39,7 @@ public class QuestionGenerationPromptBuilder {
     }
 
     public String buildSystemPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
-        ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
+        ResolvedProfile profile = personaResolver.resolve(req.position(), req.techStack());
 
         String typeGuide = profile.interviewTypeGuideMap().entrySet().stream()
             .filter(e -> req.interviewTypes().stream().anyMatch(t -> t.name().equals(e.getKey())))
@@ -72,13 +71,12 @@ public class QuestionGenerationPromptBuilder {
     }
 
     public String buildUserPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         int questionCount = QuestionCountCalculator.calculate(
             req.durationMinutes(), req.interviewTypes().size());
 
         StringBuilder sb = new StringBuilder();
         sb.append("직무: ").append(positionKorean(req.position()))
-          .append(" (").append(effectiveStack.getDisplayName()).append(")\n");
+          .append(" (").append(req.techStack().getDisplayName()).append(")\n");
         sb.append("레벨: ").append(levelKorean(req.level())).append("\n");
         sb.append("유형: ").append(typesKorean(req.interviewTypes())).append("\n");
         sb.append("질문 수: ").append(questionCount).append("개\n");
@@ -97,10 +95,6 @@ public class QuestionGenerationPromptBuilder {
         sb.append("세션: ").append(UUID.randomUUID()).append("\n");
         sb.append("중복 없는 새 관점의 질문을 생성하세요.");
         return sb.toString();
-    }
-
-    private static TechStack resolveEffectiveStack(Position position, TechStack techStack) {
-        return techStack != null ? techStack : TechStack.getDefaultForPosition(position);
     }
 
     private static String positionKorean(Position p) {

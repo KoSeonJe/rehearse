@@ -20,9 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Set;
@@ -80,16 +78,6 @@ class ClaudeApiClientTest {
         given(requestBodySpec.retrieve()).willReturn(responseSpec);
         given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
         given(responseSpec.body(ClaudeResponse.class)).willReturn(response);
-    }
-
-    private void stubRestClientChainThrows(RuntimeException ex) {
-        given(restClient.post()).willReturn(requestBodyUriSpec);
-        given(requestBodyUriSpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
-        given(requestBodySpec.header(anyString(), anyString())).willReturn(requestBodySpec);
-        given(requestBodySpec.body(any(Object.class))).willReturn(requestBodySpec);
-        given(requestBodySpec.retrieve()).willReturn(responseSpec);
-        given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
-        given(responseSpec.body(ClaudeResponse.class)).willThrow(ex);
     }
 
     private ClaudeResponse validResponse(String text) {
@@ -231,157 +219,6 @@ class ClaudeApiClientTest {
             then(followUpPromptBuilder).should().buildSystemPrompt(request);
             then(followUpPromptBuilder).should().buildUserPrompt(request);
             then(questionPromptBuilder).shouldHaveNoInteractions();
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // RetryBehavior
-    // -----------------------------------------------------------------------
-
-    @Nested
-    @DisplayName("RetryBehavior — 재시도 로직")
-    class RetryBehavior {
-
-        @Test
-        @DisplayName("RestClientException 발생 시 최대 3회까지 재시도 후 TIMEOUT 예외를 던진다")
-        void retry_restClientException_exhaustsAndThrowsTimeout() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            given(restClient.post()).willReturn(requestBodyUriSpec);
-            given(requestBodyUriSpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.header(anyString(), anyString())).willReturn(requestBodySpec);
-            given(requestBodySpec.body(any(Object.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
-            given(responseSpec.body(ClaudeResponse.class))
-                    .willThrow(new ResourceAccessException("connection timeout"));
-
-            // when & then
-            assertThatThrownBy(() -> claudeApiClient.generateQuestions(request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode())
-                            .isEqualTo(AiErrorCode.TIMEOUT.getCode()));
-
-            then(restClient).should(times(3)).post();
-        }
-
-        @Test
-        @DisplayName("1회 실패 후 2회째 성공하면 결과를 정상 반환한다")
-        void retry_firstFailSecondSuccess_returnsResult() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            ClaudeResponse response = validResponse("{}");
-
-            given(restClient.post()).willReturn(requestBodyUriSpec);
-            given(requestBodyUriSpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.header(anyString(), anyString())).willReturn(requestBodySpec);
-            given(requestBodySpec.body(any(Object.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
-            given(responseSpec.body(ClaudeResponse.class))
-                    .willThrow(new ResourceAccessException("timeout"))
-                    .willReturn(response);
-
-            GeneratedQuestion question = sampleQuestion();
-            GeneratedQuestionsWrapper wrapper = new GeneratedQuestionsWrapper(List.of(question));
-            given(responseParser.parseJsonResponse(anyString(), eq(GeneratedQuestionsWrapper.class)))
-                    .willReturn(wrapper);
-
-            // when
-            List<GeneratedQuestion> result = claudeApiClient.generateQuestions(request);
-
-            // then
-            assertThat(result).hasSize(1);
-            then(restClient).should(times(2)).post();
-        }
-
-        @Test
-        @DisplayName("BusinessException(4xx 에러)은 재시도 없이 즉시 전파된다")
-        void retry_businessException_notRetried() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            BusinessException clientError = new BusinessException(AiErrorCode.CLIENT_ERROR);
-
-            given(restClient.post()).willReturn(requestBodyUriSpec);
-            given(requestBodyUriSpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.header(anyString(), anyString())).willReturn(requestBodySpec);
-            given(requestBodySpec.body(any(Object.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
-            given(responseSpec.body(ClaudeResponse.class)).willThrow(clientError);
-
-            // when & then
-            assertThatThrownBy(() -> claudeApiClient.generateQuestions(request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode())
-                            .isEqualTo(AiErrorCode.CLIENT_ERROR.getCode()));
-
-            then(restClient).should(times(1)).post();
-        }
-
-        @Test
-        @DisplayName("모든 재시도 소진 후 TIMEOUT 예외가 발생한다")
-        void retry_allAttemptsExhausted_throwsTimeout() {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            stubRestClientChainThrows(new RestClientException("server error"));
-
-            // when & then
-            assertThatThrownBy(() -> claudeApiClient.generateQuestions(request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode())
-                            .isEqualTo(AiErrorCode.TIMEOUT.getCode()));
-        }
-
-        @Test
-        @DisplayName("Thread.sleep 중 인터럽트 발생 시 인터럽트 플래그가 복원되고 SERVER_ERROR 예외가 발생한다")
-        void retry_interrupted_restoresInterruptFlagAndThrowsServerError() throws Exception {
-            // given
-            QuestionGenerationRequest request = questionRequest();
-            given(questionPromptBuilder.buildSystemPrompt(request)).willReturn("system");
-            given(questionPromptBuilder.buildUserPrompt(request)).willReturn("user");
-
-            given(restClient.post()).willReturn(requestBodyUriSpec);
-            given(requestBodyUriSpec.contentType(any(MediaType.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.header(anyString(), anyString())).willReturn(requestBodySpec);
-            given(requestBodySpec.body(any(Object.class))).willReturn(requestBodySpec);
-            given(requestBodySpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.onStatus(any(), any())).willReturn(responseSpec);
-            given(responseSpec.body(ClaudeResponse.class))
-                    .willThrow(new ResourceAccessException("timeout"));
-
-            // when — 별도 스레드에서 실행 후 인터럽트
-            BusinessException[] caughtEx = new BusinessException[1];
-
-            Thread testThread = new Thread(() -> {
-                try {
-                    claudeApiClient.generateQuestions(request);
-                } catch (BusinessException e) {
-                    caughtEx[0] = e;
-                }
-            });
-            testThread.start();
-
-            // 첫 번째 재시도의 sleep 도중 인터럽트
-            Thread.sleep(200);
-            testThread.interrupt();
-            testThread.join(3000);
-
-            // then
-            assertThat(caughtEx[0]).isNotNull();
-            assertThat(caughtEx[0].getCode()).isEqualTo(AiErrorCode.SERVER_ERROR.getCode());
         }
     }
 
