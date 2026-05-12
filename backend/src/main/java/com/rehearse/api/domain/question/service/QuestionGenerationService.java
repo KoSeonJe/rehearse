@@ -4,6 +4,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.question.dto.QuestionGenerationCommand;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,9 +41,9 @@ public class QuestionGenerationService {
             return;
         }
 
-        List<QuestionSet> questionSets = standardTrackGenerator.generate(
+        List<QuestionSet> questionSets = standardTrackGenerator.generate(new QuestionGenerationCommand(
                 interviewId, userId, position, level, interviewTypes,
-                csSubTopics, resumeText, durationMinutes, techStack);
+                csSubTopics, resumeText, durationMinutes, techStack));
 
         transactionHandler.saveResults(interviewId, questionSets);
     }

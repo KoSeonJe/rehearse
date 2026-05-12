@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.question.entity;
 
 import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.question.entity.QuestionDistribution;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,10 +24,10 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, 6);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            assertThat(cacheable).containsEntry(InterviewType.CS_FUNDAMENTAL, 3)
+            assertThat(result).containsEntry(InterviewType.CS_FUNDAMENTAL, 3)
                     .containsEntry(InterviewType.BEHAVIORAL, 3);
         }
 
@@ -40,10 +39,10 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, 7);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            assertThat(cacheable).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
+            assertThat(result).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
                     .containsEntry(InterviewType.BEHAVIORAL, 3);
         }
 
@@ -55,11 +54,11 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, 5);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            assertThat(cacheable).containsEntry(InterviewType.CS_FUNDAMENTAL, 5);
-            assertThat(cacheable).hasSize(1);
+            assertThat(result).containsEntry(InterviewType.CS_FUNDAMENTAL, 5);
+            assertThat(result).hasSize(1);
         }
 
         @Test
@@ -74,10 +73,10 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, 10);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            assertThat(cacheable).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
+            assertThat(result).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
                     .containsEntry(InterviewType.BEHAVIORAL, 3)
                     .containsEntry(InterviewType.LANGUAGE_FRAMEWORK, 3);
         }
@@ -94,10 +93,10 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, 11);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            assertThat(cacheable).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
+            assertThat(result).containsEntry(InterviewType.CS_FUNDAMENTAL, 4)
                     .containsEntry(InterviewType.BEHAVIORAL, 4)
                     .containsEntry(InterviewType.LANGUAGE_FRAMEWORK, 3);
         }
@@ -115,66 +114,11 @@ class QuestionDistributionTest {
 
             // when
             QuestionDistribution distribution = QuestionDistribution.create(types, totalCount);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
+            Map<InterviewType, Integer> result = distribution.getDistribution();
 
             // then
-            int sum = cacheable.values().stream().mapToInt(Integer::intValue).sum();
+            int sum = result.values().stream().mapToInt(Integer::intValue).sum();
             assertThat(sum).isEqualTo(totalCount);
-        }
-    }
-
-    @Nested
-    @DisplayName("getCacheableTypes / getFreshTypes — 필터링")
-    class CacheableAndFresh {
-
-        @Test
-        @DisplayName("getCacheableTypes는 isCacheable()이 true인 타입만 반환한다")
-        void getCacheableTypes_returnsCacheableOnly() {
-            // given
-            List<InterviewType> types = List.of(
-                    InterviewType.CS_FUNDAMENTAL,   // CACHEABLE
-                    InterviewType.RESUME_BASED       // FRESH
-            );
-
-            // when
-            QuestionDistribution distribution = QuestionDistribution.create(types, 6);
-            Map<InterviewType, Integer> cacheable = distribution.getCacheableTypes();
-
-            // then
-            assertThat(cacheable).containsKey(InterviewType.CS_FUNDAMENTAL);
-            assertThat(cacheable).doesNotContainKey(InterviewType.RESUME_BASED);
-        }
-
-        @Test
-        @DisplayName("getFreshTypes는 isCacheable()이 false인 타입만 반환한다")
-        void getFreshTypes_returnsFreshOnly() {
-            // given
-            List<InterviewType> types = List.of(
-                    InterviewType.CS_FUNDAMENTAL,   // CACHEABLE
-                    InterviewType.RESUME_BASED       // FRESH
-            );
-
-            // when
-            QuestionDistribution distribution = QuestionDistribution.create(types, 6);
-            Map<InterviewType, Integer> fresh = distribution.getFreshTypes();
-
-            // then
-            assertThat(fresh).containsKey(InterviewType.RESUME_BASED);
-            assertThat(fresh).doesNotContainKey(InterviewType.CS_FUNDAMENTAL);
-        }
-
-        @Test
-        @DisplayName("모든 타입이 CACHEABLE이면 getFreshTypes는 빈 맵을 반환한다")
-        void getFreshTypes_allCacheable_returnsEmpty() {
-            // given
-            List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL);
-
-            // when
-            QuestionDistribution distribution = QuestionDistribution.create(types, 6);
-            Map<InterviewType, Integer> fresh = distribution.getFreshTypes();
-
-            // then
-            assertThat(fresh).isEmpty();
         }
     }
 }

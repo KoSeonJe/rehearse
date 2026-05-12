@@ -5,11 +5,12 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.question.dto.QuestionGenerationCommand;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionPool;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.domain.question.entity.QuestionSet;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,17 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("StandardTrackQuestionGenerator")
 class StandardTrackQuestionGeneratorTest {
 
     @Mock
-    private CacheableQuestionProvider cacheableProvider;
-
-    @Mock
-    private FreshQuestionProvider freshProvider;
+    private StandardQuestionProvider standardProvider;
 
     private StandardTrackQuestionGenerator generator;
 
@@ -42,11 +39,17 @@ class StandardTrackQuestionGeneratorTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        generator = new StandardTrackQuestionGenerator(cacheableProvider, freshProvider, assembler);
+        generator = new StandardTrackQuestionGenerator(standardProvider, assembler);
     }
 
     private QuestionPool makePool(String content) {
         return QuestionPool.create("key:cs:junior", content, null, null, null);
+    }
+
+    private QuestionGenerationCommand command(List<InterviewType> types, TechStack techStack) {
+        return new QuestionGenerationCommand(
+                1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
+                types, List.of(), null, 30, techStack);
     }
 
     @Nested
@@ -54,32 +57,18 @@ class StandardTrackQuestionGeneratorTest {
     class ProviderCallBranch {
 
         @Test
-        @DisplayName("cacheable 타입만 여럿 있을 때 CacheableProvider 가 타입별로 호출된다")
-        void multiCacheableTypes_callsCacheableProviderForEachType() {
+        @DisplayName("여러 타입이 있을 때 CacheableProvider 가 타입별로 호출된다")
+        void multipleTypes_callsCacheableProviderForEachType() {
             List<InterviewType> types = List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL);
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
+            given(standardProvider.provide(eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("CS 질문")));
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
+            given(standardProvider.provide(eq(InterviewType.BEHAVIORAL), anyInt(), any()))
                     .willReturn(List.of(makePool("자기소개")));
 
-            generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    types, List.of(), null, 30, TechStack.JAVA_SPRING);
+            generator.generate(command(types, TechStack.JAVA_SPRING));
 
-            then(cacheableProvider).should(org.mockito.Mockito.times(2))
-                    .provide(anyLong(), any(), any(), any(), any(), anyInt(), any());
-            then(freshProvider).should(never()).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("cacheable 타입만 있을 때 FreshProvider 는 호출되지 않는다")
-        void cacheableOnly_doesNotCallFreshProvider() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
-                    .willReturn(List.of(makePool("CS 질문")));
-
-            generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
-
-            then(freshProvider).should(never()).provide(any(), any(), any(), any(), anyInt(), any(), any(), any());
+            then(standardProvider).should(org.mockito.Mockito.times(2))
+                    .provide(any(), anyInt(), any());
         }
     }
 
@@ -88,15 +77,15 @@ class StandardTrackQuestionGeneratorTest {
     class ExceptionHandling {
 
         @Test
-        @DisplayName("CacheableProvider 예외 시 RuntimeException이 전파된다")
-        void cacheableProviderThrows_propagatesRuntimeException() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), any(), anyInt(), any()))
+        @DisplayName("CacheableProvider 예외 시 그대로 전파된다")
+        void standardProviderThrows_propagatesException() {
+            given(standardProvider.provide(any(), anyInt(), any()))
                     .willThrow(new RuntimeException("AI 호출 실패"));
 
-            assertThatThrownBy(() -> generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING))
+            assertThatThrownBy(() -> generator.generate(
+                    command(List.of(InterviewType.CS_FUNDAMENTAL), TechStack.JAVA_SPRING)))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("질문 생성 병렬 처리 실패");
+                    .hasMessageContaining("AI 호출 실패");
         }
     }
 
@@ -107,11 +96,11 @@ class StandardTrackQuestionGeneratorTest {
         @Test
         @DisplayName("여러 QuestionSet 의 orderIndex 가 0부터 순차적으로 재배정된다")
         void multipleQuestionSets_orderIndexReassigned() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
+            given(standardProvider.provide(eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("Q1"), makePool("Q2")));
 
-            List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
+            List<QuestionSet> result = generator.generate(
+                    command(List.of(InterviewType.CS_FUNDAMENTAL), TechStack.JAVA_SPRING));
 
             assertThat(result).hasSize(2);
             assertThat(result.get(0).getOrderIndex()).isEqualTo(0);
@@ -120,21 +109,18 @@ class StandardTrackQuestionGeneratorTest {
     }
 
     @Nested
-    @DisplayName("techStack 처리")
-    class TechStackHandling {
+    @DisplayName("techStack 전달")
+    class TechStackPassthrough {
 
         @Test
-        @DisplayName("techStack 이 null 이면 Position 기반 기본값이 사용된다")
-        void nullTechStack_usesPositionDefault() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), eq(TechStack.JAVA_SPRING),
-                    eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
+        @DisplayName("Command 의 techStack 이 그대로 CacheableProvider 로 전달된다")
+        void techStackPassedThrough() {
+            given(standardProvider.provide(eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("CS 질문")));
 
-            generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, null);
+            generator.generate(command(List.of(InterviewType.CS_FUNDAMENTAL), TechStack.JAVA_SPRING));
 
-            then(cacheableProvider).should().provide(anyLong(), any(), any(),
-                    eq(TechStack.JAVA_SPRING), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any());
+            then(standardProvider).should().provide(eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any());
         }
     }
 
@@ -145,11 +131,11 @@ class StandardTrackQuestionGeneratorTest {
         @Test
         @DisplayName("BEHAVIORAL 타입은 BEHAVIORAL_MAIN 으로 적재되고 enum 환원 시 (GUIDE, BEHAVIORAL)")
         void behavioralType_assignsBehavioralMain() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.BEHAVIORAL), anyInt(), any()))
+            given(standardProvider.provide(eq(InterviewType.BEHAVIORAL), anyInt(), any()))
                     .willReturn(List.of(makePool("자기소개")));
 
-            List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.BEHAVIORAL), List.of(), null, 30, TechStack.JAVA_SPRING);
+            List<QuestionSet> result = generator.generate(
+                    command(List.of(InterviewType.BEHAVIORAL), TechStack.JAVA_SPRING));
 
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.BEHAVIORAL_MAIN);
@@ -160,11 +146,11 @@ class StandardTrackQuestionGeneratorTest {
         @Test
         @DisplayName("CS_FUNDAMENTAL 타입은 TECH_MAIN 으로 적재되고 enum 환원 시 (MODEL_ANSWER, TECHNICAL)")
         void csFundamental_assignsTechMain() {
-            given(cacheableProvider.provide(anyLong(), any(), any(), any(), eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
+            given(standardProvider.provide(eq(InterviewType.CS_FUNDAMENTAL), anyInt(), any()))
                     .willReturn(List.of(makePool("OS 스케줄링")));
 
-            List<QuestionSet> result = generator.generate(1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                    List.of(InterviewType.CS_FUNDAMENTAL), List.of(), null, 30, TechStack.JAVA_SPRING);
+            List<QuestionSet> result = generator.generate(
+                    command(List.of(InterviewType.CS_FUNDAMENTAL), TechStack.JAVA_SPRING));
 
             Question q = result.get(0).getQuestions().get(0);
             assertThat(q.getQuestionType()).isEqualTo(QuestionType.TECH_MAIN);
