@@ -10,6 +10,7 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.interview.service.TurnAnalysisPipeline;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.resume.entity.ChainStateTracker;
@@ -19,6 +20,7 @@ import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -120,7 +122,7 @@ public class ResumeInterviewOrchestrator {
             Long interviewId, int durationMinutes,
             ResumeSkeleton skeleton, InterviewPlan plan
     ) {
-        java.util.Optional<com.rehearse.api.domain.question.entity.Question> existingOpener =
+        Optional<Question> existingOpener =
                 questionSetRepository
                         .findByInterviewIdAndCategory(interviewId, InterviewType.RESUME_BASED)
                         .flatMap(qs -> qs.getQuestions().stream()
@@ -128,7 +130,7 @@ public class ResumeInterviewOrchestrator {
                                 .findFirst());
 
         if (existingOpener.isPresent()) {
-            com.rehearse.api.domain.question.entity.Question opener = existingOpener.get();
+            Question opener = existingOpener.get();
             log.info("[ResumeOrchestrator] 기존 RESUME_OPENER 재사용: interviewId={}", interviewId);
             return FollowUpResponse.builder()
                     .questionId(opener.getId())
