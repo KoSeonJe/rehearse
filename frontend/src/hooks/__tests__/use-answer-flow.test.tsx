@@ -56,7 +56,7 @@ const buildQuestionSet = (id: number): QuestionSetData => ({
   questions: [
     {
       id: 1,
-      questionType: 'MAIN',
+      questionType: 'TECH_MAIN',
       questionText: '질문 0',
       bestAnswer: null,
       orderIndex: 0,
@@ -233,5 +233,137 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     })
 
     expect(useInterviewStore.getState().isTimeOverdue).toBe(false)
+  })
+})
+
+// 트랙 컨텍스트별 follow-up 질문이 BE QuestionType enum 과 정합한 값으로 store 에 저장되는지 검증.
+// 회귀: 이전엔 모든 트랙에서 'FOLLOWUP' (BE 미존재) 로 저장 → 검색 분기 미스.
+describe('useAnswerFlow — 트랙별 follow-up questionType 정합', () => {
+  beforeEach(() => {
+    mutateAsyncMock.mockReset()
+    cancelRequestMock.mockReset()
+  })
+
+  afterEach(() => {
+    useInterviewStore.getState().reset()
+  })
+
+  const buildSetWithMainType = (
+    id: number,
+    category: string,
+    mainType: 'TECH_MAIN' | 'BEHAVIORAL_MAIN' | 'RESUME_OPENER',
+  ): QuestionSetData => ({
+    id,
+    category,
+    orderIndex: 0,
+    analysisStatus: 'PENDING',
+    failureReason: null,
+    questions: [
+      {
+        id: 1,
+        questionType: mainType,
+        questionText: '메인 질문',
+        bestAnswer: null,
+        orderIndex: 0,
+      },
+    ],
+  })
+
+  const seedRecordingForFollowUp = (qSet: QuestionSetData) => {
+    useInterviewStore.getState().reset()
+    useInterviewStore.getState().setInterview(99, [buildQuestion(0)])
+    useInterviewStore.getState().setQuestionSets([qSet])
+    useInterviewStore.setState({ phase: 'recording' })
+    useInterviewStore.setState((s) => ({
+      answers: s.answers.map((a, i) =>
+        i === 0
+          ? {
+              ...a,
+              transcripts: [
+                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
+              ],
+            }
+          : a,
+      ),
+    }))
+  }
+
+  const buildParamsForSet = (qSet: QuestionSetData) => ({
+    ...buildParams(),
+    interview: {
+      id: 99,
+      publicId: 'pub-1',
+      status: 'IN_PROGRESS',
+      questionSets: [qSet],
+    },
+  })
+
+  it('TECH 트랙 (TECH_MAIN) → follow-up 응답이 store 에 TECH_FOLLOWUP 으로 추가된다', async () => {
+    const qSet = buildSetWithMainType(12, 'CS_FUNDAMENTAL', 'TECH_MAIN')
+    seedRecordingForFollowUp(qSet)
+    mutateAsyncMock.mockResolvedValue(
+      buildResponse({
+        questionId: 555,
+        question: '추가 설명 부탁드려요',
+        skip: false,
+        followUpExhausted: false,
+      }),
+    )
+
+    const { result } = renderHook(() => useAnswerFlow(buildParamsForSet(qSet)))
+    await act(async () => {
+      await result.current.handleStopAnswer()
+    })
+
+    const stored = useInterviewStore.getState().questionSets[0].questions
+    expect(stored).toHaveLength(2)
+    expect(stored[1].questionType).toBe('TECH_FOLLOWUP')
+    expect(stored[1].id).toBe(555)
+  })
+
+  it('BEHAVIORAL 트랙 (BEHAVIORAL_MAIN) → follow-up 응답이 store 에 BEHAVIORAL_FOLLOWUP 으로 추가된다', async () => {
+    const qSet = buildSetWithMainType(13, 'BEHAVIORAL', 'BEHAVIORAL_MAIN')
+    seedRecordingForFollowUp(qSet)
+    mutateAsyncMock.mockResolvedValue(
+      buildResponse({
+        questionId: 777,
+        question: '그 갈등을 어떻게 해결하셨나요',
+        skip: false,
+        followUpExhausted: false,
+      }),
+    )
+
+    const { result } = renderHook(() => useAnswerFlow(buildParamsForSet(qSet)))
+    await act(async () => {
+      await result.current.handleStopAnswer()
+    })
+
+    const stored = useInterviewStore.getState().questionSets[0].questions
+    expect(stored).toHaveLength(2)
+    expect(stored[1].questionType).toBe('BEHAVIORAL_FOLLOWUP')
+    expect(stored[1].id).toBe(777)
+  })
+
+  it('RESUME 트랙 (RESUME_OPENER) → follow-up 응답이 store 에 TECH_FOLLOWUP 으로 추가된다 (BE fallback 정합)', async () => {
+    const qSet = buildSetWithMainType(14, 'RESUME_BASED', 'RESUME_OPENER')
+    seedRecordingForFollowUp(qSet)
+    mutateAsyncMock.mockResolvedValue(
+      buildResponse({
+        questionId: 999,
+        question: '그 프로젝트 규모는?',
+        skip: false,
+        followUpExhausted: false,
+      }),
+    )
+
+    const { result } = renderHook(() => useAnswerFlow(buildParamsForSet(qSet)))
+    await act(async () => {
+      await result.current.handleStopAnswer()
+    })
+
+    const stored = useInterviewStore.getState().questionSets[0].questions
+    expect(stored).toHaveLength(2)
+    expect(stored[1].questionType).toBe('TECH_FOLLOWUP')
+    expect(stored[1].id).toBe(999)
   })
 })
