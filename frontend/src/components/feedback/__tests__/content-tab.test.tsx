@@ -23,7 +23,7 @@ describe('ContentTab', () => {
     render(
       <ContentTab
         technicalFeedback={buildFeedback({ rubricCategory: 'TECHNICAL' })}
-        questionType="MAIN"
+        questionType="TECH_MAIN"
       />,
     )
 
@@ -79,7 +79,7 @@ describe('ContentTab', () => {
             },
           ],
         })}
-        questionType="MAIN"
+        questionType="BEHAVIORAL_MAIN"
       />,
     )
 
@@ -98,7 +98,7 @@ describe('ContentTab', () => {
     render(
       <ContentTab
         technicalFeedback={buildFeedback({ rubricCategory: null })}
-        questionType="MAIN"
+        questionType="TECH_MAIN"
       />,
     )
 

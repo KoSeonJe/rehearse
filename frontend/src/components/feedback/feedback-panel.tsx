@@ -6,8 +6,13 @@ import BookmarkToggleButton from '@/components/feedback/bookmark-toggle-button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 const ANSWER_TYPE_LABELS: Record<string, string> = {
-  MAIN: '원본 답변',
-  FOLLOWUP: '후속 질문',
+  TECH_MAIN: '원본 답변',
+  TECH_FOLLOWUP: '후속 질문',
+  BEHAVIORAL_MAIN: '원본 답변',
+  BEHAVIORAL_FOLLOWUP: '후속 질문',
+  RESUME_OPENER: '도입 질문',
+  RESUME_PLAYGROUND: '경험 탐색',
+  RESUME_INTERROGATION: '심화 질문',
 }
 
 const FILLER_WORDS = ['음', '어', '그', '아', '그러니까', '뭐', '이제', '약간', '좀']
