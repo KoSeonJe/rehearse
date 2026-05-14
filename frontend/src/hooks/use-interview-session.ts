@@ -10,6 +10,7 @@ import { useAudioCapture } from '@/hooks/use-audio-capture'
 import { saveVideoBlob, deleteVideoBlob, loadVideoBlob } from '@/lib/video-storage'
 import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
+import { deriveQuestionFromSet } from '@/utils/question-type'
 import type { QuestionSetData, ApiResponse, UploadUrlResponse } from '@/types/interview'
 
 interface UseInterviewSessionParams {
@@ -178,18 +179,7 @@ export const useInterviewSession = ({
   useEffect(() => {
     if (interview && phase === 'preparing') {
       const qs = interview.questionSets ?? []
-      const derivedQuestions = qs.map((qSet, idx) => {
-        const mainQ = qSet.questions.find(
-          (q) => q.questionType === 'MAIN' || q.questionType === 'RESUME_OPENER',
-        )
-        return {
-          id: mainQ?.id ?? qSet.id,
-          content: mainQ?.questionText ?? '',
-          ttsContent: mainQ?.ttsText ?? mainQ?.questionText ?? '',
-          category: qSet.category,
-          order: idx,
-        }
-      })
+      const derivedQuestions = qs.map((qSet, idx) => deriveQuestionFromSet(qSet, idx))
       const firstPendingIdx = qs.findIndex((qSet) => qSet.analysisStatus === 'PENDING')
       const startIdx = firstPendingIdx >= 0 ? firstPendingIdx : 0
       const isResume = startIdx > 0

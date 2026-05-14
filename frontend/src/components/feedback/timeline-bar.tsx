@@ -1,7 +1,8 @@
 import type { TimestampFeedback } from '@/types/interview'
+import { isFollowupQuestionType } from '@/utils/question-type'
 
 const getTypeColor = (feedback: TimestampFeedback): string => {
-  if (feedback.questionType === 'FOLLOWUP') return 'bg-blue-400'
+  if (isFollowupQuestionType(feedback.questionType)) return 'bg-blue-400'
   return 'bg-brand'
 }
 
@@ -41,7 +42,7 @@ export const TimelineBar = ({
               } ${getTypeColor(fb)}`}
               style={{ left: `${left}%`, width: `${Math.max(width, 0.5)}%` }}
               onClick={() => onSeek(fb.startMs)}
-              title={`${fb.questionType === 'FOLLOWUP' ? '후속질문' : '원본'} (${Math.round(fb.startMs / 1000)}s)`}
+              title={`${isFollowupQuestionType(fb.questionType) ? '후속질문' : '원본'} (${Math.round(fb.startMs / 1000)}s)`}
             />
           )
         })}
@@ -59,7 +60,7 @@ export const TimelineBar = ({
           <div className="h-2.5 w-2.5 rounded-sm bg-brand" />
           <span className="text-[10px] font-medium text-text-tertiary">원본</span>
         </div>
-        {feedbacks.some((f) => f.questionType === 'FOLLOWUP') && (
+        {feedbacks.some((f) => isFollowupQuestionType(f.questionType)) && (
           <div className="flex items-center gap-1.5">
             <div className="h-2.5 w-2.5 rounded-sm bg-blue-400" />
             <span className="text-[10px] font-medium text-text-tertiary">후속질문</span>

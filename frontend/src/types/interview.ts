@@ -52,7 +52,16 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'MAIN' | 'FOLLOWUP' | 'RESUME_OPENER' | 'RESUME_PLAYGROUND' | 'RESUME_INTERROGATION'
+// BE com.rehearse.api.domain.question.entity.QuestionType 와 정확히 일치.
+// 표준 트랙 (BEHAVIORAL / TECH 계열) 과 RESUME 트랙이 각자 다른 enum 으로 직렬화된다.
+export type QuestionType =
+  | 'TECH_MAIN'
+  | 'TECH_FOLLOWUP'
+  | 'BEHAVIORAL_MAIN'
+  | 'BEHAVIORAL_FOLLOWUP'
+  | 'RESUME_OPENER'
+  | 'RESUME_PLAYGROUND'
+  | 'RESUME_INTERROGATION'
 
 export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
