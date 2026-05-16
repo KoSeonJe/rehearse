@@ -55,27 +55,40 @@ CONTENT_KEYS = {
 }
 
 
-def test_gemini_prompt_requests_delivery_only_schema():
+def test_gemini_prompt_requests_dimension_schema():
+    """plan-484 Phase 2a: gemini prompt = dimension 채점 (자유서술 / raw 삭제)."""
     _install_sdk_stubs()
     import analyzers.gemini_analyzer as gemini_analyzer
 
     system_template = gemini_analyzer._ANSWER_SYSTEM_TEMPLATE
     user_template = gemini_analyzer._ANSWER_USER_TEMPLATE
 
-    assert '"vocal"' in user_template
-    assert '"attitude"' in user_template
-    assert '"overall_delivery"' in user_template
-    assert "speedVariance" in user_template
+    # 신규 dimension 스키마 유지
+    assert "nonverbalDimensions" in user_template
+    assert "fluency" in user_template
+    assert "confidence_tone" in user_template
+    assert "fillerWords" in user_template
+    assert "fillerWordCount" in user_template
+
+    # plan-13 비스코프 (verbal/technical/accuracy) 잔존 부재
     assert '"overall"' not in user_template
     assert '"verbal"' not in user_template
     assert '"technical"' not in user_template
     assert "accuracyIssues" not in user_template
     assert "### 3. verbal" not in system_template
     assert "### 4. technical" not in system_template
-    assert "vocal" in system_template
-    assert "attitude" in system_template
-    assert "overall_delivery" in system_template
-    assert "speedVariance" in system_template
+
+    # plan-484 Phase 2a 자유서술 + raw 삭제 강제
+    for forbidden in (
+        "attitude",
+        "overall_delivery",
+        "speedVariance",
+        "speechPace",
+        "toneConfidenceLevel",
+        "emotionLabel",
+    ):
+        assert forbidden not in system_template, f"system 에 legacy 키 {forbidden} 잔존"
+        assert forbidden not in user_template, f"user 에 legacy 키 {forbidden} 잔존"
 
 
 def test_legacy_verbal_prompt_factory_contract_is_default_stacks_only():
