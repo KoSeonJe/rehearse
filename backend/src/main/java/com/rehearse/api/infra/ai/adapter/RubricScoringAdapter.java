@@ -106,7 +106,7 @@ public class RubricScoringAdapter {
             List<String> retryTargets, Map<String, ValidationResult> firstValidation
     ) throws JsonProcessingException {
         String hint = buildRetryHint(retryTargets, firstValidation);
-        ChatRequest retryRequest = request.withSchemaRetryHint(hint, buildSchemaExample(dimensionsToScore));
+        ChatRequest retryRequest = request.withRetryHint(hint, buildSchemaExample(dimensionsToScore));
         ChatResponse retryResponse = client.chat(retryRequest);
         return parseDimensionScores(responseParser.extractJson(retryResponse.content()), dimensionsToScore);
     }

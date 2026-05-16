@@ -54,6 +54,22 @@ public record ChatRequest(
                 cachePolicy, responseFormat, callType);
     }
 
+    public ChatRequest withRetryHint(String hint, String schemaExample) {
+        StringBuilder body = new StringBuilder(hint == null ? "" : hint);
+        if (schemaExample != null && !schemaExample.isBlank()) {
+            if (body.length() > 0) {
+                body.append("\n");
+            }
+            body.append("반드시 아래 형태의 JSON 객체로 응답하세요. 배열 안 항목 타입(객체 vs 문자열)을 절대 바꾸지 마세요.\n```json\n")
+                .append(schemaExample.strip())
+                .append("\n```");
+        }
+        List<ChatMessage> newMessages = new ArrayList<>(messages);
+        newMessages.add(ChatMessage.of(ChatMessage.Role.USER, body.toString()));
+        return new ChatRequest(List.copyOf(newMessages), modelOverride, temperature, maxTokens,
+                cachePolicy, responseFormat, callType);
+    }
+
     public static Builder builder() {
         return new Builder();
     }
