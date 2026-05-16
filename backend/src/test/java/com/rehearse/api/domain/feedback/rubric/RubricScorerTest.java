@@ -106,7 +106,7 @@ class RubricScorerTest {
             ChatRequest mockRequest = mockChatRequest();
             given(promptBuilder.build(any(), any(), any(), any(), eq(List.of("experience_concreteness")), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(List.of("experience_concreteness"))))
+            given(adapter.adapt(any(), any(), any(), eq(List.of("experience_concreteness")), any(), any(), any()))
                     .willReturn(new RubricScoringResult("resume-v1", List.of("experience_concreteness"),
                             Map.of("experience_concreteness", DimensionScore.of(3, "구체적 수치 제시", "TPS 10000")), null));
 
@@ -127,7 +127,7 @@ class RubricScorerTest {
             ChatRequest mockRequest = mockChatRequest();
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
+            given(adapter.adapt(any(), any(), any(), eq(expectedDims), any(), any(), any()))
                     .willReturn(new RubricScoringResult("resume-v1", expectedDims,
                             Map.of("technical_depth", DimensionScore.of(2, "설명", "evidence"),
                                    "reasoning_communication", DimensionScore.of(2, "설명", "evidence"),
@@ -157,7 +157,7 @@ class RubricScorerTest {
             ChatRequest mockRequest = mockChatRequest();
             given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any(), any(), any(), any()))
                     .willReturn(mockRequest);
-            given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
+            given(adapter.adapt(any(), any(), any(), eq(expectedDims), any(), any(), any()))
                     .willReturn(new RubricScoringResult("concept-cs-fundamental-v1", expectedDims,
                             Map.of("technical_depth", DimensionScore.of(2, "설명", "ev"),
                                    "reasoning_communication", DimensionScore.of(2, "설명", "ev"),
