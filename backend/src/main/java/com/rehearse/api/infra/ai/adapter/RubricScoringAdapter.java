@@ -128,9 +128,11 @@ public class RubricScoringAdapter {
                 continue;
             }
             DimensionScore retryScore = retryScores.get(dim);
-            ValidationResult retryResult = retryScore == null
-                    ? ValidationResult.violated(RubricScorerResponseValidator.Violation.MISSING_OBSERVATION, "observation")
-                    : validator.validate(dim, retryScore.score(), retryScore.observation(), retryScore.evidenceQuote(), userAnswer);
+            if (retryScore == null) {
+                retryScore = DimensionScore.notApplicable("LLM 응답에 차원 없음");
+            }
+            ValidationResult retryResult = validator.validate(
+                    dim, retryScore.score(), retryScore.observation(), retryScore.evidenceQuote(), userAnswer);
             if (retryResult.valid()) {
                 merged.put(dim, retryScore);
                 continue;

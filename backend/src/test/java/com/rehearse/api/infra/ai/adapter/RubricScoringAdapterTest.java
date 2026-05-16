@@ -140,6 +140,34 @@ class RubricScoringAdapterTest {
     }
 
     @Nested
+    @DisplayName("retry 응답 차원 누락")
+    class RetryMissingDimension {
+
+        @Test
+        @DisplayName("retry 응답에서 위배 dimension 누락 → field=score 메트릭 +1 + 해당 dimension omit")
+        void retryResponseMissingDimension_recordsScoreField() {
+            String firstJson = """
+                    {"technical_depth":{"score":2,"observation":"english only","evidence_quote":"TPS 10000 을 달성"}}
+                    """;
+            String retryJson = "{}";
+            given(aiClient.chat(any()))
+                    .willReturn(mockChatResponse("first"))
+                    .willReturn(mockChatResponse("retry"));
+            given(responseParser.extractJson("first")).willReturn(firstJson);
+            given(responseParser.extractJson("retry")).willReturn(retryJson);
+
+            Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
+                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+
+            assertThat(result.scoredDimensions()).isEmpty();
+            assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
+            assertThat(retryFailedCount("technical_depth", "score")).isEqualTo(1.0);
+            assertThat(retryFailedCount("technical_depth", "observation")).isZero();
+        }
+    }
+
+    @Nested
     @DisplayName("dimension 단위 fault isolation")
     class FaultIsolation {
 
