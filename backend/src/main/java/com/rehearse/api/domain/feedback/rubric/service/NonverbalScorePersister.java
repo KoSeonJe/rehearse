@@ -21,6 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NonverbalScorePersister {
 
+    private static final String RUBRIC_ID = "nonverbal-v1";
+
     private final QuestionScorePersister questionScorePersister;
 
     public void persistAll(QuestionSet questionSet,
@@ -72,7 +74,7 @@ public class NonverbalScorePersister {
             return;
         }
 
-        questionScorePersister.saveNonverbal(question.getId(), interview.getId(), dims);
+        questionScorePersister.saveRubric(question.getId(), interview.getId(), RUBRIC_ID, null, dims);
     }
 
     private void mergeArea(Map<String, DimensionScore> dims, SaveFeedbackRequest.AreaScore area) {
