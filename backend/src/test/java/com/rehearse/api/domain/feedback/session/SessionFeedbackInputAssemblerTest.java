@@ -92,10 +92,8 @@ class SessionFeedbackInputAssemblerTest {
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
         given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of(okScore, failedScore));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(okScore.getId()))
+        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(okScore.getId(), failedScore.getId())))
                 .willReturn(List.of(dim));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(failedScore.getId()))
-                .willReturn(List.of());
 
         SessionFeedbackInput input = assembler.assemble(interviewId);
 
@@ -136,7 +134,7 @@ class SessionFeedbackInputAssemblerTest {
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
         given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of(score));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(score.getId()))
+        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(score.getId())))
                 .willReturn(List.of(dim));
 
         SessionFeedbackInput input = assembler.assemble(interviewId);
@@ -187,7 +185,7 @@ class SessionFeedbackInputAssemblerTest {
         QuestionScore nonverbalScore1 = QuestionScore.builder()
                 .interviewId(interviewId)
                 .questionId(1L)
-                .rubricId("nonverbal")
+                .rubricId("nonverbal-v1")
                 .levelFlag(null)
                 .build();
         ReflectionTestUtils.setField(nonverbalScore1, "id", 101L);
@@ -195,7 +193,7 @@ class SessionFeedbackInputAssemblerTest {
         QuestionScore nonverbalScore2 = QuestionScore.builder()
                 .interviewId(interviewId)
                 .questionId(2L)
-                .rubricId("nonverbal")
+                .rubricId("nonverbal-v1")
                 .levelFlag(null)
                 .build();
         ReflectionTestUtils.setField(nonverbalScore2, "id", 102L);
@@ -237,12 +235,9 @@ class SessionFeedbackInputAssemblerTest {
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
         given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of(contentScore, nonverbalScore1, nonverbalScore2));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(contentScore.getId()))
-                .willReturn(List.of(contentDim));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(nonverbalScore1.getId()))
-                .willReturn(List.of(nv1D11, nv1D12, nv1D13, nv1D14));
-        given(questionScoreDimensionRepository.findByQuestionScoreId(nonverbalScore2.getId()))
-                .willReturn(List.of(nv2D11, nv2D12, nv2D13, nv2D14));
+        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(
+                List.of(contentScore.getId(), nonverbalScore1.getId(), nonverbalScore2.getId())))
+                .willReturn(List.of(contentDim, nv1D11, nv1D12, nv1D13, nv1D14, nv2D11, nv2D12, nv2D13, nv2D14));
 
         SessionFeedbackInput input = assembler.assembleWithDelivery(
                 interviewId,

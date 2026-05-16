@@ -142,7 +142,7 @@ public class QuestionSetService {
             fallbackUrl = s3Service.generateGetPresignedUrl(file.getS3Key());
         }
 
-        Map<Long, QuestionScore> questionScoresByQuestionId = questionScoreByQuestionId(questionSet);
+        Map<Long, List<QuestionScore>> questionScoresByQuestionId = questionScoresByQuestionId(questionSet);
         Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId =
                 dimensionsByQuestionScoreId(questionScoresByQuestionId);
 
@@ -150,28 +150,28 @@ public class QuestionSetService {
                 questionScoresByQuestionId, dimensionsByQuestionScoreId);
     }
 
-    private Map<Long, QuestionScore> questionScoreByQuestionId(QuestionSet questionSet) {
+    private Map<Long, List<QuestionScore>> questionScoresByQuestionId(QuestionSet questionSet) {
         if (questionSet.getInterview() == null || questionSet.getInterview().getId() == null) {
             return Map.of();
         }
         return questionScoreRepository
                 .findByInterviewIdOrderByQuestionIdAsc(questionSet.getInterview().getId())
                 .stream()
-                .filter(qs -> !"nonverbal".equals(qs.getRubricId()))
-                .collect(Collectors.toMap(
-                        QuestionScore::getQuestionId,
-                        qs -> qs,
-                        (left, ignored) -> left
-                ));
+                .collect(Collectors.groupingBy(QuestionScore::getQuestionId));
     }
 
     private Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId(
-            Map<Long, QuestionScore> scoresByQuestionId) {
-        return scoresByQuestionId.values().stream()
-                .collect(Collectors.toMap(
-                        QuestionScore::getId,
-                        qs -> questionScoreDimensionRepository.findByQuestionScoreId(qs.getId())
-                ));
+            Map<Long, List<QuestionScore>> scoresByQuestionId) {
+        List<Long> scoreIds = scoresByQuestionId.values().stream()
+                .flatMap(List::stream)
+                .map(QuestionScore::getId)
+                .distinct()
+                .toList();
+        if (scoreIds.isEmpty()) {
+            return Map.of();
+        }
+        return questionScoreDimensionRepository.findByQuestionScoreIdIn(scoreIds).stream()
+                .collect(Collectors.groupingBy(QuestionScoreDimension::getQuestionScoreId));
     }
 
     public QuestionsWithAnswersResponse getQuestionsWithAnswers(Long questionSetId) {
