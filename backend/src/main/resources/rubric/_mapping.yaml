@@ -10,13 +10,6 @@
 # when 절의 값은 단일값 또는 배열. 배열이면 OR 매칭.
 version: 1
 
-# 기술 rubric 매핑과 별도로 모든 턴에 비언어 rubric을 병렬 적용한다.
-# RubricLoader.resolveFor()는 기존 기술 rubric 한 개만 반환하므로 이 메타데이터는
-# NonverbalScorePersister/SessionFeedback 조립 경로에서 별도로 소비한다.
-always_apply:
-  - rubric_id: nonverbal-v1
-    with_context_weights: nonverbal-cw-v1
-
 rules:
   - when:
       resumeTrack: true
