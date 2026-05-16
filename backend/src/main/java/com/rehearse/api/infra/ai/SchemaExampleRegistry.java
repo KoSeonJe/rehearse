@@ -1,8 +1,8 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
-import com.rehearse.api.infra.ai.dto.GeneratedCompactionSummary;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
 import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import org.springframework.stereotype.Component;
 
@@ -21,9 +21,9 @@ public class SchemaExampleRegistry {
               "claims": [
                 {"text": "한 문장 요약", "depth_score": 3, "evidence_strength": "WEAK", "topic_tag": "topic"}
               ],
-              "missing_perspectives": ["TRADEOFF"],
+              "dimension_gaps": {"clarity": 1, "depth": 2},
+              "weakest_dimension": "depth",
               "unstated_assumptions": ["..."],
-              "answer_quality": 3,
               "recommended_next_action": "DEEP_DIVE"
             }
             """;
@@ -34,7 +34,6 @@ public class SchemaExampleRegistry {
               "skipReason": null,
               "answerText": "원문 그대로 복사",
               "target_claim_idx": 0,
-              "selected_perspective": null,
               "question": "키워드를 녹인 후속 질문",
               "ttsQuestion": "TTS 변환된 질문",
               "reason": "선택 근거 한 줄",
@@ -65,13 +64,14 @@ public class SchemaExampleRegistry {
             }
             """;
 
-    private static final String GENERATED_COMPACTION_SUMMARY_EXAMPLE = """
+    private static final String GENERATED_RESUME_QUESTIONS_EXAMPLE = """
             {
-              "covered_topics": ["GC"],
-              "key_insights": ["STW 발생 시 처리량 손실"],
-              "progression": ["기본 → 트레이드오프"],
-              "perspectives_covered": ["TRADEOFF"],
-              "open_questions": []
+              "openers": [
+                {"question": "자기소개와 가장 임팩트 있었던 프로젝트 한 줄", "tts_question": "...", "best_answer": "..."}
+              ],
+              "mains": [
+                {"question": "쿠폰 발급 시스템에서 Redis Lua 선택 이유", "tts_question": "...", "best_answer": "..."}
+              ]
             }
             """;
 
@@ -79,7 +79,7 @@ public class SchemaExampleRegistry {
             GeneratedAnswerAnalysis.class, ANSWER_ANALYSIS_EXAMPLE,
             GeneratedFollowUp.class, GENERATED_FOLLOW_UP_EXAMPLE,
             GeneratedSessionFeedback.class, GENERATED_SESSION_FEEDBACK_EXAMPLE,
-            GeneratedCompactionSummary.class, GENERATED_COMPACTION_SUMMARY_EXAMPLE
+            GeneratedResumeQuestions.class, GENERATED_RESUME_QUESTIONS_EXAMPLE
     );
 
     public String exampleFor(Class<?> clazz) {

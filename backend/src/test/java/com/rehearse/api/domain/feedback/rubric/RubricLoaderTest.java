@@ -136,10 +136,10 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("RESUME_PLAYGROUND (EXPERIENCE perspective) + standard interview + SYSTEM_DESIGN → experience-technical-v1 매핑")
+    @DisplayName("RESUME_OPENER (EXPERIENCE perspective) + standard interview + SYSTEM_DESIGN → experience-technical-v1 매핑")
     void resolveFor_experiencePerspective_correctRubric() {
         QuestionSet qs = buildQuestionSet(InterviewType.SYSTEM_DESIGN);
-        Question q = buildQuestionWithType(QuestionType.RESUME_PLAYGROUND);
+        Question q = buildQuestionWithType(QuestionType.RESUME_OPENER);
 
         Rubric rubric = rubricLoader.resolveFor(q, qs, standardInterview);
 

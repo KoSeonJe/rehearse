@@ -56,9 +56,9 @@ class TimestampFeedbackResponseTest {
     class TechnicalRubricCategoryMapping {
 
         @Test
-        @DisplayName("RESUME_PLAYGROUND 질문은 rubricCategory=EXPERIENCE 로 노출된다")
-        void rubricCategory_EXPERIENCE_when_RESUME_PLAYGROUND() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_PLAYGROUND);
+        @DisplayName("RESUME_OPENER 질문은 rubricCategory=EXPERIENCE 로 노출된다")
+        void rubricCategory_EXPERIENCE_when_RESUME_OPENER() {
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_OPENER);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore score = score(100L, 1L, "resume-v1", null);
             Map<Long, List<QuestionScoreDimension>> dims = Map.of(
@@ -72,9 +72,9 @@ class TimestampFeedbackResponseTest {
         }
 
         @Test
-        @DisplayName("RESUME_INTERROGATION 질문은 rubricCategory=TECHNICAL 로 노출된다")
-        void rubricCategory_TECHNICAL_when_RESUME_INTERROGATION() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+        @DisplayName("RESUME_MAIN 질문은 rubricCategory=TECHNICAL 로 노출된다")
+        void rubricCategory_TECHNICAL_when_RESUME_MAIN() {
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore score = score(101L, 2L, "technical-v1", "L1");
             Map<Long, List<QuestionScoreDimension>> dims = Map.of(
@@ -110,7 +110,7 @@ class TimestampFeedbackResponseTest {
         @Test
         @DisplayName("verbal + nonverbal 두 rubric row 가 있으면 technicalFeedback / nonverbalFeedback 모두 적재된다")
         void builds_both_technical_and_nonverbal_when_both_question_scores_present() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore verbal = score(200L, 10L, "technical-v1", "L1");
             QuestionScore nonverbal = score(201L, 10L, "nonverbal-v1", null);
@@ -138,7 +138,7 @@ class TimestampFeedbackResponseTest {
         @Test
         @DisplayName("nonverbal rubric row 만 있으면 nonverbalFeedback 만 적재되고 technicalFeedback 은 null 이다")
         void builds_nonverbal_only_when_verbal_absent() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore nonverbal = score(300L, 11L, "nonverbal-v1", null);
             Map<Long, List<QuestionScoreDimension>> dims = Map.of(
@@ -155,7 +155,7 @@ class TimestampFeedbackResponseTest {
         @Test
         @DisplayName("verbal rubric row 만 있으면 technicalFeedback 만 적재되고 nonverbalFeedback 은 null 이다")
         void builds_technical_only_when_nonverbal_absent() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore verbal = score(400L, 12L, "technical-v1", "L1");
             Map<Long, List<QuestionScoreDimension>> dims = Map.of(
@@ -193,7 +193,7 @@ class TimestampFeedbackResponseTest {
         @Test
         @DisplayName("known rubric 4종 외 row 는 응답에 미포함 + DEBUG 로그 1건 기록된다")
         void skips_legacy_rubric_id_silently() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_INTERROGATION);
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
             QuestionScore verbal = score(500L, 20L, "technical-v1", "L1");
             QuestionScore legacy = score(501L, 20L, "nonverbal", null);

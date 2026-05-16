@@ -8,8 +8,8 @@ public enum QuestionType {
     BEHAVIORAL_MAIN(ReferenceType.GUIDE, RubricCategory.BEHAVIORAL),
     BEHAVIORAL_FOLLOWUP(ReferenceType.GUIDE, RubricCategory.BEHAVIORAL),
     RESUME_OPENER(ReferenceType.GUIDE, RubricCategory.EXPERIENCE),
-    RESUME_PLAYGROUND(ReferenceType.GUIDE, RubricCategory.EXPERIENCE),
-    RESUME_INTERROGATION(ReferenceType.GUIDE, RubricCategory.TECHNICAL);
+    RESUME_MAIN(ReferenceType.GUIDE, RubricCategory.TECHNICAL),
+    RESUME_FOLLOWUP(ReferenceType.GUIDE, RubricCategory.TECHNICAL);
 
     private final ReferenceType referenceType;
     private final RubricCategory rubricCategory;
@@ -28,15 +28,14 @@ public enum QuestionType {
     }
 
     public boolean isFollowUp() {
-        return this == TECH_FOLLOWUP || this == BEHAVIORAL_FOLLOWUP;
+        return this == TECH_FOLLOWUP || this == BEHAVIORAL_FOLLOWUP || this == RESUME_FOLLOWUP;
     }
 
     public boolean isMain() {
-        return this == TECH_MAIN || this == BEHAVIORAL_MAIN;
+        return this == TECH_MAIN || this == BEHAVIORAL_MAIN || this == RESUME_MAIN;
     }
 
     public boolean isResume() {
-        return this == RESUME_OPENER || this == RESUME_PLAYGROUND
-                || this == RESUME_INTERROGATION;
+        return this == RESUME_OPENER || this == RESUME_MAIN || this == RESUME_FOLLOWUP;
     }
 }

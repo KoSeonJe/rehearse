@@ -33,14 +33,9 @@ public class FollowUpRequest {
         private String question;
         private String answerText;
         private String followUpType;
-        private String selectedAnswerFeedbackPerspective;
 
         public FollowUpExchange(String question, String answerText) {
-            this(question, answerText, null, null);
-        }
-
-        public FollowUpExchange(String question, String answerText, String followUpType) {
-            this(question, answerText, followUpType, null);
+            this(question, answerText, null);
         }
     }
 }

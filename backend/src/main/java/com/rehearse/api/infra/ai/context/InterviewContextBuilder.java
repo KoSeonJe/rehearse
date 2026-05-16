@@ -2,10 +2,8 @@ package com.rehearse.api.infra.ai.context;
 
 import com.rehearse.api.global.config.ContextEngineeringProperties;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.context.layer.DialogueHistoryLayer;
 import com.rehearse.api.infra.ai.context.layer.FixedContextLayer;
 import com.rehearse.api.infra.ai.context.layer.FocusLayer;
-import com.rehearse.api.infra.ai.context.layer.SessionStateLayer;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
 import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -25,8 +23,6 @@ import java.util.Map;
 public class InterviewContextBuilder {
 
     private final FixedContextLayer l1;
-    private final SessionStateLayer l2;
-    private final DialogueHistoryLayer l3;
     private final FocusLayer l4;
     private final TokenEstimator tokenEstimator;
     private final ContextEngineeringProperties properties;
@@ -37,8 +33,6 @@ public class InterviewContextBuilder {
         var perLayer = new LinkedHashMap<String, Integer>();
 
         addLayer(messages, perLayer, "L1", l1.build(req));
-        addLayer(messages, perLayer, "L2", l2.build(req));
-        addLayer(messages, perLayer, "L3", l3.build(req));
         if (properties.l4JustInTime()) {
             addLayer(messages, perLayer, "L4", l4.build(req));
         }

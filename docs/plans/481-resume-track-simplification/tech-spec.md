@@ -46,7 +46,7 @@
 - "RuntimeState 전면 폐기 + Skeleton 캐시도 폐기" — 사용자 결정. 모든 필드 dead read 확인 → `InterviewRuntimeState` + `InterviewRuntimeStateCache` + `ResumeSkeletonRuntimeCache` 3개 클래스 폐기. Skeleton 은 turn 마다 DB 재조회 (LLM ~300ms 대비 ~5ms 미미. YAGNI)
 - "resumequestionplanner도 제거해도 되는거 아니야? interviewplan 제거되면" — 사용자 결정. ResumeQuestionPlanner 신규 클래스 미신설. 책임 = 기존 `ResumeTrackInitiator` 흡수 (skeleton ingest + main 일괄 LLM 1회 + saveResults). 표준 트랙 `StandardTrackQuestionGenerator` 와 대칭 패턴. 신규 클래스 0개
 - "GPT-4o-mini primary 유지 + per-main 토큰 보수적 제한 + M max 40 clamp" — 사용자 정정. 프로젝트 AI Provider Stack (`AGENTS.md` Tech Stack: BE = GPT-4o-mini primary + Claude fallback) 준수. 응답 ~14.8K (16.4K 한계 대비 ~1.6K 안전 마진). chunk 분할 회피 사유 = chunk 경계 topic 중복 = Goal "동일 주제 3회 이상 차단" 직접 위협
-- "LLM 실패 시 정책 = 다음 main 진행" — 사용자 결정. follow-up 생성 실패 시 `FollowUpResponse.aiSkip = true` 응답 → FE 가 다음 main 진행. 면접 자체 계속. 면접 시작 시 (initiator bulk) 실패만 면접 시작 자체 실패. `ResumeFallbackQuestions` / `ResumeFallbackBestAnswers` 두 hardcoded fallback 클래스 P3 폐기 (이력서 무관 fallback 질문 = 면접 품질 저하 → 차라리 skip)
+- "LLM 실패 시 정책 = 전 트랙 throw 통일" — 사용자 결정 (#PR 481 리뷰 P1-2 반영). follow-up 생성 실패 (primary + fallback 모두 실패) = `BusinessException` 그대로 전파. FE 에서 운영자 알림 + 사용자 재시도 안내. 표준 / 이력서 트랙 동일. 기존 "aiSkip = true 응답으로 다음 main 진행" 정책 폐기 — LLM 실패와 의도된 skip (gap ≤ 1) 의미 혼재 방지. 면접 시작 시 (initiator bulk) 실패도 동일하게 면접 시작 자체 실패. `ResumeFallbackQuestions` / `ResumeFallbackBestAnswers` 두 hardcoded fallback 클래스 P3 폐기 (이력서 무관 fallback 질문 = 면접 품질 저하)
 
 ### 추정 / 미확인
 - main 평균 소요 3분 가정 = 사용자 발화. 추후 운영 측정 기반 재조정 가능 (본 spec 비스코프)
@@ -128,7 +128,7 @@
        → ResumeSkeleton 조회 = ResumeSkeletonPersister.findByInterviewId(id).orElseThrow() (DB 직접, 캐시 미경유)
        → DialogueHistoryLayer / SessionStateLayer 미참여 (폐기)
        → RESUME_FOLLOWUP row 생성
-       → LLM 실패 시 (primary + fallback 모두 실패) = `FollowUpResponse.aiSkip = true` 응답 (next main 진행. 면접 자체 계속). WARN 로그 + 운영자 알림 비대상 (follow-up 단발성)
+       → LLM 실패 시 (primary + fallback 모두 실패) = `BusinessException` 그대로 전파 (표준 트랙 동일). FE 에서 운영자 알림 + 사용자 재시도 안내. 의도된 LLM skip (gap ≤ 1 → skip=true) 만 `FollowUpResponse.aiSkip` 응답
    ↓
    FollowUpTransactionHandler.saveFollowUpResultAndPublishEvent
        → FollowUpQuestionCreatedEvent.of(...) (resumeMode/chainLevel/skeleton 필드 부재 — 표준 트랙과 동일 스키마)
@@ -402,7 +402,7 @@ int mainCount = Math.min(40, durationMinutes / 3 + 2);   // 7 ~ 40 사이
 - 호출 callType = `resume_question_generator` (planner 가 아닌 generator 명명 — 표준 트랙 동등). `ResilientAiClient` 의 callType 별 primary/fallback 모델 매핑 = 표준 트랙 동일 (GPT-4o-mini primary + Claude fallback)
 - **LLM 호출 실패 정책**:
   - (1) **면접 시작 시 (initiator bulk 1회 호출)**: GPT-4o-mini + Claude fallback 모두 실패 시 = 면접 시작 실패 (사용자 알림 + 운영자 알림). 부분 응답 (truncate `finish_reason=length` / parse 실패) 적재 금지 — `AiResponseParser.parseOrRetry` 의 schema hint retry 후 실패 시 동일 처리
-  - (2) **면접 진행 중 (per-turn follow-up 생성)**: LLM 호출 실패 시 = `FollowUpResponse.aiSkip = true` 응답 → FE 가 follow-up 미생성 상태로 **다음 main 진행** (사용자 결정). 면접 자체는 계속 진행. `RecommendedNextAction.SKIP` 분기와 동일 응답 schema 재사용. backend 운영 로그 WARN 레벨 기록 (`call_type=follow_up_writer 실패 → skip → next main`)
+  - (2) **면접 진행 중 (per-turn follow-up 생성)**: LLM 호출 실패 (primary + fallback 모두 실패) 시 = `BusinessException` 그대로 전파 (사용자 결정 — PR 481 리뷰 P1-2 반영. aiSkip 으로 다음 main 진행 정책 폐기). 전 트랙 (표준 / 이력서) 동일. FE 에서 사용자 재시도 안내 + 운영자 알림. 의도된 LLM skip (prompt 가 `skip=true` 반환 — gap ≤ 1) 만 `FollowUpResponse.aiSkip` 응답으로 다음 main 진행
 - 결과: mainCount 범위 = 7 (15분) ~ 40 (120분). 응답 토큰 ~14.8K 이내 GPT-4o-mini 한계 16.4K 안전 마진 확보 (~1.6K)
 
 ## API Contract

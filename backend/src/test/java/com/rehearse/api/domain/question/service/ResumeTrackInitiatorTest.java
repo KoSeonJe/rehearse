@@ -1,112 +1,122 @@
 package com.rehearse.api.domain.question.service;
 
-import com.rehearse.api.domain.interview.dto.FollowUpResponse;
-import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.resume.entity.ChainReference;
-import com.rehearse.api.domain.resume.entity.InterrogationPhase;
-import com.rehearse.api.domain.resume.entity.InterviewPlan;
-import com.rehearse.api.domain.resume.entity.PlaygroundPhase;
-import com.rehearse.api.domain.resume.entity.ProjectPlan;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.resume.entity.CandidateLevel;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.service.PreparedResume;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
-import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
+import com.rehearse.api.domain.resume.service.ResumeIngestionService;
+import com.rehearse.api.domain.resume.service.ResumeQuestionPersister;
+import com.rehearse.api.domain.resume.service.ResumeQuestionPersister.ResumeQuestionDraft;
+import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.context.BuiltContext;
+import com.rehearse.api.infra.ai.context.ContextBuildRequest;
+import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
+import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions.GeneratedResumeQuestion;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
 
 import java.util.List;
-import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("ResumeTrackInitiator")
+@DisplayName("ResumeTrackInitiator — opener N + main M 일괄 생성")
 class ResumeTrackInitiatorTest {
 
-    @InjectMocks
+    private QuestionGenerationTransactionHandler transactionHandler;
+    private ResumeIngestionService ingestionService;
+    private ResumeQuestionPersister persister;
+    private AiClient aiClient;
+    private AiResponseParser parser;
+    private InterviewContextBuilder contextBuilder;
+    private ObjectMapper objectMapper;
+
     private ResumeTrackInitiator initiator;
 
-    @Mock
-    private QuestionGenerationTransactionHandler transactionHandler;
-    @Mock
-    private ResumePlanPreparationService resumePlanPreparationService;
-    @Mock
-    private ResumeInterviewOrchestrator resumeInterviewOrchestrator;
-    @Mock
-    private InterviewRuntimeStateCache runtimeStateStore;
+    @BeforeEach
+    void setUp() {
+        transactionHandler = mock(QuestionGenerationTransactionHandler.class);
+        ingestionService = mock(ResumeIngestionService.class);
+        persister = mock(ResumeQuestionPersister.class);
+        aiClient = mock(AiClient.class);
+        parser = mock(AiResponseParser.class);
+        contextBuilder = mock(InterviewContextBuilder.class);
+        objectMapper = new ObjectMapper();
 
-    private ResumeSkeleton skeleton() {
-        return new ResumeSkeleton("r1", "h1", null, "backend", List.of(), Map.of());
-    }
-
-    private InterviewPlan plan() {
-        ChainReference chain = new ChainReference("proj1::redis", "Redis", 1, List.of(1, 2, 3));
-        PlaygroundPhase playground = new PlaygroundPhase("소개해주세요", List.of());
-        InterrogationPhase interrogation = new InterrogationPhase(List.of(chain), List.of());
-        ProjectPlan project = new ProjectPlan("proj1", "Redis", 1, playground, interrogation);
-        return new InterviewPlan("plan-1", List.of(project));
+        initiator = new ResumeTrackInitiator(
+                transactionHandler, ingestionService, persister,
+                aiClient, parser, contextBuilder, objectMapper);
     }
 
     @Test
-    @DisplayName("prepare → getOrInit → startSession → saveResults(emptyList) 순서로 호출된다")
-    void initiate_callsCollaboratorsInCorrectOrder() {
-        ResumeSkeleton skeleton = skeleton();
-        InterviewPlan plan = plan();
-        given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서 본문", 30))
-                .willReturn(new PreparedResume(skeleton, plan));
-        given(resumeInterviewOrchestrator.startSession(eq(1L), eq(30), any(), any()))
-                .willReturn(FollowUpResponse.builder().question("opener").presentToUser(true).build());
+    @DisplayName("durationMinutes=30 이면 opener 1 + main 12 (30/3+2) 드래프트 일괄 적재 + orderIndex 0..N-1")
+    void initiate_persistsOpenerAndMains_withSequentialOrder() {
+        long interviewId = 99L;
+        ResumeSkeleton skeleton = new ResumeSkeleton(
+                "resume-1", "hash-1", CandidateLevel.MID, "backend", List.of());
+        when(ingestionService.ingestExtractedText(eq(interviewId), any(), eq("hash-1")))
+                .thenReturn(skeleton);
+        when(contextBuilder.build(any(ContextBuildRequest.class)))
+                .thenReturn(new BuiltContext(
+                        List.of(ChatMessage.of(ChatMessage.Role.SYSTEM, "system")),
+                        0,
+                        java.util.Map.of()));
+        when(aiClient.chat(any(ChatRequest.class)))
+                .thenReturn(mock(ChatResponse.class));
+        GeneratedResumeQuestions generated = new GeneratedResumeQuestions(
+                List.of(new GeneratedResumeQuestion("자기소개 부탁드립니다", "TTS-O1", "best-O1")),
+                List.of(
+                        new GeneratedResumeQuestion("프로젝트 A 의 핵심 기술 결정", "TTS-M1", "best-M1"),
+                        new GeneratedResumeQuestion("프로젝트 B 의 기술 결정", "TTS-M2", "best-M2"),
+                        new GeneratedResumeQuestion("프로젝트 C 의 기술 결정", "TTS-M3", "best-M3")
+                ));
+        when(parser.parseOrRetry(any(), eq(GeneratedResumeQuestions.class), any(), any()))
+                .thenReturn(generated);
 
-        initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서 본문", 30);
+        initiator.initiate(interviewId, "hash-1", "이력서 본문", 30);
 
-        org.mockito.InOrder inOrder = org.mockito.Mockito.inOrder(
-                resumePlanPreparationService, runtimeStateStore, resumeInterviewOrchestrator, transactionHandler);
-        inOrder.verify(resumePlanPreparationService).prepare(1L, "hash-1", "이력서 본문", 30);
-        inOrder.verify(runtimeStateStore).getOrInit(eq(1L), any());
-        inOrder.verify(resumeInterviewOrchestrator).startSession(eq(1L), eq(30), eq(skeleton), eq(plan));
-        inOrder.verify(transactionHandler).saveResults(eq(1L), eq(List.of()));
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<ResumeQuestionDraft>> captor = ArgumentCaptor.forClass(List.class);
+        verify(persister).persistAll(eq(interviewId), captor.capture());
+        List<ResumeQuestionDraft> drafts = captor.getValue();
+
+        assertThat(drafts).hasSize(4);
+        assertThat(drafts.get(0).questionType()).isEqualTo(QuestionType.RESUME_OPENER);
+        assertThat(drafts.get(0).orderIndex()).isZero();
+        assertThat(drafts.subList(1, 4))
+                .allSatisfy(d -> assertThat(d.questionType()).isEqualTo(QuestionType.RESUME_MAIN));
+        assertThat(drafts.get(1).orderIndex()).isEqualTo(1);
+        assertThat(drafts.get(2).orderIndex()).isEqualTo(2);
+        assertThat(drafts.get(3).orderIndex()).isEqualTo(3);
+
+        verify(transactionHandler).completeGeneration(interviewId);
     }
 
     @Test
-    @DisplayName("startSession 이전에 runtimeStateStore 가 skeleton+plan 으로 시드된다")
-    void initiate_seedsRuntimeStateBeforeStartSession() {
-        ResumeSkeleton skeleton = skeleton();
-        InterviewPlan plan = plan();
-        given(resumePlanPreparationService.prepare(7L, "hash-7", "이력서", 25))
-                .willReturn(new PreparedResume(skeleton, plan));
+    @DisplayName("LLM 실패 시 transactionHandler.failGeneration 호출 후 예외 재전파")
+    void initiate_propagatesExceptionAndFailsGeneration() {
+        long interviewId = 100L;
+        when(ingestionService.ingestExtractedText(anyLong(), any(), any()))
+                .thenThrow(new RuntimeException("ingest 실패"));
 
-        initiator.initiate(7L, InterviewLevel.SENIOR, "hash-7", "이력서", 25);
+        try {
+            initiator.initiate(interviewId, "hash", "본문", 30);
+        } catch (RuntimeException expected) {
+            assertThat(expected).hasMessageContaining("ingest 실패");
+        }
 
-        org.mockito.ArgumentCaptor<java.util.function.Supplier<InterviewRuntimeState>> supplierCaptor =
-                org.mockito.ArgumentCaptor.forClass(java.util.function.Supplier.class);
-        then(runtimeStateStore).should().getOrInit(eq(7L), supplierCaptor.capture());
-        InterviewRuntimeState seeded = supplierCaptor.getValue().get();
-        org.assertj.core.api.Assertions.assertThat(seeded.getCurrentLevel()).isEqualTo("SENIOR");
-        org.assertj.core.api.Assertions.assertThat(seeded.getResumeSkeletonCache()).isSameAs(skeleton);
-        org.assertj.core.api.Assertions.assertThat(seeded.getInterviewPlanCache()).isSameAs(plan);
-    }
-
-    @Test
-    @DisplayName("startSession 예외는 그대로 전파된다")
-    void initiate_startSessionThrows_propagates() {
-        given(resumePlanPreparationService.prepare(1L, "hash-1", "이력서", 30))
-                .willReturn(new PreparedResume(skeleton(), plan()));
-        given(resumeInterviewOrchestrator.startSession(any(), anyInt(), any(), any()))
-                .willThrow(new RuntimeException("AI 호출 실패"));
-
-        assertThatThrownBy(() -> initiator.initiate(1L, InterviewLevel.JUNIOR, "hash-1", "이력서", 30))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("AI 호출 실패");
+        verify(transactionHandler).failGeneration(eq(interviewId), any());
     }
 }
