@@ -175,19 +175,23 @@ def _validate_result(result: dict) -> dict:
     """LLM 응답의 nonverbalDimensions.eye_contact_posture 만 통과시키고 폴백 보강."""
     dims = (result or {}).get("nonverbalDimensions")
     if not isinstance(dims, dict):
+        print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=nonverbalDimensions reason=MissingSection")
         return _deepcopy_fallback()
 
     ecp = dims.get("eye_contact_posture")
     if not isinstance(ecp, dict):
+        print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=dimension reason=MissingDimension")
         return _deepcopy_fallback()
 
     fb = _FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
     score = _coerce_score(ecp.get("score"), fb["score"])
     observation = ecp.get("observation")
     if not isinstance(observation, str) or not observation.strip():
+        print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=observation reason=MissingOrInvalid")
         observation = fb["observation"]
     evidence = ecp.get("evidence_quote")
     if not isinstance(evidence, str):
+        print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=evidence_quote reason=InvalidType")
         evidence = fb["evidence_quote"]
 
     return {
