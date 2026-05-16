@@ -235,11 +235,9 @@ class SessionFeedbackInputAssemblerTest {
         given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
         given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
                 .willReturn(List.of(contentScore, nonverbalScore1, nonverbalScore2));
-        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(contentScore.getId())))
-                .willReturn(List.of(contentDim));
         given(questionScoreDimensionRepository.findByQuestionScoreIdIn(
-                List.of(nonverbalScore1.getId(), nonverbalScore2.getId())))
-                .willReturn(List.of(nv1D11, nv1D12, nv1D13, nv1D14, nv2D11, nv2D12, nv2D13, nv2D14));
+                List.of(contentScore.getId(), nonverbalScore1.getId(), nonverbalScore2.getId())))
+                .willReturn(List.of(contentDim, nv1D11, nv1D12, nv1D13, nv1D14, nv2D11, nv2D12, nv2D13, nv2D14));
 
         SessionFeedbackInput input = assembler.assembleWithDelivery(
                 interviewId,

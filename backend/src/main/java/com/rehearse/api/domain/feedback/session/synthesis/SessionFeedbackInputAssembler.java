@@ -30,12 +30,46 @@ public class SessionFeedbackInputAssembler {
     public SessionFeedbackInput assemble(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
         List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
+        Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(allScores);
+        return assembleCore(interview, allScores, dimsByScoreId);
+    }
 
+    public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
+                                                      String visionAnalysis, String nonverbalAggregate) {
+        Interview interview = interviewFinder.findById(interviewId);
+        List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
+        Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(allScores);
+
+        SessionFeedbackInput base = assembleCore(interview, allScores, dimsByScoreId);
+
+        List<QuestionScore> nonverbalScores = allScores.stream()
+                .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
+                .toList();
+
+        SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
+                buildNonverbalAggregate(nonverbalScores, dimsByScoreId);
+        String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
+        return new SessionFeedbackInput(
+                base.sessionMetadata(),
+                base.turnScores(),
+                base.scoresByCategory(),
+                base.appliedRubrics(),
+                deliveryAnalysis,
+                visionAnalysis,
+                resolvedNonverbalAggregate,
+                legacyNonverbalAggregateJson,
+                base.coverage(),
+                base.userLevel()
+        );
+    }
+
+    private SessionFeedbackInput assembleCore(Interview interview,
+                                              List<QuestionScore> allScores,
+                                              Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
         List<QuestionScore> rubricScores = allScores.stream()
                 .filter(qs -> !NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
                 .toList();
 
-        Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(rubricScores);
         List<TurnScoreView> turnScores = rubricScores.stream()
                 .map(qs -> toTurnScoreView(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList())))
                 .toList();
@@ -60,32 +94,6 @@ public class SessionFeedbackInputAssembler {
                 null,
                 coverage,
                 interview.getLevel()
-        );
-    }
-
-    public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
-                                                      String visionAnalysis, String nonverbalAggregate) {
-        SessionFeedbackInput base = assemble(interviewId);
-        List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
-        List<QuestionScore> nonverbalScores = allScores.stream()
-                .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
-                .toList();
-        Map<Long, List<QuestionScoreDimension>> nonverbalDimsByScoreId = loadDimensionsByScoreId(nonverbalScores);
-
-        SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
-                buildNonverbalAggregate(nonverbalScores, nonverbalDimsByScoreId);
-        String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
-        return new SessionFeedbackInput(
-                base.sessionMetadata(),
-                base.turnScores(),
-                base.scoresByCategory(),
-                base.appliedRubrics(),
-                deliveryAnalysis,
-                visionAnalysis,
-                resolvedNonverbalAggregate,
-                legacyNonverbalAggregateJson,
-                base.coverage(),
-                base.userLevel()
         );
     }
 
