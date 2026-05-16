@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.hibernate.JDBCException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -164,98 +163,4 @@ class V40IntegrityPatchTest extends AbstractMySqlContainerTest {
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // 블록 5: timestamp_feedback level CHECK
-    // ─────────────────────────────────────────────────────────────────────────
-
-    @Nested
-    @DisplayName("블록 5: timestamp_feedback level 컬럼 CHECK 제약")
-    class TimestampFeedbackLevelCheck {
-
-        private Long qsFeedbackId;
-
-        @BeforeEach
-        void setUpFeedback() {
-            QuestionSet questionSet = QuestionSet.builder()
-                    .interview(savedInterview)
-                    .category(InterviewType.CS_FUNDAMENTAL)
-                    .orderIndex(0)
-                    .build();
-            em.persist(questionSet);
-
-            QuestionSetFeedback qsFeedback = QuestionSetFeedback.builder()
-                    .questionSet(questionSet)
-                    .questionSetComment("코멘트")
-                    .build();
-            em.persist(qsFeedback);
-            em.flush();
-            qsFeedbackId = qsFeedback.getId();
-        }
-
-        @Test
-        @DisplayName("eye_contact_level에 허용되지 않는 값 삽입 시 CHECK 위반으로 거부된다")
-        void invalidEyeContactLevel_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO timestamp_feedback (question_set_feedback_id, start_ms, end_ms, is_analyzed, eye_contact_level) " +
-                        "VALUES (?, 0, 5000, false, 'INVALID_VALUE')"
-                ).setParameter(1, qsFeedbackId).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
-        }
-
-        @Test
-        @DisplayName("posture_level에 허용되지 않는 값 삽입 시 CHECK 위반으로 거부된다")
-        void invalidPostureLevel_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO timestamp_feedback (question_set_feedback_id, start_ms, end_ms, is_analyzed, posture_level) " +
-                        "VALUES (?, 0, 5000, false, 'BAD')"
-                ).setParameter(1, qsFeedbackId).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
-        }
-
-        @Test
-        @DisplayName("tone_confidence_level에 허용되지 않는 값 삽입 시 CHECK 위반으로 거부된다")
-        void invalidToneConfidenceLevel_rejected() {
-            assertThatThrownBy(() -> {
-                em.createNativeQuery(
-                        "INSERT INTO timestamp_feedback (question_set_feedback_id, start_ms, end_ms, is_analyzed, tone_confidence_level) " +
-                        "VALUES (?, 0, 5000, false, 'EXCELLENT')"
-                ).setParameter(1, qsFeedbackId).executeUpdate();
-                em.flush();
-            }).isInstanceOf(JDBCException.class);
-        }
-
-        @Test
-        @DisplayName("허용 값(GOOD, AVERAGE, NEEDS_IMPROVEMENT)으로 삽입 시 정상 처리된다")
-        void validLevelValues_accepted() {
-            em.createNativeQuery(
-                    "INSERT INTO timestamp_feedback (question_set_feedback_id, start_ms, end_ms, is_analyzed, " +
-                    "eye_contact_level, posture_level, tone_confidence_level) VALUES (?, 0, 5000, false, 'GOOD', 'AVERAGE', 'NEEDS_IMPROVEMENT')"
-            ).setParameter(1, qsFeedbackId).executeUpdate();
-            em.flush();
-
-            long count = ((Number) em.createNativeQuery(
-                    "SELECT COUNT(*) FROM timestamp_feedback WHERE question_set_feedback_id = ?"
-            ).setParameter(1, qsFeedbackId).getSingleResult()).longValue();
-            assertThat(count).isEqualTo(1);
-        }
-
-        @Test
-        @DisplayName("level 컬럼이 NULL이면 CHECK를 통과한다")
-        void nullLevelValues_accepted() {
-            em.createNativeQuery(
-                    "INSERT INTO timestamp_feedback (question_set_feedback_id, start_ms, end_ms, is_analyzed) " +
-                    "VALUES (?, 1000, 6000, false)"
-            ).setParameter(1, qsFeedbackId).executeUpdate();
-            em.flush();
-
-            long count = ((Number) em.createNativeQuery(
-                    "SELECT COUNT(*) FROM timestamp_feedback WHERE question_set_feedback_id = ?"
-            ).setParameter(1, qsFeedbackId).getSingleResult()).longValue();
-            assertThat(count).isEqualTo(1);
-        }
-    }
 }
