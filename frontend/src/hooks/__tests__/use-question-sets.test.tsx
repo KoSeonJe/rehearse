@@ -110,4 +110,25 @@ describe('useAllQuestionSetStatuses', () => {
     expect(response).toBeDefined()
     expect(response).not.toHaveProperty('delivery')
   })
+
+  it('모든 status COMPLETED 도달 시 폴링 자동 종료 (refetchInterval false)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    mockedApiGet.mockResolvedValue(buildStatus('COMPLETED'))
+
+    const { result } = renderHook(
+      () => useAllQuestionSetStatuses(1, questionSets, true),
+      { wrapper: wrap() },
+    )
+
+    await waitFor(() => {
+      expect(result.current[0].data?.data.analysisStatus).toBe('COMPLETED')
+    })
+
+    const callCountAtTerminal = mockedApiGet.mock.calls.length
+
+    // terminal 도달 후 폴링 간격을 충분히 초과해도 추가 호출 없어야 함
+    await vi.advanceTimersByTimeAsync(20_000)
+
+    expect(mockedApiGet.mock.calls.length).toBe(callCountAtTerminal)
+  })
 })

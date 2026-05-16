@@ -1,6 +1,7 @@
 import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type {
+  AnalysisStatus,
   ApiResponse,
   SaveAnswersRequest,
   UploadUrlRequest,
@@ -10,6 +11,18 @@ import type {
   QuestionSetData,
   QuestionSetFeedbackResponse,
 } from '@/types/interview'
+
+const STATUS_POLL_INTERVAL_MS = 5000
+
+const TERMINAL_ANALYSIS_STATUSES: ReadonlySet<AnalysisStatus> = new Set([
+  'COMPLETED',
+  'PARTIAL',
+  'FAILED',
+  'SKIPPED',
+])
+
+const isTerminalStatus = (status: AnalysisStatus | undefined): boolean =>
+  status !== undefined && TERMINAL_ANALYSIS_STATUSES.has(status)
 
 export const useSaveAnswers = (interviewId: number, questionSetId: number) => {
   return useMutation({
@@ -47,7 +60,7 @@ export const useQuestionSetStatus = (
   })
 }
 
-// 모든 질문세트의 상태를 병렬 폴링
+// 모든 질문세트의 상태를 병렬 폴링 (analysisStatus terminal 도달 시 자동 종료)
 export const useAllQuestionSetStatuses = (
   interviewId: number,
   questionSets: QuestionSetData[],
@@ -61,7 +74,11 @@ export const useAllQuestionSetStatuses = (
           `/api/v1/interviews/${interviewId}/question-sets/${qs.id}/status`,
         ),
       enabled,
-      refetchInterval: enabled ? 5000 : false,
+      refetchInterval: (query: { state: { data?: ApiResponse<QuestionSetStatusResponse> } }) => {
+        if (!enabled) return false
+        const status = query.state.data?.data.analysisStatus
+        return isTerminalStatus(status) ? false : STATUS_POLL_INTERVAL_MS
+      },
     })),
   })
 }
