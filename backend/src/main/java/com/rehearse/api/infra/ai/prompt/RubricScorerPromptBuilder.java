@@ -86,8 +86,8 @@ public class RubricScorerPromptBuilder {
     }
 
     private String buildSystemPrompt() {
-        return "You are an expert technical interview evaluator.\n\n" +
-                "## All Dimension Definitions (reference only — score ONLY the dimensions listed in the user message)\n\n" +
+        return "당신은 한국어로 코칭하는 면접 평가자입니다. observation 은 한국어 1~2문장, evidence_quote 는 사용자 답변 substring 만 인용.\n\n" +
+                "## 전체 차원 정의 (참고용 — user 메시지의 DIMENSIONS_TO_SCORE 에 명시된 차원만 채점)\n\n" +
                 cachedDimensionDefinitions;
     }
 

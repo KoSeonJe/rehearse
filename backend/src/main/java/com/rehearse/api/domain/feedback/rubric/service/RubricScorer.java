@@ -51,6 +51,7 @@ public class RubricScorer {
                 question, userAnswer, analysis, rubric, dimensionsToScore, userLevel
         );
 
-        return adapter.adapt(aiClient, request, rubric, dimensionsToScore);
+        return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
+                userAnswer, interview.getId(), question.getId());
     }
 }

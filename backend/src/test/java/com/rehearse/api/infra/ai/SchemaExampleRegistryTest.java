@@ -105,4 +105,23 @@ class SchemaExampleRegistryTest {
         assertThat(hint).contains("violation");
         assertThat(hint).doesNotContain("```json");
     }
+
+    @Test
+    @DisplayName("withRetryHint 는 JSON 스키마 위반 prefix 없이 본문만 첨부한다")
+    void withRetryHint_noSchemaViolationPrefix() {
+        ChatRequest req = ChatRequest.builder()
+                .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, "원본")))
+                .callType("rubric_scorer")
+                .build();
+        String hintBody = "일부 차원이 검증 규칙을 위배했습니다. 아래 차원만 재작성하세요:\n- technical_depth: field=observation";
+
+        ChatRequest retryReq = req.withRetryHint(hintBody, "{\"technical_depth\":{}}");
+
+        assertThat(retryReq.messages()).hasSize(2);
+        String content = retryReq.messages().get(1).content();
+        assertThat(content).doesNotContain("이전 응답이 JSON 스키마를 위반했습니다");
+        assertThat(content).contains("일부 차원이 검증 규칙을 위배했습니다");
+        assertThat(content).contains("```json");
+        assertThat(content).contains("\"technical_depth\"");
+    }
 }

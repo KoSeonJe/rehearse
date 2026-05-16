@@ -93,7 +93,7 @@ class RubricScorerTest {
         ChatRequest mockRequest = mockChatRequest();
         given(promptBuilder.build(any(), any(), any(), any(), eq(expectedDims), any()))
                 .willReturn(mockRequest);
-        given(adapter.adapt(any(), any(), any(), eq(expectedDims)))
+        given(adapter.adapt(any(), any(), any(), eq(expectedDims), any(), any(), any()))
                 .willReturn(new RubricScoringResult("concept-cs-fundamental-v1", expectedDims,
                         Map.of("technical_depth", DimensionScore.of(2, "설명", "ev"),
                                "reasoning_communication", DimensionScore.of(2, "설명", "ev"),
