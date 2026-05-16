@@ -25,28 +25,9 @@ public class TimestampFeedbackMapper {
                 .endMs(item.getEndMs())
                 .transcript(item.getTranscript())
                 .fillerWordCount(item.getFillerWordCount())
-                .eyeContactLevel(item.getEyeContactLevel())
-                .postureLevel(item.getPostureLevel())
-                .expressionLabel(item.getExpressionLabel())
-                .nonverbalComment(serializeCommentBlock(item.getNonverbalComment()))
-                .overallComment(serializeCommentBlock(item.getOverallComment()))
                 .isAnalyzed(true)
                 .fillerWords(toJson(item.getFillerWords()))
-                .speechPace(item.getSpeechPace())
-                .toneConfidenceLevel(item.getToneConfidenceLevel())
-                .emotionLabel(item.getEmotionLabel())
-                .vocalComment(serializeCommentBlock(item.getVocalComment()))
-                .attitudeComment(serializeCommentBlock(item.getAttitudeComment()))
                 .build();
-    }
-
-    String serializeCommentBlock(SaveFeedbackRequest.CommentBlock block) {
-        if (block == null) return null;
-        try {
-            return objectMapper.writeValueAsString(block);
-        } catch (JsonProcessingException e) {
-            throw new IllegalStateException("CommentBlock 직렬화 실패", e);
-        }
     }
 
     String toJson(List<String> list) {

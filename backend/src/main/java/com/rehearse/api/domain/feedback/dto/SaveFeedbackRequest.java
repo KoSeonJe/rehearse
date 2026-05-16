@@ -38,21 +38,8 @@ public class SaveFeedbackRequest {
         @NotNull private Long endMs;
         private String transcript;
 
-        private CommentBlock nonverbalComment;
-        private CommentBlock overallComment;
-        private CommentBlock vocalComment;
-        private CommentBlock attitudeComment;
-
         private Integer fillerWordCount;
-        private String expressionLabel;
-
-        private String eyeContactLevel;
-        private String postureLevel;
-        private String toneConfidenceLevel;
-
         private List<String> fillerWords;
-        private String speechPace;
-        private String emotionLabel;
 
         @Valid
         private NonverbalScore nonverbalScore;
@@ -94,13 +81,5 @@ public class SaveFeedbackRequest {
         @JsonProperty("evidence_quote")
         @NotBlank
         private String evidenceQuote;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    public static class CommentBlock {
-        private String positive;
-        private String negative;
-        private String suggestion;
     }
 }
