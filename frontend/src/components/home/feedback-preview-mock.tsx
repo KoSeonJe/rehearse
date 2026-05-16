@@ -26,9 +26,9 @@ const MY_ANSWER = '그러니까 저는 저번 프로젝트에서 어 테이블 �
 
 /**
  * 실제 피드백 페이지 구조를 축소 재현한 랜딩용 Mock.
- * 기반: frontend/src/components/feedback/feedback-panel.tsx, timeline-bar.tsx, structured-comment.tsx
+ * 기반: frontend/src/components/feedback/feedback-panel.tsx, timeline-bar.tsx
  * - 탭: "내 답변은 어땠을까" 활성, "어떤 인상을 줬을까" 비활성 표시만
- * - StructuredComment: 잘한 점 / 아쉬운 점 / 이렇게 말하면 더 좋아요
+ * - 자유서술 3블록: 잘한 점 / 아쉬운 점 / 이렇게 말하면 더 좋아요
  * - TimelineBar: 원본/후속질문 segment 블록 (이름표 마커 없음)
  */
 export const FeedbackPreviewMock = ({
@@ -79,7 +79,7 @@ export const FeedbackPreviewMock = ({
         </span>
       </div>
 
-      {/* StructuredComment 3블록 */}
+      {/* 자유서술 3블록 */}
       <div className="px-5 py-5 space-y-2.5">
         <div className="rounded-xl bg-emerald-50/60 px-4 py-3">
           <p className="text-[12px] font-bold text-emerald-600 mb-0.5">잘한 점</p>

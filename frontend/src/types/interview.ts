@@ -133,41 +133,6 @@ export interface QuestionsWithAnswersResponse {
 
 // 피드백 뷰어 타입 (Sprint 0 Task 10)
 
-export type FeedbackLevel = 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT'
-
-export interface CommentBlock {
-  positive: string | null
-  negative: string | null
-  suggestion: string | null
-}
-
-export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boolean => {
-  if (block === null || block === undefined) return true
-  const fields = [block.positive, block.negative, block.suggestion]
-  return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
-}
-
-export interface LegacyNonverbalFeedback {
-  eyeContactLevel: FeedbackLevel | null
-  postureLevel: FeedbackLevel | null
-  expressionLabel: string | null
-  nonverbalComment: CommentBlock | null
-}
-
-export interface VocalFeedback {
-  fillerWords: string | null
-  fillerWordCount: number | null
-  speechPace: string | null
-  toneConfidenceLevel: FeedbackLevel | null
-  emotionLabel: string | null
-  vocalComment: CommentBlock | null
-}
-
-export interface DeliveryFeedback {
-  vocal: VocalFeedback | null
-  attitudeComment: CommentBlock | null
-}
-
 export interface TechnicalDimensionFeedback {
   dimension: string
   score: number | null
@@ -198,11 +163,9 @@ export interface TimestampFeedback {
   startMs: number
   endMs: number
   transcript: string | null
-  delivery: DeliveryFeedback | null
   technicalFeedback: TechnicalFeedback | null
   nonverbalFeedback: NonverbalFeedback | null
   fillerWordCount: number | null
-  overallComment: CommentBlock | null
   isAnalyzed: boolean
 }
 

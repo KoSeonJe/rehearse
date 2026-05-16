@@ -17,7 +17,6 @@ const baseFeedback: TimestampFeedback = {
   startMs: 0,
   endMs: 30000,
   transcript: '세대별 GC 가 동작합니다.',
-  delivery: null,
   technicalFeedback: {
     rubricCategory: 'TECHNICAL',
     rubricId: 'technical-v1',
@@ -33,7 +32,6 @@ const baseFeedback: TimestampFeedback = {
   },
   nonverbalFeedback: null,
   fillerWordCount: null,
-  overallComment: null,
   isAnalyzed: true,
 }
 
