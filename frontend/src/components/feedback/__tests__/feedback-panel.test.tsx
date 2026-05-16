@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, expect, it, vi } from 'vitest'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
@@ -44,7 +45,7 @@ const baseQuestion: QuestionWithAnswer = {
   endMs: 30000,
 }
 
-const renderPanel = (feedback: TimestampFeedback) => {
+const renderPanel = (feedback: TimestampFeedback, onSeek: (ms: number) => void = () => {}) => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -54,7 +55,7 @@ const renderPanel = (feedback: TimestampFeedback) => {
         feedbacks={[feedback]}
         questions={[baseQuestion]}
         selectedFeedbackId={feedback.id}
-        onSeek={() => {}}
+        onSeek={onSeek}
         interviewId={1}
         bookmarkIdsByTsfId={new Map()}
       />
@@ -93,6 +94,23 @@ describe('FeedbackPanel', () => {
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
     expect(screen.getByText('3점')).toBeInTheDocument()
+  })
+
+  it('카드 영역이 role="button" + 키보드 (Enter / Space) 로 seek 동작', async () => {
+    const onSeek = vi.fn()
+    renderPanel(baseFeedback, onSeek)
+    const user = userEvent.setup()
+
+    const card = screen.getByRole('button', { name: /구간으로 이동/ })
+    expect(card).toHaveAttribute('tabIndex', '0')
+
+    card.focus()
+    await user.keyboard('{Enter}')
+    expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
+
+    onSeek.mockClear()
+    await user.keyboard(' ')
+    expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
   })
 
   it('자유서술 텍스트 (긍정 / 부정 / 제안) 부재', () => {

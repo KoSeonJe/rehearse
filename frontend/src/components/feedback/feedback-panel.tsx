@@ -52,11 +52,23 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
     ? (ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType)
     : null
 
+  const handleSeek = () => onSeek(feedback.startMs)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleSeek()
+    }
+  }
+
   return (
     <div
       data-feedback-id={feedback.id}
-      className="rounded-2xl bg-card overflow-hidden transition-colors cursor-pointer shadow-sm"
-      onClick={() => onSeek(feedback.startMs)}
+      role="button"
+      tabIndex={0}
+      aria-label={`${formatTime(feedback.startMs)} 구간으로 이동`}
+      className="rounded-2xl bg-card overflow-hidden transition-colors cursor-pointer shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+      onClick={handleSeek}
+      onKeyDown={handleKeyDown}
     >
       {/* 헤더 */}
       <div className="px-6 pt-6 pb-5">
