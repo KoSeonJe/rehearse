@@ -88,8 +88,8 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     }
 
     @Nested
-    @DisplayName("TurnCompletedEvent 적재")
-    class TurnCompletedEventPersist {
+    @DisplayName("FollowUpQuestionCreatedEvent 적재")
+    class FollowUpQuestionCreatedEventPersist {
 
         @Test
         @DisplayName("정상 1턴 STANDARD 답변은 question_score 와 dimension 을 적재한다")
@@ -97,9 +97,9 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
             InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
-            followUpTransactionHandler.publishTurnCompletedEvent(
+            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
                     data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
+                    data.question().getId());
 
             QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
             assertThat(score.getQuestionId()).isEqualTo(data.question().getId());

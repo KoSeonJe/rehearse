@@ -122,7 +122,7 @@ class ResumeInterviewOrchestratorIntegrationTest extends ServiceIntegrationSuppo
     }
 
     @Test
-    @DisplayName("terminate=true: 답변 분석은 수행하되 question INSERT 0 + TurnCompletedEvent 미발행 (question_score 적재 0)")
+    @DisplayName("terminate=true: 답변 분석은 수행하되 question INSERT 0 + FollowUpQuestionCreatedEvent 미발행 (question_score 적재 0)")
     void terminateTrue_skipsInsertAndPublish() {
         Long interviewId = persistInterviewAndInitState();
 

@@ -87,8 +87,8 @@ public class FollowUpService {
         log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
                 id, InterviewTrack.CS.logLabel(),
                 BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
-        followUpTransactionHandler.publishTurnCompletedEvent(
-                id, context, turn, context.currentMainQuestionId(), turnIndex);
+        followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
+                id, context, turn, context.currentMainQuestionId());
         return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
     }
 
@@ -113,8 +113,8 @@ public class FollowUpService {
             log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
                     id, InterviewTrack.CS.logLabel(),
                     BlockReason.STEP_B_SKIP.logValue(), turnIndex);
-            followUpTransactionHandler.publishTurnCompletedEvent(
-                    id, context, turn, context.currentMainQuestionId(), turnIndex);
+            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
+                    id, context, turn, context.currentMainQuestionId());
             return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
         }
 
