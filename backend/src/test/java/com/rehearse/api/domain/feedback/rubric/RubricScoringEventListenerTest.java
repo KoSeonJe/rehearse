@@ -2,7 +2,7 @@ package com.rehearse.api.domain.feedback.rubric;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
 import com.rehearse.api.domain.feedback.rubric.service.RubricScoringEventListener;
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
@@ -18,7 +18,6 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -74,7 +73,7 @@ class RubricScoringEventListenerTest {
         @Test
         @DisplayName("Row 없을 때 채점 후 QuestionScorePersister.saveRubric() 호출")
         void on_newTurn_scoresAndSaves() {
-            TurnCompletedEvent event = createEvent(1L, 1L);
+            FollowUpQuestionCreatedEvent event = createEvent(1L);
 
             Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
@@ -87,7 +86,7 @@ class RubricScoringEventListenerTest {
 
             RubricScoringResult score = new RubricScoringResult("concept-cs-fundamental-v1",
                     List.of("technical_depth"), Map.of("technical_depth", DimensionScore.of(2, "설명", "ev")), null);
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any()))
+            given(rubricScorer.score(any(), any(), any(), any(), any()))
                     .willReturn(score);
 
             listener.on(event);
@@ -102,7 +101,7 @@ class RubricScoringEventListenerTest {
         @Test
         @DisplayName("RubricScore empty면 saveRubric() 호출 안 함")
         void on_emptyScore_noSave() {
-            TurnCompletedEvent event = createEvent(1L, 2L);
+            FollowUpQuestionCreatedEvent event = createEvent(1L);
 
             Interview interview = createInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
@@ -113,7 +112,7 @@ class RubricScoringEventListenerTest {
             QuestionSet questionSet = createQuestionSet(interview);
             given(questionSetRepository.findById(20L)).willReturn(Optional.of(questionSet));
 
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), any(), any()))
+            given(rubricScorer.score(any(), any(), any(), any(), any()))
                     .willReturn(RubricScoringResult.empty("resume-v1"));
 
             listener.on(event);
@@ -129,7 +128,7 @@ class RubricScoringEventListenerTest {
         @Test
         @DisplayName("채점 예외 발생 시 예외 전파하지 않고 결함 skip metric 증가")
         void on_scoringException_doesNotThrow() {
-            TurnCompletedEvent event = createEvent(1L, 3L);
+            FollowUpQuestionCreatedEvent event = createEvent(1L);
             given(interviewFinder.findById(anyLong()))
                     .willThrow(new RuntimeException("DB 오류"));
 
@@ -139,20 +138,19 @@ class RubricScoringEventListenerTest {
     }
 
     @Nested
-    @DisplayName("Resume Track null questionId (B1)")
-    class ResumeTrackNullQuestionId {
+    @DisplayName("null questionId/questionSetId 결함 skip")
+    class NullIdSkip {
 
         @Test
-        @DisplayName("questionId=null인 Resume Track 이벤트는 결함 skip — score/saveRubric 호출 안 하고 metric 증가")
-        void on_resumeTrack_nullQuestionId_skipsScoring() {
-            TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
-                    1L, 0L, 1L,
+        @DisplayName("questionId=null 이벤트는 결함 skip — score/saveRubric 호출 안 하고 metric 증가")
+        void on_nullQuestionId_skipsScoring() {
+            FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
+                    1L, 1L,
                     null, null,
                     "답변 텍스트",
                     new AnswerAnalysis(0L, List.of(), List.of(), List.of(), 3,
                             RecommendedNextAction.DEEP_DIVE),
-                    InterviewLevel.MID,
-                    ResumeMode.INTERROGATION, 2, null
+                    InterviewLevel.MID
             );
 
             Interview interview = createInterview();
@@ -160,7 +158,7 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
@@ -168,8 +166,8 @@ class RubricScoringEventListenerTest {
         @Test
         @DisplayName("questionSetId=null이면 결함 skip — score/saveRubric 호출 안 하고 metric 증가")
         void on_nullQuestionSetId_skipsScoring() {
-            TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
-                    1L, 5L, 1L,
+            FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
+                    1L, 1L,
                     10L, null,
                     "답변 텍스트",
                     new AnswerAnalysis(5L, List.of(), List.of(), List.of(), 3,
@@ -183,17 +181,17 @@ class RubricScoringEventListenerTest {
 
             listener.on(event);
 
-            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any(), any(), any(), any());
+            then(rubricScorer).should(never()).score(any(), any(), any(), any(), any());
             then(questionScorePersister).should(never()).saveRubric(anyLong(), anyLong(), anyString(), any(), any());
             then(aiCallMetrics).should().incrementRubricFailure("persist_failed");
         }
     }
 
-    private TurnCompletedEvent createEvent(Long interviewId, Long turnIndex) {
+    private FollowUpQuestionCreatedEvent createEvent(Long interviewId) {
         AnswerAnalysis analysis = new AnswerAnalysis(
-                turnIndex, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE);
-        return TurnCompletedEvent.ofStandard(
-                interviewId, turnIndex, 1L,
+                0L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE);
+        return FollowUpQuestionCreatedEvent.of(
+                interviewId, 1L,
                 10L, 20L,
                 "답변 텍스트", analysis,
                 InterviewLevel.MID
