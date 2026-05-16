@@ -177,28 +177,13 @@ public class DevController {
         List<Map<String, Object>> timestampFeedbacks = new ArrayList<>();
 
         for (QuestionAnswer answer : answers) {
-            Map<String, Object> commentBlock = Map.of(
-                    "positive", "명확하고 구조적인 답변입니다.",
-                    "negative", "구체적인 사례가 부족합니다.",
-                    "suggestion", "실무 경험을 추가하면 더 좋은 답변이 됩니다."
-            );
-
             timestampFeedbacks.add(Map.ofEntries(
                     Map.entry("questionId", answer.getQuestion().getId()),
                     Map.entry("startMs", answer.getStartMs()),
                     Map.entry("endMs", answer.getEndMs()),
                     Map.entry("transcript", "[DEV] 시뮬레이션된 음성 인식 결과입니다. 실제 Lambda에서는 Whisper STT가 처리합니다."),
-                    Map.entry("nonverbalComment", commentBlock),
-                    Map.entry("overallComment", commentBlock),
-                    Map.entry("vocalComment", commentBlock),
                     Map.entry("fillerWordCount", 2),
-                    Map.entry("fillerWords", List.of("음", "어")),
-                    Map.entry("speechPace", "적절"),
-                    Map.entry("toneConfidenceLevel", "GOOD"),
-                    Map.entry("emotionLabel", "자신감"),
-                    Map.entry("eyeContactLevel", "GOOD"),
-                    Map.entry("postureLevel", "GOOD"),
-                    Map.entry("expressionLabel", "CONFIDENT")
+                    Map.entry("fillerWords", List.of("음", "어"))
             ));
         }
 
