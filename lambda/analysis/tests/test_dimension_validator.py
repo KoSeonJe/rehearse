@@ -87,3 +87,55 @@ class TestEvidenceMissing:
         r = validate("technical_depth", 2, "구체적 답변", "   ", "TPS 10000 을 달성했습니다")
         assert r.valid is False
         assert r.violation == Violation.MISSING_EVIDENCE
+
+
+class TestVisionStageEvidence:
+    """P0-1 (사용자 결정 2026-05-17): vision stage 는 evidence_quote = frame 자체 인용 → transcript substring 강제 X."""
+
+    def test_vision_stage_skips_transcript_substring_check(self):
+        r = validate(
+            "eye_contact_posture", 2, "어깨가 흔들립니다.", "00:45 구간 시선 이탈",
+            "", stage="vision",
+        )
+        assert r.valid is True
+
+    def test_vision_stage_korean_observation_still_required(self):
+        r = validate(
+            "eye_contact_posture", 2, "english only observation", "00:45 구간 시선 이탈",
+            "", stage="vision",
+        )
+        assert r.valid is False
+        assert r.violation == Violation.NON_KOREAN_OBSERVATION
+
+    def test_vision_stage_missing_evidence_still_violates(self):
+        r = validate(
+            "eye_contact_posture", 2, "어깨가 흔들립니다.", "",
+            "", stage="vision",
+        )
+        assert r.valid is False
+        assert r.violation == Violation.MISSING_EVIDENCE
+
+    def test_vision_stage_score_range_still_enforced(self):
+        r = validate(
+            "eye_contact_posture", 5, "어깨가 흔들립니다.", "00:45 구간 시선 이탈",
+            "", stage="vision",
+        )
+        assert r.valid is False
+        assert r.violation == Violation.INVALID_SCORE
+
+    def test_gemini_stage_keeps_transcript_substring_check(self):
+        r = validate(
+            "fluency", 2, "필러가 많습니다.", "프레임 인용 캐시",
+            "DB 캐시는 read-through 입니다", stage="gemini",
+        )
+        assert r.valid is False
+        assert r.violation == Violation.EVIDENCE_NOT_IN_TRANSCRIPT
+
+    def test_default_stage_keeps_transcript_substring_check(self):
+        """stage 미지정 = verbal default. substring 강제 유지."""
+        r = validate(
+            "technical_depth", 2, "구체적 답변", "TPS 5000",
+            "TPS 10000 을 달성했습니다",
+        )
+        assert r.valid is False
+        assert r.violation == Violation.EVIDENCE_NOT_IN_TRANSCRIPT

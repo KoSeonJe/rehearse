@@ -122,23 +122,27 @@ class TestSystemPromptDimensionContent:
         for forbidden in ('"positive"', '"negative"', '"suggestion"'):
             assert forbidden not in _SYSTEM_PROMPT, f"자유서술 키 {forbidden} 잔존"
 
-    def test_prompt_preserves_user_answer_security_marker(self):
+    def test_prompt_specifies_frame_evidence_quote(self):
+        """P0-1: vision evidence_quote 룰 = frame 자체 인용 (transcript substring 강제 해제)."""
         from analyzers.vision_analyzer import _SYSTEM_PROMPT
-        assert "<<<USER_ANSWER>>>" in _SYSTEM_PROMPT
-        assert "<<<END_USER_ANSWER>>>" in _SYSTEM_PROMPT
+        # frame 인용 형식 키워드 포함
+        assert "프레임 자체 인용" in _SYSTEM_PROMPT or "프레임" in _SYSTEM_PROMPT
+        # transcript substring 강제 문구 부재
+        assert "transcript 의 substring" not in _SYSTEM_PROMPT
 
 
 class TestAnalyzeFramesSignature:
-    def test_analyze_frames_accepts_transcript_kwarg(self):
-        """G3 결정: evidence_quote source = transcript substring. 시그니처 확장 확인."""
+    def test_analyze_frames_omits_transcript_kwarg(self):
+        """G3 정정 (사용자 결정 2026-05-17): vision evidence_quote = frame 자체 인용.
+        transcript 인자 폐지."""
         from analyzers.vision_analyzer import analyze_frames
         import inspect
         sig = inspect.signature(analyze_frames)
-        assert "transcript" in sig.parameters
+        assert "transcript" not in sig.parameters
 
     def test_analyze_frames_returns_fallback_when_no_frames(self):
         from analyzers.vision_analyzer import analyze_frames, _FALLBACK
-        result = analyze_frames([], transcript="any")
+        result = analyze_frames([])
         ecp = result["nonverbalDimensions"]["eye_contact_posture"]
         fb = _FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
         assert ecp["score"] == fb["score"]

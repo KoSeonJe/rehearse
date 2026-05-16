@@ -272,6 +272,7 @@ def _enforce_dimension_validity(model, audio_file, user_prompt: str, result: dic
             candidate.get("observation"),
             candidate.get("evidence_quote"),
             transcript,
+            stage="gemini",
         )
         if check.valid:
             target_dims[dim_key] = candidate
@@ -305,6 +306,7 @@ def _collect_violations(result: dict, transcript: str) -> list[dict]:
             dim.get("observation"),
             dim.get("evidence_quote"),
             transcript,
+            stage="gemini",
         )
         if not check.valid:
             violations.append({

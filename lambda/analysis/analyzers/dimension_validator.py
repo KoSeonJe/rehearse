@@ -45,6 +45,7 @@ def validate(
     observation,
     evidence_quote,
     user_answer,
+    stage: str = "verbal",
 ) -> ValidationResult:
     if not isinstance(score, int) or isinstance(score, bool) or score < 1 or score > 3:
         return ValidationResult.violated(Violation.INVALID_SCORE, "score")
@@ -57,6 +58,10 @@ def validate(
 
     if not isinstance(evidence_quote, str) or not evidence_quote.strip():
         return ValidationResult.violated(Violation.MISSING_EVIDENCE, "evidence_quote")
+
+    # vision stage: evidence_quote = frame 자체 인용 (timestamp / frame 묘사). transcript substring 강제 X.
+    if stage == "vision":
+        return ValidationResult.passed()
 
     normalized_answer = _normalize(user_answer)
     normalized_quote = _normalize(evidence_quote)

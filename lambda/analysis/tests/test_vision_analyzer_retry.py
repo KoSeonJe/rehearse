@@ -45,7 +45,7 @@ def test_no_violation_returns_result_as_is():
         }
     }
     client = _FakeClient([])
-    enforced = mod._enforce_dimension_validity(client, content=[], result=result, transcript="캐시 전략은")
+    enforced = mod._enforce_dimension_validity(client, content=[], result=result)
     assert enforced is result
     assert client.chat.completions.calls == []
 
@@ -67,7 +67,7 @@ def test_first_violation_retry_succeeds_returns_dimension():
         '"evidence_quote":"캐시 전략은"}}}'
     )
     client = _FakeClient([retry_json])
-    enforced = mod._enforce_dimension_validity(client, content=[], result=initial, transcript="캐시 전략은")
+    enforced = mod._enforce_dimension_validity(client, content=[], result=initial)
     ecp = enforced["nonverbalDimensions"]["eye_contact_posture"]
     assert ecp["score"] == 3
     assert "어깨" in ecp["observation"]
@@ -89,7 +89,7 @@ def test_retry_persistent_failure_omits_dimension():
         '"score":5,"observation":"english only","evidence_quote":""}}}'
     )
     client = _FakeClient([retry_json])
-    enforced = mod._enforce_dimension_validity(client, content=[], result=initial, transcript="캐시")
+    enforced = mod._enforce_dimension_validity(client, content=[], result=initial)
     assert enforced == {"nonverbalDimensions": {}}
 
 
@@ -105,7 +105,7 @@ def test_retry_call_failure_omits_dimension():
         }
     }
     client = _FakeClient([RuntimeError("network blip")])
-    enforced = mod._enforce_dimension_validity(client, content=[], result=initial, transcript="캐시")
+    enforced = mod._enforce_dimension_validity(client, content=[], result=initial)
     assert enforced == {"nonverbalDimensions": {}}
 
 
@@ -113,6 +113,6 @@ def test_missing_dimension_section_omits_immediately():
     mod = _import_module()
     initial = {"nonverbalDimensions": {}}
     client = _FakeClient([])
-    enforced = mod._enforce_dimension_validity(client, content=[], result=initial, transcript="캐시")
+    enforced = mod._enforce_dimension_validity(client, content=[], result=initial)
     assert enforced == {"nonverbalDimensions": {}}
     assert client.chat.completions.calls == []
