@@ -187,7 +187,7 @@ class SessionFeedbackInputAssemblerTest {
         QuestionScore nonverbalScore1 = QuestionScore.builder()
                 .interviewId(interviewId)
                 .questionId(1L)
-                .rubricId("nonverbal")
+                .rubricId("nonverbal-v1")
                 .levelFlag(null)
                 .build();
         ReflectionTestUtils.setField(nonverbalScore1, "id", 101L);
@@ -195,7 +195,7 @@ class SessionFeedbackInputAssemblerTest {
         QuestionScore nonverbalScore2 = QuestionScore.builder()
                 .interviewId(interviewId)
                 .questionId(2L)
-                .rubricId("nonverbal")
+                .rubricId("nonverbal-v1")
                 .levelFlag(null)
                 .build();
         ReflectionTestUtils.setField(nonverbalScore2, "id", 102L);

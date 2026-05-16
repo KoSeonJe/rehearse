@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionFeedbackInputAssembler {
 
-    private static final String NONVERBAL_RUBRIC_ID = "nonverbal";
+    private static final String NONVERBAL_RUBRIC_ID = "nonverbal-v1";
 
     private final QuestionScoreRepository questionScoreRepository;
     private final QuestionScoreDimensionRepository questionScoreDimensionRepository;
@@ -69,7 +69,6 @@ public class SessionFeedbackInputAssembler {
         List<QuestionScore> nonverbalScores = allScores.stream()
                 .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
                 .toList();
-
         SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
                 buildNonverbalAggregate(nonverbalScores);
         String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
