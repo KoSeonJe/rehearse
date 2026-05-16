@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiClient } from '@/lib/api-client'
 import { useAllQuestionSetStatuses } from '@/hooks/use-question-sets'
 import type {
@@ -61,10 +61,6 @@ describe('useAllQuestionSetStatuses', () => {
     mockedApiGet.mockReset()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('analysisStatus 가 PENDING → ANALYZING → COMPLETED 점진 응답 시 단일 출처로 종료 상태 도달', async () => {
     mockedApiGet
       .mockResolvedValueOnce(buildStatus('PENDING'))
@@ -112,7 +108,6 @@ describe('useAllQuestionSetStatuses', () => {
   })
 
   it('모든 status COMPLETED 도달 시 폴링 자동 종료 (refetchInterval false)', async () => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
     mockedApiGet.mockResolvedValue(buildStatus('COMPLETED'))
 
     const { result } = renderHook(
@@ -126,8 +121,8 @@ describe('useAllQuestionSetStatuses', () => {
 
     const callCountAtTerminal = mockedApiGet.mock.calls.length
 
-    // terminal 도달 후 폴링 간격을 충분히 초과해도 추가 호출 없어야 함
-    await vi.advanceTimersByTimeAsync(20_000)
+    // terminal 도달 후 real timer 로 잠시 대기해도 추가 호출 없어야 함
+    await new Promise((resolve) => setTimeout(resolve, 100))
 
     expect(mockedApiGet.mock.calls.length).toBe(callCountAtTerminal)
   })

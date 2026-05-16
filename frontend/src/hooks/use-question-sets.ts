@@ -1,4 +1,4 @@
-import { useMutation, useQueries, useQuery } from '@tanstack/react-query'
+import { useMutation, useQueries, useQuery, type Query } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
 import type {
   AnalysisStatus,
@@ -74,7 +74,7 @@ export const useAllQuestionSetStatuses = (
           `/api/v1/interviews/${interviewId}/question-sets/${qs.id}/status`,
         ),
       enabled,
-      refetchInterval: (query: { state: { data?: ApiResponse<QuestionSetStatusResponse> } }) => {
+      refetchInterval: (query: Query<ApiResponse<QuestionSetStatusResponse>>) => {
         if (!enabled) return false
         const status = query.state.data?.data.analysisStatus
         return isTerminalStatus(status) ? false : STATUS_POLL_INTERVAL_MS
