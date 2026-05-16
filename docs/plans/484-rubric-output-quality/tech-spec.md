@@ -116,8 +116,8 @@
 ### TO-2. 검증 실패 재시도 정책 — 1회 vs 무재시도 vs 다회
 
 #### Option A (채택) — dimension 단위 retry 1회 + 재실패 시 해당 dimension omit + 운영 로그 + 메트릭
-- 장점: 평소 호출 비용 +0 (위배 시만 +1 round, dimension 한정). 부분 실패 = 차원 단위 fault isolation. 운영 메트릭 (`rubric_retry_failed_total{stage,dimension,field}`) 로 위배율 측정 → 임계 초과 시 prompt 추가 튜닝 결정 가능.
-- 단점: 재시도 latency +1 round (위배 dimension 만). 재시도 후에도 실패 시 데이터 누락 → 사용자는 부분 카드만 봄 (FE Empty 카드 폴백 필요).
+- 장점: 평소 호출 비용 +0 (위배 시만 +1 round). 부분 실패 = 차원 단위 fault isolation (재채택은 위배 dimension 한정). 운영 메트릭 (`rubric_retry_failed_total{stage,dimension,field}`) 로 위배율 측정 → 임계 초과 시 prompt 추가 튜닝 결정 가능.
+- 단점: 재시도 latency +1 round. 위배 1건만 발생해도 retry hint 만 추가해 전체 prompt 를 한 번 더 호출 → **전체 dimension prompt 토큰 비용 1회 추가** (재채택은 위배 dimension 만). 재시도 후에도 실패 시 데이터 누락 → 사용자는 부분 카드만 봄 (FE Empty 카드 폴백 필요).
 - 채택 사유: 사용자 결정 = "운영 로그 + 메트릭으로 충분". AC-5 (적재 누락률 0% 보장 단, 검증 실패 시 자동 회복 경로 동작) 정합. retry 0 시 위배율 직접 노출 = AC 위배 가능성 ↑. retry 다회 = 비용 폭주 위험 + 단순화 위배.
 
 #### Option B (폐기) — 무재시도, 검증 실패 = 즉시 omit
@@ -217,11 +217,15 @@
               │           (양측 whitespace 정규화 (`\\s+` → 단일 공백) 후 substring 검사)
               │           ↓
               │     ┌─ 통과 → DimensionScore 적재
-              │     └─ 위배 → [retry 1회, 위배 dimension 한정]
-              │           ├─ 보강 prompt 로 위배 dimension 만 재호출
+              │     └─ 위배 → [retry 1회, 위배 dimension 한정 — 재채택만]
+              │           ├─ retry hint 는 위배 dimension 만 명시. 어댑터는
+              │           │   전체 prompt 를 한 번 더 호출하여 전체 응답을
+              │           │   받되, 1차 통과 dimension 은 1차 값을 유지하고
+              │           │   위배 dimension 만 retry 응답으로 재채택.
               │           │   (사용자 메시지 추가: "이전 응답이 검증 규칙 위배:
               │           │   {field}={실패사유}. 한국어 1+ 음절 / 답변 substring
               │           │   강제 룰을 재준수하여 재작성하세요.")
+              │           │   → 전체 dimension prompt 토큰 비용 1회 추가
               │           ├─ 통과 → 정상 적재
               │           └─ 재실패 → log.warn("[결함 skip] retry_failed
               │                       stage=verbal interviewId={} questionId={}
@@ -1005,7 +1009,7 @@ AC 8건과 1:1 매핑 + 카테고리 명시. 통과 기준 = 회귀 테스트 �
 
 - **Phase 1 prompt 변경 후 LLM 출력 회귀** — 한국어 강제 + verbatim 강제 prompt 가 채점 정확도 저하 가능. 검증 게이트 (AC-1/2 회귀 테스트) + retry 1회 + 메트릭 운영 감시.
 - **Phase 1 prompt 토큰 증가** — ~50-100 token. GPT-4o-mini 128K 대비 영향 0.
-- **Phase 1/2a retry 1회 비용** — 위배 dimension 한정 +1 round. 위배율은 메트릭 (`rubric_retry_failed_total{stage,dimension,field}` + `nonverbal_retry_failed_total`) 으로 측정. 임계 (예: 10%+) 초과 시 prompt 추가 튜닝 또는 DB audit 컬럼 도입 재논의 (본 spec 비스코프).
+- **Phase 1/2a retry 1회 비용** — retry hint 는 위배 dimension 만 명시하지만 어댑터는 전체 prompt 를 1회 재호출 (전체 dimension prompt 토큰 비용 추가, 재채택은 위배 dimension 한정). 위배율은 메트릭 (`rubric_retry_failed_total{stage,dimension,field}` + `nonverbal_retry_failed_total`) 으로 측정. 임계 (예: 10%+) 초과 시 prompt 추가 튜닝 또는 DB audit 컬럼 도입 재논의 (본 spec 비스코프).
 - **Phase 2a Lambda 응답 토큰 영향** — gemini 자유서술 3섹션 + raw 4 키 삭제 vs 차원 2개 (observation + evidenceQuote) 추가 = 추정 -30%~+10%. vision 자유서술 + raw 5 키 삭제 vs 차원 1개 추가 = 추정 ±0%. **max_tokens 실측 timing (P1-C)**: 구현 진입 직전 dev 1회 dry-run (gemini / vision 응답 token 실측) → max_tokens 한도 사전 조정 후 PR 작성. 불충분 시 PR 분리 (token 한도 조정 PR 선행).
 - **Phase 2a Lambda 책임 분리 (TO-1 영역 키 분리)** — gemini = audio 차원 2개 (fluency / confidence_tone, payload `vocal` 키), vision = frames 차원 1개 (eye_contact_posture, payload `vision` 키). 한 분석기 실패 시 다른 영역 키만 존재 (혹은 `null`) → BE 가 받은 영역 키 dimension 만 row insert (trivial) → FE 부분 카드 노출. 두 분석기 모두 실패 시 `nonverbalScore=null` + Empty 카드.
 - **Phase 2a fluency 정의 확장 (떨림·끊김 + 속도 변동 흡수)** — gemini_analyzer LLM 호출 prompt 가 transcript + audio 직접 청취 신호로 떨림·끊김 + 속도 변동 채점 가능성. 미흡 시 LLM observation 이 filler 만 묘사 → 사용자 인지 "정의는 떨림인데 코칭은 filler" 불일치. 회귀 테스트로 description / measurement substring 검증 + 운영 dev 확인 게이트.
