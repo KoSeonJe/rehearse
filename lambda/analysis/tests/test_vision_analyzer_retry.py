@@ -116,3 +116,36 @@ def test_missing_dimension_section_omits_immediately():
     enforced = mod._enforce_dimension_validity(client, content=[], result=initial)
     assert enforced == {"nonverbalDimensions": {}}
     assert client.chat.completions.calls == []
+
+
+def test_analyze_frames_skips_enforce_retry_when_fallback(monkeypatch, tmp_path):
+    """P1-2: _validate_result fallback 분기 진입 시 _enforce_dimension_validity 호출 0회 (retry LLM 비용 방지)."""
+    mod = _import_module()
+
+    # LLM 응답이 nonverbalDimensions 섹션을 누락한 경우 → _validate_result 가 fallback 으로 대체.
+    malformed_json = '{"wrong":"shape"}'
+    fake_client = _FakeClient([malformed_json])
+    monkeypatch.setattr(mod, "OpenAI", lambda **kwargs: fake_client)
+
+    enforce_calls = []
+    original_enforce = mod._enforce_dimension_validity
+
+    def _spy_enforce(*args, **kwargs):
+        enforce_calls.append((args, kwargs))
+        return original_enforce(*args, **kwargs)
+
+    monkeypatch.setattr(mod, "_enforce_dimension_validity", _spy_enforce)
+
+    # 프레임 1장만 있는 시나리오 — 인코딩만 통과하면 됨.
+    frame_path = tmp_path / "frame.jpg"
+    frame_path.write_bytes(b"\xff\xd8\xff")  # JPEG magic. 인코딩만 통과.
+
+    result = mod.analyze_frames([str(frame_path)])
+
+    # LLM 1회만 호출 (retry skip).
+    assert len(fake_client.chat.completions.calls) == 1
+    # enforce 도 호출되지 않음.
+    assert enforce_calls == []
+    # 결과는 fallback.
+    fb = mod._FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
+    assert result["nonverbalDimensions"]["eye_contact_posture"]["score"] == fb["score"]

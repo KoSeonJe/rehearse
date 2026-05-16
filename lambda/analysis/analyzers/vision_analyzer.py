@@ -117,8 +117,9 @@ def analyze_frames(frame_paths: list[str]) -> dict:
                 return _deepcopy_fallback()
 
             result = parse_llm_json(raw.strip())
-            result = _validate_result(result)
-            result = _enforce_dimension_validity(client, content, result)
+            result, is_fallback = _validate_result_with_flag(result)
+            if not is_fallback:
+                result = _enforce_dimension_validity(client, content, result)
 
             ecp = result.get("nonverbalDimensions", {}).get("eye_contact_posture")
             score_log = ecp.get("score") if isinstance(ecp, dict) else "omitted"
@@ -173,26 +174,35 @@ def _deepcopy_fallback() -> dict:
 
 def _validate_result(result: dict) -> dict:
     """LLM 응답의 nonverbalDimensions.eye_contact_posture 만 통과시키고 폴백 보강."""
+    validated, _ = _validate_result_with_flag(result)
+    return validated
+
+
+def _validate_result_with_flag(result: dict) -> tuple[dict, bool]:
+    # 두 번째 반환값 = fallback 진입 여부. fallback 시 추가 retry / enforce 스킵용.
     dims = (result or {}).get("nonverbalDimensions")
     if not isinstance(dims, dict):
         print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=nonverbalDimensions reason=MissingSection")
-        return _deepcopy_fallback()
+        return _deepcopy_fallback(), True
 
     ecp = dims.get("eye_contact_posture")
     if not isinstance(ecp, dict):
         print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=dimension reason=MissingDimension")
-        return _deepcopy_fallback()
+        return _deepcopy_fallback(), True
 
     fb = _FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
+    fallback_used = False
     score = _coerce_score(ecp.get("score"), fb["score"])
     observation = ecp.get("observation")
     if not isinstance(observation, str) or not observation.strip():
         print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=observation reason=MissingOrInvalid")
         observation = fb["observation"]
+        fallback_used = True
     evidence = ecp.get("evidence_quote")
     if not isinstance(evidence, str):
         print(f"[Vision] _validate_result fallback stage=vision dimension={VISION_DIMENSION} field=evidence_quote reason=InvalidType")
         evidence = fb["evidence_quote"]
+        fallback_used = True
 
     return {
         "nonverbalDimensions": {
@@ -202,7 +212,7 @@ def _validate_result(result: dict) -> dict:
                 "evidence_quote": evidence,
             }
         }
-    }
+    }, fallback_used
 
 
 def _coerce_score(value, default: int) -> int:
