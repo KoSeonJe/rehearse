@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
@@ -18,8 +17,6 @@ import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -41,38 +38,32 @@ public class FollowUpQuestionWriter {
             AnswerAnalysis analysis,
             ResumeSkeleton resumeSkeleton
     ) {
-        try {
-            BuiltContext built = contextBuilder.build(new ContextBuildRequest(
-                    CALL_TYPE,
-                    new FocusHints.FollowUpGeneratorV3Hints(
-                            mainQuestion != null ? mainQuestion : "",
-                            userAnswer != null ? userAnswer : "",
-                            analysis.claims().stream().map(c -> c.text()).toList(),
-                            analysis.dimensionGaps(),
-                            analysis.weakestDimension(),
-                            analysis.unstatedAssumptions(),
-                            serializeSkeleton(resumeSkeleton)
-                    ),
-                    null
-            ));
+        BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                CALL_TYPE,
+                new FocusHints.FollowUpGeneratorV3Hints(
+                        mainQuestion != null ? mainQuestion : "",
+                        userAnswer != null ? userAnswer : "",
+                        analysis.claims().stream().map(c -> c.text()).toList(),
+                        analysis.dimensionGaps(),
+                        analysis.weakestDimension(),
+                        analysis.unstatedAssumptions(),
+                        serializeSkeleton(resumeSkeleton)
+                ),
+                null
+        ));
 
-            ChatRequest chatRequest = ChatRequest.builder()
-                    .messages(built.messages())
-                    .callType(CALL_TYPE)
-                    .temperature(TEMPERATURE)
-                    .maxTokens(MAX_TOKENS)
-                    .responseFormat(ResponseFormat.JSON_OBJECT)
-                    .build();
+        ChatRequest chatRequest = ChatRequest.builder()
+                .messages(built.messages())
+                .callType(CALL_TYPE)
+                .temperature(TEMPERATURE)
+                .maxTokens(MAX_TOKENS)
+                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .build();
 
-            ChatResponse response = aiClient.chat(chatRequest);
-            GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
-                    response, GeneratedFollowUp.class, aiClient, chatRequest);
-            return parsed.withAnswerText(userAnswer);
-        } catch (BusinessException e) {
-            log.warn("[FollowUpQuestionWriter] LLM 호출 실패 → skip 반환: code={}, reason={}",
-                    e.getCode(), e.getMessage());
-            return GeneratedFollowUp.skipped("llm_failed");
-        }
+        ChatResponse response = aiClient.chat(chatRequest);
+        GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
+                response, GeneratedFollowUp.class, aiClient, chatRequest);
+        return parsed.withAnswerText(userAnswer);
     }
 
     private String serializeSkeleton(ResumeSkeleton skeleton) {
@@ -80,7 +71,7 @@ public class FollowUpQuestionWriter {
             return "";
         }
         try {
-            return objectMapper.writeValueAsString(List.of(skeleton.projects()));
+            return objectMapper.writeValueAsString(skeleton.projects());
         } catch (JsonProcessingException e) {
             log.warn("[FollowUpQuestionWriter] skeleton 직렬화 실패 — 빈 문자열 사용", e);
             return "";

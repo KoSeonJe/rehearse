@@ -9,9 +9,9 @@ class GeneratedFollowUpTest {
 
     @Test
     void skipped_factory_marks_skip_true() {
-        GeneratedFollowUp skipped = GeneratedFollowUp.skipped("llm_failed");
+        GeneratedFollowUp skipped = GeneratedFollowUp.skipped("all_gaps_low");
         assertThat(skipped.isSkipped()).isTrue();
-        assertThat(skipped.skipReason()).isEqualTo("llm_failed");
+        assertThat(skipped.skipReason()).isEqualTo("all_gaps_low");
         assertThat(skipped.question()).isNull();
     }
 
