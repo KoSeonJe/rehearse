@@ -24,11 +24,11 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("TimestampFeedbackResponse")
+@DisplayName("타임스탬프 피드백 응답 DTO")
 class TimestampFeedbackResponseTest {
 
     @Test
-    @DisplayName("plan-13 timestamp response no longer exposes Lambda content")
+    @DisplayName("응답 DTO가 삭제된 Lambda 자유서술 필드를 노출하지 않는다")
     void timestampResponse_doesNotExposeLambdaContent() {
         assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredFields())
                 .map(field -> field.getName()))
@@ -40,7 +40,7 @@ class TimestampFeedbackResponseTest {
     }
 
     @Test
-    @DisplayName("plan-484 Phase 3: delivery / vocal / nonverbal legacy inner class 및 자유서술 필드 미노출")
+    @DisplayName("delivery/vocal/nonverbal legacy inner class 및 자유서술 필드를 응답에 노출하지 않는다")
     void response_doesNotExpose_legacy_delivery_and_freetext() {
         assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredClasses())
                 .map(Class::getSimpleName))

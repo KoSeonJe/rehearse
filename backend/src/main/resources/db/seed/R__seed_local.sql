@@ -69,7 +69,7 @@ INSERT INTO timestamp_feedback (
   1, 1, 1, 0, 45000,
   '영속성 컨텍스트는 음 엔티티를 관리하는 환경인데요, 1차 캐시가 있어서 같은 엔티티를 조회하면 DB를 안 거치고 캐시에서 가져옵니다. 그리고 어 변경 감지 기능이 있어서 트랜잭션 커밋 시점에 자동으로 UPDATE 쿼리가 나갑니다. 기본 격리 수준이 SERIALIZABLE이라서 동시성 문제도 해결됩니다.',
   2, true, '["음", "어"]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 -- 피드백 2
 INSERT INTO timestamp_feedback (
@@ -79,7 +79,7 @@ INSERT INTO timestamp_feedback (
   2, 1, 2, 45000, 90000,
   '트랜잭션 격리 수준은 READ UNCOMMITTED, READ COMMITTED, REPEATABLE READ, SERIALIZABLE 4단계가 있습니다. MySQL은 기본적으로 REPEATABLE READ를 사용하고, 이 수준에서는 팬텀 리드가 발생할 수 있지만 MySQL은 갭 락으로 이를 방지합니다.',
   0, true, '[]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 -- ===== 면접 2: 프론트엔드 · UI 프레임워크 =====
 INSERT INTO interview (id, public_id, user_id, position, position_detail, level, duration_minutes, status, question_generation_status, created_at, updated_at)
@@ -141,7 +141,7 @@ INSERT INTO timestamp_feedback (
   3, 2, 3, 0, 60000,
   'Virtual DOM은 실제 DOM의 경량 복사본 같은 건데요, 상태가 바뀌면 새로운 Virtual DOM 트리를 만들고 이전 트리와 비교해서 바뀐 부분만 실제 DOM에 반영합니다. React는 Fiber 아키텍처를 통해 이 과정을 청크 단위로 나눠서 처리할 수 있고, 우선순위도 조절할 수 있습니다.',
   1, true, '["음"]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 INSERT INTO timestamp_feedback (
   id, question_set_feedback_id, question_id, start_ms, end_ms,
@@ -150,7 +150,7 @@ INSERT INTO timestamp_feedback (
   4, 2, 4, 60000, 120000,
   'useEffect는 컴포넌트가 화면에 그려진 다음에 실행되고, useLayoutEffect는 DOM이 변경된 직후 화면에 그리기 전에 실행됩니다. 실무에서는 대부분 useEffect를 쓰는데, 스크롤 위치를 복원하거나 DOM 크기를 측정해서 바로 반영해야 할 때는 useLayoutEffect를 씁니다.',
   0, true, '[]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 INSERT INTO timestamp_feedback (
   id, question_set_feedback_id, question_id, start_ms, end_ms,
@@ -159,7 +159,7 @@ INSERT INTO timestamp_feedback (
   5, 3, 5, 0, 55000,
   '이전 팀에서 상태 관리 라이브러리 선택을 두고 의견이 나뉜 적이 있었습니다. 저는 Zustand를 제안했고 다른 분은 Redux Toolkit을 선호했는데, 각자 PoC를 만들어서 번들 사이즈, 보일러플레이트 양, 러닝 커브를 비교한 뒤 팀 투표로 결정했습니다.',
   0, true, '[]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 -- ===== 면접 3: 백엔드 · 시스템 설계 =====
 INSERT INTO interview (id, public_id, user_id, position, position_detail, level, duration_minutes, status, question_generation_status, created_at, updated_at)
@@ -201,7 +201,7 @@ INSERT INTO timestamp_feedback (
   6, 4, 6, 0, 90000,
   'URL 단축 서비스는 먼저 API를 정의하고, POST로 원본 URL을 받아 단축 URL을 반환하고, GET으로 단축 URL에 접근하면 리다이렉트합니다. 키 생성은 해시 후 Base62로 인코딩하고, 충돌 시 재해시합니다. 읽기가 많으니까 Redis 캐시를 앞에 두고, DB는 NoSQL로 수평 확장합니다.',
   0, true, '[]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 INSERT INTO timestamp_feedback (
   id, question_set_feedback_id, question_id, start_ms, end_ms,
@@ -210,7 +210,7 @@ INSERT INTO timestamp_feedback (
   7, 4, 7, 90000, 180000,
   '채팅 메시지 전달 보장은 At-least-once 전략을 기본으로 하고, 클라이언트에서 메시지 ID로 중복을 필터링합니다. 서버 간 메시지 전달은 Kafka를 사용하고, 오프라인 사용자는 메시지를 DB에 저장했다가 접속 시 전달합니다. WebSocket으로 실시간 연결을 유지하고, 연결이 끊기면 롱 폴링으로 폴백합니다.',
   0, true, '[]'
-) ON DUPLICATE KEY UPDATE id = id;
+) ON DUPLICATE KEY UPDATE transcript=VALUES(transcript), filler_word_count=VALUES(filler_word_count), filler_words=VALUES(filler_words), is_analyzed=VALUES(is_analyzed);
 
 -- ===== 복습 북마크 샘플 (피드백 3, 6, 7에 대해 북마크) =====
 INSERT INTO review_bookmark (id, user_id, timestamp_feedback_id, resolved_at, created_at)
