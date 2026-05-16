@@ -147,7 +147,7 @@ export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boo
   return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
 }
 
-export interface NonverbalFeedback {
+export interface LegacyNonverbalFeedback {
   eyeContactLevel: FeedbackLevel | null
   postureLevel: FeedbackLevel | null
   expressionLabel: string | null
@@ -164,7 +164,6 @@ export interface VocalFeedback {
 }
 
 export interface DeliveryFeedback {
-  nonverbal: NonverbalFeedback | null
   vocal: VocalFeedback | null
   attitudeComment: CommentBlock | null
 }
@@ -185,6 +184,11 @@ export interface TechnicalFeedback {
   dimensions: TechnicalDimensionFeedback[]
 }
 
+export interface NonverbalFeedback {
+  rubricId: string
+  dimensions: TechnicalDimensionFeedback[]
+}
+
 export interface TimestampFeedback {
   id: number
   questionId: number | null
@@ -196,6 +200,8 @@ export interface TimestampFeedback {
   transcript: string | null
   delivery: DeliveryFeedback | null
   technicalFeedback: TechnicalFeedback | null
+  nonverbalFeedback: NonverbalFeedback | null
+  fillerWordCount: number | null
   overallComment: CommentBlock | null
   isAnalyzed: boolean
 }
