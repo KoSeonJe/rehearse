@@ -39,6 +39,7 @@ export const resolveFollowUpQuestionType = (
 ): QuestionType => {
   if (mainQuestionType === 'TECH_MAIN') return 'TECH_FOLLOWUP'
   if (mainQuestionType === 'BEHAVIORAL_MAIN') return 'BEHAVIORAL_FOLLOWUP'
+  if (mainQuestionType === 'RESUME_MAIN') return 'RESUME_FOLLOWUP'
   return category === 'BEHAVIORAL' ? 'BEHAVIORAL_FOLLOWUP' : 'TECH_FOLLOWUP'
 }
 

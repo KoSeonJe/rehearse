@@ -75,6 +75,10 @@ describe('resolveFollowUpQuestionType — 트랙 컨텍스트로 후속질문 en
   it('RESUME_OPENER 메인 → TECH_FOLLOWUP (BE fallback 경로 정합)', () => {
     expect(resolveFollowUpQuestionType('RESUME_OPENER', 'RESUME_BASED')).toBe('TECH_FOLLOWUP')
   })
+
+  it('RESUME_MAIN 메인 → RESUME_FOLLOWUP', () => {
+    expect(resolveFollowUpQuestionType('RESUME_MAIN', 'RESUME_BASED')).toBe('RESUME_FOLLOWUP')
+  })
 })
 
 describe('deriveQuestionFromSet — 트랙별 메인 질문 derive (자동 SKIPPED 회귀 방지)', () => {
