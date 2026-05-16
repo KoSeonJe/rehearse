@@ -36,69 +36,25 @@ public class TimestampFeedback {
 
     private Integer fillerWordCount;
 
-    @Column(length = 20)
-    private String eyeContactLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
-
-    @Column(length = 20)
-    private String postureLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
-
-    @Column(length = 50)
-    private String expressionLabel;
-
-    @Column(columnDefinition = "TEXT")
-    private String nonverbalComment;
-
-    @Column(columnDefinition = "TEXT")
-    private String overallComment;
-
     @Column(nullable = false)
     private boolean isAnalyzed;
 
     @Column(columnDefinition = "TEXT")
     private String fillerWords;  // JSON 배열 문자열 예: ["음", "어"]
 
-    @Column(length = 10)
-    private String speechPace;  // "빠름" / "적절" / "느림"
-
-    @Column(length = 20)
-    private String toneConfidenceLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
-
-    @Column(length = 20)
-    private String emotionLabel;  // "자신감" / "긴장" / "평온" / "불안"
-
-    @Column(columnDefinition = "TEXT")
-    private String vocalComment;
-
-    @Column(columnDefinition = "TEXT")
-    private String attitudeComment;
-
     @Builder
     public TimestampFeedback(Question question, long startMs, long endMs,
                              String transcript,
                              Integer fillerWordCount,
-                             String eyeContactLevel, String postureLevel,
-                             String expressionLabel, String nonverbalComment, String overallComment,
                              boolean isAnalyzed,
-                             String fillerWords, String speechPace, String toneConfidenceLevel,
-                             String emotionLabel, String vocalComment,
-                             String attitudeComment) {
+                             String fillerWords) {
         this.question = question;
         this.startMs = startMs;
         this.endMs = endMs;
         this.transcript = transcript;
         this.fillerWordCount = fillerWordCount;
-        this.eyeContactLevel = eyeContactLevel;
-        this.postureLevel = postureLevel;
-        this.expressionLabel = expressionLabel;
-        this.nonverbalComment = nonverbalComment;
-        this.overallComment = overallComment;
         this.isAnalyzed = isAnalyzed;
         this.fillerWords = fillerWords;
-        this.speechPace = speechPace;
-        this.toneConfidenceLevel = toneConfidenceLevel;
-        this.emotionLabel = emotionLabel;
-        this.vocalComment = vocalComment;
-        this.attitudeComment = attitudeComment;
     }
 
     void assignQuestionSetFeedback(QuestionSetFeedback questionSetFeedback) {
