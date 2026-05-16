@@ -1,19 +1,21 @@
 import type { Question, QuestionSetData, QuestionType } from '@/types/interview'
 
 // 메인 질문으로 인식할 enum 집합.
-// BE QuestionType.isMain() 은 TECH_MAIN / BEHAVIORAL_MAIN 만 main 으로 판단하지만,
+// BE QuestionType.isMain() 은 TECH_MAIN / BEHAVIORAL_MAIN / RESUME_MAIN 을 main 으로 판단.
 // FE 표시 단위 (질문 카드 / Q1 라벨 / 메인 질문 검색) 에서는 RESUME_OPENER 도 "한 세트의 진입 질문"으로
-// 동등 취급한다. RESUME_PLAYGROUND / RESUME_INTERROGATION 은 본 세트의 메인 후속 답변 단계라 main 분류 X.
+// 동등 취급한다.
 const MAIN_QUESTION_TYPES: ReadonlySet<string> = new Set<QuestionType>([
   'TECH_MAIN',
   'BEHAVIORAL_MAIN',
   'RESUME_OPENER',
+  'RESUME_MAIN',
 ])
 
-// BE QuestionType.isFollowUp() 미러 — TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP.
+// BE QuestionType.isFollowUp() 미러 — TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP / RESUME_FOLLOWUP.
 const FOLLOWUP_QUESTION_TYPES: ReadonlySet<string> = new Set<QuestionType>([
   'TECH_FOLLOWUP',
   'BEHAVIORAL_FOLLOWUP',
+  'RESUME_FOLLOWUP',
 ])
 
 export const isMainQuestionType = (questionType: string | null | undefined): boolean => {

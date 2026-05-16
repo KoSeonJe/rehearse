@@ -18,17 +18,17 @@ const buildQuestionSet = (overrides: Partial<QuestionSetData> = {}): QuestionSet
 })
 
 describe('isMainQuestionType — BE 표준 트랙 메인 인식', () => {
-  it('TECH_MAIN / BEHAVIORAL_MAIN / RESUME_OPENER 는 메인으로 분류된다', () => {
+  it('TECH_MAIN / BEHAVIORAL_MAIN / RESUME_OPENER / RESUME_MAIN 은 메인으로 분류된다', () => {
     expect(isMainQuestionType('TECH_MAIN')).toBe(true)
     expect(isMainQuestionType('BEHAVIORAL_MAIN')).toBe(true)
     expect(isMainQuestionType('RESUME_OPENER')).toBe(true)
+    expect(isMainQuestionType('RESUME_MAIN')).toBe(true)
   })
 
-  it('FOLLOWUP 계열과 RESUME 진행 단계는 메인이 아니다', () => {
+  it('FOLLOWUP 계열은 메인이 아니다', () => {
     expect(isMainQuestionType('TECH_FOLLOWUP')).toBe(false)
     expect(isMainQuestionType('BEHAVIORAL_FOLLOWUP')).toBe(false)
-    expect(isMainQuestionType('RESUME_PLAYGROUND')).toBe(false)
-    expect(isMainQuestionType('RESUME_INTERROGATION')).toBe(false)
+    expect(isMainQuestionType('RESUME_FOLLOWUP')).toBe(false)
   })
 
   it('null / undefined / 알 수 없는 값은 메인이 아니다', () => {
@@ -40,15 +40,16 @@ describe('isMainQuestionType — BE 표준 트랙 메인 인식', () => {
 })
 
 describe('isFollowupQuestionType — BE 트랙별 후속질문 인식', () => {
-  it('TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP 모두 후속질문으로 분류된다', () => {
+  it('TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP / RESUME_FOLLOWUP 모두 후속질문으로 분류된다', () => {
     expect(isFollowupQuestionType('TECH_FOLLOWUP')).toBe(true)
     expect(isFollowupQuestionType('BEHAVIORAL_FOLLOWUP')).toBe(true)
+    expect(isFollowupQuestionType('RESUME_FOLLOWUP')).toBe(true)
   })
 
-  it('메인 / RESUME 진행 단계 / null 은 후속질문이 아니다', () => {
+  it('메인 / null 은 후속질문이 아니다', () => {
     expect(isFollowupQuestionType('TECH_MAIN')).toBe(false)
     expect(isFollowupQuestionType('RESUME_OPENER')).toBe(false)
-    expect(isFollowupQuestionType('RESUME_PLAYGROUND')).toBe(false)
+    expect(isFollowupQuestionType('RESUME_MAIN')).toBe(false)
     expect(isFollowupQuestionType(null)).toBe(false)
   })
 })

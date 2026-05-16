@@ -9,8 +9,8 @@ const ANSWER_TYPE_LABELS: Record<string, string> = {
   BEHAVIORAL_MAIN: '원본 답변',
   BEHAVIORAL_FOLLOWUP: '후속 질문',
   RESUME_OPENER: '도입 질문',
-  RESUME_PLAYGROUND: '경험 탐색',
-  RESUME_INTERROGATION: '심화 질문',
+  RESUME_MAIN: '이력서 질문',
+  RESUME_FOLLOWUP: '이력서 꼬리질문',
 }
 
 const FILLER_WORDS = ['음', '어', '그', '아', '그러니까', '뭐', '이제', '약간', '좀']
