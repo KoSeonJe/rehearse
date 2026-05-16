@@ -11,6 +11,7 @@ import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
+import { AdminQuestionPoolPage } from '@/pages/admin-question-pool-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
 import { AboutPage } from '@/pages/about-page'
 import { FaqPage } from '@/pages/faq-page'
@@ -47,6 +48,7 @@ export const App = () => {
 
         <Route element={<PasswordProtectedRoute />}>
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
+          <Route path="/admin/question-pool" element={<AdminQuestionPoolPage />} />
         </Route>
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/about" element={<AboutPage />} />
