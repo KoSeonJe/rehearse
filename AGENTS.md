@@ -22,6 +22,7 @@
 @.claude/rules/plan-mode.md
 @.claude/rules/branch-pr.md
 @.claude/rules/reporting.md
+@.claude/rules/review-output.md
 @.claude/rules/simplicity.md
 
 ## Project Overview

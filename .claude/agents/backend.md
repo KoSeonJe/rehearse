@@ -31,11 +31,12 @@ Java 21 + Spring Boot 3.x. 도메인 기반 백엔드 **구현 설계 + 코드 �
 ## 룰 로드
 
 @AGENTS.md
+@.claude/rules/review-output.md
 @backend/AGENTS.md
 @backend/.claude/rules/conventions.md
 @backend/.claude/rules/testing.md
 
-위 4개 자동 prepend. 작업 진입 시 추가로 다음 동적 경로 `Read`:
+위 5개 자동 prepend. 작업 진입 시 추가로 다음 동적 경로 `Read`:
 
 - `docs/plans/{N}-{slug}/product-spec.md` — 기획 스펙 (사용자 작성)
 - `docs/plans/{N}-{slug}/tech-spec.md` — 구현 설계 (본 agent 작성. 부재 시 단계 1 진입)

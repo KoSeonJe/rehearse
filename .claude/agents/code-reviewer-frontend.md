@@ -35,6 +35,7 @@ Frontend 변경 코드 리뷰 전담. **구현 금지**. 발견 → 보고 → �
 @.claude/rules/security.md
 @.claude/rules/comments.md
 @.claude/rules/commit.md
+@.claude/rules/review-output.md
 @frontend/AGENTS.md
 @frontend/.claude/rules/conventions.md
 @frontend/.claude/rules/architecture.md
