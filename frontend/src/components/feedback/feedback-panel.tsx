@@ -52,18 +52,24 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
     ? (ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType)
     : null
 
+  const handleSeek = () => onSeek(feedback.startMs)
+
   return (
     <div
       data-feedback-id={feedback.id}
-      className="rounded-2xl bg-card overflow-hidden transition-colors cursor-pointer shadow-sm"
-      onClick={() => onSeek(feedback.startMs)}
+      className="rounded-2xl bg-card overflow-hidden shadow-sm"
     >
       {/* 헤더 */}
       <div className="px-6 pt-6 pb-5">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+          <button
+            type="button"
+            onClick={handleSeek}
+            aria-label={`${formatTime(feedback.startMs)} 구간으로 이동`}
+            className="text-[13px] font-bold text-gray-900 tabular-nums rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand hover:text-brand transition-colors"
+          >
             {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
-          </span>
+          </button>
           {answerTypeLabel !== null && (
             <span className="text-[13px] text-gray-400">{answerTypeLabel}</span>
           )}
@@ -87,7 +93,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
 
       {/* 답변 텍스트 + 모범답변 */}
       {(feedback.transcript !== null || question?.bestAnswer) && (
-        <div className="mx-6 mb-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+        <div className="mx-6 mb-4 flex flex-col gap-3">
           {feedback.transcript !== null && (
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-[13px] font-bold text-gray-500 mb-2">내 답변</p>
@@ -128,13 +134,11 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
         </div>
       )}
 
-      <div onClick={(e) => e.stopPropagation()}>
-        <ContentTab
-          technicalFeedback={feedback.technicalFeedback}
-          nonverbalFeedback={feedback.nonverbalFeedback}
-          questionType={feedback.questionType}
-        />
-      </div>
+      <ContentTab
+        technicalFeedback={feedback.technicalFeedback}
+        nonverbalFeedback={feedback.nonverbalFeedback}
+        questionType={feedback.questionType}
+      />
 
     </div>
   )

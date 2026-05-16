@@ -1,12 +1,10 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { FeedbackPanel } from '@/components/feedback/feedback-panel'
 import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
-
-vi.mock('@/components/feedback/bookmark-toggle-button', () => ({
-  default: () => null,
-}))
 
 const baseFeedback: TimestampFeedback = {
   id: 1,
@@ -17,7 +15,6 @@ const baseFeedback: TimestampFeedback = {
   startMs: 0,
   endMs: 30000,
   transcript: '세대별 GC 가 동작합니다.',
-  delivery: null,
   technicalFeedback: {
     rubricCategory: 'TECHNICAL',
     rubricId: 'technical-v1',
@@ -33,7 +30,6 @@ const baseFeedback: TimestampFeedback = {
   },
   nonverbalFeedback: null,
   fillerWordCount: null,
-  overallComment: null,
   isAnalyzed: true,
 }
 
@@ -46,21 +42,23 @@ const baseQuestion: QuestionWithAnswer = {
   endMs: 30000,
 }
 
-const renderPanel = (feedback: TimestampFeedback) => {
+const renderPanel = (feedback: TimestampFeedback, onSeek: (ms: number) => void = () => {}) => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
   return render(
-    <QueryClientProvider client={client}>
-      <FeedbackPanel
-        feedbacks={[feedback]}
-        questions={[baseQuestion]}
-        selectedFeedbackId={feedback.id}
-        onSeek={() => {}}
-        interviewId={1}
-        bookmarkIdsByTsfId={new Map()}
-      />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={client}>
+        <FeedbackPanel
+          feedbacks={[feedback]}
+          questions={[baseQuestion]}
+          selectedFeedbackId={feedback.id}
+          onSeek={onSeek}
+          interviewId={1}
+          bookmarkIdsByTsfId={new Map()}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -95,6 +93,27 @@ describe('FeedbackPanel', () => {
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
     expect(screen.getByText('3점')).toBeInTheDocument()
+  })
+
+  it('타임스탬프 버튼 클릭 / 키보드 (Enter / Space) 로 seek 동작', async () => {
+    const onSeek = vi.fn()
+    renderPanel(baseFeedback, onSeek)
+    const user = userEvent.setup()
+
+    const seekButton = screen.getByRole('button', { name: /구간으로 이동/ })
+    expect(seekButton.tagName).toBe('BUTTON')
+
+    await user.click(seekButton)
+    expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
+
+    onSeek.mockClear()
+    seekButton.focus()
+    await user.keyboard('{Enter}')
+    expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
+
+    onSeek.mockClear()
+    await user.keyboard(' ')
+    expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
   })
 
   it('자유서술 텍스트 (긍정 / 부정 / 제안) 부재', () => {
