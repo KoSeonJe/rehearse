@@ -33,12 +33,13 @@ React 18 + Vite + TS strict + Tailwind + Zustand + TanStack Query. 도메인 기
 ## 룰 로드
 
 @AGENTS.md
+@.claude/rules/review-output.md
 @frontend/AGENTS.md
 @frontend/.claude/rules/conventions.md
 @frontend/.claude/rules/architecture.md
 @frontend/.claude/rules/testing.md
 
-위 5개 자동 prepend. 디자인 / UI 작업 시 추가 `Read`:
+위 6개 자동 prepend. 디자인 / UI 작업 시 추가 `Read`:
 
 - `frontend/DESIGN.md` — 디자인 토큰 / 색 / 타이포 / 간격
 

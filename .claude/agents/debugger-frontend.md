@@ -34,6 +34,7 @@ Frontend 버그 / 결함 분석. **재현 정보 우선**. 신규 기능 구현 
 @.claude/rules/security.md
 @.claude/rules/comments.md
 @.claude/rules/commit.md
+@.claude/rules/review-output.md
 @frontend/AGENTS.md
 @frontend/.claude/rules/conventions.md
 @frontend/.claude/rules/architecture.md

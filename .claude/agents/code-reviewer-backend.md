@@ -34,6 +34,7 @@ Backend 변경 코드 리뷰 전담. **구현 금지**. 발견 → 보고 → �
 @.claude/rules/security.md
 @.claude/rules/comments.md
 @.claude/rules/commit.md
+@.claude/rules/review-output.md
 @backend/AGENTS.md
 @backend/.claude/rules/conventions.md
 @backend/.claude/rules/testing.md
