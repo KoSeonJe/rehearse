@@ -20,25 +20,37 @@ from extractors.ffmpeg_extractor import extract_audio, extract_answer_audios, ex
 from analyzers.gemini_analyzer import analyze_answer_audio
 from analyzers.stt_analyzer import transcribe_chunked
 from analyzers.vision_analyzer import analyze_frames
-from analyzers.nonverbal_rubric_mapper import NonverbalRubricMapper
-
-_RUBRIC_MAPPER = NonverbalRubricMapper()
 
 WORK_DIR = "/tmp/analysis"
 
+_GEMINI_DIMENSIONS = ("fluency", "confidence_tone")
+_VISION_DIMENSION = "eye_contact_posture"
 
-def _build_nonverbal_score(
-    verbal_dict: dict,
-    vision_dict: dict,
-    prev_score: dict | None,
-    difficulty: str,
-) -> dict:
-    return _RUBRIC_MAPPER.score_turn(
-        verbal=verbal_dict,
-        vision=vision_dict,
-        prev=prev_score,
-        meta={"difficulty": difficulty},
-    )
+
+def _build_nonverbal_score(gemini: dict | None, vision: dict | None) -> dict | None:
+    score: dict = {}
+    vocal_dims = _collect_dimensions(gemini, _GEMINI_DIMENSIONS)
+    if vocal_dims:
+        score["vocal"] = {"dimensions": vocal_dims}
+    vision_dims = _collect_dimensions(vision, (_VISION_DIMENSION,))
+    if vision_dims:
+        score["vision"] = {"dimensions": vision_dims}
+    return score or None
+
+
+def _collect_dimensions(source: dict | None, dimension_refs: tuple[str, ...]) -> list[dict]:
+    if not isinstance(source, dict):
+        return []
+    dims = source.get("nonverbalDimensions")
+    if not isinstance(dims, dict):
+        return []
+    collected: list[dict] = []
+    for ref in dimension_refs:
+        entry = dims.get(ref)
+        if not isinstance(entry, dict):
+            continue
+        collected.append({"dimension_ref": ref, **entry})
+    return collected
 
 
 def lambda_handler(event, context):
@@ -140,12 +152,8 @@ def _run_pipeline(parsed, bucket: str, key: str) -> dict:
                 position=position, tech_stack=tech_stack, level=level,
                 skip_analyzing_update=True,
             )
-            # 레거시 폴백은 이미 ANALYZING 상태이므로 중복 호출 스킵
-            verbal_ok = any(
-                f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment")
-                for f in timestamp_feedbacks
-            )
-            nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
+            verbal_ok = any(f.get("transcript") for f in timestamp_feedbacks)
+            nonverbal_ok = False
     else:
         # 레거시 경로 (USE_GEMINI=false 또는 answer_audio_paths가 빈 경우)
         if audio_path is None:
@@ -155,11 +163,8 @@ def _run_pipeline(parsed, bucket: str, key: str) -> dict:
             interview_id, question_set_id,
             position=position, tech_stack=tech_stack, level=level,
         )
-        verbal_ok = any(
-            f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment")
-            for f in timestamp_feedbacks
-        )
-        nonverbal_ok = any(f.get("eyeContactLevel") is not None for f in timestamp_feedbacks)
+        verbal_ok = any(f.get("transcript") for f in timestamp_feedbacks)
+        nonverbal_ok = False
 
     update_progress(interview_id, question_set_id, "FINALIZING")
 
@@ -258,9 +263,7 @@ def _run_gemini_pipeline(
     verbal_ok = any(r is not None for r in gemini_results)
     nonverbal_ok = any(r is not None for r in vision_results)
 
-    # 피드백 조립
     timestamp_feedbacks = []
-    prev_score: dict | None = None
     for i, answer in enumerate(answers):
         gemini = gemini_results[i]
         vision = vision_results[i]
@@ -270,7 +273,6 @@ def _run_gemini_pipeline(
             "startMs": answer["startMs"],
             "endMs": answer["endMs"],
             "transcript": gemini.get("transcript", "") if gemini else "",
-            "attitudeComment": None,
         }
 
         if gemini:
@@ -278,46 +280,8 @@ def _run_gemini_pipeline(
             filler_list = vocal.get("fillerWords", [])
             fb["fillerWords"] = filler_list
             fb["fillerWordCount"] = len(filler_list) if isinstance(filler_list, list) else 0
-            fb["speechPace"] = vocal.get("speechPace")
-            fb["toneConfidenceLevel"] = vocal.get("toneConfidenceLevel")
-            fb["emotionLabel"] = vocal.get("emotionLabel")
-            fb["speedVariance"] = _coerce_clamped_float(
-                vocal.get("speedVariance"), 0.0, 1.0, default=0.5, field="vocal.speedVariance"
-            )
-            fb["vocalComment"] = _comment_block(vocal)
 
-            attitude = gemini.get("attitude", {})
-            fb["attitudeComment"] = _comment_block(attitude)
-
-        if vision:
-            fb["eyeContactLevel"] = vision.get("eyeContactLevel")
-            fb["postureLevel"] = vision.get("postureLevel")
-            fb["expressionLabel"] = vision.get("expressionLabel")
-            fb["gazeOnCameraRatio"] = _coerce_clamped_float(
-                vision.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5, field="vision.gazeOnCameraRatio"
-            )
-            fb["postureUnstableCount"] = _coerce_clamped_int(
-                vision.get("postureUnstableCount"), 0, 100, default=0, field="vision.postureUnstableCount"
-            )
-            fb["nonverbalComment"] = _comment_block(vision)
-
-        fb["overallComment"] = _comment_block(gemini.get("overall_delivery")) if gemini else None
-
-        score = _build_nonverbal_score(
-            verbal_dict={
-                "filler_word_count": fb.get("fillerWordCount", 0),
-                "tone_label": _level_to_tone_label(fb.get("toneConfidenceLevel")),
-                "speedVariance": fb.get("speedVariance", 0.5),
-            },
-            vision_dict={
-                "gazeOnCameraRatio": fb.get("gazeOnCameraRatio", 0.5),
-                "postureUnstableCount": fb.get("postureUnstableCount", 0),
-            },
-            prev_score=prev_score,
-            difficulty=answer.get("difficulty", "easy"),
-        )
-        fb["nonverbalScore"] = score
-        prev_score = score
+        fb["nonverbalScore"] = _build_nonverbal_score(gemini, vision)
         timestamp_feedbacks.append(fb)
 
     return timestamp_feedbacks, verbal_ok, nonverbal_ok
@@ -372,59 +336,23 @@ def _build_timestamp_feedbacks(
     feedbacks = []
     stt_text = stt_result["full_text"] if stt_result else ""
     stt_segments = stt_result["segments"] if stt_result else []
-    prev_score: dict | None = None
 
     for answer in answers:
         start_ms = answer["startMs"]
         end_ms = answer["endMs"]
-        question_text = answer.get("questionText", "")
         question_id = answer.get("questionId")
 
         transcript = _extract_transcript_for_range(stt_segments, start_ms, end_ms)
         if not transcript and stt_text and len(answers) == 1:
             transcript = stt_text
 
-        # 답변별 프레임 필터링 + Vision 분석
-        answer_frames = _filter_frames_for_range(frame_paths, start_ms, end_ms)
-        vision_result = _safe_vision(answer_frames) if answer_frames else None
-
         fb = {
             "questionId": question_id,
             "startMs": start_ms,
             "endMs": end_ms,
             "transcript": transcript or "",
-            "attitudeComment": None,
+            "nonverbalScore": None,
         }
-
-        if vision_result:
-            fb["eyeContactLevel"] = vision_result.get("eyeContactLevel")
-            fb["postureLevel"] = vision_result.get("postureLevel")
-            fb["expressionLabel"] = vision_result.get("expressionLabel")
-            fb["gazeOnCameraRatio"] = _coerce_clamped_float(
-                vision_result.get("gazeOnCameraRatio"), 0.0, 1.0, default=0.5, field="vision.gazeOnCameraRatio"
-            )
-            fb["postureUnstableCount"] = _coerce_clamped_int(
-                vision_result.get("postureUnstableCount"), 0, 100, default=0, field="vision.postureUnstableCount"
-            )
-            fb["nonverbalComment"] = _comment_block(vision_result)
-
-        fb["overallComment"] = None
-
-        score = _build_nonverbal_score(
-            verbal_dict={
-                "filler_word_count": fb.get("fillerWordCount", 0),
-                "tone_label": "PROFESSIONAL",
-                "speedVariance": fb.get("speedVariance", 0.5),
-            },
-            vision_dict={
-                "gazeOnCameraRatio": fb.get("gazeOnCameraRatio", 0.5),
-                "postureUnstableCount": fb.get("postureUnstableCount", 0),
-            },
-            prev_score=prev_score,
-            difficulty=answer.get("difficulty", "easy"),
-        )
-        fb["nonverbalScore"] = score
-        prev_score = score
 
         feedbacks.append(fb)
 
@@ -444,9 +372,8 @@ def _extract_transcript_for_range(
 
 
 def _compute_overall(feedbacks: list[dict]) -> str:
-    """라벨 기반 종합 코멘트를 생성한다."""
-    verbal_count = sum(1 for f in feedbacks if f.get("transcript") or f.get("vocalComment") or f.get("attitudeComment"))
-    nonverbal_count = sum(1 for f in feedbacks if f.get("eyeContactLevel"))
+    verbal_count = sum(1 for f in feedbacks if f.get("transcript"))
+    nonverbal_count = sum(1 for f in feedbacks if _has_vision_score(f))
     total = len(feedbacks)
 
     parts = []
@@ -462,33 +389,15 @@ def _compute_overall(feedbacks: list[dict]) -> str:
     return comment
 
 
-def _level_to_tone_label(level: str | None) -> str:
-    """toneConfidenceLevel(GOOD/AVERAGE/NEEDS_IMPROVEMENT) → tone_label for D12 매퍼."""
-    if level == "GOOD":
-        return "CONFIDENT"
-    if level == "NEEDS_IMPROVEMENT":
-        return "HESITANT"
-    return "PROFESSIONAL"
-
-
-def _comment_block(src: dict | None) -> dict | None:
-    if not src:
-        return None
-
-    def _norm(v):
-        if v is None:
-            return None
-        s = str(v).strip()
-        return s or None
-
-    block = {
-        "positive":   _norm(src.get("positive")),
-        "negative":   _norm(src.get("negative")),
-        "suggestion": _norm(src.get("suggestion")),
-    }
-    if all(v is None for v in block.values()):
-        return None
-    return block
+def _has_vision_score(fb: dict) -> bool:
+    score = fb.get("nonverbalScore")
+    if not isinstance(score, dict):
+        return False
+    vision = score.get("vision")
+    if not isinstance(vision, dict):
+        return False
+    dims = vision.get("dimensions")
+    return isinstance(dims, list) and len(dims) > 0
 
 
 def _safe_stt(audio_path: str) -> dict | None:
@@ -554,43 +463,3 @@ def _classify_error(e: Exception) -> str:
     return "INTERNAL_ERROR"
 
 
-def _coerce_clamped_float(value, lo: float, hi: float, default: float, *, field: str = "") -> float:
-    """신규 수치 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
-    if value is None or isinstance(value, bool):
-        if field:
-            print(f"[Analysis][Schema] missing field={field} → default={default}")
-        return default
-    try:
-        v = float(value)
-    except (TypeError, ValueError):
-        if field:
-            print(f"[Analysis][Schema] invalid field={field} value={value!r} → default={default}")
-        return default
-    if v != v:  # NaN
-        if field:
-            print(f"[Analysis][Schema] NaN field={field} → default={default}")
-        return default
-    return max(lo, min(hi, v))
-
-
-def _coerce_clamped_int(value, lo: int, hi: int, default: int, *, field: str = "") -> int:
-    """신규 정수 필드 누락/타입 오류 시 default 적용 + [lo, hi] clamp."""
-    if value is None or isinstance(value, bool):
-        if field:
-            print(f"[Analysis][Schema] missing field={field} → default={default}")
-        return default
-    try:
-        v = int(value)
-    except (TypeError, ValueError):
-        try:
-            f = float(value)
-        except (TypeError, ValueError):
-            if field:
-                print(f"[Analysis][Schema] invalid field={field} value={value!r} → default={default}")
-            return default
-        if f != f:  # NaN
-            if field:
-                print(f"[Analysis][Schema] NaN field={field} → default={default}")
-            return default
-        v = int(f)
-    return max(lo, min(hi, v))
