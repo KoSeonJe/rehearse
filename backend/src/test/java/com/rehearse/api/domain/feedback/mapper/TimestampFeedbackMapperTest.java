@@ -35,7 +35,7 @@ class TimestampFeedbackMapperTest {
                     .build();
 
             SaveFeedbackRequest.TimestampFeedbackItem item = createTimestampFeedbackItem(
-                    1000L, 5000L, "답변 내용", 2, "GOOD", "AVERAGE", "적절", List.of("음", "어"));
+                    1000L, 5000L, "답변 내용", 2, List.of("음", "어"));
 
             // when
             TimestampFeedback result = mapper.toEntity(item, question);
@@ -46,7 +46,6 @@ class TimestampFeedbackMapperTest {
             assertThat(result.getEndMs()).isEqualTo(5000L);
             assertThat(result.getTranscript()).isEqualTo("답변 내용");
             assertThat(result.getFillerWordCount()).isEqualTo(2);
-            assertThat(result.getEyeContactLevel()).isEqualTo("GOOD");
             assertThat(result.isAnalyzed()).isTrue();
             assertThat(result.getFillerWords()).isEqualTo("[\"음\",\"어\"]");
         }
@@ -56,7 +55,7 @@ class TimestampFeedbackMapperTest {
         void toEntity_nullQuestion_createsEntity() {
             // given
             SaveFeedbackRequest.TimestampFeedbackItem item = createTimestampFeedbackItem(
-                    0L, 3000L, null, null, null, null, null, null);
+                    0L, 3000L, null, null, null);
 
             // when
             TimestampFeedback result = mapper.toEntity(item, null);
@@ -110,32 +109,6 @@ class TimestampFeedbackMapperTest {
     }
 
     @Nested
-    @DisplayName("serializeCommentBlock 메서드")
-    class SerializeCommentBlock {
-
-        @Test
-        @DisplayName("CommentBlock을 JSON 문자열로 직렬화한다")
-        void serializeCommentBlock_validBlock_returnsJson() {
-            // given
-            SaveFeedbackRequest.CommentBlock block = new SaveFeedbackRequest.CommentBlock();
-            ReflectionTestUtils.setField(block, "positive", "좋은 답변입니다");
-
-            // when
-            String result = mapper.serializeCommentBlock(block);
-
-            // then
-            assertThat(result).contains("좋은 답변입니다");
-        }
-
-        @Test
-        @DisplayName("null이면 null을 반환한다")
-        void serializeCommentBlock_null_returnsNull() {
-            // when & then
-            assertThat(mapper.serializeCommentBlock(null)).isNull();
-        }
-    }
-
-    @Nested
     @DisplayName("toJson 메서드")
     class ToJson {
 
@@ -163,7 +136,6 @@ class TimestampFeedbackMapperTest {
 
     private SaveFeedbackRequest.TimestampFeedbackItem createTimestampFeedbackItem(
             Long startMs, Long endMs, String transcript, Integer fillerWordCount,
-            String eyeContactLevel, String postureLevel, String speechPace,
             List<String> fillerWords) {
 
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
@@ -171,9 +143,6 @@ class TimestampFeedbackMapperTest {
         ReflectionTestUtils.setField(item, "endMs", endMs);
         ReflectionTestUtils.setField(item, "transcript", transcript);
         ReflectionTestUtils.setField(item, "fillerWordCount", fillerWordCount);
-        ReflectionTestUtils.setField(item, "eyeContactLevel", eyeContactLevel);
-        ReflectionTestUtils.setField(item, "postureLevel", postureLevel);
-        ReflectionTestUtils.setField(item, "speechPace", speechPace);
         ReflectionTestUtils.setField(item, "fillerWords", fillerWords);
         return item;
     }

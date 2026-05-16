@@ -6,7 +6,6 @@ import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NonverbalScorePersister {
 
-    private final NonverbalRubricScorer nonverbalRubricScorer;
+    private static final String RUBRIC_ID = "nonverbal-v1";
+
     private final QuestionScorePersister questionScorePersister;
 
     public void persistAll(QuestionSet questionSet,
@@ -50,45 +50,59 @@ public class NonverbalScorePersister {
         }
 
         Interview interview = questionSet.getInterview();
-        String category = questionSet.getCategory().name();
-        String track = resolveTrack(interview);
-        String difficulty = item.getDifficulty() != null ? item.getDifficulty() : "easy";
+        SaveFeedbackRequest.NonverbalScore payload = item.getNonverbalScore();
 
-        NonverbalTurnScore score = nonverbalRubricScorer.score(
-                item.getNonverbalScore(),
-                category,
-                track,
-                item.getResumeMode(),
-                difficulty
-        );
-        if (!score.hasAnyScore()) {
-            if (item.getNonverbalScore() == null) {
-                log.info("[정상 skip] Nonverbal payloadNull. interviewId={}, questionId={}",
-                        interview.getId(), question.getId());
-            } else {
-                SaveFeedbackRequest.NonverbalScore payload = item.getNonverbalScore();
-                log.warn("[결함 skip] Nonverbal scoreEmpty. interviewId={}, questionId={}, "
-                                + "fluency={}, confidenceTone={}, eyeContactPosture={}, composure={}",
-                        interview.getId(), question.getId(),
-                        payload.getFluency(), payload.getConfidenceTone(),
-                        payload.getEyeContactPosture(), payload.getComposure());
-            }
+        if (payload == null) {
+            log.info("[정상 skip] Nonverbal payloadNull. interviewId={}, questionId={}",
+                    interview.getId(), question.getId());
+            return;
+        }
+
+        if (payload.getVocal() == null && payload.getVision() == null) {
+            log.warn("[결함 skip] Nonverbal areasEmpty. interviewId={}, questionId={}",
+                    interview.getId(), question.getId());
             return;
         }
 
         Map<String, DimensionScore> dims = new LinkedHashMap<>();
-        dims.put("fluency", DimensionScore.of(score.fluency(), null, null));
-        dims.put("confidence_tone", DimensionScore.of(score.confidenceTone(), null, null));
-        dims.put("eye_contact_posture", DimensionScore.of(score.eyeContactPosture(), null, null));
-        dims.put("composure", DimensionScore.of(score.composure(), null, null));
+        mergeArea(dims, payload.getVocal(), interview.getId(), question.getId(), "vocal");
+        mergeArea(dims, payload.getVision(), interview.getId(), question.getId(), "vision");
 
-        questionScorePersister.saveNonverbal(question.getId(), interview.getId(), dims);
+        if (dims.isEmpty()) {
+            log.warn("[결함 skip] Nonverbal allInvalid. interviewId={}, questionId={}",
+                    interview.getId(), question.getId());
+            return;
+        }
+
+        questionScorePersister.saveRubric(question.getId(), interview.getId(), RUBRIC_ID, null, dims);
     }
 
-    private String resolveTrack(Interview interview) {
-        if (interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
-            return "RESUME_BASED";
+    private void mergeArea(Map<String, DimensionScore> dims,
+                           SaveFeedbackRequest.AreaScore area,
+                           Long interviewId,
+                           Long questionId,
+                           String areaTag) {
+        if (area == null || area.getDimensions() == null) {
+            return;
         }
-        return null;
+        for (SaveFeedbackRequest.DimensionScoreItem dim : area.getDimensions()) {
+            if (!isValid(dim)) {
+                continue;
+            }
+            String key = dim.getDimensionRef();
+            DimensionScore score = DimensionScore.of(dim.getScore(), dim.getObservation(), dim.getEvidenceQuote());
+            if (dims.putIfAbsent(key, score) != null) {
+                log.warn("[결함 skip] Nonverbal dimensionKeyConflict. interviewId={}, questionId={}, key={}, skippedArea={}",
+                        interviewId, questionId, key, areaTag);
+            }
+        }
+    }
+
+    private boolean isValid(SaveFeedbackRequest.DimensionScoreItem dim) {
+        return dim != null
+                && dim.getDimensionRef() != null && !dim.getDimensionRef().isBlank()
+                && dim.getScore() != null
+                && dim.getObservation() != null && !dim.getObservation().isBlank()
+                && dim.getEvidenceQuote() != null && !dim.getEvidenceQuote().isBlank();
     }
 }

@@ -1,15 +1,16 @@
 package com.rehearse.api.domain.feedback.dto;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @NoArgsConstructor
@@ -37,24 +38,10 @@ public class SaveFeedbackRequest {
         @NotNull private Long endMs;
         private String transcript;
 
-        private CommentBlock nonverbalComment;
-        private CommentBlock overallComment;
-        private CommentBlock vocalComment;
-        private CommentBlock attitudeComment;
-
         private Integer fillerWordCount;
-        private String expressionLabel;
-
-        // 3단계 라벨 (GOOD / AVERAGE / NEEDS_IMPROVEMENT)
-        private String eyeContactLevel;
-        private String postureLevel;
-        private String toneConfidenceLevel;
-
-        // 음성 특성
         private List<String> fillerWords;
-        private String speechPace;
-        private String emotionLabel;
 
+        @Valid
         private NonverbalScore nonverbalScore;
         private String difficulty;
         private String resumeMode;
@@ -62,21 +49,37 @@ public class SaveFeedbackRequest {
 
     @Getter
     @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class NonverbalScore {
-        private Integer fluency;
-        @JsonProperty("confidence_tone")
-        private Integer confidenceTone;
-        @JsonProperty("eye_contact_posture")
-        private Integer eyeContactPosture;
-        private Integer composure;
-        private Map<String, Object> rawSignals;
+        @Valid private AreaScore vocal;
+        @Valid private AreaScore vision;
     }
 
     @Getter
     @NoArgsConstructor
-    public static class CommentBlock {
-        private String positive;
-        private String negative;
-        private String suggestion;
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class AreaScore {
+        @Valid private List<DimensionScoreItem> dimensions;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class DimensionScoreItem {
+        @JsonProperty("dimension_ref")
+        @NotBlank
+        private String dimensionRef;
+
+        @NotNull
+        @Min(1)
+        @Max(3)
+        private Integer score;
+
+        @NotBlank
+        private String observation;
+
+        @JsonProperty("evidence_quote")
+        @NotBlank
+        private String evidenceQuote;
     }
 }

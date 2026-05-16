@@ -82,12 +82,12 @@
 
 ```
 refactor(lambda): gemini_analyzer dimension 채점 prompt 전환
-refactor(lambda): vision_analyzer dimension 채점 prompt + transcript 입력 추가
+refactor(lambda): vision_analyzer dimension 채점 prompt + frame 인용
 ```
 
 ## 비고
 
 - max_tokens 실측 timing (P1-C) = 본 Task 구현 진입 직전 dev dry-run. 응답 길이 = 자유서술 3섹션 + raw 9 키 삭제 vs dimension 2-3 + observation/evidenceQuote 추가 → 추정 -30%~+10%. 실측 후 한도 조정 PR 같이.
-- evidence_quote source 결정 (G3): vision 도 transcript substring 강제. analyzer 가 frame 만 보고 산출하던 기존과 달리 transcript 입력 추가 후 prompt 안에 "evidence_quote = transcript substring" 명시.
+- evidence_quote source 결정 (G3, 2026-05-17 정정): verbal scorer / gemini audio = transcript substring 유지. vision = frame 자체 인용 (예: "00:45 구간 시선 이탈"). vision analyzer 는 transcript 입력 받지 않음. `dimension_validator.validate(stage="vision")` 호출 시 substring 검증 스킵.
 - rubric YAML 가이드 인용 = 단일 출처 = `_dimensions.yaml` (BE-06 산물). deploy 스크립트 (BE-04) 가 build-time copy.
 - 보안 (OWASP A03): prompt 안 transcript 영역 마커 (`<<<USER_ANSWER>>>...` 또는 동등) 보존 — 사용자 발화 injection 차단.

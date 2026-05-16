@@ -28,15 +28,12 @@ public class QuestionSetFeedbackResponse {
 
     public static QuestionSetFeedbackResponse from(QuestionSetFeedback feedback,
                                                     String streamingUrl, String fallbackUrl,
-                                                    Map<Long, QuestionScore> questionScoreByQuestionId,
+                                                    Map<Long, List<QuestionScore>> questionScoresByQuestionId,
                                                     Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId) {
         List<TimestampFeedbackResponse> timestamps = feedback.getTimestampFeedbacks().stream()
                 .map(timestamp -> {
-                    QuestionScore qs = resolveQuestionScore(timestamp, questionScoreByQuestionId);
-                    List<QuestionScoreDimension> dims = qs != null
-                            ? dimensionsByQuestionScoreId.getOrDefault(qs.getId(), List.of())
-                            : List.of();
-                    return TimestampFeedbackResponse.from(timestamp, qs, dims);
+                    List<QuestionScore> scores = resolveQuestionScores(timestamp, questionScoresByQuestionId);
+                    return TimestampFeedbackResponse.from(timestamp, scores, dimensionsByQuestionScoreId);
                 })
                 .toList();
 
@@ -49,12 +46,12 @@ public class QuestionSetFeedbackResponse {
                 .build();
     }
 
-    private static QuestionScore resolveQuestionScore(TimestampFeedback timestamp,
-                                                       Map<Long, QuestionScore> questionScoreByQuestionId) {
+    private static List<QuestionScore> resolveQuestionScores(TimestampFeedback timestamp,
+                                                              Map<Long, List<QuestionScore>> questionScoresByQuestionId) {
         Question question = timestamp.getQuestion();
         if (question == null) {
-            return null;
+            return List.of();
         }
-        return questionScoreByQuestionId.get(question.getId());
+        return questionScoresByQuestionId.getOrDefault(question.getId(), List.of());
     }
 }
