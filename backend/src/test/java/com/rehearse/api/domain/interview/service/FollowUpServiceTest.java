@@ -230,7 +230,7 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("Analyzer SKIP 권고 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        @DisplayName("Analyzer SKIP 권고 시 base questionId 로 FollowUpQuestionCreatedEvent 를 발행한다")
         void generateFollowUp_analyzerRecommendsSkip_publishesEvent() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
@@ -239,7 +239,7 @@ class FollowUpServiceTest {
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
             then(followUpTransactionHandler).should()
-                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
+                    .publishFollowUpQuestionCreatedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L));
         }
 
         @Test
@@ -258,7 +258,7 @@ class FollowUpServiceTest {
         }
 
         @Test
-        @DisplayName("Step B 자체 skip 반환 시 base questionId 로 TurnCompletedEvent 를 발행한다")
+        @DisplayName("Step B 자체 skip 반환 시 base questionId 로 FollowUpQuestionCreatedEvent 를 발행한다")
         void generateFollowUp_stepBSelfSkip_publishesEvent() {
             given(followUpTransactionHandler.loadFollowUpContext(1L, 1L, 10L)).willReturn(context(1, 2));
             given(audioTurnAnalyzer.analyze(any(), any(), any(), any(), any(), any(AskedPerspectives.class)))
@@ -268,7 +268,7 @@ class FollowUpServiceTest {
             followUpService.generateFollowUp(1L, 1L, request("질문"), audio());
 
             then(followUpTransactionHandler).should()
-                    .publishTurnCompletedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L), eq(0));
+                    .publishFollowUpQuestionCreatedEvent(eq(1L), any(FollowUpContext.class), any(TurnAnalysisResult.class), eq(50L));
         }
 
         @Test

@@ -102,7 +102,7 @@ public class ResumeInterviewOrchestrator {
                 currentMode, interviewId, currentState, answerText, analysis,
                 skeleton, plan, previousExchanges);
 
-        if (shouldSkipTurnCompletedEvent(handlerResult)) {
+        if (shouldSkipEventPublish(handlerResult)) {
             log.warn("[진행차단진단] interviewId={} track={} stage={} reason={} turnIndex={}",
                     interviewId, InterviewTrack.RESUME.logLabel(),
                     currentMode.name().toLowerCase(),
@@ -215,7 +215,7 @@ public class ResumeInterviewOrchestrator {
                 .build();
     }
 
-    private boolean shouldSkipTurnCompletedEvent(TurnHandlerResult result) {
+    private boolean shouldSkipEventPublish(TurnHandlerResult result) {
         FollowUpResponse response = result.response();
         return result.questionId() == null
                 && response.isSkip()

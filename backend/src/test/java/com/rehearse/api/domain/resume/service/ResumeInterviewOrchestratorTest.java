@@ -211,7 +211,7 @@ class ResumeInterviewOrchestratorTest {
     }
 
     @Nested
-    @DisplayName("TurnCompletedEvent 발행")
+    @DisplayName("FollowUpQuestionCreatedEvent 발행")
     class EventPublishing {
 
         @Test

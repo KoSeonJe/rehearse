@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.*;
@@ -296,25 +296,23 @@ class FollowUpTransactionHandlerTest {
                     1L, createContext(), followUp, createTurn());
 
             assertThat(result.question().getId()).isEqualTo(100L);
-            TurnCompletedEvent event = capturePublishedEvent();
+            FollowUpQuestionCreatedEvent event = capturePublishedEvent();
             assertThat(event.questionId()).isEqualTo(100L);
             assertThat(event.questionSetId()).isEqualTo(10L);
-            assertThat(event.turnIndex()).isEqualTo(1L);
         }
 
         @Test
-        @DisplayName("publishTurnCompletedEvent - 저장 없는 종료 분기도 짧은 트랜잭션 메서드에서 이벤트를 발행한다")
-        void publishTurnCompletedEvent_publishesBaseQuestionEvent() {
+        @DisplayName("publishFollowUpQuestionCreatedEvent - 저장 없는 종료 분기도 짧은 트랜잭션 메서드에서 이벤트를 발행한다")
+        void publishFollowUpQuestionCreatedEvent_publishesBaseQuestionEvent() {
             Interview interview = createInProgressInterview();
             given(interviewFinder.findById(1L)).willReturn(interview);
 
-            handler.publishTurnCompletedEvent(
-                    1L, createContext(), createTurn(), 50L, 0);
+            handler.publishFollowUpQuestionCreatedEvent(
+                    1L, createContext(), createTurn(), 50L);
 
-            TurnCompletedEvent event = capturePublishedEvent();
+            FollowUpQuestionCreatedEvent event = capturePublishedEvent();
             assertThat(event.questionId()).isEqualTo(50L);
             assertThat(event.questionSetId()).isEqualTo(10L);
-            assertThat(event.turnIndex()).isZero();
         }
 
         @Test
@@ -441,8 +439,8 @@ class FollowUpTransactionHandlerTest {
                 new AnswerAnalysis(50L, List.of(), List.of(), List.of(), 3, RecommendedNextAction.DEEP_DIVE));
     }
 
-    private TurnCompletedEvent capturePublishedEvent() {
-        ArgumentCaptor<TurnCompletedEvent> captor = ArgumentCaptor.forClass(TurnCompletedEvent.class);
+    private FollowUpQuestionCreatedEvent capturePublishedEvent() {
+        ArgumentCaptor<FollowUpQuestionCreatedEvent> captor = ArgumentCaptor.forClass(FollowUpQuestionCreatedEvent.class);
         then(eventPublisher).should().publishEvent(captor.capture());
         return captor.getValue();
     }

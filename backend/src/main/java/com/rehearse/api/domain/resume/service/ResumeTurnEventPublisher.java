@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.resume.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -40,16 +40,15 @@ public class ResumeTurnEventPublisher {
         try {
             Interview interview = interviewFinder.findById(interviewId);
             QuestionSet questionSet = resolveQuestionSet(interviewId, questionId);
-            TurnCompletedEvent event = TurnCompletedEvent.ofResumeTrack(
-                    interviewId, turnIndex, interview.getUserId(),
+            FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
+                    interviewId, interview.getUserId(),
                     questionId, questionSet != null ? questionSet.getId() : null,
                     userAnswer != null ? userAnswer : "",
-                    analysis, interview.getLevel(),
-                    currentMode, currentChainLevel, skeleton
+                    analysis, interview.getLevel()
             );
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
-            log.warn("Resume TurnCompletedEvent 발행 실패 — 턴 진행 차단하지 않음: interviewId={}, reason={}",
+            log.warn("Resume FollowUpQuestionCreatedEvent 발행 실패 — 턴 진행 차단하지 않음: interviewId={}, reason={}",
                     interviewId, e.getMessage());
         }
     }

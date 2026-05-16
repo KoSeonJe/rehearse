@@ -1,14 +1,11 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
@@ -67,14 +64,11 @@ public class RubricScorerPromptBuilder {
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
-            InterviewLevel userLevel,
-            ResumeMode resumeMode,
-            Integer currentChainLevel,
-            ResumeSkeleton resumeSkeleton
+            InterviewLevel userLevel
     ) {
         String systemPrompt = buildSystemPrompt();
         String userPrompt = buildUserPrompt(question, userAnswer, analysis, rubric,
-                dimensionsToScore, userLevel, resumeMode, currentChainLevel, resumeSkeleton);
+                dimensionsToScore, userLevel);
 
         List<ChatMessage> messages = new ArrayList<>();
         messages.add(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, systemPrompt));
@@ -103,22 +97,17 @@ public class RubricScorerPromptBuilder {
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
-            InterviewLevel userLevel,
-            ResumeMode resumeMode,
-            Integer currentChainLevel,
-            ResumeSkeleton resumeSkeleton
+            InterviewLevel userLevel
     ) {
-        String prompt = template
+        return template
                 .replace("{{USER_LEVEL}}", formatLevel(userLevel))
                 .replace("{{QUESTION_TEXT}}", question.getQuestionText())
                 .replace("{{USER_ANSWER}}", userAnswer != null ? userAnswer : "")
                 .replace("{{ANSWER_ANALYSIS_JSON}}", serializeAnalysis(analysis))
                 .replace("{{DIMENSIONS_TO_SCORE}}", String.join(", ", dimensionsToScore))
                 .replace("{{DIMENSION_DEFINITIONS}}", buildSelectedDefinitions(dimensionsToScore))
-                .replace("{{RESUME_CONTEXT}}", buildResumeContext(resumeSkeleton, dimensionsToScore))
-                .replace("{{CHAIN_DEPTH_OVERRIDE}}", buildChainDepthOverride(currentChainLevel, dimensionsToScore));
-
-        return prompt;
+                .replace("{{RESUME_CONTEXT}}", "")
+                .replace("{{CHAIN_DEPTH_OVERRIDE}}", "");
     }
 
     private String buildDimensionDefinitions() {
@@ -164,51 +153,6 @@ public class RubricScorerPromptBuilder {
             sb.append("\n");
         }
         return sb.toString();
-    }
-
-    private String buildResumeContext(ResumeSkeleton resumeSkeleton, List<String> dimensionsToScore) {
-        if (!dimensionsToScore.contains("factual_consistency") || resumeSkeleton == null) {
-            return "";
-        }
-        StringBuilder sb = new StringBuilder("## Resume Skeleton Context (for factual_consistency Factual Consistency)\n");
-        if (resumeSkeleton.projects() != null) {
-            for (var project : resumeSkeleton.projects()) {
-                sb.append("### Project: ").append(project.projectId()).append("\n");
-                if (project.claims() != null) {
-                    for (int i = 0; i < project.claims().size(); i++) {
-                        var claim = project.claims().get(i);
-                        sb.append("- [").append(i + 1).append("] ").append(claim.text()).append("\n");
-                    }
-                }
-            }
-        }
-        return sb.toString();
-    }
-
-    private String buildChainDepthOverride(Integer currentChainLevel, List<String> dimensionsToScore) {
-        if (!dimensionsToScore.contains("chain_depth") || currentChainLevel == null) {
-            return "";
-        }
-        int chainDepthScore = ChainDepthScoreMapper.scoreFor(currentChainLevel);
-        return "## chain_depth Chain Depth Override\n" +
-                "The system has determined that the candidate reached chain level " + currentChainLevel +
-                " in this session. Therefore chain_depth score MUST be " + chainDepthScore + ". " +
-                "Do not re-evaluate chain_depth from the answer text — use the provided value.\n";
-    }
-
-    /**
-     * chain level → chain_depth score 매핑 규칙:
-     * level 1 → score 1 (표면 답변), level 2~3 → score 2 (심화), level 4+ → score 3 (전문가)
-     */
-    static final class ChainDepthScoreMapper {
-        private static final int LEVEL_SURFACE_MAX = 1;
-        private static final int LEVEL_DEEP_MAX = 3;
-
-        static int scoreFor(int chainLevel) {
-            if (chainLevel <= LEVEL_SURFACE_MAX) return 1;
-            if (chainLevel <= LEVEL_DEEP_MAX) return 2;
-            return 3;
-        }
     }
 
     private String formatLevel(InterviewLevel level) {
