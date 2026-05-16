@@ -11,6 +11,9 @@ import json as _json
 from analyzers.json_utils import parse_llm_json
 from analyzers.prompts import KOREAN_INSTRUCTION
 from analyzers.verbal_prompt_factory import DEFAULT_TECH_STACKS
+from analyzers.dimension_validator import validate as validate_dimension
+
+GEMINI_DIMENSIONS = ("fluency", "confidence_tone")
 
 MAX_RETRIES = 5
 RETRY_DELAYS = [2, 5, 15, 30, 60]
@@ -201,6 +204,7 @@ def analyze_answer_audio(
             except _json.JSONDecodeError:
                 result = parse_llm_json(raw)
 
+            result = _enforce_dimension_validity(model, audio_file, user_prompt, result)
             print(f"[Gemini] 답변 분석 완료: keys={list(result.keys())}, perspective={perspective_key}")
             return result
 
@@ -225,3 +229,124 @@ def analyze_answer_audio(
 
     print(f"[Gemini] 모든 재시도 실패 — 폴백값 반환: {last_exception}")
     return copy.deepcopy(_FALLBACK_ANSWER)
+
+
+def _enforce_dimension_validity(model, audio_file, user_prompt: str, result: dict) -> dict:
+    transcript = result.get("transcript", "") if isinstance(result, dict) else ""
+    violations = _collect_violations(result, transcript)
+    if not violations:
+        return result
+
+    augmented = _build_retry_prompt(user_prompt, violations)
+    try:
+        retry_response = model.generate_content([audio_file, augmented])
+        raw = retry_response.text
+        try:
+            retried = _json.loads(raw)
+        except _json.JSONDecodeError:
+            retried = parse_llm_json(raw)
+    except Exception as e:
+        print(f"[Gemini] dimension 재시도 호출 실패: {e}")
+        return _omit_violating_dimensions(result, violations, retried_violations=None)
+
+    retried_transcript = retried.get("transcript", "") if isinstance(retried, dict) else ""
+    if retried_transcript:
+        result["transcript"] = retried_transcript
+        transcript = retried_transcript
+    retried_dims = (retried or {}).get("nonverbalDimensions") if isinstance(retried, dict) else None
+    target_dims = result.setdefault("nonverbalDimensions", {})
+
+    remaining_violations = []
+    for v in violations:
+        dim_key = v["dimension"]
+        if not isinstance(retried_dims, dict):
+            remaining_violations.append(v)
+            continue
+        candidate = retried_dims.get(dim_key)
+        if not isinstance(candidate, dict):
+            remaining_violations.append(v)
+            continue
+        check = validate_dimension(
+            dim_key,
+            candidate.get("score"),
+            candidate.get("observation"),
+            candidate.get("evidence_quote"),
+            transcript,
+        )
+        if check.valid:
+            target_dims[dim_key] = candidate
+        else:
+            remaining_violations.append({
+                "dimension": dim_key,
+                "field": check.field,
+                "reason": check.violation.value,
+            })
+
+    if remaining_violations:
+        return _omit_violating_dimensions(result, violations, remaining_violations)
+    return result
+
+
+def _collect_violations(result: dict, transcript: str) -> list[dict]:
+    violations = []
+    dims = (result or {}).get("nonverbalDimensions") if isinstance(result, dict) else None
+    if not isinstance(dims, dict):
+        for key in GEMINI_DIMENSIONS:
+            violations.append({"dimension": key, "field": "nonverbalDimensions", "reason": Violation_MISSING})
+        return violations
+    for key in GEMINI_DIMENSIONS:
+        dim = dims.get(key)
+        if not isinstance(dim, dict):
+            violations.append({"dimension": key, "field": "dimension", "reason": Violation_MISSING})
+            continue
+        check = validate_dimension(
+            key,
+            dim.get("score"),
+            dim.get("observation"),
+            dim.get("evidence_quote"),
+            transcript,
+        )
+        if not check.valid:
+            violations.append({
+                "dimension": key,
+                "field": check.field,
+                "reason": check.violation.value,
+            })
+    return violations
+
+
+def _build_retry_prompt(original_user_prompt: str, violations: list[dict]) -> str:
+    bullets = "\n".join(
+        f"- dimension={v['dimension']} field={v['field']} reason={v['reason']}"
+        for v in violations
+    )
+    notice = (
+        "\n\n[채점 보강 지시] 직전 응답이 다음 dimension 에서 검증 룰을 위반했습니다. "
+        "동일한 JSON 스키마로 다시 응답하되, 아래 항목을 반드시 시정하세요:\n"
+        f"{bullets}\n"
+        "- score 는 1·2·3 중 하나의 정수.\n"
+        "- observation 은 한국어 음절을 1자 이상 포함한 1~2문장.\n"
+        "- evidence_quote 는 transcript 의 substring 만 verbatim 인용 (없으면 빈 문자열 금지)."
+    )
+    return original_user_prompt + notice
+
+
+def _omit_violating_dimensions(
+    result: dict,
+    initial_violations: list[dict],
+    retried_violations: list[dict] | None,
+) -> dict:
+    dims = result.setdefault("nonverbalDimensions", {}) if isinstance(result, dict) else {}
+    final = retried_violations if retried_violations is not None else initial_violations
+    for v in final:
+        dim_key = v["dimension"]
+        if dim_key in dims:
+            dims.pop(dim_key, None)
+        print(
+            f"[결함 skip] retry_failed stage=gemini-audio dimension={dim_key} "
+            f"field={v['field']} reason={v['reason']}"
+        )
+    return result
+
+
+Violation_MISSING = "MissingDimension"

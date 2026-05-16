@@ -8,6 +8,9 @@ from openai import OpenAI, RateLimitError, AuthenticationError
 from config import Config
 from analyzers.json_utils import parse_llm_json
 from analyzers.prompts import KOREAN_INSTRUCTION
+from analyzers.dimension_validator import validate as validate_dimension
+
+VISION_DIMENSION = "eye_contact_posture"
 
 MAX_RETRIES = 3
 RETRY_DELAY = 2
@@ -122,9 +125,11 @@ def analyze_frames(frame_paths: list[str], transcript: str = "") -> dict:
 
             result = parse_llm_json(raw.strip())
             result = _validate_result(result)
+            result = _enforce_dimension_validity(client, content, result, safe_transcript)
 
-            score = result["nonverbalDimensions"]["eye_contact_posture"]["score"]
-            print(f"[Vision] 분석 완료: eye_contact_posture.score={score}")
+            ecp = result.get("nonverbalDimensions", {}).get("eye_contact_posture")
+            score_log = ecp.get("score") if isinstance(ecp, dict) else "omitted"
+            print(f"[Vision] 분석 완료: eye_contact_posture.score={score_log}")
             return result
 
         except AuthenticationError:
@@ -211,3 +216,79 @@ def _coerce_score(value, default: int) -> int:
     if v not in (1, 2, 3):
         return default
     return v
+
+
+def _enforce_dimension_validity(client, content, result: dict, transcript: str) -> dict:
+    ecp = result.get("nonverbalDimensions", {}).get(VISION_DIMENSION)
+    if not isinstance(ecp, dict):
+        _log_skip(field="dimension", reason="MissingDimension")
+        return {"nonverbalDimensions": {}}
+
+    check = validate_dimension(
+        VISION_DIMENSION,
+        ecp.get("score"),
+        ecp.get("observation"),
+        ecp.get("evidence_quote"),
+        transcript,
+    )
+    if check.valid:
+        return result
+
+    retried = _retry_vision_dimension(client, content, check, transcript)
+    if retried is None:
+        _log_skip(field=check.field, reason=check.violation.value)
+        return {"nonverbalDimensions": {}}
+
+    return {"nonverbalDimensions": {VISION_DIMENSION: retried}}
+
+
+def _retry_vision_dimension(client, content, first_violation, transcript: str) -> dict | None:
+    notice_text = (
+        "[채점 보강 지시] 직전 응답이 다음 검증 룰을 위반했습니다. "
+        "동일한 JSON 스키마로 다시 응답하되 시정하세요:\n"
+        f"- dimension={VISION_DIMENSION} field={first_violation.field} "
+        f"reason={first_violation.violation.value}\n"
+        "- score 는 1·2·3 중 하나의 정수.\n"
+        "- observation 은 한국어 음절을 1자 이상 포함한 1~2문장.\n"
+        "- evidence_quote 는 transcript 의 substring 만 verbatim 인용."
+    )
+    retry_content = list(content) + [{"type": "text", "text": notice_text}]
+    try:
+        response = client.chat.completions.create(
+            model=Config.VISION_MODEL,
+            messages=[
+                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "user", "content": retry_content},
+            ],
+            max_tokens=500,
+            temperature=0.3,
+            response_format={"type": "json_object"},
+        )
+        raw = response.choices[0].message.content
+        if not raw or not raw.strip():
+            return None
+        retried_result = parse_llm_json(raw.strip())
+    except Exception as e:
+        print(f"[Vision] dimension 재시도 호출 실패: {e}")
+        return None
+
+    candidate = (retried_result or {}).get("nonverbalDimensions", {}).get(VISION_DIMENSION)
+    if not isinstance(candidate, dict):
+        return None
+    check = validate_dimension(
+        VISION_DIMENSION,
+        candidate.get("score"),
+        candidate.get("observation"),
+        candidate.get("evidence_quote"),
+        transcript,
+    )
+    if not check.valid:
+        return None
+    return candidate
+
+
+def _log_skip(*, field: str, reason: str) -> None:
+    print(
+        f"[결함 skip] retry_failed stage=vision dimension={VISION_DIMENSION} "
+        f"field={field} reason={reason}"
+    )
