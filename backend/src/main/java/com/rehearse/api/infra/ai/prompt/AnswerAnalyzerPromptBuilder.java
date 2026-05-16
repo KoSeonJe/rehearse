@@ -12,7 +12,7 @@ import java.io.InputStream;
 @Component
 public class AnswerAnalyzerPromptBuilder {
 
-    private static final String TEMPLATE_PATH = "/prompts/template/follow-up-step-a-analyzer.txt";
+    private static final String TEMPLATE_PATH = "/prompts/template/answer-analyzer.txt";
 
     private String systemPromptTemplate;
 

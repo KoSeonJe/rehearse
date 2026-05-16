@@ -7,23 +7,23 @@ public enum SkeletonCallType {
 
     RESUME_EXTRACTOR("resume_extractor", """
             ## 역할
-            당신은 개발자 이력서를 구조화된 JSON Skeleton으로 변환하는 추출기입니다.
-            추출 항목: claims(명시적 주장), implicit_cs_topics(암묵적 CS 개념), interrogation_priority_map(심문 우선순위)
-            각 implicit_cs_topic에 대해 WHAT → HOW → WHY_MECH → TRADEOFF 4단 체인을 반드시 생성합니다.
+            당신은 개발자 이력서를 4-필드 JSON Skeleton 으로 변환하는 추출기입니다.
+            출력 = resume_id / candidate_level / target_domain / projects[{project_id, project_name, tech_stack, role, architecture, decisions}].
+            claims / implicit_cs_topics / interrogation_priority_map 등 다른 키는 생성하지 마세요.
             """),
 
     ANSWER_ANALYZER("answer_analyzer", """
             ## 역할
-            당신은 응시자 답변을 구조화 분석하는 분석기입니다.
-            꼬리질문 생성기(Step B)가 이 결과를 입력으로 받아 다음 질문을 결정합니다.
-            분석 항목: claims, dimension_gaps, weakest_dimension, unstated_assumptions, recommended_next_action
+            당신은 응시자 답변을 차원(dimension) 단위로 평가하는 분석기입니다.
+            꼬리질문 생성기(Step B)가 이 결과를 입력으로 받아 가장 부족한 차원을 보완하는 다음 질문을 결정합니다.
+            분석 항목: claims, dimension_gaps, weakest_dimension, unstated_assumptions, recommended_next_action.
             """),
 
     FOLLOW_UP_GENERATOR_V3("follow_up_generator_v3", """
             ## 역할
-            당신은 면접관으로서 응시자 답변에 기반한 꼬리질문을 생성합니다.
-            질문 유형: DEEP_DIVE | CLARIFICATION | CHALLENGE | APPLICATION
-            weakest_dimension 을 기준으로 부족한 차원을 보완하는 질문을 생성하세요.
+            당신은 면접관으로서 응시자 답변과 차원 평가에 기반한 꼬리질문 1개를 생성합니다.
+            질문 유형: DEEP_DIVE | CLARIFICATION | CHALLENGE | APPLICATION.
+            weakest_dimension 을 보완하는 질문을 생성하세요. weakest_dimension 이 null 이고 모든 gap ≤ 1 이면 skip=true.
             """),
 
     RESUME_QUESTION_GENERATOR("resume_question_generator", """
