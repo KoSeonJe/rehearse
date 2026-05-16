@@ -1,6 +1,5 @@
 package com.rehearse.api.infra.ai.prompt;
 
-import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -8,7 +7,6 @@ import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 
 @Slf4j
 @Component
@@ -38,8 +36,7 @@ public class AnswerAnalyzerPromptBuilder {
     public String buildUserPrompt(
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer,
-            List<AnswerFeedbackPerspective> askedPerspectives
+            String userAnswer
     ) {
         StringBuilder sb = new StringBuilder();
         sb.append("<<<MAIN_QUESTION>>>\n")
@@ -49,9 +46,6 @@ public class AnswerAnalyzerPromptBuilder {
         sb.append("<<<USER_ANSWER>>>\n")
           .append(userAnswer != null ? userAnswer : "(없음)")
           .append("\n<<<END_USER_ANSWER>>>\n");
-        sb.append("ASKED_PERSPECTIVES: ")
-          .append(PromptFormatters.formatPerspectives(askedPerspectives))
-          .append("\n");
         sb.append("\n위 답변을 분석해 JSON 한 객체로만 응답하세요.");
         return sb.toString();
     }

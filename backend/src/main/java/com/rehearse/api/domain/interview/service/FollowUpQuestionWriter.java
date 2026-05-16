@@ -1,17 +1,18 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.AskedPerspectives;
+import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.context.AnswerAnalysisJsonRenderer;
 import com.rehearse.api.infra.ai.context.BuiltContext;
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.context.FocusHints;
 import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -33,46 +33,57 @@ public class FollowUpQuestionWriter {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
+    private final ObjectMapper objectMapper;
 
     public GeneratedFollowUp write(
-            FollowUpGenerationRequest req,
+            String mainQuestion,
+            String userAnswer,
             AnswerAnalysis analysis,
-            AskedPerspectives askedPerspectives
+            ResumeSkeleton resumeSkeleton
     ) {
-        String answerAnalysisJson = AnswerAnalysisJsonRenderer.render(analysis, askedPerspectives.values());
-        BuiltContext built = buildContext(req, answerAnalysisJson, askedPerspectives);
-        ChatRequest chatRequest = buildChatRequest(built);
+        try {
+            BuiltContext built = contextBuilder.build(new ContextBuildRequest(
+                    CALL_TYPE,
+                    new FocusHints.FollowUpGeneratorV3Hints(
+                            mainQuestion != null ? mainQuestion : "",
+                            userAnswer != null ? userAnswer : "",
+                            analysis.claims().stream().map(c -> c.text()).toList(),
+                            analysis.dimensionGaps(),
+                            analysis.weakestDimension(),
+                            analysis.unstatedAssumptions(),
+                            serializeSkeleton(resumeSkeleton)
+                    ),
+                    null
+            ));
 
-        ChatResponse response = aiClient.chat(chatRequest);
-        GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
-                response, GeneratedFollowUp.class, aiClient, chatRequest);
-        return parsed.withAnswerText(req.answerText());
+            ChatRequest chatRequest = ChatRequest.builder()
+                    .messages(built.messages())
+                    .callType(CALL_TYPE)
+                    .temperature(TEMPERATURE)
+                    .maxTokens(MAX_TOKENS)
+                    .responseFormat(ResponseFormat.JSON_OBJECT)
+                    .build();
+
+            ChatResponse response = aiClient.chat(chatRequest);
+            GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
+                    response, GeneratedFollowUp.class, aiClient, chatRequest);
+            return parsed.withAnswerText(userAnswer);
+        } catch (BusinessException e) {
+            log.warn("[FollowUpQuestionWriter] LLM 호출 실패 → skip 반환: code={}, reason={}",
+                    e.getCode(), e.getMessage());
+            return GeneratedFollowUp.skipped("llm_failed");
+        }
     }
 
-    private BuiltContext buildContext(
-            FollowUpGenerationRequest req,
-            String answerAnalysisJson,
-            AskedPerspectives askedPerspectives
-    ) {
-        return contextBuilder.build(new ContextBuildRequest(
-                CALL_TYPE,
-                Map.of(),
-                req.previousExchanges() != null ? req.previousExchanges() : List.of(),
-                new FocusHints.FollowUpGeneratorV3Hints(
-                        answerAnalysisJson,
-                        askedPerspectives.values().stream().map(Enum::name).toList()
-                ),
-                null
-        ));
-    }
-
-    private static ChatRequest buildChatRequest(BuiltContext built) {
-        return ChatRequest.builder()
-                .messages(built.messages())
-                .callType(CALL_TYPE)
-                .temperature(TEMPERATURE)
-                .maxTokens(MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
-                .build();
+    private String serializeSkeleton(ResumeSkeleton skeleton) {
+        if (skeleton == null) {
+            return "";
+        }
+        try {
+            return objectMapper.writeValueAsString(List.of(skeleton.projects()));
+        } catch (JsonProcessingException e) {
+            log.warn("[FollowUpQuestionWriter] skeleton 직렬화 실패 — 빈 문자열 사용", e);
+            return "";
+        }
     }
 }

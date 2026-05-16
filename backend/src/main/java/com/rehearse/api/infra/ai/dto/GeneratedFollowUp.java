@@ -13,8 +13,7 @@ public record GeneratedFollowUp(
         String type,
         @JsonProperty("best_answer") String bestAnswer,
         @JsonProperty("answer_text") String answerText,
-        @JsonProperty("target_claim_idx") Integer targetClaimIdx,
-        @JsonProperty("selected_perspective") String selectedAnswerFeedbackPerspective
+        @JsonProperty("target_claim_idx") Integer targetClaimIdx
 ) {
 
     public GeneratedFollowUp {
@@ -31,6 +30,10 @@ public record GeneratedFollowUp(
 
     public GeneratedFollowUp withAnswerText(String newAnswerText) {
         return new GeneratedFollowUp(skip, skipReason, question, ttsQuestion, reason, type,
-                bestAnswer, newAnswerText, targetClaimIdx, selectedAnswerFeedbackPerspective);
+                bestAnswer, newAnswerText, targetClaimIdx);
+    }
+
+    public static GeneratedFollowUp skipped(String reason) {
+        return new GeneratedFollowUp(true, reason, null, null, null, null, null, null, null);
     }
 }

@@ -1,176 +1,105 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
-import com.rehearse.api.domain.resume.entity.ChainStep;
-import com.rehearse.api.domain.resume.entity.ClaimType;
-import com.rehearse.api.domain.resume.entity.InterrogationChain;
-import com.rehearse.api.domain.resume.entity.Priority;
 import com.rehearse.api.domain.resume.entity.Project;
-import com.rehearse.api.domain.resume.entity.ResumeClaim;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.entity.StepType;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.context.layer.SkeletonCallType;
-import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedChainStep;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedClaim;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedImplicitCsTopic;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton.GeneratedProject;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
-import com.rehearse.api.infra.ai.prompt.ResumeExtractorPromptBuilder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StreamUtils;
+
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ResumeExtractionService {
 
-    private static final double MIN_CONFIDENCE_THRESHOLD = 0.3;
+    private static final String CALL_TYPE = "resume_extractor";
     private static final double TEMPERATURE = 0.2;
-    private static final int MAX_TOKENS = 4096;
+    private static final int MAX_TOKENS = 12000;
+    private static final String SYSTEM_PROMPT_PATH = "prompts/template/resume/resume-extractor.txt";
 
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
-    private final ResumeExtractorPromptBuilder promptBuilder;
 
-    public ResumeSkeleton extract(String normalizedResumeText, String fileHash) {
-        ChatRequest request = buildChatRequest(normalizedResumeText);
-        ChatResponse response = aiClient.chat(request);
+    @Value("${ai.resume.extractor.timeout-ms:60000}")
+    private long timeoutMs;
 
-        GeneratedResumeSkeleton raw = aiResponseParser.parseOrRetry(
-                response, GeneratedResumeSkeleton.class, aiClient, request);
+    private String systemPrompt;
 
-        ResumeSkeleton skeleton = toDomain(raw, fileHash);
-        long named = skeleton.projects().stream()
-                .filter(p -> p.projectName() != null && !p.projectName().isBlank())
-                .count();
-        log.info("이력서 추출 완료: resumeId={}, projects={}, named={}, level={}",
-                skeleton.resumeId(), skeleton.projects().size(), named, skeleton.candidateLevel());
-        return skeleton;
+    @PostConstruct
+    void init() {
+        try {
+            systemPrompt = StreamUtils.copyToString(
+                    new ClassPathResource(SYSTEM_PROMPT_PATH).getInputStream(),
+                    StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("resume-extractor 프롬프트 로드 실패", e);
+        }
     }
 
-    private ChatRequest buildChatRequest(String normalizedResumeText) {
-        return ChatRequest.builder()
+    public ResumeSkeleton extract(String normalizedText, String fileHash) {
+        ChatRequest request = ChatRequest.builder()
                 .messages(List.of(
-                        ChatMessage.ofCached(ChatMessage.Role.SYSTEM, promptBuilder.buildSystemPrompt()),
-                        ChatMessage.of(ChatMessage.Role.USER, promptBuilder.buildUserPrompt(normalizedResumeText))
-                ))
+                        ChatMessage.of(ChatMessage.Role.SYSTEM, systemPrompt),
+                        ChatMessage.of(ChatMessage.Role.USER,
+                                "<<<RESUME_TEXT>>>\n" + normalizedText + "\n<<<END_RESUME_TEXT>>>")))
+                .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
-                .cachePolicy(CachePolicy.explicit())
                 .responseFormat(ResponseFormat.JSON_OBJECT)
-                .callType(SkeletonCallType.RESUME_EXTRACTOR.value())
                 .build();
+
+        ChatResponse response = aiClient.chat(request);
+        GeneratedResumeSkeleton parsed = aiResponseParser.parseOrRetry(
+                response, GeneratedResumeSkeleton.class, aiClient, request);
+
+        return mapToSkeleton(parsed, fileHash);
     }
 
-    private ResumeSkeleton toDomain(GeneratedResumeSkeleton raw, String fileHash) {
-        List<Project> projects = mapProjects(raw.projects());
-        Map<String, List<String>> priorityMap = raw.interrogationPriorityMap() != null
-                ? raw.interrogationPriorityMap()
-                : Map.of();
-
-        return new ResumeSkeleton(
-                raw.resumeId(),
-                fileHash,
-                parseCandidateLevel(raw.candidateLevel()),
-                raw.targetDomain(),
-                projects,
-                priorityMap
-        );
-    }
-
-    private List<Project> mapProjects(List<GeneratedProject> rawProjects) {
-        if (rawProjects == null) {
-            return List.of();
-        }
-        List<Project> projects = new ArrayList<>(rawProjects.size());
-        for (GeneratedProject raw : rawProjects) {
-            projects.add(mapProject(raw));
-        }
-        return List.copyOf(projects);
-    }
-
-    private Project mapProject(GeneratedProject raw) {
-        List<ResumeClaim> claims = mapClaims(raw.claims());
-        List<InterrogationChain> chains = mapChains(raw.implicitCsTopics());
-        return new Project(
-                raw.projectId(),
-                raw.projectName(),
-                raw.techStack(),
-                raw.role(),
-                raw.architecture(),
-                raw.decisions(),
-                claims,
-                chains
-        );
-    }
-
-    private List<ResumeClaim> mapClaims(List<GeneratedClaim> rawClaims) {
-        if (rawClaims == null) {
-            return List.of();
-        }
-        return rawClaims.stream()
-                .filter(c -> c.text() != null && !c.text().isBlank())
-                .map(this::mapClaim)
+    private ResumeSkeleton mapToSkeleton(GeneratedResumeSkeleton parsed, String fileHash) {
+        CandidateLevel level = parseCandidateLevel(parsed.candidateLevel());
+        List<Project> projects = parsed.projects().stream()
+                .map(p -> new Project(
+                        p.projectId(),
+                        p.projectName() == null ? "" : p.projectName(),
+                        p.techStack(),
+                        p.role(),
+                        p.architecture(),
+                        p.decisions()))
                 .toList();
+        return new ResumeSkeleton(parsed.resumeId(), fileHash, level, parsed.targetDomain(), projects);
     }
 
-    private ResumeClaim mapClaim(GeneratedClaim raw) {
-        return new ResumeClaim(
-                raw.text(),
-                ClaimType.fromOrDefault(raw.claimType(), ClaimType.IMPLEMENTATION),
-                Priority.fromOrDefault(raw.priority(), Priority.MEDIUM)
-        );
-    }
-
-    private List<InterrogationChain> mapChains(List<GeneratedImplicitCsTopic> rawTopics) {
-        if (rawTopics == null) {
-            return List.of();
-        }
-        return rawTopics.stream()
-                .filter(t -> t.confidence() >= MIN_CONFIDENCE_THRESHOLD)
-                .map(this::mapChain)
-                .filter(chain -> chain != null)
-                .toList();
-    }
-
-    private InterrogationChain mapChain(GeneratedImplicitCsTopic raw) {
-        List<ChainStep> steps = mapChainSteps(raw.interrogationChain());
-        try {
-            return new InterrogationChain(raw.topic(), raw.confidence(), steps);
-        } catch (IllegalArgumentException e) {
-            log.warn("InterrogationChain invariant 위반으로 드롭: topic={}, reason={}", raw.topic(), e.getMessage());
-            return null;
-        }
-    }
-
-    private List<ChainStep> mapChainSteps(List<GeneratedChainStep> rawSteps) {
-        if (rawSteps == null) {
-            return List.of();
-        }
-        return rawSteps.stream()
-                .map(s -> new ChainStep(s.level(), StepType.fromOrDefault(s.type(), StepType.WHAT), s.question()))
-                .toList();
-    }
-
-    private CandidateLevel parseCandidateLevel(String value) {
-        if (value == null) {
+    private CandidateLevel parseCandidateLevel(String raw) {
+        if (raw == null || raw.isBlank()) {
             return CandidateLevel.JUNIOR;
         }
-        return switch (value.toLowerCase()) {
-            case "mid" -> CandidateLevel.MID;
-            case "senior" -> CandidateLevel.SENIOR;
-            default -> CandidateLevel.JUNIOR;
-        };
+        try {
+            return CandidateLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            log.warn("알 수 없는 candidate_level={} → JUNIOR fallback", raw);
+            return CandidateLevel.JUNIOR;
+        }
+    }
+
+    public long timeoutMs() {
+        return timeoutMs;
     }
 }

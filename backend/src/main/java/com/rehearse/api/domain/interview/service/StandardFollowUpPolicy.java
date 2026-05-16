@@ -2,6 +2,8 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.exception.QuestionErrorCode;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.global.exception.BusinessException;
@@ -37,5 +39,14 @@ public class StandardFollowUpPolicy implements InterviewTurnPolicy {
         if (followUpCount >= maxRounds) {
             throw new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED);
         }
+    }
+
+    public boolean shouldSkipFollowUp(QuestionSet questionSet) {
+        return questionSet.getQuestions().stream()
+                .filter(q -> !q.getQuestionType().isFollowUp())
+                .map(Question::getQuestionType)
+                .findFirst()
+                .map(t -> t == QuestionType.RESUME_OPENER)
+                .orElse(false);
     }
 }

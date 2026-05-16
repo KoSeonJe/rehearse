@@ -99,6 +99,42 @@ class StandardFollowUpPolicyTest {
     }
 
     @Test
+    @DisplayName("shouldSkipFollowUp — 첫 질문이 RESUME_OPENER 이면 true")
+    void shouldSkipFollowUp_resumeOpener_true() {
+        Interview interview = standardInterview();
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview).category(InterviewType.RESUME_BASED).orderIndex(0).build();
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.RESUME_OPENER).questionText("self-intro").orderIndex(0).build());
+
+        assertThat(policy.shouldSkipFollowUp(qs)).isTrue();
+    }
+
+    @Test
+    @DisplayName("shouldSkipFollowUp — RESUME_MAIN 은 follow-up 진행 (false)")
+    void shouldSkipFollowUp_resumeMain_false() {
+        Interview interview = standardInterview();
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview).category(InterviewType.RESUME_BASED).orderIndex(0).build();
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.RESUME_MAIN).questionText("project").orderIndex(0).build());
+
+        assertThat(policy.shouldSkipFollowUp(qs)).isFalse();
+    }
+
+    @Test
+    @DisplayName("shouldSkipFollowUp — TECH_MAIN 은 follow-up 진행 (false)")
+    void shouldSkipFollowUp_techMain_false() {
+        Interview interview = standardInterview();
+        QuestionSet qs = QuestionSet.builder()
+                .interview(interview).category(InterviewType.CS_FUNDAMENTAL).orderIndex(0).build();
+        qs.addQuestion(Question.builder()
+                .questionType(QuestionType.TECH_MAIN).questionText("gc").orderIndex(0).build());
+
+        assertThat(policy.shouldSkipFollowUp(qs)).isFalse();
+    }
+
+    @Test
     @DisplayName("TECH_FOLLOWUP / BEHAVIORAL_FOLLOWUP 도 isFollowUp() 으로 카운트되어 cap 트리거")
     void assertCanContinue_subTypeFollowUps_countsTowardsCap() {
         Interview interview = standardInterview();

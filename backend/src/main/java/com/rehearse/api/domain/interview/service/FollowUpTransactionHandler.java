@@ -3,10 +3,10 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.entity.InterviewType;
-import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
@@ -34,7 +34,7 @@ public class FollowUpTransactionHandler {
     private final InterviewFinder interviewFinder;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
-    private final InterviewTurnPolicyResolver turnPolicyResolver;
+    private final StandardFollowUpPolicy standardFollowUpPolicy;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -49,8 +49,7 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        var policy = turnPolicyResolver.resolve(interview);
-        policy.assertCanContinue(interview, questionSet);
+        standardFollowUpPolicy.assertCanContinue(interview, questionSet);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
         Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
@@ -63,8 +62,15 @@ public class FollowUpTransactionHandler {
                 currentMainQuestionId,
                 nextOrderIndex,
                 mainReferenceType,
-                policy.getMaxFollowUpRounds()
+                standardFollowUpPolicy.getMaxFollowUpRounds()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public boolean shouldSkipOpener(Long questionSetId) {
+        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+        return standardFollowUpPolicy.shouldSkipFollowUp(questionSet);
     }
 
     private Long resolveCurrentMainQuestionId(QuestionSet questionSet) {
@@ -92,13 +98,6 @@ public class FollowUpTransactionHandler {
     public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp) {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-
-        // RESUME 트랙은 ResumeInterviewOrchestrator path 일임. 본 핸들러 진입 시 = 흐름 결함.
-        if (questionSet.getCategory() == InterviewType.RESUME_BASED) {
-            throw new IllegalStateException(
-                    "RESUME 트랙은 FollowUpTransactionHandler.saveFollowUpResult 를 호출할 수 없다. questionSetId="
-                            + questionSetId);
-        }
 
         int orderIndex = questionSet.getQuestions().size();
         QuestionType followUpType = resolveFollowUpType(questionSet);
@@ -135,6 +134,9 @@ public class FollowUpTransactionHandler {
         if (mainType == QuestionType.BEHAVIORAL_MAIN) {
             return QuestionType.BEHAVIORAL_FOLLOWUP;
         }
+        if (mainType == QuestionType.RESUME_MAIN) {
+            return QuestionType.RESUME_FOLLOWUP;
+        }
         return questionSet.getCategory() == InterviewType.BEHAVIORAL
                 ? QuestionType.BEHAVIORAL_FOLLOWUP
                 : QuestionType.TECH_FOLLOWUP;
@@ -142,24 +144,26 @@ public class FollowUpTransactionHandler {
 
     @Transactional
     public FollowUpSaveResult saveFollowUpResultAndPublishEvent(
-            Long interviewId, FollowUpContext context, GeneratedFollowUp followUp, TurnAnalysisResult turn
+            Long interviewId, FollowUpContext context, GeneratedFollowUp followUp,
+            AnswerAnalysis analysis, String userAnswer
     ) {
         FollowUpSaveResult saveResult = saveFollowUpResult(context.questionSetId(), followUp);
         publishFollowUpQuestionCreatedEvent(
-                interviewId, context, turn, saveResult.question().getId());
+                interviewId, context, analysis, userAnswer, saveResult.question().getId());
         return saveResult;
     }
 
     @Transactional
     public void publishFollowUpQuestionCreatedEvent(
-            Long interviewId, FollowUpContext context, TurnAnalysisResult turn, Long questionId
+            Long interviewId, FollowUpContext context,
+            AnswerAnalysis analysis, String userAnswer, Long questionId
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
             FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
                     interviewId, interview.getUserId(),
                     questionId, context.questionSetId(),
-                    turn.answerText(), turn.answerAnalysis(),
+                    userAnswer, analysis,
                     context.level()
             );
             eventPublisher.publishEvent(event);

@@ -1,10 +1,8 @@
 package com.rehearse.api.domain.resume.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
 
 import java.util.List;
-import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record ResumeSkeleton(
@@ -12,15 +10,11 @@ public record ResumeSkeleton(
         String fileHash,
         CandidateLevel candidateLevel,
         String targetDomain,
-        List<Project> projects,
-        Map<String, List<String>> interrogationPriorityMap
+        List<Project> projects
 ) {
 
-    public List<String> priorityIds(String priority) {
-        if (interrogationPriorityMap == null) {
-            return List.of();
-        }
-        return interrogationPriorityMap.getOrDefault(priority, List.of());
+    public ResumeSkeleton {
+        projects = projects == null ? List.of() : List.copyOf(projects);
     }
 
     public static ResumeSkeleton fromEntity(ResumeSkeletonEntity entity, ResumeSkeleton parsed) {
@@ -29,8 +23,7 @@ public record ResumeSkeleton(
                 entity.getFileHash(),
                 parsed.candidateLevel(),
                 parsed.targetDomain(),
-                parsed.projects(),
-                parsed.interrogationPriorityMap()
+                parsed.projects()
         );
     }
 }

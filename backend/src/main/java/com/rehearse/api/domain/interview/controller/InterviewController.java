@@ -7,12 +7,9 @@ import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
 import com.rehearse.api.domain.interview.validation.AudioValidator;
-import com.rehearse.api.domain.resume.service.ResumePlanPreparationService;
 import com.rehearse.api.global.common.ApiResponse;
-import com.rehearse.api.global.config.AsyncConfig;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -36,7 +33,6 @@ public class InterviewController {
     private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
     private final AudioValidator audioValidator;
-    private final ResumePlanPreparationService resumePlanPreparationService;
     private final Executor vtExecutor;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -110,14 +106,6 @@ public class InterviewController {
             @AuthenticationPrincipal Long userId,
             @PathVariable Long id) {
         InterviewResponse response = interviewService.retryQuestionGeneration(id, userId);
-        return ResponseEntity.ok(ApiResponse.ok(response));
-    }
-
-    @PostMapping("/{id}/replan")
-    public ResponseEntity<ApiResponse<ReplanResponse>> replan(
-            @AuthenticationPrincipal Long userId,
-            @PathVariable Long id) {
-        ReplanResponse response = resumePlanPreparationService.replan(id, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 

@@ -1,9 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.AnswerFeedbackPerspective;
-import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -20,9 +17,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,32 +29,25 @@ public class AnswerAnalyzer {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
-    private final InterviewRuntimeStateCache runtimeStateStore;
 
     public AnswerAnalysis analyze(
             Long interviewId,
-            Long turnId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer,
-            List<AnswerFeedbackPerspective> askedPerspectives
+            String userAnswer
     ) {
-        if (interviewId == null || turnId == null) {
-            throw new IllegalArgumentException("interviewId/turnId 는 null 일 수 없습니다.");
+        if (interviewId == null) {
+            throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
         }
 
-        InterviewRuntimeState runtimeState = runtimeStateStore.get(interviewId);
         String personaDepthHint = PromptFormatters.toReferenceLabel(questionReferenceType);
-        String askedPerspectivesStr = PromptFormatters.formatPerspectives(askedPerspectives);
 
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
-                Map.of("interviewRuntimeState", runtimeState, "interviewId", interviewId),
-                List.of(),
                 new FocusHints.AnswerAnalyzerHints(
                         mainQuestion != null ? mainQuestion : "",
                         userAnswer != null ? userAnswer : "",
-                        personaDepthHint + " | ASKED_PERSPECTIVES: " + askedPerspectivesStr
+                        personaDepthHint
                 ),
                 null
         ));
@@ -77,16 +64,6 @@ public class AnswerAnalyzer {
         GeneratedAnswerAnalysis parsed = aiResponseParser.parseOrRetry(
                 response, GeneratedAnswerAnalysis.class, aiClient, chatRequest);
 
-        AnswerAnalysis withTurnId = parsed.toDomain().withTurnId(turnId);
-        AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
-
-        runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));
-
-        if (guarded.recommendedNextAction() != withTurnId.recommendedNextAction()) {
-            log.info("[AnswerAnalyzer] L1 FN 가드 적용: interviewId={}, turnId={}, override→CLARIFICATION",
-                    interviewId, turnId);
-        }
-
-        return guarded;
+        return parsed.toDomain();
     }
 }

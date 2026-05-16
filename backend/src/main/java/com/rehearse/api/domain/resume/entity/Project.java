@@ -10,9 +10,7 @@ public record Project(
         List<String> techStack,
         String role,
         String architecture,
-        List<String> decisions,
-        List<ResumeClaim> claims,
-        List<InterrogationChain> implicitCsTopics
+        List<String> decisions
 ) {
 
     public Project {
@@ -23,13 +21,5 @@ public record Project(
         role = role == null ? "" : role;
         architecture = architecture == null ? "" : architecture;
         decisions = decisions == null ? List.of() : List.copyOf(decisions);
-        claims = claims == null ? List.of() : List.copyOf(claims);
-        implicitCsTopics = implicitCsTopics == null ? List.of() : List.copyOf(implicitCsTopics);
-    }
-
-    public List<ResumeClaim> claimsByPriority(Priority priority) {
-        return claims.stream()
-                .filter(c -> c.priority() == priority)
-                .toList();
     }
 }
