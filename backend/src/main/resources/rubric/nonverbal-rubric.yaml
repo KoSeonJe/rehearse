@@ -1,29 +1,21 @@
 # status: ACTIVE
 version: 1
 rubric_id: nonverbal-v1
-description: Deterministic delivery rubric for D11-D14 nonverbal interview signals.
+description: Deterministic delivery rubric for nonverbal interview signals (fluency / confidence_tone / eye_contact_posture).
 
 uses_dimensions:
   - ref: fluency
-    weight: 0.25
+    weight: 0.3333
   - ref: confidence_tone
-    weight: 0.25
+    weight: 0.3333
   - ref: eye_contact_posture
-    weight: 0.25
-  - ref: composure
-    weight: 0.25
-    conditional: difficulty >= medium
+    weight: 0.3334
 
 per_turn_rules:
   default:
     - fluency
     - confidence_tone
     - eye_contact_posture
-  medium_or_hard:
-    - fluency
-    - confidence_tone
-    - eye_contact_posture
-    - composure
 
 level_expectations:
   easy:
@@ -31,10 +23,10 @@ level_expectations:
     must_reach_3: []
     must_reach_1: []
   medium:
-    must_reach_2: [fluency, confidence_tone, eye_contact_posture, composure]
+    must_reach_2: [fluency, confidence_tone, eye_contact_posture]
     must_reach_3: []
     must_reach_1: []
   hard:
-    must_reach_2: [fluency, confidence_tone, eye_contact_posture, composure]
-    must_reach_3: [composure]
+    must_reach_2: [fluency, confidence_tone, eye_contact_posture]
+    must_reach_3: []
     must_reach_1: []

@@ -180,15 +180,16 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("D1~D14 차원 모두 로드됨")
-    void getAllDimensions_allFourteenLoaded() {
+    @DisplayName("D1~D13 차원 모두 로드되고 composure 차원은 부재")
+    void getAllDimensions_allThirteenLoaded_noComposure() {
         var dimensions = rubricLoader.getAllDimensions();
 
         assertThat(dimensions).containsKeys(
                 "problem_framing", "technical_depth", "reasoning_communication", "conceptual_accuracy",
                 "practical_application", "experience_concreteness", "collaboration_awareness",
                 "recovery_from_gaps", "factual_consistency", "chain_depth",
-                "fluency", "confidence_tone", "eye_contact_posture", "composure");
+                "fluency", "confidence_tone", "eye_contact_posture");
+        assertThat(dimensions).doesNotContainKey("composure");
     }
 
     @Test
@@ -202,12 +203,91 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @Test
-    @DisplayName("D11~D14는 비언어 채점 차원으로 로드됨")
-    void getAllDimensions_nonverbalDimensionsLoaded() {
+    @DisplayName("D11~D13 은 비언어 채점 차원으로 로드되고 composure 는 부재")
+    void getAllDimensions_nonverbalDimensionsLoaded_noComposure() {
         assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("발화 유창성");
         assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감 있는 말투");
         assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선과 자세");
-        assertThat(rubricLoader.getDimension("composure").name()).isEqualTo("압박 안정성");
+        assertThat(rubricLoader.getDimension("composure")).isNull();
+    }
+
+    @Test
+    @DisplayName("fluency description/measurement/observable 가 더듬·끊김·속도 신호 흡수 표현 포함")
+    void fluency_yamlBody_absorbsPaceAndStumbleSignals() {
+        RubricDimension fluency = rubricLoader.getDimension("fluency");
+
+        assertThat(fluency).isNotNull();
+        String combined = fluency.description() + " " + extractMeasurement("fluency") + " " + flattenObservables(fluency);
+        assertThat(combined).contains("더듬");
+        assertThat(combined).contains("끊");
+        assertThat(combined).contains("속도");
+    }
+
+    @Test
+    @DisplayName("confidence_tone measurement 가 톤과 발화 속도 신호 흡수 표현 포함")
+    void confidenceTone_measurement_absorbsToneAndSpeedSignals() {
+        String measurement = extractMeasurement("confidence_tone");
+
+        assertThat(measurement).contains("톤");
+        assertThat(measurement).contains("속도");
+    }
+
+    @Test
+    @DisplayName("eye_contact_posture description/measurement 가 시선·자세·표정 신호 흡수 표현 포함")
+    void eyeContactPosture_descriptionMeasurement_absorbsGazePostureExpressionSignals() {
+        RubricDimension dim = rubricLoader.getDimension("eye_contact_posture");
+
+        assertThat(dim).isNotNull();
+        String combined = dim.description() + " " + extractMeasurement("eye_contact_posture");
+        assertThat(combined).contains("시선");
+        assertThat(combined).contains("자세");
+        assertThat(combined).contains("표정");
+    }
+
+    private String flattenObservables(RubricDimension dim) {
+        StringBuilder sb = new StringBuilder();
+        for (var level : dim.scoring().values()) {
+            for (String line : level.observable()) {
+                sb.append(line).append(' ');
+            }
+        }
+        return sb.toString();
+    }
+
+    @Test
+    @DisplayName("nonverbal-v1 YAML 은 3차원 단일 default 규칙 + composure 미참조")
+    @SuppressWarnings("unchecked")
+    void nonverbalRubricYaml_threeDimensionsOnly_noComposure() throws java.io.IOException {
+        java.util.Map<String, Object> data;
+        try (var is = getClass().getResourceAsStream("/rubric/nonverbal-rubric.yaml")) {
+            data = new org.yaml.snakeyaml.Yaml().load(is);
+        }
+
+        java.util.List<java.util.Map<String, Object>> usesDims =
+                (java.util.List<java.util.Map<String, Object>>) data.get("uses_dimensions");
+        assertThat(usesDims).hasSize(3);
+        assertThat(usesDims).extracting(m -> m.get("ref"))
+                .containsExactlyInAnyOrder("fluency", "confidence_tone", "eye_contact_posture");
+        assertThat(usesDims).noneMatch(m -> "composure".equals(m.get("ref")));
+
+        java.util.Map<String, Object> perTurnRules =
+                (java.util.Map<String, Object>) data.get("per_turn_rules");
+        assertThat(perTurnRules).containsOnlyKeys("default");
+        assertThat((java.util.List<String>) perTurnRules.get("default"))
+                .containsExactly("fluency", "confidence_tone", "eye_contact_posture");
+        assertThat(perTurnRules).doesNotContainKey("medium_or_hard");
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractMeasurement(String dimensionKey) {
+        try (var is = getClass().getResourceAsStream("/rubric/_dimensions.yaml")) {
+            java.util.Map<String, Object> data = new org.yaml.snakeyaml.Yaml().load(is);
+            java.util.Map<String, Object> dims = (java.util.Map<String, Object>) data.get("dimensions");
+            java.util.Map<String, Object> dim = (java.util.Map<String, Object>) dims.get(dimensionKey);
+            return String.valueOf(dim.get("measurement"));
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("_dimensions.yaml 로드 실패", e);
+        }
     }
 
     private QuestionSet buildQuestionSet(InterviewType category) {
