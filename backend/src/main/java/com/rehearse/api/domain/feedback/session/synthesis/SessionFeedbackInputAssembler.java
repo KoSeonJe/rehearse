@@ -35,8 +35,9 @@ public class SessionFeedbackInputAssembler {
                 .filter(qs -> !NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
                 .toList();
 
+        Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(rubricScores);
         List<TurnScoreView> turnScores = rubricScores.stream()
-                .map(this::toTurnScoreView)
+                .map(qs -> toTurnScoreView(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList())))
                 .toList();
 
         List<TurnScoreView> okTurns = turnScores.stream()
@@ -69,8 +70,10 @@ public class SessionFeedbackInputAssembler {
         List<QuestionScore> nonverbalScores = allScores.stream()
                 .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
                 .toList();
+        Map<Long, List<QuestionScoreDimension>> nonverbalDimsByScoreId = loadDimensionsByScoreId(nonverbalScores);
+
         SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
-                buildNonverbalAggregate(nonverbalScores);
+                buildNonverbalAggregate(nonverbalScores, nonverbalDimsByScoreId);
         String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
         return new SessionFeedbackInput(
                 base.sessionMetadata(),
@@ -86,13 +89,15 @@ public class SessionFeedbackInputAssembler {
         );
     }
 
-    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(List<QuestionScore> nonverbalScores) {
+    private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(
+            List<QuestionScore> nonverbalScores,
+            Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
         if (nonverbalScores.isEmpty()) {
             return null;
         }
 
         List<SessionFeedbackInput.NonverbalTurnAggregate> turns = nonverbalScores.stream()
-                .map(this::toNonverbalTurn)
+                .map(qs -> toNonverbalTurn(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList())))
                 .toList();
 
         Map<String, Double> averageScores = buildNonverbalAverageScores(turns);
@@ -114,8 +119,8 @@ public class SessionFeedbackInputAssembler {
         );
     }
 
-    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(QuestionScore qs) {
-        List<QuestionScoreDimension> dims = questionScoreDimensionRepository.findByQuestionScoreId(qs.getId());
+    private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(QuestionScore qs,
+                                                                          List<QuestionScoreDimension> dims) {
         Map<String, Integer> dimensionScores = new LinkedHashMap<>();
         for (QuestionScoreDimension dim : dims) {
             dimensionScores.put(dim.getDimensionRef(), dim.getScore());
@@ -165,8 +170,7 @@ public class SessionFeedbackInputAssembler {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    private TurnScoreView toTurnScoreView(QuestionScore qs) {
-        List<QuestionScoreDimension> dims = questionScoreDimensionRepository.findByQuestionScoreId(qs.getId());
+    private TurnScoreView toTurnScoreView(QuestionScore qs, List<QuestionScoreDimension> dims) {
         Map<String, DimensionScore> scores = dims.stream()
                 .collect(Collectors.toMap(
                         QuestionScoreDimension::getDimensionRef,
@@ -233,6 +237,15 @@ public class SessionFeedbackInputAssembler {
         }
         long ok = turnScores.size() - failed;
         return ok + "/" + turnScores.size() + " turns scored";
+    }
+
+    private Map<Long, List<QuestionScoreDimension>> loadDimensionsByScoreId(List<QuestionScore> scores) {
+        if (scores.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> scoreIds = scores.stream().map(QuestionScore::getId).distinct().toList();
+        return questionScoreDimensionRepository.findByQuestionScoreIdIn(scoreIds).stream()
+                .collect(Collectors.groupingBy(QuestionScoreDimension::getQuestionScoreId));
     }
 
     private SessionFeedbackInput.SessionMetadata buildSessionMetadata(Interview interview, int totalTurns) {

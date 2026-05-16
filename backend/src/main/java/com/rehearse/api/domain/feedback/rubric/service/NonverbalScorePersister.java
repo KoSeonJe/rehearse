@@ -64,6 +64,7 @@ public class NonverbalScorePersister {
             return;
         }
 
+        // vocal 차원 키 (fluency / confidence_tone) ∩ vision 차원 키 (eye_contact_posture) = ∅ 전제 — rubric YAML uses_dimensions 동등성 보장.
         Map<String, DimensionScore> dims = new LinkedHashMap<>();
         mergeArea(dims, payload.getVocal());
         mergeArea(dims, payload.getVision());

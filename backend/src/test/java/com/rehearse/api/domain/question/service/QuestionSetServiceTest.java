@@ -354,7 +354,7 @@ class QuestionSetServiceTest {
                     .willReturn(Optional.of(feedback));
             given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
                     .willReturn(List.of(questionScore));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(200L))
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L)))
                     .willReturn(List.of(dimension));
 
             // when
@@ -461,10 +461,8 @@ class QuestionSetServiceTest {
                     .willReturn(Optional.of(feedback));
             given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
                     .willReturn(List.of(verbal, nonverbal));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(300L))
-                    .willReturn(List.of(verbalDim));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(301L))
-                    .willReturn(List.of(fluencyDim, toneDim));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(300L, 301L)))
+                    .willReturn(List.of(verbalDim, fluencyDim, toneDim));
 
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
@@ -561,10 +559,8 @@ class QuestionSetServiceTest {
                     .willReturn(Optional.of(feedback));
             given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
                     .willReturn(List.of(verbal, legacy));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(400L))
-                    .willReturn(List.of(verbalDim));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(401L))
-                    .willReturn(List.of(legacyDim));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(400L, 401L)))
+                    .willReturn(List.of(verbalDim, legacyDim));
 
             // when
             QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);

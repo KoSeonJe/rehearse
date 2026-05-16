@@ -162,13 +162,16 @@ public class QuestionSetService {
 
     private Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId(
             Map<Long, List<QuestionScore>> scoresByQuestionId) {
-        return scoresByQuestionId.values().stream()
+        List<Long> scoreIds = scoresByQuestionId.values().stream()
                 .flatMap(List::stream)
-                .collect(Collectors.toMap(
-                        QuestionScore::getId,
-                        qs -> questionScoreDimensionRepository.findByQuestionScoreId(qs.getId()),
-                        (left, ignored) -> left
-                ));
+                .map(QuestionScore::getId)
+                .distinct()
+                .toList();
+        if (scoreIds.isEmpty()) {
+            return Map.of();
+        }
+        return questionScoreDimensionRepository.findByQuestionScoreIdIn(scoreIds).stream()
+                .collect(Collectors.groupingBy(QuestionScoreDimension::getQuestionScoreId));
     }
 
     public QuestionsWithAnswersResponse getQuestionsWithAnswers(Long questionSetId) {
