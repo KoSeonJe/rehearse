@@ -1,5 +1,6 @@
 import type { OutlineItem } from '@/components/layout/sticky-outline'
 import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
+import { isFollowupQuestionType } from '@/utils/question-type'
 
 export interface PlayableQuestion extends QuestionWithAnswer {
   startMs: number
@@ -22,7 +23,7 @@ export function buildOutlineItems(
     followupCounter: number
   }>(
     (acc, q) => {
-      const isFollowup = q.questionType === 'FOLLOWUP'
+      const isFollowup = isFollowupQuestionType(q.questionType)
       if (!isFollowup) {
         const nextMain = acc.mainCounter + 1
         return {

@@ -5,12 +5,11 @@ import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.MappingRule;
-import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily.RubricResolutionContext;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -29,6 +28,8 @@ import java.util.Map;
 @Component
 public class RubricLoader implements RubricCatalog {
 
+    private static final String FALLBACK_RUBRIC_ID = "fallback-generic-v1";
+
     private RubricFamily family;
     private Map<String, Rubric> rubrics;
 
@@ -36,8 +37,7 @@ public class RubricLoader implements RubricCatalog {
     void init() {
         try {
             Map<String, RubricDimension> dimensions = loadDimensions();
-            MappingResult mappingResult = loadMapping();
-            family = new RubricFamily(dimensions, mappingResult.rules(), mappingResult.defaultRubricId());
+            family = new RubricFamily(dimensions);
 
             rubrics = new HashMap<>();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -48,7 +48,7 @@ public class RubricLoader implements RubricCatalog {
                 log.debug("Rubric 로드 완료: rubricId={}", rubric.rubricId());
             }
 
-            validateDefaultRubricPresent(mappingResult.defaultRubricId());
+            validateFallbackRubricPresent();
 
             log.info("RubricLoader 초기화 완료: dimensions={}, rubrics={}", dimensions.size(), rubrics.size());
         } catch (IOException e) {
@@ -56,10 +56,10 @@ public class RubricLoader implements RubricCatalog {
         }
     }
 
-    private void validateDefaultRubricPresent(String defaultRubricId) {
-        if (!rubrics.containsKey(defaultRubricId)) {
+    private void validateFallbackRubricPresent() {
+        if (!rubrics.containsKey(FALLBACK_RUBRIC_ID)) {
             throw new IllegalStateException(
-                    "YAML 구조 오류: _mapping.yaml의 default rubricId='" + defaultRubricId +
+                    "YAML 구조 오류: fallback rubricId='" + FALLBACK_RUBRIC_ID +
                     "'에 해당하는 rubric 파일이 없습니다. 로드된 rubricId=" + rubrics.keySet());
         }
     }
@@ -67,10 +67,9 @@ public class RubricLoader implements RubricCatalog {
     public Rubric resolveFor(Question question, QuestionSet questionSet, Interview interview) {
         boolean resumeTrack = interview.getInterviewTypes().contains(InterviewType.RESUME_BASED);
         InterviewType category = questionSet.getCategory();
-        RubricCategory perspective = question.getQuestionType().rubricCategory();
+        QuestionType questionType = question.getQuestionType();
 
-        RubricResolutionContext ctx = new RubricResolutionContext(resumeTrack, category, perspective);
-        String rubricId = family.resolve(ctx);
+        String rubricId = resolveRubricId(resumeTrack, category, questionType);
 
         Rubric resolved = rubrics.get(rubricId);
         if (resolved == null) {
@@ -79,6 +78,21 @@ public class RubricLoader implements RubricCatalog {
                     "로드된 rubricId=" + rubrics.keySet());
         }
         return resolved;
+    }
+
+    private String resolveRubricId(boolean resumeTrack, InterviewType category, QuestionType questionType) {
+        if (resumeTrack) {
+            return "resume-v1";
+        }
+        return switch (category) {
+            case RESUME_BASED -> "resume-v1";
+            case CS_FUNDAMENTAL -> "concept-cs-fundamental-v1";
+            case LANGUAGE_FRAMEWORK, UI_FRAMEWORK -> "concept-lang-framework-v1";
+            case BEHAVIORAL -> "experience-collaboration-v1";
+            default -> questionType.rubricCategory() == RubricCategory.EXPERIENCE
+                    ? "experience-technical-v1"
+                    : FALLBACK_RUBRIC_ID;
+        };
     }
 
     public RubricDimension getDimension(String ref) {
@@ -133,57 +147,6 @@ public class RubricLoader implements RubricCatalog {
             }
         }
         return new RubricDimension(id, name, description, scope, Map.copyOf(scoring));
-    }
-
-    @SuppressWarnings("unchecked")
-    private MappingResult loadMapping() throws IOException {
-        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-        Resource resource = resolver.getResource("classpath:rubric/_mapping.yaml");
-        Yaml yaml = new Yaml();
-
-        Map<String, Object> data;
-        try (InputStream is = resource.getInputStream()) {
-            data = yaml.load(is);
-        }
-
-        String defaultId = (String) data.getOrDefault("default", "fallback-generic-v1");
-        List<Map<String, Object>> rawRules = (List<Map<String, Object>>) data.get("rules");
-
-        List<MappingRule> rules = new ArrayList<>();
-        if (rawRules != null) {
-            for (Map<String, Object> rawRule : rawRules) {
-                Object whenRaw = rawRule.get("when");
-                if (!(whenRaw instanceof Map)) {
-                    throw new IllegalStateException("YAML 구조 오류: _mapping.yaml rule에 'when' 맵이 없습니다: " + rawRule);
-                }
-                @SuppressWarnings("unchecked")
-                Map<String, Object> when = (Map<String, Object>) whenRaw;
-                String use = (String) rawRule.get("use");
-                if (use == null || use.isBlank()) {
-                    throw new IllegalStateException("YAML 구조 오류: _mapping.yaml rule에 'use' 값이 없습니다: " + rawRule);
-                }
-
-                Boolean resumeTrack = null;
-                List<String> categories = null;
-                String rubricCategory = null;
-
-                if (when.containsKey("resumeTrack")) {
-                    resumeTrack = (Boolean) when.get("resumeTrack");
-                } else if (when.containsKey("category")) {
-                    Object catVal = when.get("category");
-                    if (catVal instanceof List<?> list) {
-                        categories = list.stream().map(Object::toString).toList();
-                    } else {
-                        categories = List.of(catVal.toString());
-                    }
-                } else if (when.containsKey("rubricCategory")) {
-                    rubricCategory = when.get("rubricCategory").toString();
-                }
-
-                rules.add(new MappingRule(resumeTrack, categories, rubricCategory, use));
-            }
-        }
-        return new MappingResult(rules, defaultId);
     }
 
     @SuppressWarnings("unchecked")
@@ -260,6 +223,4 @@ public class RubricLoader implements RubricCatalog {
         if (val instanceof Number n) return n.doubleValue();
         return 0.0;
     }
-
-    private record MappingResult(List<MappingRule> rules, String defaultRubricId) {}
 }

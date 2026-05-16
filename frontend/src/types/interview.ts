@@ -52,7 +52,16 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'MAIN' | 'FOLLOWUP' | 'RESUME_OPENER' | 'RESUME_PLAYGROUND' | 'RESUME_INTERROGATION'
+// BE com.rehearse.api.domain.question.entity.QuestionType 와 정확히 일치.
+// 표준 트랙 (BEHAVIORAL / TECH 계열) 과 RESUME 트랙이 각자 다른 enum 으로 직렬화된다.
+export type QuestionType =
+  | 'TECH_MAIN'
+  | 'TECH_FOLLOWUP'
+  | 'BEHAVIORAL_MAIN'
+  | 'BEHAVIORAL_FOLLOWUP'
+  | 'RESUME_OPENER'
+  | 'RESUME_PLAYGROUND'
+  | 'RESUME_INTERROGATION'
 
 export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
@@ -138,7 +147,7 @@ export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boo
   return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
 }
 
-export interface NonverbalFeedback {
+export interface LegacyNonverbalFeedback {
   eyeContactLevel: FeedbackLevel | null
   postureLevel: FeedbackLevel | null
   expressionLabel: string | null
@@ -155,7 +164,6 @@ export interface VocalFeedback {
 }
 
 export interface DeliveryFeedback {
-  nonverbal: NonverbalFeedback | null
   vocal: VocalFeedback | null
   attitudeComment: CommentBlock | null
 }
@@ -176,6 +184,11 @@ export interface TechnicalFeedback {
   dimensions: TechnicalDimensionFeedback[]
 }
 
+export interface NonverbalFeedback {
+  rubricId: string
+  dimensions: TechnicalDimensionFeedback[]
+}
+
 export interface TimestampFeedback {
   id: number
   questionId: number | null
@@ -187,6 +200,8 @@ export interface TimestampFeedback {
   transcript: string | null
   delivery: DeliveryFeedback | null
   technicalFeedback: TechnicalFeedback | null
+  nonverbalFeedback: NonverbalFeedback | null
+  fillerWordCount: number | null
   overallComment: CommentBlock | null
   isAnalyzed: boolean
 }

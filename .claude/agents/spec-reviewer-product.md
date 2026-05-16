@@ -34,6 +34,7 @@ product-spec.md 리뷰 전담. **수정 / 재작성 금지**. 발견 → 보고 
 ## 룰 로드
 
 @AGENTS.md
+@.claude/rules/review-output.md
 @docs/plans/AGENTS.md
 @docs/plans/_templates/product-spec.md
 

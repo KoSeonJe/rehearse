@@ -36,6 +36,7 @@ tech-spec.md 리뷰 전담. **수정 / 재작성 금지**. 발견 → 보고 →
 @AGENTS.md
 @.claude/rules/plan-mode.md
 @.claude/rules/security.md
+@.claude/rules/review-output.md
 @docs/plans/AGENTS.md
 @docs/plans/_templates/tech-spec.md
 @backend/AGENTS.md

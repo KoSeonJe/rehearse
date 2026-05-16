@@ -7,15 +7,12 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.entity.ResumeMode;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.adapter.RubricScoringAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.prompt.RubricScorerPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -35,30 +32,26 @@ public class RubricScorer {
             QuestionSet questionSet,
             Interview interview,
             String userAnswer,
-            AnswerAnalysis analysis,
-            @Nullable ResumeMode resumeMode,
-            @Nullable Integer currentChainLevel,
-            @Nullable ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         Rubric rubric = rubricLoader.resolveFor(question, questionSet, interview);
-        List<String> dimensionsToScore = rubric.selectDimensions(resumeMode);
+        List<String> dimensionsToScore = rubric.selectDimensions();
 
         if (dimensionsToScore.isEmpty()) {
-            log.debug("채점 차원 없음 — empty RubricScore 반환: rubricId={}, resumeMode={}",
-                    rubric.rubricId(), resumeMode);
+            log.debug("채점 차원 없음 — empty RubricScore 반환: rubricId={}", rubric.rubricId());
             return RubricScoringResult.empty(rubric.rubricId());
         }
 
         InterviewLevel userLevel = interview.getLevel();
 
-        log.debug("RubricScorer 채점 시작: rubricId={}, dimensions={}, mode={}",
-                rubric.rubricId(), dimensionsToScore, resumeMode);
+        log.debug("RubricScorer 채점 시작: rubricId={}, dimensions={}",
+                rubric.rubricId(), dimensionsToScore);
 
         ChatRequest request = promptBuilder.build(
-                question, userAnswer, analysis, rubric, dimensionsToScore,
-                userLevel, resumeMode, currentChainLevel, resumeSkeleton
+                question, userAnswer, analysis, rubric, dimensionsToScore, userLevel
         );
 
-        return adapter.adapt(aiClient, request, rubric, dimensionsToScore);
+        return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
+                userAnswer, interview.getId(), question.getId());
     }
 }

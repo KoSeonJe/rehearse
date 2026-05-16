@@ -51,35 +51,4 @@ public class QuestionScorePersister {
 
         log.info("QuestionScore 저장: questionId={}, rubricId={}, dimensions={}", questionId, rubricId, dimensionScores.keySet());
     }
-
-    @Transactional
-    public void saveNonverbal(Long questionId, Long interviewId,
-                              Map<String, DimensionScore> dimensionScores) {
-        String rubricId = "nonverbal";
-        if (questionScoreRepository.findByQuestionIdAndRubricId(questionId, rubricId).isPresent()) {
-            log.debug("nonverbal QuestionScore 이미 존재: questionId={}", questionId);
-            return;
-        }
-
-        QuestionScore qs = QuestionScore.builder()
-                .questionId(questionId)
-                .interviewId(interviewId)
-                .rubricId(rubricId)
-                .build();
-        questionScoreRepository.save(qs);
-
-        dimensionScores.forEach((dimensionRef, ds) -> {
-            if (ds == null || ds.score() == null) return;
-            QuestionScoreDimension dim = QuestionScoreDimension.builder()
-                    .questionScoreId(qs.getId())
-                    .dimensionRef(dimensionRef)
-                    .score(ds.score())
-                    .observation(ds.observation())
-                    .evidenceQuote(ds.evidenceQuote())
-                    .build();
-            dimensionRepository.save(dim);
-        });
-
-        log.debug("nonverbal QuestionScore 저장: questionId={}, dimensions={}", questionId, dimensionScores.keySet());
-    }
 }

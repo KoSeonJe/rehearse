@@ -1,7 +1,7 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
@@ -32,9 +32,8 @@ public class RubricScoringEventListener {
 
     @Async(RubricScoringExecutorConfig.RUBRIC_SCORING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(TurnCompletedEvent event) {
+    public void on(FollowUpQuestionCreatedEvent event) {
         Long interviewId = event.interviewId();
-        Long turnIndex = event.turnIndex();
 
         try {
             Interview interview = interviewFinder.findById(interviewId);
@@ -43,14 +42,12 @@ public class RubricScoringEventListener {
 
             RubricScoringResult score = rubricScorer.score(
                     question, questionSet, interview,
-                    event.userAnswer(), event.analysis(),
-                    event.resumeMode(),
-                    event.currentChainLevel(), event.resumeSkeleton()
+                    event.userAnswer(), event.analysis()
             );
 
             if (score.isEmpty()) {
-                log.debug("[정상 skip] RubricScore empty. interviewId={}, turnIndex={}, questionId={}",
-                        interviewId, turnIndex, event.questionId());
+                log.debug("[정상 skip] RubricScore empty. interviewId={}, questionId={}",
+                        interviewId, event.questionId());
                 return;
             }
 
@@ -61,30 +58,27 @@ public class RubricScoringEventListener {
             );
 
         } catch (Exception e) {
-            log.warn("[결함 skip] RubricScoring listener 예외. interviewId={}, turnIndex={}, reason={}",
-                    interviewId, turnIndex, e.getMessage(), e);
+            log.warn("[결함 skip] RubricScoring listener 예외. interviewId={}, reason={}",
+                    interviewId, e.getMessage(), e);
             aiCallMetrics.incrementRubricFailure("persist_failed");
         }
     }
 
-    private Question resolveQuestion(TurnCompletedEvent event) {
+    private Question resolveQuestion(FollowUpQuestionCreatedEvent event) {
         if (event.questionId() == null) {
             throw new IllegalStateException(
-                    "Question 식별 불가 — questionId null. interviewId=" + event.interviewId()
-                            + ", turnIndex=" + event.turnIndex());
+                    "Question 식별 불가 — questionId null. interviewId=" + event.interviewId());
         }
         return questionRepository.findById(event.questionId())
                 .orElseThrow(() -> new IllegalStateException(
                         "Question 미존재: questionId=" + event.questionId()
-                                + ", interviewId=" + event.interviewId()
-                                + ", turnIndex=" + event.turnIndex()));
+                                + ", interviewId=" + event.interviewId()));
     }
 
-    private QuestionSet resolveQuestionSet(TurnCompletedEvent event, Interview interview) {
+    private QuestionSet resolveQuestionSet(FollowUpQuestionCreatedEvent event, Interview interview) {
         if (event.questionSetId() == null) {
             throw new IllegalStateException(
                     "QuestionSet 식별 불가 — questionSetId null. interviewId=" + event.interviewId()
-                            + ", turnIndex=" + event.turnIndex()
                             + ", questionId=" + event.questionId());
         }
         return questionSetRepository.findById(event.questionSetId())

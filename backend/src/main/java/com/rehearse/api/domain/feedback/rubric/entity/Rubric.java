@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.entity;
 
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.domain.resume.entity.ResumeMode;
 
 import java.util.List;
 import java.util.Map;
@@ -20,23 +19,11 @@ public record Rubric(
             boolean mustReach1All
     ) {}
 
-    public List<String> selectDimensions(ResumeMode resumeMode) {
-        if (resumeMode != null) {
-            String modeKey = switch (resumeMode) {
-                case PLAYGROUND -> "on_playground_mode";
-                case INTERROGATION -> "on_interrogation_mode";
-            };
-            List<String> modeDims = perTurnRules.get(modeKey);
-            if (modeDims != null) {
-                return modeDims;
-            }
-        }
-
+    public List<String> selectDimensions() {
         List<String> answerDims = perTurnRules.get("on_intent_answer");
         if (answerDims != null) {
             return answerDims;
         }
-
         return usesDimensions.stream().map(DimensionRef::ref).toList();
     }
 

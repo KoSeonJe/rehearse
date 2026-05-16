@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.TurnCompletedEvent;
+import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -145,27 +145,26 @@ public class FollowUpTransactionHandler {
             Long interviewId, FollowUpContext context, GeneratedFollowUp followUp, TurnAnalysisResult turn
     ) {
         FollowUpSaveResult saveResult = saveFollowUpResult(context.questionSetId(), followUp);
-        publishTurnCompletedEvent(
-                interviewId, context, turn,
-                saveResult.question().getId(), saveResult.question().getOrderIndex());
+        publishFollowUpQuestionCreatedEvent(
+                interviewId, context, turn, saveResult.question().getId());
         return saveResult;
     }
 
     @Transactional
-    public void publishTurnCompletedEvent(
-            Long interviewId, FollowUpContext context, TurnAnalysisResult turn, Long questionId, int turnIndex
+    public void publishFollowUpQuestionCreatedEvent(
+            Long interviewId, FollowUpContext context, TurnAnalysisResult turn, Long questionId
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
-            TurnCompletedEvent event = TurnCompletedEvent.ofStandard(
-                    interviewId, (long) turnIndex, interview.getUserId(),
+            FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
+                    interviewId, interview.getUserId(),
                     questionId, context.questionSetId(),
                     turn.answerText(), turn.answerAnalysis(),
                     context.level()
             );
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
-            log.warn("TurnCompletedEvent 발행 실패. interviewId={}, reason={}",
+            log.warn("FollowUpQuestionCreatedEvent 발행 실패. interviewId={}, reason={}",
                     interviewId, e.getMessage());
         }
     }

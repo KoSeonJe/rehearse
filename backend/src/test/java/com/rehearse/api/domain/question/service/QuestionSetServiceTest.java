@@ -4,6 +4,7 @@ import com.rehearse.api.domain.question.entity.AnalysisStatus;
 import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
 import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
+import com.rehearse.api.domain.feedback.dto.TimestampFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
@@ -335,7 +336,7 @@ class QuestionSetServiceTest {
             QuestionScore questionScore = QuestionScore.builder()
                     .questionId(10L)
                     .interviewId(99L)
-                    .rubricId("cs-v1")
+                    .rubricId("technical-v1")
                     .levelFlag("MID_EXPECTATION_MET")
                     .build();
             ReflectionTestUtils.setField(questionScore, "id", 200L);
@@ -353,7 +354,7 @@ class QuestionSetServiceTest {
                     .willReturn(Optional.of(feedback));
             given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
                     .willReturn(List.of(questionScore));
-            given(questionScoreDimensionRepository.findByQuestionScoreId(200L))
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L)))
                     .willReturn(List.of(dimension));
 
             // when
@@ -363,7 +364,7 @@ class QuestionSetServiceTest {
             assertThat(response.getTimestampFeedbacks()).hasSize(1);
             var technicalFeedback = response.getTimestampFeedbacks().getFirst().getTechnicalFeedback();
             assertThat(technicalFeedback).isNotNull();
-            assertThat(technicalFeedback.getRubricId()).isEqualTo("cs-v1");
+            assertThat(technicalFeedback.getRubricId()).isEqualTo("technical-v1");
             assertThat(technicalFeedback.getLevelFlag()).isEqualTo("MID_EXPECTATION_MET");
             assertThat(technicalFeedback.getDimensions()).hasSize(1);
             assertThat(technicalFeedback.getDimensions().getFirst().getDimension()).isEqualTo("conceptual_accuracy");
@@ -372,6 +373,202 @@ class QuestionSetServiceTest {
                     .isEqualTo("세대별 GC 구조를 언급해 개념 정확도가 좋습니다.");
             assertThat(technicalFeedback.getDimensions().getFirst().getEvidenceQuote())
                     .isEqualTo("young 영역과 old 영역을 나눠 관리");
+        }
+
+        @Test
+        @DisplayName("getFeedback: 같은 question_id 에 verbal + nonverbal rubric 적재 시 두 카드가 동시 노출된다")
+        void getFeedback_groupsVerbalAndNonverbalByQuestionId() {
+            // given
+            Interview interview = Interview.builder()
+                    .userId(1L)
+                    .position(Position.BACKEND)
+                    .level(InterviewLevel.MID)
+                    .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                    .durationMinutes(30)
+                    .build();
+            ReflectionTestUtils.setField(interview, "id", 99L);
+
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(InterviewType.CS_FUNDAMENTAL)
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(questionSet, "id", 1L);
+
+            Question question = Question.builder()
+                    .questionType(QuestionType.TECH_MAIN)
+                    .questionText("HTTP/2 의 멀티플렉싱을 설명하세요.")
+                    .bestAnswer("스트림 ID 단위로 병렬화됩니다.")
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(question, "id", 10L);
+
+            TimestampFeedback timestampFeedback = TimestampFeedback.builder()
+                    .question(question)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .transcript("스트림 ID 로 병렬 처리합니다.")
+                    .isAnalyzed(true)
+                    .build();
+
+            QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                    .questionSet(questionSet)
+                    .questionSetComment("좋습니다.")
+                    .build();
+            ReflectionTestUtils.setField(feedback, "id", 51L);
+            feedback.addTimestampFeedback(timestampFeedback);
+
+            QuestionScore verbal = QuestionScore.builder()
+                    .questionId(10L)
+                    .interviewId(99L)
+                    .rubricId("technical-v1")
+                    .levelFlag("MID_EXPECTATION_MET")
+                    .build();
+            ReflectionTestUtils.setField(verbal, "id", 300L);
+
+            QuestionScore nonverbal = QuestionScore.builder()
+                    .questionId(10L)
+                    .interviewId(99L)
+                    .rubricId("nonverbal-v1")
+                    .levelFlag(null)
+                    .build();
+            ReflectionTestUtils.setField(nonverbal, "id", 301L);
+
+            QuestionScoreDimension verbalDim = QuestionScoreDimension.builder()
+                    .questionScoreId(300L)
+                    .dimensionRef("conceptual_accuracy")
+                    .score(3)
+                    .observation("정확합니다.")
+                    .evidenceQuote("스트림 ID")
+                    .build();
+            QuestionScoreDimension fluencyDim = QuestionScoreDimension.builder()
+                    .questionScoreId(301L)
+                    .dimensionRef("fluency")
+                    .score(2)
+                    .observation("유창")
+                    .evidenceQuote(null)
+                    .build();
+            QuestionScoreDimension toneDim = QuestionScoreDimension.builder()
+                    .questionScoreId(301L)
+                    .dimensionRef("confidence_tone")
+                    .score(1)
+                    .observation("톤 흔들림")
+                    .evidenceQuote(null)
+                    .build();
+
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.of(feedback));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
+                    .willReturn(List.of(verbal, nonverbal));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(300L, 301L)))
+                    .willReturn(List.of(verbalDim, fluencyDim, toneDim));
+
+            // when
+            QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
+
+            // then
+            assertThat(response.getTimestampFeedbacks()).hasSize(1);
+            var timestamp = response.getTimestampFeedbacks().getFirst();
+            assertThat(timestamp.getTechnicalFeedback()).isNotNull();
+            assertThat(timestamp.getTechnicalFeedback().getRubricId()).isEqualTo("technical-v1");
+            assertThat(timestamp.getTechnicalFeedback().getDimensions()).hasSize(1);
+            assertThat(timestamp.getNonverbalFeedback()).isNotNull();
+            assertThat(timestamp.getNonverbalFeedback().rubricId()).isEqualTo("nonverbal-v1");
+            assertThat(timestamp.getNonverbalFeedback().dimensions())
+                    .extracting(TimestampFeedbackResponse.TechnicalDimensionFeedback::getDimension)
+                    .containsExactly("confidence_tone", "fluency");
+        }
+
+        @Test
+        @DisplayName("getFeedback: 같은 question_id 에 legacy rubric_id row 가 있으면 응답에 미포함된다")
+        void getFeedback_skipsLegacyRubricIdSilently() {
+            // given
+            Interview interview = Interview.builder()
+                    .userId(1L)
+                    .position(Position.BACKEND)
+                    .level(InterviewLevel.MID)
+                    .interviewTypes(List.of(InterviewType.CS_FUNDAMENTAL))
+                    .durationMinutes(30)
+                    .build();
+            ReflectionTestUtils.setField(interview, "id", 99L);
+
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(InterviewType.CS_FUNDAMENTAL)
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(questionSet, "id", 1L);
+
+            Question question = Question.builder()
+                    .questionType(QuestionType.TECH_MAIN)
+                    .questionText("질문")
+                    .bestAnswer("답")
+                    .orderIndex(0)
+                    .build();
+            ReflectionTestUtils.setField(question, "id", 10L);
+
+            TimestampFeedback timestampFeedback = TimestampFeedback.builder()
+                    .question(question)
+                    .startMs(0L)
+                    .endMs(5000L)
+                    .transcript("응답")
+                    .isAnalyzed(true)
+                    .build();
+
+            QuestionSetFeedback feedback = QuestionSetFeedback.builder()
+                    .questionSet(questionSet)
+                    .questionSetComment("코멘트")
+                    .build();
+            ReflectionTestUtils.setField(feedback, "id", 52L);
+            feedback.addTimestampFeedback(timestampFeedback);
+
+            QuestionScore verbal = QuestionScore.builder()
+                    .questionId(10L)
+                    .interviewId(99L)
+                    .rubricId("technical-v1")
+                    .levelFlag("MID_EXPECTATION_MET")
+                    .build();
+            ReflectionTestUtils.setField(verbal, "id", 400L);
+
+            QuestionScore legacy = QuestionScore.builder()
+                    .questionId(10L)
+                    .interviewId(99L)
+                    .rubricId("nonverbal")
+                    .levelFlag(null)
+                    .build();
+            ReflectionTestUtils.setField(legacy, "id", 401L);
+
+            QuestionScoreDimension verbalDim = QuestionScoreDimension.builder()
+                    .questionScoreId(400L)
+                    .dimensionRef("clarity")
+                    .score(2)
+                    .observation("정리됨")
+                    .evidenceQuote(null)
+                    .build();
+            QuestionScoreDimension legacyDim = QuestionScoreDimension.builder()
+                    .questionScoreId(401L)
+                    .dimensionRef("legacy_dim")
+                    .score(1)
+                    .observation("legacy")
+                    .evidenceQuote(null)
+                    .build();
+
+            given(questionSetRepository.findById(1L)).willReturn(Optional.of(questionSet));
+            given(feedbackRepository.findByQuestionSetIdWithTimestampFeedbacks(1L))
+                    .willReturn(Optional.of(feedback));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(99L))
+                    .willReturn(List.of(verbal, legacy));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(400L, 401L)))
+                    .willReturn(List.of(verbalDim, legacyDim));
+
+            // when
+            QuestionSetFeedbackResponse response = questionSetService.getFeedback(1L);
+
+            // then
+            var timestamp = response.getTimestampFeedbacks().getFirst();
+            assertThat(timestamp.getTechnicalFeedback()).isNotNull();
+            assertThat(timestamp.getNonverbalFeedback()).isNull();
         }
 
         @Test

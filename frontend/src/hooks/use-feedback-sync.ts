@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { VideoPlayerHandle } from '@/components/feedback/video-player'
 import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
+import { isFollowupQuestionType } from '@/utils/question-type'
 
 export const useFeedbackSync = (
   videoRef: React.RefObject<VideoPlayerHandle | null>,
@@ -38,7 +39,7 @@ export const useFeedbackSync = (
     if (feedbacks.length === 0) return null
 
     const mainPlayables = questions.filter(
-      (q) => q.questionType !== 'FOLLOWUP' && q.startMs !== null && q.endMs !== null,
+      (q) => !isFollowupQuestionType(q.questionType) && q.startMs !== null && q.endMs !== null,
     )
     const firstMainQuestion = [...mainPlayables].sort(
       (a, b) => (a.startMs ?? 0) - (b.startMs ?? 0),

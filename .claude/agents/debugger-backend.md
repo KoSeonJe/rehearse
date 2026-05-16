@@ -33,6 +33,7 @@ Backend 버그 / 장애 / 결함 분석. **로그 우선**. 신규 기능 구현
 @.claude/rules/security.md
 @.claude/rules/comments.md
 @.claude/rules/commit.md
+@.claude/rules/review-output.md
 @backend/AGENTS.md
 @backend/.claude/rules/conventions.md
 @backend/.claude/rules/testing.md

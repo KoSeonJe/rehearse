@@ -78,7 +78,7 @@ class FollowUpServiceRubricEventTest {
     }
 
     @Test
-    @DisplayName("Standard Track 정상 턴 완료 시 TurnCompletedEvent 1회 publish")
+    @DisplayName("Standard Track 정상 턴 완료 시 FollowUpQuestionCreatedEvent 1회 publish")
     void generateFollowUp_answer_publishesOneEvent() {
         FollowUpContext context = new FollowUpContext(
                 Position.BACKEND, null, InterviewLevel.MID, 20L, 50L, 1,

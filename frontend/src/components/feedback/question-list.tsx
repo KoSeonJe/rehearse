@@ -1,4 +1,5 @@
 import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
+import { isFollowupQuestionType } from '@/utils/question-type'
 
 interface QuestionListProps {
   questions: QuestionWithAnswer[]
@@ -43,7 +44,7 @@ export const QuestionList = ({
     followupCounter: number
   }>(
     (acc, q) => {
-      const isFollowup = q.questionType === 'FOLLOWUP'
+      const isFollowup = isFollowupQuestionType(q.questionType)
       if (!isFollowup) {
         const nextMain = acc.mainCounter + 1
         return {

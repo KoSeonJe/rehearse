@@ -88,8 +88,8 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
     }
 
     @Nested
-    @DisplayName("TurnCompletedEvent 적재")
-    class TurnCompletedEventPersist {
+    @DisplayName("FollowUpQuestionCreatedEvent 적재")
+    class FollowUpQuestionCreatedEventPersist {
 
         @Test
         @DisplayName("정상 1턴 STANDARD 답변은 question_score 와 dimension 을 적재한다")
@@ -97,9 +97,9 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
             InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
             given(resilientAiClient.chat(any())).willReturn(rubricResponse());
 
-            followUpTransactionHandler.publishTurnCompletedEvent(
+            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
                     data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
-                    data.question().getId(), 0);
+                    data.question().getId());
 
             QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
             assertThat(score.getQuestionId()).isEqualTo(data.question().getId());
@@ -144,6 +144,26 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
             followUpService.generateFollowUp(data.interview().getId(), data.interview().getUserId(), request(data), audio());
 
             assertThat(awaitScores(data.interview().getId(), 1)).hasSize(1);
+        }
+
+        @Test
+        @DisplayName("verbal 채점 결과는 한국어 observation + userAnswer substring evidence_quote 로 적재된다")
+        void verbalScoring_persistsKoreanObservationAndVerbatimEvidence() {
+            InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId());
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            var dimensions = questionScoreDimensionRepository.findByQuestionScoreId(score.getId());
+            assertThat(dimensions).isNotEmpty();
+            assertThat(dimensions).allSatisfy(dim -> {
+                assertThat(dim.getObservation()).matches(".*[\\uAC00-\\uD7A3].*");
+                assertThat(dim.getEvidenceQuote()).isEqualTo("답변 텍스트");
+                assertThat(dim.getEvidenceQuote()).doesNotContain("팀에서 했어요 수준");
+            });
         }
 
         @Test

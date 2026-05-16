@@ -7,56 +7,63 @@ import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
-import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
+import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
+import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
-import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.domain.user.entity.OAuthProvider;
+import com.rehearse.api.domain.user.entity.User;
+import com.rehearse.api.domain.user.entity.UserRole;
+import com.rehearse.api.domain.user.repository.UserRepository;
+import com.rehearse.api.global.support.TestFixtures;
+import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("NonverbalScorePersister - silent skip 분류 로그 (Issue #472)")
-class NonverbalScorePersisterTest {
+@DisplayName("NonverbalScorePersister - 영역 키 머지 + saveRubric 단일 진입")
+class NonverbalScorePersisterTest extends ServiceIntegrationSupport {
 
-    private static final Long INTERVIEW_ID = 100L;
-    private static final Long QUESTION_ID = 200L;
-
-    @InjectMocks
+    @Autowired
     private NonverbalScorePersister persister;
 
-    @Mock
-    private NonverbalRubricScorer nonverbalRubricScorer;
+    @Autowired
+    private InterviewRepository interviewRepository;
 
-    @Mock
-    private QuestionScorePersister questionScorePersister;
+    @Autowired
+    private QuestionSetRepository questionSetRepository;
+
+    @Autowired
+    private QuestionRepository questionRepository;
+
+    @Autowired
+    private QuestionScoreRepository questionScoreRepository;
+
+    @Autowired
+    private QuestionScoreDimensionRepository dimensionRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     private ListAppender<ILoggingEvent> logAppender;
     private Logger persisterLogger;
@@ -80,117 +87,171 @@ class NonverbalScorePersisterTest {
     class NormalPersist {
 
         @Test
-        @DisplayName("scorer 가 점수를 반환하면 nonverbal QuestionScore 가 적재되고 skip 로그는 남지 않는다")
-        void persistAll_validScore_savesNonverbalAndLogsNoSkip() {
-            QuestionSet questionSet = createResumeQuestionSet();
-            QuestionSetFeedback feedback = createFeedbackWith(questionSet);
+        @DisplayName("vocal + vision 영역 dimension 머지 시 rubric_id=nonverbal-v1 1 row + dimension 3 row 적재")
+        void persistAll_mergesVocalAndVision_savesRubricV1() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
+            setArea(payload, "vocal", List.of(
+                    dim("fluency", 3, "유창하게 답변", "유창성 근거 인용"),
+                    dim("confidence_tone", 2, "안정적인 톤", "확신 톤 근거")
+            ));
+            setArea(payload, "vision", List.of(
+                    dim("eye_contact_posture", 2, "시선 안정", "시선 근거")
+            ));
 
-            SaveFeedbackRequest.NonverbalScore payload = createPayload(3, 2, 1, 2);
-            SaveFeedbackRequest.TimestampFeedbackItem item = createItem(payload);
-            given(nonverbalRubricScorer.score(eq(payload), anyString(), any(), any(), anyString()))
-                    .willReturn(new NonverbalTurnScore(3, 2, 1, 2, Map.of(), 1.0));
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
 
-            persister.persistAll(questionSet, feedback, List.of(item));
+            List<QuestionScore> scores = questionScoreRepository
+                    .findByInterviewIdOrderByQuestionIdAsc(ctx.interview().getId());
+            assertThat(scores).hasSize(1);
+            QuestionScore score = scores.get(0);
+            assertThat(score.getRubricId()).isEqualTo("nonverbal-v1");
+            assertThat(score.getQuestionId()).isEqualTo(ctx.question().getId());
 
-            ArgumentCaptor<Map<String, DimensionScore>> dimsCaptor = dimensionsCaptor();
-            then(questionScorePersister).should()
-                    .saveNonverbal(eq(QUESTION_ID), eq(INTERVIEW_ID), dimsCaptor.capture());
-            assertThat(dimsCaptor.getValue()).containsKeys(
-                    "fluency", "confidence_tone", "eye_contact_posture", "composure");
-            assertThat(skipMessages()).isEmpty();
+            List<QuestionScoreDimension> dims = dimensionRepository.findByQuestionScoreId(score.getId());
+            assertThat(dims).extracting(QuestionScoreDimension::getDimensionRef)
+                    .containsExactlyInAnyOrder("fluency", "confidence_tone", "eye_contact_posture");
+            assertThat(dims).allSatisfy(d -> {
+                assertThat(d.getObservation()).isNotBlank();
+                assertThat(d.getEvidenceQuote()).isNotBlank();
+            });
+            assertThat(dims).extracting(QuestionScoreDimension::getDimensionRef)
+                    .doesNotContain("composure");
+            assertThat(questionScoreRepository.findByQuestionIdAndRubricId(
+                    ctx.question().getId(), "nonverbal").isEmpty()).isTrue();
+        }
+
+        @Test
+        @DisplayName("vocal 만 산출 (vision null) 시 vocal dimension 만 적재 — fault isolation")
+        void persistAll_vocalOnly_persistsOnlyVocalDimensions() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
+            setArea(payload, "vocal", List.of(
+                    dim("fluency", 3, "유창함", "유창성 근거"),
+                    dim("confidence_tone", 2, "안정적", "톤 근거")
+            ));
+
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
+
+            List<QuestionScore> scores = questionScoreRepository
+                    .findByInterviewIdOrderByQuestionIdAsc(ctx.interview().getId());
+            assertThat(scores).hasSize(1);
+            List<QuestionScoreDimension> dims = dimensionRepository
+                    .findByQuestionScoreId(scores.get(0).getId());
+            assertThat(dims).extracting(QuestionScoreDimension::getDimensionRef)
+                    .containsExactlyInAnyOrder("fluency", "confidence_tone");
+        }
+
+        @Test
+        @DisplayName("dimension 일부가 observation null 이면 해당 dimension 만 skip 하고 나머지는 적재한다")
+        void persistAll_partialInvalidDimension_skipsInvalidOnly() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
+            setArea(payload, "vocal", List.of(
+                    dim("fluency", 3, "유창함", "유창성 근거"),
+                    dim("confidence_tone", 2, null, "톤 근거")
+            ));
+
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
+
+            List<QuestionScore> scores = questionScoreRepository
+                    .findByInterviewIdOrderByQuestionIdAsc(ctx.interview().getId());
+            assertThat(scores).hasSize(1);
+            List<QuestionScoreDimension> dims = dimensionRepository
+                    .findByQuestionScoreId(scores.get(0).getId());
+            assertThat(dims).extracting(QuestionScoreDimension::getDimensionRef)
+                    .containsExactly("fluency");
         }
     }
 
     @Nested
-    @DisplayName("정상 skip — payload null")
-    class PayloadNullSkip {
+    @DisplayName("skip 분기")
+    class SkipBranches {
 
         @Test
-        @DisplayName("Lambda payload 가 null 이면 [정상 skip] payloadNull 로그를 남기고 적재하지 않는다")
+        @DisplayName("payload null → [정상 skip] payloadNull INFO 로그 + row 0건")
         void persistAll_payloadNull_logsNormalSkipAndDoesNotPersist() {
-            QuestionSet questionSet = createResumeQuestionSet();
-            QuestionSetFeedback feedback = createFeedbackWith(questionSet);
+            Persisted ctx = persistInterview();
 
-            SaveFeedbackRequest.TimestampFeedbackItem item = createItem(null);
-            given(nonverbalRubricScorer.score(eq(null), anyString(), any(), any(), anyString()))
-                    .willReturn(NonverbalTurnScore.empty());
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(null)));
 
-            persister.persistAll(questionSet, feedback, List.of(item));
-
-            then(questionScorePersister).should(never()).saveNonverbal(anyLong(), anyLong(), any());
+            assertNoQuestionScoreFor(ctx.interview().getId());
             assertThat(infoMessages())
-                    .as("[정상 skip] payloadNull 로그 발생")
                     .anyMatch(m -> m.contains("[정상 skip] Nonverbal payloadNull")
-                            && m.contains("interviewId=" + INTERVIEW_ID)
-                            && m.contains("questionId=" + QUESTION_ID));
-            assertThat(warnMessages())
-                    .as("결함 skip 로그 미발생")
-                    .noneMatch(m -> m.contains("[결함 skip]"));
+                            && m.contains("interviewId=" + ctx.interview().getId())
+                            && m.contains("questionId=" + ctx.question().getId()));
+            assertThat(warnMessages()).noneMatch(m -> m.contains("[결함 skip]"));
         }
-    }
-
-    @Nested
-    @DisplayName("결함 skip — payload 있는데 scorer 결과 비어있음")
-    class ScoreEmptySkip {
 
         @Test
-        @DisplayName("payload 가 있는데 scorer 결과 hasAnyScore=false 이면 [결함 skip] scoreEmpty WARN 로그를 남긴다")
-        void persistAll_scoreEmpty_logsDefectSkipAndDoesNotPersist() {
-            QuestionSet questionSet = createResumeQuestionSet();
-            QuestionSetFeedback feedback = createFeedbackWith(questionSet);
+        @DisplayName("vocal/vision 둘 다 null → [결함 skip] areasEmpty WARN 로그 + row 0건")
+        void persistAll_areasEmpty_logsDefectSkipAndDoesNotPersist() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
 
-            SaveFeedbackRequest.NonverbalScore payload = createPayload(null, null, null, null);
-            SaveFeedbackRequest.TimestampFeedbackItem item = createItem(payload);
-            given(nonverbalRubricScorer.score(eq(payload), anyString(), any(), any(), anyString()))
-                    .willReturn(NonverbalTurnScore.empty());
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
 
-            persister.persistAll(questionSet, feedback, List.of(item));
-
-            then(questionScorePersister).should(never()).saveNonverbal(anyLong(), anyLong(), any());
+            assertNoQuestionScoreFor(ctx.interview().getId());
             assertThat(warnMessages())
-                    .as("[결함 skip] scoreEmpty WARN 로그 발생 + 4 dimension 값 노출")
-                    .anyMatch(m -> m.contains("[결함 skip] Nonverbal scoreEmpty")
-                            && m.contains("interviewId=" + INTERVIEW_ID)
-                            && m.contains("questionId=" + QUESTION_ID)
-                            && m.contains("fluency=")
-                            && m.contains("confidenceTone=")
-                            && m.contains("eyeContactPosture=")
-                            && m.contains("composure="));
-            assertThat(infoMessages())
-                    .as("정상 skip 로그 미발생")
-                    .noneMatch(m -> m.contains("[정상 skip]"));
+                    .anyMatch(m -> m.contains("[결함 skip] Nonverbal areasEmpty")
+                            && m.contains("interviewId=" + ctx.interview().getId())
+                            && m.contains("questionId=" + ctx.question().getId()));
+        }
+
+        @Test
+        @DisplayName("vocal + vision 에 동일 dimension key 가 들어오면 vision 쪽을 skip 하고 dimensionKeyConflict WARN 을 남긴다")
+        void persistAll_dimensionKeyConflict_logsWarnAndKeepsFirstArea() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
+            setArea(payload, "vocal", List.of(
+                    dim("fluency", 3, "유창함 vocal", "vocal 근거")
+            ));
+            setArea(payload, "vision", List.of(
+                    dim("fluency", 1, "유창함 vision", "vision 근거")
+            ));
+
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
+
+            List<QuestionScore> scores = questionScoreRepository
+                    .findByInterviewIdOrderByQuestionIdAsc(ctx.interview().getId());
+            assertThat(scores).hasSize(1);
+            List<QuestionScoreDimension> dims = dimensionRepository
+                    .findByQuestionScoreId(scores.get(0).getId());
+            // 첫 area (vocal) 값 유지, 두 번째 (vision) skip.
+            assertThat(dims).hasSize(1);
+            assertThat(dims.get(0).getDimensionRef()).isEqualTo("fluency");
+            assertThat(dims.get(0).getScore()).isEqualTo(3);
+            assertThat(dims.get(0).getObservation()).isEqualTo("유창함 vocal");
+
+            assertThat(warnMessages())
+                    .anyMatch(m -> m.contains("[결함 skip] Nonverbal dimensionKeyConflict")
+                            && m.contains("interviewId=" + ctx.interview().getId())
+                            && m.contains("questionId=" + ctx.question().getId())
+                            && m.contains("key=fluency")
+                            && m.contains("skippedArea=vision"));
         }
     }
 
-    // ----------------------------------------------------------------
-    // helpers
-    // ----------------------------------------------------------------
+    private Persisted persistInterview() {
+        User user = userRepository.saveAndFlush(User.builder()
+                .email("nonverbal-test@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-nonverbal-test")
+                .role(UserRole.USER)
+                .build());
+        Interview interview = TestFixtures.createInterview(
+                user.getId(), Position.BACKEND, InterviewLevel.JUNIOR, List.of(InterviewType.RESUME_BASED));
+        interviewRepository.saveAndFlush(interview);
 
-    private QuestionSet createResumeQuestionSet() {
-        Interview interview = Interview.builder()
-                .userId(1L)
-                .position(Position.BACKEND)
-                .level(InterviewLevel.JUNIOR)
-                .interviewTypes(List.of(InterviewType.RESUME_BASED))
-                .durationMinutes(30)
-                .techStack(TechStack.JAVA_SPRING)
-                .build();
-        ReflectionTestUtils.setField(interview, "id", INTERVIEW_ID);
+        QuestionSet questionSet = TestFixtures.createQuestionSet(interview, InterviewType.RESUME_BASED, 0);
+        questionSetRepository.saveAndFlush(questionSet);
 
-        QuestionSet qs = QuestionSet.builder()
-                .interview(interview)
-                .category(InterviewType.RESUME_BASED)
-                .orderIndex(0)
-                .build();
-        return qs;
-    }
-
-    private QuestionSetFeedback createFeedbackWith(QuestionSet questionSet) {
         Question question = Question.resume(
                 questionSet, QuestionType.RESUME_PLAYGROUND,
-                "이 경험을 더 설명해주세요", null, null, 0);
-        ReflectionTestUtils.setField(question, "id", QUESTION_ID);
+                "프로젝트 경험을 설명해주세요.", null, null, 0);
         questionSet.addQuestion(question);
+        questionRepository.saveAndFlush(question);
 
         QuestionSetFeedback feedback = new QuestionSetFeedback(questionSet, "코멘트");
         TimestampFeedback ts = TimestampFeedback.builder()
@@ -200,13 +261,15 @@ class NonverbalScorePersisterTest {
                 .isAnalyzed(true)
                 .build();
         feedback.addTimestampFeedback(ts);
-        return feedback;
+        return new Persisted(interview, questionSet, question, feedback);
     }
 
-    private SaveFeedbackRequest.TimestampFeedbackItem createItem(
-            SaveFeedbackRequest.NonverbalScore payload) {
+    private void assertNoQuestionScoreFor(Long interviewId) {
+        assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId)).isEmpty();
+    }
+
+    private SaveFeedbackRequest.TimestampFeedbackItem item(SaveFeedbackRequest.NonverbalScore payload) {
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
-        ReflectionTestUtils.setField(item, "questionId", QUESTION_ID);
         ReflectionTestUtils.setField(item, "startMs", 0L);
         ReflectionTestUtils.setField(item, "endMs", 1000L);
         ReflectionTestUtils.setField(item, "difficulty", "easy");
@@ -215,19 +278,21 @@ class NonverbalScorePersisterTest {
         return item;
     }
 
-    private SaveFeedbackRequest.NonverbalScore createPayload(
-            Integer fluency, Integer confidenceTone, Integer eyeContactPosture, Integer composure) {
-        SaveFeedbackRequest.NonverbalScore score = new SaveFeedbackRequest.NonverbalScore();
-        ReflectionTestUtils.setField(score, "fluency", fluency);
-        ReflectionTestUtils.setField(score, "confidenceTone", confidenceTone);
-        ReflectionTestUtils.setField(score, "eyeContactPosture", eyeContactPosture);
-        ReflectionTestUtils.setField(score, "composure", composure);
-        return score;
+    private SaveFeedbackRequest.DimensionScoreItem dim(String ref, Integer score,
+                                                      String observation, String evidence) {
+        SaveFeedbackRequest.DimensionScoreItem dim = new SaveFeedbackRequest.DimensionScoreItem();
+        ReflectionTestUtils.setField(dim, "dimensionRef", ref);
+        ReflectionTestUtils.setField(dim, "score", score);
+        ReflectionTestUtils.setField(dim, "observation", observation);
+        ReflectionTestUtils.setField(dim, "evidenceQuote", evidence);
+        return dim;
     }
 
-    @SuppressWarnings("unchecked")
-    private ArgumentCaptor<Map<String, DimensionScore>> dimensionsCaptor() {
-        return ArgumentCaptor.forClass(Map.class);
+    private void setArea(SaveFeedbackRequest.NonverbalScore payload, String areaName,
+                         List<SaveFeedbackRequest.DimensionScoreItem> dimensions) {
+        SaveFeedbackRequest.AreaScore area = new SaveFeedbackRequest.AreaScore();
+        ReflectionTestUtils.setField(area, "dimensions", new ArrayList<>(dimensions));
+        ReflectionTestUtils.setField(payload, areaName, area);
     }
 
     private List<String> infoMessages() {
@@ -244,10 +309,7 @@ class NonverbalScorePersisterTest {
                 .toList();
     }
 
-    private List<String> skipMessages() {
-        return logAppender.list.stream()
-                .map(ILoggingEvent::getFormattedMessage)
-                .filter(m -> m.contains("[정상 skip]") || m.contains("[결함 skip]"))
-                .toList();
+    private record Persisted(Interview interview, QuestionSet questionSet,
+                             Question question, QuestionSetFeedback feedback) {
     }
 }
