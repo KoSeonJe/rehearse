@@ -142,7 +142,7 @@ public class QuestionSetService {
             fallbackUrl = s3Service.generateGetPresignedUrl(file.getS3Key());
         }
 
-        Map<Long, QuestionScore> questionScoresByQuestionId = questionScoreByQuestionId(questionSet);
+        Map<Long, List<QuestionScore>> questionScoresByQuestionId = questionScoresByQuestionId(questionSet);
         Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId =
                 dimensionsByQuestionScoreId(questionScoresByQuestionId);
 
@@ -150,27 +150,24 @@ public class QuestionSetService {
                 questionScoresByQuestionId, dimensionsByQuestionScoreId);
     }
 
-    private Map<Long, QuestionScore> questionScoreByQuestionId(QuestionSet questionSet) {
+    private Map<Long, List<QuestionScore>> questionScoresByQuestionId(QuestionSet questionSet) {
         if (questionSet.getInterview() == null || questionSet.getInterview().getId() == null) {
             return Map.of();
         }
         return questionScoreRepository
                 .findByInterviewIdOrderByQuestionIdAsc(questionSet.getInterview().getId())
                 .stream()
-                .filter(qs -> !"nonverbal".equals(qs.getRubricId()))
-                .collect(Collectors.toMap(
-                        QuestionScore::getQuestionId,
-                        qs -> qs,
-                        (left, ignored) -> left
-                ));
+                .collect(Collectors.groupingBy(QuestionScore::getQuestionId));
     }
 
     private Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId(
-            Map<Long, QuestionScore> scoresByQuestionId) {
+            Map<Long, List<QuestionScore>> scoresByQuestionId) {
         return scoresByQuestionId.values().stream()
+                .flatMap(List::stream)
                 .collect(Collectors.toMap(
                         QuestionScore::getId,
-                        qs -> questionScoreDimensionRepository.findByQuestionScoreId(qs.getId())
+                        qs -> questionScoreDimensionRepository.findByQuestionScoreId(qs.getId()),
+                        (left, ignored) -> left
                 ));
     }
 
