@@ -42,6 +42,14 @@ public class QuestionGenerationTransactionHandler {
     }
 
     @Transactional
+    public void completeGeneration(Long interviewId) {
+        Interview interview = interviewRepository.findById(interviewId)
+                .orElseThrow(() -> new BusinessException(InterviewErrorCode.NOT_FOUND));
+        interview.completeQuestionGeneration();
+        log.info("질문 생성 완료: interviewId={}", interviewId);
+    }
+
+    @Transactional
     public void failGeneration(Long interviewId, String reason) {
         interviewRepository.findById(interviewId).ifPresent(interview -> {
             interview.failQuestionGeneration(reason);

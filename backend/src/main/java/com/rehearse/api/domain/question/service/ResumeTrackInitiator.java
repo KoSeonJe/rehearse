@@ -44,23 +44,21 @@ public class ResumeTrackInitiator {
     private final ObjectMapper objectMapper;
 
     public void initiate(Long interviewId, String resumeFileHash, String resumeText, Integer durationMinutes) {
-        ResumeSkeleton skeleton = resumeIngestionService.ingestExtractedText(interviewId, resumeText, resumeFileHash);
-
-        int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
-        int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));
-
-        GeneratedResumeQuestions generated;
         try {
-            generated = generateViaLlm(skeleton, OPENER_COUNT, mainCount);
-        } catch (BusinessException e) {
-            log.error("[ResumeTrackInitiator] LLM 호출 실패 — 면접 시작 실패: interviewId={}, reason={}",
+            ResumeSkeleton skeleton = resumeIngestionService.ingestExtractedText(interviewId, resumeText, resumeFileHash);
+
+            int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
+            int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));
+
+            GeneratedResumeQuestions generated = generateViaLlm(skeleton, OPENER_COUNT, mainCount);
+            persistGenerated(interviewId, generated);
+            transactionHandler.completeGeneration(interviewId);
+        } catch (Exception e) {
+            log.error("[ResumeTrackInitiator] 면접 시작 실패: interviewId={}, reason={}",
                     interviewId, e.getMessage());
-            transactionHandler.failGeneration(interviewId, "LLM 호출 실패: " + e.getMessage());
+            transactionHandler.failGeneration(interviewId, "이력서 트랙 시작 실패: " + e.getMessage());
             throw e;
         }
-
-        persistGenerated(interviewId, generated);
-        transactionHandler.saveResults(interviewId, java.util.List.of());
     }
 
     private GeneratedResumeQuestions generateViaLlm(ResumeSkeleton skeleton, int openerCount, int mainCount) {
@@ -82,15 +80,20 @@ public class ResumeTrackInitiator {
     }
 
     private void persistGenerated(Long interviewId, GeneratedResumeQuestions generated) {
+        java.util.List<ResumeQuestionPersister.ResumeQuestionDraft> drafts = new java.util.ArrayList<>(
+                generated.openers().size() + generated.mains().size());
         int order = 0;
         for (var opener : generated.openers()) {
-            resumeQuestionPersister.persist(interviewId, QuestionType.RESUME_OPENER,
-                    opener.question(), opener.ttsQuestion(), opener.bestAnswer(), order++);
+            drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
+                    QuestionType.RESUME_OPENER, opener.question(), opener.ttsQuestion(),
+                    opener.bestAnswer(), order++));
         }
         for (var main : generated.mains()) {
-            resumeQuestionPersister.persist(interviewId, QuestionType.RESUME_MAIN,
-                    main.question(), main.ttsQuestion(), main.bestAnswer(), order++);
+            drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
+                    QuestionType.RESUME_MAIN, main.question(), main.ttsQuestion(),
+                    main.bestAnswer(), order++));
         }
+        resumeQuestionPersister.persistAll(interviewId, drafts);
         log.info("[ResumeTrackInitiator] 질문 적재 완료: interviewId={}, openers={}, mains={}",
                 interviewId, generated.openers().size(), generated.mains().size());
     }
