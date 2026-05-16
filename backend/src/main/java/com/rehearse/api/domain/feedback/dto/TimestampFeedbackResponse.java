@@ -101,10 +101,6 @@ public class TimestampFeedbackResponse {
     ) {
     }
 
-    public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
-        return from(feedback, List.of(), Map.of());
-    }
-
     public static TimestampFeedbackResponse from(TimestampFeedback feedback,
                                                   List<QuestionScore> questionScores,
                                                   Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
