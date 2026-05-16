@@ -59,6 +59,7 @@ public class RubricScorer {
                 userLevel, resumeMode, currentChainLevel, resumeSkeleton
         );
 
-        return adapter.adapt(aiClient, request, rubric, dimensionsToScore);
+        return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
+                userAnswer, interview.getId(), question.getId());
     }
 }

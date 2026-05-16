@@ -147,6 +147,26 @@ class RubricScoringEventListenerIntegrationTest extends ServiceIntegrationSuppor
         }
 
         @Test
+        @DisplayName("verbal 채점 결과는 한국어 observation + userAnswer substring evidence_quote 로 적재된다")
+        void verbalScoring_persistsKoreanObservationAndVerbatimEvidence() {
+            InterviewData data = persistInterview(InterviewType.CS_FUNDAMENTAL, InterviewType.CS_FUNDAMENTAL, QuestionType.TECH_MAIN);
+            given(resilientAiClient.chat(any())).willReturn(rubricResponse());
+
+            followUpTransactionHandler.publishTurnCompletedEvent(
+                    data.interview().getId(), context(data), answerTurn(RecommendedNextAction.DEEP_DIVE),
+                    data.question().getId(), 0);
+
+            QuestionScore score = awaitScores(data.interview().getId(), 1).get(0);
+            var dimensions = questionScoreDimensionRepository.findByQuestionScoreId(score.getId());
+            assertThat(dimensions).isNotEmpty();
+            assertThat(dimensions).allSatisfy(dim -> {
+                assertThat(dim.getObservation()).matches(".*[\\uAC00-\\uD7A3].*");
+                assertThat(dim.getEvidenceQuote()).isEqualTo("답변 텍스트");
+                assertThat(dim.getEvidenceQuote()).doesNotContain("팀에서 했어요 수준");
+            });
+        }
+
+        @Test
         @DisplayName("Resume publish 시 questionId null 은 발행 skip 되어 question_score 를 적재하지 않는다")
         void resumeNullQuestionId_skipsPublish() {
             InterviewData data = persistInterview(InterviewType.RESUME_BASED, InterviewType.RESUME_BASED,
