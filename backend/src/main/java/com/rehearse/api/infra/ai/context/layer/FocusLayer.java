@@ -9,12 +9,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * L4 FocusLayer — JIT per-callType USER fragment renderer.
- * FocusHints sealed pattern 매칭으로 컴파일타임 callType ↔ hint type 정합성 보장.
  */
 @Slf4j
 @Component
@@ -22,15 +23,11 @@ import java.util.regex.Pattern;
 public class FocusLayer implements ContextLayer {
 
     static final int CAP_ANSWER_ANALYZER = 800;
-    static final int CAP_FOLLOW_UP_GENERATOR_V3 = 1000;
-    static final int CAP_RESUME_PLAYGROUND_OPENER = 600;
-    static final int CAP_RESUME_PLAYGROUND_RESPONDER = 1000;
-    static final int CAP_RESUME_CHAIN_INTERROGATOR = 1200;
+    static final int CAP_FOLLOW_UP_GENERATOR_V3 = 1400;
+    static final int CAP_RESUME_QUESTION_GENERATOR = 16000;
 
-    // chars/4 토큰 휴리스틱 ±20% 오차 흡수 마진
     private static final double SAFETY_MARGIN = 0.9;
     private static final int MAX_TRUNCATE_ITERATIONS = 8;
-    // LLM JSON 형식 유지 위한 지시문 끝부분 보존
     private static final int FALLBACK_TAIL_PRESERVE_CHARS = 200;
     private static final Pattern MARKER_BLOCK_PATTERN =
             Pattern.compile("<<<([A-Z_]+)>>>\\n([\\s\\S]*?)\\n<<<END_\\1>>>", Pattern.MULTILINE);
@@ -44,44 +41,21 @@ public class FocusLayer implements ContextLayer {
         return switch (hints) {
             case FocusHints.AnswerAnalyzerHints h -> render(buildAnswerAnalyzer(h), CAP_ANSWER_ANALYZER, callType);
             case FocusHints.FollowUpGeneratorV3Hints h -> render(buildFollowUpGeneratorV3(h), CAP_FOLLOW_UP_GENERATOR_V3, callType);
-            case FocusHints.ResumePlaygroundOpenerHints h -> render(buildResumePlaygroundOpener(h), CAP_RESUME_PLAYGROUND_OPENER, callType);
-            case FocusHints.ResumePlaygroundResponderHints h -> render(buildResumePlaygroundResponder(h), CAP_RESUME_PLAYGROUND_RESPONDER, callType);
-            case FocusHints.ResumeChainInterrogatorHints h -> render(buildResumeChainInterrogator(h), CAP_RESUME_CHAIN_INTERROGATOR, callType);
+            case FocusHints.ResumeQuestionGeneratorHints h -> render(buildResumeQuestionGenerator(h), CAP_RESUME_QUESTION_GENERATOR, callType);
             case FocusHints.EmptyHints ignored -> handleEmpty(callType);
         };
     }
 
     private List<ChatMessage> handleEmpty(String callType) {
-        if ("compaction_summarizer".equals(callType)) {
-            return List.of();
-        }
         log.warn("[FocusLayer] L4 미등록 callType 진입: callType={}", callType);
         return List.of();
     }
 
-    private String buildResumePlaygroundOpener(FocusHints.ResumePlaygroundOpenerHints h) {
-        return "<<<PROJECT_INFO>>>\n" + nz(h.projectInfo()) + "\n<<<END_PROJECT_INFO>>>\n\n" +
-               "<<<OPENER_QUESTION>>>\n" + nz(h.openerQuestion()) + "\n<<<END_OPENER_QUESTION>>>\n\n" +
-               "위 정보를 기반으로 Playground 오프너 질문을 JSON 한 객체로만 응답하세요.";
-    }
-
-    private String buildResumePlaygroundResponder(FocusHints.ResumePlaygroundResponderHints h) {
-        return "<<<PROJECT_INFO>>>\n" + nz(h.projectInfo()) + "\n<<<END_PROJECT_INFO>>>\n\n" +
-               "<<<EXPECTED_CLAIMS>>>\n" + nz(h.expectedClaims()) + "\n<<<END_EXPECTED_CLAIMS>>>\n\n" +
-               "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
-               "PLAYGROUND_TURN_COUNT: " + h.playgroundTurnCount() + "\n" +
-               "CUMULATIVE_UTTERANCE_LENGTH: " + h.cumulativeUtteranceLength() + "\n\n" +
-               "위 입력으로 Responder 결정과 다음 질문을 JSON 한 객체로만 응답하세요.";
-    }
-
-    private String buildResumeChainInterrogator(FocusHints.ResumeChainInterrogatorHints h) {
-        return "<<<PROJECT_NAME>>>\n" + nz(h.projectName()) + "\n<<<END_PROJECT_NAME>>>\n\n" +
-               "<<<CURRENT_CHAIN>>>\n" + nz(h.currentChain()) + "\n<<<END_CURRENT_CHAIN>>>\n\n" +
-               "CURRENT_LEVEL: " + h.currentLevel() + "\n" +
-               "ANSWER_QUALITY: " + h.answerQuality() + "\n" +
-               "CONSECUTIVE_STAY_COUNT: " + h.consecutiveStayCount() + "\n\n" +
-               "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
-               "위 chain 상태에서 LEVEL_UP/LEVEL_STAY/CHAIN_SWITCH 결정과 다음 질문을 JSON 한 객체로만 응답하세요.";
+    private String buildResumeQuestionGenerator(FocusHints.ResumeQuestionGeneratorHints h) {
+        return "<<<RESUME_SKELETON>>>\n" + nz(h.resumeSkeletonJson()) + "\n<<<END_RESUME_SKELETON>>>\n\n" +
+               "OPENER_COUNT: " + h.openerCount() + "\n" +
+               "MAIN_COUNT: " + h.mainCount() + "\n\n" +
+               "위 RESUME_SKELETON 을 기반으로 opener N개 + main M개 질문을 JSON 한 객체로만 응답하세요.";
     }
 
     private List<ChatMessage> render(String fragment, int cap, String callType) {
@@ -173,9 +147,14 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildFollowUpGeneratorV3(FocusHints.FollowUpGeneratorV3Hints h) {
-        return "ANSWER_ANALYSIS:\n" + nz(h.answerAnalysisJson()) + "\n\n" +
-               "asked_perspectives: " + formatList(h.askedPerspectives()) + "\n\n" +
-               "위 ANSWER_ANALYSIS 를 바탕으로 새 후속 질문을 생성하세요.";
+        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
+               "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
+               "<<<CLAIMS>>>\n" + formatList(h.claims()) + "\n<<<END_CLAIMS>>>\n\n" +
+               "WEAKEST_DIMENSION: " + nz(h.weakestDimension()) + "\n" +
+               "DIMENSION_GAPS: " + formatMap(h.dimensionGaps()) + "\n\n" +
+               "<<<UNSTATED_ASSUMPTIONS>>>\n" + formatList(h.unstatedAssumptions()) + "\n<<<END_UNSTATED_ASSUMPTIONS>>>\n\n" +
+               "<<<RESUME_SKELETON>>>\n" + nz(h.resumeSkeletonJson()) + "\n<<<END_RESUME_SKELETON>>>\n\n" +
+               "위 분석 결과를 바탕으로 새 후속 질문을 생성하세요.";
     }
 
     private static String nz(String v) {
@@ -186,6 +165,13 @@ public class FocusLayer implements ContextLayer {
 
     private static String formatList(List<String> list) {
         if (list == null || list.isEmpty()) return "(없음)";
-        return String.join(", ", list);
+        return String.join(" | ", list);
+    }
+
+    private static String formatMap(Map<String, Integer> map) {
+        if (map == null || map.isEmpty()) return "(없음)";
+        return map.entrySet().stream()
+                .map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(", "));
     }
 }

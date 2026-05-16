@@ -6,28 +6,15 @@ import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.BlockReason;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
-import com.rehearse.api.domain.interview.entity.Interview;
-import com.rehearse.api.domain.interview.entity.InterviewRuntimeState;
 import com.rehearse.api.domain.interview.entity.InterviewTrack;
-import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
-import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.entity.AskedPerspectives;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.resume.service.ResumeInterviewOrchestrator;
-import com.rehearse.api.domain.resume.service.InterviewPlanRuntimeCache;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonRuntimeCache;
-import com.rehearse.api.domain.resume.entity.InterviewPlan;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
-import com.rehearse.api.domain.resume.service.InterviewPlanPersister;
-import com.rehearse.api.domain.resume.service.ResumeInterviewPlanner;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
@@ -45,15 +32,9 @@ public class FollowUpService {
     private final AudioTurnAnalyzer audioTurnAnalyzer;
     private final FollowUpQuestionWriter followUpQuestionWriter;
     private final FollowUpTransactionHandler followUpTransactionHandler;
-    private final InterviewRuntimeStateCache runtimeStateStore;
-    private final AiCallMetrics aiCallMetrics;
-    private final ResumeInterviewOrchestrator resumeOrchestrator;
+    private final StandardFollowUpPolicy standardFollowUpPolicy;
     private final ResumeSkeletonPersister resumeSkeletonStore;
-    private final InterviewPlanPersister interviewPlanStore;
-    private final ResumeSkeletonRuntimeCache resumeSkeletonCache;
-    private final InterviewPlanRuntimeCache interviewPlanCache;
-    private final ResumeInterviewPlanner resumeInterviewPlanner;
-    private final InterviewFinder interviewFinder;
+    private final AiCallMetrics aiCallMetrics;
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -62,79 +43,72 @@ public class FollowUpService {
         }
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
-        InterviewRuntimeState state = runtimeStateStore.getOrInit(id, () -> new InterviewRuntimeState(context.level().name(), null));
 
-        if (isResumeTrack(id, state)) {
-            return delegateToResumeOrchestrator(id, request);
+        if (followUpTransactionHandler.shouldSkipOpener(request.getQuestionSetId())) {
+            log.info("RESUME_OPENER main → follow-up skip. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("opener_skip");
+            return FollowUpResponse.aiSkip(request.getAnswerText(), "resume_opener_skip");
         }
 
-        AskedPerspectives askedPerspectives = AskedPerspectives.from(request.getPreviousExchanges());
-        TurnAnalysisResult turn = audioTurnAnalyzer.analyze(
-                id, resolveTurnId(context), audioFile,
-                request.getQuestionContent(), context.mainReferenceType(), askedPerspectives);
+        AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
+                id, audioFile, request.getQuestionContent(), context.mainReferenceType());
+        String answerText = request.getAnswerText();
 
-        if (turn.answerAnalysis().recommendedNextAction() == RecommendedNextAction.SKIP) {
-            return handleAnalyzerSkip(id, context, request, turn);
+        if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
+            return handleAnalyzerSkip(id, context, request, analysis, answerText);
         }
-        return generateAndSaveFollowUp(id, context, request, turn, askedPerspectives);
+        return generateAndSaveFollowUp(id, context, request, analysis, answerText);
     }
 
-    private FollowUpResponse handleAnalyzerSkip(Long id, FollowUpContext context, FollowUpRequest request, TurnAnalysisResult turn) {
+    private FollowUpResponse handleAnalyzerSkip(
+            Long id, FollowUpContext context, FollowUpRequest request,
+            AnswerAnalysis analysis, String answerText
+    ) {
         log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
                 id, request.getQuestionSetId());
         aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
         int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-        log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
+        log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                 id, InterviewTrack.CS.logLabel(),
                 BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
         followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                id, context, turn, context.currentMainQuestionId());
-        return FollowUpResponse.aiSkip(turn.answerText(), "analyzer_recommend_skip");
+                id, context, analysis, answerText, context.currentMainQuestionId());
+        return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
     }
 
     private FollowUpResponse generateAndSaveFollowUp(
             Long id, FollowUpContext context, FollowUpRequest request,
-            TurnAnalysisResult turn, AskedPerspectives askedPerspectives
+            AnswerAnalysis analysis, String answerText
     ) {
-        String answerText = turn.answerText();
-        AnswerAnalysis analysis = turn.answerAnalysis();
+        ResumeSkeleton skeleton = resumeSkeletonStore.findByInterviewId(id).orElse(null);
 
-        FollowUpGenerationRequest stepBReq = new FollowUpGenerationRequest(
-                context.position(), context.effectiveTechStack(), context.level(),
-                request.getQuestionContent(), answerText, request.getNonVerbalSummary(),
-                request.getPreviousExchanges(), context.mainReferenceType());
-        GeneratedFollowUp stepB = followUpQuestionWriter.write(stepBReq, analysis, askedPerspectives);
+        GeneratedFollowUp stepB = followUpQuestionWriter.write(
+                request.getQuestionContent(), answerText, analysis, skeleton);
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
                     id, request.getQuestionSetId(), stepB.skipReason());
             aiCallMetrics.incrementFollowUpSkip("step_b_skip");
             int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
-            log.warn("[진행차단진단] interviewId={} track={} stage=standard-followup reason={} turnIndex={}",
+            log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                     id, InterviewTrack.CS.logLabel(),
                     BlockReason.STEP_B_SKIP.logValue(), turnIndex);
             followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                    id, context, turn, context.currentMainQuestionId());
+                    id, context, analysis, answerText, context.currentMainQuestionId());
             return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
         }
 
         FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResultAndPublishEvent(
-                id, context, stepB, turn);
+                id, context, stepB, analysis, answerText);
         boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
-        log.info("REALTIME 후속 질문 생성 완료(v3): interviewId={}, questionSetId={}, questionId={}, type={}, perspective={}, targetClaim={}, exhausted={}",
+        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}, weakestDimension={}, dimensionGaps={}, target_claim_idx={}, exhausted={}",
                 id, request.getQuestionSetId(), saveResult.question().getId(),
-                stepB.type(), stepB.selectedAnswerFeedbackPerspective(),
+                stepB.type(), analysis.weakestDimension(), analysis.dimensionGaps(),
                 stepB.targetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
-    }
-
-    private static Long resolveTurnId(FollowUpContext context) {
-        if (context.currentMainQuestionId() != null) {
-            return context.currentMainQuestionId();
-        }
-        return (long) context.nextOrderIndex();
     }
 
     private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
@@ -149,71 +123,6 @@ public class FollowUpService {
                 .skip(false)
                 .presentToUser(true)
                 .followUpExhausted(exhausted)
-                .selectedAnswerFeedbackPerspective(followUp.selectedAnswerFeedbackPerspective())
                 .build();
-    }
-
-    private boolean isResumeTrack(Long interviewId, InterviewRuntimeState state) {
-        if (state == null) {
-            return false;
-        }
-        if (state.getResumeSkeletonCache() != null) {
-            return true;
-        }
-        Interview interview = interviewFinder.findById(interviewId);
-        if (!interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)) {
-            return false;
-        }
-        resumeSkeletonStore.findByInterviewId(interviewId).ifPresent(skeleton ->
-                runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(skeleton))
-        );
-        return true;
-    }
-
-    private FollowUpResponse delegateToResumeOrchestrator(Long interviewId, FollowUpRequest request) {
-        InterviewRuntimeState state = runtimeStateStore.get(interviewId);
-        ResumeSkeleton skeleton = resolveResumeSkeleton(interviewId, state);
-
-        Interview interview = interviewFinder.findById(interviewId);
-        int durationMinutes = interview.getDurationMinutes();
-        InterviewPlan plan = resolveInterviewPlan(interviewId, skeleton, durationMinutes);
-
-        return resumeOrchestrator.processUserTurn(
-                interviewId, durationMinutes,
-                request.getQuestionContent(), request.getAnswerText(),
-                request.getPreviousExchanges(), skeleton, plan,
-                request.isTerminate()
-        );
-    }
-
-    private ResumeSkeleton resolveResumeSkeleton(Long interviewId, InterviewRuntimeState state) {
-        if (state == null) {
-            throw new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY);
-        }
-        ResumeSkeleton skeleton = state.getResumeSkeletonCache();
-        if (skeleton != null) {
-            return skeleton;
-        }
-
-        skeleton = resumeSkeletonStore.findByInterviewId(interviewId)
-                .orElseThrow(() -> new BusinessException(ResumeErrorCode.RESUME_PLAN_NOT_READY));
-        ResumeSkeleton finalSkeleton = skeleton;
-        runtimeStateStore.update(interviewId, s -> s.setResumeSkeleton(finalSkeleton));
-        return skeleton;
-    }
-
-    private InterviewPlan resolveInterviewPlan(Long interviewId, ResumeSkeleton skeleton, int durationMinutes) {
-        InterviewPlan plan = interviewPlanCache.read(interviewId);
-        if (plan != null) {
-            return plan;
-        }
-
-        plan = interviewPlanStore.findByInterviewId(interviewId).orElse(null);
-        if (plan == null) {
-            plan = resumeInterviewPlanner.plan(skeleton, durationMinutes);
-            interviewPlanStore.save(interviewId, plan);
-        }
-        interviewPlanCache.write(interviewId, plan);
-        return plan;
     }
 }

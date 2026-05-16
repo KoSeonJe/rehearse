@@ -1,10 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.interview.entity.TurnAnalysisResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
-import com.rehearse.api.domain.interview.service.InterviewRuntimeStateCache;
-import com.rehearse.api.domain.interview.entity.AskedPerspectives;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
@@ -38,39 +35,32 @@ public class AudioTurnAnalyzer {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final AudioTurnAnalyzerPromptBuilder promptBuilder;
-    private final InterviewRuntimeStateCache runtimeStateStore;
     private final TextFallbackTurnAnalyzer textFallbackTurnAnalyzer;
     private final AiCallMetrics aiCallMetrics;
 
-    public TurnAnalysisResult analyze(
+    public AnswerAnalysis analyze(
             Long interviewId,
-            Long turnId,
             MultipartFile audioFile,
             String mainQuestion,
-            ReferenceType questionReferenceType,
-            AskedPerspectives askedPerspectives
+            ReferenceType questionReferenceType
     ) {
-        validate(interviewId, turnId, audioFile);
+        validate(interviewId, audioFile);
         try {
-            TurnAnalysisResult viaAudio = analyzeViaAudioChat(audioFile, mainQuestion, questionReferenceType, askedPerspectives);
-            return commit(interviewId, turnId, viaAudio);
+            return analyzeViaAudioChat(audioFile, mainQuestion, questionReferenceType);
         } catch (AudioChatFallbackRequiredException e) {
             log.warn("[AudioTurnAnalyzer] audio chat 실패 → text-only fallback. interviewId={}", interviewId);
             aiCallMetrics.incrementFollowUpSkip("audio_chat_fallback_to_stt");
-            // fallback 경로: TextFallback 의 AnswerAnalyzer 가 내부적으로 가드+캐시 처리하므로 commit() bypass.
-            return textFallbackTurnAnalyzer.analyze(
-                    interviewId, turnId, audioFile, mainQuestion, questionReferenceType, askedPerspectives);
+            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType);
         }
     }
 
-    private TurnAnalysisResult analyzeViaAudioChat(
+    private AnswerAnalysis analyzeViaAudioChat(
             MultipartFile audio,
             String mainQuestion,
-            ReferenceType refType,
-            AskedPerspectives askedPerspectives
+            ReferenceType refType
     ) {
         String systemPrompt = promptBuilder.buildSystemPrompt();
-        String userPrompt = promptBuilder.buildUserPromptText(mainQuestion, refType, askedPerspectives.values());
+        String userPrompt = promptBuilder.buildUserPromptText(mainQuestion, refType);
 
         ChatRequest chatRequest = ChatRequest.builder()
                 .messages(List.of(
@@ -84,25 +74,13 @@ public class AudioTurnAnalyzer {
                 .build();
 
         ChatResponse response = aiClient.chatWithAudio(chatRequest, audio);
-        // parseOrRetry 는 retry 시 text-only chat 호출 → audio 컨텍스트 손실. audio 경로는 단발 파싱만.
         GeneratedTurnAnalysis raw = aiResponseParser.parseJsonResponse(response.content(), GeneratedTurnAnalysis.class);
         return raw.toDomain();
     }
 
-    private TurnAnalysisResult commit(Long interviewId, Long turnId, TurnAnalysisResult viaAudio) {
-        AnswerAnalysis withTurnId = viaAudio.answerAnalysis().withTurnId(turnId);
-        AnswerAnalysis guarded = withTurnId.applyL1FalseNegativeGuard();
-        runtimeStateStore.update(interviewId, state -> state.recordAnalysis(turnId, guarded));
-        if (guarded.recommendedNextAction() != withTurnId.recommendedNextAction()) {
-            log.info("[AudioTurnAnalyzer] L1 FN 가드 적용: interviewId={}, turnId={}, override→CLARIFICATION",
-                    interviewId, turnId);
-        }
-        return viaAudio.withAnswerAnalysis(guarded);
-    }
-
-    private static void validate(Long interviewId, Long turnId, MultipartFile audioFile) {
-        if (interviewId == null || turnId == null) {
-            throw new IllegalArgumentException("interviewId/turnId 는 null 일 수 없습니다.");
+    private static void validate(Long interviewId, MultipartFile audioFile) {
+        if (interviewId == null) {
+            throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
         }
         if (audioFile == null || audioFile.isEmpty()) {
             throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
