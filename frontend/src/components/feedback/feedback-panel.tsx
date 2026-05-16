@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import type { TimestampFeedback, QuestionWithAnswer } from '@/types/interview'
 import ContentTab from '@/components/feedback/content-tab'
-import DeliveryTab from '@/components/feedback/delivery-tab'
 import BookmarkToggleButton from '@/components/feedback/bookmark-toggle-button'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
 const ANSWER_TYPE_LABELS: Record<string, string> = {
   TECH_MAIN: '원본 답변',
@@ -31,8 +29,6 @@ const highlightFillers = (text: string): React.ReactNode[] => {
   )
 }
 
-type FeedbackTab = 'content' | 'delivery'
-
 interface FeedbackCardProps {
   feedback: TimestampFeedback
   question: QuestionWithAnswer | undefined
@@ -43,16 +39,8 @@ interface FeedbackCardProps {
 
 const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTsfId }: FeedbackCardProps) => {
   const [showBestAnswer, setShowBestAnswer] = useState(false)
-  const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
 
-  const isDeliveryAvailable =
-    feedback.delivery !== null &&
-    (feedback.delivery.nonverbal !== null ||
-      feedback.delivery.vocal !== null ||
-      feedback.delivery.attitudeComment !== null)
-
-  const effectiveTab: FeedbackTab =
-    activeTab === 'delivery' && !isDeliveryAvailable ? 'content' : activeTab
+  const fillerWordCount = feedback.fillerWordCount
 
   const formatTime = (ms: number): string => {
     const s = Math.floor(ms / 1000)
@@ -108,13 +96,11 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
                   {highlightFillers(feedback.transcript)}
                 </p>
               </div>
-              {feedback.delivery?.vocal?.fillerWordCount !== null &&
-                feedback.delivery?.vocal?.fillerWordCount !== undefined &&
-                feedback.delivery.vocal.fillerWordCount > 0 && (
-                  <p className="mt-2 text-[13px] text-gray-400">
-                    습관어 {feedback.delivery.vocal.fillerWordCount}회 감지
-                  </p>
-                )}
+              {fillerWordCount !== null && fillerWordCount > 0 && (
+                <p className="mt-2 text-[13px] text-gray-400">
+                  습관어 {fillerWordCount}회 감지
+                </p>
+              )}
             </div>
           )}
           {question?.bestAnswer && (
@@ -142,38 +128,13 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
         </div>
       )}
 
-      {/* 탭 */}
-      <Tabs
-        value={effectiveTab}
-        onValueChange={(v) => setActiveTab(v as FeedbackTab)}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <TabsList className="w-full justify-start gap-4 rounded-none bg-transparent px-6 border-b border-gray-100 h-auto pb-0">
-          <TabsTrigger
-            value="content"
-            className="pb-3 px-0 rounded-none border-b-2 text-[14px] bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-bold data-[state=active]:text-gray-900 data-[state=active]:border-gray-900 font-medium text-gray-400 border-transparent hover:text-gray-600 transition-colors"
-          >
-            내 답변은 어땠을까
-          </TabsTrigger>
-          <TabsTrigger
-            value="delivery"
-            disabled={!isDeliveryAvailable}
-            className="pb-3 px-0 rounded-none border-b-2 text-[14px] bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:font-bold data-[state=active]:text-gray-900 data-[state=active]:border-gray-900 font-medium text-gray-400 border-transparent hover:text-gray-600 disabled:text-gray-300 disabled:pointer-events-none transition-colors"
-          >
-            어떤 인상을 줬을까
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="content" className="mt-0">
-          <ContentTab
-            technicalFeedback={feedback.technicalFeedback}
-            questionType={feedback.questionType}
-          />
-        </TabsContent>
-        <TabsContent value="delivery" className="mt-0">
-          <DeliveryTab delivery={feedback.delivery} />
-        </TabsContent>
-      </Tabs>
+      <div onClick={(e) => e.stopPropagation()}>
+        <ContentTab
+          technicalFeedback={feedback.technicalFeedback}
+          nonverbalFeedback={feedback.nonverbalFeedback}
+          questionType={feedback.questionType}
+        />
+      </div>
 
     </div>
   )

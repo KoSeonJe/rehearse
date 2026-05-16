@@ -1,18 +1,19 @@
-import type { RubricCategory, TechnicalFeedback } from '@/types/interview'
+import type {
+  NonverbalFeedback,
+  RubricCategory,
+  TechnicalFeedback,
+} from '@/types/interview'
+import RubricDimensionCard from '@/components/feedback/rubric-dimension-card'
 
 interface ContentTabProps {
   technicalFeedback: TechnicalFeedback | null
+  nonverbalFeedback: NonverbalFeedback | null
   questionType: string | null
 }
 
 interface RubricCategoryCopy {
   title: string
   emptyMessage: string
-}
-
-const formatScore = (score: number | null): string => {
-  if (score === null) return '평가 제외'
-  return `${score}점`
 }
 
 const FALLBACK_COPY: RubricCategoryCopy = {
@@ -26,6 +27,7 @@ const OPENER_COPY = {
 } as const
 
 const RESUME_OPENER_QUESTION_TYPE = 'RESUME_OPENER'
+const NONVERBAL_DIMENSION_COUNT = 3
 
 const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy => {
   switch (rubricCategory) {
@@ -42,18 +44,11 @@ const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy 
   }
 }
 
-const ContentTab = ({ technicalFeedback, questionType }: ContentTabProps) => {
-  if (questionType === RESUME_OPENER_QUESTION_TYPE) {
-    return (
-      <div className="px-6 py-10 text-center">
-        <p className="text-[15px] font-bold text-gray-900">{OPENER_COPY.emptyMessage}</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-          {OPENER_COPY.secondary}
-        </p>
-      </div>
-    )
-  }
+interface VerbalSectionProps {
+  technicalFeedback: TechnicalFeedback | null
+}
 
+const VerbalSection = ({ technicalFeedback }: VerbalSectionProps) => {
   const copy = resolveCopy(technicalFeedback?.rubricCategory ?? null)
   const isCardable =
     technicalFeedback !== null &&
@@ -84,33 +79,75 @@ const ContentTab = ({ technicalFeedback, questionType }: ContentTabProps) => {
 
       <div className="space-y-3">
         {technicalFeedback.dimensions.map((dimension) => (
-          <section
-            key={dimension.dimension}
-            className="border border-gray-200 bg-white p-4"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="font-tabular text-[12px] font-semibold text-gray-500">
-                {dimension.dimension}
-              </span>
-              <span className="font-tabular text-[13px] font-bold text-gray-900">
-                {formatScore(dimension.score)}
-              </span>
-            </div>
-
-            {dimension.observation !== null && (
-              <p className="mt-3 text-[14px] leading-relaxed text-gray-800">
-                {dimension.observation}
-              </p>
-            )}
-
-            {dimension.evidenceQuote !== null && (
-              <blockquote className="mt-3 border-l-2 border-gray-300 pl-3 text-[13px] leading-relaxed text-gray-500">
-                {dimension.evidenceQuote}
-              </blockquote>
-            )}
-          </section>
+          <RubricDimensionCard key={dimension.dimension} dimension={dimension} />
         ))}
       </div>
+    </div>
+  )
+}
+
+interface NonverbalSectionProps {
+  nonverbalFeedback: NonverbalFeedback | null
+}
+
+const NonverbalSection = ({ nonverbalFeedback }: NonverbalSectionProps) => {
+  if (nonverbalFeedback === null) {
+    return (
+      <div className="space-y-2 px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900">비언어 평가</p>
+        <p className="text-[13px] leading-relaxed text-gray-400">
+          분석 실패 — 점수 없음
+        </p>
+      </div>
+    )
+  }
+
+  const isPartial = nonverbalFeedback.dimensions.length < NONVERBAL_DIMENSION_COUNT
+
+  return (
+    <div className="space-y-4 px-6 py-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[15px] font-bold text-gray-900">비언어 평가</p>
+        <span className="font-tabular text-[12px] font-medium text-gray-400">
+          {nonverbalFeedback.rubricId}
+        </span>
+      </div>
+
+      {isPartial && (
+        <p className="text-[13px] leading-relaxed text-gray-400">
+          이번 답변 비언어 분석 일부 실패
+        </p>
+      )}
+
+      <div className="space-y-3">
+        {nonverbalFeedback.dimensions.map((dimension) => (
+          <RubricDimensionCard key={dimension.dimension} dimension={dimension} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+const ContentTab = ({
+  technicalFeedback,
+  nonverbalFeedback,
+  questionType,
+}: ContentTabProps) => {
+  if (questionType === RESUME_OPENER_QUESTION_TYPE) {
+    return (
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] font-bold text-gray-900">{OPENER_COPY.emptyMessage}</p>
+        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
+          {OPENER_COPY.secondary}
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="divide-y divide-gray-100">
+      <VerbalSection technicalFeedback={technicalFeedback} />
+      <NonverbalSection nonverbalFeedback={nonverbalFeedback} />
     </div>
   )
 }
