@@ -197,6 +197,39 @@ class NonverbalScorePersisterTest extends ServiceIntegrationSupport {
                             && m.contains("interviewId=" + ctx.interview().getId())
                             && m.contains("questionId=" + ctx.question().getId()));
         }
+
+        @Test
+        @DisplayName("vocal + vision 에 동일 dimension key 가 들어오면 vision 쪽을 skip 하고 dimensionKeyConflict WARN 을 남긴다")
+        void persistAll_dimensionKeyConflict_logsWarnAndKeepsFirstArea() {
+            Persisted ctx = persistInterview();
+            SaveFeedbackRequest.NonverbalScore payload = new SaveFeedbackRequest.NonverbalScore();
+            setArea(payload, "vocal", List.of(
+                    dim("fluency", 3, "유창함 vocal", "vocal 근거")
+            ));
+            setArea(payload, "vision", List.of(
+                    dim("fluency", 1, "유창함 vision", "vision 근거")
+            ));
+
+            persister.persistAll(ctx.questionSet(), ctx.feedback(), List.of(item(payload)));
+
+            List<QuestionScore> scores = questionScoreRepository
+                    .findByInterviewIdOrderByQuestionIdAsc(ctx.interview().getId());
+            assertThat(scores).hasSize(1);
+            List<QuestionScoreDimension> dims = dimensionRepository
+                    .findByQuestionScoreId(scores.get(0).getId());
+            // 첫 area (vocal) 값 유지, 두 번째 (vision) skip.
+            assertThat(dims).hasSize(1);
+            assertThat(dims.get(0).getDimensionRef()).isEqualTo("fluency");
+            assertThat(dims.get(0).getScore()).isEqualTo(3);
+            assertThat(dims.get(0).getObservation()).isEqualTo("유창함 vocal");
+
+            assertThat(warnMessages())
+                    .anyMatch(m -> m.contains("[결함 skip] Nonverbal dimensionKeyConflict")
+                            && m.contains("interviewId=" + ctx.interview().getId())
+                            && m.contains("questionId=" + ctx.question().getId())
+                            && m.contains("key=fluency")
+                            && m.contains("skippedArea=vision"));
+        }
     }
 
     private Persisted persistInterview() {

@@ -64,10 +64,9 @@ public class NonverbalScorePersister {
             return;
         }
 
-        // vocal 차원 키 (fluency / confidence_tone) ∩ vision 차원 키 (eye_contact_posture) = ∅ 전제 — rubric YAML uses_dimensions 동등성 보장.
         Map<String, DimensionScore> dims = new LinkedHashMap<>();
-        mergeArea(dims, payload.getVocal());
-        mergeArea(dims, payload.getVision());
+        mergeArea(dims, payload.getVocal(), interview.getId(), question.getId(), "vocal");
+        mergeArea(dims, payload.getVision(), interview.getId(), question.getId(), "vision");
 
         if (dims.isEmpty()) {
             log.warn("[결함 skip] Nonverbal allInvalid. interviewId={}, questionId={}",
@@ -78,7 +77,11 @@ public class NonverbalScorePersister {
         questionScorePersister.saveRubric(question.getId(), interview.getId(), RUBRIC_ID, null, dims);
     }
 
-    private void mergeArea(Map<String, DimensionScore> dims, SaveFeedbackRequest.AreaScore area) {
+    private void mergeArea(Map<String, DimensionScore> dims,
+                           SaveFeedbackRequest.AreaScore area,
+                           Long interviewId,
+                           Long questionId,
+                           String areaTag) {
         if (area == null || area.getDimensions() == null) {
             return;
         }
@@ -86,8 +89,12 @@ public class NonverbalScorePersister {
             if (!isValid(dim)) {
                 continue;
             }
-            dims.put(dim.getDimensionRef(),
-                    DimensionScore.of(dim.getScore(), dim.getObservation(), dim.getEvidenceQuote()));
+            String key = dim.getDimensionRef();
+            DimensionScore score = DimensionScore.of(dim.getScore(), dim.getObservation(), dim.getEvidenceQuote());
+            if (dims.putIfAbsent(key, score) != null) {
+                log.warn("[결함 skip] Nonverbal dimensionKeyConflict. interviewId={}, questionId={}, key={}, skippedArea={}",
+                        interviewId, questionId, key, areaTag);
+            }
         }
     }
 
