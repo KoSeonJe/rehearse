@@ -49,10 +49,10 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        standardFollowUpPolicy.assertCanContinue(interview, questionSet);
+        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
+        standardFollowUpPolicy.assertCanContinue(interview, questionSet, currentMainQuestionId);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
-        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
 
         return new FollowUpContext(
                 interview.getPosition(),
@@ -70,28 +70,29 @@ public class FollowUpTransactionHandler {
     public boolean shouldSkipOpener(Long questionSetId) {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-        return standardFollowUpPolicy.shouldSkipFollowUp(questionSet);
+        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
+        return standardFollowUpPolicy.shouldSkipFollowUp(questionSet, currentMainQuestionId);
     }
 
     private Long resolveCurrentMainQuestionId(QuestionSet questionSet) {
-        return findMainQuestion(questionSet)
+        return findCurrentMainQuestion(questionSet)
                 .map(Question::getId)
                 .orElse(null);
     }
 
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
         InterviewType category = questionSet.getCategory();
-        return findMainQuestion(questionSet)
+        return findCurrentMainQuestion(questionSet)
                 .map(q -> q.getQuestionType().referenceType())
                 .orElseGet(() -> category == InterviewType.BEHAVIORAL
                         ? ReferenceType.GUIDE
                         : ReferenceType.MODEL_ANSWER);
     }
 
-    private Optional<Question> findMainQuestion(QuestionSet questionSet) {
+    private Optional<Question> findCurrentMainQuestion(QuestionSet questionSet) {
         return questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType().isMain())
-                .findFirst();
+                .filter(q -> !q.getQuestionType().isFollowUp())
+                .reduce((first, second) -> second);
     }
 
     @Transactional
@@ -125,7 +126,7 @@ public class FollowUpTransactionHandler {
     }
 
     private QuestionType resolveFollowUpType(QuestionSet questionSet) {
-        QuestionType mainType = findMainQuestion(questionSet)
+        QuestionType mainType = findCurrentMainQuestion(questionSet)
                 .map(Question::getQuestionType)
                 .orElse(null);
         if (mainType == QuestionType.TECH_MAIN) {
