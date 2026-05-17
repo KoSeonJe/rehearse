@@ -54,7 +54,8 @@ public class FocusLayer implements ContextLayer {
     private String buildResumeQuestionGenerator(FocusHints.ResumeQuestionGeneratorHints h) {
         return "<<<RESUME_SKELETON>>>\n" + nz(h.resumeSkeletonJson()) + "\n<<<END_RESUME_SKELETON>>>\n\n" +
                "OPENER_COUNT: " + h.openerCount() + "\n" +
-               "MAIN_COUNT: " + h.mainCount() + "\n\n" +
+               "MAIN_COUNT: " + h.mainCount() + "\n" +
+               "PRIMARY_PROJECT_NAME: " + nz(h.primaryProjectName()) + "\n\n" +
                "위 RESUME_SKELETON 을 기반으로 opener N개 + main M개 질문을 JSON 한 객체로만 응답하세요.";
     }
 
