@@ -80,7 +80,7 @@ describe('ContentTab', () => {
           ],
         })}
         nonverbalFeedback={null}
-        questionType="RESUME_PLAYGROUND"
+        questionType="RESUME_MAIN"
       />,
     )
 
@@ -163,12 +163,12 @@ describe('ContentTab', () => {
     expect(screen.queryByText('비언어 평가')).not.toBeInTheDocument()
   })
 
-  it('questionType="RESUME_PLAYGROUND" + 양쪽 null → verbal fallback + 비언어 분석 실패 동시 노출', () => {
+  it('questionType="RESUME_MAIN" + 양쪽 null → verbal fallback + 비언어 분석 실패 동시 노출', () => {
     render(
       <ContentTab
         technicalFeedback={null}
         nonverbalFeedback={null}
-        questionType="RESUME_PLAYGROUND"
+        questionType="RESUME_MAIN"
       />,
     )
 
@@ -243,7 +243,7 @@ describe('ContentTab', () => {
     expect(screen.queryByText('이번 답변 비언어 분석 일부 실패')).not.toBeInTheDocument()
   })
 
-  it('questionType="RESUME_INTERROGATION" + technicalFeedback 정상 → dimension 카드 회귀', () => {
+  it('questionType="RESUME_FOLLOWUP" + technicalFeedback 정상 → dimension 카드 회귀', () => {
     render(
       <ContentTab
         technicalFeedback={buildTechnical({
@@ -259,7 +259,7 @@ describe('ContentTab', () => {
           ],
         })}
         nonverbalFeedback={null}
-        questionType="RESUME_INTERROGATION"
+        questionType="RESUME_FOLLOWUP"
       />,
     )
 
