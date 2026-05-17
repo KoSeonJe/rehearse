@@ -1,5 +1,5 @@
 /**
- * a11y Smoke Tests — 15 Pages
+ * a11y Smoke Tests — 16 Pages
  *
  * axe-core로 각 페이지를 렌더하고 critical/serious 위반이 없는지 검사합니다.
  * - critical/serious 위반 → 테스트 실패
@@ -356,6 +356,7 @@ import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AboutPage } from '@/pages/about-page'
+import { AdminHomePage } from '@/pages/admin-home-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
 import { AdminQuestionPoolPage } from '@/pages/admin-question-pool-page'
 import { FaqPage } from '@/pages/faq-page'
@@ -366,7 +367,7 @@ import { AiMockInterviewGuidePage } from '@/pages/guide/ai-mock-interview-page'
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('a11y smoke — 15 pages', () => {
+describe('a11y smoke — 16 pages', () => {
   afterEach(() => {
     vi.clearAllMocks()
   })
@@ -442,6 +443,11 @@ describe('a11y smoke — 15 pages', () => {
       '/admin/feedbacks',
       '/admin/feedbacks',
     )
+    await assertA11y(container)
+  })
+
+  it('admin-home: critical/serious 위반 0건', async () => {
+    const { container } = renderPage(<AdminHomePage />, '/admin', '/admin')
     await assertA11y(container)
   })
 
