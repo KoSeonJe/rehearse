@@ -75,6 +75,33 @@ class QuestionRepositoryAnsweredButUnscoredTest extends AbstractMySqlContainerTe
     }
 
     @Test
+    @DisplayName("nonverbal-v1 score 만 있는 Question 은 verbal 채점 대상으로 반환한다")
+    void returns_question_when_only_nonverbal_score_exists() {
+        Interview interview = persistInterview();
+        QuestionSet questionSet = persistQuestionSet(interview);
+        QuestionSetFeedback qsf = persistQuestionSetFeedback(questionSet);
+
+        Question onlyNonverbalScored = persistQuestion(questionSet, QuestionType.RESUME_MAIN);
+        persistTimestampFeedback(qsf, onlyNonverbalScored, "답변 텍스트");
+        persistScore(interview, onlyNonverbalScored, "nonverbal-v1");
+
+        Question verbalAlreadyScored = persistQuestion(questionSet, QuestionType.RESUME_MAIN);
+        persistTimestampFeedback(qsf, verbalAlreadyScored, "답변");
+        persistScore(interview, verbalAlreadyScored, "nonverbal-v1");
+        persistScore(interview, verbalAlreadyScored, "resume-v1");
+
+        entityManager.flush();
+        entityManager.clear();
+
+        List<Question> result = questionRepository.findAnsweredButUnscoredByInterviewId(interview.getId());
+
+        assertThat(result)
+                .extracting(Question::getId)
+                .containsExactly(onlyNonverbalScored.getId())
+                .doesNotContain(verbalAlreadyScored.getId());
+    }
+
+    @Test
     @DisplayName("다른 interview 의 Question 은 반환하지 않는다")
     void does_not_return_questions_from_other_interview() {
         Interview interview = persistInterview();
@@ -162,11 +189,15 @@ class QuestionRepositoryAnsweredButUnscoredTest extends AbstractMySqlContainerTe
     }
 
     private void persistScore(Interview interview, Question question) {
+        persistScore(interview, question, "resume-v1");
+    }
+
+    private void persistScore(Interview interview, Question question, String rubricId) {
         entityManager.flush();
         QuestionScore score = QuestionScore.builder()
                 .questionId(question.getId())
                 .interviewId(interview.getId())
-                .rubricId("resume-v1")
+                .rubricId(rubricId)
                 .levelFlag("L1")
                 .build();
         entityManager.persist(score);

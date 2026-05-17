@@ -29,7 +29,11 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
                   AND tf.transcript IS NOT NULL
                   AND tf.transcript <> ''
               )
-              AND NOT EXISTS (SELECT 1 FROM QuestionScore s WHERE s.questionId = q.id)
+              AND NOT EXISTS (
+                SELECT 1 FROM QuestionScore s
+                WHERE s.questionId = q.id
+                  AND s.rubricId <> 'nonverbal-v1'
+              )
             """)
     List<Question> findAnsweredButUnscoredByInterviewId(@Param("interviewId") Long interviewId);
 }
