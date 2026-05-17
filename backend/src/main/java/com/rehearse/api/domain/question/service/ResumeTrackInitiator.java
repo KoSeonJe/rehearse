@@ -22,6 +22,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -63,9 +66,12 @@ public class ResumeTrackInitiator {
 
     private GeneratedResumeQuestions generateViaLlm(ResumeSkeleton skeleton, int openerCount, int mainCount) {
         String skeletonJson = serializeSkeleton(skeleton);
+        String primaryProjectName = skeleton.projects().isEmpty()
+                ? null
+                : skeleton.projects().get(0).projectName();
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
-                new FocusHints.ResumeQuestionGeneratorHints(skeletonJson, openerCount, mainCount),
+                new FocusHints.ResumeQuestionGeneratorHints(skeletonJson, openerCount, mainCount, primaryProjectName),
                 null
         ));
         ChatRequest request = ChatRequest.builder()
@@ -80,7 +86,7 @@ public class ResumeTrackInitiator {
     }
 
     private void persistGenerated(Long interviewId, GeneratedResumeQuestions generated) {
-        java.util.List<ResumeQuestionPersister.ResumeQuestionDraft> drafts = new java.util.ArrayList<>(
+        List<ResumeQuestionPersister.ResumeQuestionDraft> drafts = new ArrayList<>(
                 generated.openers().size() + generated.mains().size());
         int order = 0;
         for (var opener : generated.openers()) {
