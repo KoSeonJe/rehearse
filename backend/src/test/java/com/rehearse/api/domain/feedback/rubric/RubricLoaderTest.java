@@ -198,16 +198,16 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
         RubricDimension d2 = rubricLoader.getDimension("technical_depth");
 
         assertThat(d2).isNotNull();
-        assertThat(d2.name()).isEqualTo("기술적 깊이");
+        assertThat(d2.name()).isEqualTo("기술 깊이");
         assertThat(d2.scoring()).containsKeys(1, 2, 3);
     }
 
     @Test
     @DisplayName("D11~D13 은 비언어 채점 차원으로 로드되고 composure 는 부재")
     void getAllDimensions_nonverbalDimensionsLoaded_noComposure() {
-        assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("발화 유창성");
-        assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감 있는 말투");
-        assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선과 자세");
+        assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("유창함");
+        assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감");
+        assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선");
         assertThat(rubricLoader.getDimension("composure")).isNull();
     }
 
