@@ -15,7 +15,6 @@ import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ public class RubricBackfillScorer {
     private final QuestionScorePersister questionScorePersister;
     private final AiCallMetrics aiCallMetrics;
 
-    @Transactional
     public void backfill(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
         List<Question> unscored = questionRepository.findAnsweredButUnscoredByInterviewId(interviewId);
