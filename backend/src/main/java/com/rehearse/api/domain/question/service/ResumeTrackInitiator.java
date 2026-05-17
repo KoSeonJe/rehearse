@@ -6,6 +6,7 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.ResumeIngestionService;
 import com.rehearse.api.domain.resume.service.ResumeQuestionPersister;
+import com.rehearse.api.domain.resume.service.ResumeSkeletonSampler;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -41,6 +42,7 @@ public class ResumeTrackInitiator {
     private final QuestionGenerationTransactionHandler transactionHandler;
     private final ResumeIngestionService resumeIngestionService;
     private final ResumeQuestionPersister resumeQuestionPersister;
+    private final ResumeSkeletonSampler resumeSkeletonSampler;
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
@@ -53,7 +55,7 @@ public class ResumeTrackInitiator {
             int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
             int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));
 
-            GeneratedResumeQuestions generated = generateViaLlm(skeleton, OPENER_COUNT, mainCount);
+            GeneratedResumeQuestions generated = generateViaLlm(interviewId, skeleton, OPENER_COUNT, mainCount);
             persistGenerated(interviewId, generated);
             transactionHandler.completeGeneration(interviewId);
         } catch (Exception e) {
@@ -64,11 +66,12 @@ public class ResumeTrackInitiator {
         }
     }
 
-    private GeneratedResumeQuestions generateViaLlm(ResumeSkeleton skeleton, int openerCount, int mainCount) {
-        String skeletonJson = serializeSkeleton(skeleton);
-        String primaryProjectName = skeleton.projects().isEmpty()
+    private GeneratedResumeQuestions generateViaLlm(Long interviewId, ResumeSkeleton skeleton, int openerCount, int mainCount) {
+        ResumeSkeleton sampledSkeleton = resumeSkeletonSampler.sampleDecisions(skeleton, interviewId);
+        String skeletonJson = serializeSkeleton(sampledSkeleton);
+        String primaryProjectName = sampledSkeleton.projects().isEmpty()
                 ? null
-                : skeleton.projects().get(0).projectName();
+                : sampledSkeleton.projects().get(0).projectName();
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
                 new FocusHints.ResumeQuestionGeneratorHints(skeletonJson, openerCount, mainCount, primaryProjectName),
