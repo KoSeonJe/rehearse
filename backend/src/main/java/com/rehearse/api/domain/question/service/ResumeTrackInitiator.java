@@ -31,7 +31,7 @@ import java.util.List;
 public class ResumeTrackInitiator {
 
     private static final String CALL_TYPE = "resume_question_generator";
-    private static final double TEMPERATURE = 0.5;
+    private static final double TEMPERATURE = 0.8;
     private static final int MAX_TOKENS = 14800;
     private static final int OPENER_COUNT = 1;
     private static final int MIN_MAIN_COUNT = 7;
