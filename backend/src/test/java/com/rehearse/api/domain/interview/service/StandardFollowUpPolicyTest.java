@@ -135,13 +135,14 @@ class StandardFollowUpPolicyTest {
     }
 
     @Test
-    @DisplayName("이력서 트랙 — RESUME_MAIN per-main cap=1 도달 시 throw")
+    @DisplayName("이력서 트랙 — RESUME_MAIN per-main cap=2 도달 시 throw")
     void assertCanContinue_resumeMain_capOneEnforced() {
         Interview interview = standardInterview();
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview).category(InterviewType.RESUME_BASED).orderIndex(0).build();
         qs.addQuestion(resumeQuestion(QuestionType.RESUME_MAIN, "main-1", 0));
         qs.addQuestion(resumeQuestion(QuestionType.RESUME_FOLLOWUP, "f-1", 1));
+        qs.addQuestion(resumeQuestion(QuestionType.RESUME_FOLLOWUP, "f-2", 2));
 
         assertThatThrownBy(() -> policy.assertCanContinue(interview, qs))
                 .isInstanceOf(BusinessException.class);
