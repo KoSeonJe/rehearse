@@ -55,6 +55,7 @@ describe('AdminQuestionPoolPage', () => {
     expect(screen.getAllByText('운영체제')[0]).toBeInTheDocument()
     expect(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0]).toBeInTheDocument()
     expect(screen.getAllByText('프로세스는 독립 주소 공간을 가집니다.')[0]).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '세부 주제' })).toHaveClass('whitespace-nowrap')
     expect(screen.getByRole('columnheader', { name: '상태' })).toHaveClass('whitespace-nowrap')
     expect(screen.getByRole('cell', { name: '활성' })).toHaveClass('whitespace-nowrap')
   })
