@@ -96,9 +96,16 @@ public class SessionFeedback {
         this.deliveryRetryable = true;
     }
 
-    public void applyDeliveryEnrichment(String deliveryJson) {
+    public void applyEnrichedPayload(String overallJson, String strengthsJson,
+                                     String gapsJson, String deliveryJson, String weekPlanJson) {
+        this.overallJson = overallJson;
+        this.strengthsJson = strengthsJson;
+        this.gapsJson = gapsJson;
         this.deliveryJson = deliveryJson;
+        this.weekPlanJson = weekPlanJson;
         this.status = SessionFeedbackStatus.COMPLETE;
+        this.lastFailureReason = null;
+        this.deliveryRetryable = false;
     }
 
     public void updateCoverage(String coverage) {
