@@ -10,6 +10,7 @@ import { InterviewPage } from '@/pages/interview-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
+import { AdminHomePage } from '@/pages/admin-home-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
 import { AdminQuestionPoolPage } from '@/pages/admin-question-pool-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
@@ -47,6 +48,7 @@ export const App = () => {
         </Route>
 
         <Route element={<PasswordProtectedRoute />}>
+          <Route path="/admin" element={<AdminHomePage />} />
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
           <Route path="/admin/question-pool" element={<AdminQuestionPoolPage />} />
         </Route>
