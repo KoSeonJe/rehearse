@@ -7,20 +7,16 @@ import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.question.entity.Question;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-@Slf4j
 @Getter
 @Builder
 public class TimestampFeedbackResponse {
 
     private static final String NONVERBAL_RUBRIC_ID = "nonverbal-v1";
-    private static final Set<String> VERBAL_RUBRIC_IDS = Set.of("resume-v1", "behavioral-v1", "technical-v1");
 
     private final Long id;
     private final Long questionId;
@@ -73,11 +69,8 @@ public class TimestampFeedbackResponse {
             List<QuestionScoreDimension> dimensions = dimsByScoreId.getOrDefault(questionScore.getId(), List.of());
             if (NONVERBAL_RUBRIC_ID.equals(rubricId)) {
                 nonverbalFeedback = toNonverbalRubricFeedback(questionScore, dimensions);
-            } else if (VERBAL_RUBRIC_IDS.contains(rubricId)) {
-                technicalFeedback = toTechnicalFeedback(question, questionScore, dimensions);
             } else {
-                log.debug("legacy rubric_id 응답 미포함 questionScoreId={} rubricId={}",
-                        questionScore.getId(), rubricId);
+                technicalFeedback = toTechnicalFeedback(question, questionScore, dimensions);
             }
         }
 
