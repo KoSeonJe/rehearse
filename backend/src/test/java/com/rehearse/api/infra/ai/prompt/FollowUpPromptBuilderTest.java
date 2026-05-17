@@ -148,6 +148,80 @@ class FollowUpPromptBuilderTest {
         }
 
         @Test
+        @DisplayName("system prompt는 dimension 기반 분석 토큰(dimension_gaps / weakest_dimension)을 포함한다 (양 모드 공통)")
+        void buildSystemPrompt_containsDimensionTokens() {
+            // given
+            FollowUpGenerationRequest guideReq = new FollowUpGenerationRequest(
+                    Position.BACKEND,
+                    TechStack.JAVA_SPRING,
+                    InterviewLevel.MID,
+                    "이전 프로젝트에서 N+1 문제를 해결한 경험을 말씀해주세요.",
+                    "@BatchSize로 전환했습니다.",
+                    null,
+                    List.of(),
+                    ReferenceType.GUIDE
+            );
+            FollowUpGenerationRequest modelAnswerReq = new FollowUpGenerationRequest(
+                    Position.BACKEND,
+                    TechStack.JAVA_SPRING,
+                    InterviewLevel.JUNIOR,
+                    "JVM의 GC 방식에 대해 설명해주세요.",
+                    "GC는 힙 메모리를 관리합니다.",
+                    null,
+                    List.of(),
+                    ReferenceType.MODEL_ANSWER
+            );
+
+            // when
+            String guidePrompt = builder.buildSystemPrompt(guideReq);
+            String modelAnswerPrompt = builder.buildSystemPrompt(modelAnswerReq);
+
+            // then
+            assertThat(guidePrompt).contains("dimension_gaps").contains("weakest_dimension");
+            assertThat(modelAnswerPrompt).contains("dimension_gaps").contains("weakest_dimension");
+        }
+
+        @Test
+        @DisplayName("system prompt는 폐기된 Perspective schema 토큰(missing_perspectives / asked_perspectives / selected_perspective)을 포함하지 않는다 (양 모드 공통)")
+        void buildSystemPrompt_doesNotContainDeprecatedPerspectiveTokens() {
+            // given
+            FollowUpGenerationRequest guideReq = new FollowUpGenerationRequest(
+                    Position.BACKEND,
+                    TechStack.JAVA_SPRING,
+                    InterviewLevel.MID,
+                    "이전 프로젝트에서 N+1 문제를 해결한 경험을 말씀해주세요.",
+                    "@BatchSize로 전환했습니다.",
+                    null,
+                    List.of(),
+                    ReferenceType.GUIDE
+            );
+            FollowUpGenerationRequest modelAnswerReq = new FollowUpGenerationRequest(
+                    Position.BACKEND,
+                    TechStack.JAVA_SPRING,
+                    InterviewLevel.JUNIOR,
+                    "JVM의 GC 방식에 대해 설명해주세요.",
+                    "GC는 힙 메모리를 관리합니다.",
+                    null,
+                    List.of(),
+                    ReferenceType.MODEL_ANSWER
+            );
+
+            // when
+            String guidePrompt = builder.buildSystemPrompt(guideReq);
+            String modelAnswerPrompt = builder.buildSystemPrompt(modelAnswerReq);
+
+            // then
+            assertThat(guidePrompt)
+                    .doesNotContain("missing_perspectives")
+                    .doesNotContain("asked_perspectives")
+                    .doesNotContain("selected_perspective");
+            assertThat(modelAnswerPrompt)
+                    .doesNotContain("missing_perspectives")
+                    .doesNotContain("asked_perspectives")
+                    .doesNotContain("selected_perspective");
+        }
+
+        @Test
         @DisplayName("system prompt에 답변 인용 강화·skip 분기·answerText 필수 규칙이 포함된다 (양 모드 공통)")
         void buildSystemPrompt_containsCommonRules() {
             // given
