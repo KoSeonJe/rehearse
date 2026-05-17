@@ -7,7 +7,6 @@ import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionR
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,13 +35,7 @@ public class QuestionScorePersister {
                 .rubricId(rubricId)
                 .levelFlag(levelFlag)
                 .build();
-        try {
-            questionScoreRepository.saveAndFlush(qs);
-        } catch (DataIntegrityViolationException e) {
-            log.debug("QuestionScore unique 위반 — 동시 적재 idempotent skip: questionId={}, rubricId={}",
-                    questionId, rubricId);
-            return;
-        }
+        questionScoreRepository.save(qs);
 
         dimensionScores.forEach((dimensionRef, ds) -> {
             if (ds == null || ds.score() == null) return;
