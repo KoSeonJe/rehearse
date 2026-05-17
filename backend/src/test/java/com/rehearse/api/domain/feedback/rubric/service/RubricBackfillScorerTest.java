@@ -10,9 +10,12 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.global.support.TestFixtures;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -52,10 +56,20 @@ class RubricBackfillScorerTest {
     @InjectMocks
     private RubricBackfillScorer backfillScorer;
 
-    @Mock private Interview interview;
-    @Mock private Question question;
-    @Mock private QuestionSet questionSet;
-    @Mock private TimestampFeedback timestampFeedback;
+    private Interview interview;
+    private QuestionSet questionSet;
+    private Question question;
+
+    @BeforeEach
+    void setUp() {
+        interview = TestFixtures.createInterview();
+        ReflectionTestUtils.setField(interview, "id", 10L);
+        questionSet = TestFixtures.createQuestionSet(interview);
+        ReflectionTestUtils.setField(questionSet, "id", 50L);
+        question = TestFixtures.createResumeQuestion(QuestionType.RESUME_OPENER);
+        question.assignQuestionSet(questionSet);
+        ReflectionTestUtils.setField(question, "id", 100L);
+    }
 
     @Test
     @DisplayName("대상 없음 → RubricScorer 호출 0회")
@@ -72,15 +86,11 @@ class RubricBackfillScorerTest {
     @Test
     @DisplayName("transcript 가 있고 채점 결과 비어있지 않으면 saveRubric 호출")
     void persists_score_when_scoring_result_not_empty() {
-        given(interview.getId()).willReturn(10L);
-        given(question.getId()).willReturn(100L);
-        given(question.getQuestionSet()).willReturn(questionSet);
-        given(questionSet.getId()).willReturn(50L);
-
         given(interviewFinder.findById(10L)).willReturn(interview);
         given(questionRepository.findAnsweredButUnscoredByInterviewId(10L)).willReturn(List.of(question));
         given(questionSetRepository.findById(50L)).willReturn(Optional.of(questionSet));
-        given(timestampFeedback.getTranscript()).willReturn("실제 답변");
+        TimestampFeedback timestampFeedback = TestFixtures.createTimestampFeedback(question);
+        ReflectionTestUtils.setField(timestampFeedback, "transcript", "실제 답변");
         given(timestampFeedbackRepository.findByQuestionId(100L)).willReturn(List.of(timestampFeedback));
 
         Map<String, DimensionScore> dims = Map.of("clarity", new DimensionScore(4, "ok", "quote"));
@@ -97,11 +107,6 @@ class RubricBackfillScorerTest {
     @Test
     @DisplayName("transcript 비어있으면 skip — RubricScorer 호출 0회")
     void skips_when_transcript_blank() {
-        given(interview.getId()).willReturn(10L);
-        given(question.getId()).willReturn(100L);
-        given(question.getQuestionSet()).willReturn(questionSet);
-        given(questionSet.getId()).willReturn(50L);
-
         given(interviewFinder.findById(10L)).willReturn(interview);
         given(questionRepository.findAnsweredButUnscoredByInterviewId(10L)).willReturn(List.of(question));
         given(questionSetRepository.findById(50L)).willReturn(Optional.of(questionSet));
@@ -116,15 +121,11 @@ class RubricBackfillScorerTest {
     @Test
     @DisplayName("채점 결과 empty 면 saveRubric 호출 안 함")
     void skips_persist_when_scoring_empty() {
-        given(interview.getId()).willReturn(10L);
-        given(question.getId()).willReturn(100L);
-        given(question.getQuestionSet()).willReturn(questionSet);
-        given(questionSet.getId()).willReturn(50L);
-
         given(interviewFinder.findById(10L)).willReturn(interview);
         given(questionRepository.findAnsweredButUnscoredByInterviewId(10L)).willReturn(List.of(question));
         given(questionSetRepository.findById(50L)).willReturn(Optional.of(questionSet));
-        given(timestampFeedback.getTranscript()).willReturn("답변");
+        TimestampFeedback timestampFeedback = TestFixtures.createTimestampFeedback(question);
+        ReflectionTestUtils.setField(timestampFeedback, "transcript", "답변");
         given(timestampFeedbackRepository.findByQuestionId(100L)).willReturn(List.of(timestampFeedback));
         given(rubricScorer.score(any(), any(), any(), anyString(), any()))
                 .willReturn(RubricScoringResult.empty("resume-v1"));
@@ -137,23 +138,21 @@ class RubricBackfillScorerTest {
     @Test
     @DisplayName("RubricScorer 예외 → 메트릭 증가 후 다음 질문 진행")
     void increments_metric_and_continues_on_scorer_exception() {
-        Question q1 = org.mockito.Mockito.mock(Question.class);
-        Question q2 = org.mockito.Mockito.mock(Question.class);
-        given(q1.getId()).willReturn(101L);
-        given(q2.getId()).willReturn(102L);
-        given(q1.getQuestionSet()).willReturn(questionSet);
-        given(q2.getQuestionSet()).willReturn(questionSet);
-        given(questionSet.getId()).willReturn(50L);
-        given(interview.getId()).willReturn(10L);
+        Question q1 = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+        q1.assignQuestionSet(questionSet);
+        ReflectionTestUtils.setField(q1, "id", 101L);
+        Question q2 = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+        q2.assignQuestionSet(questionSet);
+        ReflectionTestUtils.setField(q2, "id", 102L);
 
         given(interviewFinder.findById(10L)).willReturn(interview);
         given(questionRepository.findAnsweredButUnscoredByInterviewId(10L)).willReturn(List.of(q1, q2));
         given(questionSetRepository.findById(50L)).willReturn(Optional.of(questionSet));
 
-        TimestampFeedback tf1 = org.mockito.Mockito.mock(TimestampFeedback.class);
-        TimestampFeedback tf2 = org.mockito.Mockito.mock(TimestampFeedback.class);
-        given(tf1.getTranscript()).willReturn("답변1");
-        given(tf2.getTranscript()).willReturn("답변2");
+        TimestampFeedback tf1 = TestFixtures.createTimestampFeedback(q1);
+        ReflectionTestUtils.setField(tf1, "transcript", "답변1");
+        TimestampFeedback tf2 = TestFixtures.createTimestampFeedback(q2);
+        ReflectionTestUtils.setField(tf2, "transcript", "답변2");
         given(timestampFeedbackRepository.findByQuestionId(101L)).willReturn(List.of(tf1));
         given(timestampFeedbackRepository.findByQuestionId(102L)).willReturn(List.of(tf2));
 
