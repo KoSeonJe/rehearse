@@ -15,7 +15,7 @@ import java.util.List;
 @Component
 public class StandardFollowUpPolicy implements InterviewTurnPolicy {
 
-    private static final int RESUME_MAX_ROUNDS_PER_MAIN = 1;
+    private static final int RESUME_MAX_ROUNDS_PER_MAIN = 2;
 
     private final int maxRounds;
 
