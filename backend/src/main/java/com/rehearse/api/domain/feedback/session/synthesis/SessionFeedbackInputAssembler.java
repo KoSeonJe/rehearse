@@ -11,6 +11,7 @@ import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -18,6 +19,7 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class SessionFeedbackInputAssembler {
@@ -253,7 +255,11 @@ public class SessionFeedbackInputAssembler {
 
     private String toKoreanLabel(String dimensionRef) {
         RubricDimension dimension = rubricCatalog.getDimension(dimensionRef);
-        return (dimension == null || dimension.name() == null) ? dimensionRef : dimension.name();
+        if (dimension == null || dimension.name() == null) {
+            log.warn("차원 한국어 라벨 누락 dimensionRef={}", dimensionRef);
+            return dimensionRef;
+        }
+        return dimension.name();
     }
 
     private String toDimensionRef(String koreanLabel) {
