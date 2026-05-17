@@ -1,3 +1,4 @@
+import { getDimensionLabel } from '@/lib/feedback/dimension-label'
 import type { TechnicalDimensionFeedback } from '@/types/interview'
 
 interface RubricDimensionCardProps {
@@ -14,7 +15,7 @@ const RubricDimensionCard = ({ dimension }: RubricDimensionCardProps) => {
     <section className="border border-gray-200 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
         <span className="font-tabular text-[12px] font-semibold text-gray-500">
-          {dimension.dimension}
+          {getDimensionLabel(dimension.dimension)}
         </span>
         <span className="font-tabular text-[13px] font-bold text-gray-900">
           {formatScore(dimension.score)}
