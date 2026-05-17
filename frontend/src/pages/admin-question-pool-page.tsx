@@ -150,7 +150,7 @@ const QuestionPoolTable = ({ items }: { items: AdminQuestionPoolItem[] }) => (
       <thead>
         <tr className="border-b border-border bg-background">
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">캐시 키</th>
-          <th className="px-4 py-3 text-left font-semibold text-text-secondary">세부 주제</th>
+          <th className="w-24 whitespace-nowrap px-4 py-3 text-left font-semibold text-text-secondary">세부 주제</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">질문</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">모범답안</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">상태</th>
@@ -161,7 +161,7 @@ const QuestionPoolTable = ({ items }: { items: AdminQuestionPoolItem[] }) => (
         {items.map((item) => (
           <tr key={item.id} className="border-b border-border/50 last:border-0">
             <td className="px-4 py-3 font-medium text-text-primary">{item.cacheKey}</td>
-            <td className="px-4 py-3 text-text-secondary">{item.category ?? '-'}</td>
+            <td className="w-24 whitespace-nowrap px-4 py-3 text-text-secondary">{item.category ?? '-'}</td>
             <td className="max-w-xs px-4 py-3 text-text-secondary">{truncate(item.content, 48)}</td>
             <td className="max-w-xs px-4 py-3 text-text-tertiary">{truncate(item.bestAnswer, 48)}</td>
             <td className="px-4 py-3 text-text-secondary">{statusLabel(item.isActive)}</td>
