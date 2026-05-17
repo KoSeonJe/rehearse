@@ -3,8 +3,10 @@ import { apiClient } from '@/lib/api-client'
 import type { ApiResponse } from '@/types/interview'
 import type {
   AdminQuestionPoolFilters,
+  AdminQuestionPoolItem,
   AdminQuestionPoolListResponse,
   CreateQuestionPoolRequest,
+  UpdateQuestionPoolRequest,
 } from '@/types/question-pool'
 
 const ADMIN_PASSWORD_KEY = 'admin-password'
@@ -58,6 +60,50 @@ export const useCreateAdminQuestionPool = () => {
   return useMutation({
     mutationFn: (request: CreateQuestionPoolRequest) =>
       apiClient.post<ApiResponse<void>>('/api/v1/admin/question-pools', request, {
+        headers: adminHeaders(),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [ADMIN_QUESTION_POOLS_QUERY_KEY] })
+    },
+  })
+}
+
+export const useUpdateAdminQuestionPool = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, request }: { id: number; request: UpdateQuestionPoolRequest }) =>
+      apiClient.patch<ApiResponse<AdminQuestionPoolItem>>(`/api/v1/admin/question-pools/${id}`, request, {
+        headers: adminHeaders(),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [ADMIN_QUESTION_POOLS_QUERY_KEY] })
+    },
+  })
+}
+
+export const useDeactivateAdminQuestionPool = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiClient.patch<ApiResponse<AdminQuestionPoolItem>>(
+        `/api/v1/admin/question-pools/${id}/deactivate`,
+        undefined,
+        { headers: adminHeaders() },
+      ),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [ADMIN_QUESTION_POOLS_QUERY_KEY] })
+    },
+  })
+}
+
+export const useBulkDeactivateAdminQuestionPools = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (ids: number[]) =>
+      apiClient.patch<ApiResponse<void>>('/api/v1/admin/question-pools/deactivate', { ids }, {
         headers: adminHeaders(),
       }),
     onSuccess: () => {
