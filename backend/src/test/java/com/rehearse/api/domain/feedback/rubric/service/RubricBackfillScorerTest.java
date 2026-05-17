@@ -136,6 +136,30 @@ class RubricBackfillScorerTest {
     }
 
     @Test
+    @DisplayName("transcript 다중 segment 는 공백으로 결합되어 RubricScorer 에 전달된다")
+    void joins_multiple_transcript_segments() {
+        given(interviewFinder.findById(10L)).willReturn(interview);
+        given(questionRepository.findAnsweredButUnscoredByInterviewId(10L)).willReturn(List.of(question));
+        given(questionSetRepository.findById(50L)).willReturn(Optional.of(questionSet));
+
+        TimestampFeedback seg1 = TestFixtures.createTimestampFeedback(question);
+        ReflectionTestUtils.setField(seg1, "transcript", "첫 번째 segment");
+        TimestampFeedback seg2 = TestFixtures.createTimestampFeedback(question);
+        ReflectionTestUtils.setField(seg2, "transcript", "두 번째 segment");
+        given(timestampFeedbackRepository.findByQuestionId(100L)).willReturn(List.of(seg1, seg2));
+
+        Map<String, DimensionScore> dims = Map.of("clarity", new DimensionScore(4, "ok", "quote"));
+        given(rubricScorer.score(eq(question), eq(questionSet), eq(interview),
+                eq("첫 번째 segment 두 번째 segment"), any(AnswerAnalysis.class)))
+                .willReturn(new RubricScoringResult("resume-v1", List.of("clarity"), dims, "L2"));
+
+        backfillScorer.backfill(10L);
+
+        then(questionScorePersister).should(times(1))
+                .saveRubric(100L, 10L, "resume-v1", "L2", dims);
+    }
+
+    @Test
     @DisplayName("RubricScorer 예외 → 메트릭 증가 후 다음 질문 진행")
     void increments_metric_and_continues_on_scorer_exception() {
         Question q1 = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);

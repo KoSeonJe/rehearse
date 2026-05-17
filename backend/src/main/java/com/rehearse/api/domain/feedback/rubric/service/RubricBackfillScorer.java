@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -88,7 +89,6 @@ public class RubricBackfillScorer {
         return timestampFeedbackRepository.findByQuestionId(questionId).stream()
                 .map(TimestampFeedback::getTranscript)
                 .filter(transcript -> transcript != null && !transcript.isBlank())
-                .findFirst()
-                .orElse(null);
+                .collect(Collectors.joining(" "));
     }
 }
