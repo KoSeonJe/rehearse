@@ -3,8 +3,10 @@ package com.rehearse.api.domain.question.service;
 import com.rehearse.api.domain.question.dto.AdminQuestionPoolResponse;
 import com.rehearse.api.domain.question.dto.AdminQuestionPoolSearchCondition;
 import com.rehearse.api.domain.question.dto.CreateQuestionPoolRequest;
+import com.rehearse.api.domain.question.dto.UpdateQuestionPoolRequest;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.repository.QuestionPoolRepository;
+import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +49,41 @@ public class AdminQuestionPoolService {
                 request.bestAnswer());
 
         return AdminQuestionPoolResponse.from(questionPoolRepository.save(questionPool));
+    }
+
+    @Transactional
+    public AdminQuestionPoolResponse update(Long id, UpdateQuestionPoolRequest request) {
+        QuestionPool questionPool = findById(id);
+        questionPool.update(
+                request.cacheKey(),
+                request.content(),
+                request.ttsContent(),
+                request.category(),
+                request.bestAnswer(),
+                request.isActive());
+
+        return AdminQuestionPoolResponse.from(questionPool);
+    }
+
+    @Transactional
+    public AdminQuestionPoolResponse deactivate(Long id) {
+        QuestionPool questionPool = findById(id);
+        questionPool.deactivate();
+        return AdminQuestionPoolResponse.from(questionPool);
+    }
+
+    @Transactional
+    public void deactivateAll(List<Long> ids) {
+        questionPoolRepository.findAllById(ids)
+                .forEach(QuestionPool::deactivate);
+    }
+
+    private QuestionPool findById(Long id) {
+        return questionPoolRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        HttpStatus.NOT_FOUND,
+                        "QUESTION_POOL_001",
+                        "질문 풀을 찾을 수 없습니다."));
     }
 
     private Specification<QuestionPool> specification(AdminQuestionPoolSearchCondition condition) {
