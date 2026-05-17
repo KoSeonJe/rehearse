@@ -91,6 +91,31 @@ class QuestionScorePersisterTest extends ServiceIntegrationSupport {
         assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(ids.interviewId())).hasSize(1);
     }
 
+    @Test
+    @DisplayName("question_score (question_id, rubric_id) unique 제약이 DB 레벨에서 적용되어 중복 insert 차단된다")
+    void questionScoreUniqueConstraint_blocksDirectDuplicateInsert() {
+        Ids ids = persistEntities("nonverbal-v1-unique");
+
+        QuestionScore first = QuestionScore.builder()
+                .questionId(ids.questionId())
+                .interviewId(ids.interviewId())
+                .rubricId("nonverbal-v1")
+                .levelFlag(null)
+                .build();
+        questionScoreRepository.saveAndFlush(first);
+
+        QuestionScore duplicate = QuestionScore.builder()
+                .questionId(ids.questionId())
+                .interviewId(ids.interviewId())
+                .rubricId("nonverbal-v1")
+                .levelFlag(null)
+                .build();
+
+        org.assertj.core.api.Assertions
+                .assertThatThrownBy(() -> questionScoreRepository.saveAndFlush(duplicate))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+    }
+
     private Ids persistEntities(String slug) {
         User user = userRepository.saveAndFlush(User.builder()
                 .email(slug + "@example.com")
