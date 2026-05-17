@@ -12,6 +12,9 @@ public interface TimestampFeedbackRepository extends JpaRepository<TimestampFeed
 
     List<TimestampFeedback> findByQuestionSetFeedbackIdOrderByStartMs(Long questionSetFeedbackId);
 
+    @Query("SELECT t FROM TimestampFeedback t WHERE t.question.id = :questionId ORDER BY t.id ASC")
+    List<TimestampFeedback> findByQuestionId(@Param("questionId") Long questionId);
+
     @Modifying
     @Query("DELETE FROM TimestampFeedback t WHERE t.questionSetFeedback.id IN (SELECT f.id FROM QuestionSetFeedback f WHERE f.questionSet.interview.id = :interviewId)")
     void deleteAllByInterviewId(@Param("interviewId") Long interviewId);
