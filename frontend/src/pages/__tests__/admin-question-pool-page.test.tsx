@@ -55,6 +55,8 @@ describe('AdminQuestionPoolPage', () => {
     expect(screen.getAllByText('운영체제')[0]).toBeInTheDocument()
     expect(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0]).toBeInTheDocument()
     expect(screen.getAllByText('프로세스는 독립 주소 공간을 가집니다.')[0]).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '상태' })).toHaveClass('whitespace-nowrap')
+    expect(screen.getByRole('cell', { name: '활성' })).toHaveClass('whitespace-nowrap')
   })
 
   it('검색 버튼을 누르면 입력한 필터로 목록을 다시 조회한다', async () => {
