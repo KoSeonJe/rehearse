@@ -203,6 +203,17 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
     }
 
     @Test
+    @DisplayName("findRefByName 은 한국어 라벨 → ref 역매핑을 반환하고 부재 라벨은 Optional.empty")
+    void findRefByName_reverseMapsKoreanLabelToRef() {
+        assertThat(rubricLoader.findRefByName("시선")).hasValue("eye_contact_posture");
+        assertThat(rubricLoader.findRefByName("유창함")).hasValue("fluency");
+        assertThat(rubricLoader.findRefByName("자신감")).hasValue("confidence_tone");
+        assertThat(rubricLoader.findRefByName("문제 정의")).hasValue("problem_framing");
+        assertThat(rubricLoader.findRefByName("존재하지않는라벨")).isEmpty();
+        assertThat(rubricLoader.findRefByName(null)).isEmpty();
+    }
+
+    @Test
     @DisplayName("D11~D13 은 비언어 채점 차원으로 로드되고 composure 는 부재")
     void getAllDimensions_nonverbalDimensionsLoaded_noComposure() {
         assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("유창함");

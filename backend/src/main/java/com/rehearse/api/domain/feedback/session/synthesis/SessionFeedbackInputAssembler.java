@@ -266,14 +266,7 @@ public class SessionFeedbackInputAssembler {
         if (koreanLabel == null) {
             return null;
         }
-        Map<String, RubricDimension> all = rubricCatalog.getAllDimensions();
-        for (Map.Entry<String, RubricDimension> entry : all.entrySet()) {
-            RubricDimension dimension = entry.getValue();
-            if (dimension != null && koreanLabel.equals(dimension.name())) {
-                return entry.getKey();
-            }
-        }
-        return koreanLabel;
+        return rubricCatalog.findRefByName(koreanLabel).orElse(koreanLabel);
     }
 
     private Map<Long, List<QuestionScoreDimension>> loadDimensionsByScoreId(List<QuestionScore> scores) {

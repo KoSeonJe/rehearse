@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -32,12 +33,14 @@ public class RubricLoader implements RubricCatalog {
 
     private RubricFamily family;
     private Map<String, Rubric> rubrics;
+    private Map<String, String> nameToRef;
 
     @PostConstruct
     void init() {
         try {
             Map<String, RubricDimension> dimensions = loadDimensions();
             family = new RubricFamily(dimensions);
+            nameToRef = buildNameToRefMap(dimensions);
 
             rubrics = new HashMap<>();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -101,6 +104,30 @@ public class RubricLoader implements RubricCatalog {
 
     public Map<String, RubricDimension> getAllDimensions() {
         return family.getDimensions();
+    }
+
+    @Override
+    public Optional<String> findRefByName(String koreanLabel) {
+        if (koreanLabel == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(nameToRef.get(koreanLabel));
+    }
+
+    private Map<String, String> buildNameToRefMap(Map<String, RubricDimension> dimensions) {
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, RubricDimension> entry : dimensions.entrySet()) {
+            RubricDimension dim = entry.getValue();
+            if (dim == null || dim.name() == null) {
+                continue;
+            }
+            String existing = result.putIfAbsent(dim.name(), entry.getKey());
+            if (existing != null) {
+                throw new IllegalStateException(
+                        "중복 dimension name=" + dim.name() + " (refs=" + existing + ", " + entry.getKey() + ")");
+            }
+        }
+        return Map.copyOf(result);
     }
 
     @SuppressWarnings("unchecked")
