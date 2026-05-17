@@ -1,4 +1,20 @@
-const DIMENSION_LABELS: Record<string, string> = {
+export type DimensionKey =
+  | 'problem_framing'
+  | 'technical_depth'
+  | 'reasoning_communication'
+  | 'conceptual_accuracy'
+  | 'practical_application'
+  | 'experience_concreteness'
+  | 'collaboration_awareness'
+  | 'recovery_from_gaps'
+  | 'factual_consistency'
+  | 'chain_depth'
+  | 'fluency'
+  | 'confidence_tone'
+  | 'eye_contact_posture'
+  | 'composure'
+
+const DIMENSION_LABELS: Record<DimensionKey, string> = {
   problem_framing: '문제 정의',
   technical_depth: '기술 깊이',
   reasoning_communication: '설명력',
@@ -15,5 +31,9 @@ const DIMENSION_LABELS: Record<string, string> = {
   composure: '차분함',
 }
 
+const isDimensionKey = (key: string): key is DimensionKey =>
+  key in DIMENSION_LABELS
+
+// 미매핑 키는 raw 반환 — BE 신규 dimension 추가 시 매핑 누락 신호
 export const getDimensionLabel = (key: string): string =>
-  DIMENSION_LABELS[key] ?? key
+  isDimensionKey(key) ? DIMENSION_LABELS[key] : key
