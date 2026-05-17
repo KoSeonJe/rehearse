@@ -4,11 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.entity.SessionFeedback;
-import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackErrorCode;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInputAssembler;
-import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -55,11 +53,33 @@ public class SessionFeedbackPersistenceService {
 
     @Transactional
     public void persistEnriched(Long interviewId, GeneratedSessionFeedback payload, String coverage) {
-        SessionFeedback feedback = sessionFeedbackRepository.findByInterviewId(interviewId)
-                .orElseThrow(() -> new BusinessException(SessionFeedbackErrorCode.NOT_FOUND));
-        feedback.applyDeliveryEnrichment(serialize(payload.delivery()));
-        feedback.updateCoverage(coverage);
-        log.info("SessionFeedback COMPLETE 전환 완료: interviewId={}", interviewId);
+        sessionFeedbackRepository.findByInterviewId(interviewId).ifPresentOrElse(
+                feedback -> {
+                    feedback.applyEnrichedPayload(
+                            serialize(payload.overall()),
+                            serialize(payload.strengths()),
+                            serialize(payload.gaps()),
+                            serialize(payload.delivery()),
+                            serialize(payload.weekPlan())
+                    );
+                    feedback.updateCoverage(coverage);
+                    log.info("SessionFeedback COMPLETE 전환 완료: interviewId={}", interviewId);
+                },
+                () -> {
+                    SessionFeedback feedback = SessionFeedback.builder()
+                            .interviewId(interviewId)
+                            .overallJson(serialize(payload.overall()))
+                            .strengthsJson(serialize(payload.strengths()))
+                            .gapsJson(serialize(payload.gaps()))
+                            .deliveryJson(serialize(payload.delivery()))
+                            .weekPlanJson(serialize(payload.weekPlan()))
+                            .coverage(coverage)
+                            .build();
+                    feedback.markComplete();
+                    sessionFeedbackRepository.save(feedback);
+                    log.info("SessionFeedback enrich-first COMPLETE 신규 생성: interviewId={}", interviewId);
+                }
+        );
     }
 
     private String serialize(Object obj) {
