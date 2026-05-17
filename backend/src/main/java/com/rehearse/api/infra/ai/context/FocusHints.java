@@ -27,7 +27,8 @@ public sealed interface FocusHints
     record ResumeQuestionGeneratorHints(
             String resumeSkeletonJson,
             int openerCount,
-            int mainCount
+            int mainCount,
+            String primaryProjectName
     ) implements FocusHints {}
 
     record EmptyHints() implements FocusHints {

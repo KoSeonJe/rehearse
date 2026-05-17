@@ -5,7 +5,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ import java.util.List;
 public class ResumeQuestionPersister {
 
     private final QuestionSetRepository questionSetRepository;
-    private final QuestionRepository questionRepository;
     private final InterviewFinder interviewFinder;
 
     @Transactional
@@ -30,37 +28,24 @@ public class ResumeQuestionPersister {
         if (drafts == null || drafts.isEmpty()) {
             return 0;
         }
-        QuestionSet questionSet = findOrCreateQuestionSet(interviewId);
-        List<Question> questions = new ArrayList<>(drafts.size());
-        for (ResumeQuestionDraft draft : drafts) {
-            questions.add(Question.resume(
-                    questionSet, draft.questionType(),
-                    draft.questionText(), draft.ttsText(), draft.bestAnswer(), draft.orderIndex()));
-        }
-        questionRepository.saveAll(questions);
-        log.info("[ResumeQuestionPersister] 질문 일괄 저장: interviewId={}, count={}",
-                interviewId, questions.size());
-        return questions.size();
-    }
-
-    private QuestionSet findOrCreateQuestionSet(Long interviewId) {
-        return questionSetRepository
-                .findByInterviewIdAndCategory(interviewId, InterviewType.RESUME_BASED)
-                .orElseGet(() -> createQuestionSet(interviewId));
-    }
-
-    private QuestionSet createQuestionSet(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
-        long existingCount = questionSetRepository.countByInterviewId(interviewId);
-        QuestionSet questionSet = QuestionSet.builder()
-                .interview(interview)
-                .category(InterviewType.RESUME_BASED)
-                .orderIndex((int) existingCount)
-                .build();
-        questionSetRepository.save(questionSet);
-        log.info("[ResumeQuestionPersister] RESUME_BASED QuestionSet 생성: interviewId={}, questionSetId={}",
-                interviewId, questionSet.getId());
-        return questionSet;
+        List<QuestionSet> questionSets = new ArrayList<>(drafts.size());
+        for (ResumeQuestionDraft draft : drafts) {
+            QuestionSet questionSet = QuestionSet.builder()
+                    .interview(interview)
+                    .category(InterviewType.RESUME_BASED)
+                    .orderIndex(draft.orderIndex())
+                    .build();
+            Question question = Question.resume(
+                    questionSet, draft.questionType(),
+                    draft.questionText(), draft.ttsText(), draft.bestAnswer(), 0);
+            questionSet.addQuestion(question);
+            questionSets.add(questionSet);
+        }
+        questionSetRepository.saveAll(questionSets);
+        log.info("[ResumeQuestionPersister] 질문 일괄 저장 (QSet 1:1 분리): interviewId={}, count={}",
+                interviewId, questionSets.size());
+        return questionSets.size();
     }
 
     public record ResumeQuestionDraft(
