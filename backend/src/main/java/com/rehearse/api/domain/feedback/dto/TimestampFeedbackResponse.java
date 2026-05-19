@@ -2,6 +2,7 @@ package com.rehearse.api.domain.feedback.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.rubric.RubricIds;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.question.entity.Question;
@@ -15,8 +16,6 @@ import java.util.Map;
 @Getter
 @Builder
 public class TimestampFeedbackResponse {
-
-    private static final String NONVERBAL_RUBRIC_ID = "nonverbal-v1";
 
     private final Long id;
     private final Long questionId;
@@ -67,7 +66,7 @@ public class TimestampFeedbackResponse {
         for (QuestionScore questionScore : questionScores) {
             String rubricId = questionScore.getRubricId();
             List<QuestionScoreDimension> dimensions = dimsByScoreId.getOrDefault(questionScore.getId(), List.of());
-            if (NONVERBAL_RUBRIC_ID.equals(rubricId)) {
+            if (RubricIds.NONVERBAL.equals(rubricId)) {
                 nonverbalFeedback = toNonverbalRubricFeedback(questionScore, dimensions);
             } else {
                 technicalFeedback = toTechnicalFeedback(question, questionScore, dimensions);

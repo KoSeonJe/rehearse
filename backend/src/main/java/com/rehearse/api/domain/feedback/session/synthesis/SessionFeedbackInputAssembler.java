@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
+import com.rehearse.api.domain.feedback.rubric.RubricIds;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
@@ -24,8 +25,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SessionFeedbackInputAssembler {
 
-    private static final String NONVERBAL_RUBRIC_ID = "nonverbal-v1";
-
     private final QuestionScoreRepository questionScoreRepository;
     private final QuestionScoreDimensionRepository questionScoreDimensionRepository;
     private final InterviewFinder interviewFinder;
@@ -48,7 +47,7 @@ public class SessionFeedbackInputAssembler {
         SessionFeedbackInput base = assembleCore(interview, allScores, dimsByScoreId);
 
         List<QuestionScore> nonverbalScores = allScores.stream()
-                .filter(qs -> NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
+                .filter(qs -> RubricIds.NONVERBAL.equals(qs.getRubricId()))
                 .toList();
 
         SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
@@ -72,7 +71,7 @@ public class SessionFeedbackInputAssembler {
                                               List<QuestionScore> allScores,
                                               Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
         List<QuestionScore> rubricScores = allScores.stream()
-                .filter(qs -> !NONVERBAL_RUBRIC_ID.equals(qs.getRubricId()))
+                .filter(qs -> !RubricIds.NONVERBAL.equals(qs.getRubricId()))
                 .toList();
 
         List<TurnScoreView> turnScores = rubricScores.stream()

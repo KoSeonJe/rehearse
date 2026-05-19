@@ -3,6 +3,7 @@ package com.rehearse.api.domain.feedback.rubric.service;
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.rubric.RubricIds;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -20,8 +21,6 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class NonverbalScorePersister {
-
-    private static final String RUBRIC_ID = "nonverbal-v1";
 
     private final QuestionScorePersister questionScorePersister;
 
@@ -74,7 +73,7 @@ public class NonverbalScorePersister {
             return;
         }
 
-        questionScorePersister.saveRubric(question.getId(), interview.getId(), RUBRIC_ID, null, dims);
+        questionScorePersister.saveRubric(question.getId(), interview.getId(), RubricIds.NONVERBAL, null, dims);
     }
 
     private void mergeArea(Map<String, DimensionScore> dims,
