@@ -39,14 +39,52 @@ _FALLBACK_ANSWER = {
         "fluency": {
             "score": 2,
             "observation": "발화 흐름을 판정할 단서가 부족합니다.",
-            "evidence_quote": "",
+            "evidence_quote": "오디오 분석 제한",
         },
         "confidence_tone": {
             "score": 2,
             "observation": "톤과 속도 변동을 판정할 단서가 부족합니다.",
-            "evidence_quote": "",
+            "evidence_quote": "오디오 분석 제한",
         },
     },
+}
+
+def _dimension_schema() -> dict:
+    # google.generativeai SDK 는 protos.Schema.enum 을 string sequence 로만 받아 정수 enum 직렬화 시 TypeError 발생.
+    # score 범위 (1·2·3) 강제는 dimension_validator.INVALID_SCORE 후처리 책임 유지.
+    return {
+        "type": "object",
+        "properties": {
+            "score": {"type": "integer"},
+            "observation": {"type": "string"},
+            "evidence_quote": {"type": "string"},
+        },
+        "required": ["score", "observation", "evidence_quote"],
+    }
+
+
+_GEMINI_ANSWER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "transcript": {"type": "string"},
+        "vocal": {
+            "type": "object",
+            "properties": {
+                "fillerWords": {"type": "array", "items": {"type": "string"}},
+                "fillerWordCount": {"type": "integer"},
+            },
+            "required": ["fillerWords", "fillerWordCount"],
+        },
+        "nonverbalDimensions": {
+            "type": "object",
+            "properties": {
+                "fluency": _dimension_schema(),
+                "confidence_tone": _dimension_schema(),
+            },
+            "required": ["fluency", "confidence_tone"],
+        },
+    },
+    "required": ["transcript", "vocal", "nonverbalDimensions"],
 }
 
 _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면접 서비스의 비언어 채점 면접관입니다. 오디오만 근거로 답변자를 dimension 단위로 채점합니다.
@@ -177,6 +215,7 @@ def analyze_answer_audio(
         generation_config=genai.GenerationConfig(
             temperature=0.3,
             response_mime_type="application/json",
+            response_schema=_GEMINI_ANSWER_SCHEMA,
         ),
     )
 
