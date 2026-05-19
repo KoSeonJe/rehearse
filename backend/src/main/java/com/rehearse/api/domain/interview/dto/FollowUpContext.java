@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.dto;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 
 public record FollowUpContext(
@@ -11,6 +12,7 @@ public record FollowUpContext(
         InterviewLevel level,
         Long questionSetId,
         Long currentMainQuestionId,
+        QuestionType currentMainQuestionType,
         int nextOrderIndex,
         ReferenceType mainReferenceType,
         int maxFollowUpRounds

@@ -7,6 +7,7 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 
 import java.util.Map;
+import java.util.Optional;
 
 public interface RubricCatalog {
 
@@ -15,4 +16,6 @@ public interface RubricCatalog {
     RubricDimension getDimension(String ref);
 
     Map<String, RubricDimension> getAllDimensions();
+
+    Optional<String> findRefByName(String koreanLabel);
 }
