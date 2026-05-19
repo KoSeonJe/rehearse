@@ -161,17 +161,14 @@ class TestGeminiStructuredOutputSchema:
 
 class TestGeminiSchemaSdkCompatibility:
     def test_schema_serializes_via_real_sdk(self):
-        # google.generativeai protos.Schema 가 schema dict 를 예외 없이 받아들이는지 실 SDK 로 확인 (정수 enum 류 회귀 차단).
+        # google.genai 가 schema dict 를 GenerateContentConfig 로 예외 없이 받아들이는지 실 SDK 로 확인.
         import pytest
-        try:
-            from google.generativeai import protos  # 실 SDK 에만 존재
-        except Exception:
-            pytest.skip("google.generativeai 실 SDK 부재 — 호환성 검증 skip")
-        import google.generativeai as genai
+        types = pytest.importorskip("google.genai.types")
+        if getattr(types.GenerateContentConfig, "_is_stub", False):
+            pytest.skip("google.genai 실 SDK 부재 — 호환성 검증 skip")
         from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
-        cfg = genai.GenerationConfig(
+        types.GenerateContentConfig(
             temperature=0.3,
             response_mime_type="application/json",
-            response_schema=_GEMINI_ANSWER_SCHEMA,
+            response_json_schema=_GEMINI_ANSWER_SCHEMA,
         )
-        genai.GenerativeModel("gemini-1.5-flash", generation_config=cfg)
