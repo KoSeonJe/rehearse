@@ -269,6 +269,15 @@ public class OpenAiClient {
         Map<String, Object> body = baseRequestBody(resolvedModel, messages, maxTokens, req);
         if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
             body.put("response_format", Map.of("type", "json_object"));
+        } else if (req.responseFormat() == ResponseFormat.JSON_SCHEMA && req.jsonSchema() != null) {
+            body.put("response_format", Map.of(
+                    "type", "json_schema",
+                    "json_schema", Map.of(
+                            "name", req.jsonSchema().name(),
+                            "strict", true,
+                            "schema", req.jsonSchema().schema()
+                    )
+            ));
         }
         return body;
     }

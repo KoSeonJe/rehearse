@@ -10,6 +10,7 @@ public record ChatRequest(
         Integer maxTokens,
         CachePolicy cachePolicy,
         ResponseFormat responseFormat,
+        JsonSchemaSpec jsonSchema,
         String callType
 ) {
 
@@ -23,6 +24,9 @@ public record ChatRequest(
         if (responseFormat == null) {
             responseFormat = ResponseFormat.TEXT;
         }
+        if (responseFormat == ResponseFormat.JSON_SCHEMA && jsonSchema == null) {
+            throw new IllegalArgumentException("responseFormat=JSON_SCHEMA 시 jsonSchema 는 필수입니다.");
+        }
         if (callType == null || callType.isBlank()) {
             callType = "unknown";
         }
@@ -30,7 +34,7 @@ public record ChatRequest(
 
     public ChatRequest withCachePolicy(CachePolicy newCachePolicy) {
         return new ChatRequest(messages, modelOverride, temperature, maxTokens,
-                newCachePolicy, responseFormat, callType);
+                newCachePolicy, responseFormat, jsonSchema, callType);
     }
 
     public ChatRequest withSchemaRetryHint(String violation) {
@@ -51,7 +55,7 @@ public record ChatRequest(
         List<ChatMessage> newMessages = new ArrayList<>(messages);
         newMessages.add(ChatMessage.of(ChatMessage.Role.USER, hint.toString()));
         return new ChatRequest(List.copyOf(newMessages), modelOverride, temperature, maxTokens,
-                cachePolicy, responseFormat, callType);
+                cachePolicy, responseFormat, jsonSchema, callType);
     }
 
     public ChatRequest withRetryHint(String hint, String schemaExample) {
@@ -67,7 +71,7 @@ public record ChatRequest(
         List<ChatMessage> newMessages = new ArrayList<>(messages);
         newMessages.add(ChatMessage.of(ChatMessage.Role.USER, body.toString()));
         return new ChatRequest(List.copyOf(newMessages), modelOverride, temperature, maxTokens,
-                cachePolicy, responseFormat, callType);
+                cachePolicy, responseFormat, jsonSchema, callType);
     }
 
     public static Builder builder() {
@@ -81,6 +85,7 @@ public record ChatRequest(
         private Integer maxTokens;
         private CachePolicy cachePolicy;
         private ResponseFormat responseFormat;
+        private JsonSchemaSpec jsonSchema;
         private String callType;
 
         private Builder() {}
@@ -115,6 +120,11 @@ public record ChatRequest(
             return this;
         }
 
+        public Builder jsonSchema(JsonSchemaSpec jsonSchema) {
+            this.jsonSchema = jsonSchema;
+            return this;
+        }
+
         public Builder callType(String callType) {
             this.callType = callType;
             return this;
@@ -122,7 +132,7 @@ public record ChatRequest(
 
         public ChatRequest build() {
             return new ChatRequest(messages, modelOverride, temperature, maxTokens,
-                    cachePolicy, responseFormat, callType);
+                    cachePolicy, responseFormat, jsonSchema, callType);
         }
     }
 }
