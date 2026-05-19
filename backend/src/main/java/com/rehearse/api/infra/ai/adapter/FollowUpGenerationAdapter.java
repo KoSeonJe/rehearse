@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +19,7 @@ public class FollowUpGenerationAdapter {
 
     private static final int MAX_TOKENS = 1024;
     private static final double TEMPERATURE = 0.7;
+    static final String SCHEMA_NAME = "generated_follow_up";
 
     private final FollowUpPromptBuilder promptBuilder;
     private final AiResponseParser responseParser;
@@ -73,8 +76,35 @@ public class FollowUpGenerationAdapter {
                 ))
                 .maxTokens(MAX_TOKENS)
                 .temperature(TEMPERATURE)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(new JsonSchemaSpec(SCHEMA_NAME, buildJsonSchema()))
                 .callType("generate_followup")
                 .build();
+    }
+
+    static Map<String, Object> buildJsonSchema() {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("skip", Map.of("type", "boolean"));
+        properties.put("skip_reason", nullableString());
+        properties.put("question", nullableString());
+        properties.put("tts_question", nullableString());
+        properties.put("reason", nullableString());
+        properties.put("type", nullableString());
+        properties.put("best_answer", nullableString());
+        properties.put("answer_text", Map.of("type", "string"));
+        properties.put("target_claim_idx", Map.of("type", List.of("integer", "null")));
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("additionalProperties", false);
+        schema.put("required", List.of(
+                "skip", "skip_reason", "question", "tts_question",
+                "reason", "type", "best_answer", "answer_text", "target_claim_idx"));
+        schema.put("properties", properties);
+        return schema;
+    }
+
+    private static Map<String, Object> nullableString() {
+        return Map.of("type", List.of("string", "null"));
     }
 }
