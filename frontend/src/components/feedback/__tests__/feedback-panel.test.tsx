@@ -91,7 +91,8 @@ describe('FeedbackPanel', () => {
     renderPanel(baseFeedback)
 
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
-    expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
+    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
+    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
     expect(screen.getByText('3점')).toBeInTheDocument()
   })
 

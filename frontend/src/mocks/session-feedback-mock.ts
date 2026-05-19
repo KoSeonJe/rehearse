@@ -6,9 +6,9 @@ export const buildMockSessionFeedback = (interviewId: number): SessionFeedbackDa
   status: 'COMPLETE',
   overall: {
     dimensionScores: {
-      conceptual_accuracy: 3,
-      system_design: 2,
-      communication: 4,
+      problem_framing: 3,
+      practical_application: 2,
+      reasoning_communication: 4,
     },
     levelAssessment: 'Mid (3년차) 수준 — 신입~주니어 사이',
     narrative:
@@ -17,25 +17,25 @@ export const buildMockSessionFeedback = (interviewId: number): SessionFeedbackDa
   },
   strengths: [
     {
-      dimension: '문제 정의',
+      dimension: 'problem_framing',
       observation: '질문 의도를 다시 정리해 답변에 들어감',
       whyMatters: '면접관 의도 일치율↑',
     },
     {
-      dimension: '예시 활용',
+      dimension: 'experience_concreteness',
       observation: '추상 개념을 본인 프로젝트와 연결',
       whyMatters: '실무 신뢰도 가산점',
     },
   ],
   gaps: [
     {
-      dimension: '시스템 설계',
+      dimension: 'technical_depth',
       observation: 'CAP·정합성 트레이드오프 언급 부족',
       levelGap: '−1단계',
       concreteAction: '대규모 시스템 설계 면접 책 5장 학습 후 1문제 모의 답변',
     },
     {
-      dimension: '근거 제시',
+      dimension: 'factual_consistency',
       observation: '"빠르다/효율적이다" 표현이 수치·벤치마크로 보강되지 않음',
       levelGap: '−0.5단계',
       concreteAction: '답변 시 항상 "수치 → 비교 대상 → 결론" 3단 구조 적용',
