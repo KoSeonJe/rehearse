@@ -89,6 +89,7 @@ export const useAnswerFlow = ({
     stopRecording,
     setCurrentFollowUp,
     completeFollowUpRound,
+    setFollowUpExhausted,
     resetFollowUpState,
     setFollowUpLoading,
     nextQuestion,
@@ -98,6 +99,7 @@ export const useAnswerFlow = ({
     setPhase,
     setQuestionSetRecordingStartTime,
     addQuestionToSet,
+    setTimeOverdue,
   } = useInterviewStore()
 
   const hasQuestionSets = !!interview?.questionSets?.length
@@ -316,7 +318,9 @@ export const useAnswerFlow = ({
     // 후속질문에 대한 답변이었는지 기록 (히스토리 저장은 API 응답 후)
     const wasFollowUp = !!state.currentFollowUp
 
+    // 후속질문 가능 여부 — BE 정책이 직전 응답에 echo한 followUpExhausted 신호로 게이트.
     const updatedState = useInterviewStore.getState()
+    const canDoMoreFollowUps = !updatedState.followUpExhausted
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
     // 현재 질문세트 ID 가져오기 — updatedState 사용으로 클로저 캡처 문제 방지
@@ -329,7 +333,7 @@ export const useAnswerFlow = ({
     // 시간 만료 후 첫 답변 완료 시점 → BE 에 종료 신호 강제.
     // 빈 답변 / followUp 소진 케이스라도 terminate=true 동봉을 위해 BE 호출 필수.
     const shouldTerminate = updatedState.isTimeOverdue
-    const shouldCallFollowUp = !!interview && (shouldTerminate || hasAnswer)
+    const shouldCallFollowUp = !!interview && (shouldTerminate || (canDoMoreFollowUps && hasAnswer))
 
     if (shouldCallFollowUp && interview) {
       // 후속질문 요청 → 응답 대기 → TTS로 읽기
@@ -360,6 +364,18 @@ export const useAnswerFlow = ({
           completeFollowUpRound(res.data.answerText || answerText)
         }
 
+        // 종료 신호 — terminate=true 송신 또는 BE hard-timeout backstop:
+        // 응답이 skip=true && followUpExhausted=true 형태로 옴 → 즉시 면접 종료 페이즈.
+        if (res.data.skip && res.data.followUpExhausted) {
+          setFollowUpExhausted(true)
+          // 종료 분기 진입 시 store 정합성 — 다음 라이프사이클을 위해 overdue 플래그 리셋.
+          setTimeOverdue(false)
+          resetFollowUpState()
+          transitionToNext(/* isLast */ true, /* useSkipPhrase */ true)
+          return
+        }
+
+        // AI 자체 skip(답변 불충분): 다음 메인 질문 자연스러운 멘트로 전환.
         if (res.data.skip) {
           resetFollowUpState()
           transitionToNext(isLastQuestion, /* useSkipPhrase */ true)
@@ -367,6 +383,7 @@ export const useAnswerFlow = ({
         }
 
         setCurrentFollowUp(res.data)
+        setFollowUpExhausted(res.data.followUpExhausted ?? false)
 
         if (currentSet && res.data.questionId) {
           const mainQ = currentSet.questions.find((q) => isMainQuestionType(q.questionType))
@@ -414,9 +431,9 @@ export const useAnswerFlow = ({
     stopRecording, audioCapture, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
     getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
-    setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
+    setFollowUpLoading, setCurrentFollowUp, setFollowUpExhausted, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
-    addQuestionToSet, recorder, setQuestionSetRecordingStartTime,
+    addQuestionToSet, recorder, setQuestionSetRecordingStartTime, setTimeOverdue,
   ])
 
   // 외부(면접 종료/언마운트)에서 in-flight 후속질문 mutation 을 abort 하기 위한 헬퍼

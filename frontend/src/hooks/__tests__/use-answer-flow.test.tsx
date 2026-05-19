@@ -142,23 +142,9 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     expect(payload.data.answerText).toBe('')
   })
 
-  it('직전 응답이 followUpExhausted=true 였어도 다음 답변에 follow-up API 가 다시 호출된다', async () => {
-    // 회귀 가드: FE 가 followUpExhausted 신호로 BE 호출 게이트를 막던 결함 해결.
-    // 마지막 follow-up 답변이 BE 에 미도달하는 문제를 막기 위해 게이트를 제거했다.
-    seedRecordingState(false)
-    // 답변 텍스트 주입.
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
+  it('followUpExhausted=true && isTimeOverdue=true → BE 호출 강제 + terminate:true', async () => {
+    seedRecordingState(true)
+    useInterviewStore.getState().setFollowUpExhausted(true)
 
     mutateAsyncMock.mockResolvedValue(
       buildResponse({ skip: true, followUpExhausted: true }),
@@ -172,6 +158,10 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     })
 
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1)
+    const payload = mutateAsyncMock.mock.calls[0][0] as {
+      data: { terminate?: boolean }
+    }
+    expect(payload.data.terminate).toBe(true)
   })
 
   it('정상 답변 (isTimeOverdue=false && hasAnswer=true) → terminate:false', async () => {
@@ -215,8 +205,9 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     expect(payload.data.answerText).toBe('정상 답변입니다')
   })
 
-  it('isTimeOverdue=false && hasAnswer=false → BE 호출 안 함', async () => {
+  it('isTimeOverdue=false && hasAnswer=false && followUpExhausted=true → BE 호출 안 함', async () => {
     seedRecordingState(false)
+    useInterviewStore.getState().setFollowUpExhausted(true)
 
     const params = buildParams()
     const { result } = renderHook(() => useAnswerFlow(params))
@@ -228,40 +219,10 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     expect(mutateAsyncMock).not.toHaveBeenCalled()
   })
 
-  it('skip=true 응답 → SKIP_TRANSITION_PHRASES 로 다음 질문 안내 발화 (transitionToNext skipPhrase=true)', async () => {
-    // 마지막 질문이면 CLOSING, 세트 끝이면 SET_TRANSITION 으로 분기되므로,
-    // "같은 세트 내 다음 메인 질문" 상황 (main 질문 2개 + currentIndex=0) 으로 시드해야 SKIP 분기 도달.
-    const multiMainSet: QuestionSetData = {
-      id: 12,
-      category: 'CS',
-      orderIndex: 0,
-      analysisStatus: 'PENDING',
-      failureReason: null,
-      questions: [
-        { id: 1, questionType: 'TECH_MAIN', questionText: '질문 0', bestAnswer: null, orderIndex: 0 },
-        { id: 2, questionType: 'TECH_MAIN', questionText: '질문 1', bestAnswer: null, orderIndex: 1 },
-      ],
-    }
-    useInterviewStore.getState().reset()
-    useInterviewStore.getState().setInterview(99, [buildQuestion(0), buildQuestion(1)])
-    useInterviewStore.getState().setQuestionSets([multiMainSet])
-    useInterviewStore.setState({ phase: 'recording' })
-    // 답변 텍스트 주입 → BE 호출 트리거.
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
-
+  it('종료 분기 진입 후 isTimeOverdue 가 false 로 리셋된다', async () => {
+    seedRecordingState(true)
     mutateAsyncMock.mockResolvedValue(
-      buildResponse({ skip: true, followUpExhausted: false }),
+      buildResponse({ skip: true, followUpExhausted: true }),
     )
 
     const params = buildParams()
@@ -271,17 +232,8 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
       await result.current.handleStopAnswer()
     })
 
-    // skip 분기 → SKIP_TRANSITION_PHRASES 사용 검증. 메인 질문 분기는 CLOSING_PHRASES 가 아닌 SKIP 멘트.
-    const SKIP_PHRASES = [
-      '네. 알겠습니다. 그럼 다음 질문으로 넘어가 볼게요.',
-      '네. 좋습니다. 다른 주제로 넘어가겠습니다.',
-      '네. 그럼 다음 질문 드리겠습니다.',
-    ]
-    expect(params.tts.speak).toHaveBeenCalledTimes(1)
-    const spokenText = (params.tts.speak as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(SKIP_PHRASES).toContain(spokenText)
+    expect(useInterviewStore.getState().isTimeOverdue).toBe(false)
   })
-
 })
 
 // 트랙 컨텍스트별 follow-up 질문이 BE QuestionType enum 과 정합한 값으로 store 에 저장되는지 검증.

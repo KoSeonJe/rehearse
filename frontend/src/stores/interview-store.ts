@@ -34,6 +34,8 @@ interface InterviewState {
 
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
+  // BE policy.isExhausted echo. true 면 추가 꼬리질문 호출 금지.
+  followUpExhausted: boolean
   followUpTranscriptOffset: number
   isFollowUpLoading: boolean
 
@@ -70,6 +72,7 @@ interface InterviewActions {
   completeInterview: () => void
   setCurrentFollowUp: (followUp: FollowUpResponse | null) => void
   completeFollowUpRound: (answerText: string) => void
+  setFollowUpExhausted: (exhausted: boolean) => void
   resetFollowUpState: () => void
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
@@ -108,6 +111,7 @@ const initialState: InterviewState = {
 
   followUpHistory: new Map(),
   currentFollowUp: null,
+  followUpExhausted: false,
   followUpTranscriptOffset: 0,
   isFollowUpLoading: false,
 
@@ -227,8 +231,11 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     })
   },
 
+  setFollowUpExhausted: (exhausted) => set({ followUpExhausted: exhausted }),
+
   resetFollowUpState: () => set({
     currentFollowUp: null,
+    followUpExhausted: false,
     followUpTranscriptOffset: 0,
   }),
 
@@ -251,6 +258,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         currentQuestionSetIndex: currentQuestionSetIndex + 1,
         followUpHistory: new Map(),
         currentFollowUp: null,
+        followUpExhausted: false,
         followUpTranscriptOffset: 0,
         questionSetRecordingStartTime: null,
       })
