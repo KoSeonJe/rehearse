@@ -28,7 +28,9 @@
 | `factual_consistency` | (Resume 전용) 이력서 claim 과 답변 일치 |
 | `chain_depth` | (Resume 전용) 심화 답변 깊이 (L1 What → L2 How → L3 Why → L4 Tradeoff) |
 
-`factual_consistency`, `chain_depth` 는 이력서 기반 질문에서만 평가. CS·경험 일반 질문은 생략 가능 (`dimension_gaps` 에 키 자체 없음).
+`factual_consistency`, `chain_depth` 는 이력서 기반 질문에서만 평가. CS·경험 일반 질문은 해당 키 값을 null 로 둔다.
+
+`dimension_gaps` 는 위 10개 dimension id 모두를 키로 포함해야 한다 (strict schema 강제). 평가하지 않는 차원은 값을 null 로 표기.
 
 ## 분석 항목
 
@@ -45,9 +47,9 @@
 - `topic_tag` (string): 한 단어 주제 태그
 
 ### dimension_gaps (객체)
-위 10개 dimension id 중 평가 대상 차원만 키로 사용하며, 값은 0~3 정수. 평가하지 않는 차원은 키 자체를 누락.
+위 10개 dimension id 를 모두 키로 포함. 평가한 차원은 0~3 정수, 평가하지 않은 차원은 null.
 
-예: `{"technical_depth": 2, "reasoning_communication": 1, "experience_concreteness": 3}`
+예: `{"problem_framing": null, "technical_depth": 2, "reasoning_communication": 1, "conceptual_accuracy": null, "practical_application": null, "experience_concreteness": 3, "collaboration_awareness": null, "recovery_from_gaps": null, "factual_consistency": null, "chain_depth": null}`
 
 ### weakest_dimension (string)
 `dimension_gaps` 중 값이 가장 큰 dimension id 1개. 동률이면 우선순위 = `technical_depth` > `conceptual_accuracy` > `experience_concreteness` > `reasoning_communication` > `practical_application` > 그 외.
@@ -70,7 +72,7 @@
 ```json
 {
   "claims": [{"text":"...", "depth_score":1-5, "evidence_strength":"STRONG|WEAK|ASSUMED", "topic_tag":"..."}],
-  "dimension_gaps": {"<dimension_id>": 0-3, "...": 0-3},
+  "dimension_gaps": {"<dimension_id>": 0-3|null, "...": 0-3|null},
   "weakest_dimension": "<dimension_id>|null",
   "unstated_assumptions": ["..."],
   "recommended_next_action": "DEEP_DIVE|CLARIFICATION|CHALLENGE|APPLICATION|SKIP"
@@ -95,10 +97,16 @@ JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하�
     {"text":"객체 생존 횟수에 따라 Old 로 승격된다", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"}
   ],
   "dimension_gaps": {
+    "problem_framing": null,
     "technical_depth": 2,
-    "conceptual_accuracy": 0,
     "reasoning_communication": 1,
-    "practical_application": 2
+    "conceptual_accuracy": 0,
+    "practical_application": 2,
+    "experience_concreteness": null,
+    "collaboration_awareness": null,
+    "recovery_from_gaps": null,
+    "factual_consistency": null,
+    "chain_depth": null
   },
   "weakest_dimension": "technical_depth",
   "unstated_assumptions": ["GC 알고리즘별 차이는 본 답변에서 다루지 않음"],
@@ -122,10 +130,16 @@ QUESTION_REFERENCE_TYPE: GUIDE
     {"text":"Cache-Aside + TTL 5분 + stale read 허용 정책", "depth_score":4, "evidence_strength":"STRONG", "topic_tag":"caching"}
   ],
   "dimension_gaps": {
+    "problem_framing": null,
     "technical_depth": 1,
+    "reasoning_communication": null,
+    "conceptual_accuracy": null,
+    "practical_application": 1,
     "experience_concreteness": 0,
     "collaboration_awareness": 1,
-    "practical_application": 1
+    "recovery_from_gaps": null,
+    "factual_consistency": null,
+    "chain_depth": null
   },
   "weakest_dimension": "collaboration_awareness",
   "unstated_assumptions": ["캐시 히트율은 측정했으나 답변에는 미언급"],
@@ -146,11 +160,16 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 {
   "claims": [],
   "dimension_gaps": {
+    "problem_framing": null,
     "technical_depth": 3,
-    "conceptual_accuracy": 3,
     "reasoning_communication": 3,
+    "conceptual_accuracy": 3,
     "practical_application": 3,
-    "recovery_from_gaps": 2
+    "experience_concreteness": null,
+    "collaboration_awareness": null,
+    "recovery_from_gaps": 2,
+    "factual_consistency": null,
+    "chain_depth": null
   },
   "weakest_dimension": "technical_depth",
   "unstated_assumptions": [],
@@ -173,10 +192,16 @@ QUESTION_REFERENCE_TYPE: GUIDE
     {"text":"Redis Lua 스크립트로 INCR+발급 원자적 처리", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"redis"}
   ],
   "dimension_gaps": {
+    "problem_framing": null,
     "technical_depth": 2,
+    "reasoning_communication": null,
+    "conceptual_accuracy": null,
+    "practical_application": null,
+    "experience_concreteness": 2,
+    "collaboration_awareness": null,
+    "recovery_from_gaps": null,
     "factual_consistency": 0,
-    "chain_depth": 2,
-    "experience_concreteness": 2
+    "chain_depth": 2
   },
   "weakest_dimension": "technical_depth",
   "unstated_assumptions": ["Lua 가 Redis 안에서 single-thread 로 실행된다는 점을 전제"],
