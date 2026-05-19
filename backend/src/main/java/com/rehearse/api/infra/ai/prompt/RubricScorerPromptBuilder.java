@@ -9,6 +9,7 @@ import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,6 +24,8 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +36,7 @@ public class RubricScorerPromptBuilder {
 
     private static final String CALL_TYPE = "rubric_scorer";
     private static final String TEMPLATE_PATH = "classpath:prompts/template/turn-rubric-scorer.txt";
+    private static final String SCHEMA_NAME = "rubric_score";
 
     private final RubricCatalog rubricLoader;
     private final ResourceLoader resourceLoader;
@@ -74,15 +78,56 @@ public class RubricScorerPromptBuilder {
         messages.add(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, systemPrompt));
         messages.add(ChatMessage.of(ChatMessage.Role.USER, userPrompt));
 
+        JsonSchemaSpec schemaSpec = new JsonSchemaSpec(SCHEMA_NAME, buildJsonSchema(dimensionsToScore));
+
         return ChatRequest.builder()
                 .messages(messages)
                 .modelOverride(model)
                 .temperature(temperature)
                 .maxTokens(maxTokens)
                 .cachePolicy(CachePolicy.defaults())
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(schemaSpec)
                 .callType(CALL_TYPE)
                 .build();
+    }
+
+    Map<String, Object> buildJsonSchema(List<String> dimensionsToScore) {
+        Map<String, Object> scoreSchema = new LinkedHashMap<>();
+        scoreSchema.put("type", List.of("integer", "null"));
+        scoreSchema.put("enum", Arrays.asList(1, 2, 3, null));
+        scoreSchema.put("description", "1~3 점 또는 null (차원 무관 시 null)");
+
+        Map<String, Object> observationSchema = new LinkedHashMap<>();
+        observationSchema.put("type", "string");
+        observationSchema.put("description", "한국어 1~2문장 관찰 서술");
+
+        Map<String, Object> evidenceQuoteSchema = new LinkedHashMap<>();
+        evidenceQuoteSchema.put("type", "string");
+        evidenceQuoteSchema.put("description", "사용자 답변에서 추출한 verbatim substring (non-null)");
+
+        Map<String, Object> dimensionProperties = new LinkedHashMap<>();
+        dimensionProperties.put("score", scoreSchema);
+        dimensionProperties.put("observation", observationSchema);
+        dimensionProperties.put("evidence_quote", evidenceQuoteSchema);
+
+        Map<String, Object> dimensionSchema = new LinkedHashMap<>();
+        dimensionSchema.put("type", "object");
+        dimensionSchema.put("additionalProperties", false);
+        dimensionSchema.put("required", List.of("score", "observation", "evidence_quote"));
+        dimensionSchema.put("properties", dimensionProperties);
+
+        Map<String, Object> properties = new LinkedHashMap<>();
+        for (String dim : dimensionsToScore) {
+            properties.put(dim, dimensionSchema);
+        }
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("additionalProperties", false);
+        schema.put("required", List.copyOf(dimensionsToScore));
+        schema.put("properties", properties);
+        return schema;
     }
 
     private String buildSystemPrompt() {

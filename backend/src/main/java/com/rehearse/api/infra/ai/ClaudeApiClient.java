@@ -94,7 +94,8 @@ public class ClaudeApiClient {
         List<SystemContent> systemContents = new ArrayList<>();
         List<ClaudeRequest.Message> userMessages = new ArrayList<>();
 
-        if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
+        if (req.responseFormat() == ResponseFormat.JSON_OBJECT
+                || req.responseFormat() == ResponseFormat.JSON_SCHEMA) {
             systemContents.add(SystemContent.of(JSON_OBJECT_INSTRUCTION));
         }
 
