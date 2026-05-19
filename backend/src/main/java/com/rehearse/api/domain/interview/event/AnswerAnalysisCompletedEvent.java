@@ -1,9 +1,9 @@
-package com.rehearse.api.domain.feedback.rubric.event;
+package com.rehearse.api.domain.interview.event;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 
-public record FollowUpQuestionCreatedEvent(
+public record AnswerAnalysisCompletedEvent(
         Long interviewId,
         Long userId,
         Long questionId,
@@ -13,13 +13,13 @@ public record FollowUpQuestionCreatedEvent(
         InterviewLevel userLevel
 ) {
 
-    public static FollowUpQuestionCreatedEvent of(
+    public static AnswerAnalysisCompletedEvent of(
             Long interviewId, Long userId,
             Long questionId, Long questionSetId,
             String userAnswer, AnswerAnalysis analysis,
             InterviewLevel userLevel
     ) {
-        return new FollowUpQuestionCreatedEvent(
+        return new AnswerAnalysisCompletedEvent(
                 interviewId, userId,
                 questionId, questionSetId,
                 userAnswer, analysis, userLevel

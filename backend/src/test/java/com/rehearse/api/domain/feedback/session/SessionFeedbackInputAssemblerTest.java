@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.session;
 
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
+import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
@@ -45,11 +46,14 @@ class SessionFeedbackInputAssemblerTest {
 
     @BeforeEach
     void setUp() {
+        RubricLoader rubricLoader = new RubricLoader();
+        ReflectionTestUtils.invokeMethod(rubricLoader, "init");
         assembler = new SessionFeedbackInputAssembler(
                 questionScoreRepository,
                 questionScoreDimensionRepository,
                 interviewFinder,
-                new NonverbalImprovementActionsLoader()
+                new NonverbalImprovementActionsLoader(),
+                rubricLoader
         );
         mockInterview = Interview.builder()
                 .userId(1L)
@@ -101,7 +105,9 @@ class SessionFeedbackInputAssemblerTest {
 
         TurnScoreView okTurn = input.turnScores().get(0);
         assertThat(okTurn.status()).isEqualTo(TurnScoreView.TurnStatus.OK);
-        assertThat(okTurn.scoredDimensions()).containsExactly("problem_framing");
+        assertThat(okTurn.scoredDimensions()).containsExactly("문제 정의");
+        assertThat(okTurn.dimensionScores()).containsKey("문제 정의");
+        assertThat(okTurn.dimensionScores()).doesNotContainKey("problem_framing");
 
         TurnScoreView failedTurn = input.turnScores().get(1);
         assertThat(failedTurn.status()).isEqualTo(TurnScoreView.TurnStatus.FAILED);
@@ -251,12 +257,16 @@ class SessionFeedbackInputAssemblerTest {
         assertThat(aggregate.source()).isEqualTo("nonverbal_score");
         assertThat(input.legacyNonverbalAggregateJson()).isNull();
         assertThat(aggregate.turns()).hasSize(2);
-        assertThat(aggregate.turns().getFirst().scores()).containsEntry("eye_contact_posture", 1);
-        assertThat(aggregate.averageScores()).containsEntry("fluency", 2.0);
-        assertThat(aggregate.averageScores()).containsEntry("eye_contact_posture", 1.0);
-        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("eye_contact_posture");
+        assertThat(aggregate.turns().getFirst().scores()).containsEntry("시선", 1);
+        assertThat(aggregate.turns().getFirst().scores()).doesNotContainKey("eye_contact_posture");
+        assertThat(aggregate.averageScores()).containsEntry("유창함", 2.0);
+        assertThat(aggregate.averageScores()).containsEntry("시선", 1.0);
+        assertThat(aggregate.averageScores()).containsEntry("자신감", 2.5);
+        assertThat(aggregate.averageScores()).doesNotContainKey("fluency");
+        assertThat(aggregate.averageScores()).doesNotContainKey("confidence_tone");
+        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("시선");
         assertThat(aggregate.lowestDimension().averageScore()).isEqualTo(1.0);
-        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("eye_contact_posture");
+        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("시선");
         assertThat(aggregate.recommendedActions().getFirst().actions().getFirst())
                 .contains("카메라를 보고 말하기");
     }

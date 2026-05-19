@@ -29,7 +29,7 @@ dimensions:
           - 제약 확인 후 답변 범위 스스로 정의
 
   technical_depth:
-    name: 기술적 깊이
+    name: 기술 깊이
     description: 원리/트레이드오프/대안 인지
     scope: general
     scoring:
@@ -54,7 +54,7 @@ dimensions:
           - 복수 옵션 간 의사결정 근거 제시
 
   reasoning_communication:
-    name: 사고 과정 전달
+    name: 설명력
     description: 사고 과정 단계적 언어화
     scope: general
     scoring:
@@ -78,7 +78,7 @@ dimensions:
           - 전제 → 추론 → 결론 구조 명시적
 
   conceptual_accuracy:
-    name: 개념 정확성
+    name: 개념 정확도
     description: 개념 설명의 기술적 정확성
     scope: general
     scoring:
@@ -103,7 +103,7 @@ dimensions:
           - 실제 동작 메커니즘까지 서술
 
   practical_application:
-    name: 실무 적용력
+    name: 실무 응용
     description: 실무 사용 맥락, 주의점, 흔한 실수 이해
     scope: general
     scoring:
@@ -154,7 +154,7 @@ dimensions:
           - Learnings (전이 가능한 교훈)
 
   collaboration_awareness:
-    name: 협업 인식
+    name: 협업 의식
     description: 팀/이해관계자 관점 고려
     scope: general
     scoring:
@@ -179,7 +179,7 @@ dimensions:
           - 상대방 입장 언어로 재서술
 
   recovery_from_gaps:
-    name: 모름 대처
+    name: 답변 회복력
     description: 모르는 걸 만났을 때 대처
     scope: general
     scoring:
@@ -204,7 +204,7 @@ dimensions:
           - '만약 안다면 이렇게 접근하겠다 제시'
 
   factual_consistency:
-    name: 이력서 일관성
+    name: 사실 일관성
     description: (Resume 전용) 이력서 claim과 답변 일치
     scope: resume_only
     scoring:
@@ -227,7 +227,7 @@ dimensions:
           - 추가 설명이 이력서 맥락과 정합
 
   chain_depth:
-    name: 심화 답변 깊이
+    name: 후속 깊이
     description: (Resume 전용) 심화 체인 어디까지 답했는가 (L1 What → L2 How → L3 Why-mech → L4 Tradeoff)
     scope: resume_only
     scoring:
@@ -249,7 +249,7 @@ dimensions:
           - 운영/확장성 관점 포함
 
   fluency:
-    name: 발화 유창성
+    name: 유창함
     description: 필러·말 더듬·발화 속도 변동이 답변 전달을 방해하지 않는가
     scope: nonverbal
     category: nonverbal
@@ -276,7 +276,7 @@ dimensions:
           - 발화 속도가 답변 전체에서 일정하게 유지됨
 
   confidence_tone:
-    name: 자신감 있는 말투
+    name: 자신감
     description: 톤과 발화 속도 변동이 자신감 있게 유지되는가
     scope: nonverbal
     category: nonverbal
@@ -303,7 +303,7 @@ dimensions:
           - 발화 속도 분산 0.15 미만으로 일정한 톤이 이어짐
 
   eye_contact_posture:
-    name: 시선과 자세
+    name: 시선
     description: 시선·자세·표정이 안정적으로 유지되는가
     scope: nonverbal
     category: nonverbal

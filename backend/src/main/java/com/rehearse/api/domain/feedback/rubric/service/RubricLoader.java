@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
+import com.rehearse.api.domain.feedback.rubric.RubricIds;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricFamily;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
@@ -23,21 +24,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
 public class RubricLoader implements RubricCatalog {
 
-    private static final String FALLBACK_RUBRIC_ID = "fallback-generic-v1";
-
     private RubricFamily family;
     private Map<String, Rubric> rubrics;
+    private Map<String, String> nameToRef;
 
     @PostConstruct
     void init() {
         try {
             Map<String, RubricDimension> dimensions = loadDimensions();
             family = new RubricFamily(dimensions);
+            nameToRef = buildNameToRefMap(dimensions);
 
             rubrics = new HashMap<>();
             PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
@@ -57,9 +59,9 @@ public class RubricLoader implements RubricCatalog {
     }
 
     private void validateFallbackRubricPresent() {
-        if (!rubrics.containsKey(FALLBACK_RUBRIC_ID)) {
+        if (!rubrics.containsKey(RubricIds.FALLBACK)) {
             throw new IllegalStateException(
-                    "YAML 구조 오류: fallback rubricId='" + FALLBACK_RUBRIC_ID +
+                    "YAML 구조 오류: fallback rubricId='" + RubricIds.FALLBACK +
                     "'에 해당하는 rubric 파일이 없습니다. 로드된 rubricId=" + rubrics.keySet());
         }
     }
@@ -82,16 +84,16 @@ public class RubricLoader implements RubricCatalog {
 
     private String resolveRubricId(boolean resumeTrack, InterviewType category, QuestionType questionType) {
         if (resumeTrack) {
-            return "resume-v1";
+            return RubricIds.RESUME;
         }
         return switch (category) {
-            case RESUME_BASED -> "resume-v1";
-            case CS_FUNDAMENTAL -> "concept-cs-fundamental-v1";
-            case LANGUAGE_FRAMEWORK, UI_FRAMEWORK -> "concept-lang-framework-v1";
-            case BEHAVIORAL -> "experience-collaboration-v1";
+            case RESUME_BASED -> RubricIds.RESUME;
+            case CS_FUNDAMENTAL -> RubricIds.CONCEPT_CS;
+            case LANGUAGE_FRAMEWORK, UI_FRAMEWORK -> RubricIds.CONCEPT_LANG;
+            case BEHAVIORAL -> RubricIds.EXPERIENCE_COLLAB;
             default -> questionType.rubricCategory() == RubricCategory.EXPERIENCE
-                    ? "experience-technical-v1"
-                    : FALLBACK_RUBRIC_ID;
+                    ? RubricIds.EXPERIENCE_TECH
+                    : RubricIds.FALLBACK;
         };
     }
 
@@ -101,6 +103,30 @@ public class RubricLoader implements RubricCatalog {
 
     public Map<String, RubricDimension> getAllDimensions() {
         return family.getDimensions();
+    }
+
+    @Override
+    public Optional<String> findRefByName(String koreanLabel) {
+        if (koreanLabel == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(nameToRef.get(koreanLabel));
+    }
+
+    private Map<String, String> buildNameToRefMap(Map<String, RubricDimension> dimensions) {
+        Map<String, String> result = new HashMap<>();
+        for (Map.Entry<String, RubricDimension> entry : dimensions.entrySet()) {
+            RubricDimension dim = entry.getValue();
+            if (dim == null || dim.name() == null) {
+                continue;
+            }
+            String existing = result.putIfAbsent(dim.name(), entry.getKey());
+            if (existing != null) {
+                throw new IllegalStateException(
+                        "중복 dimension name=" + dim.name() + " (refs=" + existing + ", " + entry.getKey() + ")");
+            }
+        }
+        return Map.copyOf(result);
     }
 
     @SuppressWarnings("unchecked")

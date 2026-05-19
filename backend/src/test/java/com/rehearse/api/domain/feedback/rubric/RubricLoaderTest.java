@@ -198,16 +198,27 @@ class RubricLoaderTest extends AbstractMySqlContainerTest {
         RubricDimension d2 = rubricLoader.getDimension("technical_depth");
 
         assertThat(d2).isNotNull();
-        assertThat(d2.name()).isEqualTo("기술적 깊이");
+        assertThat(d2.name()).isEqualTo("기술 깊이");
         assertThat(d2.scoring()).containsKeys(1, 2, 3);
+    }
+
+    @Test
+    @DisplayName("findRefByName 은 한국어 라벨 → ref 역매핑을 반환하고 부재 라벨은 Optional.empty")
+    void findRefByName_reverseMapsKoreanLabelToRef() {
+        assertThat(rubricLoader.findRefByName("시선")).hasValue("eye_contact_posture");
+        assertThat(rubricLoader.findRefByName("유창함")).hasValue("fluency");
+        assertThat(rubricLoader.findRefByName("자신감")).hasValue("confidence_tone");
+        assertThat(rubricLoader.findRefByName("문제 정의")).hasValue("problem_framing");
+        assertThat(rubricLoader.findRefByName("존재하지않는라벨")).isEmpty();
+        assertThat(rubricLoader.findRefByName(null)).isEmpty();
     }
 
     @Test
     @DisplayName("D11~D13 은 비언어 채점 차원으로 로드되고 composure 는 부재")
     void getAllDimensions_nonverbalDimensionsLoaded_noComposure() {
-        assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("발화 유창성");
-        assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감 있는 말투");
-        assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선과 자세");
+        assertThat(rubricLoader.getDimension("fluency").name()).isEqualTo("유창함");
+        assertThat(rubricLoader.getDimension("confidence_tone").name()).isEqualTo("자신감");
+        assertThat(rubricLoader.getDimension("eye_contact_posture").name()).isEqualTo("시선");
         assertThat(rubricLoader.getDimension("composure")).isNull();
     }
 
