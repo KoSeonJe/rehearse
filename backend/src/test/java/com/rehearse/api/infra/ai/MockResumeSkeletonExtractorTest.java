@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.adapter.OpenAiResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
+import com.rehearse.api.infra.ai.config.OpenAiResumeExtractorRestClientConfig;
 import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class MockResumeSkeletonExtractorTest {
             .withBean(OpenAiCommonProperties.class,
                     () -> new OpenAiCommonProperties("test-key"))
             .withUserConfiguration(
+                    OpenAiResumeExtractorRestClientConfig.class,
                     OpenAiResumeSkeletonExtractor.class,
                     MockResumeSkeletonExtractor.class);
 

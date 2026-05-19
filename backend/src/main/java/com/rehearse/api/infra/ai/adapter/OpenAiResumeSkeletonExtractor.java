@@ -10,9 +10,8 @@ import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
-import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
-import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -23,7 +22,6 @@ import org.springframework.web.client.RestClient;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -47,18 +45,12 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
     private String systemPrompt;
 
     public OpenAiResumeSkeletonExtractor(
-            RestClient.Builder restClientBuilder,
+            @Qualifier("openAiResumeExtractorRestClient") RestClient openAiResumeExtractorRestClient,
             OpenAiResponsesOutputTextExtractor outputTextExtractor,
             AiResponseParser aiResponseParser,
             OpenAiResumeSkeletonProperties properties,
             OpenAiCommonProperties commonProperties) {
-        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
-                .withConnectTimeout(Duration.ofSeconds(5))
-                .withReadTimeout(Duration.ofMillis(properties.timeoutMs()));
-        this.restClient = restClientBuilder
-                .baseUrl(properties.baseUrl())
-                .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
-                .build();
+        this.restClient = openAiResumeExtractorRestClient;
         this.outputTextExtractor = outputTextExtractor;
         this.aiResponseParser = aiResponseParser;
         this.properties = properties;

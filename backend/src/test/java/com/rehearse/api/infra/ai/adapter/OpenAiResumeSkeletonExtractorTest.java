@@ -93,8 +93,12 @@ class OpenAiResumeSkeletonExtractorTest {
                 0.2,
                 "http://localhost:" + wireMock.port() + RESPONSES_PATH);
 
+        RestClient restClient = RestClient.builder()
+                .baseUrl(properties.baseUrl())
+                .build();
+
         extractor = new OpenAiResumeSkeletonExtractor(
-                RestClient.builder(),
+                restClient,
                 outputTextExtractor,
                 aiResponseParser,
                 properties,
