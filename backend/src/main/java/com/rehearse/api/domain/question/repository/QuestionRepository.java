@@ -18,22 +18,4 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             "AND q.questionPool.cacheKey = :cacheKey")
     Set<Long> findUsedQuestionPoolIdsByUserIdAndCacheKey(
             @Param("userId") Long userId, @Param("cacheKey") String cacheKey);
-
-    @Query("""
-            SELECT q FROM Question q
-            JOIN q.questionSet qs
-            WHERE qs.interview.id = :interviewId
-              AND EXISTS (
-                SELECT 1 FROM TimestampFeedback tf
-                WHERE tf.question.id = q.id
-                  AND tf.transcript IS NOT NULL
-                  AND tf.transcript <> ''
-              )
-              AND NOT EXISTS (
-                SELECT 1 FROM QuestionScore s
-                WHERE s.questionId = q.id
-                  AND s.rubricId <> 'nonverbal-v1'
-              )
-            """)
-    List<Question> findAnsweredButUnscoredByInterviewId(@Param("interviewId") Long interviewId);
 }

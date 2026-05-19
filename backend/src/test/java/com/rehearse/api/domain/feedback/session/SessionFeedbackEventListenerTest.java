@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.rehearse.api.domain.feedback.rubric.service.RubricBackfillScorer;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
@@ -11,7 +10,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.BDDMockito.willThrow;
@@ -21,36 +19,20 @@ import static org.mockito.Mockito.times;
 class SessionFeedbackEventListenerTest {
 
     @Mock private SessionFeedbackService sessionFeedbackService;
-    @Mock private RubricBackfillScorer rubricBackfillScorer;
     @Mock private AiCallMetrics aiCallMetrics;
 
     @InjectMocks
     private SessionFeedbackEventListener listener;
 
     @Test
-    @DisplayName("정상_케이스_backfill_후_synthesizePreliminary_1회_호출")
-    void on_calls_backfill_then_synthesizePreliminary_once_on_success() {
+    @DisplayName("정상_케이스_synthesizePreliminary_1회_호출")
+    void on_calls_synthesizePreliminary_once_on_success() {
         willDoNothing().given(sessionFeedbackService).synthesizePreliminary(1L);
 
         listener.on(new InterviewCompletedEvent(1L, java.time.LocalDateTime.now()));
 
-        then(rubricBackfillScorer).should(times(1)).backfill(1L);
         then(sessionFeedbackService).should(times(1)).synthesizePreliminary(1L);
         then(sessionFeedbackService).should(times(0)).recordSynthesisFailure(1L, "PARSE_FAILED");
-    }
-
-    @Test
-    @DisplayName("backfill_실패해도_synthesizePreliminary_호출_되고_synth_실패_카운터는_증가하지_않는다")
-    void on_continues_to_synthesis_when_backfill_throws() {
-        willThrow(new RuntimeException("backfill 폭발"))
-                .given(rubricBackfillScorer).backfill(5L);
-        willDoNothing().given(sessionFeedbackService).synthesizePreliminary(5L);
-
-        listener.on(new InterviewCompletedEvent(5L, java.time.LocalDateTime.now()));
-
-        then(sessionFeedbackService).should(times(1)).synthesizePreliminary(5L);
-        then(aiCallMetrics).should(times(1)).incrementRubricFailure("backfill_listener_failed");
-        then(aiCallMetrics).should(times(0)).incrementSynthesizerFailure("INTERNAL_ERROR");
     }
 
     @Test

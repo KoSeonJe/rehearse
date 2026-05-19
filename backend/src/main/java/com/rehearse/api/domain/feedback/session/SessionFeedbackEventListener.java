@@ -1,6 +1,5 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.rehearse.api.domain.feedback.rubric.service.RubricBackfillScorer;
 import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
@@ -19,7 +18,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class SessionFeedbackEventListener {
 
     private final SessionFeedbackService sessionFeedbackService;
-    private final RubricBackfillScorer rubricBackfillScorer;
     private final AiCallMetrics aiCallMetrics;
 
     @Async(SessionFeedbackExecutorConfig.SESSION_FEEDBACK_EXECUTOR)
@@ -27,12 +25,6 @@ public class SessionFeedbackEventListener {
     public void on(InterviewCompletedEvent event) {
         Long interviewId = event.interviewId();
         try {
-            try {
-                rubricBackfillScorer.backfill(interviewId);
-            } catch (Exception backfillEx) {
-                log.warn("RubricBackfill 실패 — synthesis 는 계속 진행: interviewId={}", interviewId, backfillEx);
-                aiCallMetrics.incrementRubricFailure("backfill_listener_failed");
-            }
             sessionFeedbackService.synthesizePreliminary(interviewId);
         } catch (SessionFeedbackParseException e) {
             sessionFeedbackService.recordSynthesisFailure(interviewId, "PARSE_FAILED");
