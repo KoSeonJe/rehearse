@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.adapter.OpenAiResumeSkeletonExtractor;
+import com.rehearse.api.infra.ai.client.OpenAiResumeExtractorClient;
 import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeExtractorRestClientConfig;
 import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
@@ -37,6 +38,7 @@ class MockResumeSkeletonExtractorTest {
                     () -> new OpenAiCommonProperties("test-key"))
             .withUserConfiguration(
                     OpenAiResumeExtractorRestClientConfig.class,
+                    OpenAiResumeExtractorClient.class,
                     OpenAiResumeSkeletonExtractor.class,
                     MockResumeSkeletonExtractor.class);
 

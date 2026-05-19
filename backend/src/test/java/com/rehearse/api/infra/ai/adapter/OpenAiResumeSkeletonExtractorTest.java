@@ -1,38 +1,30 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.OpenAiResponsesOutputTextExtractor;
-import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
-import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
+import com.rehearse.api.infra.ai.client.OpenAiResumeExtractorClient;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.web.client.RestClient;
 
 import java.lang.reflect.Method;
 import java.util.Base64;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@DisplayName("OpenAiResumeSkeletonExtractor — PDF 바이트를 OpenAI Responses API 로 전송해 Skeleton JSON 을 추출한다")
+@DisplayName("OpenAiResumeSkeletonExtractor — PDF 바이트를 base64 로 인코딩하고 Client 응답을 Skeleton 으로 매핑한다")
 class OpenAiResumeSkeletonExtractorTest {
-
-    private static final String RESPONSES_PATH = "/v1/responses";
 
     private static final String SUCCESS_RESPONSE = """
             {
@@ -72,43 +64,19 @@ class OpenAiResumeSkeletonExtractorTest {
             }
             """;
 
-    private WireMockServer wireMock;
+    private OpenAiResumeExtractorClient client;
     private OpenAiResumeSkeletonExtractor extractor;
 
     @BeforeEach
     void setUp() throws Exception {
-        wireMock = new WireMockServer(WireMockConfiguration.wireMockConfig()
-                .dynamicPort()
-                .http2PlainDisabled(true));
-        wireMock.start();
-
         ObjectMapper objectMapper = new ObjectMapper();
         OpenAiResponsesOutputTextExtractor outputTextExtractor =
                 new OpenAiResponsesOutputTextExtractor(objectMapper);
         AiResponseParser aiResponseParser = new AiResponseParser(objectMapper, null, null);
-        OpenAiResumeSkeletonProperties properties = new OpenAiResumeSkeletonProperties(
-                "gpt-4o-mini",
-                60_000L,
-                12_000,
-                0.2,
-                "http://localhost:" + wireMock.port() + RESPONSES_PATH);
+        client = mock(OpenAiResumeExtractorClient.class);
 
-        RestClient restClient = RestClient.builder()
-                .baseUrl(properties.baseUrl())
-                .build();
-
-        extractor = new OpenAiResumeSkeletonExtractor(
-                restClient,
-                outputTextExtractor,
-                aiResponseParser,
-                properties,
-                new OpenAiCommonProperties("test-api-key"));
+        extractor = new OpenAiResumeSkeletonExtractor(client, outputTextExtractor, aiResponseParser);
         invokeInit(extractor);
-    }
-
-    @AfterEach
-    void tearDown() {
-        wireMock.stop();
     }
 
     @Nested
@@ -116,38 +84,32 @@ class OpenAiResumeSkeletonExtractorTest {
     class Success {
 
         @Test
-        @DisplayName("PDF 바이트를 base64 로 인코딩해 input_file.file_data 에 담아 전송한다")
-        void extract_encodesPdfAsBase64InRequestBody() {
-            stubSuccess(SUCCESS_RESPONSE);
+        @DisplayName("PDF 바이트를 base64 로 인코딩해 Client.call 의 두 번째 인자로 넘긴다")
+        void extract_passesBase64EncodedPdfToClient() {
             byte[] pdfBytes = "%PDF-1.4 dummy content".getBytes();
-            String expectedDataUrl = "data:application/pdf;base64," + Base64.getEncoder().encodeToString(pdfBytes);
+            String expectedBase64 = Base64.getEncoder().encodeToString(pdfBytes);
+            when(client.call(any(), eq(expectedBase64))).thenReturn(SUCCESS_RESPONSE);
 
-            GeneratedResumeSkeleton result = extractor.extract(pdfBytes, "hash-1");
+            extractor.extract(pdfBytes, "hash-1");
 
-            assertThat(result.resumeId()).isEqualTo("r_abc12345");
-
-            wireMock.verify(postRequestedFor(urlEqualTo(RESPONSES_PATH))
-                    .withRequestBody(matchingJsonPath("$.model", equalTo("gpt-4o-mini")))
-                    .withRequestBody(matchingJsonPath("$.input[0].content[1].type", equalTo("input_file")))
-                    .withRequestBody(matchingJsonPath("$.input[0].content[1].filename", equalTo("resume.pdf")))
-                    .withRequestBody(matchingJsonPath("$.input[0].content[1].file_data", equalTo(expectedDataUrl))));
+            verify(client).call(any(), eq(expectedBase64));
         }
 
         @Test
-        @DisplayName("system prompt 는 input_text 로 첫 번째 content 에 포함된다")
-        void extract_includesSystemPromptAsInputText() {
-            stubSuccess(SUCCESS_RESPONSE);
+        @DisplayName("classpath 의 resume-extractor.txt 프롬프트를 Client.call 첫 인자로 넘긴다")
+        void extract_passesSystemPromptToClient() {
+            when(client.call(any(), any())).thenReturn(SUCCESS_RESPONSE);
 
             extractor.extract("%PDF-1.4".getBytes(), "hash-2");
 
-            wireMock.verify(postRequestedFor(urlEqualTo(RESPONSES_PATH))
-                    .withRequestBody(matchingJsonPath("$.input[0].content[0].type", equalTo("input_text"))));
+            verify(client).call(org.mockito.ArgumentMatchers.argThat(
+                    prompt -> prompt != null && !prompt.isBlank()), any());
         }
 
         @Test
-        @DisplayName("응답 output_text 의 JSON 을 GeneratedResumeSkeleton 으로 매핑한다")
+        @DisplayName("Client 응답의 output_text JSON 을 GeneratedResumeSkeleton 으로 매핑한다")
         void extract_mapsResponseToSkeleton() {
-            stubSuccess(SUCCESS_RESPONSE);
+            when(client.call(any(), any())).thenReturn(SUCCESS_RESPONSE);
 
             GeneratedResumeSkeleton result = extractor.extract("%PDF-1.4".getBytes(), "hash-3");
 
@@ -161,7 +123,7 @@ class OpenAiResumeSkeletonExtractorTest {
         @Test
         @DisplayName("output_text 가 ```json fence 로 감싸여 와도 파싱한다")
         void extract_stripsJsonCodeFence() {
-            stubSuccess(SUCCESS_RESPONSE_WITH_FENCE);
+            when(client.call(any(), any())).thenReturn(SUCCESS_RESPONSE_WITH_FENCE);
 
             GeneratedResumeSkeleton result = extractor.extract("%PDF-1.4".getBytes(), "hash-4");
 
@@ -175,7 +137,7 @@ class OpenAiResumeSkeletonExtractorTest {
     class Failure {
 
         @Test
-        @DisplayName("빈 PDF 바이트 → CLIENT_ERROR")
+        @DisplayName("빈 PDF 바이트 → CLIENT_ERROR (Client 호출 안 함)")
         void extract_emptyBytes_throwsClientError() {
             assertThatThrownBy(() -> extractor.extract(new byte[0], "hash"))
                     .isInstanceOf(BusinessException.class)
@@ -184,25 +146,10 @@ class OpenAiResumeSkeletonExtractorTest {
         }
 
         @Test
-        @DisplayName("OpenAI 400 응답 → CLIENT_ERROR")
-        void extract_4xx_throwsClientError() {
-            wireMock.stubFor(post(urlEqualTo(RESPONSES_PATH))
-                    .willReturn(aResponse().withStatus(400).withBody("{\"error\":\"bad request\"}")));
-
-            assertThatThrownBy(() -> extractor.extract("%PDF-1.4".getBytes(), "hash"))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting("errorCode")
-                    .isEqualTo(AiErrorCode.CLIENT_ERROR);
-        }
-
-        @Test
-        @DisplayName("output 배열 누락 → EMPTY_RESPONSE")
+        @DisplayName("output 배열 누락 응답 → EMPTY_RESPONSE")
         void extract_missingOutput_throwsEmptyResponse() {
-            wireMock.stubFor(post(urlEqualTo(RESPONSES_PATH))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody("{\"id\":\"resp_x\",\"model\":\"gpt-4o-mini\"}")));
+            when(client.call(any(), any()))
+                    .thenReturn("{\"id\":\"resp_x\",\"model\":\"gpt-4o-mini\"}");
 
             assertThatThrownBy(() -> extractor.extract("%PDF-1.4".getBytes(), "hash"))
                     .isInstanceOf(BusinessException.class)
@@ -223,25 +170,13 @@ class OpenAiResumeSkeletonExtractorTest {
                       }]
                     }
                     """;
-            wireMock.stubFor(post(urlEqualTo(RESPONSES_PATH))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(malformed)));
+            when(client.call(any(), any())).thenReturn(malformed);
 
             assertThatThrownBy(() -> extractor.extract("%PDF-1.4".getBytes(), "hash"))
                     .isInstanceOf(BusinessException.class)
                     .extracting("errorCode")
                     .isEqualTo(AiErrorCode.PARSE_FAILED);
         }
-    }
-
-    private void stubSuccess(String body) {
-        wireMock.stubFor(post(urlEqualTo(RESPONSES_PATH))
-                .willReturn(aResponse()
-                        .withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(body)));
     }
 
     private static void invokeInit(OpenAiResumeSkeletonExtractor target) throws Exception {
