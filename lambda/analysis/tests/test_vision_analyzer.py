@@ -19,7 +19,8 @@ class TestFallbackSchema:
         ecp = _FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
         assert ecp["score"] in (1, 2, 3)
         assert isinstance(ecp["observation"], str) and ecp["observation"]
-        assert ecp["evidence_quote"] == ""
+        # BE @NotBlank 통과용 placeholder — 빈 문자열 금지.
+        assert ecp["evidence_quote"] == "프레임 분석 제한"
 
     def test_fallback_omits_raw_legacy_keys(self):
         from analyzers.vision_analyzer import _FALLBACK
@@ -147,3 +148,22 @@ class TestAnalyzeFramesSignature:
         fb = _FALLBACK["nonverbalDimensions"]["eye_contact_posture"]
         assert ecp["score"] == fb["score"]
         assert ecp["observation"] == fb["observation"]
+
+
+class TestVisionStructuredOutputSchema:
+    def test_response_format_uses_json_schema_strict(self):
+        from analyzers.vision_analyzer import _VISION_RESPONSE_FORMAT
+        assert _VISION_RESPONSE_FORMAT["type"] == "json_schema"
+        js = _VISION_RESPONSE_FORMAT["json_schema"]
+        assert js["strict"] is True
+        assert js["name"] == "vision_nonverbal"
+
+    def test_schema_enforces_score_enum_and_min_length(self):
+        from analyzers.vision_analyzer import _VISION_SCHEMA
+        ecp = _VISION_SCHEMA["properties"]["nonverbalDimensions"]["properties"]["eye_contact_posture"]
+        props = ecp["properties"]
+        assert props["score"]["enum"] == [1, 2, 3]
+        assert props["observation"]["minLength"] == 1
+        assert props["evidence_quote"]["minLength"] == 1
+        assert ecp["additionalProperties"] is False
+        assert set(ecp["required"]) == {"score", "observation", "evidence_quote"}

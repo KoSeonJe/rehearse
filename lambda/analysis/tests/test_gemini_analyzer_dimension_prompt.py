@@ -104,7 +104,8 @@ class TestFallbackSchema:
             assert isinstance(body["observation"], str) and body["observation"], (
                 f"{name}.observation empty"
             )
-            assert body["evidence_quote"] == ""
+            # BE @NotBlank 통과용 placeholder — 빈 문자열 금지.
+            assert body["evidence_quote"] == "오디오 분석 제한"
 
     def test_fallback_keeps_filler_fields(self):
         from analyzers.gemini_analyzer import _FALLBACK_ANSWER
@@ -127,3 +128,26 @@ class TestFallbackSchema:
             assert forbidden not in _FALLBACK_ANSWER, (
                 f"최상위 자유서술 섹션 {forbidden} 잔존"
             )
+
+
+class TestGeminiStructuredOutputSchema:
+    def test_schema_requires_top_level_fields(self):
+        from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
+        assert set(_GEMINI_ANSWER_SCHEMA["required"]) == {
+            "transcript", "vocal", "nonverbalDimensions",
+        }
+
+    def test_schema_dimensions_enforce_score_enum(self):
+        from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
+        dims = _GEMINI_ANSWER_SCHEMA["properties"]["nonverbalDimensions"]["properties"]
+        for key in ("fluency", "confidence_tone"):
+            props = dims[key]["properties"]
+            assert props["score"]["enum"] == [1, 2, 3]
+            assert set(dims[key]["required"]) == {
+                "score", "observation", "evidence_quote",
+            }
+
+    def test_schema_vocal_requires_filler_fields(self):
+        from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
+        vocal = _GEMINI_ANSWER_SCHEMA["properties"]["vocal"]
+        assert set(vocal["required"]) == {"fillerWords", "fillerWordCount"}
