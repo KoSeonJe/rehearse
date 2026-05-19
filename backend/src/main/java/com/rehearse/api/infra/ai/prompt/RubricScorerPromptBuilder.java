@@ -24,7 +24,6 @@ import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,9 +93,9 @@ public class RubricScorerPromptBuilder {
 
     Map<String, Object> buildJsonSchema(List<String> dimensionsToScore) {
         Map<String, Object> scoreSchema = new LinkedHashMap<>();
-        scoreSchema.put("type", List.of("integer", "null"));
-        scoreSchema.put("enum", Arrays.asList(1, 2, 3, null));
-        scoreSchema.put("description", "1~3 점 또는 null (차원 무관 시 null)");
+        scoreSchema.put("type", "integer");
+        scoreSchema.put("enum", List.of(1, 2, 3));
+        scoreSchema.put("description", "1~3 점 (모든 차원 강제 채점)");
 
         Map<String, Object> observationSchema = new LinkedHashMap<>();
         observationSchema.put("type", "string");

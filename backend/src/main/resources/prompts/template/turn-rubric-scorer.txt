@@ -33,7 +33,7 @@
 2. 레벨에 맞춰 보정합니다. JUNIOR 는 conceptual_accuracy 2 점이 통과 수준, SENIOR 는 technical_depth 와 conceptual_accuracy 모두 3 점을 기대합니다.
 3. evidence_quote MUST be a verbatim substring from <<<USER_ANSWER>>>...<<<END_USER_ANSWER>>>. Quoting the question, rubric definition, or any other text is FORBIDDEN.
    - 인용 길이는 40 단어 이하로 제한합니다.
-   - 사용자가 해당 차원과 관련된 발언을 전혀 하지 않은 경우 score 는 null 로 두고 observation 에 사유를 한국어로 적습니다 (evidence_quote 도 null).
+   - 사용자가 해당 차원과 관련된 발언을 전혀 하지 않더라도 score 는 1~3 중 하나를 반드시 부여합니다 (가장 낮은 1 점 기본). observation 에 부재 사유를 한국어로 적고, evidence_quote 는 가장 근접한 substring 또는 빈 문자열을 사용합니다.
 4. observation MUST be in Korean (한국어 1~2문장). 차원 정의의 관찰 가능한 행동을 한국어 문장으로 서술합니다.
 5. DIMENSIONS_TO_SCORE 에 포함된 차원만 출력합니다. 그 외 차원은 키 자체를 생략합니다.
 
@@ -47,9 +47,9 @@
     "evidence_quote": "Redis를 썼어요. 빠르니까요."
   },
   "recovery_from_gaps": {
-    "score": null,
-    "observation": "이번 답변에서는 지식 공백 상황이 발생하지 않았습니다.",
-    "evidence_quote": null
+    "score": 1,
+    "observation": "이번 답변에서는 지식 공백 상황이 발생하지 않아 회복 능력을 관찰할 근거가 부족합니다.",
+    "evidence_quote": ""
   }
 }
 

@@ -127,7 +127,7 @@ class RubricScorerPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("score 는 1/2/3/null enum 만 허용한다")
+        @DisplayName("score 는 1/2/3 정수 enum 만 허용한다 (null 비허용 — 모든 차원 강제 채점)")
         void buildJsonSchema_score_enum() {
             Map<String, Object> schema = builder.buildJsonSchema(List.of("technical_depth"));
 
@@ -140,7 +140,8 @@ class RubricScorerPromptBuilderTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> score = (Map<String, Object>) dimProps.get("score");
 
-            assertThat(score.get("enum")).asList().containsExactly(1, 2, 3, null);
+            assertThat(score.get("type")).isEqualTo("integer");
+            assertThat(score.get("enum")).asList().containsExactly(1, 2, 3);
         }
     }
 
