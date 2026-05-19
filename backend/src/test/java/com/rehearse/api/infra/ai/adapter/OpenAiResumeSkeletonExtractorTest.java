@@ -6,6 +6,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.OpenAiResponsesOutputTextExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
@@ -97,7 +98,7 @@ class OpenAiResumeSkeletonExtractorTest {
                 outputTextExtractor,
                 aiResponseParser,
                 properties,
-                "test-api-key");
+                new OpenAiCommonProperties("test-api-key"));
         invokeInit(extractor);
     }
 

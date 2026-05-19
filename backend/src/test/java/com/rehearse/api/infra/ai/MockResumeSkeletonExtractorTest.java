@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.adapter.OpenAiResumeSkeletonExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,8 @@ class MockResumeSkeletonExtractorTest {
             .withBean(OpenAiResumeSkeletonProperties.class,
                     () -> new OpenAiResumeSkeletonProperties(
                             "gpt-4o-mini", 60_000L, 12_000, 0.2, "https://api.openai.com/v1/responses"))
+            .withBean(OpenAiCommonProperties.class,
+                    () -> new OpenAiCommonProperties("test-key"))
             .withUserConfiguration(
                     OpenAiResumeSkeletonExtractor.class,
                     MockResumeSkeletonExtractor.class);

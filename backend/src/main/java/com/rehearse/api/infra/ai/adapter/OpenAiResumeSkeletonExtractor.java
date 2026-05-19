@@ -4,12 +4,12 @@ import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.OpenAiResponsesOutputTextExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
@@ -51,7 +51,7 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
             OpenAiResponsesOutputTextExtractor outputTextExtractor,
             AiResponseParser aiResponseParser,
             OpenAiResumeSkeletonProperties properties,
-            @Value("${openai.api-key}") String apiKey) {
+            OpenAiCommonProperties commonProperties) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(Duration.ofSeconds(5))
                 .withReadTimeout(Duration.ofMillis(properties.timeoutMs()));
@@ -62,7 +62,7 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
         this.outputTextExtractor = outputTextExtractor;
         this.aiResponseParser = aiResponseParser;
         this.properties = properties;
-        this.apiKey = apiKey;
+        this.apiKey = commonProperties.apiKey();
     }
 
     @PostConstruct

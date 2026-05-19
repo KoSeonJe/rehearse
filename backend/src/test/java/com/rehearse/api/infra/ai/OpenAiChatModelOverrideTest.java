@@ -74,7 +74,7 @@ class OpenAiChatModelOverrideTest {
                 qBuilder,
                 fBuilder,
                 parser,
-                "test-api-key",
+                new com.rehearse.api.infra.ai.config.OpenAiCommonProperties("test-api-key"),
                 "gpt-4o-mini",  // 기본 모델
                 "gpt-4o-mini-audio-preview",  // audio 모델
                 baseUrl

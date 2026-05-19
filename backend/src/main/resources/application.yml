@@ -52,6 +52,7 @@ ai:
   resume:
     skeleton:
       model: ${RESUME_SKELETON_MODEL:gpt-4o-mini}
+      base-url: ${RESUME_SKELETON_BASE_URL:https://api.openai.com/v1/responses}
       timeout-ms: ${RESUME_SKELETON_TIMEOUT_MS:60000}
       max-tokens: ${RESUME_SKELETON_MAX_TOKENS:12000}
       temperature: ${RESUME_SKELETON_TEMPERATURE:0.2}
