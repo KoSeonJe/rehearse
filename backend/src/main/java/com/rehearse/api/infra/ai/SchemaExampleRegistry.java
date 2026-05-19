@@ -21,8 +21,19 @@ public class SchemaExampleRegistry {
               "claims": [
                 {"text": "한 문장 요약", "depth_score": 3, "evidence_strength": "WEAK", "topic_tag": "topic"}
               ],
-              "dimension_gaps": {"clarity": 1, "depth": 2},
-              "weakest_dimension": "depth",
+              "dimension_gaps": {
+                "problem_framing": 1,
+                "technical_depth": 2,
+                "reasoning_communication": null,
+                "conceptual_accuracy": 1,
+                "practical_application": null,
+                "experience_concreteness": 2,
+                "collaboration_awareness": null,
+                "recovery_from_gaps": null,
+                "factual_consistency": 0,
+                "chain_depth": 1
+              },
+              "weakest_dimension": "technical_depth",
               "unstated_assumptions": ["..."],
               "recommended_next_action": "DEEP_DIVE"
             }
@@ -31,30 +42,45 @@ public class SchemaExampleRegistry {
     private static final String GENERATED_FOLLOW_UP_EXAMPLE = """
             {
               "skip": false,
-              "skipReason": null,
-              "answerText": "원문 그대로 복사",
-              "target_claim_idx": 0,
+              "skip_reason": null,
               "question": "키워드를 녹인 후속 질문",
-              "ttsQuestion": "TTS 변환된 질문",
+              "tts_question": "TTS 변환된 질문",
               "reason": "선택 근거 한 줄",
               "type": "DEEP_DIVE",
-              "best_answer": "참고 답변 2~4문장"
+              "best_answer": "참고 답변 2~4문장",
+              "answer_text": "원문 그대로 복사",
+              "target_claim_idx": 0
             }
             """;
 
     private static final String GENERATED_SESSION_FEEDBACK_EXAMPLE = """
             {
               "overall": {
-                "dimension_scores": {"problem_framing": 2.5},
+                "dimension_scores": {
+                  "문제 정의": 2.5,
+                  "기술 깊이": 2.0,
+                  "설명력": 3.0,
+                  "개념 정확도": null,
+                  "실무 응용": 2.5,
+                  "경험 구체성": null,
+                  "협업 의식": 3.0,
+                  "답변 회복력": null,
+                  "사실 일관성": 2.5,
+                  "후속 깊이": null,
+                  "유창함": 3.0,
+                  "자신감": 2.5,
+                  "시선": null,
+                  "차분함": 2.5
+                },
                 "level_assessment": "주니어 기대치 충족",
                 "narrative": "CS 개념에서 탄탄하지만 경험 질문에서 구체화 부족",
                 "coverage": "all turns scored"
               },
               "strengths": [
-                {"dimension": "problem_framing", "observation": "turn 1에서 명확", "why_matters": "소통"}
+                {"dimension": "문제 정의", "observation": "turn 1에서 명확", "why_matters": "소통"}
               ],
               "gaps": [
-                {"dimension": "technical_depth", "observation": "turn 2 근거 부족",
+                {"dimension": "기술 깊이", "observation": "turn 2 근거 부족",
                  "level_gap": "미드 미달", "concrete_action": "CS 기초 복습"}
               ],
               "delivery": {"filler_words": "없음", "tone_pattern": "안정", "action": "유지"},
