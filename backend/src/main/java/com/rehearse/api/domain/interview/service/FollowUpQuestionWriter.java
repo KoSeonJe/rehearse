@@ -13,10 +13,15 @@ import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
+import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -24,6 +29,7 @@ import org.springframework.stereotype.Service;
 public class FollowUpQuestionWriter {
 
     private static final String CALL_TYPE = "follow_up_generator_v3";
+    static final String SCHEMA_NAME = "generated_follow_up_v3";
     private static final double TEMPERATURE = 0.6;
     private static final int MAX_TOKENS = 1024;
 
@@ -57,13 +63,40 @@ public class FollowUpQuestionWriter {
                 .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(new JsonSchemaSpec(SCHEMA_NAME, buildJsonSchema()))
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);
         GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
                 response, GeneratedFollowUp.class, aiClient, chatRequest);
         return parsed.withAnswerText(userAnswer);
+    }
+
+    static Map<String, Object> buildJsonSchema() {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        properties.put("skip", Map.of("type", "boolean"));
+        properties.put("skip_reason", nullableString());
+        properties.put("question", nullableString());
+        properties.put("tts_question", nullableString());
+        properties.put("reason", nullableString());
+        properties.put("type", nullableString());
+        properties.put("best_answer", nullableString());
+        properties.put("answer_text", Map.of("type", "string"));
+        properties.put("target_claim_idx", Map.of("type", List.of("integer", "null")));
+
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "object");
+        schema.put("additionalProperties", false);
+        schema.put("required", List.of(
+                "skip", "skip_reason", "question", "tts_question",
+                "reason", "type", "best_answer", "answer_text", "target_claim_idx"));
+        schema.put("properties", properties);
+        return schema;
+    }
+
+    private static Map<String, Object> nullableString() {
+        return Map.of("type", List.of("string", "null"));
     }
 
     private String serializeSkeleton(ResumeSkeleton skeleton) {
