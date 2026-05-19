@@ -1,12 +1,12 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
 import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.event.AnswerAnalysisCompletedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
@@ -144,24 +144,13 @@ public class FollowUpTransactionHandler {
     }
 
     @Transactional
-    public FollowUpSaveResult saveFollowUpResultAndPublishEvent(
-            Long interviewId, FollowUpContext context, GeneratedFollowUp followUp,
-            AnswerAnalysis analysis, String userAnswer
-    ) {
-        FollowUpSaveResult saveResult = saveFollowUpResult(context.questionSetId(), followUp);
-        publishFollowUpQuestionCreatedEvent(
-                interviewId, context, analysis, userAnswer, saveResult.question().getId());
-        return saveResult;
-    }
-
-    @Transactional
-    public void publishFollowUpQuestionCreatedEvent(
+    public void publishAnswerAnalysisCompletedEvent(
             Long interviewId, FollowUpContext context,
             AnswerAnalysis analysis, String userAnswer, Long questionId
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
-            FollowUpQuestionCreatedEvent event = FollowUpQuestionCreatedEvent.of(
+            AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                     interviewId, interview.getUserId(),
                     questionId, context.questionSetId(),
                     userAnswer, analysis,
@@ -169,7 +158,7 @@ public class FollowUpTransactionHandler {
             );
             eventPublisher.publishEvent(event);
         } catch (Exception e) {
-            log.warn("FollowUpQuestionCreatedEvent 발행 실패. interviewId={}, reason={}",
+            log.warn("AnswerAnalysisCompletedEvent 발행 실패. interviewId={}, reason={}",
                     interviewId, e.getMessage());
         }
     }

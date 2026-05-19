@@ -48,12 +48,17 @@ public class FollowUpService {
             log.info("RESUME_OPENER main → follow-up skip. interviewId={}, questionSetId={}",
                     id, request.getQuestionSetId());
             aiCallMetrics.incrementFollowUpSkip("opener_skip");
+            followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
+                    id, context, AnswerAnalysis.empty(), request.getAnswerText(), context.currentMainQuestionId());
             return FollowUpResponse.aiSkip(request.getAnswerText(), "resume_opener_skip");
         }
 
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
                 id, audioFile, request.getQuestionContent(), context.mainReferenceType());
         String answerText = request.getAnswerText();
+
+        followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
+                id, context, analysis, answerText, context.currentMainQuestionId());
 
         if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
             return handleAnalyzerSkip(id, context, request, analysis, answerText);
@@ -72,8 +77,6 @@ public class FollowUpService {
         log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                 id, InterviewTrack.CS.logLabel(),
                 BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
-        followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                id, context, analysis, answerText, context.currentMainQuestionId());
         return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
     }
 
@@ -94,13 +97,11 @@ public class FollowUpService {
             log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                     id, InterviewTrack.CS.logLabel(),
                     BlockReason.STEP_B_SKIP.logValue(), turnIndex);
-            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                    id, context, analysis, answerText, context.currentMainQuestionId());
             return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
         }
 
-        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResultAndPublishEvent(
-                id, context, stepB, analysis, answerText);
+        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
+                context.questionSetId(), stepB);
         boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
         log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}, weakestDimension={}, dimensionGaps={}, target_claim_idx={}, exhausted={}",
