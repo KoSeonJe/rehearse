@@ -49,15 +49,19 @@ _FALLBACK_ANSWER = {
     },
 }
 
-_DIMENSION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "score": {"type": "integer", "enum": [1, 2, 3]},
-        "observation": {"type": "string"},
-        "evidence_quote": {"type": "string"},
-    },
-    "required": ["score", "observation", "evidence_quote"],
-}
+def _dimension_schema() -> dict:
+    # google.generativeai SDK 는 protos.Schema.enum 을 string sequence 로만 받아 정수 enum 직렬화 시 TypeError 발생.
+    # score 범위 (1·2·3) 강제는 dimension_validator.INVALID_SCORE 후처리 책임 유지.
+    return {
+        "type": "object",
+        "properties": {
+            "score": {"type": "integer"},
+            "observation": {"type": "string"},
+            "evidence_quote": {"type": "string"},
+        },
+        "required": ["score", "observation", "evidence_quote"],
+    }
+
 
 _GEMINI_ANSWER_SCHEMA = {
     "type": "object",
@@ -74,8 +78,8 @@ _GEMINI_ANSWER_SCHEMA = {
         "nonverbalDimensions": {
             "type": "object",
             "properties": {
-                "fluency": _DIMENSION_SCHEMA,
-                "confidence_tone": _DIMENSION_SCHEMA,
+                "fluency": _dimension_schema(),
+                "confidence_tone": _dimension_schema(),
             },
             "required": ["fluency", "confidence_tone"],
         },

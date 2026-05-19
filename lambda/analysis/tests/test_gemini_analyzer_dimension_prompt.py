@@ -137,12 +137,12 @@ class TestGeminiStructuredOutputSchema:
             "transcript", "vocal", "nonverbalDimensions",
         }
 
-    def test_schema_dimensions_enforce_score_enum(self):
+    def test_schema_dimensions_require_core_fields(self):
         from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
         dims = _GEMINI_ANSWER_SCHEMA["properties"]["nonverbalDimensions"]["properties"]
         for key in ("fluency", "confidence_tone"):
             props = dims[key]["properties"]
-            assert props["score"]["enum"] == [1, 2, 3]
+            assert props["score"]["type"] == "integer"
             assert set(dims[key]["required"]) == {
                 "score", "observation", "evidence_quote",
             }
@@ -151,3 +151,27 @@ class TestGeminiStructuredOutputSchema:
         from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
         vocal = _GEMINI_ANSWER_SCHEMA["properties"]["vocal"]
         assert set(vocal["required"]) == {"fillerWords", "fillerWordCount"}
+
+    def test_schema_dimension_objects_are_independent(self):
+        # _DIMENSION_SCHEMA 공유 시 mutate 사이드이펙트 위험 — 별도 인스턴스 보장.
+        from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
+        dims = _GEMINI_ANSWER_SCHEMA["properties"]["nonverbalDimensions"]["properties"]
+        assert dims["fluency"] is not dims["confidence_tone"]
+
+
+class TestGeminiSchemaSdkCompatibility:
+    def test_schema_serializes_via_real_sdk(self):
+        # google.generativeai protos.Schema 가 schema dict 를 예외 없이 받아들이는지 실 SDK 로 확인 (정수 enum 류 회귀 차단).
+        import pytest
+        try:
+            from google.generativeai import protos  # 실 SDK 에만 존재
+        except Exception:
+            pytest.skip("google.generativeai 실 SDK 부재 — 호환성 검증 skip")
+        import google.generativeai as genai
+        from analyzers.gemini_analyzer import _GEMINI_ANSWER_SCHEMA
+        cfg = genai.GenerationConfig(
+            temperature=0.3,
+            response_mime_type="application/json",
+            response_schema=_GEMINI_ANSWER_SCHEMA,
+        )
+        genai.GenerativeModel("gemini-1.5-flash", generation_config=cfg)
