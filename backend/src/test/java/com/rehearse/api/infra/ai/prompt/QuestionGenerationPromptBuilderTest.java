@@ -43,7 +43,6 @@ class QuestionGenerationPromptBuilderTest {
                     InterviewLevel.JUNIOR,
                     Set.of(InterviewType.CS_FUNDAMENTAL),
                     Set.of("OS", "NETWORK"),
-                    null,
                     30,
                     TechStack.JAVA_SPRING
             );
@@ -65,7 +64,6 @@ class QuestionGenerationPromptBuilderTest {
                     InterviewLevel.JUNIOR,
                     Set.of(InterviewType.LANGUAGE_FRAMEWORK),
                     Set.of("OS", "NETWORK"),
-                    null,
                     30,
                     TechStack.JAVA_SPRING
             );
@@ -78,50 +76,6 @@ class QuestionGenerationPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("resumeText가 있을 때 system prompt에 이력서 활용 블록이 포함된다")
-        void buildSystemPrompt_resumeTextPresent_containsResumeBlock() {
-            // given
-            QuestionGenerationRequest req = new QuestionGenerationRequest(
-                    Position.BACKEND,
-                    null,
-                    InterviewLevel.JUNIOR,
-                    Set.of(InterviewType.RESUME_BASED),
-                    null,
-                    "Spring Boot 프로젝트 경험 2년",
-                    30,
-                    TechStack.JAVA_SPRING
-            );
-
-            // when
-            String prompt = builder.buildSystemPrompt(req);
-
-            // then
-            assertThat(prompt).contains("이력서 활용");
-        }
-
-        @Test
-        @DisplayName("resumeText가 null이면 system prompt에 이력서 활용 내용(RESUME_BASED 지침)이 없다")
-        void buildSystemPrompt_resumeTextNull_doesNotContainResumeContent() {
-            // given
-            QuestionGenerationRequest req = new QuestionGenerationRequest(
-                    Position.BACKEND,
-                    null,
-                    InterviewLevel.JUNIOR,
-                    Set.of(InterviewType.LANGUAGE_FRAMEWORK),
-                    null,
-                    null,
-                    30,
-                    TechStack.JAVA_SPRING
-            );
-
-            // when
-            String prompt = builder.buildSystemPrompt(req);
-
-            // then
-            assertThat(prompt).doesNotContain("RESUME_BASED 질문은 이력서의");
-        }
-
-        @Test
         @DisplayName("interviewTypes=[LANGUAGE_FRAMEWORK, SYSTEM_DESIGN] 시 해당 2개 가이드만 포함된다")
         void buildSystemPrompt_specificInterviewTypes_containsOnlyMatchingGuides() {
             // given
@@ -130,7 +84,6 @@ class QuestionGenerationPromptBuilderTest {
                     null,
                     InterviewLevel.MID,
                     Set.of(InterviewType.LANGUAGE_FRAMEWORK, InterviewType.SYSTEM_DESIGN),
-                    null,
                     null,
                     30,
                     TechStack.JAVA_SPRING
@@ -155,7 +108,6 @@ class QuestionGenerationPromptBuilderTest {
                     null,
                     InterviewLevel.JUNIOR,
                     Set.of(InterviewType.LANGUAGE_FRAMEWORK),
-                    null,
                     null,
                     30,
                     TechStack.JAVA_SPRING

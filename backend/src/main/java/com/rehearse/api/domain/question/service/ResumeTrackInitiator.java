@@ -48,9 +48,9 @@ public class ResumeTrackInitiator {
     private final InterviewContextBuilder contextBuilder;
     private final ObjectMapper objectMapper;
 
-    public void initiate(Long interviewId, String resumeFileHash, String resumeText, Integer durationMinutes) {
+    public void initiate(Long interviewId, String resumeFileHash, byte[] resumePdfBytes, Integer durationMinutes) {
         try {
-            ResumeSkeleton skeleton = resumeIngestionService.ingestExtractedText(interviewId, resumeText, resumeFileHash);
+            ResumeSkeleton skeleton = resumeIngestionService.ingestPdf(interviewId, resumePdfBytes, resumeFileHash);
 
             int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
             int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));

@@ -42,7 +42,7 @@ class QuestionGenerationEventHandlerTest {
                 InterviewLevel.JUNIOR,
                 List.of(InterviewType.CS_FUNDAMENTAL),
                 List.of(),
-                null, null, 30,
+                (byte[]) null, null, 30,
                 TechStack.JAVA_SPRING);
     }
 
@@ -70,13 +70,14 @@ class QuestionGenerationEventHandlerTest {
         @DisplayName("이벤트 파라미터가 generateQuestions에 그대로 전달된다")
         void eventParameters_passedToGenerateQuestions() {
             // given
+            byte[] pdfBytes = "pdf-content".getBytes();
             QuestionGenerationRequestedEvent event = new QuestionGenerationRequestedEvent(
                     42L, 99L,
                     Position.FRONTEND, "React 개발자",
                     InterviewLevel.SENIOR,
                     List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL),
                     List.of(CsSubTopic.OS, CsSubTopic.NETWORK),
-                    "이력서 내용", "hash-42", 45,
+                    pdfBytes, "hash-42", 45,
                     TechStack.REACT_TS);
 
             // when
@@ -87,7 +88,7 @@ class QuestionGenerationEventHandlerTest {
                     eq(42L), eq(99L), eq(Position.FRONTEND), eq(InterviewLevel.SENIOR),
                     eq(List.of(InterviewType.CS_FUNDAMENTAL, InterviewType.BEHAVIORAL)),
                     eq(List.of("OS", "NETWORK")),
-                    eq("이력서 내용"), eq("hash-42"), eq(45), eq(TechStack.REACT_TS));
+                    eq(pdfBytes), eq("hash-42"), eq(45), eq(TechStack.REACT_TS));
         }
     }
 

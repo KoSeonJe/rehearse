@@ -69,9 +69,6 @@ dependencies {
     implementation(platform("com.google.cloud:libraries-bom:26.59.0"))
     implementation("com.google.cloud:google-cloud-texttospeech")
 
-    // PDF
-    implementation("org.apache.pdfbox:pdfbox:3.0.4")
-
     // .env 파일 로드
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
 

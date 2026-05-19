@@ -10,7 +10,6 @@ import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.resume.exception.ResumeErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.global.util.FileHasher;
-import com.rehearse.api.infra.ai.PdfTextExtractor;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import java.util.List;
 public class InterviewCreationService {
 
     private final InterviewRepository interviewRepository;
-    private final PdfTextExtractor pdfTextExtractor;
     private final FileHasher fileHasher;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -40,11 +38,13 @@ public class InterviewCreationService {
             throw new BusinessException(InterviewErrorCode.INVALID_TECH_STACK);
         }
 
-        String resumeText = null;
+        byte[] resumePdfBytes = null;
         String resumeFileHash = null;
         if (resumeFile != null && !resumeFile.isEmpty()) {
-            resumeFileHash = fileHasher.hash(readFileBytes(resumeFile));
-            resumeText = pdfTextExtractor.extract(resumeFile);
+            validatePdfFile(resumeFile);
+            resumePdfBytes = readFileBytes(resumeFile);
+            validatePdfMagicBytes(resumePdfBytes);
+            resumeFileHash = fileHasher.hash(resumePdfBytes);
         }
 
         Interview interview = Interview.builder()
@@ -68,7 +68,7 @@ public class InterviewCreationService {
                 request.getLevel(),
                 request.getInterviewTypes(),
                 request.getCsSubTopics(),
-                resumeText,
+                resumePdfBytes,
                 resumeFileHash,
                 request.getDurationMinutes(),
                 request.getTechStack()
@@ -108,4 +108,29 @@ public class InterviewCreationService {
             throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
         }
     }
+
+    private void validatePdfFile(MultipartFile resumeFile) {
+        if (resumeFile.getSize() > MAX_RESUME_FILE_SIZE_BYTES) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_SIZE);
+        }
+        String contentType = resumeFile.getContentType();
+        if (contentType == null || !contentType.equals(PDF_CONTENT_TYPE)) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_TYPE);
+        }
+    }
+
+    private void validatePdfMagicBytes(byte[] bytes) {
+        if (bytes.length < PDF_MAGIC_BYTES.length) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_MAGIC_BYTES);
+        }
+        for (int i = 0; i < PDF_MAGIC_BYTES.length; i++) {
+            if (bytes[i] != PDF_MAGIC_BYTES[i]) {
+                throw new BusinessException(ResumeErrorCode.INVALID_FILE_MAGIC_BYTES);
+            }
+        }
+    }
+
+    private static final long MAX_RESUME_FILE_SIZE_BYTES = 5_242_880L;
+    private static final String PDF_CONTENT_TYPE = "application/pdf";
+    private static final byte[] PDF_MAGIC_BYTES = {'%', 'P', 'D', 'F'};
 }

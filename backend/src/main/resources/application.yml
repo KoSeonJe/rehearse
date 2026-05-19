@@ -48,6 +48,14 @@ app:
 openai:
   audio-model: ${OPENAI_AUDIO_MODEL:gpt-4o-mini-audio-preview}
 
+ai:
+  resume:
+    skeleton:
+      model: ${RESUME_SKELETON_MODEL:gpt-4o-mini}
+      timeout-ms: ${RESUME_SKELETON_TIMEOUT_MS:60000}
+      max-tokens: ${RESUME_SKELETON_MAX_TOKENS:12000}
+      temperature: ${RESUME_SKELETON_TEMPERATURE:0.2}
+
 rehearse:
   interview:
     policy:
