@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.OpenAiResponsesOutputTextExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import org.junit.jupiter.api.AfterEach;
@@ -78,16 +81,23 @@ class OpenAiResumeSkeletonExtractorTest {
                 .http2PlainDisabled(true));
         wireMock.start();
 
-        String baseUrl = "http://localhost:" + wireMock.port() + RESPONSES_PATH;
+        ObjectMapper objectMapper = new ObjectMapper();
+        OpenAiResponsesOutputTextExtractor outputTextExtractor =
+                new OpenAiResponsesOutputTextExtractor(objectMapper);
+        AiResponseParser aiResponseParser = new AiResponseParser(objectMapper, null, null);
+        OpenAiResumeSkeletonProperties properties = new OpenAiResumeSkeletonProperties(
+                "gpt-4o-mini",
+                60_000L,
+                12_000,
+                0.2,
+                "http://localhost:" + wireMock.port() + RESPONSES_PATH);
+
         extractor = new OpenAiResumeSkeletonExtractor(
                 RestClient.builder(),
-                new ObjectMapper(),
-                "test-api-key",
-                "gpt-4o-mini",
-                60000L,
-                12000,
-                0.2,
-                baseUrl);
+                outputTextExtractor,
+                aiResponseParser,
+                properties,
+                "test-api-key");
         invokeInit(extractor);
     }
 
@@ -229,7 +239,6 @@ class OpenAiResumeSkeletonExtractorTest {
                         .withBody(body)));
     }
 
-    // @PostConstruct 은 Spring 컨텍스트 밖에서 자동 호출 안 되므로 리플렉션으로 호출.
     private static void invokeInit(OpenAiResumeSkeletonExtractor target) throws Exception {
         Method init = OpenAiResumeSkeletonExtractor.class.getDeclaredMethod("init");
         init.setAccessible(true);

@@ -1,10 +1,10 @@
 package com.rehearse.api.infra.ai.adapter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.AiResponseParser;
+import com.rehearse.api.infra.ai.OpenAiResponsesOutputTextExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
@@ -39,35 +39,30 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
     private static final String PDF_FILENAME = "resume.pdf";
 
     private final RestClient restClient;
-    private final ObjectMapper objectMapper;
+    private final OpenAiResponsesOutputTextExtractor outputTextExtractor;
+    private final AiResponseParser aiResponseParser;
     private final String apiKey;
-    private final String model;
-    private final int maxTokens;
-    private final double temperature;
+    private final OpenAiResumeSkeletonProperties properties;
 
     private String systemPrompt;
 
     public OpenAiResumeSkeletonExtractor(
             RestClient.Builder restClientBuilder,
-            ObjectMapper objectMapper,
-            @Value("${openai.api-key}") String apiKey,
-            @Value("${ai.resume.skeleton.model:gpt-4o-mini}") String model,
-            @Value("${ai.resume.skeleton.timeout-ms:60000}") long timeoutMs,
-            @Value("${ai.resume.skeleton.max-tokens:12000}") int maxTokens,
-            @Value("${ai.resume.skeleton.temperature:0.2}") double temperature,
-            @Value("${ai.resume.skeleton.base-url:https://api.openai.com/v1/responses}") String baseUrl) {
+            OpenAiResponsesOutputTextExtractor outputTextExtractor,
+            AiResponseParser aiResponseParser,
+            OpenAiResumeSkeletonProperties properties,
+            @Value("${openai.api-key}") String apiKey) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(Duration.ofSeconds(5))
-                .withReadTimeout(Duration.ofMillis(timeoutMs));
+                .withReadTimeout(Duration.ofMillis(properties.timeoutMs()));
         this.restClient = restClientBuilder
-                .baseUrl(baseUrl)
+                .baseUrl(properties.baseUrl())
                 .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
-        this.objectMapper = objectMapper;
+        this.outputTextExtractor = outputTextExtractor;
+        this.aiResponseParser = aiResponseParser;
+        this.properties = properties;
         this.apiKey = apiKey;
-        this.model = model;
-        this.maxTokens = maxTokens;
-        this.temperature = temperature;
     }
 
     @PostConstruct
@@ -91,15 +86,15 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
         Map<String, Object> requestBody = buildRequestBody(base64Pdf);
 
         String responseBody = executeOnce(requestBody);
-        String outputText = extractOutputText(responseBody);
-        return parseSkeleton(outputText, fileHash);
+        String outputText = outputTextExtractor.extract(responseBody);
+        return aiResponseParser.parseJsonResponse(outputText, GeneratedResumeSkeleton.class);
     }
 
     private Map<String, Object> buildRequestBody(String base64Pdf) {
         Map<String, Object> body = new HashMap<>();
-        body.put("model", model);
-        body.put("max_output_tokens", maxTokens);
-        body.put("temperature", temperature);
+        body.put("model", properties.model());
+        body.put("max_output_tokens", properties.maxTokens());
+        body.put("temperature", properties.temperature());
         body.put("input", List.of(
                 Map.of(
                         "role", "user",
@@ -143,84 +138,5 @@ public class OpenAiResumeSkeletonExtractor implements ResumeSkeletonExtractor {
             throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
         }
         return responseBody;
-    }
-
-    private String extractOutputText(String responseBody) {
-        try {
-            JsonNode root = objectMapper.readTree(responseBody);
-            JsonNode output = root.path("output");
-            if (!output.isArray() || output.isEmpty()) {
-                log.error("[OpenAI Responses] output 배열 누락: bodyLen={}, bodyPreview={}",
-                        responseBody.length(), maskPreview(responseBody));
-                throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
-            }
-            for (JsonNode item : output) {
-                JsonNode content = item.path("content");
-                if (!content.isArray()) {
-                    continue;
-                }
-                for (JsonNode part : content) {
-                    String type = part.path("type").asText("");
-                    if ("output_text".equals(type)) {
-                        String text = part.path("text").asText("");
-                        if (!text.isBlank()) {
-                            return text;
-                        }
-                    }
-                }
-            }
-            log.error("[OpenAI Responses] output_text 추출 실패: bodyLen={}, bodyPreview={}",
-                    responseBody.length(), maskPreview(responseBody));
-            throw new BusinessException(AiErrorCode.EMPTY_RESPONSE);
-        } catch (JsonProcessingException e) {
-            log.error("[OpenAI Responses] 응답 JSON 파싱 실패", e);
-            throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
-        }
-    }
-
-    private GeneratedResumeSkeleton parseSkeleton(String outputText, String fileHash) {
-        String json = stripJsonCodeFence(outputText);
-        try {
-            return objectMapper.readValue(json, GeneratedResumeSkeleton.class);
-        } catch (JsonProcessingException e) {
-            log.error("[OpenAI Responses] skeleton JSON 파싱 실패 fileHash={}, textLen={}, textPreview={}",
-                    maskHash(fileHash), outputText.length(), maskPreview(outputText), e);
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
-        }
-    }
-
-    private String maskHash(String fileHash) {
-        if (fileHash == null || fileHash.length() < 8) {
-            return "(none)";
-        }
-        return fileHash.substring(0, 8);
-    }
-
-    private String maskPreview(String text) {
-        if (text == null) {
-            return "(null)";
-        }
-        if (text.length() <= 80) {
-            return text;
-        }
-        return text.substring(0, 80) + "...";
-    }
-
-    private String stripJsonCodeFence(String text) {
-        String json = text.trim();
-        if (json.startsWith("```json")) {
-            json = json.substring(7);
-            int end = json.lastIndexOf("```");
-            if (end >= 0) {
-                json = json.substring(0, end);
-            }
-        } else if (json.startsWith("```")) {
-            json = json.substring(3);
-            int end = json.lastIndexOf("```");
-            if (end >= 0) {
-                json = json.substring(0, end);
-            }
-        }
-        return json.trim();
     }
 }

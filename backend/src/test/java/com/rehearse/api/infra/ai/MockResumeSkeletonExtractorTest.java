@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.adapter.OpenAiResumeSkeletonExtractor;
+import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -25,6 +26,11 @@ class MockResumeSkeletonExtractorTest {
                     RestClientAutoConfiguration.class))
             .withUserConfiguration(TestPromptConfig.class)
             .withBean(ObjectMapper.class, ObjectMapper::new)
+            .withBean(OpenAiResponsesOutputTextExtractor.class)
+            .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null, null))
+            .withBean(OpenAiResumeSkeletonProperties.class,
+                    () -> new OpenAiResumeSkeletonProperties(
+                            "gpt-4o-mini", 60_000L, 12_000, 0.2, "https://api.openai.com/v1/responses"))
             .withUserConfiguration(
                     OpenAiResumeSkeletonExtractor.class,
                     MockResumeSkeletonExtractor.class);
