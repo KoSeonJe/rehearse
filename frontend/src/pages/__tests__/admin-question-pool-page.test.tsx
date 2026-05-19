@@ -1,15 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HelmetProvider } from 'react-helmet-async'
 import { AdminQuestionPoolPage } from '../admin-question-pool-page'
 
 const mutate = vi.fn()
+const updateMutate = vi.fn()
+const deactivateMutate = vi.fn()
+const bulkDeactivateMutate = vi.fn()
 const mockUseAdminQuestionPools = vi.fn()
 
 vi.mock('@/hooks/use-admin-question-pool', () => ({
   useAdminQuestionPools: (...args: unknown[]) => mockUseAdminQuestionPools(...args),
   useCreateAdminQuestionPool: () => ({ mutate, isPending: false }),
+  useUpdateAdminQuestionPool: () => ({ mutate: updateMutate, isPending: false }),
+  useDeactivateAdminQuestionPool: () => ({ mutate: deactivateMutate, isPending: false }),
+  useBulkDeactivateAdminQuestionPools: () => ({ mutate: bulkDeactivateMutate, isPending: false }),
 }))
 
 const renderPage = () =>
@@ -138,5 +144,63 @@ describe('AdminQuestionPoolPage', () => {
     expect(screen.getByLabelText('생성될 캐시 키')).toHaveValue('JUNIOR:CS_FUNDAMENTAL')
     expect(screen.queryByLabelText('직무')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('기술스택')).not.toBeInTheDocument()
+  })
+
+  it('질문 풀 행을 클릭하면 전체 내용을 상세 모달에 표시한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+
+    const dialog = screen.getByRole('dialog', { name: '질문 상세' })
+    expect(within(dialog).getByText('JUNIOR:CS_FUNDAMENTAL')).toBeInTheDocument()
+    expect(within(dialog).getByText('운영체제')).toBeInTheDocument()
+    expect(within(dialog).getAllByText('프로세스와 스레드의 차이는 무엇인가요?')).toHaveLength(2)
+    expect(within(dialog).getByText('프로세스는 독립 주소 공간을 가집니다.')).toBeInTheDocument()
+    expect(within(dialog).getByText('활성')).toBeInTheDocument()
+  })
+
+  it('상세 모달에서 질문 풀 row를 수정한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+    await user.click(screen.getByRole('button', { name: '수정' }))
+    await user.clear(screen.getByLabelText('수정 질문 본문'))
+    await user.type(screen.getByLabelText('수정 질문 본문'), '스레드와 프로세스의 차이를 설명해주세요.')
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(updateMutate).toHaveBeenCalledWith(
+      {
+        id: 1,
+        request: expect.objectContaining({
+          content: '스레드와 프로세스의 차이를 설명해주세요.',
+          cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
+          category: '운영체제',
+          isActive: true,
+        }),
+      },
+      expect.any(Object),
+    )
+  })
+
+  it('상세 모달에서 단일 질문 풀 row를 비활성화한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+    await user.click(screen.getByRole('button', { name: '비활성화' }))
+
+    expect(deactivateMutate).toHaveBeenCalledWith(1, expect.any(Object))
+  })
+
+  it('선택한 질문 풀 row를 일괄 비활성화한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByLabelText('JUNIOR:CS_FUNDAMENTAL 선택')[0])
+    await user.click(screen.getByRole('button', { name: '선택 비활성화' }))
+
+    expect(bulkDeactivateMutate).toHaveBeenCalledWith([1], expect.any(Object))
   })
 })

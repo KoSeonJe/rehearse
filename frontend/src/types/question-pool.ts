@@ -31,3 +31,7 @@ export interface CreateQuestionPoolRequest {
   category: string
   bestAnswer: string
 }
+
+export interface UpdateQuestionPoolRequest extends CreateQuestionPoolRequest {
+  isActive: boolean
+}
