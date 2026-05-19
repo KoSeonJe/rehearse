@@ -12,6 +12,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
@@ -44,15 +45,6 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
-        if (followUpTransactionHandler.shouldSkipOpener(request.getQuestionSetId())) {
-            log.info("RESUME_OPENER main → follow-up skip. interviewId={}, questionSetId={}",
-                    id, request.getQuestionSetId());
-            aiCallMetrics.incrementFollowUpSkip("opener_skip");
-            followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
-                    id, context, AnswerAnalysis.empty(), request.getAnswerText(), context.currentMainQuestionId());
-            return FollowUpResponse.aiSkip(request.getAnswerText(), "resume_opener_skip");
-        }
-
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
                 id, audioFile, request.getQuestionContent(), context.mainReferenceType());
         String answerText = request.getAnswerText();
@@ -60,6 +52,12 @@ public class FollowUpService {
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
                 id, context, analysis, answerText, context.currentMainQuestionId());
 
+        if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
+            log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("opener_skip");
+            return FollowUpResponse.aiSkip(answerText, "resume_opener_skip");
+        }
         if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
             return handleAnalyzerSkip(id, context, request, analysis, answerText);
         }

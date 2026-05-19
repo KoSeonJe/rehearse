@@ -49,7 +49,9 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
+        Optional<Question> currentMainQuestion = findCurrentMainQuestion(questionSet);
+        Long currentMainQuestionId = currentMainQuestion.map(Question::getId).orElse(null);
+        QuestionType currentMainQuestionType = currentMainQuestion.map(Question::getQuestionType).orElse(null);
         standardFollowUpPolicy.assertCanContinue(interview, questionSet, currentMainQuestionId);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
@@ -60,24 +62,11 @@ public class FollowUpTransactionHandler {
                 interview.getLevel(),
                 questionSetId,
                 currentMainQuestionId,
+                currentMainQuestionType,
                 nextOrderIndex,
                 mainReferenceType,
                 standardFollowUpPolicy.getMaxFollowUpRounds()
         );
-    }
-
-    @Transactional(readOnly = true)
-    public boolean shouldSkipOpener(Long questionSetId) {
-        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
-                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
-        Long currentMainQuestionId = resolveCurrentMainQuestionId(questionSet);
-        return standardFollowUpPolicy.shouldSkipFollowUp(questionSet, currentMainQuestionId);
-    }
-
-    private Long resolveCurrentMainQuestionId(QuestionSet questionSet) {
-        return findCurrentMainQuestion(questionSet)
-                .map(Question::getId)
-                .orElse(null);
     }
 
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
