@@ -61,7 +61,7 @@ const DimensionScoreRow = ({ name, score }: { name: string; score: number }) => 
 
 const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
   <div className="px-4 py-3 bg-brand-bg/40 rounded-md">
-    <p className="text-[14px] font-bold text-foreground mb-1.5">{item.dimension}</p>
+    <p className="text-[14px] font-bold text-foreground mb-1.5">{getDimensionLabel(item.dimension)}</p>
     <p className="text-[14px] text-foreground/85 leading-[1.65]">{item.observation}</p>
     {item.whyMatters && (
       <p className="mt-1.5 text-[13px] text-muted-foreground leading-[1.60]">
@@ -74,7 +74,7 @@ const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
 const GapItem = ({ item }: { item: SessionFeedbackGap }) => (
   <div className="px-4 py-3 bg-accent-editorial-bg/60 rounded-md">
     <div className="flex items-center gap-2 mb-1.5">
-      <p className="text-[14px] font-bold text-foreground">{item.dimension}</p>
+      <p className="text-[14px] font-bold text-foreground">{getDimensionLabel(item.dimension)}</p>
       {item.levelGap && (
         <Badge
           variant="outline"
