@@ -74,4 +74,20 @@ public class QuestionPool {
     public void deactivate() {
         this.isActive = false;
     }
+
+    public void update(String cacheKey, String content, String ttsContent,
+            String category, String bestAnswer, boolean isActive) {
+        if (cacheKey == null || cacheKey.isBlank()) {
+            throw new IllegalArgumentException("cacheKey는 필수입니다");
+        }
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content는 필수입니다");
+        }
+        this.cacheKey = cacheKey;
+        this.content = content;
+        this.ttsContent = ttsContent;
+        this.category = category;
+        this.bestAnswer = bestAnswer;
+        this.isActive = isActive;
+    }
 }

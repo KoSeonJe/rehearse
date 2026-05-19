@@ -21,9 +21,20 @@ import {
   POSITION_TECH_STACKS,
   TECH_STACK_LABELS,
 } from '@/constants/interview-labels'
-import { useAdminQuestionPools, useCreateAdminQuestionPool } from '@/hooks/use-admin-question-pool'
+import {
+  useAdminQuestionPools,
+  useBulkDeactivateAdminQuestionPools,
+  useCreateAdminQuestionPool,
+  useDeactivateAdminQuestionPool,
+  useUpdateAdminQuestionPool,
+} from '@/hooks/use-admin-question-pool'
 import type { InterviewType, Level, Position, TechStack } from '@/types/interview'
-import type { AdminQuestionPoolFilters, AdminQuestionPoolItem, CreateQuestionPoolRequest } from '@/types/question-pool'
+import type {
+  AdminQuestionPoolFilters,
+  AdminQuestionPoolItem,
+  CreateQuestionPoolRequest,
+  UpdateQuestionPoolRequest,
+} from '@/types/question-pool'
 
 const PAGE_SIZE = 20
 
@@ -144,11 +155,35 @@ const truncate = (text: string | null, maxLength: number): string => {
 
 const statusLabel = (isActive: boolean) => (isActive ? '활성' : '비활성')
 
-const QuestionPoolTable = ({ items }: { items: AdminQuestionPoolItem[] }) => (
+const toUpdateForm = (item: AdminQuestionPoolItem): UpdateQuestionPoolRequest => ({
+  cacheKey: item.cacheKey,
+  content: item.content,
+  ttsContent: item.ttsContent ?? '',
+  category: item.category ?? '',
+  bestAnswer: item.bestAnswer ?? '',
+  isActive: item.isActive,
+})
+
+const DetailField = ({ label, value }: { label: string; value: string }) => (
+  <div>
+    <dt className="text-xs font-semibold text-text-tertiary">{label}</dt>
+    <dd className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-primary">{value || '-'}</dd>
+  </div>
+)
+
+interface QuestionPoolTableProps {
+  items: AdminQuestionPoolItem[]
+  selectedIds: Set<number>
+  onToggleSelect: (id: number) => void
+  onOpenDetail: (item: AdminQuestionPoolItem) => void
+}
+
+const QuestionPoolTable = ({ items, selectedIds, onToggleSelect, onOpenDetail }: QuestionPoolTableProps) => (
   <Card className="overflow-hidden border border-border bg-surface shadow-sm">
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-border bg-background">
+          <th className="w-12 px-4 py-3 text-left font-semibold text-text-secondary">선택</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">캐시 키</th>
           <th className="w-24 whitespace-nowrap px-4 py-3 text-left font-semibold text-text-secondary">세부 주제</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">질문</th>
@@ -159,7 +194,28 @@ const QuestionPoolTable = ({ items }: { items: AdminQuestionPoolItem[] }) => (
       </thead>
       <tbody>
         {items.map((item) => (
-          <tr key={item.id} className="border-b border-border/50 last:border-0">
+          <tr
+            key={item.id}
+            tabIndex={0}
+            onClick={() => onOpenDetail(item)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                onOpenDetail(item)
+              }
+            }}
+            className="cursor-pointer border-b border-border/50 transition-colors last:border-0 hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <td className="px-4 py-3">
+              <input
+                type="checkbox"
+                aria-label={`${item.cacheKey} 선택`}
+                checked={selectedIds.has(item.id)}
+                onChange={() => onToggleSelect(item.id)}
+                onClick={(event) => event.stopPropagation()}
+                className="h-4 w-4"
+              />
+            </td>
             <td className="px-4 py-3 font-medium text-text-primary">{item.cacheKey}</td>
             <td className="w-24 whitespace-nowrap px-4 py-3 text-text-secondary">{item.category ?? '-'}</td>
             <td className="max-w-xs px-4 py-3 text-text-secondary">{truncate(item.content, 48)}</td>
@@ -173,14 +229,43 @@ const QuestionPoolTable = ({ items }: { items: AdminQuestionPoolItem[] }) => (
   </Card>
 )
 
-const QuestionPoolCards = ({ items }: { items: AdminQuestionPoolItem[] }) => (
+interface QuestionPoolCardsProps {
+  items: AdminQuestionPoolItem[]
+  selectedIds: Set<number>
+  onToggleSelect: (id: number) => void
+  onOpenDetail: (item: AdminQuestionPoolItem) => void
+}
+
+const QuestionPoolCards = ({ items, selectedIds, onToggleSelect, onOpenDetail }: QuestionPoolCardsProps) => (
   <div className="flex flex-col gap-3">
     {items.map((item) => (
-      <Card key={item.id} className="border border-border bg-surface p-4 shadow-sm">
+      <Card
+        key={item.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenDetail(item)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onOpenDetail(item)
+          }
+        }}
+        className="cursor-pointer border border-border bg-surface p-4 shadow-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <div className="flex items-start justify-between gap-3">
-          <div>
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              aria-label={`${item.cacheKey} 선택`}
+              checked={selectedIds.has(item.id)}
+              onChange={() => onToggleSelect(item.id)}
+              onClick={(event) => event.stopPropagation()}
+              className="mt-0.5 h-4 w-4"
+            />
+            <div>
             <p className="text-sm font-semibold text-text-primary">{item.cacheKey}</p>
             <p className="mt-1 text-xs text-text-tertiary">{item.category ?? '-'}</p>
+            </div>
           </div>
           <span className="text-xs font-medium text-text-secondary">{statusLabel(item.isActive)}</span>
         </div>
@@ -201,9 +286,16 @@ export const AdminQuestionPoolPage = () => {
   const [cacheKeyCriteria, setCacheKeyCriteria] = useState<CacheKeyCriteria>(EMPTY_CACHE_KEY_CRITERIA)
   const [selectedSubject, setSelectedSubject] = useState('')
   const [customSubject, setCustomSubject] = useState('')
+  const [selectedQuestion, setSelectedQuestion] = useState<AdminQuestionPoolItem | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editForm, setEditForm] = useState<UpdateQuestionPoolRequest | null>(null)
 
   const { data, isLoading } = useAdminQuestionPools(appliedFilters, page, PAGE_SIZE)
   const createMutation = useCreateAdminQuestionPool()
+  const updateMutation = useUpdateAdminQuestionPool()
+  const deactivateMutation = useDeactivateAdminQuestionPool()
+  const bulkDeactivateMutation = useBulkDeactivateAdminQuestionPools()
 
   const items = data?.data?.content ?? []
   const totalElements = data?.data?.totalElements ?? 0
@@ -271,6 +363,71 @@ export const AdminQuestionPoolPage = () => {
     })
   }
 
+  const handleOpenDetail = (item: AdminQuestionPoolItem) => {
+    setSelectedQuestion(item)
+    setEditForm(toUpdateForm(item))
+    setIsEditMode(false)
+  }
+
+  const handleDetailOpenChange = (open: boolean) => {
+    if (!open) {
+      setSelectedQuestion(null)
+      setEditForm(null)
+      setIsEditMode(false)
+    }
+  }
+
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((current) => {
+      const next = new Set(current)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  const handleEditFormChange = (field: keyof UpdateQuestionPoolRequest, value: string | boolean) => {
+    setEditForm((current) => {
+      if (!current) return current
+      return { ...current, [field]: value }
+    })
+  }
+
+  const handleUpdateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedQuestion || !editForm || updateMutation.isPending) {
+      return
+    }
+
+    updateMutation.mutate({ id: selectedQuestion.id, request: editForm }, {
+      onSuccess: () => handleDetailOpenChange(false),
+    })
+  }
+
+  const handleDeactivateSelected = () => {
+    const ids = Array.from(selectedIds)
+    if (ids.length === 0 || bulkDeactivateMutation.isPending) {
+      return
+    }
+
+    bulkDeactivateMutation.mutate(ids, {
+      onSuccess: () => setSelectedIds(new Set()),
+    })
+  }
+
+  const handleDeactivateDetail = () => {
+    if (!selectedQuestion || deactivateMutation.isPending) {
+      return
+    }
+
+    deactivateMutation.mutate(selectedQuestion.id, {
+      onSuccess: () => handleDetailOpenChange(false),
+    })
+  }
+
   return (
     <div className="min-h-screen bg-background text-text-primary">
       <Helmet>
@@ -286,10 +443,21 @@ export const AdminQuestionPoolPage = () => {
               <p className="mt-1 text-sm text-text-secondary">총 {totalElements}개의 질문</p>
             )}
           </div>
-          <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-            <Plus size={16} />
-            새 질문 추가
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleDeactivateSelected}
+              disabled={selectedIds.size === 0 || bulkDeactivateMutation.isPending}
+              className="whitespace-nowrap"
+            >
+              선택 비활성화
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+              <Plus size={16} />
+              새 질문 추가
+            </Button>
+          </div>
         </div>
 
         <Card className="mb-5 border border-border bg-surface p-4 shadow-sm">
@@ -361,10 +529,20 @@ export const AdminQuestionPoolPage = () => {
         ) : (
           <>
             <div className="hidden lg:block">
-              <QuestionPoolTable items={items} />
+              <QuestionPoolTable
+                items={items}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onOpenDetail={handleOpenDetail}
+              />
             </div>
             <div className="lg:hidden">
-              <QuestionPoolCards items={items} />
+              <QuestionPoolCards
+                items={items}
+                selectedIds={selectedIds}
+                onToggleSelect={handleToggleSelect}
+                onOpenDetail={handleOpenDetail}
+              />
             </div>
           </>
         )}
@@ -550,6 +728,115 @@ export const AdminQuestionPoolPage = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={selectedQuestion !== null} onOpenChange={handleDetailOpenChange}>
+        <DialogContent className="max-h-screen overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>질문 상세</DialogTitle>
+            <DialogDescription>질문 풀 row의 전체 내용을 확인하고 수정합니다.</DialogDescription>
+          </DialogHeader>
+
+          {selectedQuestion && !isEditMode && (
+            <div className="space-y-5">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <DetailField label="캐시 키" value={selectedQuestion.cacheKey} />
+                <DetailField label="세부 주제" value={selectedQuestion.category ?? ''} />
+                <DetailField label="상태" value={statusLabel(selectedQuestion.isActive)} />
+                <DetailField label="생성일" value={formatDate(selectedQuestion.createdAt)} />
+                <div className="sm:col-span-2">
+                  <DetailField label="질문" value={selectedQuestion.content} />
+                </div>
+                <div className="sm:col-span-2">
+                  <DetailField label="TTS 문구" value={selectedQuestion.ttsContent ?? ''} />
+                </div>
+                <div className="sm:col-span-2">
+                  <DetailField label="모범답안" value={selectedQuestion.bestAnswer ?? ''} />
+                </div>
+              </dl>
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={handleDeactivateDetail}>
+                  비활성화
+                </Button>
+                <Button type="button" onClick={() => setIsEditMode(true)}>
+                  수정
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {selectedQuestion && isEditMode && editForm && (
+            <form onSubmit={handleUpdateSubmit} className="space-y-4">
+              <div>
+                <Label htmlFor="edit-cache-key">수정 캐시 키</Label>
+                <Input
+                  id="edit-cache-key"
+                  value={editForm.cacheKey}
+                  onChange={(event) => handleEditFormChange('cacheKey', event.target.value)}
+                  required
+                  className="mt-1 font-mono text-xs"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-category">수정 세부 주제</Label>
+                <Input
+                  id="edit-category"
+                  value={editForm.category}
+                  onChange={(event) => handleEditFormChange('category', event.target.value)}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-content">수정 질문 본문</Label>
+                <textarea
+                  id="edit-content"
+                  value={editForm.content}
+                  onChange={(event) => handleEditFormChange('content', event.target.value)}
+                  required
+                  className="mt-1 flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-tts-content">수정 TTS 문구</Label>
+                <textarea
+                  id="edit-tts-content"
+                  value={editForm.ttsContent}
+                  onChange={(event) => handleEditFormChange('ttsContent', event.target.value)}
+                  className="mt-1 flex min-h-20 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-best-answer">수정 모범답안</Label>
+                <textarea
+                  id="edit-best-answer"
+                  value={editForm.bestAnswer}
+                  onChange={(event) => handleEditFormChange('bestAnswer', event.target.value)}
+                  className="mt-1 flex min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit-active">수정 활성 상태</Label>
+                <select
+                  id="edit-active"
+                  value={String(editForm.isActive)}
+                  onChange={(event) => handleEditFormChange('isActive', event.target.value === 'true')}
+                  className="mt-1 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="true">활성</option>
+                  <option value="false">비활성</option>
+                </select>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="secondary" onClick={() => setIsEditMode(false)}>
+                  취소
+                </Button>
+                <Button type="submit" disabled={!editForm.content.trim() || updateMutation.isPending}>
+                  저장
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>

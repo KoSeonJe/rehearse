@@ -29,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -158,6 +159,76 @@ class AdminQuestionPoolControllerTest {
                             .content(requestBody))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false));
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/v1/admin/question-pools/{id} - 수정")
+    class Update {
+
+        @Test
+        @DisplayName("질문 풀 row를 수정하고 수정된 row를 반환한다")
+        void updatesQuestionPool_when_requestValid() throws Exception {
+            given(adminQuestionPoolService.update(any(), any())).willReturn(response(1L));
+
+            String requestBody = """
+                    {
+                      "cacheKey": "JUNIOR:CS_FUNDAMENTAL",
+                      "content": "스레드와 프로세스의 차이를 설명해주세요.",
+                      "ttsContent": "스레드와 프로세스의 차이를 설명해주세요.",
+                      "category": "운영체제",
+                      "bestAnswer": "프로세스는 독립 주소 공간을 가집니다.",
+                      "isActive": true
+                    }
+                    """;
+
+            mockMvc.perform(patch("/api/v1/admin/question-pools/1")
+                            .header("X-Admin-Password", "test-pass")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(1));
+
+            then(adminQuestionPoolService).should().update(any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/v1/admin/question-pools/{id}/deactivate - 단일 비활성화")
+    class DeactivateOne {
+
+        @Test
+        @DisplayName("질문 풀 row를 비활성화하고 수정된 row를 반환한다")
+        void deactivatesQuestionPool_when_idProvided() throws Exception {
+            given(adminQuestionPoolService.deactivate(1L)).willReturn(response(1L));
+
+            mockMvc.perform(patch("/api/v1/admin/question-pools/1/deactivate")
+                            .header("X-Admin-Password", "test-pass"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.data.id").value(1));
+
+            then(adminQuestionPoolService).should().deactivate(1L);
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/v1/admin/question-pools/deactivate - 일괄 비활성화")
+    class DeactivateMany {
+
+        @Test
+        @DisplayName("선택한 질문 풀 row들을 비활성화한다")
+        void deactivatesQuestionPools_when_idsProvided() throws Exception {
+            String requestBody = """
+                    { "ids": [1, 2, 3] }
+                    """;
+
+            mockMvc.perform(patch("/api/v1/admin/question-pools/deactivate")
+                            .header("X-Admin-Password", "test-pass")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(requestBody))
+                    .andExpect(status().isOk());
+
+            then(adminQuestionPoolService).should().deactivateAll(List.of(1L, 2L, 3L));
         }
     }
 
