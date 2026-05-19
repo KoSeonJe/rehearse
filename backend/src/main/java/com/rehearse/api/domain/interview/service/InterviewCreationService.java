@@ -27,6 +27,10 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class InterviewCreationService {
 
+    private static final long MAX_RESUME_FILE_SIZE_BYTES = 10_485_760L;
+    private static final String PDF_CONTENT_TYPE = "application/pdf";
+    private static final byte[] PDF_MAGIC_BYTES = {'%', 'P', 'D', 'F'};
+
     private final InterviewRepository interviewRepository;
     private final FileHasher fileHasher;
     private final ApplicationEventPublisher eventPublisher;
@@ -130,7 +134,4 @@ public class InterviewCreationService {
         }
     }
 
-    private static final long MAX_RESUME_FILE_SIZE_BYTES = 5_242_880L;
-    private static final String PDF_CONTENT_TYPE = "application/pdf";
-    private static final byte[] PDF_MAGIC_BYTES = {'%', 'P', 'D', 'F'};
 }

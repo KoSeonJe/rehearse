@@ -289,11 +289,11 @@ class InterviewCreationServiceTest {
         }
 
         @Test
-        @DisplayName("파일 크기가 5MB 초과면 400 INVALID_FILE_SIZE")
+        @DisplayName("파일 크기가 10MB 초과면 400 INVALID_FILE_SIZE")
         void createInterview_oversizedFile_throwsInvalidFileSize() {
             CreateInterviewRequest request = resumeBasedRequest();
 
-            byte[] oversized = new byte[5_242_881];
+            byte[] oversized = new byte[10_485_761];
             oversized[0] = '%';
             oversized[1] = 'P';
             oversized[2] = 'D';
