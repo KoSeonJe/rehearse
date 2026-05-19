@@ -103,8 +103,8 @@ public class RubricScorerPromptBuilder {
         observationSchema.put("description", "한국어 1~2문장 관찰 서술");
 
         Map<String, Object> evidenceQuoteSchema = new LinkedHashMap<>();
-        evidenceQuoteSchema.put("type", List.of("string", "null"));
-        evidenceQuoteSchema.put("description", "사용자 답변에서 추출한 verbatim substring. 차원 무관 시 null");
+        evidenceQuoteSchema.put("type", "string");
+        evidenceQuoteSchema.put("description", "사용자 답변에서 추출한 verbatim substring (non-null)");
 
         Map<String, Object> dimensionProperties = new LinkedHashMap<>();
         dimensionProperties.put("score", scoreSchema);

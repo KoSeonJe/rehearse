@@ -110,8 +110,8 @@ class RubricScorerPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("evidence_quote 는 nullable string 타입을 가진다 (차원 무관 시 null 허용)")
-        void buildJsonSchema_evidence_quote_nullable() {
+        @DisplayName("evidence_quote 는 non-null string 타입을 가진다")
+        void buildJsonSchema_evidence_quote_non_null() {
             Map<String, Object> schema = builder.buildJsonSchema(List.of("technical_depth"));
 
             @SuppressWarnings("unchecked")
@@ -123,7 +123,7 @@ class RubricScorerPromptBuilderTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> evidenceQuote = (Map<String, Object>) dimProps.get("evidence_quote");
 
-            assertThat(evidenceQuote.get("type")).isEqualTo(List.of("string", "null"));
+            assertThat(evidenceQuote.get("type")).isEqualTo("string");
         }
 
         @Test
