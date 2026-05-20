@@ -49,13 +49,13 @@ class ResumeQuestionPersisterIntegrationTest extends ServiceIntegrationSupport {
         Long interviewId = persistInterview();
         List<ResumeQuestionDraft> drafts = List.of(
                 new ResumeQuestionDraft(QuestionType.RESUME_OPENER,
-                        "메인 프로젝트 설명과 본인의 역할을 말해주세요.", "TTS-O", "best-O", 0),
+                        "메인 프로젝트 설명과 본인의 역할을 말해주세요.", "TTS-O", "best-O", 0, null),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "Redis 캐시 도입 의사결정 근거", "TTS-M1", "best-M1", 1),
+                        "Redis 캐시 도입 의사결정 근거", "TTS-M1", "best-M1", 1, null),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "Cache-Aside 정합성 정책", "TTS-M2", "best-M2", 2),
+                        "Cache-Aside 정합성 정책", "TTS-M2", "best-M2", 2, null),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "TTL 만료 시 stampede 방어", "TTS-M3", "best-M3", 3)
+                        "TTL 만료 시 stampede 방어", "TTS-M3", "best-M3", 3, null)
         );
 
         int saved = persister.persistAll(interviewId, drafts);

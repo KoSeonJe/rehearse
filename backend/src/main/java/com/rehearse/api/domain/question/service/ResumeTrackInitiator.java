@@ -102,12 +102,12 @@ public class ResumeTrackInitiator {
         for (var opener : generated.openers()) {
             drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
                     QuestionType.RESUME_OPENER, opener.question(), opener.ttsQuestion(),
-                    opener.bestAnswer(), order++));
+                    opener.bestAnswer(), order++, null));
         }
         for (var main : generated.mains()) {
             drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
                     QuestionType.RESUME_MAIN, main.question(), main.ttsQuestion(),
-                    main.bestAnswer(), order++));
+                    main.bestAnswer(), order++, main.depthType()));
         }
         resumeQuestionPersister.persistAll(interviewId, drafts);
         log.info("[ResumeTrackInitiator] 질문 적재 완료: interviewId={}, openers={}, mains={}",
