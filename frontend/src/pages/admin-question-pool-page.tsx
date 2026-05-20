@@ -23,9 +23,7 @@ import {
 } from '@/constants/interview-labels'
 import {
   useAdminQuestionPools,
-  useBulkDeactivateAdminQuestionPools,
   useCreateAdminQuestionPool,
-  useDeactivateAdminQuestionPool,
   useUpdateAdminQuestionPool,
 } from '@/hooks/use-admin-question-pool'
 import type { InterviewType, Level, Position, TechStack } from '@/types/interview'
@@ -164,10 +162,22 @@ const toUpdateForm = (item: AdminQuestionPoolItem): UpdateQuestionPoolRequest =>
   isActive: item.isActive,
 })
 
-const DetailField = ({ label, value }: { label: string; value: string }) => (
-  <div>
+const DetailField = ({
+  label,
+  value,
+  className = '',
+  valueClassName = '',
+}: {
+  label: string
+  value: string
+  className?: string
+  valueClassName?: string
+}) => (
+  <div className={className}>
     <dt className="text-xs font-semibold text-text-tertiary">{label}</dt>
-    <dd className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-primary">{value || '-'}</dd>
+    <dd className={`mt-1 whitespace-pre-wrap text-sm leading-relaxed text-text-primary ${valueClassName}`}>
+      {value || '-'}
+    </dd>
   </div>
 )
 
@@ -183,7 +193,9 @@ const QuestionPoolTable = ({ items, selectedIds, onToggleSelect, onOpenDetail }:
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-border bg-background">
-          <th className="w-12 px-4 py-3 text-left font-semibold text-text-secondary">선택</th>
+          <th className="w-12 px-4 py-3 text-left font-semibold text-text-secondary">
+            <span className="sr-only">선택</span>
+          </th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">캐시 키</th>
           <th className="w-24 whitespace-nowrap px-4 py-3 text-left font-semibold text-text-secondary">세부 주제</th>
           <th className="px-4 py-3 text-left font-semibold text-text-secondary">질문</th>
@@ -294,10 +306,9 @@ export const AdminQuestionPoolPage = () => {
   const { data, isLoading } = useAdminQuestionPools(appliedFilters, page, PAGE_SIZE)
   const createMutation = useCreateAdminQuestionPool()
   const updateMutation = useUpdateAdminQuestionPool()
-  const deactivateMutation = useDeactivateAdminQuestionPool()
-  const bulkDeactivateMutation = useBulkDeactivateAdminQuestionPools()
 
   const items = data?.data?.content ?? []
+  const selectedItems = items.filter((item) => selectedIds.has(item.id))
   const totalElements = data?.data?.totalElements ?? 0
   const totalPages = data?.data?.totalPages ?? 0
   const generatedCacheKey = generateCacheKey(cacheKeyCriteria)
@@ -407,23 +418,39 @@ export const AdminQuestionPoolPage = () => {
     })
   }
 
-  const handleDeactivateSelected = () => {
-    const ids = Array.from(selectedIds)
-    if (ids.length === 0 || bulkDeactivateMutation.isPending) {
+  const handleBulkStatusChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextValue = event.target.value
+    if (selectedItems.length === 0 || updateMutation.isPending || !nextValue) {
       return
     }
 
-    bulkDeactivateMutation.mutate(ids, {
-      onSuccess: () => setSelectedIds(new Set()),
-    })
+    const nextIsActive = nextValue === 'true'
+    await Promise.all(
+      selectedItems.map((item) =>
+        updateMutation.mutateAsync({
+          id: item.id,
+          request: {
+            ...toUpdateForm(item),
+            isActive: nextIsActive,
+          },
+        }),
+      ),
+    )
+    setSelectedIds(new Set())
   }
 
-  const handleDeactivateDetail = () => {
-    if (!selectedQuestion || deactivateMutation.isPending) {
+  const handleToggleDetailStatus = () => {
+    if (!selectedQuestion || updateMutation.isPending) {
       return
     }
 
-    deactivateMutation.mutate(selectedQuestion.id, {
+    updateMutation.mutate({
+      id: selectedQuestion.id,
+      request: {
+        ...toUpdateForm(selectedQuestion),
+        isActive: !selectedQuestion.isActive,
+      },
+    }, {
       onSuccess: () => handleDetailOpenChange(false),
     })
   }
@@ -444,15 +471,21 @@ export const AdminQuestionPoolPage = () => {
             )}
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleDeactivateSelected}
-              disabled={selectedIds.size === 0 || bulkDeactivateMutation.isPending}
-              className="whitespace-nowrap"
+            <label className="sr-only" htmlFor="bulk-status-change">
+              선택 상태 변경
+            </label>
+            <select
+              id="bulk-status-change"
+              aria-label="선택 상태 변경"
+              value=""
+              onChange={handleBulkStatusChange}
+              disabled={selectedIds.size === 0 || updateMutation.isPending}
+              className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
             >
-              선택 비활성화
-            </Button>
+              <option value="">선택 상태 변경</option>
+              <option value="true">활성으로 변경</option>
+              <option value="false">비활성으로 변경</option>
+            </select>
             <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus size={16} />
               새 질문 추가
@@ -741,7 +774,12 @@ export const AdminQuestionPoolPage = () => {
           {selectedQuestion && !isEditMode && (
             <div className="space-y-5">
               <dl className="grid gap-4 sm:grid-cols-2">
-                <DetailField label="캐시 키" value={selectedQuestion.cacheKey} />
+                <DetailField
+                  label="캐시 키"
+                  value={selectedQuestion.cacheKey}
+                  className="sm:col-span-2"
+                  valueClassName="break-all font-mono text-xs"
+                />
                 <DetailField label="세부 주제" value={selectedQuestion.category ?? ''} />
                 <DetailField label="상태" value={statusLabel(selectedQuestion.isActive)} />
                 <DetailField label="생성일" value={formatDate(selectedQuestion.createdAt)} />
@@ -756,8 +794,8 @@ export const AdminQuestionPoolPage = () => {
                 </div>
               </dl>
               <DialogFooter>
-                <Button type="button" variant="secondary" onClick={handleDeactivateDetail}>
-                  비활성화
+                <Button type="button" variant="secondary" onClick={handleToggleDetailStatus}>
+                  {selectedQuestion.isActive ? '비활성으로 변경' : '활성으로 변경'}
                 </Button>
                 <Button type="button" onClick={() => setIsEditMode(true)}>
                   수정
