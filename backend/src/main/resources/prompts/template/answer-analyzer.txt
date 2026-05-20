@@ -41,6 +41,7 @@
 
 ### claims (객체 배열, 절대 문자열 배열 금지)
 응시자 답변에서 추출한 핵심 주장. 각 항목은 반드시 아래 4개 필드를 가진 **객체**여야 한다.
+답변에서 채굴할 주장이 전혀 없으면 빈 배열 `[]` 반환 (예: "잘 모르겠어요", "패스" 등 무내용 답변).
 - `text` (string): 한 문장 요약, 60자 이내
 - `depth_score` (정수 1~5)
   - 1: 이름만 언급 ("락을 씁니다")
@@ -116,36 +117,7 @@ JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하�
 }
 ```
 
-### 예시 2 (CS 트랙, 매우 얕은 답변)
-TRACK: CS
-<<<MAIN_QUESTION>>>
-TCP 의 3-way handshake 를 설명해주세요.
-<<<END_MAIN_QUESTION>>>
-QUESTION_REFERENCE_TYPE: MODEL_ANSWER
-<<<USER_ANSWER>>>
-음... 잘 모르겠어요.
-<<<END_USER_ANSWER>>>
-
-```json
-{
-  "claims": [],
-  "dimension_gaps": {
-    "problem_framing": 2,
-    "technical_depth": 3,
-    "reasoning_communication": 3,
-    "conceptual_accuracy": 3,
-    "practical_application": 3,
-    "experience_concreteness": 0,
-    "collaboration_awareness": 0,
-    "recovery_from_gaps": 2
-  },
-  "weakest_dimension": "technical_depth",
-  "unstated_assumptions": [],
-  "recommended_next_action": "CLARIFICATION"
-}
-```
-
-### 예시 3 (Resume 트랙, factual_consistency / chain_depth 평가)
+### 예시 2 (Resume 트랙, factual_consistency / chain_depth 평가)
 TRACK: RESUME
 <<<MAIN_QUESTION>>>
 이력서에 Redis Lua 스크립트로 쿠폰 동시성 제어를 했다고 적으셨는데, 어떤 문제를 풀었는지 설명해주세요.
@@ -178,7 +150,7 @@ QUESTION_REFERENCE_TYPE: GUIDE
 }
 ```
 
-### 예시 4 (Resume 트랙, 경험 답변 강함)
+### 예시 3 (Resume 트랙, 경험 답변 강함)
 TRACK: RESUME
 <<<MAIN_QUESTION>>>
 프로젝트에서 캐시를 도입한 경험을 설명해주세요.
