@@ -8,6 +8,7 @@ import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
 import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionDepthType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
@@ -30,6 +31,7 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,6 +131,39 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     }
 
     @Test
+    @DisplayName("LLM 응답 depth_type 값이 main Question.depthType 컬럼에 적재되고 opener 는 NULL 로 유지된다")
+    void initiate_persistsDepthType_forMains_andNullForOpener() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth"), "hash-depth");
+        stubAiClient(questionsJsonWithDepthTypes(1,
+                List.of("TRADEOFF", "LIMITATION", "QUANTITATIVE", "ALTERNATIVE", "PRINCIPLE")));
+
+        initiator.initiate(interviewId, "hash-depth", RESUME_PDF, 30,
+                Position.BACKEND, TechStack.JAVA_SPRING);
+
+        List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+        assertThat(persistedSets).hasSize(6);
+
+        Question openerQuestion = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(0).getId()).get(0);
+        assertThat(openerQuestion.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
+        assertThat(openerQuestion.getDepthType()).isNull();
+
+        List<QuestionDepthType> mainDepthTypes = new ArrayList<>();
+        for (int i = 1; i < persistedSets.size(); i++) {
+            Question main = questionRepository
+                    .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(i).getId()).get(0);
+            mainDepthTypes.add(main.getDepthType());
+        }
+        assertThat(mainDepthTypes).containsExactly(
+                QuestionDepthType.TRADEOFF,
+                QuestionDepthType.LIMITATION,
+                QuestionDepthType.QUANTITATIVE,
+                QuestionDepthType.ALTERNATIVE,
+                QuestionDepthType.PRINCIPLE);
+    }
+
+    @Test
     @DisplayName("LLM 실패 시 Interview 상태 FAILED 로 전이 + 예외 재전파")
     void initiate_marksInterviewFailed_andRethrows_whenLlmFails() {
         Long interviewId = persistInterview();
@@ -215,6 +250,26 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                 "backend",
                 List.of()
         );
+    }
+
+    private String questionsJsonWithDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"").append(mainDepthTypes.get(i)).append("\"}");
+        }
+        sb.append("]}");
+        return sb.toString();
     }
 
     private String questionsJson(int openerCount, int mainCount) {
