@@ -9,8 +9,8 @@ import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackBusyExc
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackErrorCode;
 import com.rehearse.api.domain.feedback.session.infra.LambdaRetryTrigger;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
+import com.rehearse.api.domain.feedback.session.models.service.SessionFeedbackSynthesizer;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
-import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackSynthesizer;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.global.exception.BusinessException;

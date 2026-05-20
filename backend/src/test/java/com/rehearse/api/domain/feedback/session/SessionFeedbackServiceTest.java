@@ -6,7 +6,7 @@ import com.rehearse.api.domain.feedback.session.entity.SessionFeedbackStatus;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackBusyException;
 import com.rehearse.api.domain.feedback.session.infra.LambdaRetryTrigger;
 import com.rehearse.api.domain.feedback.session.repository.SessionFeedbackRepository;
-import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackSynthesizer;
+import com.rehearse.api.domain.feedback.session.models.service.SessionFeedbackSynthesizer;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import io.micrometer.core.instrument.MeterRegistry;

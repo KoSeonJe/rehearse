@@ -3,12 +3,10 @@ package com.rehearse.api.infra.ai.prompt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,9 +24,6 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 new DefaultResourceLoader(),
                 new ObjectMapper()
         );
-        ReflectionTestUtils.setField(builder, "model", "gpt-4o-mini");
-        ReflectionTestUtils.setField(builder, "temperature", 0.4);
-        ReflectionTestUtils.setField(builder, "maxTokens", 2048);
         builder.init();
     }
 
@@ -48,14 +43,15 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("\"position\":\"BACKEND\"");
         assertThat(prompt).contains("\"source\":\"nonverbal_score\"");
         assertThat(prompt).contains("\"lowestDimension\":{\"dimension\":\"eye_contact_posture\",\"averageScore\":1.0}");
         assertThat(prompt).contains("\"recommendedActions\":[{\"dimension\":\"eye_contact_posture\"");
         assertThat(prompt).doesNotContain("legacyAggregate");
+        assertThat(pair.system()).contains("JSON");
     }
 
     @Test
@@ -74,8 +70,8 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("### Delivery Analysis (Lambda");
         assertThat(prompt).contains("### Nonverbal Aggregate\nnull");
@@ -97,8 +93,8 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("### Nonverbal Aggregate\n{\"legacy\":\"aggregate\"}");
     }
