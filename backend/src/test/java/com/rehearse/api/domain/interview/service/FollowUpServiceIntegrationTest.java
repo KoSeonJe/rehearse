@@ -67,7 +67,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @Autowired private AnswerAnalysisCompletedEventCollector eventCollector;
 
     @MockitoBean private AudioTurnAnalyzer audioTurnAnalyzer;
-    @MockitoBean private FollowUpQuestionWriter followUpQuestionWriter;
+    @MockitoBean private FollowUpQuestionService followUpQuestionService;
     @MockitoBean private RubricScorer rubricScorer;
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
@@ -96,7 +96,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(response.getSkipReason()).isEqualTo("resume_opener_skip");
         verify(audioTurnAnalyzer, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any());
-        verify(followUpQuestionWriter, never()).write(any(), any(), any(), any());
+        verify(followUpQuestionService, never()).write(any(), any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -122,7 +122,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
                 .willReturn(SAMPLE_ANALYSIS);
         given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionWriter.write(any(), any(), any(), any()))
+        given(followUpQuestionService.write(any(), any(), any(), any()))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
 
@@ -135,7 +135,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(response.getQuestion()).isEqualTo("심화 질문");
         verify(audioTurnAnalyzer, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any());
-        verify(followUpQuestionWriter, times(1)).write(any(), any(), any(), any());
+        verify(followUpQuestionService, times(1)).write(any(), any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -167,7 +167,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
-        verify(followUpQuestionWriter, never()).write(any(), any(), any(), any());
+        verify(followUpQuestionService, never()).write(any(), any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);

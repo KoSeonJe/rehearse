@@ -31,7 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class FollowUpService {
 
     private final AudioTurnAnalyzer audioTurnAnalyzer;
-    private final FollowUpQuestionWriter followUpQuestionWriter;
+    private final FollowUpQuestionService followUpQuestionService;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final StandardFollowUpPolicy standardFollowUpPolicy;
     private final ResumeSkeletonPersister resumeSkeletonStore;
@@ -84,7 +84,7 @@ public class FollowUpService {
     ) {
         ResumeSkeleton skeleton = resumeSkeletonStore.findByInterviewId(id).orElse(null);
 
-        GeneratedFollowUp stepB = followUpQuestionWriter.write(
+        GeneratedFollowUp stepB = followUpQuestionService.write(
                 request.getQuestionContent(), answerText, analysis, skeleton);
 
         if (stepB.isSkipped()) {
