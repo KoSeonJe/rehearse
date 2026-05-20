@@ -30,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional(readOnly = true)
 public class FollowUpService {
 
-    private final AudioTurnAnalyzer audioTurnAnalyzer;
+    private final AudioTurnAnalysisService audioTurnAnalysisService;
     private final FollowUpQuestionService followUpQuestionService;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final StandardFollowUpPolicy standardFollowUpPolicy;
@@ -45,7 +45,7 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
-        AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
+        AnswerAnalysis analysis = audioTurnAnalysisService.analyze(
                 id, audioFile, request.getQuestionContent(), context.mainReferenceType());
         String answerText = request.getAnswerText();
 

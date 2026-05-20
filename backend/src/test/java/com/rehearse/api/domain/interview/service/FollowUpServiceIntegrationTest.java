@@ -66,7 +66,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @Autowired private QuestionScoreRepository questionScoreRepository;
     @Autowired private AnswerAnalysisCompletedEventCollector eventCollector;
 
-    @MockitoBean private AudioTurnAnalyzer audioTurnAnalyzer;
+    @MockitoBean private AudioTurnAnalysisService audioTurnAnalysisService;
     @MockitoBean private FollowUpQuestionService followUpQuestionService;
     @MockitoBean private RubricScorer rubricScorer;
 
@@ -82,7 +82,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_OPENER → analyzer 1회 호출 + 이벤트 발행 + QuestionScore 적재 + follow-up 미생성")
     void resumeOpener_publishesEvent_persistsScore_andSkipsFollowUp() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_OPENER);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(SAMPLE_ANALYSIS);
         given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
@@ -94,7 +94,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("resume_opener_skip");
-        verify(audioTurnAnalyzer, times(1))
+        verify(audioTurnAnalysisService, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any());
         verify(followUpQuestionService, never()).write(any(), any(), any(), any());
 
@@ -118,7 +118,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_MAIN 일반 답변 → analyzer + 이벤트 + 채점 + follow-up 생성")
     void resumeMain_followsUpAndPersistsScore() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(SAMPLE_ANALYSIS);
         given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
@@ -133,7 +133,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isFalse();
         assertThat(response.getQuestion()).isEqualTo("심화 질문");
-        verify(audioTurnAnalyzer, times(1))
+        verify(audioTurnAnalysisService, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any());
         verify(followUpQuestionService, times(1)).write(any(), any(), any(), any());
 
@@ -155,7 +155,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         AnswerAnalysis skipAnalysis = new AnswerAnalysis(
                 List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(skipAnalysis);
         given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
