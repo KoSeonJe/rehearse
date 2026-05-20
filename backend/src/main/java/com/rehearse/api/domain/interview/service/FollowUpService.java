@@ -13,8 +13,6 @@ import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
@@ -34,7 +32,6 @@ public class FollowUpService {
     private final FollowUpQuestionWriter followUpQuestionWriter;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final StandardFollowUpPolicy standardFollowUpPolicy;
-    private final ResumeSkeletonPersister resumeSkeletonStore;
     private final AiCallMetrics aiCallMetrics;
 
     @Transactional(propagation = NOT_SUPPORTED)
@@ -83,10 +80,8 @@ public class FollowUpService {
             Long id, FollowUpContext context, FollowUpRequest request,
             AnswerAnalysis analysis, String answerText
     ) {
-        ResumeSkeleton skeleton = resumeSkeletonStore.findByInterviewId(id).orElse(null);
-
         GeneratedFollowUp stepB = followUpQuestionWriter.write(
-                request.getQuestionContent(), answerText, analysis, skeleton);
+                request.getQuestionContent(), answerText, analysis);
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",

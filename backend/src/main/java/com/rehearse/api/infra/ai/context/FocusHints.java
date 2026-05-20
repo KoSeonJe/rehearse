@@ -25,8 +25,7 @@ public sealed interface FocusHints
             List<String> claims,
             Map<String, Integer> dimensionGaps,
             String weakestDimension,
-            List<String> unstatedAssumptions,
-            String resumeSkeletonJson
+            List<String> unstatedAssumptions
     ) implements FocusHints {}
 
     record ResumeQuestionGeneratorHints(
