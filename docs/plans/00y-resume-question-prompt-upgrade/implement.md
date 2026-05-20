@@ -197,7 +197,7 @@ feat(BE): ResumeQuestionPersister 가 depthType 전파 + 관찰성 로그
 - `backend/src/test/java/com/rehearse/api/domain/resume/entity/DepthSignalsTest.java` — 신규. Domain Unit. 빈 객체 / null 필드 → 빈 List 변환. 구버전 JSON (depth_signals 키 부재) Jackson 역직렬화 → `DepthSignals.empty()`.
 - `backend/src/test/java/com/rehearse/api/domain/question/service/ResumeTrackInitiatorIntegrationTest.java` — 신규 또는 기존 확장. Testcontainers MySQL. Mock LLM = 5 main + depth_type 다양 → Question 조회 depth_type 적재 확인 / Mock 응답 depth_type=null → parse 실패 → 재시도 → BusinessException / opener depth_type = NULL 확인.
 - `backend/src/test/java/com/rehearse/api/domain/resume/service/ResumeIngestionServiceIntegrationTest.java` — 기존 또는 신규. 구버전 skeleton JSON 데이터 (depth_signals 부재) → Project.depthSignals = empty.
-- `backend/src/test/java/com/rehearse/api/e2e/ResumeQuestionGenerationLiveE2ETest.java` — 신규. `@Disabled` + `@EnabledIfEnvironmentVariable(name="RUN_LIVE_API", matches="true")`. 자동 단언 5개 (mains size==5 / depth_type enum / opener null / 편중 ≥4 점유 시 실패 / 표층 정규식 ≤1) + 수동 단언 (5건 샘플 docs/plans/00y-resume-question-prompt-upgrade/ 기록).
+- `backend/src/test/java/com/rehearse/api/e2e/ResumeQuestionGenerationLiveE2ETest.java` — 신규. `@Disabled` + `@EnabledIfEnvironmentVariable(name="RUN_LIVE_API", matches="true")`. 자동 단언 5개 (mains size==EXPECTED_MAIN_COUNT(7, durationMinutes=15 케이스) / depth_type enum / opener null / 편중 ≥4 점유 시 실패 / 표층 정규식 ≤1) + 수동 단언 (5건 샘플 docs/plans/00y-resume-question-prompt-upgrade/ 기록).
 
 ### 핵심 로직 / 변경 요약
 - testing.md 카테고리 분류 강제:

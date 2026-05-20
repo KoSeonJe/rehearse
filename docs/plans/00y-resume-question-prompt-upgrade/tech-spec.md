@@ -381,11 +381,11 @@ public record ContextBuildRequest(
   - 구버전 skeleton JSON 데이터 (depth_signals 부재) → 신 코드 정상 역직렬화 + Project.depthSignals = empty.
 - [ ] **Live LLM E2E** (`@Disabled` + `@EnabledIfEnvironmentVariable(name="RUN_LIVE_API", matches="true")`): `ResumeQuestionGenerationLiveE2ETest`
   - **자동 단언** (assertions):
-    - mains size == 5 (product-spec AC #1 본문).
+    - mains size == EXPECTED_MAIN_COUNT (= MIN_MAIN_COUNT = 7 / durationMinutes=15 케이스). main 갯수는 durationMinutes 동적 산출 (max(7, min(40, minutes/3+2))).
     - 각 main 의 `depth_type` ∈ {TRADEOFF, LIMITATION, QUANTITATIVE, ALTERNATIVE, PRINCIPLE} (enum 파싱 성공).
     - opener `depth_type` == null.
-    - **편중 가드**: 5 main 중 동일 `depth_type` ≥4 점유 시 실패 (≤3 통과 — AC #4 표기 일치).
-    - **표층 패턴 가드**: 5 main 질문 텍스트 중 `("왜 X 사용", "X 의 장점")` 정규식 매칭 ≤ 1 (AC #3).
+    - **편중 가드**: 7 main 중 동일 `depth_type` ≥4 점유 시 실패 (≤3 통과 — 한 유형 절반 이상 차단).
+    - **표층 패턴 가드**: 7 main 질문 텍스트 중 `("왜 X 사용", "X 의 장점")` 정규식 매칭 ≤ 1 (AC #3).
   - **수동 단언** (사용자 외부 관찰):
     - 동일 이력서 PDF + BACKEND vs FRONTEND 각각 인터뷰 생성 → 질문 어휘 차이 (AC #1).
     - sample 비교 결과 = `docs/plans/00y-resume-question-prompt-upgrade/` 폴더 보고 파일 기록 (5건).
