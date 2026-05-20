@@ -171,6 +171,15 @@ return validateOrRetry(parsed, clazz, json);           // 검증 + validation re
 - Idempotent 작성. DDL 이 기존 데이터 제약 위반 가능 (예: `ADD UNIQUE INDEX`) → 사전 운영 SQL 정리 후 DDL.
 - 본 룰은 **현 시점부터 적용**. 과거 위반 V 파일은 그대로 유지 (재작성 금지).
 
+## LLM strict JSON schema 정의 위치
+
+OpenAI `response_format=json_schema` (strict=true) 사용 site 의 schema 는 반드시 `infra/ai/schema/{DtoName}Schema.java` 에 정의한다.
+
+- DTO 1:1 매핑. 클래스명 = `{DtoName}Schema`.
+- `public static final String NAME` + `public static Map<String, Object> build()` (또는 `build(args)`) + `public static JsonSchemaSpec spec()` (또는 `spec(args)`).
+- Adapter / Service / PromptBuilder 어디서든 동일 schema 클래스 호출. inline 정의 금지.
+- `additionalProperties: false` 강제.
+
 ## Lombok
 
 | 허용 | 금지 |
