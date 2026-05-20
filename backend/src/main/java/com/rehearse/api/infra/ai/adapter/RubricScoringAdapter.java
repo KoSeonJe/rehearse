@@ -163,7 +163,7 @@ public class RubricScoringAdapter {
                     .append(", reason=").append(vr.violation() == null ? "unknown" : vr.violation().name())
                     .append("\n");
         }
-        sb.append("룰: score ∈ {1,2,3}; observation 은 한국어 음절 1+ 포함; evidence_quote 는 사용자 답변 substring 만 인용.");
+        sb.append("룰: score ∈ {1,2,3}; observation 은 한국어 음절 1+ 포함; evidence_quote 는 사용자 답변 substring 인용 또는 인용할 발언이 전혀 없으면 정확히 \"관련 발언 없음\" 고정 문구.");
         return sb.toString();
     }
 

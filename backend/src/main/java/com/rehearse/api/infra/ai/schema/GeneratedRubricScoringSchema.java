@@ -25,7 +25,7 @@ public final class GeneratedRubricScoringSchema {
 
         Map<String, Object> evidenceQuoteSchema = new LinkedHashMap<>();
         evidenceQuoteSchema.put("type", "string");
-        evidenceQuoteSchema.put("description", "사용자 답변에서 추출한 verbatim substring (non-null)");
+        evidenceQuoteSchema.put("description", "사용자 답변에서 추출한 verbatim substring. 답변에 관련 발언이 전혀 없으면 정확히 \"관련 발언 없음\" 고정 문구 사용");
 
         Map<String, Object> dimensionProperties = new LinkedHashMap<>();
         dimensionProperties.put("score", scoreSchema);
