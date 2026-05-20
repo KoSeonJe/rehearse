@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.resume.question.claude")
-public record ClaudeResumeQuestionProperties(
+@ConfigurationProperties(prefix = "ai.followup.generator.claude")
+public record ClaudeFollowUpQuestionGeneratorProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,7 +11,7 @@ public record ClaudeResumeQuestionProperties(
         String baseUrl
 ) {
 
-    public ClaudeResumeQuestionProperties {
+    public ClaudeFollowUpQuestionGeneratorProperties {
         if (model == null || model.isBlank()) {
             model = "claude-sonnet-4-20250514";
         }
@@ -19,10 +19,10 @@ public record ClaudeResumeQuestionProperties(
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 14_800;
+            maxTokens = 1024;
         }
         if (temperature <= 0) {
-            temperature = 0.8;
+            temperature = 0.6;
         }
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://api.anthropic.com/v1/messages";

@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.audio.turn-analyzer.openai")
-public record OpenAiAudioTurnAnalyzerProperties(
+@ConfigurationProperties(prefix = "ai.session.feedback.claude")
+public record ClaudeSessionFeedbackSynthesizerProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,21 +11,21 @@ public record OpenAiAudioTurnAnalyzerProperties(
         String baseUrl
 ) {
 
-    public OpenAiAudioTurnAnalyzerProperties {
+    public ClaudeSessionFeedbackSynthesizerProperties {
         if (model == null || model.isBlank()) {
-            model = "gpt-4o-mini-audio-preview";
+            model = "claude-sonnet-4-20250514";
         }
         if (timeoutMs <= 0) {
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 1024;
+            maxTokens = 2048;
         }
         if (temperature <= 0) {
-            temperature = 0.2;
+            temperature = 0.3;
         }
         if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.openai.com/v1/chat/completions";
+            baseUrl = "https://api.anthropic.com/v1/messages";
         }
     }
 }

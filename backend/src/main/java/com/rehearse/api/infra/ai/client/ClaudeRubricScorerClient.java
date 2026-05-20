@@ -1,7 +1,7 @@
 package com.rehearse.api.infra.ai.client;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.config.ClaudeRubricScorerProperties;
+import com.rehearse.api.infra.ai.properties.ClaudeRubricScorerProperties;
 import com.rehearse.api.infra.ai.dto.claude.ClaudeRequest;
 import com.rehearse.api.infra.ai.dto.claude.ClaudeResponse;
 import com.rehearse.api.infra.ai.dto.claude.SystemContent;

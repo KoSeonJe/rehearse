@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.resume.question.openai")
-public record OpenAiResumeQuestionProperties(
+@ConfigurationProperties(prefix = "ai.resume.skeleton")
+public record OpenAiResumeSkeletonProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,7 +11,7 @@ public record OpenAiResumeQuestionProperties(
         String baseUrl
 ) {
 
-    public OpenAiResumeQuestionProperties {
+    public OpenAiResumeSkeletonProperties {
         if (model == null || model.isBlank()) {
             model = "gpt-4o-mini";
         }
@@ -19,13 +19,10 @@ public record OpenAiResumeQuestionProperties(
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 14_800;
-        }
-        if (temperature <= 0) {
-            temperature = 0.8;
+            maxTokens = 12_000;
         }
         if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.openai.com/v1/chat/completions";
+            baseUrl = "https://api.openai.com/v1/responses";
         }
     }
 }

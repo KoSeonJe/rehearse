@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.question.generator.claude")
-public record ClaudeQuestionGeneratorProperties(
+@ConfigurationProperties(prefix = "ai.followup.generator.openai")
+public record OpenAiFollowUpQuestionGeneratorProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,21 +11,21 @@ public record ClaudeQuestionGeneratorProperties(
         String baseUrl
 ) {
 
-    public ClaudeQuestionGeneratorProperties {
+    public OpenAiFollowUpQuestionGeneratorProperties {
         if (model == null || model.isBlank()) {
-            model = "claude-sonnet-4-20250514";
+            model = "gpt-4o-mini";
         }
         if (timeoutMs <= 0) {
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 8192;
+            maxTokens = 1024;
         }
         if (temperature <= 0) {
-            temperature = 0.9;
+            temperature = 0.6;
         }
         if (baseUrl == null || baseUrl.isBlank()) {
-            baseUrl = "https://api.anthropic.com/v1/messages";
+            baseUrl = "https://api.openai.com/v1/chat/completions";
         }
     }
 }

@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.rubric.scorer.openai")
-public record OpenAiRubricScorerProperties(
+@ConfigurationProperties(prefix = "ai.answer.analyzer.openai")
+public record OpenAiAnswerAnalyzerProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,7 +11,7 @@ public record OpenAiRubricScorerProperties(
         String baseUrl
 ) {
 
-    public OpenAiRubricScorerProperties {
+    public OpenAiAnswerAnalyzerProperties {
         if (model == null || model.isBlank()) {
             model = "gpt-4o-mini";
         }
@@ -19,7 +19,7 @@ public record OpenAiRubricScorerProperties(
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 1536;
+            maxTokens = 800;
         }
         if (temperature <= 0) {
             temperature = 0.2;

@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableRetry(order = Ordered.HIGHEST_PRECEDENCE)
-@ConfigurationPropertiesScan({"com.rehearse.api.global.config", "com.rehearse.api.infra.ai.config"})
+@ConfigurationPropertiesScan({"com.rehearse.api.global.config", "com.rehearse.api.infra.ai.config", "com.rehearse.api.infra.ai.properties"})
 public class RehearseApiApplication {
 
     public static void main(String[] args) {

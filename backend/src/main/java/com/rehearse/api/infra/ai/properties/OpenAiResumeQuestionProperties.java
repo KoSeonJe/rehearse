@@ -1,9 +1,9 @@
-package com.rehearse.api.infra.ai.config;
+package com.rehearse.api.infra.ai.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "ai.followup.generator.openai")
-public record OpenAiFollowUpQuestionGeneratorProperties(
+@ConfigurationProperties(prefix = "ai.resume.question.openai")
+public record OpenAiResumeQuestionProperties(
         String model,
         long timeoutMs,
         int maxTokens,
@@ -11,7 +11,7 @@ public record OpenAiFollowUpQuestionGeneratorProperties(
         String baseUrl
 ) {
 
-    public OpenAiFollowUpQuestionGeneratorProperties {
+    public OpenAiResumeQuestionProperties {
         if (model == null || model.isBlank()) {
             model = "gpt-4o-mini";
         }
@@ -19,10 +19,10 @@ public record OpenAiFollowUpQuestionGeneratorProperties(
             timeoutMs = 60_000L;
         }
         if (maxTokens <= 0) {
-            maxTokens = 1024;
+            maxTokens = 14_800;
         }
         if (temperature <= 0) {
-            temperature = 0.6;
+            temperature = 0.8;
         }
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://api.openai.com/v1/chat/completions";

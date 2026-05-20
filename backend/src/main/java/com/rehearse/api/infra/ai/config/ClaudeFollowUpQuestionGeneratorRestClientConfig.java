@@ -1,5 +1,7 @@
 package com.rehearse.api.infra.ai.config;
 
+import com.rehearse.api.infra.ai.properties.ClaudeFollowUpQuestionGeneratorProperties;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
