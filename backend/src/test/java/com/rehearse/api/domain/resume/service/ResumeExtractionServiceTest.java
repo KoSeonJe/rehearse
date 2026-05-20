@@ -49,7 +49,8 @@ class ResumeExtractionServiceTest {
                             List.of("Redis", "MySQL"),
                             "백엔드",
                             "Cache-Aside",
-                            List.of("TTL 5분")
+                            List.of("TTL 5분"),
+                            null
                     ))
             );
             given(resumeSkeletonExtractor.extract(any(byte[].class), eq(fileHash))).willReturn(generated);
@@ -101,7 +102,7 @@ class ResumeExtractionServiceTest {
                     "JUNIOR",
                     "backend",
                     List.of(new GeneratedResumeSkeleton.GeneratedProject(
-                            "p1", null, List.of(), "백엔드", "", List.of()))
+                            "p1", null, List.of(), "백엔드", "", List.of(), null))
             );
             given(resumeSkeletonExtractor.extract(any(byte[].class), eq("h"))).willReturn(generated);
 

@@ -49,6 +49,8 @@ public class AnswerAnalyzer {
                         userAnswer != null ? userAnswer : "",
                         personaDepthHint
                 ),
+                null,
+                null,
                 null
         ));
 

@@ -91,6 +91,31 @@ class QuestionTest {
     }
 
     @Nested
+    @DisplayName("resume 팩토리")
+    class ResumeFactory {
+
+        @Test
+        @DisplayName("RESUME_MAIN 타입인데 depthType 이 null 이면 IllegalArgumentException 을 던진다")
+        void resume_resumeMain_nullDepthType_throws() {
+            assertThatThrownBy(() ->
+                    Question.resume(null, QuestionType.RESUME_MAIN,
+                            "주요 의사결정을 설명하세요.", "TTS", "best", 0, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("RESUME_MAIN");
+        }
+
+        @Test
+        @DisplayName("RESUME_OPENER 타입은 depthType 이 null 이어도 생성된다")
+        void resume_resumeOpener_nullDepthType_ok() {
+            Question question = Question.resume(null, QuestionType.RESUME_OPENER,
+                    "프로젝트 소개", "TTS", "best", 0, null);
+
+            assertThat(question.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
+            assertThat(question.getDepthType()).isNull();
+        }
+    }
+
+    @Nested
     @DisplayName("assignQuestionSet 메서드")
     class AssignQuestionSet {
 

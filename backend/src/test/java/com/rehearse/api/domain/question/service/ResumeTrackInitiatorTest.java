@@ -5,8 +5,10 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionDepthType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
@@ -17,10 +19,12 @@ import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.domain.user.repository.UserRepository;
 import com.rehearse.api.global.support.TestFixtures;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +33,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +77,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonWithProjects("hash-success"), "hash-success");
         stubAiClient(questionsJson(1, 3));
 
-        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30);
+        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30, Position.BACKEND, TechStack.JAVA_SPRING);
 
         List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
         assertThat(persistedSets).hasSize(4);
@@ -104,7 +110,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonWithProjects("hash-primary"), "hash-primary");
         stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21);
+        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
@@ -119,12 +125,66 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonNoProjects("hash-empty"), "hash-empty");
         stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21);
+        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
                 .as("projects 비어 있음 → primaryProjectName=null → FocusLayer 의 nz() 가 (없음) 출력")
                 .contains("PRIMARY_PROJECT_NAME: (없음)");
+    }
+
+    @Test
+    @DisplayName("LLM 응답 depth_type 값이 main Question.depthType 컬럼에 적재되고 opener 는 NULL 로 유지된다")
+    void initiate_persistsDepthType_forMains_andNullForOpener() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth"), "hash-depth");
+        stubAiClient(questionsJsonWithDepthTypes(1,
+                List.of("TRADEOFF", "LIMITATION", "QUANTITATIVE", "ALTERNATIVE", "PRINCIPLE")));
+
+        initiator.initiate(interviewId, "hash-depth", RESUME_PDF, 30,
+                Position.BACKEND, TechStack.JAVA_SPRING);
+
+        List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+        assertThat(persistedSets).hasSize(6);
+
+        Question openerQuestion = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(0).getId()).get(0);
+        assertThat(openerQuestion.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
+        assertThat(openerQuestion.getDepthType()).isNull();
+
+        List<QuestionDepthType> mainDepthTypes = new ArrayList<>();
+        for (int i = 1; i < persistedSets.size(); i++) {
+            Question main = questionRepository
+                    .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(i).getId()).get(0);
+            mainDepthTypes.add(main.getDepthType());
+        }
+        assertThat(mainDepthTypes).containsExactly(
+                QuestionDepthType.TRADEOFF,
+                QuestionDepthType.LIMITATION,
+                QuestionDepthType.QUANTITATIVE,
+                QuestionDepthType.ALTERNATIVE,
+                QuestionDepthType.PRINCIPLE);
+    }
+
+    @Test
+    @DisplayName("LLM 응답 mains 중 depth_type 누락 시 BusinessException(RESPONSE_INVALID) + Interview 상태 FAILED")
+    void initiate_throwsAndMarksFailed_whenMainsDepthTypeMissing() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth-missing"), "hash-depth-missing");
+        stubAiClient(questionsJsonWithPartialDepthTypes(1,
+                Arrays.asList("TRADEOFF", null, "QUANTITATIVE")));
+
+        Assertions.assertThatThrownBy(() ->
+                        initiator.initiate(interviewId, "hash-depth-missing", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AiErrorCode.RESPONSE_INVALID);
+
+        Interview reloaded = interviewRepository.findById(interviewId).orElseThrow();
+        assertThat(reloaded.getQuestionGenerationStatus())
+                .isEqualTo(QuestionGenerationStatus.FAILED);
+        assertThat(questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId)).isEmpty();
     }
 
     @Test
@@ -136,7 +196,8 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                 .thenThrow(new RuntimeException("LLM 호출 실패"));
 
         Assertions.assertThatThrownBy(() ->
-                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30))
+                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("LLM 호출 실패");
 
@@ -196,12 +257,12 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                                 "p1", "주문 캐싱 개선",
                                 List.of("Redis", "MySQL"),
                                 "백엔드", "Cache-Aside",
-                                List.of("TTL 5분")),
+                                List.of("TTL 5분"), null),
                         new GeneratedResumeSkeleton.GeneratedProject(
                                 "p2", "결제 정합성",
                                 List.of("Java"),
                                 "백엔드", "",
-                                List.of())
+                                List.of(), null)
                 )
         );
     }
@@ -213,6 +274,50 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                 "backend",
                 List.of()
         );
+    }
+
+    private String questionsJsonWithDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"").append(mainDepthTypes.get(i)).append("\"}");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    private String questionsJsonWithPartialDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i).append("\"");
+            String depthType = mainDepthTypes.get(i);
+            if (depthType != null) {
+                sb.append(",\"depth_type\":\"").append(depthType).append("\"");
+            }
+            sb.append("}");
+        }
+        sb.append("]}");
+        return sb.toString();
     }
 
     private String questionsJson(int openerCount, int mainCount) {
@@ -228,7 +333,8 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
             if (i > 0) sb.append(",");
             sb.append("{\"question\":\"주요 의사결정 ").append(i)
                     .append("\",\"tts_question\":\"TTS-M").append(i)
-                    .append("\",\"best_answer\":\"best-M").append(i).append("\"}");
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"TRADEOFF\"}");
         }
         sb.append("]}");
         return sb.toString();

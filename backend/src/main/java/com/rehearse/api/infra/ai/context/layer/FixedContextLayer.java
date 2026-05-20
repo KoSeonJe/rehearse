@@ -2,12 +2,14 @@ package com.rehearse.api.infra.ai.context.layer;
 
 import com.rehearse.api.infra.ai.context.ContextBuildRequest;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
+import com.rehearse.api.infra.ai.prompt.ResumeQuestionPromptBuilder;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +19,10 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class FixedContextLayer implements ContextLayer {
+
+    private static final String RESUME_QUESTION_GENERATOR_CALL_TYPE = "resume_question_generator";
 
     private static final String ANSWER_ANALYZER_TEMPLATE_PATH = "/prompts/template/answer-analyzer.txt";
     private static final String RESUME_TEMPLATE_DIR = "/prompts/template/resume/";
@@ -46,6 +51,7 @@ public class FixedContextLayer implements ContextLayer {
             """;
 
     private final Map<String, String> dynamicSkeletons = new HashMap<>();
+    private final ResumeQuestionPromptBuilder resumeQuestionPromptBuilder;
 
     @PostConstruct
     public void init() {
@@ -102,16 +108,24 @@ public class FixedContextLayer implements ContextLayer {
 
     @Override
     public List<ChatMessage> build(ContextBuildRequest req) {
-        String skeleton = dynamicSkeletons.get(req.callType());
-        if (skeleton == null) {
-            skeleton = SkeletonCallType.fromValue(req.callType())
-                    .map(SkeletonCallType::skeleton)
-                    .orElseGet(() -> {
-                        log.warn("알 수 없는 callType: {}, default skeleton 적용", req.callType());
-                        return DEFAULT_SKELETON;
-                    });
-        }
+        String skeleton = resolveSkeleton(req);
         String fixedBlock = GLOBAL_CORE + "\n" + skeleton;
         return List.of(ChatMessage.ofCached(ChatMessage.Role.SYSTEM, fixedBlock));
+    }
+
+    private String resolveSkeleton(ContextBuildRequest req) {
+        if (RESUME_QUESTION_GENERATOR_CALL_TYPE.equals(req.callType())) {
+            return resumeQuestionPromptBuilder.buildSystemPrompt(req.position(), req.techStack());
+        }
+        String skeleton = dynamicSkeletons.get(req.callType());
+        if (skeleton != null) {
+            return skeleton;
+        }
+        return SkeletonCallType.fromValue(req.callType())
+                .map(SkeletonCallType::skeleton)
+                .orElseGet(() -> {
+                    log.warn("알 수 없는 callType: {}, default skeleton 적용", req.callType());
+                    return DEFAULT_SKELETON;
+                });
     }
 }
