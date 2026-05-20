@@ -12,13 +12,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ResumeIngestionService {
 
-    private static final int MIN_RESUME_TEXT_LENGTH = 50;
-
     private final ResumeExtractionService extractionService;
     private final ResumeSkeletonPersister skeletonStore;
 
-    public ResumeSkeleton ingestExtractedText(Long interviewId, String normalizedText, String fileHash) {
-        validateExtractedText(normalizedText);
+    public ResumeSkeleton ingestPdf(Long interviewId, byte[] pdfBytes, String fileHash) {
+        validatePdfBytes(pdfBytes);
         if (fileHash == null || fileHash.isBlank()) {
             throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
         }
@@ -31,17 +29,17 @@ public class ResumeIngestionService {
             return fromDb;
         }
 
-        return extractAndPersist(interviewId, normalizedText, fileHash);
+        return extractAndPersist(interviewId, pdfBytes, fileHash);
     }
 
-    private void validateExtractedText(String text) {
-        if (text == null || text.isBlank() || text.length() < MIN_RESUME_TEXT_LENGTH) {
-            throw new BusinessException(ResumeErrorCode.EMPTY_RESUME_TEXT);
+    private void validatePdfBytes(byte[] pdfBytes) {
+        if (pdfBytes == null || pdfBytes.length == 0) {
+            throw new BusinessException(ResumeErrorCode.INVALID_FILE_EMPTY);
         }
     }
 
-    private ResumeSkeleton extractAndPersist(Long interviewId, String normalizedText, String fileHash) {
-        ResumeSkeleton skeleton = extractionService.extract(normalizedText, fileHash);
+    private ResumeSkeleton extractAndPersist(Long interviewId, byte[] pdfBytes, String fileHash) {
+        ResumeSkeleton skeleton = extractionService.extract(pdfBytes, fileHash);
         skeletonStore.save(interviewId, skeleton);
         log.info("이력서 추출·저장 완료: interviewId={}, fileHash={}", interviewId, fileHash.substring(0, 8));
         return skeleton;

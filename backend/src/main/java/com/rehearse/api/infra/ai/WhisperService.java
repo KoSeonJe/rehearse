@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.exception.WhisperErrorCode;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +32,9 @@ public class WhisperService implements SttService {
     private final RestTemplate restTemplate;
 
     public WhisperService(
-            @Value("${openai.api-key:}") String apiKey,
+            OpenAiCommonProperties commonProperties,
             @Value("${openai.api.url:https://api.openai.com/v1/audio/transcriptions}") String whisperApiUrl) {
-        this.apiKey = apiKey;
+        this.apiKey = commonProperties.apiKey();
         this.whisperApiUrl = whisperApiUrl;
 
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()

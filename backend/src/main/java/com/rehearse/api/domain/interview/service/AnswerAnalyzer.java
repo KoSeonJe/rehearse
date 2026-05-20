@@ -52,6 +52,8 @@ public class AnswerAnalyzer {
                         personaDepthHint,
                         isResumeTrack
                 ),
+                null,
+                null,
                 null
         ));
 

@@ -40,6 +40,10 @@ public class Question {
     @JoinColumn(name = "question_pool_id")
     private QuestionPool questionPool;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "depth_type", length = 20)
+    private QuestionDepthType depthType;
+
     @Builder
     public Question(QuestionType questionType, String questionText,
                     String ttsText, String bestAnswer,
@@ -56,11 +60,14 @@ public class Question {
 
     public static Question resume(QuestionSet questionSet, QuestionType type,
                                    String questionText, String ttsText, String bestAnswer,
-                                   int orderIndex) {
+                                   int orderIndex, QuestionDepthType depthType) {
         requireValidQuestionText(questionText);
         requireNonNullQuestionType(type);
         if (!type.isResume()) {
             throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
+        }
+        if (type == QuestionType.RESUME_MAIN && depthType == null) {
+            throw new IllegalArgumentException("RESUME_MAIN 질문은 depthType 이 필수입니다.");
         }
         Question q = new Question();
         q.questionSet = questionSet;
@@ -69,6 +76,7 @@ public class Question {
         q.ttsText = ttsText;
         q.bestAnswer = bestAnswer;
         q.orderIndex = orderIndex;
+        q.depthType = depthType;
         return q;
     }
 

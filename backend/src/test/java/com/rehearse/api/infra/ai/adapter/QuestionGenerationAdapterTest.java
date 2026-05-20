@@ -48,7 +48,7 @@ class QuestionGenerationAdapterTest {
     private QuestionGenerationRequest questionRequest() {
         return new QuestionGenerationRequest(
                 Position.BACKEND, null, InterviewLevel.JUNIOR,
-                Set.of(InterviewType.CS_FUNDAMENTAL), null, null, 30, null);
+                Set.of(InterviewType.CS_FUNDAMENTAL), null, 30, null);
     }
 
     private GeneratedQuestion sampleQuestion() {

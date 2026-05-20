@@ -43,7 +43,8 @@ public class ResumeSkeletonSampler {
                 project.techStack(),
                 project.role(),
                 project.architecture(),
-                sampled
+                sampled,
+                project.depthSignals()
         );
     }
 }

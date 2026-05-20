@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -10,7 +11,9 @@ public record Project(
         List<String> techStack,
         String role,
         String architecture,
-        List<String> decisions
+        List<String> decisions,
+        @JsonInclude(value = JsonInclude.Include.CUSTOM, valueFilter = DepthSignals.EmptyValueFilter.class)
+        DepthSignals depthSignals
 ) {
 
     public Project {
@@ -21,5 +24,6 @@ public record Project(
         role = role == null ? "" : role;
         architecture = architecture == null ? "" : architecture;
         decisions = decisions == null ? List.of() : List.copyOf(decisions);
+        depthSignals = depthSignals == null ? DepthSignals.empty() : depthSignals;
     }
 }
