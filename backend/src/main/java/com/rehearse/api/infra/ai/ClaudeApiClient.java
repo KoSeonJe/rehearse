@@ -1,5 +1,7 @@
 package com.rehearse.api.infra.ai;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.dto.claude.ClaudeRequest;
@@ -46,6 +48,7 @@ public class ClaudeApiClient {
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
     private final FollowUpPromptBuilder followUpPromptBuilder;
     private final AiResponseParser responseParser;
+    private final ObjectMapper objectMapper;
     private final String apiKey;
     private final String model;
 
@@ -54,6 +57,7 @@ public class ClaudeApiClient {
             QuestionGenerationPromptBuilder questionPromptBuilder,
             FollowUpPromptBuilder followUpPromptBuilder,
             AiResponseParser responseParser,
+            ObjectMapper objectMapper,
             @Value("${claude.api-key}") String apiKey,
             @Value("${claude.model:claude-sonnet-4-20250514}") String model,
             @Value("${claude.api.url:https://api.anthropic.com/v1/messages}") String apiUrl) {
@@ -68,6 +72,7 @@ public class ClaudeApiClient {
         this.questionPromptBuilder = questionPromptBuilder;
         this.followUpPromptBuilder = followUpPromptBuilder;
         this.responseParser = responseParser;
+        this.objectMapper = objectMapper;
         this.apiKey = apiKey;
         this.model = model;
     }
@@ -75,6 +80,8 @@ public class ClaudeApiClient {
     // Claude 는 response_format 파라미터 미지원 → system 메시지 앞에 prepend 해서 JSON 강제.
     private static final String JSON_OBJECT_INSTRUCTION =
             "You MUST respond with a single JSON object only. No prose, no markdown, no code fences.";
+    private static final String JSON_SCHEMA_INSTRUCTION_PREFIX =
+            "\n\n반드시 아래 JSON Schema 를 정확히 따라 응답하세요. 모든 required 필드 포함, additionalProperties 금지:\n";
 
     @RateLimiter(name = "claude-api")
     @Retryable(
@@ -94,7 +101,9 @@ public class ClaudeApiClient {
         List<SystemContent> systemContents = new ArrayList<>();
         List<ClaudeRequest.Message> userMessages = new ArrayList<>();
 
-        if (req.responseFormat() == ResponseFormat.JSON_OBJECT
+        if (req.responseFormat() == ResponseFormat.JSON_SCHEMA && req.jsonSchema() != null) {
+            systemContents.add(SystemContent.of(buildJsonSchemaInstruction(req.jsonSchema())));
+        } else if (req.responseFormat() == ResponseFormat.JSON_OBJECT
                 || req.responseFormat() == ResponseFormat.JSON_SCHEMA) {
             systemContents.add(SystemContent.of(JSON_OBJECT_INSTRUCTION));
         }
@@ -207,6 +216,17 @@ public class ClaudeApiClient {
     public GeneratedFollowUp recoverGenerateFollowUpQuestion(Exception e, FollowUpGenerationRequest request) {
         log.error("[Claude API] generateFollowUpQuestion 재시도 최종 실패", e);
         throw new BusinessException(AiErrorCode.TIMEOUT);
+    }
+
+    private String buildJsonSchemaInstruction(JsonSchemaSpec spec) {
+        try {
+            String schemaJson = objectMapper.writeValueAsString(spec.schema());
+            return JSON_OBJECT_INSTRUCTION + JSON_SCHEMA_INSTRUCTION_PREFIX + schemaJson;
+        } catch (JsonProcessingException e) {
+            log.warn("[Claude API] JSON Schema 직렬화 실패 — JSON_OBJECT_INSTRUCTION 만 적용. schemaName={}, reason={}",
+                    spec.name(), e.getMessage());
+            return JSON_OBJECT_INSTRUCTION;
+        }
     }
 
     private String callClaudeApi(String systemPrompt, String userPrompt, int maxTokens, Double temperature) {
