@@ -249,7 +249,7 @@ class NonverbalScorePersisterTest extends ServiceIntegrationSupport {
 
         Question question = Question.resume(
                 questionSet, QuestionType.RESUME_OPENER,
-                "프로젝트 경험을 설명해주세요.", null, null, 0);
+                "프로젝트 경험을 설명해주세요.", null, null, 0, null);
         questionSet.addQuestion(question);
         questionRepository.saveAndFlush(question);
 

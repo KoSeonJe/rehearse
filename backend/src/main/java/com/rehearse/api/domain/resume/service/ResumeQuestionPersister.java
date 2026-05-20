@@ -38,7 +38,7 @@ public class ResumeQuestionPersister {
                     .build();
             Question question = Question.resume(
                     questionSet, draft.questionType(),
-                    draft.questionText(), draft.ttsText(), draft.bestAnswer(), 0);
+                    draft.questionText(), draft.ttsText(), draft.bestAnswer(), 0, null);
             questionSet.addQuestion(question);
             questionSets.add(questionSet);
         }

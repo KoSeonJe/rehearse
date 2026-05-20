@@ -10,7 +10,8 @@ public record Project(
         List<String> techStack,
         String role,
         String architecture,
-        List<String> decisions
+        List<String> decisions,
+        DepthSignals depthSignals
 ) {
 
     public Project {
@@ -21,5 +22,6 @@ public record Project(
         role = role == null ? "" : role;
         architecture = architecture == null ? "" : architecture;
         decisions = decisions == null ? List.of() : List.copyOf(decisions);
+        depthSignals = depthSignals == null ? DepthSignals.empty() : depthSignals;
     }
 }

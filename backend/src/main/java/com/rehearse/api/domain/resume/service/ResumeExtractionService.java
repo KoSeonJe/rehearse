@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.resume.service;
 
 import com.rehearse.api.domain.resume.entity.CandidateLevel;
+import com.rehearse.api.domain.resume.entity.DepthSignals;
 import com.rehearse.api.domain.resume.entity.Project;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
@@ -33,9 +34,21 @@ public class ResumeExtractionService {
                         p.techStack(),
                         p.role(),
                         p.architecture(),
-                        p.decisions()))
+                        p.decisions(),
+                        toDepthSignals(p.depthSignals())))
                 .toList();
         return new ResumeSkeleton(parsed.resumeId(), fileHash, level, parsed.targetDomain(), projects);
+    }
+
+    private DepthSignals toDepthSignals(GeneratedResumeSkeleton.GeneratedDepthSignals raw) {
+        if (raw == null) {
+            return DepthSignals.empty();
+        }
+        return new DepthSignals(
+                raw.tradeoffs(),
+                raw.alternatives(),
+                raw.quantitative(),
+                raw.decisionRationale());
     }
 
     private CandidateLevel parseCandidateLevel(String raw) {

@@ -196,12 +196,12 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                                 "p1", "주문 캐싱 개선",
                                 List.of("Redis", "MySQL"),
                                 "백엔드", "Cache-Aside",
-                                List.of("TTL 5분")),
+                                List.of("TTL 5분"), null),
                         new GeneratedResumeSkeleton.GeneratedProject(
                                 "p2", "결제 정합성",
                                 List.of("Java"),
                                 "백엔드", "",
-                                List.of())
+                                List.of(), null)
                 )
         );
     }

@@ -89,7 +89,7 @@ class ResumeSkeletonSamplerTest {
         void preserves_non_decision_fields() {
             Project original = new Project(
                     "p1", "주문 캐싱", List.of("Redis", "MySQL"),
-                    "백엔드", "Cache-Aside", seven()
+                    "백엔드", "Cache-Aside", seven(), null
             );
             ResumeSkeleton skeleton = new ResumeSkeleton(
                     "r1", "hash1", CandidateLevel.JUNIOR, "backend", List.of(original)
@@ -131,7 +131,7 @@ class ResumeSkeletonSamplerTest {
 
     private ResumeSkeleton skeletonWithDecisions(List<String> decisions) {
         Project project = new Project(
-                "p1", "test-project", List.of("Java"), "backend", "monolith", decisions
+                "p1", "test-project", List.of("Java"), "backend", "monolith", decisions, null
         );
         return new ResumeSkeleton(
                 "r1", "hash1", CandidateLevel.JUNIOR, "backend", List.of(project)
