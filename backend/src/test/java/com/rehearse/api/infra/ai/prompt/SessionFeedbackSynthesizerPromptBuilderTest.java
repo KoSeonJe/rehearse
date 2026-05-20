@@ -126,7 +126,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
         assertThat(request.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(request.jsonSchema()).isNotNull();
         assertThat(request.jsonSchema().name())
-                .isEqualTo(GeneratedSessionFeedbackSchema.NAME);
+                .isEqualTo(GeneratedSessionFeedbackSchema.SCHEMA_NAME);
         Map<String, Object> schema = request.jsonSchema().schema();
         assertThat(schema).containsEntry("type", "object");
         assertThat(schema).containsEntry("additionalProperties", false);

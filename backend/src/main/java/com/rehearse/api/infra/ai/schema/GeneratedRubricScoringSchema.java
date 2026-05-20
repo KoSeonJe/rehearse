@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class GeneratedRubricScoringSchema {
 
-    public static final String NAME = "rubric_score";
+    public static final String SCHEMA_NAME = "rubric_score";
 
     private GeneratedRubricScoringSchema() {
     }
@@ -52,6 +52,6 @@ public final class GeneratedRubricScoringSchema {
     }
 
     public static JsonSchemaSpec spec(List<String> dimensionsToScore) {
-        return new JsonSchemaSpec(NAME, build(dimensionsToScore));
+        return new JsonSchemaSpec(SCHEMA_NAME, build(dimensionsToScore));
     }
 }

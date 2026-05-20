@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class GeneratedQuestionsWrapperSchema {
 
-    public static final String NAME = "generated_questions";
+    public static final String SCHEMA_NAME = "generated_questions";
 
     private GeneratedQuestionsWrapperSchema() {
     }
@@ -47,6 +47,6 @@ public final class GeneratedQuestionsWrapperSchema {
     }
 
     public static JsonSchemaSpec spec() {
-        return new JsonSchemaSpec(NAME, build());
+        return new JsonSchemaSpec(SCHEMA_NAME, build());
     }
 }

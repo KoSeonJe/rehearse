@@ -70,7 +70,7 @@ class FollowUpGenerationAdapterTest {
         assertThat(captured.callType()).isEqualTo("generate_followup");
         assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(captured.jsonSchema()).isNotNull();
-        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedFollowUpSchema.NAME);
+        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedFollowUpSchema.SCHEMA_NAME);
         assertThat(captured.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(captured.jsonSchema().schema()).containsEntry("additionalProperties", false);
     }

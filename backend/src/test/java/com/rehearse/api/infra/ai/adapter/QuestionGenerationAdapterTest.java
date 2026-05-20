@@ -106,7 +106,7 @@ class QuestionGenerationAdapterTest {
         assertThat(captured.callType()).isEqualTo("generate_questions");
         assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(captured.jsonSchema()).isNotNull();
-        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedQuestionsWrapperSchema.NAME);
+        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedQuestionsWrapperSchema.SCHEMA_NAME);
         assertThat(captured.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(captured.jsonSchema().schema()).containsEntry("additionalProperties", false);
         assertThat(captured.jsonSchema().schema().get("required")).isEqualTo(List.of("questions"));

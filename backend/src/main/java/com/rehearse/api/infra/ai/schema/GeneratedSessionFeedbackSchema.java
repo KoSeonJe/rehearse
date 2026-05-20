@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class GeneratedSessionFeedbackSchema {
 
-    public static final String NAME = "session_feedback";
+    public static final String SCHEMA_NAME = "session_feedback";
 
     public static final List<String> DIMENSION_KEYS = List.of(
             "문제 정의", "기술 깊이", "설명력", "개념 정확도", "실무 응용",
@@ -102,6 +102,6 @@ public final class GeneratedSessionFeedbackSchema {
     }
 
     public static JsonSchemaSpec spec() {
-        return new JsonSchemaSpec(NAME, build());
+        return new JsonSchemaSpec(SCHEMA_NAME, build());
     }
 }

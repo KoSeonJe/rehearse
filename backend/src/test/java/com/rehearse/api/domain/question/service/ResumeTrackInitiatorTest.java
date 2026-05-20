@@ -140,7 +140,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
 
         assertThat(generatorReq.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(generatorReq.jsonSchema()).isNotNull();
-        assertThat(generatorReq.jsonSchema().name()).isEqualTo(GeneratedResumeQuestionsSchema.NAME);
+        assertThat(generatorReq.jsonSchema().name()).isEqualTo(GeneratedResumeQuestionsSchema.SCHEMA_NAME);
         assertThat(generatorReq.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(generatorReq.jsonSchema().schema()).containsEntry("additionalProperties", false);
         assertThat(generatorReq.jsonSchema().schema().get("required"))

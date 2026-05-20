@@ -9,8 +9,8 @@ import java.util.Map;
 
 public final class GeneratedAnswerAnalysisSchema {
 
-    public static final String NAME_CS = "answer_analysis_cs";
-    public static final String NAME_RESUME = "answer_analysis_resume";
+    public static final String SCHEMA_NAME_CS = "answer_analysis_cs";
+    public static final String SCHEMA_NAME_RESUME = "answer_analysis_resume";
 
     public static final List<String> CS_DIMENSION_KEYS = List.of(
             "problem_framing", "technical_depth", "reasoning_communication",
@@ -81,7 +81,7 @@ public final class GeneratedAnswerAnalysisSchema {
     }
 
     public static JsonSchemaSpec spec(boolean resumeTrack) {
-        String name = resumeTrack ? NAME_RESUME : NAME_CS;
+        String name = resumeTrack ? SCHEMA_NAME_RESUME : SCHEMA_NAME_CS;
         return new JsonSchemaSpec(name, build(resumeTrack));
     }
 }

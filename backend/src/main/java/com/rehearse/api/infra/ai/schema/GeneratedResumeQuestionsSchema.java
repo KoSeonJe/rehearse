@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class GeneratedResumeQuestionsSchema {
 
-    public static final String NAME = "generated_resume_questions";
+    public static final String SCHEMA_NAME = "generated_resume_questions";
 
     private GeneratedResumeQuestionsSchema() {
     }
@@ -42,6 +42,6 @@ public final class GeneratedResumeQuestionsSchema {
     }
 
     public static JsonSchemaSpec spec() {
-        return new JsonSchemaSpec(NAME, build());
+        return new JsonSchemaSpec(SCHEMA_NAME, build());
     }
 }

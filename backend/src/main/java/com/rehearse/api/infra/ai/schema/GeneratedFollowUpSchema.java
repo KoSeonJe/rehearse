@@ -8,7 +8,7 @@ import java.util.Map;
 
 public final class GeneratedFollowUpSchema {
 
-    public static final String NAME = "generated_follow_up";
+    public static final String SCHEMA_NAME = "generated_follow_up";
 
     private GeneratedFollowUpSchema() {
     }
@@ -36,7 +36,7 @@ public final class GeneratedFollowUpSchema {
     }
 
     public static JsonSchemaSpec spec() {
-        return new JsonSchemaSpec(NAME, build());
+        return new JsonSchemaSpec(SCHEMA_NAME, build());
     }
 
     private static Map<String, Object> nullableString() {
