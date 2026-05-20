@@ -2,28 +2,43 @@ package com.rehearse.api.infra.ai.schema;
 
 import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public final class GeneratedAnswerAnalysisSchema {
 
-    public static final String NAME = "answer_analysis";
+    public static final String NAME_CS = "answer_analysis_cs";
+    public static final String NAME_RESUME = "answer_analysis_resume";
 
-    public static final List<String> DIMENSION_KEYS = List.of(
+    public static final List<String> CS_DIMENSION_KEYS = List.of(
             "problem_framing", "technical_depth", "reasoning_communication",
             "conceptual_accuracy", "practical_application", "experience_concreteness",
-            "collaboration_awareness", "recovery_from_gaps",
+            "collaboration_awareness", "recovery_from_gaps");
+
+    public static final List<String> RESUME_ONLY_DIMENSION_KEYS = List.of(
             "factual_consistency", "chain_depth");
+
+    public static final List<String> RESUME_DIMENSION_KEYS;
+
+    static {
+        List<String> merged = new ArrayList<>(CS_DIMENSION_KEYS);
+        merged.addAll(RESUME_ONLY_DIMENSION_KEYS);
+        RESUME_DIMENSION_KEYS = List.copyOf(merged);
+    }
 
     private static final List<String> EVIDENCE_STRENGTHS = List.of("STRONG", "WEAK", "ASSUMED");
     private static final List<String> RECOMMENDED_ACTIONS = List.of(
             "DEEP_DIVE", "CLARIFICATION", "CHALLENGE", "APPLICATION", "SKIP");
+    private static final List<Integer> GAP_ENUM = List.of(0, 1, 2, 3);
 
     private GeneratedAnswerAnalysisSchema() {
     }
 
-    public static Map<String, Object> build() {
+    public static Map<String, Object> build(boolean resumeTrack) {
+        List<String> dimensionKeys = resumeTrack ? RESUME_DIMENSION_KEYS : CS_DIMENSION_KEYS;
+
         Map<String, Object> claimProps = new LinkedHashMap<>();
         claimProps.put("text", Map.of("type", "string"));
         claimProps.put("depth_score", Map.of("type", "integer"));
@@ -37,13 +52,13 @@ public final class GeneratedAnswerAnalysisSchema {
         claimItem.put("properties", claimProps);
 
         Map<String, Object> dimensionGapsProps = new LinkedHashMap<>();
-        for (String key : DIMENSION_KEYS) {
-            dimensionGapsProps.put(key, Map.of("type", List.of("integer", "null")));
+        for (String key : dimensionKeys) {
+            dimensionGapsProps.put(key, Map.of("type", "integer", "enum", GAP_ENUM));
         }
         Map<String, Object> dimensionGapsSchema = new LinkedHashMap<>();
         dimensionGapsSchema.put("type", "object");
         dimensionGapsSchema.put("additionalProperties", false);
-        dimensionGapsSchema.put("required", List.copyOf(DIMENSION_KEYS));
+        dimensionGapsSchema.put("required", List.copyOf(dimensionKeys));
         dimensionGapsSchema.put("properties", dimensionGapsProps);
 
         Map<String, Object> rootProps = new LinkedHashMap<>();
@@ -65,7 +80,8 @@ public final class GeneratedAnswerAnalysisSchema {
         return schema;
     }
 
-    public static JsonSchemaSpec spec() {
-        return new JsonSchemaSpec(NAME, build());
+    public static JsonSchemaSpec spec(boolean resumeTrack) {
+        String name = resumeTrack ? NAME_RESUME : NAME_CS;
+        return new JsonSchemaSpec(name, build(resumeTrack));
     }
 }

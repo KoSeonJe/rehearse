@@ -35,7 +35,8 @@ public class AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
         if (interviewId == null) {
             throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
@@ -48,7 +49,8 @@ public class AnswerAnalyzer {
                 new FocusHints.AnswerAnalyzerHints(
                         mainQuestion != null ? mainQuestion : "",
                         userAnswer != null ? userAnswer : "",
-                        personaDepthHint
+                        personaDepthHint,
+                        isResumeTrack
                 ),
                 null
         ));
@@ -59,7 +61,7 @@ public class AnswerAnalyzer {
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
                 .responseFormat(ResponseFormat.JSON_SCHEMA)
-                .jsonSchema(GeneratedAnswerAnalysisSchema.spec())
+                .jsonSchema(GeneratedAnswerAnalysisSchema.spec(isResumeTrack))
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);

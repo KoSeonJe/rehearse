@@ -44,6 +44,20 @@ class AnswerAnalyzerPromptRenderingTest {
             assertThat(templateContent).doesNotContain("missing_perspectives");
             assertThat(templateContent).doesNotContain("asked_perspectives");
         }
+
+        @Test
+        @DisplayName("CS / Resume 트랙 라벨 안내가 template 에 포함된다")
+        void template_contains_track_labels() {
+            assertThat(templateContent).contains("TRACK: CS");
+            assertThat(templateContent).contains("TRACK: RESUME");
+        }
+
+        @Test
+        @DisplayName("Resume 전용 차원 키가 template 에 안내된다")
+        void template_describes_resume_only_dimensions() {
+            assertThat(templateContent).contains("factual_consistency");
+            assertThat(templateContent).contains("chain_depth");
+        }
     }
 
     @Nested

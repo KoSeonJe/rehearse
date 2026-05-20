@@ -2,6 +2,7 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.infra.ai.schema.GeneratedAnswerAnalysisSchema;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -9,52 +10,83 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("GeneratedAnswerAnalysisSchema — strict JSON Schema 정의 검증")
+@DisplayName("GeneratedAnswerAnalysisSchema — 트랙별 strict JSON Schema 정의 검증")
 class AnswerAnalyzerSchemaTest {
 
     @Test
-    @DisplayName("build() root 는 5개 필드 모두 required + additionalProperties=false")
-    void buildJsonSchema_root_requiresAllTopLevelFields() {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) GeneratedAnswerAnalysisSchema.build();
-
-        assertThat(schema).containsEntry("type", "object");
-        assertThat(schema).containsEntry("additionalProperties", false);
-        assertThat(schema.get("required")).isEqualTo(List.of(
-                "claims", "dimension_gaps", "weakest_dimension",
-                "unstated_assumptions", "recommended_next_action"));
+    @DisplayName("CS 트랙 spec name 은 answer_analysis_cs, Resume 트랙은 answer_analysis_resume")
+    void spec_name_differs_per_track() {
+        assertThat(GeneratedAnswerAnalysisSchema.spec(false).name()).isEqualTo("answer_analysis_cs");
+        assertThat(GeneratedAnswerAnalysisSchema.spec(true).name()).isEqualTo("answer_analysis_resume");
     }
 
-    @Test
-    @DisplayName("dimension_gaps 는 10개 dimension id 모두를 required 로 포함하고 각 값은 nullable integer")
-    void buildJsonSchema_dimensionGaps_requiresAll10Keys_asNullableInteger() {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) GeneratedAnswerAnalysisSchema.build();
+    @Nested
+    @DisplayName("공통 root 구조")
+    class Root {
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> dimensionGaps = (Map<String, Object>) properties.get("dimension_gaps");
+        @Test
+        @DisplayName("CS / Resume 모두 root 는 5개 필드 required + additionalProperties=false")
+        void root_requiresAllTopLevelFields() {
+            for (boolean resumeTrack : List.of(false, true)) {
+                Map<String, Object> schema = GeneratedAnswerAnalysisSchema.build(resumeTrack);
 
-        assertThat(dimensionGaps).containsEntry("type", "object");
-        assertThat(dimensionGaps).containsEntry("additionalProperties", false);
-        assertThat(dimensionGaps.get("required"))
-                .isEqualTo(List.copyOf(GeneratedAnswerAnalysisSchema.DIMENSION_KEYS));
+                assertThat(schema).containsEntry("type", "object");
+                assertThat(schema).containsEntry("additionalProperties", false);
+                assertThat(schema.get("required")).isEqualTo(List.of(
+                        "claims", "dimension_gaps", "weakest_dimension",
+                        "unstated_assumptions", "recommended_next_action"));
+            }
+        }
+    }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> dimensionGapsProps = (Map<String, Object>) dimensionGaps.get("properties");
-        for (String key : GeneratedAnswerAnalysisSchema.DIMENSION_KEYS) {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> field = (Map<String, Object>) dimensionGapsProps.get(key);
-            assertThat(field.get("type")).isEqualTo(List.of("integer", "null"));
+    @Nested
+    @DisplayName("dimension_gaps — 트랙별 키 집합 다름, 모두 0~3 enum 정수")
+    class DimensionGaps {
+
+        @Test
+        @DisplayName("CS 트랙은 8개 키만 required (factual_consistency / chain_depth 제외)")
+        void csTrack_has8Keys() {
+            Map<String, Object> dimensionGaps = dimensionGaps(false);
+
+            assertThat(dimensionGaps.get("required"))
+                    .isEqualTo(GeneratedAnswerAnalysisSchema.CS_DIMENSION_KEYS);
+            assertThat(GeneratedAnswerAnalysisSchema.CS_DIMENSION_KEYS).hasSize(8)
+                    .doesNotContain("factual_consistency", "chain_depth");
+        }
+
+        @Test
+        @DisplayName("Resume 트랙은 10개 키 required (CS 8개 + factual_consistency + chain_depth)")
+        void resumeTrack_has10Keys() {
+            Map<String, Object> dimensionGaps = dimensionGaps(true);
+
+            assertThat(dimensionGaps.get("required"))
+                    .isEqualTo(GeneratedAnswerAnalysisSchema.RESUME_DIMENSION_KEYS);
+            assertThat(GeneratedAnswerAnalysisSchema.RESUME_DIMENSION_KEYS).hasSize(10)
+                    .contains("factual_consistency", "chain_depth");
+        }
+
+        @Test
+        @DisplayName("각 dimension 값은 0~3 정수 enum, null 불허")
+        void dimensionValue_isIntegerEnum0to3_nullForbidden() {
+            for (boolean resumeTrack : List.of(false, true)) {
+                Map<String, Object> dimensionGaps = dimensionGaps(resumeTrack);
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> props = (Map<String, Object>) dimensionGaps.get("properties");
+                for (var entry : props.entrySet()) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> field = (Map<String, Object>) entry.getValue();
+                    assertThat(field.get("type")).isEqualTo("integer");
+                    assertThat(field.get("enum")).isEqualTo(List.of(0, 1, 2, 3));
+                }
+            }
         }
     }
 
     @Test
     @DisplayName("claims item 은 4개 필드 required + evidence_strength enum 제한")
     void buildJsonSchema_claimItem_strict() {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) GeneratedAnswerAnalysisSchema.build();
+        Map<String, Object> schema = GeneratedAnswerAnalysisSchema.build(false);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -78,8 +110,7 @@ class AnswerAnalyzerSchemaTest {
     @Test
     @DisplayName("recommended_next_action 은 5개 enum 으로 제한된다")
     void buildJsonSchema_recommendedNextAction_enum() {
-        @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) GeneratedAnswerAnalysisSchema.build();
+        Map<String, Object> schema = GeneratedAnswerAnalysisSchema.build(false);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -88,5 +119,12 @@ class AnswerAnalyzerSchemaTest {
 
         assertThat(action.get("enum")).isEqualTo(List.of(
                 "DEEP_DIVE", "CLARIFICATION", "CHALLENGE", "APPLICATION", "SKIP"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> dimensionGaps(boolean resumeTrack) {
+        Map<String, Object> schema = GeneratedAnswerAnalysisSchema.build(resumeTrack);
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        return (Map<String, Object>) properties.get("dimension_gaps");
     }
 }

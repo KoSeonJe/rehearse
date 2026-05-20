@@ -50,12 +50,15 @@ class AiSchemaSpecTest {
     }
 
     @Test
-    @DisplayName("GeneratedAnswerAnalysisSchema.spec() name = answer_analysis")
-    void generatedAnswerAnalysisSchema_spec() {
-        JsonSchemaSpec spec = GeneratedAnswerAnalysisSchema.spec();
+    @DisplayName("GeneratedAnswerAnalysisSchema.spec(false) name = answer_analysis_cs, spec(true) = answer_analysis_resume")
+    void generatedAnswerAnalysisSchema_spec_perTrack() {
+        JsonSchemaSpec csSpec = GeneratedAnswerAnalysisSchema.spec(false);
+        JsonSchemaSpec resumeSpec = GeneratedAnswerAnalysisSchema.spec(true);
 
-        assertThat(spec.name()).isEqualTo("answer_analysis");
-        assertThat(spec.schema()).containsEntry("additionalProperties", false);
+        assertThat(csSpec.name()).isEqualTo("answer_analysis_cs");
+        assertThat(resumeSpec.name()).isEqualTo("answer_analysis_resume");
+        assertThat(csSpec.schema()).containsEntry("additionalProperties", false);
+        assertThat(resumeSpec.schema()).containsEntry("additionalProperties", false);
     }
 
     @Test

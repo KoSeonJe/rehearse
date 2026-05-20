@@ -29,13 +29,14 @@ public class TextFallbackTurnAnalyzer {
             Long interviewId,
             MultipartFile audioFile,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) {
         if (sttService == null) {
             log.error("[TextFallbackTurnAnalyzer] STT 서비스 미설정 — fallback 불가. interviewId={}", interviewId);
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         String answerText = sttService.transcribe(audioFile);
-        return answerAnalyzer.analyze(interviewId, mainQuestion, questionReferenceType, answerText);
+        return answerAnalyzer.analyze(interviewId, mainQuestion, questionReferenceType, answerText, isResumeTrack);
     }
 }

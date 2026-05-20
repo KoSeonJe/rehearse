@@ -25,6 +25,7 @@ public record GeneratedAnswerAnalysis(
                     "GeneratedAnswerAnalysis.recommendedNextAction 는 null 일 수 없습니다.");
         }
         claims = claims != null ? List.copyOf(claims) : List.of();
+        // audio chat (JSON_OBJECT) 경로는 schema 미적용 → 방어적 null 필터링 유지.
         dimensionGaps = dimensionGaps != null ? copyNonNull(dimensionGaps) : Map.of();
         unstatedAssumptions = unstatedAssumptions != null ? List.copyOf(unstatedAssumptions) : List.of();
     }
