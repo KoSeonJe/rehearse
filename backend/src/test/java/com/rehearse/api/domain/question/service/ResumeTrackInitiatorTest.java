@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -171,7 +172,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         Long interviewId = persistInterview();
         stubExtractor(skeletonWithProjects("hash-depth-missing"), "hash-depth-missing");
         stubAiClient(questionsJsonWithPartialDepthTypes(1,
-                List.of("TRADEOFF", null, "QUANTITATIVE")));
+                Arrays.asList("TRADEOFF", null, "QUANTITATIVE")));
 
         Assertions.assertThatThrownBy(() ->
                         initiator.initiate(interviewId, "hash-depth-missing", RESUME_PDF, 30,
