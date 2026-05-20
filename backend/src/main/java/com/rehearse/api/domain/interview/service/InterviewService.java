@@ -5,7 +5,6 @@ import com.rehearse.api.domain.interview.dto.UpdateStatusRequest;
 import com.rehearse.api.domain.interview.dto.UpdateStatusResponse;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
-import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
 import com.rehearse.api.domain.interview.event.QuestionGenerationRequestedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
@@ -13,7 +12,6 @@ import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.question.service.QuestionSetService;
-import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
 import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +35,6 @@ public class InterviewService {
     private final QuestionSetRepository questionSetRepository;
     private final QuestionSetService questionSetService;
     private final ApplicationEventPublisher eventPublisher;
-    private final ResumeSkeletonRepository resumeSkeletonRepository;
     private final InterviewRetryRecorder interviewRetryRecorder;
     private final InterviewProperties interviewProperties;
 
@@ -69,12 +66,6 @@ public class InterviewService {
 
         if (interview.getQuestionGenerationStatus() != QuestionGenerationStatus.FAILED) {
             throw new BusinessException(InterviewErrorCode.QUESTION_GENERATION_NOT_FAILED);
-        }
-
-        if (interview.getInterviewTypes().contains(InterviewType.RESUME_BASED)
-                && resumeSkeletonRepository.findByInterviewId(id).isEmpty()) {
-            log.warn("이력서 면접 재시도 차단 — skeleton 부재: interviewId={}, userId={}", id, userId);
-            throw new BusinessException(InterviewErrorCode.RESUME_PLAN_RECOVERY_REQUIRED);
         }
 
         if (interview.getQuestionGenRetryCount() >= interviewProperties.retry().maxAttempts()) {

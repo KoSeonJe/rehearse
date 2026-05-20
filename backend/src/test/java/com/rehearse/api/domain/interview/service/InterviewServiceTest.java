@@ -9,8 +9,6 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
-import com.rehearse.api.domain.resume.entity.ResumeSkeletonEntity;
-import com.rehearse.api.domain.resume.repository.ResumeSkeletonRepository;
 import com.rehearse.api.global.config.InterviewProperties;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
@@ -27,7 +25,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -54,9 +51,6 @@ class InterviewServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
-
-    @Mock
-    private ResumeSkeletonRepository resumeSkeletonRepository;
 
     @Mock
     private InterviewRetryRecorder interviewRetryRecorder;
@@ -231,33 +225,6 @@ class InterviewServiceTest {
                         BusinessException be = (BusinessException) ex;
                         assertThat(be.getStatus()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
                         assertThat(be.getCode()).isEqualTo("INTERVIEW_013");
-                    });
-            then(eventPublisher).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("RESUME_BASED 인데 skeleton 부재 시 RESUME_PLAN_RECOVERY_REQUIRED")
-        void retryQuestionGeneration_resumeBasedSkeletonMissing() {
-            // given
-            Interview interview = Interview.builder()
-                    .position(Position.BACKEND)
-                    .level(InterviewLevel.JUNIOR)
-                    .interviewTypes(List.of(InterviewType.RESUME_BASED))
-                    .durationMinutes(30)
-                    .build();
-            ReflectionTestUtils.setField(interview, "id", 1L);
-            ReflectionTestUtils.setField(interview, "userId", 1L);
-            interview.failQuestionGeneration("AI 호출 실패");
-            given(interviewFinder.findById(1L)).willReturn(interview);
-            given(resumeSkeletonRepository.findByInterviewId(1L)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> interviewService.retryQuestionGeneration(1L, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException be = (BusinessException) ex;
-                        assertThat(be.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-                        assertThat(be.getCode()).isEqualTo("INTERVIEW_014");
                     });
             then(eventPublisher).shouldHaveNoInteractions();
         }

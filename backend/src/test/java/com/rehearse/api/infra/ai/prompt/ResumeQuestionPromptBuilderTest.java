@@ -84,13 +84,23 @@ class ResumeQuestionPromptBuilderTest extends ServiceIntegrationSupport {
         }
 
         @Test
-        @DisplayName("출력 프롬프트에 depth_signals 인용 가이드 + depth_type 필드 명시 룰이 포함된다")
+        @DisplayName("출력 프롬프트에 main 객체 depth_type 필드 명시 룰이 포함된다")
         void output_schema_includes_depth_type_field_rule() {
             String prompt = builder.buildSystemPrompt(Position.BACKEND, TechStack.JAVA_SPRING);
 
             assertThat(prompt)
-                    .contains("depth_signals")
                     .contains("depth_type");
+        }
+
+        @Test
+        @DisplayName("출력 프롬프트에 PDF 직접 첨부 전제 지시문이 포함된다")
+        void prompt_states_pdf_attachment_is_authoritative_source() {
+            String prompt = builder.buildSystemPrompt(Position.BACKEND, TechStack.JAVA_SPRING);
+
+            assertThat(prompt)
+                    .as("PDF 직접 첨부 전제: 'PDF' 와 '첨부' 어휘가 함께 등장")
+                    .contains("PDF")
+                    .contains("첨부");
         }
     }
 }

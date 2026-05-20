@@ -1,9 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.context.BuiltContext;
@@ -31,13 +28,11 @@ public class FollowUpQuestionWriter {
     private final AiClient aiClient;
     private final AiResponseParser aiResponseParser;
     private final InterviewContextBuilder contextBuilder;
-    private final ObjectMapper objectMapper;
 
     public GeneratedFollowUp write(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
@@ -47,8 +42,7 @@ public class FollowUpQuestionWriter {
                         analysis.claims().stream().map(c -> c.text()).toList(),
                         analysis.dimensionGaps(),
                         analysis.weakestDimension(),
-                        analysis.unstatedAssumptions(),
-                        serializeSkeleton(resumeSkeleton)
+                        analysis.unstatedAssumptions()
                 ),
                 null,
                 null,
@@ -68,17 +62,5 @@ public class FollowUpQuestionWriter {
         GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
                 response, GeneratedFollowUp.class, aiClient, chatRequest);
         return parsed.withAnswerText(userAnswer);
-    }
-
-    private String serializeSkeleton(ResumeSkeleton skeleton) {
-        if (skeleton == null) {
-            return "";
-        }
-        try {
-            return objectMapper.writeValueAsString(skeleton.projects());
-        } catch (JsonProcessingException e) {
-            log.warn("[FollowUpQuestionWriter] skeleton 직렬화 실패 — 빈 문자열 사용", e);
-            return "";
-        }
     }
 }

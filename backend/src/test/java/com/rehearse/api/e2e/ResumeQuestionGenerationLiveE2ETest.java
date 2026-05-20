@@ -13,20 +13,18 @@ import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.domain.question.service.ResumeTrackInitiator;
-import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.domain.user.repository.UserRepository;
 import com.rehearse.api.global.support.TestFixtures;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.core.io.ClassPathResource;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -34,16 +32,14 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
-@Disabled("Live LLM E2E — RUN_LIVE_API=true 환경변수로만 활성")
+// TODO(seonje, 2026-06-30): Live PDF fixture 정식 fixtures 디렉토리로 이동 + 실 LLM 호출 단가 측정 후 활성 조건 정리
+@Disabled("Live LLM E2E — RUN_LIVE_API=true 환경변수로만 활성 / 실제 PDF fixture 필요")
 @EnabledIfEnvironmentVariable(named = "RUN_LIVE_API", matches = "true")
-@DisplayName("Resume 질문 생성 Live LLM E2E — 실제 LLM 호출로 깊이/직무/표층 가드 검증")
+@DisplayName("Resume 질문 생성 Live LLM E2E — 실제 PDF 직접 첨부 호출로 깊이/직무/표층 가드 검증")
 class ResumeQuestionGenerationLiveE2ETest extends ServiceIntegrationSupport {
 
-    private static final byte[] DUMMY_PDF = "pdf".getBytes();
+    private static final String LIVE_PDF_RESOURCE = "fixtures/live-resume.pdf";
     private static final int EXPECTED_MAIN_COUNT = 7;
     private static final int DEPTH_DOMINANCE_THRESHOLD = 4;
     private static final int FORBIDDEN_PATTERN_THRESHOLD = 1;
@@ -68,16 +64,13 @@ class ResumeQuestionGenerationLiveE2ETest extends ServiceIntegrationSupport {
     @Autowired
     private QuestionRepository questionRepository;
 
-    @MockitoBean
-    private ResumeSkeletonExtractor resumeSkeletonExtractor;
-
     @Test
     @DisplayName("BACKEND/JAVA_SPRING 실제 LLM 호출 → main 7개 / depth_type enum 유효 / opener depthType null / 편중·표층 가드 통과")
-    void liveCall_satisfiesDepthAndForbiddenGuards_forBackend() {
+    void liveCall_satisfiesDepthAndForbiddenGuards_forBackend() throws Exception {
+        byte[] pdfBytes = new ClassPathResource(LIVE_PDF_RESOURCE).getInputStream().readAllBytes();
         Long interviewId = persistInterview(Position.BACKEND);
-        stubExtractor(backendSkeleton(), "live-be-hash");
 
-        initiator.initiate(interviewId, "live-be-hash", DUMMY_PDF, 15,
+        initiator.initiate(interviewId, "live-be-hash", pdfBytes, 15,
                 Position.BACKEND, TechStack.JAVA_SPRING);
 
         List<QuestionSet> sets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
@@ -156,30 +149,5 @@ class ResumeQuestionGenerationLiveE2ETest extends ServiceIntegrationSupport {
                 user.getId(), position, InterviewLevel.MID, List.of(InterviewType.RESUME_BASED));
         interviewRepository.saveAndFlush(interview);
         return interview.getId();
-    }
-
-    private void stubExtractor(GeneratedResumeSkeleton skeleton, String fileHash) {
-        when(resumeSkeletonExtractor.extract(any(byte[].class), eq(fileHash))).thenReturn(skeleton);
-    }
-
-    private GeneratedResumeSkeleton backendSkeleton() {
-        return new GeneratedResumeSkeleton(
-                "r_live01",
-                "mid",
-                "backend",
-                List.of(new GeneratedResumeSkeleton.GeneratedProject(
-                        "p1",
-                        "주문 캐싱 개선",
-                        List.of("Spring Boot", "Redis", "MySQL", "JPA"),
-                        "백엔드 단독 / API + 캐시 레이어 설계",
-                        "Spring Boot REST API + Redis Cache-Aside + MySQL",
-                        List.of("Memcached vs Redis → Redis 채택, TTL 정책 필요"),
-                        new GeneratedResumeSkeleton.GeneratedDepthSignals(
-                                List.of("TTL 5분 채택 → 캐시 무효화 비용 vs 신선도 비용"),
-                                List.of("Memcached vs Redis → Redis 채택"),
-                                List.of("주문 조회 API p95 800ms → 120ms"),
-                                List.of("Redis TTL 정책 필요 → Memcached 대신 채택"))
-                ))
-        );
     }
 }
