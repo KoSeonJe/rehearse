@@ -5,6 +5,7 @@ import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.schema.GeneratedSessionFeedbackSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -125,7 +126,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
         assertThat(request.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(request.jsonSchema()).isNotNull();
         assertThat(request.jsonSchema().name())
-                .isEqualTo(SessionFeedbackSynthesizerPromptBuilder.SCHEMA_NAME);
+                .isEqualTo(GeneratedSessionFeedbackSchema.NAME);
         Map<String, Object> schema = request.jsonSchema().schema();
         assertThat(schema).containsEntry("type", "object");
         assertThat(schema).containsEntry("additionalProperties", false);
@@ -138,7 +139,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
     void buildJsonSchema_dimensionScores_requireAll14Keys_asNullableNumber() {
         @SuppressWarnings("unchecked")
         Map<String, Object> schema =
-                (Map<String, Object>) SessionFeedbackSynthesizerPromptBuilder.buildJsonSchema();
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -152,12 +153,12 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
         assertThat(dimensionScores).containsEntry("type", "object");
         assertThat(dimensionScores).containsEntry("additionalProperties", false);
         assertThat(dimensionScores.get("required"))
-                .isEqualTo(List.copyOf(SessionFeedbackSynthesizerPromptBuilder.DIMENSION_KEYS));
+                .isEqualTo(List.copyOf(GeneratedSessionFeedbackSchema.DIMENSION_KEYS));
 
         @SuppressWarnings("unchecked")
         Map<String, Object> dimensionScoresProps =
                 (Map<String, Object>) dimensionScores.get("properties");
-        for (String key : SessionFeedbackSynthesizerPromptBuilder.DIMENSION_KEYS) {
+        for (String key : GeneratedSessionFeedbackSchema.DIMENSION_KEYS) {
             @SuppressWarnings("unchecked")
             Map<String, Object> field = (Map<String, Object>) dimensionScoresProps.get(key);
             assertThat(field.get("type")).isEqualTo(List.of("number", "null"));
@@ -169,7 +170,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
     void buildJsonSchema_delivery_anyOfObjectOrNull() {
         @SuppressWarnings("unchecked")
         Map<String, Object> schema =
-                (Map<String, Object>) SessionFeedbackSynthesizerPromptBuilder.buildJsonSchema();
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -195,7 +196,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
     void buildJsonSchema_arrayItems_areStrictObjects() {
         @SuppressWarnings("unchecked")
         Map<String, Object> schema =
-                (Map<String, Object>) SessionFeedbackSynthesizerPromptBuilder.buildJsonSchema();
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
 
         @SuppressWarnings("unchecked")
         Map<String, Object> properties = (Map<String, Object>) schema.get("properties");

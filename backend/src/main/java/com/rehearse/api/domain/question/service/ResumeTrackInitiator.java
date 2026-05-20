@@ -17,17 +17,15 @@ import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
-import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -35,7 +33,6 @@ import java.util.Map;
 public class ResumeTrackInitiator {
 
     private static final String CALL_TYPE = "resume_question_generator";
-    static final String SCHEMA_NAME = "generated_resume_questions";
     private static final double TEMPERATURE = 0.8;
     private static final int MAX_TOKENS = 14800;
     private static final int OPENER_COUNT = 1;
@@ -87,38 +84,10 @@ public class ResumeTrackInitiator {
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
                 .responseFormat(ResponseFormat.JSON_SCHEMA)
-                .jsonSchema(new JsonSchemaSpec(SCHEMA_NAME, buildJsonSchema()))
+                .jsonSchema(GeneratedResumeQuestionsSchema.spec())
                 .build();
         ChatResponse response = aiClient.chat(request);
         return aiResponseParser.parseOrRetry(response, GeneratedResumeQuestions.class, aiClient, request);
-    }
-
-    static Map<String, Object> buildJsonSchema() {
-        Map<String, Object> questionProps = new LinkedHashMap<>();
-        questionProps.put("question", Map.of("type", "string"));
-        questionProps.put("tts_question", Map.of("type", "string"));
-        questionProps.put("best_answer", Map.of("type", "string"));
-
-        Map<String, Object> questionItem = new LinkedHashMap<>();
-        questionItem.put("type", "object");
-        questionItem.put("additionalProperties", false);
-        questionItem.put("required", List.of("question", "tts_question", "best_answer"));
-        questionItem.put("properties", questionProps);
-
-        Map<String, Object> questionArray = new LinkedHashMap<>();
-        questionArray.put("type", "array");
-        questionArray.put("items", questionItem);
-
-        Map<String, Object> rootProps = new LinkedHashMap<>();
-        rootProps.put("openers", questionArray);
-        rootProps.put("mains", questionArray);
-
-        Map<String, Object> schema = new LinkedHashMap<>();
-        schema.put("type", "object");
-        schema.put("additionalProperties", false);
-        schema.put("required", List.of("openers", "mains"));
-        schema.put("properties", rootProps);
-        return schema;
     }
 
     private void persistGenerated(Long interviewId, GeneratedResumeQuestions generated) {

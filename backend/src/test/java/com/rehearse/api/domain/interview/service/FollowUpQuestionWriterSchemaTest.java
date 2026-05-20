@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
+import com.rehearse.api.infra.ai.schema.GeneratedFollowUpSchema;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,14 +9,14 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("FollowUpQuestionWriter — strict JSON Schema 정의 검증")
+@DisplayName("GeneratedFollowUpSchema — strict JSON Schema 정의 검증")
 class FollowUpQuestionWriterSchemaTest {
 
     @Test
-    @DisplayName("buildJsonSchema() 는 9개 필드 required + nullable 필드는 type 배열로 표현한다")
+    @DisplayName("build() 는 9개 필드 required + nullable 필드는 type 배열로 표현한다")
     void buildJsonSchema_requiresAllFields_withNullableTypes() {
         @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) FollowUpQuestionWriter.buildJsonSchema();
+        Map<String, Object> schema = (Map<String, Object>) GeneratedFollowUpSchema.build();
 
         assertThat(schema).containsEntry("type", "object");
         assertThat(schema).containsEntry("additionalProperties", false);

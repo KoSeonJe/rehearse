@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
+import com.rehearse.api.infra.ai.schema.GeneratedFollowUpSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -69,7 +70,7 @@ class FollowUpGenerationAdapterTest {
         assertThat(captured.callType()).isEqualTo("generate_followup");
         assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(captured.jsonSchema()).isNotNull();
-        assertThat(captured.jsonSchema().name()).isEqualTo(FollowUpGenerationAdapter.SCHEMA_NAME);
+        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedFollowUpSchema.NAME);
         assertThat(captured.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(captured.jsonSchema().schema()).containsEntry("additionalProperties", false);
     }
@@ -78,7 +79,7 @@ class FollowUpGenerationAdapterTest {
     @DisplayName("buildJsonSchema() 는 9개 필드를 모두 required 로 포함하고 nullable 필드를 type 배열로 표현한다")
     void buildJsonSchema_includesAllFields_withNullableTypes() {
         @SuppressWarnings("unchecked")
-        Map<String, Object> schema = (Map<String, Object>) FollowUpGenerationAdapter.buildJsonSchema();
+        Map<String, Object> schema = (Map<String, Object>) GeneratedFollowUpSchema.build();
 
         assertThat(schema.get("required")).isEqualTo(List.of(
                 "skip", "skip_reason", "question", "tts_question",

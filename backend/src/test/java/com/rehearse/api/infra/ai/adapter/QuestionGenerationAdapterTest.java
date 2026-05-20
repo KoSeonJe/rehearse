@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+import com.rehearse.api.infra.ai.schema.GeneratedQuestionsWrapperSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -105,7 +106,7 @@ class QuestionGenerationAdapterTest {
         assertThat(captured.callType()).isEqualTo("generate_questions");
         assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(captured.jsonSchema()).isNotNull();
-        assertThat(captured.jsonSchema().name()).isEqualTo(QuestionGenerationAdapter.SCHEMA_NAME);
+        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedQuestionsWrapperSchema.NAME);
         assertThat(captured.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(captured.jsonSchema().schema()).containsEntry("additionalProperties", false);
         assertThat(captured.jsonSchema().schema().get("required")).isEqualTo(List.of("questions"));
@@ -117,7 +118,7 @@ class QuestionGenerationAdapterTest {
         // when
         @SuppressWarnings("unchecked")
         java.util.Map<String, Object> schema =
-                (java.util.Map<String, Object>) QuestionGenerationAdapter.buildJsonSchema();
+                (java.util.Map<String, Object>) GeneratedQuestionsWrapperSchema.build();
 
         // then
         @SuppressWarnings("unchecked")

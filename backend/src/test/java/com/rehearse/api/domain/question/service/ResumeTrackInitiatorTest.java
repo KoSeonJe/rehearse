@@ -20,6 +20,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -139,7 +140,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
 
         assertThat(generatorReq.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
         assertThat(generatorReq.jsonSchema()).isNotNull();
-        assertThat(generatorReq.jsonSchema().name()).isEqualTo(ResumeTrackInitiator.SCHEMA_NAME);
+        assertThat(generatorReq.jsonSchema().name()).isEqualTo(GeneratedResumeQuestionsSchema.NAME);
         assertThat(generatorReq.jsonSchema().schema()).containsEntry("type", "object");
         assertThat(generatorReq.jsonSchema().schema()).containsEntry("additionalProperties", false);
         assertThat(generatorReq.jsonSchema().schema().get("required"))
