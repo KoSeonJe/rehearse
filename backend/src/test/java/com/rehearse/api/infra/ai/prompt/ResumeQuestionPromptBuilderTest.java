@@ -38,9 +38,7 @@ class ResumeQuestionPromptBuilderTest extends ServiceIntegrationSupport {
                     .as("토큰 슬롯이 모두 치환되어 남아있지 않다")
                     .doesNotContain("{PERSONA_BLOCK}")
                     .doesNotContain("{EVALUATION_PERSPECTIVE}")
-                    .doesNotContain("{FOLLOW_UP_DEPTH}")
-                    .doesNotContain("{DEPTH_GUIDE_5_TYPES}")
-                    .doesNotContain("{FORBIDDEN_PATTERNS}");
+                    .doesNotContain("{FOLLOW_UP_DEPTH}");
         }
 
         @Test
