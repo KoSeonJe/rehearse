@@ -19,10 +19,12 @@ import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.domain.user.repository.UserRepository;
 import com.rehearse.api.global.support.TestFixtures;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -164,6 +166,27 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     }
 
     @Test
+    @DisplayName("LLM 응답 mains 중 depth_type 누락 시 BusinessException(RESPONSE_INVALID) + Interview 상태 FAILED")
+    void initiate_throwsAndMarksFailed_whenMainsDepthTypeMissing() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth-missing"), "hash-depth-missing");
+        stubAiClient(questionsJsonWithPartialDepthTypes(1,
+                List.of("TRADEOFF", null, "QUANTITATIVE")));
+
+        Assertions.assertThatThrownBy(() ->
+                        initiator.initiate(interviewId, "hash-depth-missing", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AiErrorCode.RESPONSE_INVALID);
+
+        Interview reloaded = interviewRepository.findById(interviewId).orElseThrow();
+        assertThat(reloaded.getQuestionGenerationStatus())
+                .isEqualTo(QuestionGenerationStatus.FAILED);
+        assertThat(questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId)).isEmpty();
+    }
+
+    @Test
     @DisplayName("LLM 실패 시 Interview 상태 FAILED 로 전이 + 예외 재전파")
     void initiate_marksInterviewFailed_andRethrows_whenLlmFails() {
         Long interviewId = persistInterview();
@@ -272,6 +295,30 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         return sb.toString();
     }
 
+    private String questionsJsonWithPartialDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i).append("\"");
+            String depthType = mainDepthTypes.get(i);
+            if (depthType != null) {
+                sb.append(",\"depth_type\":\"").append(depthType).append("\"");
+            }
+            sb.append("}");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
     private String questionsJson(int openerCount, int mainCount) {
         StringBuilder sb = new StringBuilder("{\"openers\":[");
         for (int i = 0; i < openerCount; i++) {
@@ -285,7 +332,8 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
             if (i > 0) sb.append(",");
             sb.append("{\"question\":\"주요 의사결정 ").append(i)
                     .append("\",\"tts_question\":\"TTS-M").append(i)
-                    .append("\",\"best_answer\":\"best-M").append(i).append("\"}");
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"TRADEOFF\"}");
         }
         sb.append("]}");
         return sb.toString();

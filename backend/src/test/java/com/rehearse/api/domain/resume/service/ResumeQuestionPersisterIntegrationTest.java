@@ -6,6 +6,7 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionDepthType;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
@@ -51,11 +52,14 @@ class ResumeQuestionPersisterIntegrationTest extends ServiceIntegrationSupport {
                 new ResumeQuestionDraft(QuestionType.RESUME_OPENER,
                         "메인 프로젝트 설명과 본인의 역할을 말해주세요.", "TTS-O", "best-O", 0, null),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "Redis 캐시 도입 의사결정 근거", "TTS-M1", "best-M1", 1, null),
+                        "Redis 캐시 도입 의사결정 근거", "TTS-M1", "best-M1", 1,
+                        QuestionDepthType.TRADEOFF),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "Cache-Aside 정합성 정책", "TTS-M2", "best-M2", 2, null),
+                        "Cache-Aside 정합성 정책", "TTS-M2", "best-M2", 2,
+                        QuestionDepthType.PRINCIPLE),
                 new ResumeQuestionDraft(QuestionType.RESUME_MAIN,
-                        "TTL 만료 시 stampede 방어", "TTS-M3", "best-M3", 3, null)
+                        "TTL 만료 시 stampede 방어", "TTS-M3", "best-M3", 3,
+                        QuestionDepthType.LIMITATION)
         );
 
         int saved = persister.persistAll(interviewId, drafts);

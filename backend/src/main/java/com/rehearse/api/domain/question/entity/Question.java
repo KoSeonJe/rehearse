@@ -66,6 +66,9 @@ public class Question {
         if (!type.isResume()) {
             throw new IllegalArgumentException("resume() 팩토리는 RESUME_* 타입만 허용합니다: " + type);
         }
+        if (type == QuestionType.RESUME_MAIN && depthType == null) {
+            throw new IllegalArgumentException("RESUME_MAIN 질문은 depthType 이 필수입니다.");
+        }
         Question q = new Question();
         q.questionSet = questionSet;
         q.questionType = type;

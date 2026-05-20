@@ -105,6 +105,11 @@ public class ResumeTrackInitiator {
                     opener.bestAnswer(), order++, null));
         }
         for (var main : generated.mains()) {
+            if (main.depthType() == null) {
+                log.error("[ResumeTrackInitiator] main 질문 depthType 누락: interviewId={}, question={}",
+                        interviewId, main.question());
+                throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+            }
             drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
                     QuestionType.RESUME_MAIN, main.question(), main.ttsQuestion(),
                     main.bestAnswer(), order++, main.depthType()));
