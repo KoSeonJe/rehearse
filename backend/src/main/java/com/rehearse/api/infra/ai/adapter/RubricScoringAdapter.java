@@ -82,7 +82,7 @@ public class RubricScoringAdapter {
         Map<String, ValidationResult> result = new LinkedHashMap<>();
         for (String dim : dimensionsToScore) {
             DimensionScore ds = scores.get(dim);
-            if (ds == null || ds.score() == null) {
+            if (ds == null) {
                 result.put(dim, ValidationResult.passed());
                 continue;
             }
