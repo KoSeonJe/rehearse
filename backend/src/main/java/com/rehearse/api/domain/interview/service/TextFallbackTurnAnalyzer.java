@@ -15,14 +15,14 @@ import org.springframework.web.multipart.MultipartFile;
 public class TextFallbackTurnAnalyzer {
 
     private final SttService sttService;
-    private final AnswerAnalyzer answerAnalyzer;
+    private final AnswerAnalysisService answerAnalysisService;
 
     public TextFallbackTurnAnalyzer(
             @Nullable SttService sttService,
-            AnswerAnalyzer answerAnalyzer
+            AnswerAnalysisService answerAnalysisService
     ) {
         this.sttService = sttService;
-        this.answerAnalyzer = answerAnalyzer;
+        this.answerAnalysisService = answerAnalysisService;
     }
 
     public AnswerAnalysis analyze(
@@ -36,6 +36,6 @@ public class TextFallbackTurnAnalyzer {
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         String answerText = sttService.transcribe(audioFile);
-        return answerAnalyzer.analyze(interviewId, mainQuestion, questionReferenceType, answerText);
+        return answerAnalysisService.analyze(interviewId, mainQuestion, questionReferenceType, answerText);
     }
 }
