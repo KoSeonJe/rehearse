@@ -28,7 +28,7 @@ public class QuestionGenerationEventHandler {
             questionGenerationService.generateQuestions(
                     event.interviewId(), event.userId(), event.position(), event.level(),
                     event.interviewTypes(), toCsSubTopicNames(event.csSubTopics()),
-                    event.resumeText(), event.resumeFileHash(),
+                    event.resumePdfBytes(), event.resumeFileHash(),
                     event.durationMinutes(), event.techStack());
         } catch (Exception e) {
             log.error("질문 생성 비동기 작업 실패: interviewId={}", event.interviewId(), e);

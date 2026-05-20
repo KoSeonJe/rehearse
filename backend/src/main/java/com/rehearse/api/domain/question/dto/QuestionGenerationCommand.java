@@ -14,7 +14,6 @@ public record QuestionGenerationCommand(
         InterviewLevel level,
         List<InterviewType> interviewTypes,
         List<String> csSubTopics,
-        String resumeText,
         Integer durationMinutes,
         TechStack techStack
 ) {

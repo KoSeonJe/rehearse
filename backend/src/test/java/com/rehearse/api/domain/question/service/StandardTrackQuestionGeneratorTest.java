@@ -49,7 +49,7 @@ class StandardTrackQuestionGeneratorTest {
     private QuestionGenerationCommand command(List<InterviewType> types, TechStack techStack) {
         return new QuestionGenerationCommand(
                 1L, 1L, Position.BACKEND, InterviewLevel.JUNIOR,
-                types, List.of(), null, 30, techStack);
+                types, List.of(), 30, techStack);
     }
 
     @Nested

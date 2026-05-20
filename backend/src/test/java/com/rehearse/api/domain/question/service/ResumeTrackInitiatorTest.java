@@ -11,6 +11,7 @@ import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
@@ -19,6 +20,7 @@ import com.rehearse.api.global.support.TestFixtures;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -31,6 +33,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -38,10 +41,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("ResumeTrackInitiator — 이력서 트랙 면접 시작 (opener + main 일괄 LLM 생성 + DB 분리 적재)")
 class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
 
-    private static final String RESUME_TEXT = """
-            경력 2년차 백엔드 개발자입니다. 주문 조회 API 성능 개선 프로젝트와
-            결제 정합성 보장 프로젝트를 진행했습니다. 기술스택: Java, Spring, MySQL, Redis.
-            """;
+    private static final byte[] RESUME_PDF = "pdf-content".getBytes();
 
     @Autowired
     private ResumeTrackInitiator initiator;
@@ -61,13 +61,17 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     @MockitoBean
     private AiClient aiClient;
 
+    @MockitoBean
+    private ResumeSkeletonExtractor resumeSkeletonExtractor;
+
     @Test
     @DisplayName("opener 1 + main 3 응답 → QSet 4개 분리 적재 + orderIndex 0..3 + Interview 상태 COMPLETED")
     void initiate_persistsOpenerAndMains_andCompletesInterview() {
         Long interviewId = persistInterview();
-        stubAiClient(skeletonJsonWithProjects(), questionsJson(1, 3));
+        stubExtractor(skeletonWithProjects("hash-success"), "hash-success");
+        stubAiClient(questionsJson(1, 3));
 
-        initiator.initiate(interviewId, "hash-success", RESUME_TEXT, 30);
+        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30);
 
         List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
         assertThat(persistedSets).hasSize(4);
@@ -97,9 +101,10 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     @DisplayName("skeleton.projects[0].projectName 이 LLM prompt 의 PRIMARY_PROJECT_NAME 라인으로 전달된다")
     void initiate_passes_primaryProjectName_to_llm_prompt() {
         Long interviewId = persistInterview();
-        stubAiClient(skeletonJsonWithProjects(), questionsJson(1, 1));
+        stubExtractor(skeletonWithProjects("hash-primary"), "hash-primary");
+        stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-primary", RESUME_TEXT, 21);
+        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
@@ -111,9 +116,10 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     @DisplayName("projects 가 비어 있으면 PRIMARY_PROJECT_NAME 자리는 '(없음)' 으로 채워진다 (generic fallback)")
     void initiate_falls_back_to_generic_when_projects_empty() {
         Long interviewId = persistInterview();
-        stubAiClient(skeletonJsonNoProjects(), questionsJson(1, 1));
+        stubExtractor(skeletonNoProjects("hash-empty"), "hash-empty");
+        stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-empty", RESUME_TEXT, 21);
+        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
@@ -125,11 +131,12 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
     @DisplayName("LLM 실패 시 Interview 상태 FAILED 로 전이 + 예외 재전파")
     void initiate_marksInterviewFailed_andRethrows_whenLlmFails() {
         Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-fail"), "hash-fail");
         when(aiClient.chat(any(ChatRequest.class)))
                 .thenThrow(new RuntimeException("LLM 호출 실패"));
 
         Assertions.assertThatThrownBy(() ->
-                        initiator.initiate(interviewId, "hash-fail", RESUME_TEXT, 30))
+                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("LLM 호출 실패");
 
@@ -153,14 +160,14 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         return interview.getId();
     }
 
-    private void stubAiClient(String skeletonJson, String questionsJson) {
+    private void stubExtractor(GeneratedResumeSkeleton skeleton, String fileHash) {
+        when(resumeSkeletonExtractor.extract(any(byte[].class), eq(fileHash))).thenReturn(skeleton);
+    }
+
+    private void stubAiClient(String questionsJson) {
         when(aiClient.chat(any(ChatRequest.class))).thenAnswer(inv -> {
             ChatRequest req = inv.getArgument(0);
-            String content = switch (req.callType()) {
-                case "resume_extractor" -> skeletonJson;
-                case "resume_question_generator" -> questionsJson;
-                default -> "{}";
-            };
+            String content = "resume_question_generator".equals(req.callType()) ? questionsJson : "{}";
             return new ChatResponse(content, ChatResponse.Usage.empty(), "mock", "mock-model", false, false);
         });
     }
@@ -179,43 +186,33 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                 .orElseThrow(() -> new AssertionError("USER 메시지 없음"));
     }
 
-    private String skeletonJsonWithProjects() {
-        return """
-                {
-                  "resume_id": "resume-1",
-                  "candidate_level": "MID",
-                  "target_domain": "backend",
-                  "projects": [
-                    {
-                      "project_id": "p1",
-                      "project_name": "주문 캐싱 개선",
-                      "tech_stack": ["Redis", "MySQL"],
-                      "role": "백엔드",
-                      "architecture": "Cache-Aside",
-                      "decisions": ["TTL 5분"]
-                    },
-                    {
-                      "project_id": "p2",
-                      "project_name": "결제 정합성",
-                      "tech_stack": ["Java"],
-                      "role": "백엔드",
-                      "architecture": "",
-                      "decisions": []
-                    }
-                  ]
-                }
-                """;
+    private GeneratedResumeSkeleton skeletonWithProjects(String resumeId) {
+        return new GeneratedResumeSkeleton(
+                resumeId,
+                "MID",
+                "backend",
+                List.of(
+                        new GeneratedResumeSkeleton.GeneratedProject(
+                                "p1", "주문 캐싱 개선",
+                                List.of("Redis", "MySQL"),
+                                "백엔드", "Cache-Aside",
+                                List.of("TTL 5분")),
+                        new GeneratedResumeSkeleton.GeneratedProject(
+                                "p2", "결제 정합성",
+                                List.of("Java"),
+                                "백엔드", "",
+                                List.of())
+                )
+        );
     }
 
-    private String skeletonJsonNoProjects() {
-        return """
-                {
-                  "resume_id": "resume-2",
-                  "candidate_level": "JUNIOR",
-                  "target_domain": "backend",
-                  "projects": []
-                }
-                """;
+    private GeneratedResumeSkeleton skeletonNoProjects(String resumeId) {
+        return new GeneratedResumeSkeleton(
+                resumeId,
+                "JUNIOR",
+                "backend",
+                List.of()
+        );
     }
 
     private String questionsJson(int openerCount, int mainCount) {

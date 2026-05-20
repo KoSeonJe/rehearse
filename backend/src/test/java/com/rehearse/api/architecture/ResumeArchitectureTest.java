@@ -148,6 +148,16 @@ class ResumeArchitectureTest {
     }
 
     @Test
+    @DisplayName("PDF 텍스트 추출기 클래스는 다시 만들 수 없다 (PDF 직접 입력 방식 채택)")
+    void deletedPdfTextExtractorMustNotResurface() {
+        noClasses()
+                .that().haveSimpleName("PdfTextExtractor")
+                .should().resideInAnyPackage("..")
+                .allowEmptyShould(true)
+                .check(importedClasses);
+    }
+
+    @Test
     @DisplayName("applyL1FalseNegativeGuard 메서드는 다시 만들 수 없다 (false-negative 보정 로직 폐기)")
     void deletedAnswerAnalysisGuardMethodMustNotResurface() {
         noMethods()
