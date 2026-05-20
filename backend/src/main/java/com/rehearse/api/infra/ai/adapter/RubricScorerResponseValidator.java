@@ -18,6 +18,9 @@ public class RubricScorerResponseValidator {
             String evidenceQuote,
             String userAnswer
     ) {
+        if (score == null && isNotEvaluableSentinel(observation)) {
+            return ValidationResult.passed();
+        }
         if (score == null || score < 1 || score > 3) {
             return ValidationResult.violated(Violation.INVALID_SCORE, "score");
         }
@@ -43,6 +46,10 @@ public class RubricScorerResponseValidator {
             return "";
         }
         return WHITESPACE.matcher(text).replaceAll(" ").trim();
+    }
+
+    private boolean isNotEvaluableSentinel(String observation) {
+        return observation != null && observation.strip().startsWith(NO_RELATED_UTTERANCE);
     }
 
     public enum Violation {
