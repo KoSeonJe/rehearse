@@ -22,4 +22,21 @@ public record DepthSignals(
     public static DepthSignals empty() {
         return new DepthSignals(List.of(), List.of(), List.of(), List.of());
     }
+
+    public boolean isEmpty() {
+        return tradeoffs.isEmpty() && alternatives.isEmpty()
+                && quantitative.isEmpty() && decisionRationale.isEmpty();
+    }
+
+    public static final class EmptyValueFilter {
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof DepthSignals signals && signals.isEmpty();
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+    }
 }

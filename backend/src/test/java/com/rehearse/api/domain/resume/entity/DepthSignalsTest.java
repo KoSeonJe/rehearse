@@ -130,5 +130,36 @@ class DepthSignalsTest {
             assertThat(project.depthSignals().quantitative()).isEmpty();
             assertThat(project.depthSignals().decisionRationale()).isEmpty();
         }
+
+        @Test
+        @DisplayName("Project.depthSignals 가 empty 이면 직렬화 결과에 depthSignals 키 자체가 제외된다")
+        void emptyDepthSignals_excluded_from_project_serialization() throws Exception {
+            Project project = new Project(
+                    "p1", "주문 캐싱",
+                    List.of("Redis"), "백엔드", "Cache-Aside",
+                    List.of("Memcached vs Redis → Redis"),
+                    DepthSignals.empty()
+            );
+
+            String json = objectMapper.writeValueAsString(project);
+
+            assertThat(json).doesNotContain("depthSignals");
+        }
+
+        @Test
+        @DisplayName("Project.depthSignals 에 값이 있으면 직렬화 결과에 포함된다")
+        void nonEmptyDepthSignals_included_in_project_serialization() throws Exception {
+            Project project = new Project(
+                    "p1", "주문 캐싱",
+                    List.of("Redis"), "백엔드", "Cache-Aside",
+                    List.of(),
+                    new DepthSignals(List.of("t1"), List.of(), List.of(), List.of())
+            );
+
+            String json = objectMapper.writeValueAsString(project);
+
+            assertThat(json).contains("depthSignals");
+            assertThat(json).contains("\"tradeoffs\":[\"t1\"]");
+        }
     }
 }
