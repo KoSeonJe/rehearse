@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.score.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
@@ -38,13 +39,15 @@ public class QuestionScorePersister {
         questionScoreRepository.save(qs);
 
         dimensionScores.forEach((dimensionRef, ds) -> {
-            if (ds == null || ds.score() == null) return;
+            if (ds == null) return;
+            if (ds.status() == DimensionStatus.OK && ds.score() == null) return;
             QuestionScoreDimension dim = QuestionScoreDimension.builder()
                     .questionScoreId(qs.getId())
                     .dimensionRef(dimensionRef)
                     .score(ds.score())
                     .observation(ds.observation())
                     .evidenceQuote(ds.evidenceQuote())
+                    .status(ds.status())
                     .build();
             dimensionRepository.save(dim);
         });

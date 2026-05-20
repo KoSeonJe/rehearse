@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.adapter;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -232,6 +233,59 @@ class RubricScoringAdapterTest {
             assertThat(result.scoredDimensions()).containsExactly("technical_depth");
             assertThat(result.dimensionScores().get("technical_depth").score()).isEqualTo(2);
             assertThat(retryFailedCount("technical_depth", "score")).isZero();
+        }
+    }
+
+    @Nested
+    @DisplayName("\"관련 발언 없음\" sentinel 매핑")
+    class NotEvaluableSentinel {
+
+        @Test
+        @DisplayName("LLM 응답 score=null + observation=\"관련 발언 없음\" → NOT_EVALUABLE 매핑 + retry 없음")
+        void notEvaluableSentinel_mapsToNotEvaluableWithoutRetry() {
+            String json = """
+                    {"technical_depth":{"score":null,"observation":"관련 발언 없음","evidence_quote":"관련 발언 없음"}}
+                    """;
+            given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
+            given(responseParser.extractJson("first")).willReturn(json);
+
+            Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
+                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+
+            verify(aiClient, times(1)).chat(any());
+            assertThat(result.scoredDimensions()).isEmpty();
+            var ds = result.dimensionScores().get("technical_depth");
+            assertThat(ds.score()).isNull();
+            assertThat(ds.status()).isEqualTo(DimensionStatus.NOT_EVALUABLE);
+            assertThat(ds.observation()).isEqualTo("관련 발언 없음");
+            assertThat(retryFailedCount("technical_depth", "score")).isZero();
+        }
+
+        @Test
+        @DisplayName("A=sentinel + B=정상 → A 는 NOT_EVALUABLE / B 는 OK 적재 + retry 없음")
+        void partialSentinel_perDimensionMapping() {
+            String json = """
+                    {
+                      "technical_depth":{"score":null,"observation":"관련 발언 없음","evidence_quote":"관련 발언 없음"},
+                      "reasoning_communication":{"score":2,"observation":"논리 흐름 명확","evidence_quote":"결제 모듈을 리팩토링"}
+                    }
+                    """;
+            given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
+            given(responseParser.extractJson("first")).willReturn(json);
+
+            Rubric rubric = createRubric("test-v1", List.of("technical_depth", "reasoning_communication"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
+                    List.of("technical_depth", "reasoning_communication"),
+                    USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+
+            verify(aiClient, times(1)).chat(any());
+            assertThat(result.scoredDimensions()).containsExactly("reasoning_communication");
+            assertThat(result.dimensionScores().get("technical_depth").status())
+                    .isEqualTo(DimensionStatus.NOT_EVALUABLE);
+            assertThat(result.dimensionScores().get("reasoning_communication").status())
+                    .isEqualTo(DimensionStatus.OK);
+            assertThat(result.dimensionScores().get("reasoning_communication").score()).isEqualTo(2);
         }
     }
 

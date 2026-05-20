@@ -22,6 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RubricScorer {
 
+    private static final int BLANK_ANSWER_LENGTH_THRESHOLD = 3;
+
     private final RubricCatalog rubricLoader;
     private final RubricScorerPromptBuilder promptBuilder;
     private final RubricScoringAdapter adapter;
@@ -42,6 +44,14 @@ public class RubricScorer {
             return RubricScoringResult.empty(rubric.rubricId());
         }
 
+        if (isBlankAnswer(userAnswer)) {
+            int length = userAnswer == null ? 0 : userAnswer.strip().length();
+            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, len={}",
+                    interview.getId(), question.getId(), length);
+            return RubricScoringResult.notEvaluable(rubric.rubricId(), dimensionsToScore,
+                    "응답 길이 " + BLANK_ANSWER_LENGTH_THRESHOLD + "자 이하");
+        }
+
         InterviewLevel userLevel = interview.getLevel();
 
         log.debug("RubricScorer 채점 시작: rubricId={}, dimensions={}",
@@ -53,5 +63,9 @@ public class RubricScorer {
 
         return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
                 userAnswer, interview.getId(), question.getId());
+    }
+
+    private boolean isBlankAnswer(String userAnswer) {
+        return userAnswer == null || userAnswer.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
     }
 }

@@ -140,6 +140,33 @@ class RubricScorerResponseValidatorTest {
     }
 
     @Nested
+    @DisplayName("NOT_EVALUABLE sentinel observation 통과")
+    class NotEvaluableSentinel {
+
+        @Test
+        @DisplayName("score=null + observation 이 \"관련 발언 없음\" 으로 시작하면 통과 (NOT_EVALUABLE sentinel)")
+        void scoreNullWithSentinelObservation_passes() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", null, "관련 발언 없음", "관련 발언 없음",
+                    "오늘 날씨 좋네요");
+
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("score=null + observation 이 sentinel 이 아니면 INVALID_SCORE 위배")
+        void scoreNullWithoutSentinel_violatesInvalidScore() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", null, "구체적 답변", "TPS 10000",
+                    "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isFalse();
+            assertThat(result.violation()).isEqualTo(Violation.INVALID_SCORE);
+            assertThat(result.field()).isEqualTo("score");
+        }
+    }
+
+    @Nested
     @DisplayName("evidence_quote null/blank 검증")
     class EvidenceMissing {
 
