@@ -189,7 +189,7 @@ public class SessionFeedbackInputAssembler {
                 .collect(Collectors.toMap(
                         d -> toKoreanLabel(d.getDimensionRef()),
                         d -> new DimensionScore(d.getScore(), d.getObservation(), d.getEvidenceQuote(),
-                                d.getStatus() != null ? d.getStatus() : DimensionStatus.OK)
+                                d.getStatus())
                 ));
 
         if (scores.isEmpty()) {

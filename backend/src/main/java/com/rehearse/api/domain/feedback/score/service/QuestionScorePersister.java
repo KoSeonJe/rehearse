@@ -40,15 +40,14 @@ public class QuestionScorePersister {
 
         dimensionScores.forEach((dimensionRef, ds) -> {
             if (ds == null) return;
-            DimensionStatus status = ds.status() != null ? ds.status() : DimensionStatus.OK;
-            if (status == DimensionStatus.OK && ds.score() == null) return;
+            if (ds.status() == DimensionStatus.OK && ds.score() == null) return;
             QuestionScoreDimension dim = QuestionScoreDimension.builder()
                     .questionScoreId(qs.getId())
                     .dimensionRef(dimensionRef)
                     .score(ds.score())
                     .observation(ds.observation())
                     .evidenceQuote(ds.evidenceQuote())
-                    .status(status)
+                    .status(ds.status())
                     .build();
             dimensionRepository.save(dim);
         });
