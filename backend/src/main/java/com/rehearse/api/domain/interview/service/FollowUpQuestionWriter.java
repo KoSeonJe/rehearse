@@ -14,6 +14,7 @@ import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.schema.GeneratedFollowUpSchema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -59,7 +60,8 @@ public class FollowUpQuestionWriter {
                 .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(GeneratedFollowUpSchema.spec())
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);

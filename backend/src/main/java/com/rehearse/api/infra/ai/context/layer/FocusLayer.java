@@ -141,7 +141,9 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildAnswerAnalyzer(FocusHints.AnswerAnalyzerHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
+        String trackLabel = h.isResumeTrack() ? "RESUME" : "CS";
+        return "TRACK: " + trackLabel + "\n\n" +
+               "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "PERSONA_DEPTH: " + nz(h.personaDepthHint()) + "\n\n" +
                "위 답변을 분석해 JSON 한 객체로만 응답하세요.";

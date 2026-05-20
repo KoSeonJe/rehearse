@@ -9,6 +9,7 @@ public class RubricScorerResponseValidator {
 
     private static final Pattern KOREAN_SYLLABLE = Pattern.compile("[\\uAC00-\\uD7A3]");
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+    static final String NO_RELATED_UTTERANCE = "관련 발언 없음";
 
     public ValidationResult validate(
             String dimensionKey,
@@ -26,12 +27,12 @@ public class RubricScorerResponseValidator {
         if (!KOREAN_SYLLABLE.matcher(observation).find()) {
             return ValidationResult.violated(Violation.NON_KOREAN_OBSERVATION, "observation");
         }
-        if (evidenceQuote == null || evidenceQuote.isBlank()) {
-            return ValidationResult.violated(Violation.MISSING_EVIDENCE, "evidence_quote");
+        if (evidenceQuote == null || evidenceQuote.isBlank() || NO_RELATED_UTTERANCE.equals(evidenceQuote.trim())) {
+            return ValidationResult.passed();
         }
         String normalizedAnswer = normalize(userAnswer);
         String normalizedQuote = normalize(evidenceQuote);
-        if (normalizedQuote.isEmpty() || !normalizedAnswer.contains(normalizedQuote)) {
+        if (!normalizedAnswer.contains(normalizedQuote)) {
             return ValidationResult.violated(Violation.EVIDENCE_NOT_IN_USER_ANSWER, "evidence_quote");
         }
         return ValidationResult.passed();
@@ -48,7 +49,6 @@ public class RubricScorerResponseValidator {
         INVALID_SCORE,
         MISSING_OBSERVATION,
         NON_KOREAN_OBSERVATION,
-        MISSING_EVIDENCE,
         EVIDENCE_NOT_IN_USER_ANSWER
     }
 

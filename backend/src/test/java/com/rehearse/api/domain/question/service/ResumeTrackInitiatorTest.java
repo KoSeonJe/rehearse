@@ -24,7 +24,9 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
+import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
 import com.rehearse.api.support.ServiceIntegrationSupport;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -131,6 +133,31 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         assertThat(questionGenUserMessage)
                 .as("projects 비어 있음 → primaryProjectName=null → FocusLayer 의 nz() 가 (없음) 출력")
                 .contains("PRIMARY_PROJECT_NAME: (없음)");
+    }
+
+    @Test
+    @DisplayName("resume_question_generator ChatRequest 는 strict JSON_SCHEMA 포맷으로 빌드된다 (openers / mains required)")
+    void initiate_chatRequest_uses_strict_json_schema() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-schema"), "hash-schema");
+        stubAiClient(questionsJson(1, 1));
+
+        initiator.initiate(interviewId, "hash-schema", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(aiClient, atLeastOnce()).chat(captor.capture());
+        ChatRequest generatorReq = captor.getAllValues().stream()
+                .filter(r -> "resume_question_generator".equals(r.callType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(generatorReq.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
+        assertThat(generatorReq.jsonSchema()).isNotNull();
+        assertThat(generatorReq.jsonSchema().name()).isEqualTo(GeneratedResumeQuestionsSchema.SCHEMA_NAME);
+        assertThat(generatorReq.jsonSchema().schema()).containsEntry("type", "object");
+        assertThat(generatorReq.jsonSchema().schema()).containsEntry("additionalProperties", false);
+        assertThat(generatorReq.jsonSchema().schema().get("required"))
+                .isEqualTo(List.of("openers", "mains"));
     }
 
     @Test

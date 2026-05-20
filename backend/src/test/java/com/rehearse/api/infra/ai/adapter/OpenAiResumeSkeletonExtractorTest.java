@@ -72,7 +72,7 @@ class OpenAiResumeSkeletonExtractorTest {
         ObjectMapper objectMapper = new ObjectMapper();
         OpenAiResponsesOutputTextExtractor outputTextExtractor =
                 new OpenAiResponsesOutputTextExtractor(objectMapper);
-        AiResponseParser aiResponseParser = new AiResponseParser(objectMapper, null, null);
+        AiResponseParser aiResponseParser = new AiResponseParser(objectMapper, null);
         client = mock(OpenAiResumeExtractorClient.class);
 
         extractor = new OpenAiResumeSkeletonExtractor(client, outputTextExtractor, aiResponseParser);

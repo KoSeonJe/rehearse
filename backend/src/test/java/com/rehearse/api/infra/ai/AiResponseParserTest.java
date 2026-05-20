@@ -22,7 +22,6 @@ class AiResponseParserTest {
     void setUp() {
         parser = new AiResponseParser(
                 new ObjectMapper(),
-                new SchemaExampleRegistry(),
                 org.mockito.Mockito.mock(AiCallMetrics.class));
     }
 

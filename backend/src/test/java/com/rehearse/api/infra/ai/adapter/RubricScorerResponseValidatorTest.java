@@ -144,14 +144,30 @@ class RubricScorerResponseValidatorTest {
     class EvidenceMissing {
 
         @Test
-        @DisplayName("evidence_quote null 은 MISSING_EVIDENCE 위배")
-        void nullEvidence_violatesMissing() {
+        @DisplayName("evidence_quote null 은 substring 검사 우회 — 답변 무관 차원으로 통과")
+        void nullEvidence_passes() {
             ValidationResult result = validator.validate(
                     "technical_depth", 2, "구체적 답변", null, "TPS 10000 을 달성했습니다");
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.violation()).isEqualTo(Violation.MISSING_EVIDENCE);
-            assertThat(result.field()).isEqualTo("evidence_quote");
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("evidence_quote 빈 문자열 은 답변 무관 차원으로 통과")
+        void blankEvidence_passes() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", 2, "구체적 답변", "   ", "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("evidence_quote = \"관련 발언 없음\" 고정 문구는 답변과 무관하게 통과")
+        void noRelatedUtterancePlaceholder_passes() {
+            ValidationResult result = validator.validate(
+                    "recovery_from_gaps", 1, "회복 능력 관찰 근거 부족", "관련 발언 없음", "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isTrue();
         }
     }
 }

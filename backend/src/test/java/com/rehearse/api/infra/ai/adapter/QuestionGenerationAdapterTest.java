@@ -7,6 +7,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+import com.rehearse.api.infra.ai.schema.GeneratedQuestionsWrapperSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -81,7 +82,7 @@ class QuestionGenerationAdapterTest {
     }
 
     @Test
-    @DisplayName("adapt() 이 빌드하는 ChatRequest 는 callType=generate_questions 이고 JSON_OBJECT 포맷이다")
+    @DisplayName("adapt() 이 빌드하는 ChatRequest 는 callType=generate_questions 이고 strict JSON_SCHEMA 포맷이다")
     void adapt_chatRequestHasCorrectCallTypeAndFormat() {
         // given
         QuestionGenerationRequest req = questionRequest();
@@ -103,7 +104,36 @@ class QuestionGenerationAdapterTest {
         // then
         ChatRequest captured = captor.getValue();
         assertThat(captured.callType()).isEqualTo("generate_questions");
-        assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_OBJECT);
+        assertThat(captured.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
+        assertThat(captured.jsonSchema()).isNotNull();
+        assertThat(captured.jsonSchema().name()).isEqualTo(GeneratedQuestionsWrapperSchema.SCHEMA_NAME);
+        assertThat(captured.jsonSchema().schema()).containsEntry("type", "object");
+        assertThat(captured.jsonSchema().schema()).containsEntry("additionalProperties", false);
+        assertThat(captured.jsonSchema().schema().get("required")).isEqualTo(List.of("questions"));
+    }
+
+    @Test
+    @DisplayName("buildJsonSchema() 는 question 객체 항목별 7개 필드를 required 로 포함한다")
+    void buildJsonSchema_requiresAllQuestionFields() {
+        // when
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> schema =
+                (java.util.Map<String, Object>) GeneratedQuestionsWrapperSchema.build();
+
+        // then
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> properties = (java.util.Map<String, Object>) schema.get("properties");
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> questionsArray = (java.util.Map<String, Object>) properties.get("questions");
+        assertThat(questionsArray).containsEntry("type", "array");
+
+        @SuppressWarnings("unchecked")
+        java.util.Map<String, Object> itemSchema = (java.util.Map<String, Object>) questionsArray.get("items");
+        assertThat(itemSchema).containsEntry("type", "object");
+        assertThat(itemSchema).containsEntry("additionalProperties", false);
+        assertThat(itemSchema.get("required")).isEqualTo(List.of(
+                "content", "tts_content", "category", "order",
+                "evaluation_criteria", "question_category", "best_answer"));
     }
 
     @Test

@@ -30,7 +30,7 @@ class MockResumeSkeletonExtractorTest {
             .withUserConfiguration(TestPromptConfig.class)
             .withBean(ObjectMapper.class, ObjectMapper::new)
             .withBean(OpenAiResponsesOutputTextExtractor.class)
-            .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null, null))
+            .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null))
             .withBean(OpenAiResumeSkeletonProperties.class,
                     () -> new OpenAiResumeSkeletonProperties(
                             "gpt-4o-mini", 60_000L, 12_000, 0.2, "https://api.openai.com/v1/responses"))

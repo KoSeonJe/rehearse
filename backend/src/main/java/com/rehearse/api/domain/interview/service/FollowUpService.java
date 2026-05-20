@@ -45,8 +45,9 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
+        boolean isResumeTrack = isResumeTrack(context.currentMainQuestionType());
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
-                id, audioFile, request.getQuestionContent(), context.mainReferenceType());
+                id, audioFile, request.getQuestionContent(), context.mainReferenceType(), isResumeTrack);
         String answerText = request.getAnswerText();
 
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
@@ -108,6 +109,12 @@ public class FollowUpService {
                 stepB.targetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
+    }
+
+    private static boolean isResumeTrack(QuestionType mainType) {
+        return mainType == QuestionType.RESUME_OPENER
+                || mainType == QuestionType.RESUME_MAIN
+                || mainType == QuestionType.RESUME_FOLLOWUP;
     }
 
     private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {

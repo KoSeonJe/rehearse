@@ -12,7 +12,12 @@ public sealed interface FocusHints
                 FocusHints.ResumeQuestionGeneratorHints,
                 FocusHints.EmptyHints {
 
-    record AnswerAnalyzerHints(String mainQuestion, String userAnswer, String personaDepthHint) implements FocusHints {}
+    record AnswerAnalyzerHints(
+            String mainQuestion,
+            String userAnswer,
+            String personaDepthHint,
+            boolean isResumeTrack
+    ) implements FocusHints {}
 
     record FollowUpGeneratorV3Hints(
             String mainQuestion,

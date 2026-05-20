@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.prompt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
+import com.rehearse.api.infra.ai.schema.GeneratedRubricScoringSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -88,7 +89,7 @@ class RubricScorerPromptBuilderTest {
         void buildJsonSchema_required_perDimension() {
             List<String> dims = List.of("technical_depth", "conceptual_accuracy");
 
-            Map<String, Object> schema = builder.buildJsonSchema(dims);
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(dims);
 
             assertThat(schema).containsEntry("type", "object");
             assertThat(schema).containsEntry("additionalProperties", false);
@@ -112,7 +113,7 @@ class RubricScorerPromptBuilderTest {
         @Test
         @DisplayName("evidence_quote 는 non-null string 타입을 가진다")
         void buildJsonSchema_evidence_quote_non_null() {
-            Map<String, Object> schema = builder.buildJsonSchema(List.of("technical_depth"));
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(List.of("technical_depth"));
 
             @SuppressWarnings("unchecked")
             Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -127,9 +128,9 @@ class RubricScorerPromptBuilderTest {
         }
 
         @Test
-        @DisplayName("score 는 1/2/3/null enum 만 허용한다")
+        @DisplayName("score 는 1/2/3 정수 enum 만 허용한다 (null 비허용 — 모든 차원 강제 채점)")
         void buildJsonSchema_score_enum() {
-            Map<String, Object> schema = builder.buildJsonSchema(List.of("technical_depth"));
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(List.of("technical_depth"));
 
             @SuppressWarnings("unchecked")
             Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
@@ -140,7 +141,8 @@ class RubricScorerPromptBuilderTest {
             @SuppressWarnings("unchecked")
             Map<String, Object> score = (Map<String, Object>) dimProps.get("score");
 
-            assertThat(score.get("enum")).asList().containsExactly(1, 2, 3, null);
+            assertThat(score.get("type")).isEqualTo("integer");
+            assertThat(score.get("enum")).asList().containsExactly(1, 2, 3);
         }
     }
 

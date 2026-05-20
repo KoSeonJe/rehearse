@@ -13,6 +13,7 @@ import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.prompt.PromptFormatters;
+import com.rehearse.api.infra.ai.schema.GeneratedAnswerAnalysisSchema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,8 @@ public class AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
         if (interviewId == null) {
             throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
@@ -47,7 +49,8 @@ public class AnswerAnalyzer {
                 new FocusHints.AnswerAnalyzerHints(
                         mainQuestion != null ? mainQuestion : "",
                         userAnswer != null ? userAnswer : "",
-                        personaDepthHint
+                        personaDepthHint,
+                        isResumeTrack
                 ),
                 null,
                 null,
@@ -59,7 +62,8 @@ public class AnswerAnalyzer {
                 .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(GeneratedAnswerAnalysisSchema.spec(isResumeTrack))
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);

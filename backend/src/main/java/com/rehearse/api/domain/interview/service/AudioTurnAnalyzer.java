@@ -42,7 +42,8 @@ public class AudioTurnAnalyzer {
             Long interviewId,
             MultipartFile audioFile,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) {
         validate(interviewId, audioFile);
         try {
@@ -50,7 +51,7 @@ public class AudioTurnAnalyzer {
         } catch (AudioChatFallbackRequiredException e) {
             log.warn("[AudioTurnAnalyzer] audio chat 실패 → text-only fallback. interviewId={}", interviewId);
             aiCallMetrics.incrementFollowUpSkip("audio_chat_fallback_to_stt");
-            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType);
+            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType, isResumeTrack);
         }
     }
 

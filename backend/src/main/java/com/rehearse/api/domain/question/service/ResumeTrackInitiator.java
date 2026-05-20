@@ -21,6 +21,7 @@ import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -89,7 +90,8 @@ public class ResumeTrackInitiator {
                 .callType(CALL_TYPE)
                 .temperature(TEMPERATURE)
                 .maxTokens(MAX_TOKENS)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(GeneratedResumeQuestionsSchema.spec())
                 .build();
         ChatResponse response = aiClient.chat(request);
         return aiResponseParser.parseOrRetry(response, GeneratedResumeQuestions.class, aiClient, request);
