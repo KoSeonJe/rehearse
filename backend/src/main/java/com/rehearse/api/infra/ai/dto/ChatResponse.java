@@ -6,7 +6,6 @@ public record ChatResponse(
         String provider,
         String model,
         boolean cacheHit,
-        // fallbackUsed 는 ResilientAiClient 만 true 로 set. provider 단일 호출은 항상 false.
         boolean fallbackUsed
 ) {
 

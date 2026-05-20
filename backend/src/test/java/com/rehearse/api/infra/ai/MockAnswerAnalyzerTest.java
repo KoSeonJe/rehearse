@@ -49,7 +49,7 @@ class MockAnswerAnalyzerTest {
                         HttpClientAutoConfiguration.class,
                         RestClientAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
-                .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null, null))
+                .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper()))
                 .withBean(SimpleMeterRegistry.class, () -> reg)
                 .withBean(ContextEngineeringMetrics.class, () -> new ContextEngineeringMetrics(reg))
                 .withBean(AiCallMetrics.class, () -> new AiCallMetrics(reg, new ContextEngineeringMetrics(reg)))

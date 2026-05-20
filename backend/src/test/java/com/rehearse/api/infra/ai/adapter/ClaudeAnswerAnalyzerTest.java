@@ -38,7 +38,7 @@ class ClaudeAnswerAnalyzerTest {
     void setUp() {
         client = mock(ClaudeAnswerAnalyzerClient.class);
         promptBuilder = mock(AnswerAnalysisPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         adapter = new ClaudeAnswerAnalyzer(client, promptBuilder, parser);
     }
 

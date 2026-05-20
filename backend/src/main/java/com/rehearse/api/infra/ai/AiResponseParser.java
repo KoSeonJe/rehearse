@@ -1,11 +1,8 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
-import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +17,6 @@ import java.util.function.Supplier;
 public class AiResponseParser {
 
     private final ObjectMapper objectMapper;
-    private final SchemaExampleRegistry schemaExampleRegistry;
-    private final AiCallMetrics aiCallMetrics;
 
     public <T> T parseJsonResponse(String text, Class<T> clazz) {
         try {
@@ -44,28 +39,6 @@ public class AiResponseParser {
                 String retryJson = extractJson(retryResponse.content());
                 return objectMapper.readValue(retryJson, clazz);
             } catch (JsonProcessingException secondEx) {
-                log.error("AI 응답 2차 파싱도 실패: {}", secondEx.getMessage());
-                throw new BusinessException(AiErrorCode.PARSE_FAILED);
-            }
-        }
-    }
-
-    // 1차 파싱 실패 시 originalRequest 에 스키마 힌트를 덧붙여 client.chat() 재호출 → 2차 파싱.
-    public <T> T parseOrRetry(ChatResponse initial, Class<T> clazz, AiClient client, ChatRequest originalRequest) {
-        try {
-            String json = extractJson(initial.content());
-            return objectMapper.readValue(json, clazz);
-        } catch (JsonProcessingException firstEx) {
-            aiCallMetrics.incrementParseFail(originalRequest.callType(), "first");
-            log.warn("AI 응답 1차 파싱 실패, 스키마 힌트 재호출 시도: {}", firstEx.getMessage());
-            try {
-                String schemaExample = schemaExampleRegistry.exampleFor(clazz);
-                ChatRequest retryRequest = originalRequest.withSchemaRetryHint(firstEx.getMessage(), schemaExample);
-                ChatResponse retryResponse = client.chat(retryRequest);
-                String retryJson = extractJson(retryResponse.content());
-                return objectMapper.readValue(retryJson, clazz);
-            } catch (JsonProcessingException secondEx) {
-                aiCallMetrics.incrementParseFail(originalRequest.callType(), "second");
                 log.error("AI 응답 2차 파싱도 실패: {}", secondEx.getMessage());
                 throw new BusinessException(AiErrorCode.PARSE_FAILED);
             }

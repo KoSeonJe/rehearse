@@ -48,7 +48,7 @@ class OpenAiAudioTurnAnalyzerTest {
     void setUp() {
         client = mock(OpenAiAudioTurnAnalyzerClient.class);
         promptBuilder = mock(AudioTurnAnalyzerPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         adapter = new OpenAiAudioTurnAnalyzer(client, promptBuilder, parser);
     }
 

@@ -45,9 +45,6 @@ app:
   admin:
     password: ${ADMIN_PASSWORD}
 
-openai:
-  audio-model: ${OPENAI_AUDIO_MODEL:gpt-4o-mini-audio-preview}
-
 ai:
   resume:
     skeleton:
@@ -82,29 +79,11 @@ rehearse:
     l3-recent-window: 5
     l4-just-in-time: true
     max-context-tokens: 8000
-  resume-planner:
-    model: ${RESUME_PLANNER_MODEL:gpt-4o-mini}
-    temperature: 0.3
-    max-tokens: 2048
-  resume-track:
-    model: ${RESUME_TRACK_MODEL:gpt-4o-mini}
-    temperature: 0.7
-    max-tokens: 800
-    playground-max-turns: 3
-    chain-max-depth: 4
-    hard-timeout-min: 10
-  rubric-scorer:
-    model: ${RUBRIC_SCORER_MODEL:gpt-4o-mini}
-    temperature: 0.2
-    max-tokens: 1536
   feedback-rubric:
     family-version: v1
     fallback-rubric: fallback-generic-v1
     mode-aware: true
   feedback-synthesizer:
-    model: ${FEEDBACK_SYNTHESIZER_MODEL:gpt-4o-mini}
-    temperature: 0.3
-    max-tokens: 2048
     delivery-timeout-minutes: 10
 
 management:

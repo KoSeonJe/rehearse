@@ -47,7 +47,7 @@ class ClaudeFollowUpQuestionGeneratorTest {
     void setUp() {
         client = mock(ClaudeFollowUpQuestionGeneratorClient.class);
         promptBuilder = mock(FollowUpQuestionPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         adapter = new ClaudeFollowUpQuestionGenerator(client, promptBuilder, parser);
     }
 

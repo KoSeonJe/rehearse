@@ -43,7 +43,7 @@ class MockAudioTurnAnalyzerTest {
                         HttpClientAutoConfiguration.class,
                         RestClientAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
-                .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null, null))
+                .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper()))
                 .withBean(AudioTurnAnalyzerPromptBuilder.class,
                         () -> org.mockito.Mockito.mock(AudioTurnAnalyzerPromptBuilder.class))
                 .withBean(OpenAiCommonProperties.class, () -> new OpenAiCommonProperties("test-key"))

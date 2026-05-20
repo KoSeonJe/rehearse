@@ -44,7 +44,7 @@ class OpenAiStandardQuestionGeneratorTest {
     void setUp() {
         client = mock(OpenAiQuestionGeneratorClient.class);
         promptBuilder = mock(QuestionGenerationPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         generator = new OpenAiStandardQuestionGenerator(client, promptBuilder, parser);
     }
 

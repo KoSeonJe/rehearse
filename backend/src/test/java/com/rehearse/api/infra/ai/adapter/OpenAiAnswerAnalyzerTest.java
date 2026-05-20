@@ -41,7 +41,7 @@ class OpenAiAnswerAnalyzerTest {
     void setUp() {
         client = mock(OpenAiAnswerAnalyzerClient.class);
         promptBuilder = mock(AnswerAnalysisPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         adapter = new OpenAiAnswerAnalyzer(client, promptBuilder, parser);
     }
 

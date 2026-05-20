@@ -50,7 +50,7 @@ class OpenAiFollowUpQuestionGeneratorTest {
     void setUp() {
         client = mock(OpenAiFollowUpQuestionGeneratorClient.class);
         promptBuilder = mock(FollowUpQuestionPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         adapter = new OpenAiFollowUpQuestionGenerator(client, promptBuilder, parser);
     }
 

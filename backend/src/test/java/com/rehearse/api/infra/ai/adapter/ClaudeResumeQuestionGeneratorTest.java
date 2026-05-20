@@ -40,7 +40,7 @@ class ClaudeResumeQuestionGeneratorTest {
     void setUp() {
         client = mock(ClaudeResumeQuestionClient.class);
         promptBuilder = mock(ResumeQuestionPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         generator = new ClaudeResumeQuestionGenerator(client, promptBuilder, parser);
     }
 

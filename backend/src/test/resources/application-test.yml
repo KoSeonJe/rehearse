@@ -26,11 +26,9 @@ spring:
 
 claude:
   api-key: test-key
-  model: claude-sonnet-4-20250514
 
 openai:
   api-key: test-key
-  model: gpt-4o-mini
 
 aws:
   enabled: false

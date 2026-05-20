@@ -47,7 +47,7 @@ class OpenAiResumeQuestionGeneratorTest {
     void setUp() {
         client = mock(OpenAiResumeQuestionClient.class);
         promptBuilder = mock(ResumeQuestionPromptBuilder.class);
-        AiResponseParser parser = new AiResponseParser(new ObjectMapper(), null, null);
+        AiResponseParser parser = new AiResponseParser(new ObjectMapper());
         generator = new OpenAiResumeQuestionGenerator(client, promptBuilder, parser);
     }
 
