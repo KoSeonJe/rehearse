@@ -3,12 +3,10 @@ package com.rehearse.api.infra.ai.adapter;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.adapter.RubricScorerResponseValidator.ValidationResult;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.dto.GeneratedRubricScoring;
+import com.rehearse.api.infra.ai.prompt.RubricScorerPromptBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,22 +22,27 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * RubricScorer adapter 공용 채점 로직 (검증 / retry / merge / fallback).
+ * OpenAI / Claude adapter 가 LLM 호출 함수만 주입하여 재사용한다.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RubricScoringAdapter {
+public class RubricScoringPipeline {
 
-    static final String RETRY_FAILED_COUNTER = "rubric_retry_failed_total";
+    public static final String RETRY_FAILED_COUNTER = "rubric_retry_failed_total";
     private static final String STAGE_VERBAL = "verbal";
 
     private final AiResponseParser responseParser;
     private final ObjectMapper objectMapper;
     private final RubricScorerResponseValidator validator;
+    private final RubricScorerPromptBuilder promptBuilder;
     private final MeterRegistry meterRegistry;
 
-    public RubricScoringResult adapt(
-            AiClient client,
-            ChatRequest request,
+    public RubricScoringResult execute(
+            RubricScorerPromptBuilder.PromptBundle prompt,
+            LlmCaller caller,
             Rubric rubric,
             List<String> dimensionsToScore,
             String userAnswer,
@@ -47,11 +50,12 @@ public class RubricScoringAdapter {
             Long questionId
     ) {
         try {
-            ChatResponse firstResponse = client.chat(request);
+            String firstContent = caller.call(prompt.system(), prompt.user(), false);
             Map<String, DimensionScore> firstScores = parseDimensionScores(
-                    responseParser.extractJson(firstResponse.content()), dimensionsToScore);
+                    responseParser.extractJson(firstContent), dimensionsToScore);
 
-            Map<String, ValidationResult> firstValidation = validateAll(firstScores, dimensionsToScore, userAnswer);
+            Map<String, ValidationResult> firstValidation = validateAll(
+                    firstScores, dimensionsToScore, userAnswer);
             List<String> retryTargets = collectViolated(firstValidation);
 
             if (retryTargets.isEmpty()) {
@@ -59,7 +63,7 @@ public class RubricScoringAdapter {
             }
 
             Map<String, DimensionScore> retryScores = runRetry(
-                    client, request, dimensionsToScore, retryTargets, firstValidation);
+                    prompt, caller, dimensionsToScore, retryTargets, firstValidation);
             Map<String, DimensionScore> merged = mergeAfterRetry(
                     dimensionsToScore, firstScores, firstValidation,
                     retryScores, userAnswer, interviewId, questionId);
@@ -68,11 +72,8 @@ public class RubricScoringAdapter {
         } catch (JsonProcessingException parseEx) {
             log.warn("RubricScore JSON 파싱 실패. interviewId={}, questionId={}, reason={}",
                     interviewId, questionId, parseEx.getMessage());
-            return buildFallbackScore(rubric.rubricId(), dimensionsToScore, "파싱 실패: " + parseEx.getMessage());
-        } catch (Exception ex) {
-            log.error("RubricScore 어댑터 예외. interviewId={}, questionId={}, reason={}",
-                    interviewId, questionId, ex.getMessage(), ex);
-            return buildFallbackScore(rubric.rubricId(), dimensionsToScore, "어댑터 예외: " + ex.getMessage());
+            return buildFallbackScore(rubric.rubricId(), dimensionsToScore,
+                    "파싱 실패: " + parseEx.getMessage());
         }
     }
 
@@ -102,13 +103,23 @@ public class RubricScoringAdapter {
     }
 
     private Map<String, DimensionScore> runRetry(
-            AiClient client, ChatRequest request, List<String> dimensionsToScore,
-            List<String> retryTargets, Map<String, ValidationResult> firstValidation
+            RubricScorerPromptBuilder.PromptBundle prompt,
+            LlmCaller caller,
+            List<String> dimensionsToScore,
+            List<String> retryTargets,
+            Map<String, ValidationResult> firstValidation
     ) throws JsonProcessingException {
-        String hint = buildRetryHint(retryTargets, firstValidation);
-        ChatRequest retryRequest = request.withRetryHint(hint, buildSchemaExample(dimensionsToScore));
-        ChatResponse retryResponse = client.chat(retryRequest);
-        return parseDimensionScores(responseParser.extractJson(retryResponse.content()), dimensionsToScore);
+        Map<String, String> targetReasons = new LinkedHashMap<>();
+        for (String dim : retryTargets) {
+            ValidationResult vr = firstValidation.get(dim);
+            String reason = "field=" + vr.field()
+                    + ", reason=" + (vr.violation() == null ? "unknown" : vr.violation().name());
+            targetReasons.put(dim, reason);
+        }
+        String hint = promptBuilder.buildRetryHint(retryTargets, targetReasons, dimensionsToScore);
+        String retryUser = prompt.user() + "\n\n" + hint;
+        String retryContent = caller.call(prompt.system(), retryUser, true);
+        return parseDimensionScores(responseParser.extractJson(retryContent), dimensionsToScore);
     }
 
     private Map<String, DimensionScore> mergeAfterRetry(
@@ -152,19 +163,6 @@ public class RubricScoringAdapter {
                 "stage", STAGE_VERBAL,
                 "dimension", dimension,
                 "field", field).increment();
-    }
-
-    private String buildRetryHint(List<String> retryTargets, Map<String, ValidationResult> firstValidation) {
-        StringBuilder sb = new StringBuilder("일부 차원이 검증 규칙을 위배했습니다. 아래 차원만 룰을 재준수하여 재작성하세요:\n");
-        for (String dim : retryTargets) {
-            ValidationResult vr = firstValidation.get(dim);
-            sb.append("- ").append(dim)
-                    .append(": field=").append(vr.field())
-                    .append(", reason=").append(vr.violation() == null ? "unknown" : vr.violation().name())
-                    .append("\n");
-        }
-        sb.append("룰: score ∈ {1,2,3}; observation 은 한국어 음절 1+ 포함; evidence_quote 는 사용자 답변 substring 만 인용.");
-        return sb.toString();
     }
 
     private Map<String, DimensionScore> parseDimensionScores(String json, List<String> dimensionsToScore)
@@ -215,18 +213,12 @@ public class RubricScoringAdapter {
         return new RubricScoringResult(rubricId, Collections.emptyList(), Map.copyOf(fallback), null);
     }
 
-    private String buildSchemaExample(List<String> dimensionsToScore) {
-        if (dimensionsToScore.isEmpty()) {
-            return "{}";
-        }
-        StringBuilder sb = new StringBuilder("{\n");
-        for (int i = 0; i < dimensionsToScore.size(); i++) {
-            String dim = dimensionsToScore.get(i);
-            sb.append("  \"").append(dim).append("\": {\"score\": 2, \"observation\": \"한국어 관찰 문장\", \"evidence_quote\": \"사용자 답변 substring\"}");
-            if (i < dimensionsToScore.size() - 1) sb.append(",");
-            sb.append("\n");
-        }
-        sb.append("}");
-        return sb.toString();
+    @FunctionalInterface
+    public interface LlmCaller {
+        /**
+         * @param isRetry true 인 경우 1차 위배 후 retry hint 가 포함된 user prompt 가 전달됨.
+         *                provider 별로 schema 파라미터를 retry 단계에서 생략하는 등의 분기에 활용 가능.
+         */
+        String call(String systemPrompt, String userPrompt, boolean isRetry) throws JsonProcessingException;
     }
 }

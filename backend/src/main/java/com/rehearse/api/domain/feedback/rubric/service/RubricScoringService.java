@@ -2,15 +2,12 @@ package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
+import com.rehearse.api.domain.feedback.rubric.models.service.RubricScorer;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.adapter.RubricScoringAdapter;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.prompt.RubricScorerPromptBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,12 +17,10 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RubricScorer {
+public class RubricScoringService {
 
     private final RubricCatalog rubricLoader;
-    private final RubricScorerPromptBuilder promptBuilder;
-    private final RubricScoringAdapter adapter;
-    private final AiClient aiClient;
+    private final RubricScorer rubricScorer;
 
     public RubricScoringResult score(
             Question question,
@@ -44,14 +39,13 @@ public class RubricScorer {
 
         InterviewLevel userLevel = interview.getLevel();
 
-        log.debug("RubricScorer 채점 시작: rubricId={}, dimensions={}",
+        log.debug("RubricScoringService 채점 시작: rubricId={}, dimensions={}",
                 rubric.rubricId(), dimensionsToScore);
 
-        ChatRequest request = promptBuilder.build(
-                question, userAnswer, analysis, rubric, dimensionsToScore, userLevel
+        return rubricScorer.score(
+                question, userAnswer, analysis, rubric,
+                dimensionsToScore, userLevel,
+                interview.getId(), question.getId()
         );
-
-        return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
-                userAnswer, interview.getId(), question.getId());
     }
 }

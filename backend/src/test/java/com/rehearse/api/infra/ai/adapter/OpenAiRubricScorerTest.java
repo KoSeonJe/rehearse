@@ -1,57 +1,62 @@
 package com.rehearse.api.infra.ai.adapter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionRef;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.infra.ai.client.OpenAiRubricScorerClient;
+import com.rehearse.api.infra.ai.prompt.RubricScorerPromptBuilder;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("RubricScoringAdapter")
-class RubricScoringAdapterTest {
+@DisplayName("OpenAiRubricScorer — RubricScoringPipeline 위임 + validate / retry / merge / fallback 시나리오")
+class OpenAiRubricScorerTest {
 
     private static final Long INTERVIEW_ID = 100L;
     private static final Long QUESTION_ID = 200L;
     private static final String USER_ANSWER = "저는 작년에 결제 모듈을 리팩토링하여 TPS 10000 을 달성했습니다";
 
-    @Mock
+    private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
+            List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
+
+    private OpenAiRubricScorerClient client;
+    private RubricScorerPromptBuilder promptBuilder;
     private AiResponseParser responseParser;
-
-    @Mock
-    private AiClient aiClient;
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private MeterRegistry meterRegistry;
-    private RubricScorerResponseValidator validator;
-    private RubricScoringAdapter adapter;
+    private OpenAiRubricScorer adapter;
 
     @BeforeEach
     void setUp() {
+        client = mock(OpenAiRubricScorerClient.class);
+        promptBuilder = mock(RubricScorerPromptBuilder.class);
+        responseParser = mock(AiResponseParser.class);
         meterRegistry = new SimpleMeterRegistry();
-        validator = new RubricScorerResponseValidator();
-        adapter = new RubricScoringAdapter(responseParser, objectMapper, validator, meterRegistry);
+        RubricScorerResponseValidator validator = new RubricScorerResponseValidator();
+        ObjectMapper objectMapper = new ObjectMapper();
+        RubricScoringPipeline executor = new RubricScoringPipeline(
+                responseParser, objectMapper, validator, promptBuilder, meterRegistry);
+        adapter = new OpenAiRubricScorer(client, promptBuilder, executor);
     }
 
     @Nested
@@ -64,14 +69,17 @@ class RubricScoringAdapterTest {
             String json = """
                     {"technical_depth":{"score":2,"observation":"구체적 수치 인용","evidence_quote":"TPS 10000 을 달성"}}
                     """;
-            given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
-            given(responseParser.extractJson("first")).willReturn(json);
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(eq("sys"), eq("usr"), any())).thenReturn("first-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(json);
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
-            verify(aiClient, times(1)).chat(any());
+            verify(client, times(1)).call(anyString(), anyString(), any());
             assertThat(result.scoredDimensions()).containsExactly("technical_depth");
             assertThat(result.dimensionScores().get("technical_depth").score()).isEqualTo(2);
             assertThat(retryFailedCount("technical_depth", "observation")).isZero();
@@ -91,19 +99,24 @@ class RubricScoringAdapterTest {
             String retryJson = """
                     {"technical_depth":{"score":2,"observation":"구체적 수치 인용","evidence_quote":"TPS 10000 을 달성"}}
                     """;
-            given(aiClient.chat(any()))
-                    .willReturn(mockChatResponse("first"))
-                    .willReturn(mockChatResponse("retry"));
-            given(responseParser.extractJson("first")).willReturn(firstJson);
-            given(responseParser.extractJson("retry")).willReturn(retryJson);
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(anyString(), anyString(), any()))
+                    .thenReturn("first-raw")
+                    .thenReturn("retry-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(firstJson);
+            when(responseParser.extractJson("retry-raw")).thenReturn(retryJson);
+            when(promptBuilder.buildRetryHint(any(), any(), any())).thenReturn("retry-hint");
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
-            verify(aiClient, times(2)).chat(any());
+            verify(client, times(2)).call(anyString(), anyString(), any());
             assertThat(result.scoredDimensions()).containsExactly("technical_depth");
-            assertThat(result.dimensionScores().get("technical_depth").observation()).isEqualTo("구체적 수치 인용");
+            assertThat(result.dimensionScores().get("technical_depth").observation())
+                    .isEqualTo("구체적 수치 인용");
             assertThat(retryFailedCount("technical_depth", "observation")).isZero();
         }
     }
@@ -113,7 +126,7 @@ class RubricScoringAdapterTest {
     class RetryFails {
 
         @Test
-        @DisplayName("evidence_quote 가 두 번 모두 userAnswer 미포함 → 해당 dimension omit + 메트릭 +1 + 로그 라벨 정확")
+        @DisplayName("evidence_quote 가 두 번 모두 userAnswer 미포함 → 해당 dimension omit + 메트릭 +1")
         void evidenceNotInAnswer_retryFails_omits() {
             String firstJson = """
                     {"technical_depth":{"score":2,"observation":"구체적 답변","evidence_quote":"팀에서 했어요 수준"}}
@@ -121,15 +134,19 @@ class RubricScoringAdapterTest {
             String retryJson = """
                     {"technical_depth":{"score":2,"observation":"구체적 답변","evidence_quote":"루브릭 정의문"}}
                     """;
-            given(aiClient.chat(any()))
-                    .willReturn(mockChatResponse("first"))
-                    .willReturn(mockChatResponse("retry"));
-            given(responseParser.extractJson("first")).willReturn(firstJson);
-            given(responseParser.extractJson("retry")).willReturn(retryJson);
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(anyString(), anyString(), any()))
+                    .thenReturn("first-raw")
+                    .thenReturn("retry-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(firstJson);
+            when(responseParser.extractJson("retry-raw")).thenReturn(retryJson);
+            when(promptBuilder.buildRetryHint(any(), any(), any())).thenReturn("retry-hint");
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
             assertThat(result.scoredDimensions()).isEmpty();
             assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
@@ -144,21 +161,25 @@ class RubricScoringAdapterTest {
     class RetryMissingDimension {
 
         @Test
-        @DisplayName("retry 응답에서 위배 dimension 누락 → field=score 메트릭 +1 + 해당 dimension omit")
+        @DisplayName("retry 응답에서 위배 dimension 누락 → field=score 메트릭 +1")
         void retryResponseMissingDimension_recordsScoreField() {
             String firstJson = """
                     {"technical_depth":{"score":2,"observation":"english only","evidence_quote":"TPS 10000 을 달성"}}
                     """;
             String retryJson = "{}";
-            given(aiClient.chat(any()))
-                    .willReturn(mockChatResponse("first"))
-                    .willReturn(mockChatResponse("retry"));
-            given(responseParser.extractJson("first")).willReturn(firstJson);
-            given(responseParser.extractJson("retry")).willReturn(retryJson);
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(anyString(), anyString(), any()))
+                    .thenReturn("first-raw")
+                    .thenReturn("retry-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(firstJson);
+            when(responseParser.extractJson("retry-raw")).thenReturn(retryJson);
+            when(promptBuilder.buildRetryHint(any(), any(), any())).thenReturn("retry-hint");
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
             assertThat(result.scoredDimensions()).isEmpty();
             assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
@@ -172,7 +193,7 @@ class RubricScoringAdapterTest {
     class FaultIsolation {
 
         @Test
-        @DisplayName("A 위배 + B 정상 → A retry → A 재실패 시에도 B 정상 적재")
+        @DisplayName("A 위배 + B 정상 → A retry → A 재실패해도 B 는 정상 적재")
         void partialFailure_doesNotAffectValidDimension() {
             String firstJson = """
                     {
@@ -186,16 +207,19 @@ class RubricScoringAdapterTest {
                       "reasoning_communication":{"score":2,"observation":"논리 흐름 명확","evidence_quote":"결제 모듈을 리팩토링"}
                     }
                     """;
-            given(aiClient.chat(any()))
-                    .willReturn(mockChatResponse("first"))
-                    .willReturn(mockChatResponse("retry"));
-            given(responseParser.extractJson("first")).willReturn(firstJson);
-            given(responseParser.extractJson("retry")).willReturn(retryJson);
+            stubPrompt(List.of("technical_depth", "reasoning_communication"));
+            when(client.call(anyString(), anyString(), any()))
+                    .thenReturn("first-raw")
+                    .thenReturn("retry-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(firstJson);
+            when(responseParser.extractJson("retry-raw")).thenReturn(retryJson);
+            when(promptBuilder.buildRetryHint(any(), any(), any())).thenReturn("retry-hint");
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth", "reasoning_communication"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
                     List.of("technical_depth", "reasoning_communication"),
-                    USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+                    InterviewLevel.JUNIOR, INTERVIEW_ID, QUESTION_ID);
 
             assertThat(result.scoredDimensions()).containsExactly("reasoning_communication");
             assertThat(result.dimensionScores().get("reasoning_communication").score()).isEqualTo(2);
@@ -213,12 +237,15 @@ class RubricScoringAdapterTest {
         @DisplayName("응답에 차원 누락 → notApplicable 로 채우고 scoredDimensions 미포함")
         void missingDimension_fillsAsNotApplicable() {
             String json = "{}";
-            given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
-            given(responseParser.extractJson("first")).willReturn(json);
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(anyString(), anyString(), any())).thenReturn("first-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn(json);
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+                    List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
             assertThat(result.scoredDimensions()).isEmpty();
             assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
@@ -229,20 +256,30 @@ class RubricScoringAdapterTest {
         @Test
         @DisplayName("JSON 파싱 실패 → 전체 fallback")
         void invalidJson_fallback() {
-            given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
-            given(responseParser.extractJson("first")).willReturn("not-a-json");
+            stubPrompt(List.of("technical_depth"));
+            when(client.call(anyString(), anyString(), any())).thenReturn("first-raw");
+            when(responseParser.extractJson("first-raw")).thenReturn("not-a-json");
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
-            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
-                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+            RubricScoringResult result = adapter.score(
+                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+                    List.of("technical_depth"), InterviewLevel.JUNIOR,
+                    INTERVIEW_ID, QUESTION_ID);
 
             assertThat(result.scoredDimensions()).isEmpty();
-            assertThat(result.dimensionScores().get("technical_depth").observation()).contains("파싱 실패");
+            assertThat(result.dimensionScores().get("technical_depth").observation())
+                    .contains("파싱 실패");
         }
     }
 
+    private void stubPrompt(List<String> dimensions) {
+        Map<String, Object> schema = Map.of("type", "object");
+        when(promptBuilder.build(any(), any(), any(), any(), any(), any()))
+                .thenReturn(new RubricScorerPromptBuilder.PromptBundle("sys", "usr", schema));
+    }
+
     private double retryFailedCount(String dimension, String field) {
-        var counter = meterRegistry.find(RubricScoringAdapter.RETRY_FAILED_COUNTER)
+        var counter = meterRegistry.find(RubricScoringPipeline.RETRY_FAILED_COUNTER)
                 .tag("stage", "verbal")
                 .tag("dimension", dimension)
                 .tag("field", field)
@@ -250,15 +287,8 @@ class RubricScoringAdapterTest {
         return counter == null ? 0.0 : counter.count();
     }
 
-    private ChatResponse mockChatResponse(String content) {
-        return new ChatResponse(content, null, "openai", "gpt-4o-mini", false, false);
-    }
-
-    private ChatRequest mockRequest() {
-        return ChatRequest.builder()
-                .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, "test")))
-                .callType("rubric_scorer")
-                .build();
+    private Question mockQuestion() {
+        return mock(Question.class);
     }
 
     private Rubric createRubric(String rubricId, List<String> dimRefs) {

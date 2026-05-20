@@ -23,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class RubricScoringEventListener {
 
-    private final RubricScorer rubricScorer;
+    private final RubricScoringService rubricScoringService;
     private final QuestionScorePersister questionScorePersister;
     private final InterviewFinder interviewFinder;
     private final QuestionRepository questionRepository;
@@ -40,7 +40,7 @@ public class RubricScoringEventListener {
             Question question = resolveQuestion(event);
             QuestionSet questionSet = resolveQuestionSet(event, interview);
 
-            RubricScoringResult score = rubricScorer.score(
+            RubricScoringResult score = rubricScoringService.score(
                     question, questionSet, interview,
                     event.userAnswer(), event.analysis()
             );

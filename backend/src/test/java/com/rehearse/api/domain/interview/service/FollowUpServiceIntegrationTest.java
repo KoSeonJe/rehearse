@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScoringService;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
@@ -68,7 +68,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
     @MockitoBean private AudioTurnAnalysisService audioTurnAnalysisService;
     @MockitoBean private FollowUpQuestionService followUpQuestionService;
-    @MockitoBean private RubricScorer rubricScorer;
+    @MockitoBean private RubricScoringService rubricScoringService;
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
             List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
@@ -84,7 +84,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_OPENER);
         given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
@@ -120,7 +120,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
         given(followUpQuestionService.write(any(), any(), any(), any()))
                 .willReturn(new GeneratedFollowUp(
@@ -157,7 +157,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
                 List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
         given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any()))
                 .willReturn(skipAnalysis);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
