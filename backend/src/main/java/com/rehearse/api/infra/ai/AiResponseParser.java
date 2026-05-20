@@ -20,7 +20,6 @@ import java.util.function.Supplier;
 public class AiResponseParser {
 
     private final ObjectMapper objectMapper;
-    private final SchemaExampleRegistry schemaExampleRegistry;
     private final AiCallMetrics aiCallMetrics;
 
     public <T> T parseJsonResponse(String text, Class<T> clazz) {
@@ -59,8 +58,7 @@ public class AiResponseParser {
             aiCallMetrics.incrementParseFail(originalRequest.callType(), "first");
             log.warn("AI 응답 1차 파싱 실패, 스키마 힌트 재호출 시도: {}", firstEx.getMessage());
             try {
-                String schemaExample = schemaExampleRegistry.exampleFor(clazz);
-                ChatRequest retryRequest = originalRequest.withSchemaRetryHint(firstEx.getMessage(), schemaExample);
+                ChatRequest retryRequest = originalRequest.withSchemaRetryHint(firstEx.getMessage());
                 ChatResponse retryResponse = client.chat(retryRequest);
                 String retryJson = extractJson(retryResponse.content());
                 return objectMapper.readValue(retryJson, clazz);
