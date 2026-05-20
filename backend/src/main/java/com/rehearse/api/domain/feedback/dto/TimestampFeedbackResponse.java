@@ -48,6 +48,7 @@ public class TimestampFeedbackResponse {
         private final Integer score;
         private final String observation;
         private final String evidenceQuote;
+        private final String status;
     }
 
     public record NonverbalRubricFeedback(
@@ -125,6 +126,7 @@ public class TimestampFeedbackResponse {
                         .score(d.getScore())
                         .observation(d.getObservation())
                         .evidenceQuote(d.getEvidenceQuote())
+                        .status(d.getStatus() != null ? d.getStatus().name() : null)
                         .build())
                 .toList();
     }

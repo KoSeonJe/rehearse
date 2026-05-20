@@ -3,6 +3,7 @@ package com.rehearse.api.domain.feedback.session.synthesis;
 import com.rehearse.api.domain.feedback.rubric.RubricIds;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
 import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
@@ -187,18 +188,31 @@ public class SessionFeedbackInputAssembler {
         Map<String, DimensionScore> scores = dims.stream()
                 .collect(Collectors.toMap(
                         d -> toKoreanLabel(d.getDimensionRef()),
-                        d -> DimensionScore.of(d.getScore(), d.getObservation(), d.getEvidenceQuote())
+                        d -> new DimensionScore(d.getScore(), d.getObservation(), d.getEvidenceQuote(),
+                                d.getStatus() != null ? d.getStatus() : DimensionStatus.OK)
                 ));
 
-        boolean failed = scores.isEmpty();
-        TurnScoreView.TurnStatus status = failed ? TurnScoreView.TurnStatus.FAILED : TurnScoreView.TurnStatus.OK;
-        List<String> scoredDimensions = failed ? Collections.emptyList() : new ArrayList<>(scores.keySet());
+        if (scores.isEmpty()) {
+            return new TurnScoreView(
+                    qs.getQuestionId(),
+                    qs.getRubricId(),
+                    Collections.emptyList(),
+                    Collections.emptyMap(),
+                    TurnScoreView.TurnStatus.FAILED
+            );
+        }
+
+        boolean allNotEvaluable = scores.values().stream()
+                .allMatch(s -> s.status() == DimensionStatus.NOT_EVALUABLE);
+        TurnScoreView.TurnStatus status = allNotEvaluable
+                ? TurnScoreView.TurnStatus.NOT_EVALUABLE
+                : TurnScoreView.TurnStatus.OK;
 
         return new TurnScoreView(
                 qs.getQuestionId(),
                 qs.getRubricId(),
-                scoredDimensions,
-                failed ? Collections.emptyMap() : scores,
+                new ArrayList<>(scores.keySet()),
+                scores,
                 status
         );
     }
@@ -242,13 +256,12 @@ public class SessionFeedbackInputAssembler {
     }
 
     private String buildCoverage(List<TurnScoreView> turnScores) {
-        long failed = turnScores.stream()
-                .filter(t -> t.status() == TurnScoreView.TurnStatus.FAILED)
+        long ok = turnScores.stream()
+                .filter(t -> t.status() == TurnScoreView.TurnStatus.OK)
                 .count();
-        if (failed == 0) {
+        if (ok == turnScores.size()) {
             return "all turns scored";
         }
-        long ok = turnScores.size() - failed;
         return ok + "/" + turnScores.size() + " turns scored";
     }
 

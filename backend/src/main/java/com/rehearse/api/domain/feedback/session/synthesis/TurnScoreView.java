@@ -14,6 +14,6 @@ public record TurnScoreView(
 ) {
 
     public enum TurnStatus {
-        OK, FAILED
+        OK, NOT_EVALUABLE, FAILED
     }
 }
