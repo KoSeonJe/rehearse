@@ -5,6 +5,7 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
@@ -71,7 +72,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonWithProjects("hash-success"), "hash-success");
         stubAiClient(questionsJson(1, 3));
 
-        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30);
+        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30, Position.BACKEND, TechStack.JAVA_SPRING);
 
         List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
         assertThat(persistedSets).hasSize(4);
@@ -104,7 +105,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonWithProjects("hash-primary"), "hash-primary");
         stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21);
+        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
@@ -119,7 +120,7 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
         stubExtractor(skeletonNoProjects("hash-empty"), "hash-empty");
         stubAiClient(questionsJson(1, 1));
 
-        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21);
+        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
 
         String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
         assertThat(questionGenUserMessage)
@@ -136,7 +137,8 @@ class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
                 .thenThrow(new RuntimeException("LLM 호출 실패"));
 
         Assertions.assertThatThrownBy(() ->
-                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30))
+                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("LLM 호출 실패");
 

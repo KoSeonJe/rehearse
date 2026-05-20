@@ -2,6 +2,8 @@ package com.rehearse.api.domain.question.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.ResumeIngestionService;
@@ -48,14 +50,16 @@ public class ResumeTrackInitiator {
     private final InterviewContextBuilder contextBuilder;
     private final ObjectMapper objectMapper;
 
-    public void initiate(Long interviewId, String resumeFileHash, byte[] resumePdfBytes, Integer durationMinutes) {
+    public void initiate(Long interviewId, String resumeFileHash, byte[] resumePdfBytes,
+                         Integer durationMinutes, Position position, TechStack techStack) {
         try {
             ResumeSkeleton skeleton = resumeIngestionService.ingestPdf(interviewId, resumePdfBytes, resumeFileHash);
 
             int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
             int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));
 
-            GeneratedResumeQuestions generated = generateViaLlm(interviewId, skeleton, OPENER_COUNT, mainCount);
+            GeneratedResumeQuestions generated = generateViaLlm(
+                    interviewId, skeleton, OPENER_COUNT, mainCount, position, techStack);
             persistGenerated(interviewId, generated);
             transactionHandler.completeGeneration(interviewId);
         } catch (Exception e) {
@@ -66,7 +70,8 @@ public class ResumeTrackInitiator {
         }
     }
 
-    private GeneratedResumeQuestions generateViaLlm(Long interviewId, ResumeSkeleton skeleton, int openerCount, int mainCount) {
+    private GeneratedResumeQuestions generateViaLlm(Long interviewId, ResumeSkeleton skeleton, int openerCount,
+                                                    int mainCount, Position position, TechStack techStack) {
         ResumeSkeleton sampledSkeleton = resumeSkeletonSampler.sampleDecisions(skeleton, interviewId);
         String skeletonJson = serializeSkeleton(sampledSkeleton);
         String primaryProjectName = sampledSkeleton.projects().isEmpty()
@@ -75,7 +80,9 @@ public class ResumeTrackInitiator {
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
                 new FocusHints.ResumeQuestionGeneratorHints(skeletonJson, openerCount, mainCount, primaryProjectName),
-                null
+                null,
+                position,
+                techStack
         ));
         ChatRequest request = ChatRequest.builder()
                 .messages(built.messages())

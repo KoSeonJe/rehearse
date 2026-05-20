@@ -49,6 +49,8 @@ public class FollowUpQuestionWriter {
                         analysis.unstatedAssumptions(),
                         serializeSkeleton(resumeSkeleton)
                 ),
+                null,
+                null,
                 null
         ));
 
