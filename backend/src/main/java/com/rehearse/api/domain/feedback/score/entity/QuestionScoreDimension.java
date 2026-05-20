@@ -31,13 +31,19 @@ public class QuestionScoreDimension {
     @Column(name = "evidence_quote", columnDefinition = "TEXT")
     private String evidenceQuote;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private DimensionStatus status;
+
     @Builder
     public QuestionScoreDimension(Long questionScoreId, String dimensionRef,
-                                  Integer score, String observation, String evidenceQuote) {
+                                  Integer score, String observation, String evidenceQuote,
+                                  DimensionStatus status) {
         this.questionScoreId = questionScoreId;
         this.dimensionRef = dimensionRef;
         this.score = score;
         this.observation = observation;
         this.evidenceQuote = evidenceQuote;
+        this.status = status != null ? status : DimensionStatus.OK;
     }
 }

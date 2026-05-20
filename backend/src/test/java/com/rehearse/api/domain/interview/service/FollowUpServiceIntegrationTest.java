@@ -195,7 +195,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
     private RubricScoringResult rubricResult() {
         Map<String, DimensionScore> dims = Map.of(
-                "clarity", new DimensionScore(3, "관찰", "evidence"));
+                "clarity", DimensionScore.of(3, "관찰", "evidence"));
         return new RubricScoringResult("resume-v1", List.of("clarity"), dims, "L2");
     }
 
