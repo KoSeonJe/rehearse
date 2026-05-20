@@ -5,8 +5,6 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.util.List;
 
@@ -18,7 +16,7 @@ public record QuestionGenerationRequestedEvent(
         InterviewLevel level,
         List<InterviewType> interviewTypes,
         List<CsSubTopic> csSubTopics,
-        String resumeText,
+        byte[] resumePdfBytes,
         String resumeFileHash,
         Integer durationMinutes,
         TechStack techStack

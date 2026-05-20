@@ -3,7 +3,8 @@ from __future__ import annotations
 import copy
 import time
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from config import Config
 import json as _json
@@ -19,15 +20,15 @@ MAX_RETRIES = 5
 RETRY_DELAYS = [2, 5, 15, 30, 60]
 MAX_SERVER_RETRY_DELAY = 90  # 서버가 요구해도 이 값 이상은 대기하지 않음
 
-_genai_configured = False
+_client: genai.Client | None = None
 
 
-def _ensure_genai_configured():
-    """genai.configure()를 한 번만 호출한다 (스레드 안전)."""
-    global _genai_configured
-    if not _genai_configured:
-        genai.configure(api_key=Config.GEMINI_API_KEY)
-        _genai_configured = True
+def _get_client() -> genai.Client:
+    """genai.Client 를 lazy 싱글톤으로 반환."""
+    global _client
+    if _client is None:
+        _client = genai.Client(api_key=Config.GEMINI_API_KEY)
+    return _client
 
 _FALLBACK_ANSWER = {
     "transcript": "",
@@ -39,14 +40,51 @@ _FALLBACK_ANSWER = {
         "fluency": {
             "score": 2,
             "observation": "발화 흐름을 판정할 단서가 부족합니다.",
-            "evidence_quote": "",
+            "evidence_quote": "오디오 분석 제한",
         },
         "confidence_tone": {
             "score": 2,
             "observation": "톤과 속도 변동을 판정할 단서가 부족합니다.",
-            "evidence_quote": "",
+            "evidence_quote": "오디오 분석 제한",
         },
     },
+}
+
+def _dimension_schema() -> dict:
+    # score 범위 (1·2·3) 강제는 dimension_validator.INVALID_SCORE 후처리 책임 유지 (별도 PR 에서 enum 복원 예정).
+    return {
+        "type": "object",
+        "properties": {
+            "score": {"type": "integer"},
+            "observation": {"type": "string"},
+            "evidence_quote": {"type": "string"},
+        },
+        "required": ["score", "observation", "evidence_quote"],
+    }
+
+
+_GEMINI_ANSWER_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "transcript": {"type": "string"},
+        "vocal": {
+            "type": "object",
+            "properties": {
+                "fillerWords": {"type": "array", "items": {"type": "string"}},
+                "fillerWordCount": {"type": "integer"},
+            },
+            "required": ["fillerWords", "fillerWordCount"],
+        },
+        "nonverbalDimensions": {
+            "type": "object",
+            "properties": {
+                "fluency": _dimension_schema(),
+                "confidence_tone": _dimension_schema(),
+            },
+            "required": ["fluency", "confidence_tone"],
+        },
+    },
+    "required": ["transcript", "vocal", "nonverbalDimensions"],
 }
 
 _ANSWER_SYSTEM_TEMPLATE = KOREAN_INSTRUCTION + """당신은 개발자 모의면접 서비스의 비언어 채점 면접관입니다. 오디오만 근거로 답변자를 dimension 단위로 채점합니다.
@@ -163,7 +201,7 @@ def analyze_answer_audio(
     feedback_perspective: str | None = None,
 ) -> dict:
     """오디오 파일을 Gemini로 분석하여 전사 + 언어 평가 + 음성 특성을 반환한다."""
-    _ensure_genai_configured()
+    client = _get_client()
 
     effective_position = position or "BACKEND"
     effective_stack = tech_stack or DEFAULT_TECH_STACKS.get(effective_position, "JAVA_SPRING")
@@ -171,13 +209,11 @@ def analyze_answer_audio(
 
     system_instruction = _ANSWER_SYSTEM_TEMPLATE
 
-    model = genai.GenerativeModel(
-        Config.GEMINI_MODEL,
+    config = types.GenerateContentConfig(
         system_instruction=system_instruction,
-        generation_config=genai.GenerationConfig(
-            temperature=0.3,
-            response_mime_type="application/json",
-        ),
+        temperature=0.3,
+        response_mime_type="application/json",
+        response_json_schema=_GEMINI_ANSWER_SCHEMA,
     )
 
     model_answer_line = f"모범답변: {model_answer}\n" if model_answer else ""
@@ -194,17 +230,24 @@ def analyze_answer_audio(
 
     for attempt in range(MAX_RETRIES):
         try:
-            audio_file = genai.upload_file(audio_path, mime_type="audio/mpeg")
+            audio_file = client.files.upload(
+                file=audio_path,
+                config={"mime_type": "audio/mpeg"},
+            )
             print(f"[Gemini] 오디오 업로드 완료: {audio_file.name}")
 
-            response = model.generate_content([audio_file, user_prompt])
+            response = client.models.generate_content(
+                model=Config.GEMINI_MODEL,
+                contents=[audio_file, user_prompt],
+                config=config,
+            )
             raw = response.text
             try:
                 result = _json.loads(raw)
             except _json.JSONDecodeError:
                 result = parse_llm_json(raw)
 
-            result = _enforce_dimension_validity(model, audio_file, user_prompt, result)
+            result = _enforce_dimension_validity(client, config, audio_file, user_prompt, result)
             print(f"[Gemini] 답변 분석 완료: keys={list(result.keys())}, perspective={perspective_key}")
             return result
 
@@ -221,7 +264,7 @@ def analyze_answer_audio(
         finally:
             if audio_file is not None:
                 try:
-                    genai.delete_file(audio_file.name)
+                    client.files.delete(name=audio_file.name)
                     print(f"[Gemini] 업로드 파일 삭제: {audio_file.name}")
                 except Exception as del_err:
                     print(f"[Gemini] 파일 삭제 실패: {del_err}")
@@ -231,7 +274,7 @@ def analyze_answer_audio(
     return copy.deepcopy(_FALLBACK_ANSWER)
 
 
-def _enforce_dimension_validity(model, audio_file, user_prompt: str, result: dict) -> dict:
+def _enforce_dimension_validity(client, config, audio_file, user_prompt: str, result: dict) -> dict:
     transcript = result.get("transcript", "") if isinstance(result, dict) else ""
     violations = _collect_violations(result, transcript)
     if not violations:
@@ -239,7 +282,11 @@ def _enforce_dimension_validity(model, audio_file, user_prompt: str, result: dic
 
     augmented = _build_retry_prompt(user_prompt, violations)
     try:
-        retry_response = model.generate_content([audio_file, augmented])
+        retry_response = client.models.generate_content(
+            model=Config.GEMINI_MODEL,
+            contents=[audio_file, augmented],
+            config=config,
+        )
         raw = retry_response.text
         try:
             retried = _json.loads(raw)

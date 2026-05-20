@@ -54,7 +54,8 @@ public class FocusLayer implements ContextLayer {
     private String buildResumeQuestionGenerator(FocusHints.ResumeQuestionGeneratorHints h) {
         return "<<<RESUME_SKELETON>>>\n" + nz(h.resumeSkeletonJson()) + "\n<<<END_RESUME_SKELETON>>>\n\n" +
                "OPENER_COUNT: " + h.openerCount() + "\n" +
-               "MAIN_COUNT: " + h.mainCount() + "\n\n" +
+               "MAIN_COUNT: " + h.mainCount() + "\n" +
+               "PRIMARY_PROJECT_NAME: " + nz(h.primaryProjectName()) + "\n\n" +
                "위 RESUME_SKELETON 을 기반으로 opener N개 + main M개 질문을 JSON 한 객체로만 응답하세요.";
     }
 
@@ -140,7 +141,9 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildAnswerAnalyzer(FocusHints.AnswerAnalyzerHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
+        String trackLabel = h.isResumeTrack() ? "RESUME" : "CS";
+        return "TRACK: " + trackLabel + "\n\n" +
+               "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "PERSONA_DEPTH: " + nz(h.personaDepthHint()) + "\n\n" +
                "위 답변을 분석해 JSON 한 객체로만 응답하세요.";

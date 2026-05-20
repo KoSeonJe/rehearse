@@ -48,6 +48,15 @@ app:
 openai:
   audio-model: ${OPENAI_AUDIO_MODEL:gpt-4o-mini-audio-preview}
 
+ai:
+  resume:
+    skeleton:
+      model: ${RESUME_SKELETON_MODEL:gpt-5.4-mini}
+      base-url: ${RESUME_SKELETON_BASE_URL:https://api.openai.com/v1/responses}
+      timeout-ms: ${RESUME_SKELETON_TIMEOUT_MS:60000}
+      max-tokens: ${RESUME_SKELETON_MAX_TOKENS:12000}
+      temperature: ${RESUME_SKELETON_TEMPERATURE:0.2}
+
 rehearse:
   interview:
     policy:
@@ -74,18 +83,18 @@ rehearse:
     l4-just-in-time: true
     max-context-tokens: 8000
   resume-planner:
-    model: ${RESUME_PLANNER_MODEL:gpt-4o-mini}
+    model: ${RESUME_PLANNER_MODEL:gpt-5.4-mini}
     temperature: 0.3
     max-tokens: 2048
   resume-track:
-    model: ${RESUME_TRACK_MODEL:gpt-4o-mini}
+    model: ${RESUME_TRACK_MODEL:gpt-5.4-mini}
     temperature: 0.7
     max-tokens: 800
     playground-max-turns: 3
     chain-max-depth: 4
     hard-timeout-min: 10
   rubric-scorer:
-    model: ${RUBRIC_SCORER_MODEL:gpt-4o-mini}
+    model: ${RUBRIC_SCORER_MODEL:gpt-5.4-mini}
     temperature: 0.2
     max-tokens: 1536
   feedback-rubric:
@@ -93,7 +102,7 @@ rehearse:
     fallback-rubric: fallback-generic-v1
     mode-aware: true
   feedback-synthesizer:
-    model: ${FEEDBACK_SYNTHESIZER_MODEL:gpt-4o-mini}
+    model: ${FEEDBACK_SYNTHESIZER_MODEL:gpt-5.4-mini}
     temperature: 0.3
     max-tokens: 2048
     delivery-timeout-minutes: 10

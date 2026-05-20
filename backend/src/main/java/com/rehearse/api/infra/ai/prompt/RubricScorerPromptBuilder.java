@@ -10,6 +10,7 @@ import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.schema.GeneratedRubricScoringSchema;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -80,7 +81,8 @@ public class RubricScorerPromptBuilder {
                 .temperature(temperature)
                 .maxTokens(maxTokens)
                 .cachePolicy(CachePolicy.defaults())
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(GeneratedRubricScoringSchema.spec(dimensionsToScore))
                 .callType(CALL_TYPE)
                 .build();
     }

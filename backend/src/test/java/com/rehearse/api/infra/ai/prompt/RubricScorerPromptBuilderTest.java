@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.prompt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricDimension;
 import com.rehearse.api.domain.feedback.rubric.service.RubricCatalog;
+import com.rehearse.api.infra.ai.schema.GeneratedRubricScoringSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -11,6 +12,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -75,6 +77,72 @@ class RubricScorerPromptBuilderTest {
         void template_preserves_user_answer_markers() {
             assertThat(templateContent).contains("<<<USER_ANSWER>>>");
             assertThat(templateContent).contains("<<<END_USER_ANSWER>>>");
+        }
+    }
+
+    @Nested
+    @DisplayName("buildJsonSchema - OpenAI strict structured output schema 생성")
+    class BuildJsonSchema {
+
+        @Test
+        @DisplayName("dimensionsToScore 키마다 score / observation / evidence_quote 를 required 로 포함한다")
+        void buildJsonSchema_required_perDimension() {
+            List<String> dims = List.of("technical_depth", "conceptual_accuracy");
+
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(dims);
+
+            assertThat(schema).containsEntry("type", "object");
+            assertThat(schema).containsEntry("additionalProperties", false);
+            assertThat(schema.get("required")).isEqualTo(dims);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+            assertThat(properties).containsOnlyKeys("technical_depth", "conceptual_accuracy");
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimSchema = (Map<String, Object>) properties.get("technical_depth");
+            assertThat(dimSchema).containsEntry("additionalProperties", false);
+            assertThat(dimSchema.get("required"))
+                    .isEqualTo(List.of("score", "observation", "evidence_quote"));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimProps = (Map<String, Object>) dimSchema.get("properties");
+            assertThat(dimProps).containsKeys("score", "observation", "evidence_quote");
+        }
+
+        @Test
+        @DisplayName("evidence_quote 는 non-null string 타입을 가진다")
+        void buildJsonSchema_evidence_quote_non_null() {
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(List.of("technical_depth"));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimSchema = (Map<String, Object>) properties.get("technical_depth");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimProps = (Map<String, Object>) dimSchema.get("properties");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> evidenceQuote = (Map<String, Object>) dimProps.get("evidence_quote");
+
+            assertThat(evidenceQuote.get("type")).isEqualTo("string");
+        }
+
+        @Test
+        @DisplayName("score 는 1/2/3 정수 enum 만 허용한다 (null 비허용 — 모든 차원 강제 채점)")
+        void buildJsonSchema_score_enum() {
+            Map<String, Object> schema = GeneratedRubricScoringSchema.build(List.of("technical_depth"));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimSchema = (Map<String, Object>) properties.get("technical_depth");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> dimProps = (Map<String, Object>) dimSchema.get("properties");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> score = (Map<String, Object>) dimProps.get("score");
+
+            assertThat(score.get("type")).isEqualTo("integer");
+            assertThat(score.get("enum")).asList().containsExactly(1, 2, 3);
         }
     }
 

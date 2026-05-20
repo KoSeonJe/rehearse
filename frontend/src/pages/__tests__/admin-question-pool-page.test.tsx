@@ -6,7 +6,6 @@ import { AdminQuestionPoolPage } from '../admin-question-pool-page'
 
 const mutate = vi.fn()
 const updateMutate = vi.fn()
-const updateMutateAsync = vi.fn()
 const deactivateMutate = vi.fn()
 const bulkDeactivateMutate = vi.fn()
 const mockUseAdminQuestionPools = vi.fn()
@@ -14,7 +13,7 @@ const mockUseAdminQuestionPools = vi.fn()
 vi.mock('@/hooks/use-admin-question-pool', () => ({
   useAdminQuestionPools: (...args: unknown[]) => mockUseAdminQuestionPools(...args),
   useCreateAdminQuestionPool: () => ({ mutate, isPending: false }),
-  useUpdateAdminQuestionPool: () => ({ mutate: updateMutate, mutateAsync: updateMutateAsync, isPending: false }),
+  useUpdateAdminQuestionPool: () => ({ mutate: updateMutate, isPending: false }),
   useDeactivateAdminQuestionPool: () => ({ mutate: deactivateMutate, isPending: false }),
   useBulkDeactivateAdminQuestionPools: () => ({ mutate: bulkDeactivateMutate, isPending: false }),
 }))
@@ -29,7 +28,6 @@ const renderPage = () =>
 describe('AdminQuestionPoolPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    updateMutateAsync.mockResolvedValue({})
     mockUseAdminQuestionPools.mockReturnValue({
       data: {
         data: {
@@ -44,18 +42,8 @@ describe('AdminQuestionPoolPage', () => {
               isActive: true,
               createdAt: '2026-05-16T10:30:00',
             },
-            {
-              id: 2,
-              cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
-              content: 'JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?',
-              ttsContent: 'JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?',
-              category: 'JPA',
-              bestAnswer: '영속성 컨텍스트는 엔티티를 식별자 기준으로 관리합니다.',
-              isActive: false,
-              createdAt: '2026-05-16T11:30:00',
-            },
           ],
-          totalElements: 2,
+          totalElements: 1,
           totalPages: 1,
           size: 20,
           number: 0,
@@ -76,7 +64,6 @@ describe('AdminQuestionPoolPage', () => {
     expect(screen.getByRole('columnheader', { name: '세부 주제' })).toHaveClass('whitespace-nowrap')
     expect(screen.getByRole('columnheader', { name: '상태' })).toHaveClass('whitespace-nowrap')
     expect(screen.getByRole('cell', { name: '활성' })).toHaveClass('whitespace-nowrap')
-    expect(screen.getByRole('columnheader', { name: '선택' }).firstElementChild).toHaveClass('sr-only')
   })
 
   it('검색 버튼을 누르면 입력한 필터로 목록을 다시 조회한다', async () => {
@@ -173,18 +160,6 @@ describe('AdminQuestionPoolPage', () => {
     expect(within(dialog).getByText('활성')).toBeInTheDocument()
   })
 
-  it('상세 모달에서 긴 캐시 키를 전체 폭에서 줄바꿈 가능하게 표시한다', async () => {
-    const user = userEvent.setup()
-    renderPage()
-
-    await user.click(screen.getAllByText('JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?')[0])
-
-    const dialog = screen.getByRole('dialog', { name: '질문 상세' })
-    const cacheKey = within(dialog).getByText('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK')
-    expect(cacheKey.closest('div')).toHaveClass('sm:col-span-2')
-    expect(cacheKey).toHaveClass('break-all')
-  })
-
   it('상세 모달에서 질문 풀 row를 수정한다', async () => {
     const user = userEvent.setup()
     renderPage()
@@ -209,73 +184,23 @@ describe('AdminQuestionPoolPage', () => {
     )
   })
 
-  it('상세 모달에서 단일 질문 풀 row를 비활성으로 변경한다', async () => {
+  it('상세 모달에서 단일 질문 풀 row를 비활성화한다', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
-    await user.click(screen.getByRole('button', { name: '비활성으로 변경' }))
+    await user.click(screen.getByRole('button', { name: '비활성화' }))
 
-    expect(updateMutate).toHaveBeenCalledWith(
-      {
-        id: 1,
-        request: expect.objectContaining({
-          cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
-          isActive: false,
-        }),
-      },
-      expect.any(Object),
-    )
+    expect(deactivateMutate).toHaveBeenCalledWith(1, expect.any(Object))
   })
 
-  it('상세 모달에서 비활성 질문 풀 row를 활성으로 변경한다', async () => {
-    const user = userEvent.setup()
-    renderPage()
-
-    await user.click(screen.getAllByText('JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?')[0])
-    await user.click(screen.getByRole('button', { name: '활성으로 변경' }))
-
-    expect(updateMutate).toHaveBeenCalledWith(
-      {
-        id: 2,
-        request: expect.objectContaining({
-          cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
-          isActive: true,
-        }),
-      },
-      expect.any(Object),
-    )
-  })
-
-  it('선택한 질문 풀 row를 일괄 비활성으로 변경한다', async () => {
+  it('선택한 질문 풀 row를 일괄 비활성화한다', async () => {
     const user = userEvent.setup()
     renderPage()
 
     await user.click(screen.getAllByLabelText('JUNIOR:CS_FUNDAMENTAL 선택')[0])
-    await user.selectOptions(screen.getByLabelText('선택 상태 변경'), 'false')
+    await user.click(screen.getByRole('button', { name: '선택 비활성화' }))
 
-    expect(updateMutateAsync).toHaveBeenCalledWith({
-      id: 1,
-      request: expect.objectContaining({
-        cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
-        isActive: false,
-      }),
-    })
-  })
-
-  it('선택한 질문 풀 row를 일괄 활성으로 변경한다', async () => {
-    const user = userEvent.setup()
-    renderPage()
-
-    await user.click(screen.getAllByLabelText('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK 선택')[0])
-    await user.selectOptions(screen.getByLabelText('선택 상태 변경'), 'true')
-
-    expect(updateMutateAsync).toHaveBeenCalledWith({
-      id: 2,
-      request: expect.objectContaining({
-        cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
-        isActive: true,
-      }),
-    })
+    expect(bulkDeactivateMutate).toHaveBeenCalledWith([1], expect.any(Object))
   })
 })

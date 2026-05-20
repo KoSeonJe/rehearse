@@ -1,21 +1,14 @@
 package com.rehearse.api.domain.feedback.dto;
 
-import ch.qos.logback.classic.Level;
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.read.ListAppender;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.support.TestFixtures;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.slf4j.LoggerFactory;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
@@ -170,50 +163,72 @@ class TimestampFeedbackResponseTest {
     }
 
     @Nested
-    @DisplayName("legacy rubric_id silently skip")
-    class LegacyRubricSkip {
+    @DisplayName("verbal rubricId 모두 technicalFeedback 매핑")
+    class VerbalRubricMapping {
 
-        private ListAppender<ILoggingEvent> appender;
-        private Logger logbackLogger;
+        @Test
+        @DisplayName("resume-v1 / experience-technical-v1 / concept-cs-fundamental-v1 / concept-lang-framework-v1 / experience-collaboration-v1 / fallback-generic-v1 모두 technicalFeedback 으로 적재된다")
+        void all_verbal_rubric_ids_map_to_technical_feedback() {
+            String[] verbalRubricIds = {
+                    "resume-v1",
+                    "experience-technical-v1",
+                    "concept-cs-fundamental-v1",
+                    "concept-lang-framework-v1",
+                    "experience-collaboration-v1",
+                    "fallback-generic-v1"
+            };
 
-        @BeforeEach
-        void attachAppender() {
-            logbackLogger = (Logger) LoggerFactory.getLogger(TimestampFeedbackResponse.class);
-            appender = new ListAppender<>();
-            appender.start();
-            logbackLogger.addAppender(appender);
-            logbackLogger.setLevel(Level.DEBUG);
-        }
+            long idSeed = 600L;
+            for (String rubricId : verbalRubricIds) {
+                Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+                TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+                QuestionScore verbal = score(idSeed, 30L, rubricId, "L1");
+                Map<Long, List<QuestionScoreDimension>> dims = Map.of(
+                        idSeed, List.of(TestFixtures.createQuestionScoreDimension(idSeed, "clarity", 2, "ok"))
+                );
 
-        @AfterEach
-        void detachAppender() {
-            logbackLogger.detachAppender(appender);
+                TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(verbal), dims);
+
+                assertThat(response.getTechnicalFeedback())
+                        .as("rubricId=%s 는 technicalFeedback 으로 적재되어야 한다", rubricId)
+                        .isNotNull();
+                assertThat(response.getTechnicalFeedback().getRubricId()).isEqualTo(rubricId);
+                assertThat(response.getNonverbalFeedback()).isNull();
+                idSeed++;
+            }
         }
 
         @Test
-        @DisplayName("known rubric 4종 외 row 는 응답에 미포함 + DEBUG 로그 1건 기록된다")
-        void skips_legacy_rubric_id_silently() {
+        @DisplayName("nonverbal-v1 row 는 nonverbalFeedback 으로만 적재되고 technicalFeedback 은 null 이다")
+        void nonverbal_rubric_id_maps_only_to_nonverbal_feedback() {
             Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
             TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore verbal = score(500L, 20L, "technical-v1", "L1");
-            QuestionScore legacy = score(501L, 20L, "nonverbal", null);
+            QuestionScore nonverbal = score(700L, 31L, "nonverbal-v1", null);
             Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    500L, List.of(TestFixtures.createQuestionScoreDimension(500L, "clarity", 2, "정리됨")),
-                    501L, List.of(TestFixtures.createQuestionScoreDimension(501L, "legacy_dim", 1, "legacy"))
+                    700L, List.of(TestFixtures.createQuestionScoreDimension(700L, "fluency", 2, "유창"))
             );
 
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(verbal, legacy), dims);
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(nonverbal), dims);
+
+            assertThat(response.getNonverbalFeedback()).isNotNull();
+            assertThat(response.getTechnicalFeedback()).isNull();
+        }
+
+        @Test
+        @DisplayName("미지 rubricId (legacy / 신규) 도 nonverbal-v1 이 아니면 technicalFeedback 으로 매핑된다")
+        void unknown_non_nonverbal_rubric_id_maps_to_technical_feedback() {
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+            QuestionScore unknown = score(800L, 32L, "future-rubric-v1", "L1");
+            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
+                    800L, List.of(TestFixtures.createQuestionScoreDimension(800L, "clarity", 2, "ok"))
+            );
+
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(unknown), dims);
 
             assertThat(response.getTechnicalFeedback()).isNotNull();
+            assertThat(response.getTechnicalFeedback().getRubricId()).isEqualTo("future-rubric-v1");
             assertThat(response.getNonverbalFeedback()).isNull();
-            assertThat(appender.list)
-                    .anySatisfy(event -> {
-                        assertThat(event.getLevel()).isEqualTo(Level.DEBUG);
-                        assertThat(event.getFormattedMessage())
-                                .contains("legacy rubric_id 응답 미포함")
-                                .contains("questionScoreId=501")
-                                .contains("rubricId=nonverbal");
-                    });
         }
     }
 

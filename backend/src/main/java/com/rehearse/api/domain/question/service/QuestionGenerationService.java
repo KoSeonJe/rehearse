@@ -23,27 +23,20 @@ public class QuestionGenerationService {
 
     public void generateQuestions(Long interviewId, Long userId, Position position,
                                   InterviewLevel level, List<InterviewType> interviewTypes,
-                                  List<String> csSubTopics, String resumeText,
-                                  Integer durationMinutes, TechStack techStack) {
-        generateQuestions(interviewId, userId, position, level, interviewTypes, csSubTopics,
-                resumeText, null, durationMinutes, techStack);
-    }
-
-    public void generateQuestions(Long interviewId, Long userId, Position position,
-                                  InterviewLevel level, List<InterviewType> interviewTypes,
-                                  List<String> csSubTopics, String resumeText, String resumeFileHash,
+                                  List<String> csSubTopics, byte[] resumePdfBytes, String resumeFileHash,
                                   Integer durationMinutes, TechStack techStack) {
 
         transactionHandler.startGeneration(interviewId);
 
         if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
-            resumeTrackInitiator.initiate(interviewId, resumeFileHash, resumeText, durationMinutes);
+            resumeTrackInitiator.initiate(interviewId, resumeFileHash, resumePdfBytes,
+                    durationMinutes, position, techStack);
             return;
         }
 
         List<QuestionSet> questionSets = standardTrackGenerator.generate(new QuestionGenerationCommand(
                 interviewId, userId, position, level, interviewTypes,
-                csSubTopics, resumeText, durationMinutes, techStack));
+                csSubTopics, durationMinutes, techStack));
 
         transactionHandler.saveResults(interviewId, questionSets);
     }

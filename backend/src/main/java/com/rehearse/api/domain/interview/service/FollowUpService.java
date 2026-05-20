@@ -12,6 +12,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.domain.resume.service.ResumeSkeletonPersister;
 import com.rehearse.api.global.exception.BusinessException;
@@ -44,17 +45,20 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
-        if (followUpTransactionHandler.shouldSkipOpener(request.getQuestionSetId())) {
-            log.info("RESUME_OPENER main → follow-up skip. interviewId={}, questionSetId={}",
-                    id, request.getQuestionSetId());
-            aiCallMetrics.incrementFollowUpSkip("opener_skip");
-            return FollowUpResponse.aiSkip(request.getAnswerText(), "resume_opener_skip");
-        }
-
+        boolean isResumeTrack = isResumeTrack(context.currentMainQuestionType());
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
-                id, audioFile, request.getQuestionContent(), context.mainReferenceType());
+                id, audioFile, request.getQuestionContent(), context.mainReferenceType(), isResumeTrack);
         String answerText = request.getAnswerText();
 
+        followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
+                id, context, analysis, answerText, context.currentMainQuestionId());
+
+        if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
+            log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("opener_skip");
+            return FollowUpResponse.aiSkip(answerText, "resume_opener_skip");
+        }
         if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
             return handleAnalyzerSkip(id, context, request, analysis, answerText);
         }
@@ -72,8 +76,6 @@ public class FollowUpService {
         log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                 id, InterviewTrack.CS.logLabel(),
                 BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
-        followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                id, context, analysis, answerText, context.currentMainQuestionId());
         return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
     }
 
@@ -94,13 +96,11 @@ public class FollowUpService {
             log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
                     id, InterviewTrack.CS.logLabel(),
                     BlockReason.STEP_B_SKIP.logValue(), turnIndex);
-            followUpTransactionHandler.publishFollowUpQuestionCreatedEvent(
-                    id, context, analysis, answerText, context.currentMainQuestionId());
             return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
         }
 
-        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResultAndPublishEvent(
-                id, context, stepB, analysis, answerText);
+        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
+                context.questionSetId(), stepB);
         boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
 
         log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}, weakestDimension={}, dimensionGaps={}, target_claim_idx={}, exhausted={}",
@@ -109,6 +109,12 @@ public class FollowUpService {
                 stepB.targetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), exhausted);
+    }
+
+    private static boolean isResumeTrack(QuestionType mainType) {
+        return mainType == QuestionType.RESUME_OPENER
+                || mainType == QuestionType.RESUME_MAIN
+                || mainType == QuestionType.RESUME_FOLLOWUP;
     }
 
     private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {

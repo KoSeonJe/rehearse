@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.schema.GeneratedSessionFeedbackSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,6 +103,121 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
         String prompt = request.messages().getFirst().content();
 
         assertThat(prompt).contains("### Nonverbal Aggregate\n{\"legacy\":\"aggregate\"}");
+    }
+
+    @Test
+    @DisplayName("build() ChatRequest 는 strict JSON Schema 포맷 (response_format=json_schema) 으로 설정된다")
+    void build_chatRequest_uses_strict_json_schema() {
+        SessionFeedbackInput input = new SessionFeedbackInput(
+                metadata(),
+                Collections.emptyList(),
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                null,
+                null,
+                null,
+                null,
+                "all turns scored",
+                InterviewLevel.MID
+        );
+
+        ChatRequest request = builder.build(input);
+
+        assertThat(request.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
+        assertThat(request.jsonSchema()).isNotNull();
+        assertThat(request.jsonSchema().name())
+                .isEqualTo(GeneratedSessionFeedbackSchema.SCHEMA_NAME);
+        Map<String, Object> schema = request.jsonSchema().schema();
+        assertThat(schema).containsEntry("type", "object");
+        assertThat(schema).containsEntry("additionalProperties", false);
+        assertThat(schema.get("required"))
+                .isEqualTo(List.of("overall", "strengths", "gaps", "delivery", "week_plan"));
+    }
+
+    @Test
+    @DisplayName("buildJsonSchema() 는 overall.dimension_scores 14개 한국어 키를 required 로 포함하고 nullable number 로 정의한다")
+    void buildJsonSchema_dimensionScores_requireAll14Keys_asNullableNumber() {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> schema =
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> overall = (Map<String, Object>) properties.get("overall");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> overallProps = (Map<String, Object>) overall.get("properties");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dimensionScores = (Map<String, Object>) overallProps.get("dimension_scores");
+
+        assertThat(dimensionScores).containsEntry("type", "object");
+        assertThat(dimensionScores).containsEntry("additionalProperties", false);
+        assertThat(dimensionScores.get("required"))
+                .isEqualTo(List.copyOf(GeneratedSessionFeedbackSchema.DIMENSION_KEYS));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dimensionScoresProps =
+                (Map<String, Object>) dimensionScores.get("properties");
+        for (String key : GeneratedSessionFeedbackSchema.DIMENSION_KEYS) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> field = (Map<String, Object>) dimensionScoresProps.get(key);
+            assertThat(field.get("type")).isEqualTo(List.of("number", "null"));
+        }
+    }
+
+    @Test
+    @DisplayName("buildJsonSchema() 의 delivery 는 anyOf 로 object 또는 null 을 허용한다 (모든 nested object 는 additionalProperties=false)")
+    void buildJsonSchema_delivery_anyOfObjectOrNull() {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> schema =
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> delivery = (Map<String, Object>) properties.get("delivery");
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> anyOf = (List<Map<String, Object>>) delivery.get("anyOf");
+        assertThat(anyOf).hasSize(2);
+
+        Map<String, Object> deliveryObject = anyOf.get(0);
+        assertThat(deliveryObject).containsEntry("type", "object");
+        assertThat(deliveryObject).containsEntry("additionalProperties", false);
+        assertThat(deliveryObject.get("required"))
+                .isEqualTo(List.of("filler_words", "tone_pattern", "action"));
+
+        Map<String, Object> nullOption = anyOf.get(1);
+        assertThat(nullOption).containsEntry("type", "null");
+    }
+
+    @Test
+    @DisplayName("buildJsonSchema() 의 strengths / gaps / week_plan 은 array<object> 이며 각 item 은 strict 객체이다")
+    void buildJsonSchema_arrayItems_areStrictObjects() {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> schema =
+                (Map<String, Object>) GeneratedSessionFeedbackSchema.build();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> properties = (Map<String, Object>) schema.get("properties");
+
+        assertStrictArrayItem(properties, "strengths",
+                List.of("dimension", "observation", "why_matters"));
+        assertStrictArrayItem(properties, "gaps",
+                List.of("dimension", "observation", "level_gap", "concrete_action"));
+        assertStrictArrayItem(properties, "week_plan",
+                List.of("priority", "topic", "resources", "practice"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertStrictArrayItem(
+            Map<String, Object> properties, String key, List<String> expectedRequired) {
+        Map<String, Object> arr = (Map<String, Object>) properties.get(key);
+        assertThat(arr).containsEntry("type", "array");
+        Map<String, Object> item = (Map<String, Object>) arr.get("items");
+        assertThat(item).containsEntry("type", "object");
+        assertThat(item).containsEntry("additionalProperties", false);
+        assertThat(item.get("required")).isEqualTo(expectedRequired);
     }
 
     private SessionFeedbackInput.SessionMetadata metadata() {

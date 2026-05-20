@@ -55,7 +55,8 @@ describe('ContentTab', () => {
 
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
-    expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
+    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
+    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
     expect(screen.getByText('3점')).toBeInTheDocument()
     expect(
       screen.getByText('세대별 GC 구조를 언급해 개념 정확도가 좋습니다.'),
@@ -86,7 +87,8 @@ describe('ContentTab', () => {
 
     expect(screen.getByText('경험 평가')).toBeInTheDocument()
     expect(screen.queryByText('기술 피드백')).not.toBeInTheDocument()
-    expect(screen.getByText('experience_concreteness')).toBeInTheDocument()
+    expect(screen.getByText('경험 구체성')).toBeInTheDocument()
+    expect(screen.queryByText('experience_concreteness')).not.toBeInTheDocument()
     expect(screen.getByText('1점')).toBeInTheDocument()
     expect(screen.getByText('구체 수치 / 결과가 부족합니다.')).toBeInTheDocument()
   })
@@ -114,7 +116,8 @@ describe('ContentTab', () => {
     expect(screen.getByText('경험/협업')).toBeInTheDocument()
     expect(screen.queryByText('기술 피드백')).not.toBeInTheDocument()
     expect(screen.queryByText('경험 평가')).not.toBeInTheDocument()
-    expect(screen.getByText('collaboration_awareness')).toBeInTheDocument()
+    expect(screen.getByText('협업 의식')).toBeInTheDocument()
+    expect(screen.queryByText('collaboration_awareness')).not.toBeInTheDocument()
     expect(screen.getByText('2점')).toBeInTheDocument()
     expect(screen.getByText('협업 사례 묘사가 추상적입니다.')).toBeInTheDocument()
     expect(screen.getByText('팀과 잘 맞췄어요')).toBeInTheDocument()
@@ -132,7 +135,7 @@ describe('ContentTab', () => {
     )
 
     expect(screen.getByText('해당 턴은 평가 대상이 아닙니다.')).toBeInTheDocument()
-    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
+    expect(screen.queryByText('개념 정확도')).not.toBeInTheDocument()
   })
 
   it('technicalFeedback === null → verbal fallback 노출 (회귀)', () => {
@@ -189,10 +192,12 @@ describe('ContentTab', () => {
 
     expect(screen.getByText('기술 피드백')).toBeInTheDocument()
     expect(screen.getByText('비언어 평가')).toBeInTheDocument()
-    expect(screen.getByText('conceptual_accuracy')).toBeInTheDocument()
-    expect(screen.getByText('fluency')).toBeInTheDocument()
-    expect(screen.getByText('confidence_tone')).toBeInTheDocument()
-    expect(screen.getByText('eye_contact_posture')).toBeInTheDocument()
+    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
+    expect(screen.getByText('유창함')).toBeInTheDocument()
+    expect(screen.getByText('자신감')).toBeInTheDocument()
+    expect(screen.getByText('시선')).toBeInTheDocument()
+    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
+    expect(screen.queryByText('fluency')).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
     expect(screen.queryByText('긍정')).not.toBeInTheDocument()
     expect(screen.queryByText('이번 답변 비언어 분석 일부 실패')).not.toBeInTheDocument()
@@ -223,9 +228,10 @@ describe('ContentTab', () => {
     )
 
     expect(screen.getByText('비언어 평가')).toBeInTheDocument()
-    expect(screen.getByText('fluency')).toBeInTheDocument()
-    expect(screen.getByText('confidence_tone')).toBeInTheDocument()
-    expect(screen.queryByText('eye_contact_posture')).not.toBeInTheDocument()
+    expect(screen.getByText('유창함')).toBeInTheDocument()
+    expect(screen.getByText('자신감')).toBeInTheDocument()
+    expect(screen.queryByText('시선')).not.toBeInTheDocument()
+    expect(screen.queryByText('fluency')).not.toBeInTheDocument()
     expect(screen.getByText('이번 답변 비언어 분석 일부 실패')).toBeInTheDocument()
   })
 
@@ -264,7 +270,8 @@ describe('ContentTab', () => {
     )
 
     expect(screen.getByText('경험 평가')).toBeInTheDocument()
-    expect(screen.getByText('technical_depth')).toBeInTheDocument()
+    expect(screen.getByText('기술 깊이')).toBeInTheDocument()
+    expect(screen.queryByText('technical_depth')).not.toBeInTheDocument()
     expect(screen.getByText('4점')).toBeInTheDocument()
     expect(
       screen.getByText('아키텍처 트레이드오프를 구체적으로 설명했습니다.'),

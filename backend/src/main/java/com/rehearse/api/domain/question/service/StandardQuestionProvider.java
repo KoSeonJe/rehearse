@@ -74,7 +74,7 @@ public class StandardQuestionProvider {
                     position, null, level,
                     Set.of(type),
                     csSubTopics != null ? new HashSet<>(csSubTopics) : Set.of(),
-                    null, null, techStack
+                    null, techStack
             );
 
             List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(request);

@@ -1,9 +1,9 @@
 package com.rehearse.api.domain.feedback.rubric.service;
 
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.domain.feedback.rubric.event.FollowUpQuestionCreatedEvent;
 import com.rehearse.api.domain.feedback.score.service.QuestionScorePersister;
 import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.event.AnswerAnalysisCompletedEvent;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
@@ -32,7 +32,7 @@ public class RubricScoringEventListener {
 
     @Async(RubricScoringExecutorConfig.RUBRIC_SCORING_EXECUTOR)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(FollowUpQuestionCreatedEvent event) {
+    public void on(AnswerAnalysisCompletedEvent event) {
         Long interviewId = event.interviewId();
 
         try {
@@ -64,7 +64,7 @@ public class RubricScoringEventListener {
         }
     }
 
-    private Question resolveQuestion(FollowUpQuestionCreatedEvent event) {
+    private Question resolveQuestion(AnswerAnalysisCompletedEvent event) {
         if (event.questionId() == null) {
             throw new IllegalStateException(
                     "Question 식별 불가 — questionId null. interviewId=" + event.interviewId());
@@ -75,7 +75,7 @@ public class RubricScoringEventListener {
                                 + ", interviewId=" + event.interviewId()));
     }
 
-    private QuestionSet resolveQuestionSet(FollowUpQuestionCreatedEvent event, Interview interview) {
+    private QuestionSet resolveQuestionSet(AnswerAnalysisCompletedEvent event, Interview interview) {
         if (event.questionSetId() == null) {
             throw new IllegalStateException(
                     "QuestionSet 식별 불가 — questionSetId null. interviewId=" + event.interviewId()

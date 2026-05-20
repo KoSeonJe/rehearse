@@ -1,122 +1,369 @@
 package com.rehearse.api.domain.question.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.interview.entity.Interview;
+import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.QuestionGenerationStatus;
+import com.rehearse.api.domain.interview.entity.TechStack;
+import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionDepthType;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.resume.entity.CandidateLevel;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.service.ResumeIngestionService;
-import com.rehearse.api.domain.resume.service.ResumeQuestionPersister;
-import com.rehearse.api.domain.resume.service.ResumeQuestionPersister.ResumeQuestionDraft;
+import com.rehearse.api.domain.question.repository.QuestionRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
+import com.rehearse.api.domain.user.entity.OAuthProvider;
+import com.rehearse.api.domain.user.entity.User;
+import com.rehearse.api.domain.user.entity.UserRole;
+import com.rehearse.api.domain.user.repository.UserRepository;
+import com.rehearse.api.global.support.TestFixtures;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.AiResponseParser;
-import com.rehearse.api.infra.ai.context.BuiltContext;
-import com.rehearse.api.infra.ai.context.ContextBuildRequest;
-import com.rehearse.api.infra.ai.context.InterviewContextBuilder;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
-import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions.GeneratedResumeQuestion;
-import org.junit.jupiter.api.BeforeEach;
+import com.rehearse.api.infra.ai.dto.GeneratedResumeSkeleton;
+import com.rehearse.api.infra.ai.dto.ResponseFormat;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
+import com.rehearse.api.support.ServiceIntegrationSupport;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("ResumeTrackInitiator — opener N + main M 일괄 생성")
-class ResumeTrackInitiatorTest {
+@DisplayName("ResumeTrackInitiator — 이력서 트랙 면접 시작 (opener + main 일괄 LLM 생성 + DB 분리 적재)")
+class ResumeTrackInitiatorTest extends ServiceIntegrationSupport {
 
-    private QuestionGenerationTransactionHandler transactionHandler;
-    private ResumeIngestionService ingestionService;
-    private ResumeQuestionPersister persister;
-    private AiClient aiClient;
-    private AiResponseParser parser;
-    private InterviewContextBuilder contextBuilder;
-    private ObjectMapper objectMapper;
+    private static final byte[] RESUME_PDF = "pdf-content".getBytes();
 
+    @Autowired
     private ResumeTrackInitiator initiator;
 
-    @BeforeEach
-    void setUp() {
-        transactionHandler = mock(QuestionGenerationTransactionHandler.class);
-        ingestionService = mock(ResumeIngestionService.class);
-        persister = mock(ResumeQuestionPersister.class);
-        aiClient = mock(AiClient.class);
-        parser = mock(AiResponseParser.class);
-        contextBuilder = mock(InterviewContextBuilder.class);
-        objectMapper = new ObjectMapper();
+    @Autowired
+    private UserRepository userRepository;
 
-        initiator = new ResumeTrackInitiator(
-                transactionHandler, ingestionService, persister,
-                aiClient, parser, contextBuilder, objectMapper);
-    }
+    @Autowired
+    private InterviewRepository interviewRepository;
 
-    @Test
-    @DisplayName("durationMinutes=30 이면 opener 1 + main 12 (30/3+2) 드래프트 일괄 적재 + orderIndex 0..N-1")
-    void initiate_persistsOpenerAndMains_withSequentialOrder() {
-        long interviewId = 99L;
-        ResumeSkeleton skeleton = new ResumeSkeleton(
-                "resume-1", "hash-1", CandidateLevel.MID, "backend", List.of());
-        when(ingestionService.ingestExtractedText(eq(interviewId), any(), eq("hash-1")))
-                .thenReturn(skeleton);
-        when(contextBuilder.build(any(ContextBuildRequest.class)))
-                .thenReturn(new BuiltContext(
-                        List.of(ChatMessage.of(ChatMessage.Role.SYSTEM, "system")),
-                        0,
-                        java.util.Map.of()));
-        when(aiClient.chat(any(ChatRequest.class)))
-                .thenReturn(mock(ChatResponse.class));
-        GeneratedResumeQuestions generated = new GeneratedResumeQuestions(
-                List.of(new GeneratedResumeQuestion("자기소개 부탁드립니다", "TTS-O1", "best-O1")),
-                List.of(
-                        new GeneratedResumeQuestion("프로젝트 A 의 핵심 기술 결정", "TTS-M1", "best-M1"),
-                        new GeneratedResumeQuestion("프로젝트 B 의 기술 결정", "TTS-M2", "best-M2"),
-                        new GeneratedResumeQuestion("프로젝트 C 의 기술 결정", "TTS-M3", "best-M3")
-                ));
-        when(parser.parseOrRetry(any(), eq(GeneratedResumeQuestions.class), any(), any()))
-                .thenReturn(generated);
+    @Autowired
+    private QuestionSetRepository questionSetRepository;
 
-        initiator.initiate(interviewId, "hash-1", "이력서 본문", 30);
+    @Autowired
+    private QuestionRepository questionRepository;
 
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<List<ResumeQuestionDraft>> captor = ArgumentCaptor.forClass(List.class);
-        verify(persister).persistAll(eq(interviewId), captor.capture());
-        List<ResumeQuestionDraft> drafts = captor.getValue();
+    @MockitoBean
+    private AiClient aiClient;
 
-        assertThat(drafts).hasSize(4);
-        assertThat(drafts.get(0).questionType()).isEqualTo(QuestionType.RESUME_OPENER);
-        assertThat(drafts.get(0).orderIndex()).isZero();
-        assertThat(drafts.subList(1, 4))
-                .allSatisfy(d -> assertThat(d.questionType()).isEqualTo(QuestionType.RESUME_MAIN));
-        assertThat(drafts.get(1).orderIndex()).isEqualTo(1);
-        assertThat(drafts.get(2).orderIndex()).isEqualTo(2);
-        assertThat(drafts.get(3).orderIndex()).isEqualTo(3);
-
-        verify(transactionHandler).completeGeneration(interviewId);
-    }
+    @MockitoBean
+    private ResumeSkeletonExtractor resumeSkeletonExtractor;
 
     @Test
-    @DisplayName("LLM 실패 시 transactionHandler.failGeneration 호출 후 예외 재전파")
-    void initiate_propagatesExceptionAndFailsGeneration() {
-        long interviewId = 100L;
-        when(ingestionService.ingestExtractedText(anyLong(), any(), any()))
-                .thenThrow(new RuntimeException("ingest 실패"));
+    @DisplayName("opener 1 + main 3 응답 → QSet 4개 분리 적재 + orderIndex 0..3 + Interview 상태 COMPLETED")
+    void initiate_persistsOpenerAndMains_andCompletesInterview() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-success"), "hash-success");
+        stubAiClient(questionsJson(1, 3));
 
-        try {
-            initiator.initiate(interviewId, "hash", "본문", 30);
-        } catch (RuntimeException expected) {
-            assertThat(expected).hasMessageContaining("ingest 실패");
+        initiator.initiate(interviewId, "hash-success", RESUME_PDF, 30, Position.BACKEND, TechStack.JAVA_SPRING);
+
+        List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+        assertThat(persistedSets).hasSize(4);
+        assertThat(persistedSets).extracting(QuestionSet::getCategory)
+                .containsOnly(InterviewType.RESUME_BASED);
+        assertThat(persistedSets).extracting(QuestionSet::getOrderIndex)
+                .containsExactly(0, 1, 2, 3);
+
+        List<Question> openerQuestions = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(0).getId());
+        assertThat(openerQuestions).hasSize(1);
+        assertThat(openerQuestions.get(0).getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
+
+        for (int i = 1; i < persistedSets.size(); i++) {
+            List<Question> mains = questionRepository
+                    .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(i).getId());
+            assertThat(mains).hasSize(1);
+            assertThat(mains.get(0).getQuestionType()).isEqualTo(QuestionType.RESUME_MAIN);
         }
 
-        verify(transactionHandler).failGeneration(eq(interviewId), any());
+        Interview reloaded = interviewRepository.findById(interviewId).orElseThrow();
+        assertThat(reloaded.getQuestionGenerationStatus())
+                .isEqualTo(QuestionGenerationStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("skeleton.projects[0].projectName 이 LLM prompt 의 PRIMARY_PROJECT_NAME 라인으로 전달된다")
+    void initiate_passes_primaryProjectName_to_llm_prompt() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-primary"), "hash-primary");
+        stubAiClient(questionsJson(1, 1));
+
+        initiator.initiate(interviewId, "hash-primary", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
+
+        String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
+        assertThat(questionGenUserMessage)
+                .as("primaryProjectName = projects[0].projectName 이 prompt 에 주입된다")
+                .contains("PRIMARY_PROJECT_NAME: 주문 캐싱 개선");
+    }
+
+    @Test
+    @DisplayName("projects 가 비어 있으면 PRIMARY_PROJECT_NAME 자리는 '(없음)' 으로 채워진다 (generic fallback)")
+    void initiate_falls_back_to_generic_when_projects_empty() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonNoProjects("hash-empty"), "hash-empty");
+        stubAiClient(questionsJson(1, 1));
+
+        initiator.initiate(interviewId, "hash-empty", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
+
+        String questionGenUserMessage = captureUserMessageForCallType("resume_question_generator");
+        assertThat(questionGenUserMessage)
+                .as("projects 비어 있음 → primaryProjectName=null → FocusLayer 의 nz() 가 (없음) 출력")
+                .contains("PRIMARY_PROJECT_NAME: (없음)");
+    }
+
+    @Test
+    @DisplayName("resume_question_generator ChatRequest 는 strict JSON_SCHEMA 포맷으로 빌드된다 (openers / mains required)")
+    void initiate_chatRequest_uses_strict_json_schema() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-schema"), "hash-schema");
+        stubAiClient(questionsJson(1, 1));
+
+        initiator.initiate(interviewId, "hash-schema", RESUME_PDF, 21, Position.BACKEND, TechStack.JAVA_SPRING);
+
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(aiClient, atLeastOnce()).chat(captor.capture());
+        ChatRequest generatorReq = captor.getAllValues().stream()
+                .filter(r -> "resume_question_generator".equals(r.callType()))
+                .findFirst()
+                .orElseThrow();
+
+        assertThat(generatorReq.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
+        assertThat(generatorReq.jsonSchema()).isNotNull();
+        assertThat(generatorReq.jsonSchema().name()).isEqualTo(GeneratedResumeQuestionsSchema.SCHEMA_NAME);
+        assertThat(generatorReq.jsonSchema().schema()).containsEntry("type", "object");
+        assertThat(generatorReq.jsonSchema().schema()).containsEntry("additionalProperties", false);
+        assertThat(generatorReq.jsonSchema().schema().get("required"))
+                .isEqualTo(List.of("openers", "mains"));
+    }
+
+    @Test
+    @DisplayName("LLM 응답 depth_type 값이 main Question.depthType 컬럼에 적재되고 opener 는 NULL 로 유지된다")
+    void initiate_persistsDepthType_forMains_andNullForOpener() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth"), "hash-depth");
+        stubAiClient(questionsJsonWithDepthTypes(1,
+                List.of("TRADEOFF", "LIMITATION", "QUANTITATIVE", "ALTERNATIVE", "PRINCIPLE")));
+
+        initiator.initiate(interviewId, "hash-depth", RESUME_PDF, 30,
+                Position.BACKEND, TechStack.JAVA_SPRING);
+
+        List<QuestionSet> persistedSets = questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId);
+        assertThat(persistedSets).hasSize(6);
+
+        Question openerQuestion = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(0).getId()).get(0);
+        assertThat(openerQuestion.getQuestionType()).isEqualTo(QuestionType.RESUME_OPENER);
+        assertThat(openerQuestion.getDepthType()).isNull();
+
+        List<QuestionDepthType> mainDepthTypes = new ArrayList<>();
+        for (int i = 1; i < persistedSets.size(); i++) {
+            Question main = questionRepository
+                    .findByQuestionSetIdOrderByOrderIndex(persistedSets.get(i).getId()).get(0);
+            mainDepthTypes.add(main.getDepthType());
+        }
+        assertThat(mainDepthTypes).containsExactly(
+                QuestionDepthType.TRADEOFF,
+                QuestionDepthType.LIMITATION,
+                QuestionDepthType.QUANTITATIVE,
+                QuestionDepthType.ALTERNATIVE,
+                QuestionDepthType.PRINCIPLE);
+    }
+
+    @Test
+    @DisplayName("LLM 응답 mains 중 depth_type 누락 시 BusinessException(RESPONSE_INVALID) + Interview 상태 FAILED")
+    void initiate_throwsAndMarksFailed_whenMainsDepthTypeMissing() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-depth-missing"), "hash-depth-missing");
+        stubAiClient(questionsJsonWithPartialDepthTypes(1,
+                Arrays.asList("TRADEOFF", null, "QUANTITATIVE")));
+
+        Assertions.assertThatThrownBy(() ->
+                        initiator.initiate(interviewId, "hash-depth-missing", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(AiErrorCode.RESPONSE_INVALID);
+
+        Interview reloaded = interviewRepository.findById(interviewId).orElseThrow();
+        assertThat(reloaded.getQuestionGenerationStatus())
+                .isEqualTo(QuestionGenerationStatus.FAILED);
+        assertThat(questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("LLM 실패 시 Interview 상태 FAILED 로 전이 + 예외 재전파")
+    void initiate_marksInterviewFailed_andRethrows_whenLlmFails() {
+        Long interviewId = persistInterview();
+        stubExtractor(skeletonWithProjects("hash-fail"), "hash-fail");
+        when(aiClient.chat(any(ChatRequest.class)))
+                .thenThrow(new RuntimeException("LLM 호출 실패"));
+
+        Assertions.assertThatThrownBy(() ->
+                        initiator.initiate(interviewId, "hash-fail", RESUME_PDF, 30,
+                                Position.BACKEND, TechStack.JAVA_SPRING))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("LLM 호출 실패");
+
+        Interview reloaded = interviewRepository.findById(interviewId).orElseThrow();
+        assertThat(reloaded.getQuestionGenerationStatus())
+                .isEqualTo(QuestionGenerationStatus.FAILED);
+        assertThat(questionSetRepository.findByInterviewIdOrderByOrderIndex(interviewId)).isEmpty();
+    }
+
+    private Long persistInterview() {
+        User user = userRepository.saveAndFlush(User.builder()
+                .email("resume-initiator@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-resume-initiator")
+                .role(UserRole.USER)
+                .build());
+        Interview interview = TestFixtures.createInterview(
+                user.getId(), Position.BACKEND, InterviewLevel.JUNIOR, List.of(InterviewType.RESUME_BASED));
+        interviewRepository.saveAndFlush(interview);
+        return interview.getId();
+    }
+
+    private void stubExtractor(GeneratedResumeSkeleton skeleton, String fileHash) {
+        when(resumeSkeletonExtractor.extract(any(byte[].class), eq(fileHash))).thenReturn(skeleton);
+    }
+
+    private void stubAiClient(String questionsJson) {
+        when(aiClient.chat(any(ChatRequest.class))).thenAnswer(inv -> {
+            ChatRequest req = inv.getArgument(0);
+            String content = "resume_question_generator".equals(req.callType()) ? questionsJson : "{}";
+            return new ChatResponse(content, ChatResponse.Usage.empty(), "mock", "mock-model", false, false);
+        });
+    }
+
+    private String captureUserMessageForCallType(String callType) {
+        ArgumentCaptor<ChatRequest> captor = ArgumentCaptor.forClass(ChatRequest.class);
+        verify(aiClient, atLeastOnce()).chat(captor.capture());
+        return captor.getAllValues().stream()
+                .filter(r -> callType.equals(r.callType()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("callType=" + callType + " 호출 없음"))
+                .messages().stream()
+                .filter(m -> m.role() == com.rehearse.api.infra.ai.dto.ChatMessage.Role.USER)
+                .map(com.rehearse.api.infra.ai.dto.ChatMessage::content)
+                .reduce((a, b) -> a + "\n" + b)
+                .orElseThrow(() -> new AssertionError("USER 메시지 없음"));
+    }
+
+    private GeneratedResumeSkeleton skeletonWithProjects(String resumeId) {
+        return new GeneratedResumeSkeleton(
+                resumeId,
+                "MID",
+                "backend",
+                List.of(
+                        new GeneratedResumeSkeleton.GeneratedProject(
+                                "p1", "주문 캐싱 개선",
+                                List.of("Redis", "MySQL"),
+                                "백엔드", "Cache-Aside",
+                                List.of("TTL 5분"), null),
+                        new GeneratedResumeSkeleton.GeneratedProject(
+                                "p2", "결제 정합성",
+                                List.of("Java"),
+                                "백엔드", "",
+                                List.of(), null)
+                )
+        );
+    }
+
+    private GeneratedResumeSkeleton skeletonNoProjects(String resumeId) {
+        return new GeneratedResumeSkeleton(
+                resumeId,
+                "JUNIOR",
+                "backend",
+                List.of()
+        );
+    }
+
+    private String questionsJsonWithDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"").append(mainDepthTypes.get(i)).append("\"}");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    private String questionsJsonWithPartialDepthTypes(int openerCount, List<String> mainDepthTypes) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainDepthTypes.size(); i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i).append("\"");
+            String depthType = mainDepthTypes.get(i);
+            if (depthType != null) {
+                sb.append(",\"depth_type\":\"").append(depthType).append("\"");
+            }
+            sb.append("}");
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+
+    private String questionsJson(int openerCount, int mainCount) {
+        StringBuilder sb = new StringBuilder("{\"openers\":[");
+        for (int i = 0; i < openerCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"메인 프로젝트 설명").append(i)
+                    .append("\",\"tts_question\":\"TTS-O").append(i)
+                    .append("\",\"best_answer\":\"best-O").append(i).append("\"}");
+        }
+        sb.append("],\"mains\":[");
+        for (int i = 0; i < mainCount; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("{\"question\":\"주요 의사결정 ").append(i)
+                    .append("\",\"tts_question\":\"TTS-M").append(i)
+                    .append("\",\"best_answer\":\"best-M").append(i)
+                    .append("\",\"depth_type\":\"TRADEOFF\"}");
+        }
+        sb.append("]}");
+        return sb.toString();
     }
 }

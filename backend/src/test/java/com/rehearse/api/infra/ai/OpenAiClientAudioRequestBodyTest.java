@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
+import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,5 +60,40 @@ class OpenAiClientAudioRequestBodyTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> rfMap = (Map<String, Object>) rf;
         assertThat(rfMap).containsEntry("type", "json_object");
+    }
+
+    @Test
+    @DisplayName("buildRequestBody 는 JSON_SCHEMA 요청 시 strict json_schema 페이로드를 포함한다")
+    void buildRequestBody_includesJsonSchemaPayload() {
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "required", List.of("foo"),
+                "properties", Map.of("foo", Map.of("type", "string"))
+        );
+        ChatRequest req = ChatRequest.builder()
+                .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, "test")))
+                .callType("rubric_scorer")
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(new JsonSchemaSpec("test_schema", schema))
+                .build();
+
+        Map<String, Object> body = OpenAiClient.buildRequestBody(
+                "gpt-4o-mini",
+                List.of(Map.of("role", "user", "content", "test")),
+                800,
+                req
+        );
+
+        assertThat(body).containsKey("response_format");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> rf = (Map<String, Object>) body.get("response_format");
+        assertThat(rf).containsEntry("type", "json_schema");
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> jsonSchema = (Map<String, Object>) rf.get("json_schema");
+        assertThat(jsonSchema).containsEntry("name", "test_schema");
+        assertThat(jsonSchema).containsEntry("strict", true);
+        assertThat(jsonSchema).containsEntry("schema", schema);
     }
 }

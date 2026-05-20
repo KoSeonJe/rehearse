@@ -206,12 +206,42 @@ class RubricScoringAdapterTest {
     }
 
     @Nested
+    @DisplayName("score=null 정책 위배")
+    class ScoreNullTriggersRetry {
+
+        @Test
+        @DisplayName("1차 응답에 score=null 이면 INVALID_SCORE 위배 → retry 진입 → retry 정상 시 적재")
+        void scoreNullInFirstResponse_triggersRetry() {
+            String firstJson = """
+                    {"technical_depth":{"score":null,"observation":"구체적 답변","evidence_quote":"TPS 10000 을 달성"}}
+                    """;
+            String retryJson = """
+                    {"technical_depth":{"score":2,"observation":"구체적 답변","evidence_quote":"TPS 10000 을 달성"}}
+                    """;
+            given(aiClient.chat(any()))
+                    .willReturn(mockChatResponse("first"))
+                    .willReturn(mockChatResponse("retry"));
+            given(responseParser.extractJson("first")).willReturn(firstJson);
+            given(responseParser.extractJson("retry")).willReturn(retryJson);
+
+            Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
+            RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
+                    List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
+
+            verify(aiClient, times(2)).chat(any());
+            assertThat(result.scoredDimensions()).containsExactly("technical_depth");
+            assertThat(result.dimensionScores().get("technical_depth").score()).isEqualTo(2);
+            assertThat(retryFailedCount("technical_depth", "score")).isZero();
+        }
+    }
+
+    @Nested
     @DisplayName("응답 차원 누락 / 파싱 실패")
     class MissingOrFallback {
 
         @Test
-        @DisplayName("응답에 차원 누락 → notApplicable 로 채우고 scoredDimensions 미포함")
-        void missingDimension_fillsAsNotApplicable() {
+        @DisplayName("응답에 차원 누락 → INVALID_SCORE retry 진입 → 2회 모두 누락 시 retry_failed 로 적재")
+        void missingDimension_triggersRetry_thenRetryFailed() {
             String json = "{}";
             given(aiClient.chat(any())).willReturn(mockChatResponse("first"));
             given(responseParser.extractJson("first")).willReturn(json);
@@ -220,10 +250,12 @@ class RubricScoringAdapterTest {
             RubricScoringResult result = adapter.adapt(aiClient, mockRequest(), rubric,
                     List.of("technical_depth"), USER_ANSWER, INTERVIEW_ID, QUESTION_ID);
 
+            verify(aiClient, times(2)).chat(any());
             assertThat(result.scoredDimensions()).isEmpty();
             assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
             assertThat(result.dimensionScores().get("technical_depth").observation())
-                    .contains("LLM 응답에 차원 없음");
+                    .startsWith("retry_failed:");
+            assertThat(retryFailedCount("technical_depth", "score")).isEqualTo(1.0);
         }
 
         @Test

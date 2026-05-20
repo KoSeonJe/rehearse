@@ -60,7 +60,6 @@ class OpenAiChatModelOverrideTest {
         com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
         AiResponseParser parser = new AiResponseParser(
                 objectMapper,
-                new SchemaExampleRegistry(),
                 org.mockito.Mockito.mock(com.rehearse.api.infra.ai.metrics.AiCallMetrics.class));
 
         // PromptBuilders: 이 테스트에서는 직접 ChatRequest.chat() 을 호출하므로 mock 불필요
@@ -74,7 +73,7 @@ class OpenAiChatModelOverrideTest {
                 qBuilder,
                 fBuilder,
                 parser,
-                "test-api-key",
+                new com.rehearse.api.infra.ai.config.OpenAiCommonProperties("test-api-key"),
                 "gpt-4o-mini",  // 기본 모델
                 "gpt-4o-mini-audio-preview",  // audio 모델
                 baseUrl

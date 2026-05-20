@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.dto.openai.OpenAiResponse;
 import org.springframework.lang.Nullable;
@@ -57,7 +58,7 @@ public class OpenAiClient {
             QuestionGenerationPromptBuilder questionPromptBuilder,
             FollowUpPromptBuilder followUpPromptBuilder,
             AiResponseParser responseParser,
-            @Value("${openai.api-key}") String apiKey,
+            OpenAiCommonProperties commonProperties,
             @Value("${openai.model:gpt-4o-mini}") String model,
             @Value("${openai.audio-model:gpt-4o-mini-audio-preview}") String audioModel,
             @Value("${openai.base-url:https://api.openai.com/v1/chat/completions}") String baseUrl) {
@@ -72,7 +73,7 @@ public class OpenAiClient {
         this.questionPromptBuilder = questionPromptBuilder;
         this.followUpPromptBuilder = followUpPromptBuilder;
         this.responseParser = responseParser;
-        this.apiKey = apiKey;
+        this.apiKey = commonProperties.apiKey();
         this.model = model;
         this.audioModel = audioModel;
     }
@@ -269,6 +270,15 @@ public class OpenAiClient {
         Map<String, Object> body = baseRequestBody(resolvedModel, messages, maxTokens, req);
         if (req.responseFormat() == ResponseFormat.JSON_OBJECT) {
             body.put("response_format", Map.of("type", "json_object"));
+        } else if (req.responseFormat() == ResponseFormat.JSON_SCHEMA && req.jsonSchema() != null) {
+            body.put("response_format", Map.of(
+                    "type", "json_schema",
+                    "json_schema", Map.of(
+                            "name", req.jsonSchema().name(),
+                            "strict", true,
+                            "schema", req.jsonSchema().schema()
+                    )
+            ));
         }
         return body;
     }

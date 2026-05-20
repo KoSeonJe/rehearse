@@ -8,25 +8,43 @@ def pytest_configure():
     boto3.client = lambda *_args, **_kwargs: object()
     sys.modules.setdefault("boto3", boto3)
 
-    google = types.ModuleType("google")
-    generativeai = types.ModuleType("google.generativeai")
-    generativeai.configure = lambda *_args, **_kwargs: None
+    # 실 SDK 가 설치돼 있으면 stub 으로 덮지 않는다 — schema 호환성 검증 테스트가 실 SDK 를 필요로 함.
+    try:
+        import importlib
+        importlib.import_module("google.genai")
+    except Exception:
+        google = types.ModuleType("google")
+        genai_mod = types.ModuleType("google.genai")
+        genai_types = types.ModuleType("google.genai.types")
 
-    class _GenerationConfig:
-        def __init__(self, *args, **kwargs):
-            self.args = args
-            self.kwargs = kwargs
+        class _Client:
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
 
-    class _GenerativeModel:
-        def __init__(self, *args, **kwargs):
-            self.args = args
-            self.kwargs = kwargs
+        class _GenerateContentConfig:
+            _is_stub = True
 
-    generativeai.GenerationConfig = _GenerationConfig
-    generativeai.GenerativeModel = _GenerativeModel
-    google.generativeai = generativeai
-    sys.modules.setdefault("google", google)
-    sys.modules.setdefault("google.generativeai", generativeai)
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        class _UploadFileConfig:
+            _is_stub = True
+
+            def __init__(self, *args, **kwargs):
+                self.args = args
+                self.kwargs = kwargs
+
+        genai_mod.Client = _Client
+        genai_mod.types = genai_types
+        genai_mod._is_stub = True
+        genai_types.GenerateContentConfig = _GenerateContentConfig
+        genai_types.UploadFileConfig = _UploadFileConfig
+        google.genai = genai_mod
+        sys.modules.setdefault("google", google)
+        sys.modules.setdefault("google.genai", genai_mod)
+        sys.modules.setdefault("google.genai.types", genai_types)
 
     openai = types.ModuleType("openai")
     openai.OpenAI = object

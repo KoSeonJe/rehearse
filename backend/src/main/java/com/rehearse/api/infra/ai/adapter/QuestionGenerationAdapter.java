@@ -4,6 +4,7 @@ import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.*;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
+import com.rehearse.api.infra.ai.schema.GeneratedQuestionsWrapperSchema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -30,7 +31,8 @@ public class QuestionGenerationAdapter {
                 ))
                 .maxTokens(MAX_TOKENS)
                 .temperature(TEMPERATURE)
-                .responseFormat(ResponseFormat.JSON_OBJECT)
+                .responseFormat(ResponseFormat.JSON_SCHEMA)
+                .jsonSchema(GeneratedQuestionsWrapperSchema.spec())
                 .callType("generate_questions")
                 .build();
 

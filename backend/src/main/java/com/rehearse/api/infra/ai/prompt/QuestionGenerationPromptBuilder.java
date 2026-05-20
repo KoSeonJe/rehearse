@@ -57,17 +57,12 @@ public class QuestionGenerationPromptBuilder {
 
         String levelGuide = LevelGuideProvider.get(req.level());
 
-        String resumeBlock = (req.resumeText() != null && !req.resumeText().isBlank())
-            ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성하되, 성능 수치 외에도 의사결정 과정·장애 대응·팀 협업·테스트 전략·유지보수성 등 다양한 관점에서 질문하세요."
-            : "";
-
         return template
             .replace("{FULL_PERSONA}", profile.fullPersona())
             .replace("{BASE_EVALUATION_PERSPECTIVE}", profile.evaluationPerspective())
             .replace("{FILTERED_INTERVIEW_TYPE_GUIDE}", typeGuide)
             .replace("{CONDITIONAL_CS_SUBTOPIC_BLOCK}", csBlock)
-            .replace("{SINGLE_LEVEL_GUIDE}", levelGuide)
-            .replace("{CONDITIONAL_RESUME_BLOCK}", resumeBlock);
+            .replace("{SINGLE_LEVEL_GUIDE}", levelGuide);
     }
 
     public String buildUserPrompt(QuestionGenerationRequest req) {
@@ -87,9 +82,6 @@ public class QuestionGenerationPromptBuilder {
             } else {
                 sb.append("CS 세부: 자료구조, 운영체제, 네트워크, 데이터베이스\n");
             }
-        }
-        if (req.resumeText() != null && !req.resumeText().isBlank()) {
-            sb.append("이력서:\n<<<RESUME_TEXT>>>\n").append(req.resumeText()).append("\n<<<END_RESUME_TEXT>>>\n");
         }
 
         sb.append("세션: ").append(UUID.randomUUID()).append("\n");

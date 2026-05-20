@@ -69,8 +69,43 @@ _FALLBACK = {
         "eye_contact_posture": {
             "score": 2,
             "observation": "프레임 품질 또는 분량 제약으로 시선·자세 세부 평가가 제한됐습니다.",
-            "evidence_quote": "",
+            "evidence_quote": "프레임 분석 제한",
         }
+    },
+}
+
+
+_VISION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "nonverbalDimensions": {
+            "type": "object",
+            "properties": {
+                "eye_contact_posture": {
+                    "type": "object",
+                    "properties": {
+                        "score": {"type": "integer", "enum": [1, 2, 3]},
+                        "observation": {"type": "string", "minLength": 1},
+                        "evidence_quote": {"type": "string", "minLength": 1},
+                    },
+                    "required": ["score", "observation", "evidence_quote"],
+                    "additionalProperties": False,
+                },
+            },
+            "required": ["eye_contact_posture"],
+            "additionalProperties": False,
+        },
+    },
+    "required": ["nonverbalDimensions"],
+    "additionalProperties": False,
+}
+
+_VISION_RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "json_schema": {
+        "name": "vision_nonverbal",
+        "strict": True,
+        "schema": _VISION_SCHEMA,
     },
 }
 
@@ -108,7 +143,7 @@ def analyze_frames(frame_paths: list[str]) -> dict:
                 ],
                 max_tokens=500,
                 temperature=0.3,
-                response_format={"type": "json_object"},
+                response_format=_VISION_RESPONSE_FORMAT,
             )
 
             raw = response.choices[0].message.content
