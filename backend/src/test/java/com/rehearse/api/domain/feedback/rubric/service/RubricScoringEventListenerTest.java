@@ -45,7 +45,7 @@ import static org.mockito.Mockito.times;
 @DisplayName("RubricScoringEventListener — AnswerAnalysisCompletedEvent 채점 트리거")
 class RubricScoringEventListenerTest {
 
-    @Mock private RubricScorer rubricScorer;
+    @Mock private RubricScoringService rubricScoringService;
     @Mock private QuestionScorePersister questionScorePersister;
     @Mock private InterviewFinder interviewFinder;
     @Mock private QuestionRepository questionRepository;
@@ -86,7 +86,7 @@ class RubricScoringEventListenerTest {
                     "opener 답변 본문", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
             Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(2, "ok", "quote"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, "L2");
-            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview), eq("opener 답변 본문"),
+            given(rubricScoringService.score(eq(question), eq(questionSet), eq(interview), eq("opener 답변 본문"),
                     any(AnswerAnalysis.class))).willReturn(result);
 
             listener.on(event);
@@ -103,7 +103,7 @@ class RubricScoringEventListenerTest {
                     10L, 1L, 100L, 50L, "일반 답변", analysis, InterviewLevel.JUNIOR);
             Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(3, "good", "quote2"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, null);
-            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview), eq("일반 답변"),
+            given(rubricScoringService.score(eq(question), eq(questionSet), eq(interview), eq("일반 답변"),
                     eq(analysis))).willReturn(result);
 
             listener.on(event);
@@ -118,7 +118,7 @@ class RubricScoringEventListenerTest {
     void skips_save_when_scoring_result_empty() {
         AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                 10L, 1L, 100L, 50L, "답변", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
-        given(rubricScorer.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
+        given(rubricScoringService.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
                 .willReturn(RubricScoringResult.empty("resume-v1"));
 
         listener.on(event);
@@ -132,7 +132,7 @@ class RubricScoringEventListenerTest {
     void swallows_exception_and_increments_failure_metric() {
         AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                 10L, 1L, 100L, 50L, "답변", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
-        given(rubricScorer.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
+        given(rubricScoringService.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
                 .willThrow(new RuntimeException("AI 호출 폭발"));
 
         listener.on(event);

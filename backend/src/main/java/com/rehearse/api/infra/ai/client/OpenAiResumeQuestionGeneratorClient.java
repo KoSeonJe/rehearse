@@ -1,8 +1,8 @@
 package com.rehearse.api.infra.ai.client;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeQuestionGeneratorProperties;
+import com.rehearse.api.infra.ai.properties.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;

@@ -15,11 +15,9 @@ spring:
 # Live LLM E2E — OPENAI_API_KEY 환경변수에서 주입. 누락 시 테스트는 assumeTrue 로 스킵.
 claude:
   api-key: ${ANTHROPIC_API_KEY:disabled}
-  model: claude-sonnet-4-20250514
 
 openai:
   api-key: ${OPENAI_API_KEY:disabled}
-  model: gpt-4o-mini
 
 aws:
   enabled: false

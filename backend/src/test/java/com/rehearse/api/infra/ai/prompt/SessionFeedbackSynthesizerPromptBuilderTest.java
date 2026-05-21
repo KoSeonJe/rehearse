@@ -3,14 +3,11 @@ package com.rehearse.api.infra.ai.prompt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ResponseFormat;
 import com.rehearse.api.infra.ai.schema.GeneratedSessionFeedbackSchema;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +25,6 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 new DefaultResourceLoader(),
                 new ObjectMapper()
         );
-        ReflectionTestUtils.setField(builder, "model", "gpt-4o-mini");
-        ReflectionTestUtils.setField(builder, "temperature", 0.4);
-        ReflectionTestUtils.setField(builder, "maxTokens", 2048);
         builder.init();
     }
 
@@ -50,14 +44,15 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("\"position\":\"BACKEND\"");
         assertThat(prompt).contains("\"source\":\"nonverbal_score\"");
         assertThat(prompt).contains("\"lowestDimension\":{\"dimension\":\"eye_contact_posture\",\"averageScore\":1.0}");
         assertThat(prompt).contains("\"recommendedActions\":[{\"dimension\":\"eye_contact_posture\"");
         assertThat(prompt).doesNotContain("legacyAggregate");
+        assertThat(pair.system()).contains("JSON");
     }
 
     @Test
@@ -76,8 +71,8 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("### Delivery Analysis (Lambda");
         assertThat(prompt).contains("### Nonverbal Aggregate\nnull");
@@ -99,39 +94,10 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
                 InterviewLevel.MID
         );
 
-        ChatRequest request = builder.build(input);
-        String prompt = request.messages().getFirst().content();
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
 
         assertThat(prompt).contains("### Nonverbal Aggregate\n{\"legacy\":\"aggregate\"}");
-    }
-
-    @Test
-    @DisplayName("build() ChatRequest 는 strict JSON Schema 포맷 (response_format=json_schema) 으로 설정된다")
-    void build_chatRequest_uses_strict_json_schema() {
-        SessionFeedbackInput input = new SessionFeedbackInput(
-                metadata(),
-                Collections.emptyList(),
-                Collections.emptyMap(),
-                Collections.emptyList(),
-                null,
-                null,
-                null,
-                null,
-                "all turns scored",
-                InterviewLevel.MID
-        );
-
-        ChatRequest request = builder.build(input);
-
-        assertThat(request.responseFormat()).isEqualTo(ResponseFormat.JSON_SCHEMA);
-        assertThat(request.jsonSchema()).isNotNull();
-        assertThat(request.jsonSchema().name())
-                .isEqualTo(GeneratedSessionFeedbackSchema.SCHEMA_NAME);
-        Map<String, Object> schema = request.jsonSchema().schema();
-        assertThat(schema).containsEntry("type", "object");
-        assertThat(schema).containsEntry("additionalProperties", false);
-        assertThat(schema.get("required"))
-                .isEqualTo(List.of("overall", "strengths", "gaps", "delivery", "week_plan"));
     }
 
     @Test

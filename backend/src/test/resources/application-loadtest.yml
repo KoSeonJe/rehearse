@@ -31,8 +31,6 @@ cors:
 # 외부 API → Mock Server (localhost:9090)
 claude:
   api-key: sk-test-dummy-key
-  api:
-    url: http://localhost:9090/v1/messages
 
 openai:
   api-key: sk-test-dummy-key

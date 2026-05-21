@@ -6,9 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.resume.models.service.ResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.adapter.OpenAiResumeSkeletonExtractor;
 import com.rehearse.api.infra.ai.client.OpenAiResumeExtractorClient;
-import com.rehearse.api.infra.ai.config.OpenAiCommonProperties;
+import com.rehearse.api.infra.ai.properties.OpenAiCommonProperties;
 import com.rehearse.api.infra.ai.config.OpenAiResumeExtractorRestClientConfig;
-import com.rehearse.api.infra.ai.config.OpenAiResumeSkeletonProperties;
+import com.rehearse.api.infra.ai.properties.OpenAiResumeSkeletonProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -30,7 +30,7 @@ class MockResumeSkeletonExtractorTest {
             .withUserConfiguration(TestPromptConfig.class)
             .withBean(ObjectMapper.class, ObjectMapper::new)
             .withBean(OpenAiResponsesOutputTextExtractor.class)
-            .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper(), null))
+            .withBean(AiResponseParser.class, () -> new AiResponseParser(new ObjectMapper()))
             .withBean(OpenAiResumeSkeletonProperties.class,
                     () -> new OpenAiResumeSkeletonProperties(
                             "gpt-4o-mini", 60_000L, 12_000, 0.2, "https://api.openai.com/v1/responses"))

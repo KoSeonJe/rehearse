@@ -14,12 +14,14 @@ import com.rehearse.api.infra.ai.schema.GeneratedResumeQuestionsSchema;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.Base64;
 
 @Slf4j
 @Component
+@Primary
 @RequiredArgsConstructor
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
 public class OpenAiResumeQuestionGenerator implements ResumeQuestionGenerator {

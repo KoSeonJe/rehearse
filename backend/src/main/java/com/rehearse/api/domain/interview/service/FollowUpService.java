@@ -28,8 +28,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional(readOnly = true)
 public class FollowUpService {
 
-    private final AudioTurnAnalyzer audioTurnAnalyzer;
-    private final FollowUpQuestionWriter followUpQuestionWriter;
+    private final AudioTurnAnalysisService audioTurnAnalysisService;
+    private final FollowUpQuestionService followUpQuestionService;
     private final FollowUpTransactionHandler followUpTransactionHandler;
     private final StandardFollowUpPolicy standardFollowUpPolicy;
     private final AiCallMetrics aiCallMetrics;
@@ -43,7 +43,7 @@ public class FollowUpService {
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
         boolean isResumeTrack = isResumeTrack(context.currentMainQuestionType());
-        AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
+        AnswerAnalysis analysis = audioTurnAnalysisService.analyze(
                 id, audioFile, request.getQuestionContent(), context.mainReferenceType(), isResumeTrack);
         String answerText = request.getAnswerText();
 
@@ -80,7 +80,7 @@ public class FollowUpService {
             Long id, FollowUpContext context, FollowUpRequest request,
             AnswerAnalysis analysis, String answerText
     ) {
-        GeneratedFollowUp stepB = followUpQuestionWriter.write(
+        GeneratedFollowUp stepB = followUpQuestionService.write(
                 request.getQuestionContent(), answerText, analysis);
 
         if (stepB.isSkipped()) {

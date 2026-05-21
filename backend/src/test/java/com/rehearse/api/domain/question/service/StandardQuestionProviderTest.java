@@ -8,7 +8,7 @@ import com.rehearse.api.domain.question.dto.GetQuestionPoolCommand;
 import com.rehearse.api.domain.question.entity.QuestionPool;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
 import com.rehearse.api.global.support.TestFixtures;
-import com.rehearse.api.infra.ai.AiClient;
+import com.rehearse.api.domain.question.models.service.StandardQuestionGenerator;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
 import org.junit.jupiter.api.DisplayName;
@@ -46,7 +46,7 @@ class StandardQuestionProviderTest {
     private QuestionRepository questionRepository;
 
     @Mock
-    private AiClient aiClient;
+    private StandardQuestionGenerator standardQuestionGenerator;
 
     @Mock
     private QuestionGenerationLock questionGenerationLock;
@@ -86,7 +86,7 @@ class StandardQuestionProviderTest {
 
             // then
             assertThat(result).hasSize(3);
-            then(aiClient).should(never()).generateQuestions(any());
+            then(standardQuestionGenerator).should(never()).generate(any());
         }
 
         @Test
@@ -133,7 +133,7 @@ class StandardQuestionProviderTest {
             given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
                     .willReturn(Optional.empty(), Optional.empty());
             given(questionGenerationLock.acquire(any())).willReturn(lock);
-            given(aiClient.generateQuestions(any(QuestionGenerationRequest.class)))
+            given(standardQuestionGenerator.generate(any(QuestionGenerationRequest.class)))
                     .willReturn(generated);
             given(questionPoolService.saveQuestionPools(any(), eq(generated)))
                     .willReturn(convertedPool);
@@ -146,7 +146,7 @@ class StandardQuestionProviderTest {
 
             // then
             assertThat(result).isNotEmpty();
-            then(aiClient).should().generateQuestions(any(QuestionGenerationRequest.class));
+            then(standardQuestionGenerator).should().generate(any(QuestionGenerationRequest.class));
             then(questionPoolService).should().saveQuestionPools(any(), eq(generated));
         }
 
@@ -167,7 +167,7 @@ class StandardQuestionProviderTest {
             given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
                     .willReturn(Optional.empty(), Optional.empty());
             given(questionGenerationLock.acquire(any())).willReturn(lock);
-            given(aiClient.generateQuestions(any())).willReturn(generated);
+            given(standardQuestionGenerator.generate(any())).willReturn(generated);
             given(questionPoolService.saveQuestionPools(any(), any())).willReturn(convertedPool);
             given(questionPoolService.selectWithCategoryDistribution(any(), anyInt()))
                     .willReturn(convertedPool);
@@ -191,7 +191,7 @@ class StandardQuestionProviderTest {
             given(questionPoolService.selectIfSufficient(any(PoolSelectionCriteria.class)))
                     .willReturn(Optional.empty(), Optional.empty());
             given(questionGenerationLock.acquire(any())).willReturn(lock);
-            given(aiClient.generateQuestions(any(QuestionGenerationRequest.class)))
+            given(standardQuestionGenerator.generate(any(QuestionGenerationRequest.class)))
                     .willThrow(new RuntimeException("AI 서비스 오류"));
 
             // when & then
@@ -234,7 +234,7 @@ class StandardQuestionProviderTest {
 
             // then
             assertThat(result).isNotEmpty();
-            then(aiClient).should(never()).generateQuestions(any());
+            then(standardQuestionGenerator).should(never()).generate(any());
             then(questionGenerationLock).should().release(lock);
         }
     }

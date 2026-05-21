@@ -7,8 +7,8 @@ import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.question.dto.GetQuestionPoolCommand;
 import com.rehearse.api.domain.question.entity.QuestionPool;
+import com.rehearse.api.domain.question.models.service.StandardQuestionGenerator;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.infra.ai.AiClient;
 import com.rehearse.api.infra.ai.dto.GeneratedQuestion;
 import com.rehearse.api.infra.ai.dto.QuestionGenerationRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ public class StandardQuestionProvider {
 
     private final QuestionPoolService questionPoolService;
     private final QuestionRepository questionRepository;
-    private final AiClient aiClient;
+    private final StandardQuestionGenerator standardQuestionGenerator;
     private final QuestionGenerationLock questionGenerationLock;
 
     public List<QuestionPool> provide(InterviewType type, int requiredCount, GetQuestionPoolCommand command) {
@@ -77,7 +77,7 @@ public class StandardQuestionProvider {
                     null, techStack
             );
 
-            List<GeneratedQuestion> generatedQuestions = aiClient.generateQuestions(request);
+            List<GeneratedQuestion> generatedQuestions = standardQuestionGenerator.generate(request);
             List<QuestionPool> generatedQuestionPools = questionPoolService.saveQuestionPools(cacheKey, generatedQuestions);
 
             // category 필터가 있으면 필터링 후 선택

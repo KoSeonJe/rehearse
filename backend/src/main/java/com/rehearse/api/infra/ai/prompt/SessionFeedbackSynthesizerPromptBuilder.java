@@ -3,41 +3,26 @@ package com.rehearse.api.infra.ai.prompt;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
-import com.rehearse.api.infra.ai.dto.CachePolicy;
-import com.rehearse.api.infra.ai.dto.ChatMessage;
-import com.rehearse.api.infra.ai.dto.ChatRequest;
-import com.rehearse.api.infra.ai.dto.ResponseFormat;
-import com.rehearse.api.infra.ai.schema.GeneratedSessionFeedbackSchema;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class SessionFeedbackSynthesizerPromptBuilder {
 
-    private static final String CALL_TYPE = "feedback_synthesizer";
     private static final String TEMPLATE_PATH = "classpath:prompts/template/session-feedback-synthesizer.txt";
+    private static final String SYSTEM_PROMPT =
+            "You synthesize structured interview feedback in strict JSON. No prose, no markdown, no code fences.";
 
     private final ResourceLoader resourceLoader;
     private final ObjectMapper objectMapper;
-
-    @Value("${rehearse.feedback-synthesizer.model:gpt-4o-mini}")
-    private String model;
-
-    @Value("${rehearse.feedback-synthesizer.temperature:0.4}")
-    private double temperature;
-
-    @Value("${rehearse.feedback-synthesizer.max-tokens:2048}")
-    private int maxTokens;
 
     private String template;
 
@@ -48,19 +33,8 @@ public class SessionFeedbackSynthesizerPromptBuilder {
         log.info("SessionFeedbackSynthesizerPromptBuilder 초기화 완료");
     }
 
-    public ChatRequest build(SessionFeedbackInput input) {
-        String userPrompt = buildUserPrompt(input);
-
-        return ChatRequest.builder()
-                .messages(List.of(ChatMessage.of(ChatMessage.Role.USER, userPrompt)))
-                .modelOverride(model)
-                .temperature(temperature)
-                .maxTokens(maxTokens)
-                .cachePolicy(CachePolicy.defaults())
-                .responseFormat(ResponseFormat.JSON_SCHEMA)
-                .jsonSchema(GeneratedSessionFeedbackSchema.spec())
-                .callType(CALL_TYPE)
-                .build();
+    public PromptPair build(SessionFeedbackInput input) {
+        return new PromptPair(SYSTEM_PROMPT, buildUserPrompt(input));
     }
 
     private String buildUserPrompt(SessionFeedbackInput input) {
@@ -95,5 +69,8 @@ public class SessionFeedbackSynthesizerPromptBuilder {
             return serialize(input.nonverbalAggregate());
         }
         return nullSafe(input.legacyNonverbalAggregateJson());
+    }
+
+    public record PromptPair(String system, String user) {
     }
 }

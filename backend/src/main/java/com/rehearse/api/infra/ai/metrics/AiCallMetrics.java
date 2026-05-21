@@ -42,6 +42,29 @@ public class AiCallMetrics {
         meterRegistry.counter(SYNTHESIZER_FAILURE_TOTAL, "reason", reason).increment();
     }
 
+    public <T> T recordCall(String callType, String provider, boolean fallback, Callable<T> callable) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        String outcome = "success";
+        try {
+            return callable.call();
+        } catch (Exception e) {
+            outcome = "failure";
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
+            throw new RuntimeException(e);
+        } finally {
+            sample.stop(Timer.builder(TIMER_NAME)
+                    .tag("call.type", callType)
+                    .tag("model", "unknown")
+                    .tag("provider", provider)
+                    .tag("cache.hit", "unknown")
+                    .tag("fallback", String.valueOf(fallback))
+                    .tag("outcome", outcome)
+                    .register(meterRegistry));
+        }
+    }
+
     public ChatResponse recordChat(String callType, Callable<ChatResponse> callable) {
         Timer.Sample sample = Timer.start(meterRegistry);
         String outcome = "success";

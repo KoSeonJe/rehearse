@@ -4,7 +4,7 @@ import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
-import com.rehearse.api.domain.feedback.rubric.service.RubricScorer;
+import com.rehearse.api.domain.feedback.rubric.service.RubricScoringService;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
@@ -67,9 +67,9 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @Autowired private QuestionScoreRepository questionScoreRepository;
     @Autowired private AnswerAnalysisCompletedEventCollector eventCollector;
 
-    @MockitoBean private AudioTurnAnalyzer audioTurnAnalyzer;
-    @MockitoBean private FollowUpQuestionWriter followUpQuestionWriter;
-    @MockitoBean private RubricScorer rubricScorer;
+    @MockitoBean private AudioTurnAnalysisService audioTurnAnalysisService;
+    @MockitoBean private FollowUpQuestionService followUpQuestionService;
+    @MockitoBean private RubricScoringService rubricScoringService;
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
             List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
@@ -83,9 +83,9 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_OPENER → analyzer 1회 호출 + 이벤트 발행 + QuestionScore 적재 + follow-up 미생성")
     void resumeOpener_publishesEvent_persistsScore_andSkipsFollowUp() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_OPENER);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
@@ -95,9 +95,9 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("resume_opener_skip");
-        verify(audioTurnAnalyzer, times(1))
+        verify(audioTurnAnalysisService, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionWriter, never()).write(any(), any(), any());
+        verify(followUpQuestionService, never()).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -119,11 +119,11 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_MAIN 일반 답변 → analyzer + 이벤트 + 채점 + follow-up 생성")
     void resumeMain_followsUpAndPersistsScore() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionWriter.write(any(), any(), any()))
+        given(followUpQuestionService.write(any(), any(), any()))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
 
@@ -134,9 +134,9 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isFalse();
         assertThat(response.getQuestion()).isEqualTo("심화 질문");
-        verify(audioTurnAnalyzer, times(1))
+        verify(audioTurnAnalysisService, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionWriter, times(1)).write(any(), any(), any());
+        verify(followUpQuestionService, times(1)).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -156,9 +156,9 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         AnswerAnalysis skipAnalysis = new AnswerAnalysis(
                 List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
-        given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(skipAnalysis);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
@@ -168,7 +168,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
-        verify(followUpQuestionWriter, never()).write(any(), any(), any());
+        verify(followUpQuestionService, never()).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);

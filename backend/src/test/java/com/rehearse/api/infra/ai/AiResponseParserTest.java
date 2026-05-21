@@ -2,7 +2,6 @@ package com.rehearse.api.infra.ai;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,9 +19,7 @@ class AiResponseParserTest {
 
     @BeforeEach
     void setUp() {
-        parser = new AiResponseParser(
-                new ObjectMapper(),
-                org.mockito.Mockito.mock(AiCallMetrics.class));
+        parser = new AiResponseParser(new ObjectMapper());
     }
 
     @Nested
@@ -214,70 +211,8 @@ class AiResponseParserTest {
         }
     }
 
-    @Nested
-    @DisplayName("parseOrRetry — compact constructor 거절 → schema retry 흡수")
-    class ParseOrRetryRecord {
-
-        @Test
-        @DisplayName("1차 응답이 record invariant 위반 시 schema retry 발동 후 정상 응답 반환")
-        void parseOrRetry_compactConstructorRejection_triggersSchemaRetryAndSucceeds() {
-            String firstContent = "{\"value\": -1}";
-            String retryContent = "{\"value\": 5}";
-            com.rehearse.api.infra.ai.dto.ChatResponse firstResponse =
-                    new com.rehearse.api.infra.ai.dto.ChatResponse(firstContent, null, "openai", "gpt-4o-mini", false, false);
-            com.rehearse.api.infra.ai.dto.ChatResponse retryResponse =
-                    new com.rehearse.api.infra.ai.dto.ChatResponse(retryContent, null, "openai", "gpt-4o-mini", false, false);
-            com.rehearse.api.infra.ai.AiClient client = org.mockito.Mockito.mock(com.rehearse.api.infra.ai.AiClient.class);
-            org.mockito.Mockito.when(client.chat(org.mockito.ArgumentMatchers.any())).thenReturn(retryResponse);
-            com.rehearse.api.infra.ai.dto.ChatRequest request = com.rehearse.api.infra.ai.dto.ChatRequest.builder()
-                    .messages(List.of(com.rehearse.api.infra.ai.dto.ChatMessage.of(
-                            com.rehearse.api.infra.ai.dto.ChatMessage.Role.USER, "user")))
-                    .callType("test_call")
-                    .build();
-
-            ValidatedRecord result = parser.parseOrRetry(firstResponse, ValidatedRecord.class, client, request);
-
-            assertThat(result.value()).isEqualTo(5);
-            org.mockito.Mockito.verify(client, org.mockito.Mockito.times(1))
-                    .chat(org.mockito.ArgumentMatchers.any());
-        }
-
-        @Test
-        @DisplayName("schema retry 2차도 invariant 위반 시 BusinessException(AI_005) 전파")
-        void parseOrRetry_secondRejection_throwsBusinessException() {
-            String firstContent = "{\"value\": -1}";
-            String retryContent = "{\"value\": -2}";
-            com.rehearse.api.infra.ai.dto.ChatResponse firstResponse =
-                    new com.rehearse.api.infra.ai.dto.ChatResponse(firstContent, null, "openai", "gpt-4o-mini", false, false);
-            com.rehearse.api.infra.ai.dto.ChatResponse retryResponse =
-                    new com.rehearse.api.infra.ai.dto.ChatResponse(retryContent, null, "openai", "gpt-4o-mini", false, false);
-            com.rehearse.api.infra.ai.AiClient client = org.mockito.Mockito.mock(com.rehearse.api.infra.ai.AiClient.class);
-            org.mockito.Mockito.when(client.chat(org.mockito.ArgumentMatchers.any())).thenReturn(retryResponse);
-            com.rehearse.api.infra.ai.dto.ChatRequest request = com.rehearse.api.infra.ai.dto.ChatRequest.builder()
-                    .messages(List.of(com.rehearse.api.infra.ai.dto.ChatMessage.of(
-                            com.rehearse.api.infra.ai.dto.ChatMessage.Role.USER, "user")))
-                    .callType("test_call")
-                    .build();
-
-            assertThatThrownBy(() -> parser.parseOrRetry(firstResponse, ValidatedRecord.class, client, request))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException be = (BusinessException) ex;
-                        assertThat(be.getCode()).isEqualTo("AI_005");
-                    });
-        }
-    }
-
     static class TestDto {
         public String name;
         public int count;
-    }
-
-    public record ValidatedRecord(int value) {
-        public ValidatedRecord {
-            if (value < 0) {
-                throw new IllegalArgumentException("value must be non-negative: " + value);
-            }
-        }
     }
 }
