@@ -26,7 +26,8 @@ public class MockAudioTurnAnalyzer implements AudioTurnAnalyzer {
     public GeneratedTurnAnalysis analyze(
             MultipartFile audio,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) throws AudioChatFallbackRequiredException {
         throw new AudioChatFallbackRequiredException("Mock 환경 — audio chat 미지원");
     }

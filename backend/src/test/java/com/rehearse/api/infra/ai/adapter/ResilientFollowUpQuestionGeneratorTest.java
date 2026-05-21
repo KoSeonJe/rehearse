@@ -53,61 +53,61 @@ class ResilientFollowUpQuestionGeneratorTest {
     @Test
     @DisplayName("OpenAI 성공 시 Claude 호출 없음")
     void generate_openAiSuccess_claudeNotCalled() {
-        when(openAi.generate(any(), any(), any(), any())).thenReturn(sample("openai-ok"));
+        when(openAi.generate(any(), any(), any())).thenReturn(sample("openai-ok"));
 
-        GeneratedFollowUp result = resilient.generate("Q", "A", SAMPLE_ANALYSIS, null);
+        GeneratedFollowUp result = resilient.generate("Q", "A", SAMPLE_ANALYSIS);
 
         assertThat(result.reason()).isEqualTo("openai-ok");
-        verify(claude, never()).generate(any(), any(), any(), any());
+        verify(claude, never()).generate(any(), any(), any());
     }
 
     @Test
     @DisplayName("OpenAI RetryableApiException 발생 시 Claude fallback")
     void generate_openAiRetryable_claudeFallback() {
-        when(openAi.generate(any(), any(), any(), any())).thenThrow(new RetryableApiException("타임아웃"));
-        when(claude.generate(any(), any(), any(), any())).thenReturn(sample("claude-ok"));
+        when(openAi.generate(any(), any(), any())).thenThrow(new RetryableApiException("타임아웃"));
+        when(claude.generate(any(), any(), any())).thenReturn(sample("claude-ok"));
 
-        GeneratedFollowUp result = resilient.generate("Q", "A", SAMPLE_ANALYSIS, null);
+        GeneratedFollowUp result = resilient.generate("Q", "A", SAMPLE_ANALYSIS);
 
         assertThat(result.reason()).isEqualTo("claude-ok");
-        verify(claude, times(1)).generate(any(), any(), any(), any());
+        verify(claude, times(1)).generate(any(), any(), any());
     }
 
     @Test
     @DisplayName("CLIENT_ERROR (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void generate_clientError_noFallback() {
-        when(openAi.generate(any(), any(), any(), any()))
+        when(openAi.generate(any(), any(), any()))
                 .thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
 
-        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS, null))
+        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.CLIENT_ERROR);
 
-        verify(claude, never()).generate(any(), any(), any(), any());
+        verify(claude, never()).generate(any(), any(), any());
     }
 
     @Test
     @DisplayName("PARSE_FAILED (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void generate_parseFailed_noFallback() {
-        when(openAi.generate(any(), any(), any(), any()))
+        when(openAi.generate(any(), any(), any()))
                 .thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
-        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS, null))
+        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
 
-        verify(claude, never()).generate(any(), any(), any(), any());
+        verify(claude, never()).generate(any(), any(), any());
     }
 
     @Test
     @DisplayName("OpenAI + Claude 모두 실패 시 SERVICE_UNAVAILABLE")
     void generate_bothFail_serviceUnavailable() {
-        when(openAi.generate(any(), any(), any(), any())).thenThrow(new RetryableApiException("OpenAI 실패"));
-        when(claude.generate(any(), any(), any(), any())).thenThrow(new RetryableApiException("Claude 실패"));
+        when(openAi.generate(any(), any(), any())).thenThrow(new RetryableApiException("OpenAI 실패"));
+        when(claude.generate(any(), any(), any())).thenThrow(new RetryableApiException("Claude 실패"));
 
-        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS, null))
+        assertThatThrownBy(() -> resilient.generate("Q", "A", SAMPLE_ANALYSIS))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.SERVICE_UNAVAILABLE);
@@ -117,12 +117,12 @@ class ResilientFollowUpQuestionGeneratorTest {
     @DisplayName("OpenAI 미설정 (null) + Claude 존재 시 Claude 직접 호출")
     void generate_openAiNull_directlyCallClaude() {
         ResilientFollowUpQuestionGenerator claudeOnly = new ResilientFollowUpQuestionGenerator(null, claude, metrics);
-        when(claude.generate(any(), any(), any(), any())).thenReturn(sample("claude-only"));
+        when(claude.generate(any(), any(), any())).thenReturn(sample("claude-only"));
 
-        GeneratedFollowUp result = claudeOnly.generate("Q", "A", SAMPLE_ANALYSIS, null);
+        GeneratedFollowUp result = claudeOnly.generate("Q", "A", SAMPLE_ANALYSIS);
 
         assertThat(result.reason()).isEqualTo("claude-only");
-        verify(claude, times(1)).generate(any(), any(), any(), any());
+        verify(claude, times(1)).generate(any(), any(), any());
     }
 
     @Test

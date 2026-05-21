@@ -19,15 +19,23 @@ public class AnswerAnalysisPromptBuilder {
 
     private final InterviewContextBuilder contextBuilder;
 
-    public PromptPair build(String mainQuestion, ReferenceType questionReferenceType, String userAnswer) {
+    public PromptPair build(
+            String mainQuestion,
+            ReferenceType questionReferenceType,
+            String userAnswer,
+            boolean isResumeTrack
+    ) {
         String personaDepthHint = PromptFormatters.toReferenceLabel(questionReferenceType);
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
                 new FocusHints.AnswerAnalyzerHints(
                         mainQuestion != null ? mainQuestion : "",
                         userAnswer != null ? userAnswer : "",
-                        personaDepthHint
+                        personaDepthHint,
+                        isResumeTrack
                 ),
+                null,
+                null,
                 null
         ));
 

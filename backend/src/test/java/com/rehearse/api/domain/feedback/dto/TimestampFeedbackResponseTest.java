@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.dto;
 
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.question.entity.Question;
@@ -159,6 +160,49 @@ class TimestampFeedbackResponseTest {
 
             assertThat(response.getTechnicalFeedback()).isNotNull();
             assertThat(response.getNonverbalFeedback()).isNull();
+        }
+    }
+
+    @Nested
+    @DisplayName("dimension status 노출")
+    class DimensionStatusExposure {
+
+        @Test
+        @DisplayName("status=OK 차원은 status 필드가 'OK' 로 노출된다")
+        void status_OK_when_dimension_status_OK() {
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+            QuestionScore score = score(500L, 20L, "resume-v1", "L1");
+            QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                    .questionScoreId(500L).dimensionRef("clarity").score(2).observation("정리됨")
+                    .evidenceQuote("근거").status(DimensionStatus.OK)
+                    .build();
+            Map<Long, List<QuestionScoreDimension>> dims = Map.of(500L, List.of(dim));
+
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+
+            assertThat(response.getTechnicalFeedback().getDimensions().getFirst().getStatus()).isEqualTo("OK");
+        }
+
+        @Test
+        @DisplayName("status=NOT_EVALUABLE 차원은 status 필드가 'NOT_EVALUABLE' 로 노출되고 score 는 null 이다")
+        void status_NOT_EVALUABLE_when_dimension_notEvaluable() {
+            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
+            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
+            QuestionScore score = score(501L, 21L, "resume-v1", null);
+            QuestionScoreDimension dim = QuestionScoreDimension.builder()
+                    .questionScoreId(501L).dimensionRef("technical_depth")
+                    .score(null).observation("관련 발언 없음").evidenceQuote(null)
+                    .status(DimensionStatus.NOT_EVALUABLE)
+                    .build();
+            Map<Long, List<QuestionScoreDimension>> dims = Map.of(501L, List.of(dim));
+
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+
+            TimestampFeedbackResponse.TechnicalDimensionFeedback feedbackDim =
+                    response.getTechnicalFeedback().getDimensions().getFirst();
+            assertThat(feedbackDim.getStatus()).isEqualTo("NOT_EVALUABLE");
+            assertThat(feedbackDim.getScore()).isNull();
         }
     }
 

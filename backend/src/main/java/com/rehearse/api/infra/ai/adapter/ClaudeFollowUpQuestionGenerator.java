@@ -2,7 +2,6 @@ package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.client.ClaudeFollowUpQuestionGeneratorClient;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -29,11 +28,10 @@ public class ClaudeFollowUpQuestionGenerator implements FollowUpQuestionGenerato
     public GeneratedFollowUp generate(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         FollowUpQuestionPromptBuilder.PromptPair prompt = promptBuilder.build(
-                mainQuestion, userAnswer, analysis, resumeSkeleton);
+                mainQuestion, userAnswer, analysis);
         String systemPrompt = JSON_OBJECT_INSTRUCTION + "\n\n" + prompt.system();
         String content = client.call(systemPrompt, prompt.user());
         GeneratedFollowUp parsed = aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);

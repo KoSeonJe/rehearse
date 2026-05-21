@@ -13,6 +13,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -45,11 +46,11 @@ class ClaudeAnswerAnalyzerTest {
     @Test
     @DisplayName("system prompt 앞에 JSON 강제 지시문이 prepend 된다")
     void analyze_prependsJsonInstructionToSystemPrompt() {
-        when(promptBuilder.build(any(), any(), any()))
+        when(promptBuilder.build(any(), any(), any(), anyBoolean()))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("base-sys", "usr"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A");
+        adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
 
         ArgumentCaptor<String> sysCaptor = ArgumentCaptor.forClass(String.class);
         verify(client).call(sysCaptor.capture(), any());
@@ -62,11 +63,11 @@ class ClaudeAnswerAnalyzerTest {
     @Test
     @DisplayName("user prompt 는 변경 없이 전달된다")
     void analyze_userPromptPassedThrough() {
-        when(promptBuilder.build(any(), any(), any()))
+        when(promptBuilder.build(any(), any(), any(), anyBoolean()))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("sys", "user-content"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A");
+        adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
 
         ArgumentCaptor<String> userCaptor = ArgumentCaptor.forClass(String.class);
         verify(client).call(any(), userCaptor.capture());
@@ -76,11 +77,11 @@ class ClaudeAnswerAnalyzerTest {
     @Test
     @DisplayName("정상 JSON 응답을 GeneratedAnswerAnalysis 로 매핑한다")
     void analyze_mapsValidJson() {
-        when(promptBuilder.build(any(), any(), any()))
+        when(promptBuilder.build(any(), any(), any(), anyBoolean()))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("sys", "usr"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        GeneratedAnswerAnalysis result = adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A");
+        GeneratedAnswerAnalysis result = adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
 
         assertThat(result.weakestDimension()).isEqualTo("clarity");
     }

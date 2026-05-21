@@ -13,7 +13,7 @@ public record OpenAiQuestionGeneratorProperties(
 
     public OpenAiQuestionGeneratorProperties {
         if (model == null || model.isBlank()) {
-            model = "gpt-4o-mini";
+            model = "gpt-5.4-mini";
         }
         if (timeoutMs <= 0) {
             timeoutMs = 60_000L;

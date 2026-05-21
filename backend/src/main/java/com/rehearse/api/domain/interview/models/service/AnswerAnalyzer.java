@@ -14,6 +14,7 @@ public interface AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     );
 }

@@ -250,7 +250,7 @@ class OpenAiRubricScorerTest {
             assertThat(result.scoredDimensions()).isEmpty();
             assertThat(result.dimensionScores().get("technical_depth").score()).isNull();
             assertThat(result.dimensionScores().get("technical_depth").observation())
-                    .contains("LLM 응답에 차원 없음");
+                    .contains("retry_failed");
         }
 
         @Test

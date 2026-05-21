@@ -54,7 +54,7 @@ class ResilientRubricScorerTest {
     private RubricScoringResult sample(String rubricId) {
         return new RubricScoringResult(
                 rubricId, List.of("technical_depth"),
-                Map.of("technical_depth", new DimensionScore(2, "ok", "evidence")),
+                Map.of("technical_depth", new DimensionScore(2, "ok", "evidence", com.rehearse.api.domain.feedback.score.entity.DimensionStatus.OK)),
                 null);
     }
 

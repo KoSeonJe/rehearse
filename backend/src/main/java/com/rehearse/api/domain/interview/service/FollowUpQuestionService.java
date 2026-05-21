@@ -2,7 +2,6 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,9 +17,8 @@ public class FollowUpQuestionService {
     public GeneratedFollowUp write(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
-        return followUpQuestionGenerator.generate(mainQuestion, userAnswer, analysis, resumeSkeleton);
+        return followUpQuestionGenerator.generate(mainQuestion, userAnswer, analysis);
     }
 }

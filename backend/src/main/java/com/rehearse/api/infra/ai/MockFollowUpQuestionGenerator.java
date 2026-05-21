@@ -2,7 +2,6 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.infra.ai.adapter.ClaudeFollowUpQuestionGenerator;
 import com.rehearse.api.infra.ai.adapter.OpenAiFollowUpQuestionGenerator;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -25,8 +24,7 @@ public class MockFollowUpQuestionGenerator implements FollowUpQuestionGenerator 
     public GeneratedFollowUp generate(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         return new GeneratedFollowUp(
                 false,

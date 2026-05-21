@@ -61,7 +61,7 @@ class OpenAiAudioTurnAnalyzerTest {
         MultipartFile audio = audioFile();
         when(client.call(eq("sys-prompt"), eq("user-prompt"), eq(audio))).thenReturn(VALID_JSON);
 
-        GeneratedTurnAnalysis result = adapter.analyze(audio, "주요 질문", ReferenceType.MODEL_ANSWER);
+        GeneratedTurnAnalysis result = adapter.analyze(audio, "주요 질문", ReferenceType.MODEL_ANSWER, false);
 
         verify(client).call(eq("sys-prompt"), eq("user-prompt"), eq(audio));
         assertThat(result.answerAnalysis()).isNotNull();
@@ -75,7 +75,7 @@ class OpenAiAudioTurnAnalyzerTest {
         when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
@@ -88,7 +88,7 @@ class OpenAiAudioTurnAnalyzerTest {
         when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -99,7 +99,7 @@ class OpenAiAudioTurnAnalyzerTest {
         when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new RetryableApiException("upstream 5xx"));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -110,7 +110,7 @@ class OpenAiAudioTurnAnalyzerTest {
         when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new ResourceAccessException("connection reset"));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -121,7 +121,7 @@ class OpenAiAudioTurnAnalyzerTest {
         when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenReturn("not a json");
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);

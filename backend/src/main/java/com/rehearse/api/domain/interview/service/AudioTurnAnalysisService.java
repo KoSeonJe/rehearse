@@ -29,16 +29,17 @@ public class AudioTurnAnalysisService {
             Long interviewId,
             MultipartFile audioFile,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) {
         validate(interviewId, audioFile);
         try {
-            GeneratedTurnAnalysis raw = audioTurnAnalyzer.analyze(audioFile, mainQuestion, questionReferenceType);
+            GeneratedTurnAnalysis raw = audioTurnAnalyzer.analyze(audioFile, mainQuestion, questionReferenceType, isResumeTrack);
             return raw.toDomain();
         } catch (AudioChatFallbackRequiredException e) {
             log.warn("[AudioTurnAnalysisService] audio chat 실패 → text-only fallback. interviewId={}", interviewId);
             aiCallMetrics.incrementFollowUpSkip("audio_chat_fallback_to_stt");
-            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType);
+            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType, isResumeTrack);
         }
     }
 

@@ -2,6 +2,7 @@ package com.rehearse.api.domain.feedback.session;
 
 import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
 import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
 import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
@@ -165,6 +166,50 @@ class SessionFeedbackInputAssemblerTest {
         assertThat(input.sessionMetadata().interviewTypes()).containsExactly("CS_FUNDAMENTAL");
         assertThat(input.sessionMetadata().totalTurns()).isZero();
         assertThat(input.sessionMetadata().durationMinutes()).isEqualTo(30);
+    }
+
+    @Test
+    @DisplayName("모든 dim 이 NOT_EVALUABLE 인 turn 은 TurnStatus.NOT_EVALUABLE 로 매핑되고 coverage 분자에서 제외된다")
+    void assemble_mapsAllNotEvaluableDimensions_toNotEvaluableStatus() {
+        Long interviewId = 30L;
+
+        QuestionScore okScore = QuestionScore.builder()
+                .interviewId(interviewId).questionId(1L).rubricId("cs-v1").levelFlag("MID").build();
+        ReflectionTestUtils.setField(okScore, "id", 30L);
+
+        QuestionScore notEvaluableScore = QuestionScore.builder()
+                .interviewId(interviewId).questionId(2L).rubricId("cs-v1").levelFlag("MID").build();
+        ReflectionTestUtils.setField(notEvaluableScore, "id", 31L);
+
+        QuestionScoreDimension okDim = QuestionScoreDimension.builder()
+                .questionScoreId(okScore.getId())
+                .dimensionRef("problem_framing").score(3).observation("명확함").evidenceQuote("turn 1")
+                .status(DimensionStatus.OK)
+                .build();
+        QuestionScoreDimension neDim1 = QuestionScoreDimension.builder()
+                .questionScoreId(notEvaluableScore.getId())
+                .dimensionRef("problem_framing").score(null).observation("관련 발언 없음").evidenceQuote(null)
+                .status(DimensionStatus.NOT_EVALUABLE)
+                .build();
+        QuestionScoreDimension neDim2 = QuestionScoreDimension.builder()
+                .questionScoreId(notEvaluableScore.getId())
+                .dimensionRef("technical_depth").score(null).observation("관련 발언 없음").evidenceQuote(null)
+                .status(DimensionStatus.NOT_EVALUABLE)
+                .build();
+
+        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                .willReturn(List.of(okScore, notEvaluableScore));
+        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(okScore.getId(), notEvaluableScore.getId())))
+                .willReturn(List.of(okDim, neDim1, neDim2));
+
+        SessionFeedbackInput input = assembler.assemble(interviewId);
+
+        assertThat(input.turnScores()).hasSize(2);
+        assertThat(input.turnScores().get(0).status()).isEqualTo(TurnScoreView.TurnStatus.OK);
+        assertThat(input.turnScores().get(1).status()).isEqualTo(TurnScoreView.TurnStatus.NOT_EVALUABLE);
+        assertThat(input.coverage()).isEqualTo("1/2 turns scored");
+        assertThat(input.scoresByCategory().get("cs-v1")).containsOnlyKeys("문제 정의");
     }
 
     @Test

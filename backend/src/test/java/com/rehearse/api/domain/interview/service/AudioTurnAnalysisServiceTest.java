@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,49 +64,49 @@ class AudioTurnAnalysisServiceTest {
     @DisplayName("port 가 정상 응답 시 toDomain() 매핑 결과 반환, text fallback 미호출")
     void analyze_success_returnsDomain() {
         MultipartFile audio = audioFile();
-        when(audioTurnAnalyzer.analyze(eq(audio), eq("Q"), eq(ReferenceType.MODEL_ANSWER)))
+        when(audioTurnAnalyzer.analyze(eq(audio), eq("Q"), eq(ReferenceType.MODEL_ANSWER), eq(false)))
                 .thenReturn(SAMPLE_GENERATED);
 
-        AnswerAnalysis result = service.analyze(1L, audio, "Q", ReferenceType.MODEL_ANSWER);
+        AnswerAnalysis result = service.analyze(1L, audio, "Q", ReferenceType.MODEL_ANSWER, false);
 
         assertThat(result.weakestDimension()).isEqualTo("depth");
         assertThat(result.recommendedNextAction()).isEqualTo(RecommendedNextAction.DEEP_DIVE);
-        verify(textFallbackTurnAnalyzer, never()).analyze(any(), any(), any(), any());
+        verify(textFallbackTurnAnalyzer, never()).analyze(any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
     @DisplayName("port 가 AudioChatFallbackRequiredException 던지면 text-only fallback 위임, 결과 그대로 반환")
     void analyze_audioFallback_delegatesToTextFallback() {
         MultipartFile audio = audioFile();
-        when(audioTurnAnalyzer.analyze(any(), any(), any()))
+        when(audioTurnAnalyzer.analyze(any(), any(), any(), anyBoolean()))
                 .thenThrow(new AudioChatFallbackRequiredException("simulated"));
-        when(textFallbackTurnAnalyzer.analyze(eq(1L), eq(audio), eq("Q"), eq(ReferenceType.GUIDE)))
+        when(textFallbackTurnAnalyzer.analyze(eq(1L), eq(audio), eq("Q"), eq(ReferenceType.GUIDE), eq(false)))
                 .thenReturn(FALLBACK_RESULT);
 
-        AnswerAnalysis result = service.analyze(1L, audio, "Q", ReferenceType.GUIDE);
+        AnswerAnalysis result = service.analyze(1L, audio, "Q", ReferenceType.GUIDE, false);
 
         assertThat(result).isSameAs(FALLBACK_RESULT);
-        verify(textFallbackTurnAnalyzer, times(1)).analyze(eq(1L), eq(audio), eq("Q"), eq(ReferenceType.GUIDE));
+        verify(textFallbackTurnAnalyzer, times(1)).analyze(eq(1L), eq(audio), eq("Q"), eq(ReferenceType.GUIDE), eq(false));
     }
 
     @Test
     @DisplayName("port 가 PARSE_FAILED BusinessException 을 rethrow 하면 service 에서도 그대로 전파 (text fallback 미호출)")
     void analyze_parseFailed_propagates() {
-        when(audioTurnAnalyzer.analyze(any(), any(), any()))
+        when(audioTurnAnalyzer.analyze(any(), any(), any(), anyBoolean()))
                 .thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
-        assertThatThrownBy(() -> service.analyze(1L, audioFile(), "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> service.analyze(1L, audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
 
-        verify(textFallbackTurnAnalyzer, never()).analyze(any(), any(), any(), any());
+        verify(textFallbackTurnAnalyzer, never()).analyze(any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
     @DisplayName("interviewId == null 이면 IllegalArgumentException")
     void analyze_nullInterviewId_throws() {
-        assertThatThrownBy(() -> service.analyze(null, audioFile(), "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> service.analyze(null, audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -114,7 +115,7 @@ class AudioTurnAnalysisServiceTest {
     void analyze_emptyAudio_throws() {
         MultipartFile empty = new MockMultipartFile("audio", "a.wav", "audio/wav", new byte[0]);
 
-        assertThatThrownBy(() -> service.analyze(1L, empty, "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> service.analyze(1L, empty, "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
@@ -126,7 +127,7 @@ class AudioTurnAnalysisServiceTest {
         byte[] tooBig = new byte[(int) (10L * 1024 * 1024 + 1)];
         MultipartFile oversized = new MockMultipartFile("audio", "a.wav", "audio/wav", tooBig);
 
-        assertThatThrownBy(() -> service.analyze(1L, oversized, "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> service.analyze(1L, oversized, "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.CLIENT_ERROR);

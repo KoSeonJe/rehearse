@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.domain.feedback.rubric.entity.DimensionScore;
+import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 import com.rehearse.api.domain.feedback.rubric.entity.Rubric;
 import com.rehearse.api.domain.feedback.rubric.entity.RubricScoringResult;
 import com.rehearse.api.domain.feedback.rubric.models.service.RubricScorer;
@@ -43,7 +44,7 @@ public class MockRubricScorer implements RubricScorer {
         Map<String, DimensionScore> scores = new HashMap<>();
         List<String> scored = new ArrayList<>();
         for (String dim : dimensionsToScore) {
-            scores.put(dim, new DimensionScore(2, "Mock 관찰 — API 키 미설정 환경 fallback", "Mock evidence"));
+            scores.put(dim, new DimensionScore(2, "Mock 관찰 — API 키 미설정 환경 fallback", "Mock evidence", DimensionStatus.OK));
             scored.add(dim);
         }
         return new RubricScoringResult(rubric.rubricId(), scored, Map.copyOf(scores), null);

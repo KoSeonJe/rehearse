@@ -24,11 +24,27 @@ public record GeneratedResumeSkeleton(
             @JsonProperty("tech_stack") List<String> techStack,
             String role,
             String architecture,
-            List<String> decisions
+            List<String> decisions,
+            @JsonProperty("depth_signals") GeneratedDepthSignals depthSignals
     ) {
         public GeneratedProject {
             techStack = techStack != null ? List.copyOf(techStack) : List.of();
             decisions = decisions != null ? List.copyOf(decisions) : List.of();
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record GeneratedDepthSignals(
+            List<String> tradeoffs,
+            List<String> alternatives,
+            List<String> quantitative,
+            @JsonProperty("decision_rationale") List<String> decisionRationale
+    ) {
+        public GeneratedDepthSignals {
+            tradeoffs = tradeoffs != null ? List.copyOf(tradeoffs) : List.of();
+            alternatives = alternatives != null ? List.copyOf(alternatives) : List.of();
+            quantitative = quantitative != null ? List.copyOf(quantitative) : List.of();
+            decisionRationale = decisionRationale != null ? List.copyOf(decisionRationale) : List.of();
         }
     }
 }

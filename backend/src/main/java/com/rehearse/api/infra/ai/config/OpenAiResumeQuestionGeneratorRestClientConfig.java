@@ -1,7 +1,5 @@
 package com.rehearse.api.infra.ai.config;
 
-import com.rehearse.api.infra.ai.properties.OpenAiResumeQuestionProperties;
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.boot.http.client.ClientHttpRequestFactoryBuilder;
 import org.springframework.boot.http.client.ClientHttpRequestFactorySettings;
@@ -13,14 +11,14 @@ import java.time.Duration;
 
 @Configuration
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
-public class OpenAiResumeQuestionRestClientConfig {
+public class OpenAiResumeQuestionGeneratorRestClientConfig {
 
     private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
 
     @Bean
-    public RestClient openAiResumeQuestionRestClient(
+    public RestClient openAiResumeQuestionGeneratorRestClient(
             RestClient.Builder restClientBuilder,
-            OpenAiResumeQuestionProperties properties) {
+            OpenAiResumeQuestionGeneratorProperties properties) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.defaults()
                 .withConnectTimeout(CONNECT_TIMEOUT)
                 .withReadTimeout(Duration.ofMillis(properties.timeoutMs()));

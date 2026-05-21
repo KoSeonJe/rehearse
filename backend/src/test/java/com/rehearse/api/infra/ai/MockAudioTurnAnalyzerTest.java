@@ -32,7 +32,7 @@ class MockAudioTurnAnalyzerTest {
         MockAudioTurnAnalyzer mock = new MockAudioTurnAnalyzer();
         MultipartFile audio = new MockMultipartFile("audio", "a.wav", "audio/wav", new byte[]{1});
 
-        assertThatThrownBy(() -> mock.analyze(audio, "Q", ReferenceType.MODEL_ANSWER))
+        assertThatThrownBy(() -> mock.analyze(audio, "Q", ReferenceType.MODEL_ANSWER, false))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 

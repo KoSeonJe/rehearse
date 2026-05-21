@@ -42,7 +42,7 @@ class MockFollowUpQuestionGeneratorTest {
     void generate_returnsMockFollowUp() {
         MockFollowUpQuestionGenerator mock = new MockFollowUpQuestionGenerator();
 
-        GeneratedFollowUp result = mock.generate("Q", "원문 답변", SAMPLE_ANALYSIS, null);
+        GeneratedFollowUp result = mock.generate("Q", "원문 답변", SAMPLE_ANALYSIS);
 
         assertThat(result.isSkipped()).isFalse();
         assertThat(result.question()).isNotBlank();

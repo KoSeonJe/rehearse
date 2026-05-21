@@ -83,7 +83,7 @@ public class RubricScoringPipeline {
         Map<String, ValidationResult> result = new LinkedHashMap<>();
         for (String dim : dimensionsToScore) {
             DimensionScore ds = scores.get(dim);
-            if (ds == null || ds.score() == null) {
+            if (ds == null) {
                 result.put(dim, ValidationResult.passed());
                 continue;
             }
@@ -177,12 +177,24 @@ public class RubricScoringPipeline {
                 result.put(dim, DimensionScore.notApplicable("LLM 응답에 차원 없음"));
                 continue;
             }
-            Integer score = entry.get("score") == null ? null : ((Number) entry.get("score")).intValue();
-            String observation = (String) entry.getOrDefault("observation", "");
-            String evidenceQuote = (String) entry.get("evidence_quote");
-            result.put(dim, DimensionScore.of(score, observation, evidenceQuote));
+            result.put(dim, toDimensionScore(entry));
         }
         return result;
+    }
+
+    private DimensionScore toDimensionScore(Map<String, Object> entry) {
+        Integer score = entry.get("score") == null ? null : ((Number) entry.get("score")).intValue();
+        String observation = (String) entry.getOrDefault("observation", "");
+        String evidenceQuote = (String) entry.get("evidence_quote");
+        if (score == null && isNotEvaluableSentinel(observation)) {
+            return DimensionScore.notEvaluable(RubricScorerResponseValidator.NO_RELATED_UTTERANCE);
+        }
+        return DimensionScore.of(score, observation, evidenceQuote);
+    }
+
+    private boolean isNotEvaluableSentinel(String observation) {
+        return observation != null
+                && observation.strip().startsWith(RubricScorerResponseValidator.NO_RELATED_UTTERANCE);
     }
 
     private RubricScoringResult buildResult(

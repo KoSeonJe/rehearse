@@ -12,7 +12,12 @@ public sealed interface FocusHints
                 FocusHints.ResumeQuestionGeneratorHints,
                 FocusHints.EmptyHints {
 
-    record AnswerAnalyzerHints(String mainQuestion, String userAnswer, String personaDepthHint) implements FocusHints {}
+    record AnswerAnalyzerHints(
+            String mainQuestion,
+            String userAnswer,
+            String personaDepthHint,
+            boolean isResumeTrack
+    ) implements FocusHints {}
 
     record FollowUpGeneratorV3Hints(
             String mainQuestion,
@@ -20,8 +25,7 @@ public sealed interface FocusHints
             List<String> claims,
             Map<String, Integer> dimensionGaps,
             String weakestDimension,
-            List<String> unstatedAssumptions,
-            String resumeSkeletonJson
+            List<String> unstatedAssumptions
     ) implements FocusHints {}
 
     record ResumeQuestionGeneratorHints(

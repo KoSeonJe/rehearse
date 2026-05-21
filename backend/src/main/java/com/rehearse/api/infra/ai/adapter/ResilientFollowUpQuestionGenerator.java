@@ -2,7 +2,6 @@ package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
@@ -50,40 +49,38 @@ public class ResilientFollowUpQuestionGenerator implements FollowUpQuestionGener
     public GeneratedFollowUp generate(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         if (openAi == null) {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", false,
-                    () -> claude.generate(mainQuestion, userAnswer, analysis, resumeSkeleton));
+                    () -> claude.generate(mainQuestion, userAnswer, analysis));
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "openai", false,
-                    () -> openAi.generate(mainQuestion, userAnswer, analysis, resumeSkeleton));
+                    () -> openAi.generate(mainQuestion, userAnswer, analysis));
         } catch (BusinessException e) {
             if (isNonRetryable(e)) {
                 throw e;
             }
             log.warn("[FollowUpQuestionGenerator Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(mainQuestion, userAnswer, analysis, resumeSkeleton);
+            return fallback(mainQuestion, userAnswer, analysis);
         } catch (RestClientException | RetryableApiException e) {
             log.warn("[FollowUpQuestionGenerator Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(mainQuestion, userAnswer, analysis, resumeSkeleton);
+            return fallback(mainQuestion, userAnswer, analysis);
         }
     }
 
     private GeneratedFollowUp fallback(
             String mainQuestion,
             String userAnswer,
-            AnswerAnalysis analysis,
-            ResumeSkeleton resumeSkeleton
+            AnswerAnalysis analysis
     ) {
         if (claude == null) {
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", true,
-                    () -> claude.generate(mainQuestion, userAnswer, analysis, resumeSkeleton));
+                    () -> claude.generate(mainQuestion, userAnswer, analysis));
         } catch (Exception fallbackEx) {
             log.error("[FollowUpQuestionGenerator Fallback] Claude 도 실패 — 이중 장애: {}", fallbackEx.getMessage());
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);

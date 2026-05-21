@@ -140,18 +140,61 @@ class RubricScorerResponseValidatorTest {
     }
 
     @Nested
+    @DisplayName("NOT_EVALUABLE sentinel observation 통과")
+    class NotEvaluableSentinel {
+
+        @Test
+        @DisplayName("score=null + observation 이 \"관련 발언 없음\" 으로 시작하면 통과 (NOT_EVALUABLE sentinel)")
+        void scoreNullWithSentinelObservation_passes() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", null, "관련 발언 없음", "관련 발언 없음",
+                    "오늘 날씨 좋네요");
+
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("score=null + observation 이 sentinel 이 아니면 INVALID_SCORE 위배")
+        void scoreNullWithoutSentinel_violatesInvalidScore() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", null, "구체적 답변", "TPS 10000",
+                    "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isFalse();
+            assertThat(result.violation()).isEqualTo(Violation.INVALID_SCORE);
+            assertThat(result.field()).isEqualTo("score");
+        }
+    }
+
+    @Nested
     @DisplayName("evidence_quote null/blank 검증")
     class EvidenceMissing {
 
         @Test
-        @DisplayName("evidence_quote null 은 MISSING_EVIDENCE 위배")
-        void nullEvidence_violatesMissing() {
+        @DisplayName("evidence_quote null 은 substring 검사 우회 — 답변 무관 차원으로 통과")
+        void nullEvidence_passes() {
             ValidationResult result = validator.validate(
                     "technical_depth", 2, "구체적 답변", null, "TPS 10000 을 달성했습니다");
 
-            assertThat(result.valid()).isFalse();
-            assertThat(result.violation()).isEqualTo(Violation.MISSING_EVIDENCE);
-            assertThat(result.field()).isEqualTo("evidence_quote");
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("evidence_quote 빈 문자열 은 답변 무관 차원으로 통과")
+        void blankEvidence_passes() {
+            ValidationResult result = validator.validate(
+                    "technical_depth", 2, "구체적 답변", "   ", "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isTrue();
+        }
+
+        @Test
+        @DisplayName("evidence_quote = \"관련 발언 없음\" 고정 문구는 답변과 무관하게 통과")
+        void noRelatedUtterancePlaceholder_passes() {
+            ValidationResult result = validator.validate(
+                    "recovery_from_gaps", 1, "회복 능력 관찰 근거 부족", "관련 발언 없음", "TPS 10000 을 달성했습니다");
+
+            assertThat(result.valid()).isTrue();
         }
     }
 }

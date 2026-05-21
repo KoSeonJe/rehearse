@@ -141,7 +141,9 @@ public class FocusLayer implements ContextLayer {
     }
 
     private String buildAnswerAnalyzer(FocusHints.AnswerAnalyzerHints h) {
-        return "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
+        String trackLabel = h.isResumeTrack() ? "RESUME" : "CS";
+        return "TRACK: " + trackLabel + "\n\n" +
+               "<<<MAIN_QUESTION>>>\n" + nz(h.mainQuestion()) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(h.userAnswer()) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "PERSONA_DEPTH: " + nz(h.personaDepthHint()) + "\n\n" +
                "위 답변을 분석해 JSON 한 객체로만 응답하세요.";
@@ -154,7 +156,6 @@ public class FocusLayer implements ContextLayer {
                "WEAKEST_DIMENSION: " + nz(h.weakestDimension()) + "\n" +
                "DIMENSION_GAPS: " + formatMap(h.dimensionGaps()) + "\n\n" +
                "<<<UNSTATED_ASSUMPTIONS>>>\n" + formatList(h.unstatedAssumptions()) + "\n<<<END_UNSTATED_ASSUMPTIONS>>>\n\n" +
-               "<<<RESUME_SKELETON>>>\n" + nz(h.resumeSkeletonJson()) + "\n<<<END_RESUME_SKELETON>>>\n\n" +
                "위 분석 결과를 바탕으로 새 후속 질문을 생성하세요.";
     }
 

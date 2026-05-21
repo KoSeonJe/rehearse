@@ -35,7 +35,7 @@ class MockAnswerAnalyzerTest {
     void analyze_returnsMockAnalysis() {
         MockAnswerAnalyzer mock = new MockAnswerAnalyzer();
 
-        GeneratedAnswerAnalysis result = mock.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A");
+        GeneratedAnswerAnalysis result = mock.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
 
         assertThat(result.weakestDimension()).isEqualTo("depth");
         assertThat(result.dimensionGaps()).containsKeys("clarity", "depth", "evidence");

@@ -17,6 +17,7 @@ public interface AudioTurnAnalyzer {
     GeneratedTurnAnalysis analyze(
             MultipartFile audio,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) throws AudioChatFallbackRequiredException;
 }

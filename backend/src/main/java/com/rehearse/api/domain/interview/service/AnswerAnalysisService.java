@@ -19,14 +19,15 @@ public class AnswerAnalysisService {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
         if (interviewId == null) {
             throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
         }
 
         GeneratedAnswerAnalysis generated = answerAnalyzer.analyze(
-                interviewId, mainQuestion, questionReferenceType, userAnswer);
+                interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
         return generated.toDomain();
     }
 }

@@ -84,7 +84,7 @@ class RubricScoringEventListenerTest {
             AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                     10L, 1L, 100L, 50L,
                     "opener 답변 본문", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
-            Map<String, DimensionScore> dims = Map.of("clarity", new DimensionScore(4, "ok", "quote"));
+            Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(2, "ok", "quote"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, "L2");
             given(rubricScoringService.score(eq(question), eq(questionSet), eq(interview), eq("opener 답변 본문"),
                     any(AnswerAnalysis.class))).willReturn(result);
@@ -101,7 +101,7 @@ class RubricScoringEventListenerTest {
             AnswerAnalysis analysis = AnswerAnalysis.empty();
             AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                     10L, 1L, 100L, 50L, "일반 답변", analysis, InterviewLevel.JUNIOR);
-            Map<String, DimensionScore> dims = Map.of("clarity", new DimensionScore(3, "good", "quote2"));
+            Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(3, "good", "quote2"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, null);
             given(rubricScoringService.score(eq(question), eq(questionSet), eq(interview), eq("일반 답변"),
                     eq(analysis))).willReturn(result);

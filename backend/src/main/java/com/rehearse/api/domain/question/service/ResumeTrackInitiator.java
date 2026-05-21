@@ -1,12 +1,13 @@
 package com.rehearse.api.domain.question.service;
 
+import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.TechStack;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.models.service.ResumeQuestionGenerator;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
-import com.rehearse.api.domain.resume.service.ResumeIngestionService;
 import com.rehearse.api.domain.resume.service.ResumeQuestionPersister;
-import com.rehearse.api.domain.resume.service.ResumeSkeletonSampler;
+import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedResumeQuestions;
+import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,20 +26,21 @@ public class ResumeTrackInitiator {
     private static final int DEFAULT_DURATION_MINUTES = 30;
 
     private final QuestionGenerationTransactionHandler transactionHandler;
-    private final ResumeIngestionService resumeIngestionService;
     private final ResumeQuestionPersister resumeQuestionPersister;
-    private final ResumeSkeletonSampler resumeSkeletonSampler;
     private final ResumeQuestionGenerator resumeQuestionGenerator;
 
-    public void initiate(Long interviewId, String resumeFileHash, byte[] resumePdfBytes, Integer durationMinutes) {
+    public void initiate(Long interviewId, String resumeFileHash, byte[] resumePdfBytes,
+                         Integer durationMinutes, Position position, TechStack techStack) {
         try {
-            ResumeSkeleton skeleton = resumeIngestionService.ingestPdf(interviewId, resumePdfBytes, resumeFileHash);
-
             int minutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
             int mainCount = Math.max(MIN_MAIN_COUNT, Math.min(MAX_MAIN_COUNT, minutes / 3 + 2));
 
-            ResumeSkeleton sampledSkeleton = resumeSkeletonSampler.sampleDecisions(skeleton, interviewId);
-            GeneratedResumeQuestions generated = resumeQuestionGenerator.generate(sampledSkeleton, OPENER_COUNT, mainCount);
+            log.info("[ResumeTrackInitiator] 이력서 질문 생성 시작: interviewId={}, fileHash={}, pdfBytes={}, openerCount={}, mainCount={}",
+                    interviewId, resumeFileHash, resumePdfBytes == null ? 0 : resumePdfBytes.length,
+                    OPENER_COUNT, mainCount);
+
+            GeneratedResumeQuestions generated = resumeQuestionGenerator.generate(
+                    resumePdfBytes, OPENER_COUNT, mainCount, position, techStack);
             persistGenerated(interviewId, generated);
             transactionHandler.completeGeneration(interviewId);
         } catch (Exception e) {
@@ -56,12 +58,17 @@ public class ResumeTrackInitiator {
         for (var opener : generated.openers()) {
             drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
                     QuestionType.RESUME_OPENER, opener.question(), opener.ttsQuestion(),
-                    opener.bestAnswer(), order++));
+                    opener.bestAnswer(), order++, null));
         }
         for (var main : generated.mains()) {
+            if (main.depthType() == null) {
+                log.error("[ResumeTrackInitiator] main 질문 depthType 누락: interviewId={}, question={}",
+                        interviewId, main.question());
+                throw new BusinessException(AiErrorCode.RESPONSE_INVALID);
+            }
             drafts.add(new ResumeQuestionPersister.ResumeQuestionDraft(
                     QuestionType.RESUME_MAIN, main.question(), main.ttsQuestion(),
-                    main.bestAnswer(), order++));
+                    main.bestAnswer(), order++, main.depthType()));
         }
         resumeQuestionPersister.persistAll(interviewId, drafts);
         log.info("[ResumeTrackInitiator] 질문 적재 완료: interviewId={}, openers={}, mains={}",

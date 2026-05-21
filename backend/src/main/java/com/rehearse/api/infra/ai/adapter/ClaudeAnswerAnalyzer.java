@@ -29,9 +29,10 @@ public class ClaudeAnswerAnalyzer implements AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
-        AnswerAnalysisPromptBuilder.PromptPair prompt = promptBuilder.build(mainQuestion, questionReferenceType, userAnswer);
+        AnswerAnalysisPromptBuilder.PromptPair prompt = promptBuilder.build(mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
         String systemPrompt = JSON_OBJECT_INSTRUCTION + "\n\n" + prompt.system();
         String content = client.call(systemPrompt, prompt.user());
         return aiResponseParser.parseJsonResponse(content, GeneratedAnswerAnalysis.class);

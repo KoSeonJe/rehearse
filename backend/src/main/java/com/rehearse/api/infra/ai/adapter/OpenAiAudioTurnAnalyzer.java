@@ -33,7 +33,8 @@ public class OpenAiAudioTurnAnalyzer implements AudioTurnAnalyzer {
     public GeneratedTurnAnalysis analyze(
             MultipartFile audio,
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            boolean isResumeTrack
     ) throws AudioChatFallbackRequiredException {
         String systemPrompt = promptBuilder.buildSystemPrompt();
         String userPrompt = promptBuilder.buildUserPromptText(mainQuestion, questionReferenceType);

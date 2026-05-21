@@ -50,24 +50,25 @@ public class ResilientAnswerAnalyzer implements AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
         if (openAi == null) {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", false,
-                    () -> claude.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer));
+                    () -> claude.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack));
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "openai", false,
-                    () -> openAi.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer));
+                    () -> openAi.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack));
         } catch (BusinessException e) {
             if (isNonRetryable(e)) {
                 throw e;
             }
             log.warn("[AnswerAnalyzer Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(interviewId, mainQuestion, questionReferenceType, userAnswer);
+            return fallback(interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
         } catch (RestClientException | RetryableApiException e) {
             log.warn("[AnswerAnalyzer Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(interviewId, mainQuestion, questionReferenceType, userAnswer);
+            return fallback(interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
         }
     }
 
@@ -75,14 +76,15 @@ public class ResilientAnswerAnalyzer implements AnswerAnalyzer {
             Long interviewId,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            String userAnswer
+            String userAnswer,
+            boolean isResumeTrack
     ) {
         if (claude == null) {
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", true,
-                    () -> claude.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer));
+                    () -> claude.analyze(interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack));
         } catch (Exception fallbackEx) {
             log.error("[AnswerAnalyzer Fallback] Claude 도 실패 — 이중 장애: {}", fallbackEx.getMessage());
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
