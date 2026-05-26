@@ -33,7 +33,6 @@ public class RubricScorer {
             Question question,
             QuestionSet questionSet,
             Interview interview,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         Rubric rubric = rubricLoader.resolveFor(question, questionSet, interview);
@@ -44,11 +43,10 @@ public class RubricScorer {
             return RubricScoringResult.empty(rubric.rubricId());
         }
 
-        if (isBlankAnswer(userAnswer, analysis)) {
-            int length = userAnswer == null ? 0 : userAnswer.strip().length();
-            int transcriptLength = analysis == null ? 0 : analysis.transcript().strip().length();
-            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, len={}, transcriptLen={}",
-                    interview.getId(), question.getId(), length, transcriptLength);
+        String transcript = transcriptOf(analysis);
+        if (isBlankAnswer(transcript)) {
+            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, transcriptLen={}",
+                    interview.getId(), question.getId(), transcript.strip().length());
             return RubricScoringResult.notEvaluable(rubric.rubricId(), dimensionsToScore,
                     "응답 길이 " + BLANK_ANSWER_LENGTH_THRESHOLD + "자 이하");
         }
@@ -59,22 +57,18 @@ public class RubricScorer {
                 rubric.rubricId(), dimensionsToScore);
 
         ChatRequest request = promptBuilder.build(
-                question, userAnswer, analysis, rubric, dimensionsToScore, userLevel
+                question, transcript, analysis, rubric, dimensionsToScore, userLevel
         );
 
         return adapter.adapt(aiClient, request, rubric, dimensionsToScore,
-                userAnswer, interview.getId(), question.getId());
+                transcript, interview.getId(), question.getId());
     }
 
-    private boolean isBlankAnswer(String userAnswer, AnswerAnalysis analysis) {
-        String effective = effectiveText(userAnswer, analysis);
-        return effective == null || effective.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
+    private static String transcriptOf(AnswerAnalysis analysis) {
+        return analysis != null ? analysis.transcript() : "";
     }
 
-    private static String effectiveText(String userAnswer, AnswerAnalysis analysis) {
-        if (userAnswer != null && userAnswer.strip().length() > BLANK_ANSWER_LENGTH_THRESHOLD) {
-            return userAnswer;
-        }
-        return analysis != null ? analysis.transcript() : null;
+    private boolean isBlankAnswer(String transcript) {
+        return transcript.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
     }
 }

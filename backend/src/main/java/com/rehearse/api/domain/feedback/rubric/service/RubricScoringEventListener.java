@@ -41,8 +41,7 @@ public class RubricScoringEventListener {
             QuestionSet questionSet = resolveQuestionSet(event, interview);
 
             RubricScoringResult score = rubricScorer.score(
-                    question, questionSet, interview,
-                    event.userAnswer(), event.analysis()
+                    question, questionSet, interview, event.analysis()
             );
 
             if (score.isEmpty()) {
