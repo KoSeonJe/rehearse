@@ -47,7 +47,7 @@ class MockRubricScorerTest {
                 Map.of(), Map.of());
 
         RubricScoringResult result = mock.score(
-                null, "답변", null, rubric,
+                null, null, rubric,
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L);
 
         assertThat(result.rubricId()).isEqualTo("mock-v1");

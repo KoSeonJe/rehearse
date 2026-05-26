@@ -35,18 +35,17 @@ import java.util.Map;
 class MockFollowUpQuestionGeneratorTest {
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
-            List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
+            "원문 답변", List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
 
     @Test
-    @DisplayName("Mock 단독 호출 시 기본 follow-up 질문 + answerText override 가 적용된다")
+    @DisplayName("Mock 단독 호출 시 기본 follow-up 질문을 반환한다")
     void generate_returnsMockFollowUp() {
         MockFollowUpQuestionGenerator mock = new MockFollowUpQuestionGenerator();
 
-        GeneratedFollowUp result = mock.generate("Q", "원문 답변", SAMPLE_ANALYSIS);
+        GeneratedFollowUp result = mock.generate("Q", SAMPLE_ANALYSIS);
 
         assertThat(result.isSkipped()).isFalse();
         assertThat(result.question()).isNotBlank();
-        assertThat(result.answerText()).isEqualTo("원문 답변");
     }
 
     private ApplicationContextRunner baseRunner() {
