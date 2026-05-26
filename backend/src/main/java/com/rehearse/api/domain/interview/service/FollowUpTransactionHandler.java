@@ -24,6 +24,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.Optional;
 
 @Slf4j
@@ -55,12 +56,14 @@ public class FollowUpTransactionHandler {
         standardFollowUpPolicy.assertCanContinue(interview, questionSet, currentMainQuestionId);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
+        Long answeredQuestionId = findAnsweredQuestionId(questionSet);
 
         return new FollowUpContext(
                 interview.getPosition(),
                 interview.getEffectiveTechStack(),
                 interview.getLevel(),
                 questionSetId,
+                answeredQuestionId,
                 currentMainQuestionId,
                 currentMainQuestionType,
                 nextOrderIndex,
@@ -82,6 +85,13 @@ public class FollowUpTransactionHandler {
         return questionSet.getQuestions().stream()
                 .filter(q -> !q.getQuestionType().isFollowUp())
                 .reduce((first, second) -> second);
+    }
+
+    private Long findAnsweredQuestionId(QuestionSet questionSet) {
+        return questionSet.getQuestions().stream()
+                .max(Comparator.comparingInt(Question::getOrderIndex))
+                .map(Question::getId)
+                .orElse(null);
     }
 
     @Transactional

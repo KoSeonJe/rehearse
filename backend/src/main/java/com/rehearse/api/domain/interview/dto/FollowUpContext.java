@@ -11,6 +11,7 @@ public record FollowUpContext(
         TechStack effectiveTechStack,
         InterviewLevel level,
         Long questionSetId,
+        Long answeredQuestionId,
         Long currentMainQuestionId,
         QuestionType currentMainQuestionType,
         int nextOrderIndex,
