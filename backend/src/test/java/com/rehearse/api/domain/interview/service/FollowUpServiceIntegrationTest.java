@@ -182,6 +182,65 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(finalQuestions).hasSize(1);
     }
 
+    @Test
+    @DisplayName("후속질문 답변 턴 → 방금 답변된 후속질문 ID로 채점 (메인질문 채점 미발생)")
+    void followUpAnswer_persistsScoreUnderFollowUpQuestionId() {
+        Fixture fixture = persistResumeFixtureWithFollowUp(QuestionType.RESUME_MAIN, QuestionType.RESUME_FOLLOWUP);
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+                .willReturn(analysisOf("후속 답변", RecommendedNextAction.CLARIFICATION));
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
+                .willReturn(rubricResult());
+        given(followUpQuestionService.write(any(), any()))
+                .willReturn(new GeneratedFollowUp(
+                        false, null, "심화 질문2", "TTS", "이유", "claim", "best", null, 0));
+
+        followUpService.generateFollowUp(
+                fixture.interviewId, fixture.userId,
+                request(fixture.questionSetId),
+                audio());
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            assertThat(eventCollector.events()).hasSize(1);
+            assertThat(eventCollector.events().get(0).questionId()).isEqualTo(fixture.followUpQuestionId);
+
+            List<QuestionScore> scores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(fixture.interviewId);
+            assertThat(scores).hasSize(1);
+            assertThat(scores.get(0).getQuestionId()).isEqualTo(fixture.followUpQuestionId);
+        });
+    }
+
+    @Test
+    @DisplayName("메인 + 후속 2턴 연속 → 서로 다른 question_id 로 2행 적재 (중복/누락 없음)")
+    void mainThenFollowUp_persistsTwoScoresWithDistinctQuestionIds() {
+        Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+                .willReturn(analysisOf("정상 답변", RecommendedNextAction.CLARIFICATION));
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
+                .willReturn(rubricResult());
+        given(followUpQuestionService.write(any(), any()))
+                .willReturn(new GeneratedFollowUp(
+                        false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
+
+        followUpService.generateFollowUp(
+                fixture.interviewId, fixture.userId, request(fixture.questionSetId), audio());
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() ->
+                assertThat(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(fixture.interviewId)).hasSize(1));
+
+        followUpService.generateFollowUp(
+                fixture.interviewId, fixture.userId, request(fixture.questionSetId), audio());
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            List<QuestionScore> scores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(fixture.interviewId);
+            assertThat(scores).hasSize(2);
+            assertThat(scores).extracting(QuestionScore::getQuestionId).doesNotHaveDuplicates();
+        });
+
+        List<Question> finalQuestions = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(fixture.questionSetId);
+        assertThat(finalQuestions).hasSize(3);
+    }
+
     private FollowUpRequest request(Long questionSetId) {
         FollowUpRequest req = new FollowUpRequest();
         org.springframework.test.util.ReflectionTestUtils.setField(req, "questionSetId", questionSetId);
@@ -225,10 +284,48 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         questionSet.addQuestion(mainQuestion);
         questionSetRepository.saveAndFlush(questionSet);
 
-        return new Fixture(user.getId(), interview.getId(), questionSet.getId(), mainQuestion.getId());
+        return new Fixture(user.getId(), interview.getId(), questionSet.getId(), mainQuestion.getId(), null);
     }
 
-    private record Fixture(Long userId, Long interviewId, Long questionSetId, Long questionId) {}
+    private Fixture persistResumeFixtureWithFollowUp(QuestionType mainType, QuestionType followUpType) {
+        User user = userRepository.saveAndFlush(User.builder()
+                .email("followup-fu-" + mainType + "@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-fu-" + mainType)
+                .role(UserRole.USER)
+                .build());
+
+        Interview interview = TestFixtures.createInterview(
+                user.getId(), Position.BACKEND, InterviewLevel.JUNIOR, List.of(InterviewType.RESUME_BASED));
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        interviewRepository.saveAndFlush(interview);
+
+        QuestionSet questionSet = TestFixtures.createQuestionSet(interview, InterviewType.RESUME_BASED, 0);
+        Question mainQuestion = Question.builder()
+                .questionType(mainType)
+                .questionText("이력서 기반 메인 질문")
+                .ttsText("TTS")
+                .bestAnswer("best")
+                .orderIndex(0)
+                .build();
+        Question followUpQuestion = Question.builder()
+                .questionType(followUpType)
+                .questionText("이력서 기반 후속 질문")
+                .ttsText("TTS")
+                .bestAnswer("best")
+                .orderIndex(1)
+                .build();
+        questionSet.addQuestion(mainQuestion);
+        questionSet.addQuestion(followUpQuestion);
+        questionSetRepository.saveAndFlush(questionSet);
+
+        return new Fixture(user.getId(), interview.getId(), questionSet.getId(),
+                mainQuestion.getId(), followUpQuestion.getId());
+    }
+
+    private record Fixture(Long userId, Long interviewId, Long questionSetId, Long questionId, Long followUpQuestionId) {}
 
     @TestConfiguration
     static class TestEventCollectorConfig {
