@@ -44,10 +44,11 @@ public class RubricScorer {
             return RubricScoringResult.empty(rubric.rubricId());
         }
 
-        if (isBlankAnswer(userAnswer)) {
+        if (isBlankAnswer(userAnswer, analysis)) {
             int length = userAnswer == null ? 0 : userAnswer.strip().length();
-            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, len={}",
-                    interview.getId(), question.getId(), length);
+            int transcriptLength = analysis == null ? 0 : analysis.transcript().strip().length();
+            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, len={}, transcriptLen={}",
+                    interview.getId(), question.getId(), length, transcriptLength);
             return RubricScoringResult.notEvaluable(rubric.rubricId(), dimensionsToScore,
                     "응답 길이 " + BLANK_ANSWER_LENGTH_THRESHOLD + "자 이하");
         }
@@ -65,7 +66,15 @@ public class RubricScorer {
                 userAnswer, interview.getId(), question.getId());
     }
 
-    private boolean isBlankAnswer(String userAnswer) {
-        return userAnswer == null || userAnswer.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
+    private boolean isBlankAnswer(String userAnswer, AnswerAnalysis analysis) {
+        String effective = effectiveText(userAnswer, analysis);
+        return effective == null || effective.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
+    }
+
+    private static String effectiveText(String userAnswer, AnswerAnalysis analysis) {
+        if (userAnswer != null && userAnswer.strip().length() > BLANK_ANSWER_LENGTH_THRESHOLD) {
+            return userAnswer;
+        }
+        return analysis != null ? analysis.transcript() : null;
     }
 }
