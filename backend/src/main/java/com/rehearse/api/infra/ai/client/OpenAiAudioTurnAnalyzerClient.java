@@ -82,7 +82,7 @@ public class OpenAiAudioTurnAnalyzerClient {
             String systemPrompt, String userPrompt, String audioBase64, String audioFormat) {
         Map<String, Object> body = new HashMap<>();
         body.put("model", properties.model());
-        body.put("max_tokens", properties.maxTokens());
+        body.put("max_completion_tokens", properties.maxTokens());
         body.put("temperature", properties.temperature());
         body.put("messages", List.of(
                 Map.of("role", "system", "content", systemPrompt),
