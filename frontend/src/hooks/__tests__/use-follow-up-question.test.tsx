@@ -35,7 +35,6 @@ describe('useFollowUpQuestion — terminate 신호 payload 직렬화', () => {
   const defaultData: FollowUpRequest = {
     questionSetId: 12,
     questionContent: '프로젝트에서 가장 어려웠던 점은?',
-    answerText: '메모리 누수 디버깅이 어려웠습니다.',
     previousExchanges: [],
   }
 
