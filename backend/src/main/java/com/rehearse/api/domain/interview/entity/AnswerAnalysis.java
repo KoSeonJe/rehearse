@@ -22,4 +22,9 @@ public record AnswerAnalysis(
     public static AnswerAnalysis empty() {
         return new AnswerAnalysis("", List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
     }
+
+    public AnswerAnalysis withTranscript(String newTranscript) {
+        return new AnswerAnalysis(
+                newTranscript, claims, dimensionGaps, weakestDimension, unstatedAssumptions, recommendedNextAction);
+    }
 }

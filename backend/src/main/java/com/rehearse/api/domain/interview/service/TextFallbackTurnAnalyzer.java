@@ -37,6 +37,8 @@ public class TextFallbackTurnAnalyzer {
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
         }
         String answerText = sttService.transcribe(audioFile);
-        return answerAnalysisService.analyze(interviewId, mainQuestion, questionReferenceType, answerText, isResumeTrack);
+        AnswerAnalysis analysis = answerAnalysisService.analyze(
+                interviewId, mainQuestion, questionReferenceType, answerText, isResumeTrack);
+        return analysis.withTranscript(answerText);
     }
 }

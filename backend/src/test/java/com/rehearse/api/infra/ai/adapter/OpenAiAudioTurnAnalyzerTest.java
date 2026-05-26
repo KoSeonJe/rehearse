@@ -31,6 +31,20 @@ class OpenAiAudioTurnAnalyzerTest {
     private static final String VALID_JSON = """
             {
               "answer_analysis": {
+                "transcript": "저는 트랜잭션 격리 수준을 이렇게 설명합니다.",
+                "claims": [],
+                "dimension_gaps": {"depth": 1},
+                "weakest_dimension": "depth",
+                "unstated_assumptions": [],
+                "recommended_next_action": "DEEP_DIVE"
+              }
+            }
+            """;
+
+    private static final String BLANK_TRANSCRIPT_JSON = """
+            {
+              "answer_analysis": {
+                "transcript": "   ",
                 "claims": [],
                 "dimension_gaps": {"depth": 1},
                 "weakest_dimension": "depth",
@@ -66,6 +80,18 @@ class OpenAiAudioTurnAnalyzerTest {
         verify(client).call(eq("sys-prompt"), eq("user-prompt"), eq(audio));
         assertThat(result.answerAnalysis()).isNotNull();
         assertThat(result.toDomain().weakestDimension()).isEqualTo("depth");
+        assertThat(result.toDomain().transcript()).isEqualTo("저는 트랜잭션 격리 수준을 이렇게 설명합니다.");
+    }
+
+    @Test
+    @DisplayName("claims 는 채웠지만 transcript 가 blank 면 AudioChatFallbackRequiredException 으로 STT fallback 트리거")
+    void analyze_blankTranscript_throwsFallbackSignal() {
+        when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
+        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(client.call(any(), any(), any())).thenReturn(BLANK_TRANSCRIPT_JSON);
+
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
+                .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
     @Test
