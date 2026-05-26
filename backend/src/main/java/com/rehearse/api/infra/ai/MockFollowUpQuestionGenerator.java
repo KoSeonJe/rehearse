@@ -23,7 +23,6 @@ public class MockFollowUpQuestionGenerator implements FollowUpQuestionGenerator 
     @Override
     public GeneratedFollowUp generate(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         return new GeneratedFollowUp(
@@ -34,7 +33,7 @@ public class MockFollowUpQuestionGenerator implements FollowUpQuestionGenerator 
                 "Mock 후속 질문 — API 키 미설정 환경 fallback",
                 "DEEP_DIVE",
                 null,
-                userAnswer,
+                null,
                 null
         );
     }

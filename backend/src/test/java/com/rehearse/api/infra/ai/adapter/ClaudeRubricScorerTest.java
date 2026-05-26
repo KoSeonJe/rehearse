@@ -37,7 +37,7 @@ class ClaudeRubricScorerTest {
     private static final String USER_ANSWER = "저는 작년에 결제 모듈을 리팩토링하여 TPS 10000 을 달성했습니다";
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
-            List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
+            USER_ANSWER, List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
 
     private ClaudeRubricScorerClient client;
     private RubricScorerPromptBuilder promptBuilder;
@@ -69,7 +69,7 @@ class ClaudeRubricScorerTest {
         when(responseParser.extractJson("first-raw")).thenReturn(json);
 
         Rubric rubric = createRubric();
-        adapter.score(mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+        adapter.score(mockQuestion(), SAMPLE_ANALYSIS, rubric,
                 List.of("technical_depth"), InterviewLevel.JUNIOR, INTERVIEW_ID, QUESTION_ID);
 
         ArgumentCaptor<String> systemCaptor = ArgumentCaptor.forClass(String.class);
@@ -90,7 +90,7 @@ class ClaudeRubricScorerTest {
         when(responseParser.extractJson("first-raw")).thenReturn(json);
 
         RubricScoringResult result = adapter.score(
-                mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, createRubric(),
+                mockQuestion(), SAMPLE_ANALYSIS, createRubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR,
                 INTERVIEW_ID, QUESTION_ID);
 
@@ -106,7 +106,7 @@ class ClaudeRubricScorerTest {
         when(responseParser.extractJson("first-raw")).thenReturn("not-a-json");
 
         RubricScoringResult result = adapter.score(
-                mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, createRubric(),
+                mockQuestion(), SAMPLE_ANALYSIS, createRubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR,
                 INTERVIEW_ID, QUESTION_ID);
 
@@ -117,7 +117,7 @@ class ClaudeRubricScorerTest {
 
     private void stubPrompt() {
         Map<String, Object> schema = Map.of("type", "object");
-        when(promptBuilder.build(any(), any(), any(), any(), any(), any()))
+        when(promptBuilder.build(any(), any(), any(), any(), any()))
                 .thenReturn(new RubricScorerPromptBuilder.PromptBundle("sys-content", "usr", schema));
     }
 

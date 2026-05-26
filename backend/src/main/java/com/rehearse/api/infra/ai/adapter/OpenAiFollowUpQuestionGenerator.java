@@ -24,13 +24,11 @@ public class OpenAiFollowUpQuestionGenerator implements FollowUpQuestionGenerato
     @Override
     public GeneratedFollowUp generate(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         FollowUpQuestionPromptBuilder.PromptPair prompt = promptBuilder.build(
-                mainQuestion, userAnswer, analysis);
+                mainQuestion, analysis);
         String content = client.call(prompt.system(), prompt.user());
-        GeneratedFollowUp parsed = aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);
-        return parsed.withAnswerText(userAnswer);
+        return aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);
     }
 }

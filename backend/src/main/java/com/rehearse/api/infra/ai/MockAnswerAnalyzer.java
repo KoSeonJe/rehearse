@@ -33,6 +33,7 @@ public class MockAnswerAnalyzer implements AnswerAnalyzer {
             boolean isResumeTrack
     ) {
         return new GeneratedAnswerAnalysis(
+                userAnswer != null ? userAnswer : "",
                 List.of(),
                 Map.of("clarity", 1, "depth", 1, "evidence", 1),
                 "depth",

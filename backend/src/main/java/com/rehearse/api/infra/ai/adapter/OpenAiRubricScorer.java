@@ -28,7 +28,6 @@ public class OpenAiRubricScorer implements RubricScorer {
     @Override
     public RubricScoringResult score(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
@@ -37,14 +36,14 @@ public class OpenAiRubricScorer implements RubricScorer {
             Long questionId
     ) {
         RubricScorerPromptBuilder.PromptBundle prompt = promptBuilder.build(
-                question, userAnswer, analysis, rubric, dimensionsToScore, level);
+                question, analysis, rubric, dimensionsToScore, level);
 
         return pipeline.execute(
                 prompt,
                 (system, user, isRetry) -> client.call(system, user, prompt.jsonSchema()),
                 rubric,
                 dimensionsToScore,
-                userAnswer,
+                analysis.transcript(),
                 interviewId,
                 questionId
         );

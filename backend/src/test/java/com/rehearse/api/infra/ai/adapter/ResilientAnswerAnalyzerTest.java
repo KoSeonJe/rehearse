@@ -46,6 +46,7 @@ class ResilientAnswerAnalyzerTest {
 
     private GeneratedAnswerAnalysis sample(String dim) {
         return new GeneratedAnswerAnalysis(
+                "전사 텍스트",
                 List.of(),
                 Map.of("clarity", 2, "depth", 1),
                 dim,

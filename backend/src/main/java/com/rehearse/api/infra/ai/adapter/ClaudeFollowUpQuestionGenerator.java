@@ -27,14 +27,12 @@ public class ClaudeFollowUpQuestionGenerator implements FollowUpQuestionGenerato
     @Override
     public GeneratedFollowUp generate(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         FollowUpQuestionPromptBuilder.PromptPair prompt = promptBuilder.build(
-                mainQuestion, userAnswer, analysis);
+                mainQuestion, analysis);
         String systemPrompt = JSON_OBJECT_INSTRUCTION + "\n\n" + prompt.system();
         String content = client.call(systemPrompt, prompt.user());
-        GeneratedFollowUp parsed = aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);
-        return parsed.withAnswerText(userAnswer);
+        return aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);
     }
 }

@@ -10,6 +10,7 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -75,47 +76,47 @@ class RubricScoringServiceTest {
     class BlankAnswerGuard {
 
         @Test
-        @DisplayName("userAnswer 가 null 이면 전 차원 NOT_EVALUABLE 반환 + LLM 미호출")
-        void should_return_notEvaluable_when_userAnswer_null() {
+        @DisplayName("analysis 가 null 이면 전 차원 NOT_EVALUABLE 반환 + LLM 미호출")
+        void should_return_notEvaluable_when_analysis_null() {
             givenRubric(List.of("technical_depth", "conceptual_accuracy"));
 
-            RubricScoringResult result = service.score(question, questionSet, interview, null, AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview, null);
 
             assertAllNotEvaluable(result, "technical_depth", "conceptual_accuracy");
-            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
 
         @Test
-        @DisplayName("userAnswer 가 빈 문자열이면 NOT_EVALUABLE 반환")
-        void should_return_notEvaluable_when_userAnswer_empty() {
+        @DisplayName("transcript 가 빈 문자열이면 NOT_EVALUABLE 반환")
+        void should_return_notEvaluable_when_transcript_empty() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = service.score(question, questionSet, interview, "", AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview, analysisWithTranscript(""));
 
             assertAllNotEvaluable(result, "technical_depth");
-            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
 
         @Test
-        @DisplayName("userAnswer strip 후 3자 이하이면 NOT_EVALUABLE 반환 (경계 - 3자)")
-        void should_return_notEvaluable_when_userAnswer_length_exactly_3() {
+        @DisplayName("transcript strip 후 3자 이하이면 NOT_EVALUABLE 반환 (경계 - 3자)")
+        void should_return_notEvaluable_when_transcript_length_exactly_3() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = service.score(question, questionSet, interview, "잘몰라", AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview, analysisWithTranscript("잘몰라"));
 
             assertAllNotEvaluable(result, "technical_depth");
-            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
 
         @Test
-        @DisplayName("공백만 있는 답변은 strip 후 0자로 NOT_EVALUABLE 반환")
-        void should_return_notEvaluable_when_userAnswer_whitespace_only() {
+        @DisplayName("공백만 있는 transcript 는 strip 후 0자로 NOT_EVALUABLE 반환")
+        void should_return_notEvaluable_when_transcript_whitespace_only() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = service.score(question, questionSet, interview, "   \n\t  ", AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview, analysisWithTranscript("   \n\t  "));
 
             assertAllNotEvaluable(result, "technical_depth");
-            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
     }
 
@@ -124,19 +125,19 @@ class RubricScoringServiceTest {
     class NormalScoring {
 
         @Test
-        @DisplayName("userAnswer 가 4자 이상이면 LLM 채점기 호출 (경계 - 4자)")
-        void should_call_LLM_when_userAnswer_length_exactly_4() {
+        @DisplayName("transcript 가 4자 이상이면 LLM 채점기 호출 (경계 - 4자)")
+        void should_call_LLM_when_transcript_length_exactly_4() {
             givenRubric(List.of("technical_depth"));
             RubricScoringResult scorerResult =
                     new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
-            given(rubricScorer.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+            given(rubricScorer.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                     .willReturn(scorerResult);
 
-            RubricScoringResult result = service.score(question, questionSet, interview, "잘 모르겠습니다",
-                    AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview,
+                    analysisWithTranscript("잘 모르겠습니다"));
 
             assertThat(result).isSameAs(scorerResult);
-            verify(rubricScorer).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
     }
 
@@ -149,11 +150,16 @@ class RubricScoringServiceTest {
         void should_return_empty_when_no_dimensions_to_score() {
             givenRubric(List.of());
 
-            RubricScoringResult result = service.score(question, questionSet, interview, "", AnswerAnalysis.empty());
+            RubricScoringResult result = service.score(question, questionSet, interview, analysisWithTranscript(""));
 
             assertThat(result.isEmpty()).isTrue();
-            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+            verify(rubricScorer, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
         }
+    }
+
+    private static AnswerAnalysis analysisWithTranscript(String transcript) {
+        return new AnswerAnalysis(transcript, List.of(), Map.of(), null, List.of(),
+                RecommendedNextAction.CLARIFICATION);
     }
 
     private void givenRubric(List<String> dimensions) {

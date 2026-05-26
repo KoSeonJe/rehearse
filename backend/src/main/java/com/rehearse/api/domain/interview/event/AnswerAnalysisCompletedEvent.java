@@ -8,7 +8,6 @@ public record AnswerAnalysisCompletedEvent(
         Long userId,
         Long questionId,
         Long questionSetId,
-        String userAnswer,
         AnswerAnalysis analysis,
         InterviewLevel userLevel
 ) {
@@ -16,13 +15,13 @@ public record AnswerAnalysisCompletedEvent(
     public static AnswerAnalysisCompletedEvent of(
             Long interviewId, Long userId,
             Long questionId, Long questionSetId,
-            String userAnswer, AnswerAnalysis analysis,
+            AnswerAnalysis analysis,
             InterviewLevel userLevel
     ) {
         return new AnswerAnalysisCompletedEvent(
                 interviewId, userId,
                 questionId, questionSetId,
-                userAnswer, analysis, userLevel
+                analysis, userLevel
         );
     }
 }

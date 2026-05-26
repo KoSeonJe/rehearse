@@ -25,7 +25,7 @@ class AnswerAnalyzerSchemaTest {
     class Root {
 
         @Test
-        @DisplayName("CS / Resume 모두 root 는 5개 필드 required + additionalProperties=false")
+        @DisplayName("CS / Resume 모두 root 는 6개 필드 required + additionalProperties=false")
         void root_requiresAllTopLevelFields() {
             for (boolean resumeTrack : List.of(false, true)) {
                 Map<String, Object> schema = GeneratedAnswerAnalysisSchema.build(resumeTrack);
@@ -33,7 +33,7 @@ class AnswerAnalyzerSchemaTest {
                 assertThat(schema).containsEntry("type", "object");
                 assertThat(schema).containsEntry("additionalProperties", false);
                 assertThat(schema.get("required")).isEqualTo(List.of(
-                        "claims", "dimension_gaps", "weakest_dimension",
+                        "transcript", "claims", "dimension_gaps", "weakest_dimension",
                         "unstated_assumptions", "recommended_next_action"));
             }
         }

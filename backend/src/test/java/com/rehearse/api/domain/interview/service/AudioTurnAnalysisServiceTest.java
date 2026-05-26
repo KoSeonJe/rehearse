@@ -37,6 +37,7 @@ class AudioTurnAnalysisServiceTest {
 
     private static final GeneratedTurnAnalysis SAMPLE_GENERATED = new GeneratedTurnAnalysis(
             new GeneratedAnswerAnalysis(
+                    "전사 텍스트",
                     List.of(),
                     Map.of("depth", 1),
                     "depth",
@@ -44,7 +45,7 @@ class AudioTurnAnalysisServiceTest {
                     RecommendedNextAction.DEEP_DIVE));
 
     private static final AnswerAnalysis FALLBACK_RESULT = new AnswerAnalysis(
-            List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
+            "전사 텍스트", List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
 
     private AudioTurnAnalyzer audioTurnAnalyzer;
     private TextFallbackTurnAnalyzer textFallbackTurnAnalyzer;

@@ -21,14 +21,13 @@ public class FollowUpQuestionPromptBuilder {
 
     public PromptPair build(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         BuiltContext built = contextBuilder.build(new ContextBuildRequest(
                 CALL_TYPE,
                 new FocusHints.FollowUpGeneratorV3Hints(
                         mainQuestion != null ? mainQuestion : "",
-                        userAnswer != null ? userAnswer : "",
+                        analysis.transcript(),
                         analysis.claims().stream().map(c -> c.text()).toList(),
                         analysis.dimensionGaps(),
                         analysis.weakestDimension(),

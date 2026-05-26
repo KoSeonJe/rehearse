@@ -41,7 +41,12 @@ public class OpenAiAudioTurnAnalyzer implements AudioTurnAnalyzer {
 
         try {
             String content = client.call(systemPrompt, userPrompt, audio);
-            return aiResponseParser.parseJsonResponse(content, GeneratedTurnAnalysis.class);
+            GeneratedTurnAnalysis parsed = aiResponseParser.parseJsonResponse(content, GeneratedTurnAnalysis.class);
+            if (isTranscriptBlank(parsed)) {
+                log.warn("[OpenAiAudioTurnAnalyzer] transcript 누락 → STT fallback 으로 답변텍스트 복구");
+                throw new AudioChatFallbackRequiredException("audio chat transcript 누락");
+            }
+            return parsed;
         } catch (BusinessException e) {
             if (isResponseDefect(e)) {
                 throw e;
@@ -56,5 +61,13 @@ public class OpenAiAudioTurnAnalyzer implements AudioTurnAnalyzer {
 
     private boolean isResponseDefect(BusinessException e) {
         return AiErrorCode.PARSE_FAILED.getCode().equals(e.getCode());
+    }
+
+    private boolean isTranscriptBlank(GeneratedTurnAnalysis parsed) {
+        if (parsed.answerAnalysis() == null) {
+            return true;
+        }
+        String transcript = parsed.answerAnalysis().transcript();
+        return transcript == null || transcript.isBlank();
     }
 }

@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 class ResilientRubricScorerTest {
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
-            List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
+            "전사 텍스트", List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
 
     private OpenAiRubricScorer openAi;
     private ClaudeRubricScorer claude;
@@ -67,75 +67,75 @@ class ResilientRubricScorerTest {
     @Test
     @DisplayName("OpenAI 성공 시 Claude 호출 없음")
     void score_openAiSuccess_claudeNotCalled() {
-        when(openAi.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(openAi.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenReturn(sample("openai-ok"));
 
         RubricScoringResult result = resilient.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L);
 
         assertThat(result.rubricId()).isEqualTo("openai-ok");
-        verify(claude, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+        verify(claude, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
     }
 
     @Test
     @DisplayName("OpenAI RetryableApiException 발생 시 Claude fallback")
     void score_openAiRetryable_claudeFallback() {
-        when(openAi.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(openAi.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenThrow(new RetryableApiException("타임아웃"));
-        when(claude.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(claude.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenReturn(sample("claude-ok"));
 
         RubricScoringResult result = resilient.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L);
 
         assertThat(result.rubricId()).isEqualTo("claude-ok");
-        verify(claude, times(1)).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+        verify(claude, times(1)).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
     }
 
     @Test
     @DisplayName("CLIENT_ERROR (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void score_clientError_noFallback() {
-        when(openAi.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(openAi.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
 
         assertThatThrownBy(() -> resilient.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.CLIENT_ERROR);
 
-        verify(claude, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+        verify(claude, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
     }
 
     @Test
     @DisplayName("PARSE_FAILED (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void score_parseFailed_noFallback() {
-        when(openAi.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(openAi.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
         assertThatThrownBy(() -> resilient.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
 
-        verify(claude, never()).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+        verify(claude, never()).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
     }
 
     @Test
     @DisplayName("OpenAI + Claude 모두 실패 시 SERVICE_UNAVAILABLE")
     void score_bothFail_serviceUnavailable() {
-        when(openAi.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(openAi.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenThrow(new RetryableApiException("OpenAI 실패"));
-        when(claude.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(claude.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenThrow(new RetryableApiException("Claude 실패"));
 
         assertThatThrownBy(() -> resilient.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
@@ -146,15 +146,15 @@ class ResilientRubricScorerTest {
     @DisplayName("OpenAI 미설정 (null) + Claude 존재 시 Claude 직접 호출")
     void score_openAiNull_directlyCallClaude() {
         ResilientRubricScorer claudeOnly = new ResilientRubricScorer(null, claude, metrics);
-        when(claude.score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong()))
+        when(claude.score(any(), any(), any(), any(), any(), anyLong(), anyLong()))
                 .thenReturn(sample("claude-only"));
 
         RubricScoringResult result = claudeOnly.score(
-                mock(Question.class), "A", SAMPLE_ANALYSIS, rubric(),
+                mock(Question.class), SAMPLE_ANALYSIS, rubric(),
                 List.of("technical_depth"), InterviewLevel.JUNIOR, 1L, 2L);
 
         assertThat(result.rubricId()).isEqualTo("claude-only");
-        verify(claude, times(1)).score(any(), any(), any(), any(), any(), any(), anyLong(), anyLong());
+        verify(claude, times(1)).score(any(), any(), any(), any(), any(), anyLong(), anyLong());
     }
 
     @Test

@@ -47,14 +47,13 @@ public class RubricScorerPromptBuilder {
 
     public PromptBundle build(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
             InterviewLevel userLevel
     ) {
         String systemPrompt = buildSystemPrompt();
-        String userPrompt = buildUserPrompt(question, userAnswer, analysis, rubric,
+        String userPrompt = buildUserPrompt(question, analysis, rubric,
                 dimensionsToScore, userLevel);
         Map<String, Object> schema = buildJsonSchema(dimensionsToScore);
         return new PromptBundle(systemPrompt, userPrompt, schema);
@@ -122,7 +121,6 @@ public class RubricScorerPromptBuilder {
 
     private String buildUserPrompt(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
@@ -131,7 +129,7 @@ public class RubricScorerPromptBuilder {
         return template
                 .replace("{{USER_LEVEL}}", formatLevel(userLevel))
                 .replace("{{QUESTION_TEXT}}", question.getQuestionText())
-                .replace("{{USER_ANSWER}}", userAnswer != null ? userAnswer : "")
+                .replace("{{USER_ANSWER}}", analysis != null ? analysis.transcript() : "")
                 .replace("{{ANSWER_ANALYSIS_JSON}}", serializeAnalysis(analysis))
                 .replace("{{DIMENSIONS_TO_SCORE}}", String.join(", ", dimensionsToScore))
                 .replace("{{DIMENSION_DEFINITIONS}}", buildSelectedDefinitions(dimensionsToScore))

@@ -38,7 +38,7 @@ class OpenAiRubricScorerTest {
     private static final String USER_ANSWER = "저는 작년에 결제 모듈을 리팩토링하여 TPS 10000 을 달성했습니다";
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
-            List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
+            USER_ANSWER, List.of(), Map.of("depth", 1), "depth", List.of(), RecommendedNextAction.DEEP_DIVE);
 
     private OpenAiRubricScorerClient client;
     private RubricScorerPromptBuilder promptBuilder;
@@ -75,7 +75,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    mockQuestion(), SAMPLE_ANALYSIS,
                     rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -109,7 +109,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    mockQuestion(), SAMPLE_ANALYSIS,
                     rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -144,7 +144,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    mockQuestion(), SAMPLE_ANALYSIS,
                     rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -177,7 +177,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS,
+                    mockQuestion(), SAMPLE_ANALYSIS,
                     rubric, List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -217,7 +217,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth", "reasoning_communication"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+                    mockQuestion(), SAMPLE_ANALYSIS, rubric,
                     List.of("technical_depth", "reasoning_communication"),
                     InterviewLevel.JUNIOR, INTERVIEW_ID, QUESTION_ID);
 
@@ -243,7 +243,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+                    mockQuestion(), SAMPLE_ANALYSIS, rubric,
                     List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -262,7 +262,7 @@ class OpenAiRubricScorerTest {
 
             Rubric rubric = createRubric("test-v1", List.of("technical_depth"));
             RubricScoringResult result = adapter.score(
-                    mockQuestion(), USER_ANSWER, SAMPLE_ANALYSIS, rubric,
+                    mockQuestion(), SAMPLE_ANALYSIS, rubric,
                     List.of("technical_depth"), InterviewLevel.JUNIOR,
                     INTERVIEW_ID, QUESTION_ID);
 
@@ -274,7 +274,7 @@ class OpenAiRubricScorerTest {
 
     private void stubPrompt(List<String> dimensions) {
         Map<String, Object> schema = Map.of("type", "object");
-        when(promptBuilder.build(any(), any(), any(), any(), any(), any()))
+        when(promptBuilder.build(any(), any(), any(), any(), any()))
                 .thenReturn(new RubricScorerPromptBuilder.PromptBundle("sys", "usr", schema));
     }
 

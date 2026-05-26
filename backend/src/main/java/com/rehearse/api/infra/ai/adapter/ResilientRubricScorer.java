@@ -53,7 +53,6 @@ public class ResilientRubricScorer implements RubricScorer {
     @Override
     public RubricScoringResult score(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
@@ -63,30 +62,29 @@ public class ResilientRubricScorer implements RubricScorer {
     ) {
         if (openAi == null) {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", false,
-                    () -> claude.score(question, userAnswer, analysis, rubric,
+                    () -> claude.score(question, analysis, rubric,
                             dimensionsToScore, level, interviewId, questionId));
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "openai", false,
-                    () -> openAi.score(question, userAnswer, analysis, rubric,
+                    () -> openAi.score(question, analysis, rubric,
                             dimensionsToScore, level, interviewId, questionId));
         } catch (BusinessException e) {
             if (isNonRetryable(e)) {
                 throw e;
             }
             log.warn("[RubricScorer Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(question, userAnswer, analysis, rubric,
+            return fallback(question, analysis, rubric,
                     dimensionsToScore, level, interviewId, questionId);
         } catch (RestClientException | RetryableApiException e) {
             log.warn("[RubricScorer Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(question, userAnswer, analysis, rubric,
+            return fallback(question, analysis, rubric,
                     dimensionsToScore, level, interviewId, questionId);
         }
     }
 
     private RubricScoringResult fallback(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
@@ -99,7 +97,7 @@ public class ResilientRubricScorer implements RubricScorer {
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", true,
-                    () -> claude.score(question, userAnswer, analysis, rubric,
+                    () -> claude.score(question, analysis, rubric,
                             dimensionsToScore, level, interviewId, questionId));
         } catch (Exception fallbackEx) {
             log.error("[RubricScorer Fallback] Claude 도 실패 — 이중 장애: {}", fallbackEx.getMessage());

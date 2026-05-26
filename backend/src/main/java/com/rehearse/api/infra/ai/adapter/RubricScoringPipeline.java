@@ -45,7 +45,7 @@ public class RubricScoringPipeline {
             LlmCaller caller,
             Rubric rubric,
             List<String> dimensionsToScore,
-            String userAnswer,
+            String transcript,
             Long interviewId,
             Long questionId
     ) {
@@ -55,7 +55,7 @@ public class RubricScoringPipeline {
                     responseParser.extractJson(firstContent), dimensionsToScore);
 
             Map<String, ValidationResult> firstValidation = validateAll(
-                    firstScores, dimensionsToScore, userAnswer);
+                    firstScores, dimensionsToScore, transcript);
             List<String> retryTargets = collectViolated(firstValidation);
 
             if (retryTargets.isEmpty()) {
@@ -66,7 +66,7 @@ public class RubricScoringPipeline {
                     prompt, caller, dimensionsToScore, retryTargets, firstValidation);
             Map<String, DimensionScore> merged = mergeAfterRetry(
                     dimensionsToScore, firstScores, firstValidation,
-                    retryScores, userAnswer, interviewId, questionId);
+                    retryScores, transcript, interviewId, questionId);
 
             return buildResult(rubric.rubricId(), dimensionsToScore, merged);
         } catch (JsonProcessingException parseEx) {
@@ -78,7 +78,7 @@ public class RubricScoringPipeline {
     }
 
     private Map<String, ValidationResult> validateAll(
-            Map<String, DimensionScore> scores, List<String> dimensionsToScore, String userAnswer
+            Map<String, DimensionScore> scores, List<String> dimensionsToScore, String transcript
     ) {
         Map<String, ValidationResult> result = new LinkedHashMap<>();
         for (String dim : dimensionsToScore) {
@@ -87,7 +87,7 @@ public class RubricScoringPipeline {
                 result.put(dim, ValidationResult.passed());
                 continue;
             }
-            result.put(dim, validator.validate(dim, ds.score(), ds.observation(), ds.evidenceQuote(), userAnswer));
+            result.put(dim, validator.validate(dim, ds.score(), ds.observation(), ds.evidenceQuote(), transcript));
         }
         return result;
     }
@@ -127,7 +127,7 @@ public class RubricScoringPipeline {
             Map<String, DimensionScore> firstScores,
             Map<String, ValidationResult> firstValidation,
             Map<String, DimensionScore> retryScores,
-            String userAnswer,
+            String transcript,
             Long interviewId,
             Long questionId
     ) {
@@ -143,7 +143,7 @@ public class RubricScoringPipeline {
                 retryScore = DimensionScore.notApplicable("LLM 응답에 차원 없음");
             }
             ValidationResult retryResult = validator.validate(
-                    dim, retryScore.score(), retryScore.observation(), retryScore.evidenceQuote(), userAnswer);
+                    dim, retryScore.score(), retryScore.observation(), retryScore.evidenceQuote(), transcript);
             if (retryResult.valid()) {
                 merged.put(dim, retryScore);
                 continue;

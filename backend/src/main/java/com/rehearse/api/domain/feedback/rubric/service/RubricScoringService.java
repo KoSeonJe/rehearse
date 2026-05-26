@@ -28,7 +28,6 @@ public class RubricScoringService {
             Question question,
             QuestionSet questionSet,
             Interview interview,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         Rubric rubric = rubricLoader.resolveFor(question, questionSet, interview);
@@ -39,10 +38,10 @@ public class RubricScoringService {
             return RubricScoringResult.empty(rubric.rubricId());
         }
 
-        if (isBlankAnswer(userAnswer)) {
-            int length = userAnswer == null ? 0 : userAnswer.strip().length();
-            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, len={}",
-                    interview.getId(), question.getId(), length);
+        String transcript = transcriptOf(analysis);
+        if (isBlankAnswer(transcript)) {
+            log.info("무응답 감지 - 전 차원 NOT_EVALUABLE 반환: interviewId={}, questionId={}, transcriptLen={}",
+                    interview.getId(), question.getId(), transcript.strip().length());
             return RubricScoringResult.notEvaluable(rubric.rubricId(), dimensionsToScore,
                     "응답 길이 " + BLANK_ANSWER_LENGTH_THRESHOLD + "자 이하");
         }
@@ -53,13 +52,17 @@ public class RubricScoringService {
                 rubric.rubricId(), dimensionsToScore);
 
         return rubricScorer.score(
-                question, userAnswer, analysis, rubric,
+                question, analysis, rubric,
                 dimensionsToScore, userLevel,
                 interview.getId(), question.getId()
         );
     }
 
-    private boolean isBlankAnswer(String userAnswer) {
-        return userAnswer == null || userAnswer.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
+    private static String transcriptOf(AnswerAnalysis analysis) {
+        return analysis != null ? analysis.transcript() : "";
+    }
+
+    private boolean isBlankAnswer(String transcript) {
+        return transcript.strip().length() <= BLANK_ANSWER_LENGTH_THRESHOLD;
     }
 }

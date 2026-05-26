@@ -36,6 +36,9 @@
 
 ## Answer Analysis
 
+### transcript (string)
+1단계에서 오디오를 전사한 한국어 텍스트 전체를 그대로 복사해 넣는다. `answer_text` 와 동일한 내용. 전사 실패 시 빈 문자열 "".
+
 ### claims (배열)
 응시자가 답변에서 한 핵심 주장. 각 항목:
 - `text`: 한 문장 요약 (60자 이내)
@@ -67,6 +70,7 @@
 {
   "answer_text": "...",
   "answer_analysis": {
+    "transcript": "...",
     "claims": [{"text":"...", "depth_score":1-5, "evidence_strength":"STRONG|WEAK|ASSUMED", "topic_tag":"..."}],
     "dimension_gaps": {"<dimension_id>": 0-3, "...": 0-3},
     "weakest_dimension": "<dimension_id>|null",
@@ -89,6 +93,7 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 {
   "answer_text": "JVM은 힙 메모리를 Young Generation과 Old Generation으로 나누고 Young에서 Minor GC가 발생하고 객체가 일정 횟수 살아남으면 Old로 이동합니다.",
   "answer_analysis": {
+    "transcript": "JVM은 힙 메모리를 Young Generation과 Old Generation으로 나누고 Young에서 Minor GC가 발생하고 객체가 일정 횟수 살아남으면 Old로 이동합니다.",
     "claims": [
       {"text":"JVM 힙은 Young/Old 세대로 분리된다", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"},
       {"text":"객체 생존 횟수에 따라 Old로 승격된다", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"}
@@ -117,6 +122,7 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 {
   "answer_text": "솔직히 잘 모르겠어요. 다음 질문으로 넘어가도 될까요?",
   "answer_analysis": {
+    "transcript": "솔직히 잘 모르겠어요. 다음 질문으로 넘어가도 될까요?",
     "claims": [],
     "dimension_gaps": {
       "technical_depth": 3,
@@ -141,6 +147,7 @@ QUESTION_REFERENCE_TYPE: GUIDE
 {
   "answer_text": "주문 조회 API p95가 800ms였는데 Redis 캐시 도입 후 120ms로 떨어졌습니다. TTL 5분 Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다.",
   "answer_analysis": {
+    "transcript": "주문 조회 API p95가 800ms였는데 Redis 캐시 도입 후 120ms로 떨어졌습니다. TTL 5분 Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다.",
     "claims": [
       {"text":"Redis 캐시 도입으로 p95 800→120ms 개선", "depth_score":5, "evidence_strength":"STRONG", "topic_tag":"caching"},
       {"text":"Cache-Aside + TTL 5분 + stale read 허용 정책", "depth_score":4, "evidence_strength":"STRONG", "topic_tag":"caching"}
@@ -169,6 +176,7 @@ QUESTION_REFERENCE_TYPE: GUIDE
 {
   "answer_text": "선착순 쿠폰 발급에서 race condition 이 있었습니다. Redis 의 Lua 스크립트로 INCR + 발급 로직을 원자적으로 처리해서 중복 발급을 막았습니다.",
   "answer_analysis": {
+    "transcript": "선착순 쿠폰 발급에서 race condition 이 있었습니다. Redis 의 Lua 스크립트로 INCR + 발급 로직을 원자적으로 처리해서 중복 발급을 막았습니다.",
     "claims": [
       {"text":"Redis Lua 스크립트로 INCR+발급 원자적 처리", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"redis"}
     ],

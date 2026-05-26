@@ -48,31 +48,29 @@ public class ResilientFollowUpQuestionGenerator implements FollowUpQuestionGener
     @Override
     public GeneratedFollowUp generate(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         if (openAi == null) {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", false,
-                    () -> claude.generate(mainQuestion, userAnswer, analysis));
+                    () -> claude.generate(mainQuestion, analysis));
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "openai", false,
-                    () -> openAi.generate(mainQuestion, userAnswer, analysis));
+                    () -> openAi.generate(mainQuestion, analysis));
         } catch (BusinessException e) {
             if (isNonRetryable(e)) {
                 throw e;
             }
             log.warn("[FollowUpQuestionGenerator Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(mainQuestion, userAnswer, analysis);
+            return fallback(mainQuestion, analysis);
         } catch (RestClientException | RetryableApiException e) {
             log.warn("[FollowUpQuestionGenerator Fallback] OpenAI 실패 → Claude 전환: {}", e.getMessage());
-            return fallback(mainQuestion, userAnswer, analysis);
+            return fallback(mainQuestion, analysis);
         }
     }
 
     private GeneratedFollowUp fallback(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
         if (claude == null) {
@@ -80,7 +78,7 @@ public class ResilientFollowUpQuestionGenerator implements FollowUpQuestionGener
         }
         try {
             return aiCallMetrics.recordCall(CALL_TYPE, "claude", true,
-                    () -> claude.generate(mainQuestion, userAnswer, analysis));
+                    () -> claude.generate(mainQuestion, analysis));
         } catch (Exception fallbackEx) {
             log.error("[FollowUpQuestionGenerator Fallback] Claude 도 실패 — 이중 장애: {}", fallbackEx.getMessage());
             throw new BusinessException(AiErrorCode.SERVICE_UNAVAILABLE);
