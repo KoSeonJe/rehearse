@@ -28,11 +28,6 @@ public record GeneratedFollowUp(
         return Boolean.TRUE.equals(skip);
     }
 
-    public GeneratedFollowUp withAnswerText(String newAnswerText) {
-        return new GeneratedFollowUp(skip, skipReason, question, ttsQuestion, reason, type,
-                bestAnswer, newAnswerText, targetClaimIdx);
-    }
-
     public static GeneratedFollowUp skipped(String reason) {
         return new GeneratedFollowUp(true, reason, null, null, null, null, null, null, null);
     }

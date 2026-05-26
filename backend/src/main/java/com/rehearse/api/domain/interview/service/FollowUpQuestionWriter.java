@@ -35,7 +35,6 @@ public class FollowUpQuestionWriter {
 
     public GeneratedFollowUp write(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis,
             ResumeSkeleton resumeSkeleton
     ) {
@@ -43,7 +42,7 @@ public class FollowUpQuestionWriter {
                 CALL_TYPE,
                 new FocusHints.FollowUpGeneratorV3Hints(
                         mainQuestion != null ? mainQuestion : "",
-                        userAnswer != null ? userAnswer : "",
+                        analysis.transcript(),
                         analysis.claims().stream().map(c -> c.text()).toList(),
                         analysis.dimensionGaps(),
                         analysis.weakestDimension(),
@@ -65,9 +64,8 @@ public class FollowUpQuestionWriter {
                 .build();
 
         ChatResponse response = aiClient.chat(chatRequest);
-        GeneratedFollowUp parsed = aiResponseParser.parseOrRetry(
+        return aiResponseParser.parseOrRetry(
                 response, GeneratedFollowUp.class, aiClient, chatRequest);
-        return parsed.withAnswerText(userAnswer);
     }
 
     private String serializeSkeleton(ResumeSkeleton skeleton) {
