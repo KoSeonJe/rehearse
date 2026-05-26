@@ -1,7 +1,6 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -42,11 +41,9 @@ public class ResilientAiClient extends AbstractAiClient {
     public ResilientAiClient(
             @Nullable OpenAiClient openAiClient,
             @Nullable ClaudeApiClient claudeApiClient,
-            @Nullable SttService sttService,
             AiCallMetrics aiCallMetrics,
-            QuestionGenerationAdapter questionAdapter,
-            FollowUpGenerationAdapter followUpAdapter) {
-        super(questionAdapter, followUpAdapter, sttService);
+            QuestionGenerationAdapter questionAdapter) {
+        super(questionAdapter);
         this.openAiClient = openAiClient;
         this.claudeApiClient = claudeApiClient;
         this.aiCallMetrics = aiCallMetrics;

@@ -7,7 +7,6 @@ import com.rehearse.api.infra.ai.dto.openai.OpenAiResponse;
 import org.springframework.lang.Nullable;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
-import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +46,6 @@ public class OpenAiClient {
 
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
-    private final FollowUpPromptBuilder followUpPromptBuilder;
     private final AiResponseParser responseParser;
     private final String apiKey;
     private final String model;
@@ -56,7 +54,6 @@ public class OpenAiClient {
     public OpenAiClient(
             RestClient.Builder restClientBuilder,
             QuestionGenerationPromptBuilder questionPromptBuilder,
-            FollowUpPromptBuilder followUpPromptBuilder,
             AiResponseParser responseParser,
             OpenAiCommonProperties commonProperties,
             @Value("${openai.model:gpt-4o-mini}") String model,
@@ -71,7 +68,6 @@ public class OpenAiClient {
                 .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
-        this.followUpPromptBuilder = followUpPromptBuilder;
         this.responseParser = responseParser;
         this.apiKey = commonProperties.apiKey();
         this.model = model;
@@ -161,39 +157,6 @@ public class OpenAiClient {
         return wrapper.questions();
     }
 
-    @RateLimiter(name = "openai-api")
-    @Retryable(
-            retryFor = {RetryableApiException.class, RestClientException.class},
-            noRetryFor = {BusinessException.class},
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
-    )
-    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
-        String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
-        String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
-
-        String text = callOpenAiApi(systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, TEMPERATURE_FOLLOW_UP);
-        return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
-    @RateLimiter(name = "openai-api")
-    @Retryable(
-            retryFor = {RetryableApiException.class, RestClientException.class},
-            noRetryFor = {BusinessException.class},
-            maxAttempts = 3,
-            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
-    )
-    public GeneratedFollowUp generateFollowUpWithAudio(MultipartFile audioFile, FollowUpGenerationRequest request) {
-        String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
-        String userPrompt = followUpPromptBuilder.buildUserPromptForAudio(request);
-
-        String audioBase64 = encodeAudioToBase64(audioFile);
-        String audioFormat = resolveAudioFormat(audioFile.getOriginalFilename());
-
-        String text = callOpenAiAudioApi(systemPrompt, userPrompt, audioBase64, audioFormat);
-        return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
     @Recover
     public ChatResponse recoverChat(Exception e, ChatRequest req) {
         log.error("[OpenAI API] chat 재시도 최종 실패: callType={}", req.callType(), e);
@@ -209,19 +172,6 @@ public class OpenAiClient {
     @Recover
     public List<GeneratedQuestion> recoverGenerateQuestions(Exception e, QuestionGenerationRequest request) {
         log.error("[OpenAI API] generateQuestions 재시도 최종 실패", e);
-        throw new BusinessException(AiErrorCode.TIMEOUT);
-    }
-
-    @Recover
-    public GeneratedFollowUp recoverGenerateFollowUpQuestion(Exception e, FollowUpGenerationRequest request) {
-        log.error("[OpenAI API] generateFollowUpQuestion 재시도 최종 실패", e);
-        throw new BusinessException(AiErrorCode.TIMEOUT);
-    }
-
-    @Recover
-    public GeneratedFollowUp recoverGenerateFollowUpWithAudio(
-            Exception e, MultipartFile audioFile, FollowUpGenerationRequest request) {
-        log.error("[OpenAI Audio API] generateFollowUpWithAudio 재시도 최종 실패", e);
         throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 

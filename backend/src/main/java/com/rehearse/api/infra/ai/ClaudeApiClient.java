@@ -9,7 +9,6 @@ import com.rehearse.api.infra.ai.dto.claude.ClaudeResponse;
 import com.rehearse.api.infra.ai.dto.claude.SystemContent;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.rehearse.api.infra.ai.exception.RetryableApiException;
-import com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder;
 import com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder;
 
 import java.util.ArrayList;
@@ -41,12 +40,9 @@ public class ClaudeApiClient {
 
     private static final int MAX_TOKENS_QUESTION = 8192;
     private static final int MAX_TOKENS_FOLLOW_UP = 1024;
-    private static final double TEMPERATURE_FOLLOW_UP = 0.7;
-    private static final String FOLLOW_UP_MODEL = "claude-haiku-4-5-20251001";
 
     private final RestClient restClient;
     private final QuestionGenerationPromptBuilder questionPromptBuilder;
-    private final FollowUpPromptBuilder followUpPromptBuilder;
     private final AiResponseParser responseParser;
     private final ObjectMapper objectMapper;
     private final String apiKey;
@@ -55,7 +51,6 @@ public class ClaudeApiClient {
     public ClaudeApiClient(
             RestClient.Builder restClientBuilder,
             QuestionGenerationPromptBuilder questionPromptBuilder,
-            FollowUpPromptBuilder followUpPromptBuilder,
             AiResponseParser responseParser,
             ObjectMapper objectMapper,
             @Value("${claude.api-key}") String apiKey,
@@ -70,7 +65,6 @@ public class ClaudeApiClient {
                 .requestFactory(ClientHttpRequestFactoryBuilder.detect().build(settings))
                 .build();
         this.questionPromptBuilder = questionPromptBuilder;
-        this.followUpPromptBuilder = followUpPromptBuilder;
         this.responseParser = responseParser;
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
@@ -185,21 +179,6 @@ public class ClaudeApiClient {
         return wrapper.questions();
     }
 
-    @RateLimiter(name = "claude-api")
-    @Retryable(
-            retryFor = {RetryableApiException.class, RestClientException.class},
-            noRetryFor = {BusinessException.class},
-            maxAttempts = 4,
-            backoff = @Backoff(delay = 1000, multiplier = 2.0, random = true)
-    )
-    public GeneratedFollowUp generateFollowUpQuestion(FollowUpGenerationRequest request) {
-        String systemPrompt = followUpPromptBuilder.buildSystemPrompt(request);
-        String userPrompt = followUpPromptBuilder.buildUserPrompt(request);
-
-        String text = callClaudeApiWithModel(FOLLOW_UP_MODEL, systemPrompt, userPrompt, MAX_TOKENS_FOLLOW_UP, TEMPERATURE_FOLLOW_UP);
-        return responseParser.parseJsonResponse(text, GeneratedFollowUp.class);
-    }
-
     @Recover
     public ChatResponse recoverChat(Exception e, ChatRequest req) {
         log.error("[Claude API] chat 재시도 최종 실패: callType={}", req.callType(), e);
@@ -212,11 +191,6 @@ public class ClaudeApiClient {
         throw new BusinessException(AiErrorCode.TIMEOUT);
     }
 
-    @Recover
-    public GeneratedFollowUp recoverGenerateFollowUpQuestion(Exception e, FollowUpGenerationRequest request) {
-        log.error("[Claude API] generateFollowUpQuestion 재시도 최종 실패", e);
-        throw new BusinessException(AiErrorCode.TIMEOUT);
-    }
 
     private String buildJsonSchemaInstruction(JsonSchemaSpec spec) {
         try {

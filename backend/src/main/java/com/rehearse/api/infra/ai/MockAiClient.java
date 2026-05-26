@@ -1,6 +1,5 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.ChatRequest;
 import com.rehearse.api.infra.ai.dto.ChatResponse;
@@ -14,10 +13,8 @@ import org.springframework.stereotype.Component;
 @ConditionalOnMissingBean(ResilientAiClient.class)
 public class MockAiClient extends AbstractAiClient {
 
-    public MockAiClient(
-            QuestionGenerationAdapter questionAdapter,
-            FollowUpGenerationAdapter followUpAdapter) {
-        super(questionAdapter, followUpAdapter, null);
+    public MockAiClient(QuestionGenerationAdapter questionAdapter) {
+        super(questionAdapter);
     }
 
     @PostConstruct
@@ -31,7 +28,6 @@ public class MockAiClient extends AbstractAiClient {
 
         String content = switch (request.callType()) {
             case "generate_questions" -> mockQuestionsJson();
-            case "generate_followup" -> mockFollowUpJson();
             default -> "[Mock] " + request.callType() + " response";
         };
         return new ChatResponse(
@@ -53,12 +49,6 @@ public class MockAiClient extends AbstractAiClient {
                   {"content": "[Mock] 동시성 문제를 해결하기 위한 방법들을 설명해주세요.", "category": "운영체제", "order": 4, "evaluation_criteria": "락, 세마포어, CAS 등 동시성 제어 이해", "question_category": "CS", "best_answer": "뮤텍스, 세마포어, CAS 기반 락프리 알고리즘이 있습니다."},
                   {"content": "[Mock] 최근 진행한 프로젝트에서 가장 어려웠던 기술적 문제와 해결 과정을 설명해주세요.", "category": "경험", "order": 5, "evaluation_criteria": "문제 해결 과정과 학습 능력", "question_category": "RESUME", "best_answer": "STAR 기법으로 구조화하여 답변하세요."}
                 ]}
-                """;
-    }
-
-    private String mockFollowUpJson() {
-        return """
-                {"question": "[Mock] 방금 말씀하신 내용에서 성능 최적화를 위해 구체적으로 어떤 접근을 하셨나요?", "reason": "답변의 기술적 깊이를 확인하기 위함", "type": "DEEP_DIVE", "best_answer": "[Mock] 성능 최적화를 위해 캐싱, 쿼리 최적화, 비동기 처리 등을 설명할 수 있어야 합니다."}
                 """;
     }
 }
