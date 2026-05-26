@@ -48,7 +48,7 @@ public class FollowUpService {
         String answerText = analysis.transcript();
 
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
-                id, context, analysis, context.currentMainQuestionId());
+                id, context, analysis, context.answeredQuestionId());
 
         if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
             log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
