@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -40,6 +41,7 @@ public class SessionFeedbackService {
     private final MeterRegistry meterRegistry;
     private final AiCallMetrics aiCallMetrics;
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void synthesizePreliminary(Long interviewId) {
         if (sessionFeedbackRepository.findByInterviewId(interviewId).isPresent()) {
             log.debug("SessionFeedback 이미 존재 — skip (idempotent): interviewId={}", interviewId);
@@ -50,6 +52,7 @@ public class SessionFeedbackService {
         persistenceService.persistPreliminary(interviewId, payload, input.coverage());
     }
 
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void enrichDelivery(Long interviewId, String deliveryJson, String visionJson, String nonverbalAggregateJson) {
         if (deliveryJson == null && visionJson == null && nonverbalAggregateJson == null) {
             markCompleteDueToTimeout(interviewId);
@@ -62,6 +65,7 @@ public class SessionFeedbackService {
 
     // Lambda 데이터 없이 DB의 nonverbal score만으로 enrichment를 수행한다.
     // DeliveryEnrichmentRequestedEvent 핸들러에서 호출 — null-all TIMEOUT 가드를 우회해야 하기 때문에 분리.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void enrichDeliveryFromScores(Long interviewId) {
         enrichDeliveryInternal(interviewId, null, null, null);
     }
