@@ -28,13 +28,4 @@ class GeneratedFollowUpTest {
                 true, "step_b_skip", null, null, null, null, null, null, null);
         assertThat(fu.isSkipped()).isTrue();
     }
-
-    @Test
-    void with_answer_text_returns_copy_with_new_text() {
-        GeneratedFollowUp original = new GeneratedFollowUp(
-                false, null, "Q?", "tts", "reason", "DEEP_DIVE", "best", "old", 0);
-        GeneratedFollowUp updated = original.withAnswerText("new");
-        assertThat(updated.answerText()).isEqualTo("new");
-        assertThat(original.answerText()).isEqualTo("old");
-    }
 }

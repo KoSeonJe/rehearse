@@ -83,10 +83,10 @@ class RubricScoringEventListenerTest {
         void persists_score_for_opener_answer() {
             AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                     10L, 1L, 100L, 50L,
-                    "opener 답변 본문", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
+                    AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
             Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(2, "ok", "quote"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, "L2");
-            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview), eq("opener 답변 본문"),
+            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview),
                     any(AnswerAnalysis.class))).willReturn(result);
 
             listener.on(event);
@@ -100,10 +100,10 @@ class RubricScoringEventListenerTest {
         void persists_score_for_regular_answer() {
             AnswerAnalysis analysis = AnswerAnalysis.empty();
             AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
-                    10L, 1L, 100L, 50L, "일반 답변", analysis, InterviewLevel.JUNIOR);
+                    10L, 1L, 100L, 50L, analysis, InterviewLevel.JUNIOR);
             Map<String, DimensionScore> dims = Map.of("clarity", DimensionScore.of(3, "good", "quote2"));
             RubricScoringResult result = new RubricScoringResult("resume-v1", List.of("clarity"), dims, null);
-            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview), eq("일반 답변"),
+            given(rubricScorer.score(eq(question), eq(questionSet), eq(interview),
                     eq(analysis))).willReturn(result);
 
             listener.on(event);
@@ -117,8 +117,8 @@ class RubricScoringEventListenerTest {
     @DisplayName("RubricScore empty 이면 saveRubric 호출되지 않는다")
     void skips_save_when_scoring_result_empty() {
         AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
-                10L, 1L, 100L, 50L, "답변", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
-        given(rubricScorer.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
+                10L, 1L, 100L, 50L, AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
+        given(rubricScorer.score(any(), any(), any(), any(AnswerAnalysis.class)))
                 .willReturn(RubricScoringResult.empty("resume-v1"));
 
         listener.on(event);
@@ -131,8 +131,8 @@ class RubricScoringEventListenerTest {
     @DisplayName("내부 예외는 삼키고 rubric_failure 카운터 증가")
     void swallows_exception_and_increments_failure_metric() {
         AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
-                10L, 1L, 100L, 50L, "답변", AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
-        given(rubricScorer.score(any(), any(), any(), anyString(), any(AnswerAnalysis.class)))
+                10L, 1L, 100L, 50L, AnswerAnalysis.empty(), InterviewLevel.JUNIOR);
+        given(rubricScorer.score(any(), any(), any(), any(AnswerAnalysis.class)))
                 .willThrow(new RuntimeException("AI 호출 폭발"));
 
         listener.on(event);

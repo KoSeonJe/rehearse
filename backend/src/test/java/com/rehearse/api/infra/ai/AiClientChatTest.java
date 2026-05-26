@@ -1,6 +1,5 @@
 package com.rehearse.api.infra.ai;
 
-import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -38,9 +37,7 @@ class AiClientChatTest {
 
     @BeforeEach
     void setUp() {
-        mockAiClient = new MockAiClient(
-                mock(QuestionGenerationAdapter.class),
-                mock(FollowUpGenerationAdapter.class));
+        mockAiClient = new MockAiClient(mock(QuestionGenerationAdapter.class));
         basicMessages = List.of(
                 ChatMessage.of(ChatMessage.Role.SYSTEM, "당신은 면접관입니다."),
                 ChatMessage.of(ChatMessage.Role.USER, "Java GC 에 대해 설명해주세요.")

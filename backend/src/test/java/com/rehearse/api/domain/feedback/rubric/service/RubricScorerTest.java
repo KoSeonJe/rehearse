@@ -36,7 +36,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RubricScorer - 무응답 가드 (3자 이하 답변은 LLM 호출 없이 NOT_EVALUABLE 반환)")
+@DisplayName("RubricScorer - transcript 단일 소스 채점 (3자 이하 transcript 는 LLM 호출 없이 NOT_EVALUABLE)")
 class RubricScorerTest {
 
     private static final String RUBRIC_ID = "resume-v1";
@@ -83,44 +83,47 @@ class RubricScorerTest {
     class BlankAnswerGuard {
 
         @Test
-        @DisplayName("userAnswer 가 null 이면 전 차원 NOT_EVALUABLE 반환 + LLM 미호출")
-        void should_return_notEvaluable_when_userAnswer_null() {
+        @DisplayName("transcript 가 빈 문자열이면 전 차원 NOT_EVALUABLE 반환 + LLM 미호출")
+        void should_return_notEvaluable_when_transcript_empty() {
             givenRubric(List.of("technical_depth", "conceptual_accuracy"));
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, null, AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview,
+                    analysisWithTranscript(""));
 
             assertAllNotEvaluable(result, "technical_depth", "conceptual_accuracy");
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
         }
 
         @Test
-        @DisplayName("userAnswer 가 빈 문자열이면 NOT_EVALUABLE 반환")
-        void should_return_notEvaluable_when_userAnswer_empty() {
+        @DisplayName("AnswerAnalysis.empty() (transcript 없음) 이면 NOT_EVALUABLE 반환")
+        void should_return_notEvaluable_when_analysisEmpty() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "", AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview, AnswerAnalysis.empty());
 
             assertAllNotEvaluable(result, "technical_depth");
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
         }
 
         @Test
-        @DisplayName("userAnswer strip 후 3자 이하이면 NOT_EVALUABLE 반환 (경계 - 3자)")
-        void should_return_notEvaluable_when_userAnswer_length_exactly_3() {
+        @DisplayName("transcript strip 후 3자 이하이면 NOT_EVALUABLE 반환 (경계 - 3자)")
+        void should_return_notEvaluable_when_transcript_length_exactly_3() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "잘몰라", AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview,
+                    analysisWithTranscript("잘몰라"));
 
             assertAllNotEvaluable(result, "technical_depth");
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
         }
 
         @Test
-        @DisplayName("공백만 있는 답변은 strip 후 0자로 NOT_EVALUABLE 반환")
-        void should_return_notEvaluable_when_userAnswer_whitespace_only() {
+        @DisplayName("공백만 있는 transcript 는 strip 후 0자로 NOT_EVALUABLE 반환")
+        void should_return_notEvaluable_when_transcript_whitespace_only() {
             givenRubric(List.of("technical_depth"));
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "   \n\t  ", AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview,
+                    analysisWithTranscript("   \n\t  "));
 
             assertAllNotEvaluable(result, "technical_depth");
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
@@ -128,98 +131,34 @@ class RubricScorerTest {
     }
 
     @Nested
-    @DisplayName("transcript fallback (FE 텍스트 부실 시 analysis.transcript 로 복구)")
-    class TranscriptFallback {
-
-        @Test
-        @DisplayName("FE 텍스트 빈 문자열 + transcript 정상 → 정상 채점 (LLM 호출)")
-        void should_score_when_userAnswerEmpty_butTranscriptPresent() {
-            givenRubric(List.of("technical_depth"));
-            RubricScoringResult adapterResult =
-                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
-            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
-
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "",
-                    analysisWithTranscript("이것은 충분히 긴 음성 전사 텍스트입니다."));
-
-            assertThat(result).isSameAs(adapterResult);
-            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("FE 텍스트 + transcript 모두 비면 전 차원 NOT_EVALUABLE")
-        void should_notEvaluable_when_bothEmpty() {
-            givenRubric(List.of("technical_depth"));
-
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "",
-                    analysisWithTranscript(""));
-
-            assertAllNotEvaluable(result, "technical_depth");
-            verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("FE 텍스트 정상 + transcript 빈 문자열 → userAnswer 우선, 정상 채점")
-        void should_score_when_userAnswerPresent_butTranscriptEmpty() {
-            givenRubric(List.of("technical_depth"));
-            RubricScoringResult adapterResult =
-                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
-            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
-
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "정상적인 답변 텍스트",
-                    analysisWithTranscript(""));
-
-            assertThat(result).isSameAs(adapterResult);
-            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("FE 텍스트 3자 이하 + transcript 정상 → transcript fallback, 정상 채점")
-        void should_score_when_userAnswerShort_butTranscriptPresent() {
-            givenRubric(List.of("technical_depth"));
-            RubricScoringResult adapterResult =
-                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
-            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
-
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "잘",
-                    analysisWithTranscript("이것은 충분히 긴 음성 전사 텍스트입니다."));
-
-            assertThat(result).isSameAs(adapterResult);
-            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        @Test
-        @DisplayName("회귀 - FE 텍스트 3자 이하 + AnswerAnalysis.empty() → 전 차원 NOT_EVALUABLE")
-        void should_notEvaluable_when_userAnswerShort_andAnalysisEmpty() {
-            givenRubric(List.of("technical_depth"));
-
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "안녕",
-                    AnswerAnalysis.empty());
-
-            assertAllNotEvaluable(result, "technical_depth");
-            verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
-        }
-
-        private AnswerAnalysis analysisWithTranscript(String transcript) {
-            return new AnswerAnalysis(transcript, List.of(), Map.of(), null, List.of(),
-                    RecommendedNextAction.CLARIFICATION);
-        }
-    }
-
-    @Nested
-    @DisplayName("정상 채점 경로")
+    @DisplayName("정상 채점 경로 (transcript 충분 시 LLM 어댑터 호출)")
     class NormalScoring {
 
         @Test
-        @DisplayName("userAnswer 가 4자 이상이면 LLM 어댑터 호출 (경계 - 4자)")
-        void should_call_LLM_when_userAnswer_length_exactly_4() {
+        @DisplayName("transcript 가 4자 이상이면 LLM 어댑터 호출 (경계 - 4자)")
+        void should_call_LLM_when_transcript_length_exactly_4() {
             givenRubric(List.of("technical_depth"));
             RubricScoringResult adapterResult =
                     new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
             given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "잘 모르겠습니다",
-                    AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview,
+                    analysisWithTranscript("잘 모르겠습니다"));
+
+            assertThat(result).isSameAs(adapterResult);
+            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("transcript 가 충분히 길면 정상 채점")
+        void should_score_when_transcript_present() {
+            givenRubric(List.of("technical_depth"));
+            RubricScoringResult adapterResult =
+                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
+            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview,
+                    analysisWithTranscript("이것은 충분히 긴 음성 전사 텍스트입니다."));
 
             assertThat(result).isSameAs(adapterResult);
             verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
@@ -235,11 +174,16 @@ class RubricScorerTest {
         void should_return_empty_when_no_dimensions_to_score() {
             givenRubric(List.of());
 
-            RubricScoringResult result = scorer.score(question, questionSet, interview, "", AnswerAnalysis.empty());
+            RubricScoringResult result = scorer.score(question, questionSet, interview, AnswerAnalysis.empty());
 
             assertThat(result.isEmpty()).isTrue();
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
         }
+    }
+
+    private AnswerAnalysis analysisWithTranscript(String transcript) {
+        return new AnswerAnalysis(transcript, List.of(), Map.of(), null, List.of(),
+                RecommendedNextAction.CLARIFICATION);
     }
 
     private void givenRubric(List<String> dimensions) {

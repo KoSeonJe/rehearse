@@ -85,25 +85,25 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_OPENER);
         given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
                 fixture.interviewId, fixture.userId,
-                request(fixture.questionSetId, "원문 답변"),
+                request(fixture.questionSetId),
                 audio());
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("resume_opener_skip");
         verify(audioTurnAnalyzer, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionWriter, never()).write(any(), any(), any(), any());
+        verify(followUpQuestionWriter, never()).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
             AnswerAnalysisCompletedEvent event = eventCollector.events().get(0);
             assertThat(event.questionId()).isEqualTo(fixture.questionId);
-            assertThat(event.userAnswer()).isEqualTo("원문 답변");
+            assertThat(event.analysis()).isEqualTo(SAMPLE_ANALYSIS);
 
             List<QuestionScore> scores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(fixture.interviewId);
             assertThat(scores).hasSize(1);
@@ -121,22 +121,22 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(SAMPLE_ANALYSIS);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionWriter.write(any(), any(), any(), any()))
+        given(followUpQuestionWriter.write(any(), any(), any()))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
 
         FollowUpResponse response = followUpService.generateFollowUp(
                 fixture.interviewId, fixture.userId,
-                request(fixture.questionSetId, "정상 답변"),
+                request(fixture.questionSetId),
                 audio());
 
         assertThat(response.isSkip()).isFalse();
         assertThat(response.getQuestion()).isEqualTo("심화 질문");
         verify(audioTurnAnalyzer, times(1))
                 .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionWriter, times(1)).write(any(), any(), any(), any());
+        verify(followUpQuestionWriter, times(1)).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -158,17 +158,17 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
                 "", List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
         given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(skipAnalysis);
-        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))
+        given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
 
         FollowUpResponse response = followUpService.generateFollowUp(
                 fixture.interviewId, fixture.userId,
-                request(fixture.questionSetId, "부족 답변"),
+                request(fixture.questionSetId),
                 audio());
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
-        verify(followUpQuestionWriter, never()).write(any(), any(), any(), any());
+        verify(followUpQuestionWriter, never()).write(any(), any(), any());
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -181,11 +181,10 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(finalQuestions).hasSize(1);
     }
 
-    private FollowUpRequest request(Long questionSetId, String answerText) {
+    private FollowUpRequest request(Long questionSetId) {
         FollowUpRequest req = new FollowUpRequest();
         org.springframework.test.util.ReflectionTestUtils.setField(req, "questionSetId", questionSetId);
         org.springframework.test.util.ReflectionTestUtils.setField(req, "questionContent", "메인 질문 본문");
-        org.springframework.test.util.ReflectionTestUtils.setField(req, "answerText", answerText);
         return req;
     }
 

@@ -1,7 +1,6 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.adapter.FollowUpGenerationAdapter;
 import com.rehearse.api.infra.ai.adapter.QuestionGenerationAdapter;
 import com.rehearse.api.infra.ai.dto.CachePolicy;
 import com.rehearse.api.infra.ai.dto.ChatMessage;
@@ -53,9 +52,6 @@ class ResilientAiClientFallbackTest {
     @Mock
     private ClaudeApiClient claudeApiClient;
 
-    @Mock
-    private SttService sttService;
-
     private ResilientAiClient resilientAiClient;
 
     private ChatRequest baseRequest;
@@ -65,8 +61,8 @@ class ResilientAiClientFallbackTest {
         SimpleMeterRegistry reg = new SimpleMeterRegistry();
         AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
         resilientAiClient = new ResilientAiClient(
-                openAiClient, claudeApiClient, sttService, noopMetrics,
-                mock(QuestionGenerationAdapter.class), mock(FollowUpGenerationAdapter.class));
+                openAiClient, claudeApiClient, noopMetrics,
+                mock(QuestionGenerationAdapter.class));
 
         baseRequest = ChatRequest.builder()
                 .messages(List.of(
@@ -240,8 +236,8 @@ class ResilientAiClientFallbackTest {
             SimpleMeterRegistry reg = new SimpleMeterRegistry();
             AiCallMetrics noopMetrics = new AiCallMetrics(reg, new ContextEngineeringMetrics(reg));
             ResilientAiClient clientWithoutOpenAi = new ResilientAiClient(
-                    null, claudeApiClient, sttService, noopMetrics,
-                    mock(QuestionGenerationAdapter.class), mock(FollowUpGenerationAdapter.class));
+                    null, claudeApiClient, noopMetrics,
+                    mock(QuestionGenerationAdapter.class));
 
             assertThatThrownBy(() -> clientWithoutOpenAi.chatWithAudio(baseRequest, audio))
                     .isInstanceOf(AudioChatFallbackRequiredException.class);

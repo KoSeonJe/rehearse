@@ -72,13 +72,10 @@ class ClaudeApiClientJsonSchemaTest {
 
         com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder qBuilder =
                 org.mockito.Mockito.mock(com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder.class);
-        com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder fBuilder =
-                org.mockito.Mockito.mock(com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder.class);
 
         claudeApiClient = new ClaudeApiClient(
                 RestClient.builder(),
                 qBuilder,
-                fBuilder,
                 parser,
                 objectMapper,
                 "test-api-key",

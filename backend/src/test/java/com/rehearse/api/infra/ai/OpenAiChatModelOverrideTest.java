@@ -62,16 +62,13 @@ class OpenAiChatModelOverrideTest {
                 objectMapper,
                 org.mockito.Mockito.mock(com.rehearse.api.infra.ai.metrics.AiCallMetrics.class));
 
-        // PromptBuilders: 이 테스트에서는 직접 ChatRequest.chat() 을 호출하므로 mock 불필요
+        // PromptBuilder: 이 테스트에서는 직접 ChatRequest.chat() 을 호출하므로 mock 불필요
         com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder qBuilder =
                 org.mockito.Mockito.mock(com.rehearse.api.infra.ai.prompt.QuestionGenerationPromptBuilder.class);
-        com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder fBuilder =
-                org.mockito.Mockito.mock(com.rehearse.api.infra.ai.prompt.FollowUpPromptBuilder.class);
 
         openAiClient = new OpenAiClient(
                 RestClient.builder(),
                 qBuilder,
-                fBuilder,
                 parser,
                 new com.rehearse.api.infra.ai.config.OpenAiCommonProperties("test-api-key"),
                 "gpt-4o-mini",  // 기본 모델

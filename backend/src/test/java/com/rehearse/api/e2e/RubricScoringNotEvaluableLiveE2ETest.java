@@ -65,8 +65,8 @@ class RubricScoringNotEvaluableLiveE2ETest extends ServiceIntegrationSupport {
     private QuestionRepository questionRepository;
 
     @Test
-    @DisplayName("(1) 긴 음성 답변 + FE 송신 텍스트 빈 문자열 → 차원별 점수 정상 산출 (NOT_EVALUABLE 0건)")
-    void scenario1_longAudio_emptyUserAnswer_scoresAllDimensions() {
+    @DisplayName("(1) 긴 음성 답변 transcript 확보 → 차원별 점수 정상 산출 (NOT_EVALUABLE 0건)")
+    void scenario1_longAudio_transcriptPresent_scoresAllDimensions() {
         Fixture fixture = persistFixture();
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
                 fixture.interviewId, loadAudio(LONG_AUDIO), MAIN_QUESTION, ReferenceType.MODEL_ANSWER, false);
@@ -75,34 +75,33 @@ class RubricScoringNotEvaluableLiveE2ETest extends ServiceIntegrationSupport {
                 .as("음성 전사 텍스트가 임계(3자) 초과로 확보됨").isGreaterThan(3);
 
         RubricScoringResult result = rubricScorer.score(
-                fixture.question, fixture.questionSet, fixture.interview, "", analysis);
+                fixture.question, fixture.questionSet, fixture.interview, analysis);
 
         assertNoNotEvaluable(result);
     }
 
     @Test
     @DisplayName("(2) 긴 음성 답변 + 정상 LLM 응답 → 차원별 점수 정상 산출")
-    void scenario2_longAudio_normalUserAnswer_scoresAllDimensions() {
+    void scenario2_longAudio_normalTranscript_scoresAllDimensions() {
         Fixture fixture = persistFixture();
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
                 fixture.interviewId, loadAudio(LONG_AUDIO), MAIN_QUESTION, ReferenceType.MODEL_ANSWER, false);
 
         RubricScoringResult result = rubricScorer.score(
-                fixture.question, fixture.questionSet, fixture.interview,
-                "JVM 은 힙을 Young 과 Old 로 나누어 관리합니다.", analysis);
+                fixture.question, fixture.questionSet, fixture.interview, analysis);
 
         assertNoNotEvaluable(result);
     }
 
     @Test
-    @DisplayName("(3) 무음 + 텍스트 임계 미만 → 전 차원 NOT_EVALUABLE 정상 적용")
-    void scenario3_silentAudio_shortUserAnswer_marksNotEvaluable() {
+    @DisplayName("(3) 무음 → transcript 임계 미만 → 전 차원 NOT_EVALUABLE 정상 적용")
+    void scenario3_silentAudio_blankTranscript_marksNotEvaluable() {
         Fixture fixture = persistFixture();
         AnswerAnalysis analysis = audioTurnAnalyzer.analyze(
                 fixture.interviewId, loadAudio(SILENT_AUDIO), MAIN_QUESTION, ReferenceType.MODEL_ANSWER, false);
 
         RubricScoringResult result = rubricScorer.score(
-                fixture.question, fixture.questionSet, fixture.interview, "잘", analysis);
+                fixture.question, fixture.questionSet, fixture.interview, analysis);
 
         assertAllNotEvaluable(result);
     }
@@ -115,8 +114,7 @@ class RubricScoringNotEvaluableLiveE2ETest extends ServiceIntegrationSupport {
                 fixture.interviewId, loadAudio(LONG_AUDIO), MAIN_QUESTION, ReferenceType.MODEL_ANSWER, false);
 
         RubricScoringResult result = rubricScorer.score(
-                fixture.question, fixture.questionSet, fixture.interview,
-                "JVM 은 힙을 Young 과 Old 로 나누어 관리합니다.", analysis);
+                fixture.question, fixture.questionSet, fixture.interview, analysis);
 
         long notEvaluable = result.scoredDimensions().stream()
                 .filter(dim -> result.dimensionScores().get(dim).status() == DimensionStatus.NOT_EVALUABLE)
@@ -132,8 +130,7 @@ class RubricScoringNotEvaluableLiveE2ETest extends ServiceIntegrationSupport {
                 fixture.interviewId, loadAudio(LONG_AUDIO), MAIN_QUESTION, ReferenceType.MODEL_ANSWER, false);
 
         RubricScoringResult result = rubricScorer.score(
-                fixture.question, fixture.questionSet, fixture.interview,
-                "JVM 은 힙을 Young 과 Old 로 나누어 관리합니다.", analysis);
+                fixture.question, fixture.questionSet, fixture.interview, analysis);
 
         assertThat(result.scoredDimensions()).as("validator 차단 없이 차원 채점 완료").isNotEmpty();
     }
