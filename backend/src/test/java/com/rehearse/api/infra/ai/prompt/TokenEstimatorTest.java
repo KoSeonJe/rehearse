@@ -1,4 +1,4 @@
-package com.rehearse.api.infra.ai.context.token;
+package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.infra.ai.dto.ChatMessage;
 import org.junit.jupiter.api.BeforeEach;

@@ -1,7 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

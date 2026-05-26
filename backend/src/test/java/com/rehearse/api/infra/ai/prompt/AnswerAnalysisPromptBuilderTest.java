@@ -1,7 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.infra.ai.context.token.TokenEstimator;
 import com.rehearse.api.infra.ai.prompt.AnswerAnalysisPromptBuilder.PromptPair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
