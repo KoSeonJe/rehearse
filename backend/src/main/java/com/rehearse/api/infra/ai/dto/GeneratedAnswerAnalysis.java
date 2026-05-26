@@ -12,6 +12,7 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GeneratedAnswerAnalysis(
+        @JsonProperty("transcript") String transcript,
         @JsonProperty("claims") List<Claim> claims,
         @JsonProperty("dimension_gaps") Map<String, Integer> dimensionGaps,
         @JsonProperty("weakest_dimension") String weakestDimension,
@@ -31,7 +32,9 @@ public record GeneratedAnswerAnalysis(
     }
 
     public AnswerAnalysis toDomain() {
-        return new AnswerAnalysis(claims, dimensionGaps, weakestDimension, unstatedAssumptions, recommendedNextAction);
+        return new AnswerAnalysis(
+                transcript != null ? transcript : "",
+                claims, dimensionGaps, weakestDimension, unstatedAssumptions, recommendedNextAction);
     }
 
     private static Map<String, Integer> copyNonNull(Map<String, Integer> source) {
