@@ -102,18 +102,6 @@ export const useAnswerFlow = ({
 
   const hasQuestionSets = !!interview?.questionSets?.length
 
-  // 현재 답변 텍스트 수집 — 후속질문 중엔 offset 이후 transcript만 반환
-  const getCurrentAnswerText = useCallback(() => {
-    const state = useInterviewStore.getState()
-    const currentAnswer = state.answers[state.currentQuestionIndex]
-    const offset = state.currentFollowUp !== null ? state.followUpTranscriptOffset : 0
-    return currentAnswer?.transcripts
-      .filter((t) => t.isFinal)
-      .slice(offset)
-      .map((t) => t.text)
-      .join(' ') ?? ''
-  }, [])
-
   // 질문세트 완료 시 업로드 파이프라인 (백그라운드)
   // 반환값: recorder.restart() 직후 타임스탬프 (세트 전환 시 타임라인 기준점)
   //
@@ -282,9 +270,6 @@ export const useAnswerFlow = ({
     // 후속질문용 오디오 캡처 (await)
     const audioBlob = await audioCapture.stop()
 
-    // 현재 답변 텍스트 수집
-    const answerText = getCurrentAnswerText()
-
     // 질문세트가 있으면 답변 타임스탬프 기록
     if (hasQuestionSets) {
       const currentSetForTs = state.questionSets[state.currentQuestionSetIndex]
@@ -324,7 +309,7 @@ export const useAnswerFlow = ({
       ? updatedState.questionSets[updatedState.currentQuestionSetIndex]
       : undefined
 
-    const hasAnswer = !!(answerText.trim() || (audioBlob && audioBlob.size > 0))
+    const hasAnswer = !!(audioBlob && audioBlob.size > 0)
 
     // 시간 만료 후 첫 답변 완료 시점 → BE 에 종료 신호 강제.
     // 빈 답변 / followUp 소진 케이스라도 terminate=true 동봉을 위해 BE 호출 필수.
@@ -347,7 +332,6 @@ export const useAnswerFlow = ({
           data: {
             questionSetId: currentSet?.id ?? 0,
             questionContent: state.questions[state.currentQuestionIndex].content,
-            answerText,
             previousExchanges,
             terminate: shouldTerminate,
           },
@@ -357,7 +341,7 @@ export const useAnswerFlow = ({
 
         // API 응답에서 Whisper STT 결과를 받아 히스토리에 저장
         if (wasFollowUp) {
-          completeFollowUpRound(res.data.answerText || answerText)
+          completeFollowUpRound(res.data.answerText ?? '')
         }
 
         if (res.data.skip) {
@@ -396,7 +380,7 @@ export const useAnswerFlow = ({
         console.error('[후속질문] 생성 실패:', err)
         // 실패 시에도 히스토리 기록 (빈 텍스트라도)
         if (wasFollowUp) {
-          completeFollowUpRound(answerText)
+          completeFollowUpRound('')
         }
         setFollowUpLoading(false)
         resetFollowUpState()
@@ -405,7 +389,7 @@ export const useAnswerFlow = ({
     } else {
       // 후속질문 라운드 종료 → 마지막 라운드 히스토리 저장
       if (wasFollowUp) {
-        completeFollowUpRound(answerText)
+        completeFollowUpRound('')
       }
       resetFollowUpState()
       transitionToNext(isLastQuestion)
@@ -413,7 +397,7 @@ export const useAnswerFlow = ({
   }, [
     stopRecording, audioCapture, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
-    getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
+    completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
     addQuestionToSet, recorder, setQuestionSetRecordingStartTime,

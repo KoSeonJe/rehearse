@@ -64,7 +64,12 @@ const buildQuestionSet = (id: number): QuestionSetData => ({
   ],
 })
 
-const buildParams = () => {
+// 빈 Blob(size=0)=답변 없음, 내용 있는 Blob(size>0)=답변 있음.
+// hasAnswer 판정이 audioBlob.size 기준으로 단일화됨.
+const EMPTY_AUDIO_BLOB = new Blob([], { type: 'audio/webm' })
+const buildAnswerAudioBlob = () => new Blob(['voice'], { type: 'audio/webm' })
+
+const buildParams = (audioBlob: Blob = EMPTY_AUDIO_BLOB) => {
   const greetingPhaseRef: MutableRefObject<boolean> = { current: false }
   const pendingTtsActionRef: MutableRefObject<(() => void) | null> = { current: null }
 
@@ -86,7 +91,7 @@ const buildParams = () => {
     },
     audioCapture: {
       start: vi.fn(),
-      stop: vi.fn().mockResolvedValue(new Blob([], { type: 'audio/webm' })),
+      stop: vi.fn().mockResolvedValue(audioBlob),
     },
     tts: {
       speak: vi.fn(),
@@ -136,35 +141,24 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
 
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1)
     const payload = mutateAsyncMock.mock.calls[0][0] as {
-      data: { terminate?: boolean; answerText?: string }
+      data: Record<string, unknown>
     }
     expect(payload.data.terminate).toBe(true)
-    expect(payload.data.answerText).toBe('')
+    // answerText 필드는 더 이상 송신하지 않는다 (BE transcript 단일 소스).
+    expect(payload.data).not.toHaveProperty('answerText')
   })
 
   it('직전 응답이 followUpExhausted=true 였어도 다음 답변에 follow-up API 가 다시 호출된다', async () => {
     // 회귀 가드: FE 가 followUpExhausted 신호로 BE 호출 게이트를 막던 결함 해결.
     // 마지막 follow-up 답변이 BE 에 미도달하는 문제를 막기 위해 게이트를 제거했다.
     seedRecordingState(false)
-    // 답변 텍스트 주입.
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
 
     mutateAsyncMock.mockResolvedValue(
       buildResponse({ skip: true, followUpExhausted: true }),
     )
 
-    const params = buildParams()
+    // 음성 답변 존재 → hasAnswer=true.
+    const params = buildParams(buildAnswerAudioBlob())
     const { result } = renderHook(() => useAnswerFlow(params))
 
     await act(async () => {
@@ -174,21 +168,8 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1)
   })
 
-  it('정상 답변 (isTimeOverdue=false && hasAnswer=true) → terminate:false', async () => {
+  it('정상 답변 (isTimeOverdue=false && hasAnswer=true) → terminate:false, answerText 미송신', async () => {
     seedRecordingState(false)
-    // 답변 텍스트 주입
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '정상 답변입니다', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
 
     mutateAsyncMock.mockResolvedValue(
       buildResponse({
@@ -200,7 +181,8 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
       }),
     )
 
-    const params = buildParams()
+    // 음성 답변 존재 → hasAnswer=true.
+    const params = buildParams(buildAnswerAudioBlob())
     const { result } = renderHook(() => useAnswerFlow(params))
 
     await act(async () => {
@@ -209,10 +191,13 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
 
     expect(mutateAsyncMock).toHaveBeenCalledTimes(1)
     const payload = mutateAsyncMock.mock.calls[0][0] as {
-      data: { terminate?: boolean; answerText?: string }
+      data: Record<string, unknown>
+      audioBlob?: Blob
     }
     expect(payload.data.terminate).toBe(false)
-    expect(payload.data.answerText).toBe('정상 답변입니다')
+    expect(payload.data).not.toHaveProperty('answerText')
+    // 답변 텍스트 신뢰 소스는 audioBlob → BE STT/transcript.
+    expect(payload.audioBlob).toBeInstanceOf(Blob)
   })
 
   it('isTimeOverdue=false && hasAnswer=false → BE 호출 안 함', async () => {
@@ -246,25 +231,13 @@ describe('useAnswerFlow — 시간 만료 / followUp 소진 시 BE 호출 강제
     useInterviewStore.getState().setInterview(99, [buildQuestion(0), buildQuestion(1)])
     useInterviewStore.getState().setQuestionSets([multiMainSet])
     useInterviewStore.setState({ phase: 'recording' })
-    // 답변 텍스트 주입 → BE 호출 트리거.
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
 
     mutateAsyncMock.mockResolvedValue(
       buildResponse({ skip: true, followUpExhausted: false }),
     )
 
-    const params = buildParams()
+    // 음성 답변 존재 → BE 호출 트리거.
+    const params = buildParams(buildAnswerAudioBlob())
     const { result } = renderHook(() => useAnswerFlow(params))
 
     await act(async () => {
@@ -322,22 +295,11 @@ describe('useAnswerFlow — 트랙별 follow-up questionType 정합', () => {
     useInterviewStore.getState().setInterview(99, [buildQuestion(0)])
     useInterviewStore.getState().setQuestionSets([qSet])
     useInterviewStore.setState({ phase: 'recording' })
-    useInterviewStore.setState((s) => ({
-      answers: s.answers.map((a, i) =>
-        i === 0
-          ? {
-              ...a,
-              transcripts: [
-                { questionIndex: 0, text: '답변', startTime: 0, endTime: 100, isFinal: true },
-              ],
-            }
-          : a,
-      ),
-    }))
   }
 
+  // 음성 답변 존재 → hasAnswer=true → BE 호출 트리거.
   const buildParamsForSet = (qSet: QuestionSetData) => ({
-    ...buildParams(),
+    ...buildParams(buildAnswerAudioBlob()),
     interview: {
       id: 99,
       publicId: 'pub-1',

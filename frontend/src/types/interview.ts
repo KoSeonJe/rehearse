@@ -248,7 +248,6 @@ export interface FollowUpExchange {
 export interface FollowUpRequest {
   questionSetId: number
   questionContent: string
-  answerText?: string
   previousExchanges?: Array<{ question: string; answerText: string; followUpType?: FollowUpType }>
   // 사용자 시간 만료 후 답변 완료 시점에 면접 종료 의사 신호 — BE 가 followUpExhausted=true 응답
   terminate?: boolean
@@ -269,19 +268,10 @@ export interface FollowUpResponse {
 
 // 면접 진행 관련 타입
 
-export interface TranscriptSegment {
-  questionIndex: number
-  text: string
-  startTime: number
-  endTime: number
-  isFinal: boolean
-}
-
 export interface QuestionAnswer {
   questionIndex: number
   startTime: number
   endTime: number
-  transcripts: TranscriptSegment[]
 }
 
 // 대시보드 목록/통계 타입

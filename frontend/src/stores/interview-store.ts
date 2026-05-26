@@ -34,7 +34,6 @@ interface InterviewState {
 
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
-  followUpTranscriptOffset: number
   isFollowUpLoading: boolean
 
   questionSetRecordingStartTime: number | null
@@ -108,7 +107,6 @@ const initialState: InterviewState = {
 
   followUpHistory: new Map(),
   currentFollowUp: null,
-  followUpTranscriptOffset: 0,
   isFollowUpLoading: false,
 
   questionSetRecordingStartTime: null,
@@ -128,7 +126,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       questionIndex: index,
       startTime: 0,
       endTime: 0,
-      transcripts: [],
     }))
 
     const startIdx = startQuestionSetIndex ?? 0
@@ -195,16 +192,7 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   completeInterview: () => set({ phase: 'completed' }),
 
-  setCurrentFollowUp: (followUp) => {
-    if (followUp !== null) {
-      const state = get()
-      const currentAnswer = state.answers[state.currentQuestionIndex]
-      const offset = currentAnswer?.transcripts.filter((t) => t.isFinal).length ?? 0
-      set({ currentFollowUp: followUp, followUpTranscriptOffset: offset })
-    } else {
-      set({ currentFollowUp: followUp })
-    }
-  },
+  setCurrentFollowUp: (followUp) => set({ currentFollowUp: followUp }),
 
   completeFollowUpRound: (answerText) => {
     const { currentQuestionIndex, currentFollowUp, followUpHistory } = get()
@@ -229,7 +217,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   resetFollowUpState: () => set({
     currentFollowUp: null,
-    followUpTranscriptOffset: 0,
   }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
@@ -251,7 +238,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         currentQuestionSetIndex: currentQuestionSetIndex + 1,
         followUpHistory: new Map(),
         currentFollowUp: null,
-        followUpTranscriptOffset: 0,
         questionSetRecordingStartTime: null,
       })
     }
