@@ -39,6 +39,9 @@
 
 ## 분석 항목
 
+### transcript (string)
+`<<<USER_ANSWER>>>` 블록 안의 입력 텍스트를 그대로 복사해 넣는다. 가공·요약 금지. 입력이 비어 있으면 빈 문자열 "".
+
 ### claims (객체 배열, 절대 문자열 배열 금지)
 응시자 답변에서 추출한 핵심 주장. 각 항목은 반드시 아래 4개 필드를 가진 **객체**여야 한다.
 답변에서 채굴할 주장이 전혀 없으면 빈 배열 `[]` 반환 (예: "잘 모르겠어요", "패스" 등 무내용 답변).
@@ -75,6 +78,7 @@
 
 ```json
 {
+  "transcript": "...",
   "claims": [{"text":"...", "depth_score":1-5, "evidence_strength":"STRONG|WEAK|ASSUMED", "topic_tag":"..."}],
   "dimension_gaps": {"<dimension_id>": 0-3, "...": 0-3},
   "weakest_dimension": "<dimension_id>|null",
@@ -97,6 +101,7 @@ JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하�
 
 ```json
 {
+  "transcript": "JVM 은 힙을 Young 과 Old 로 나누고, Young 에서 Minor GC 가 발생하며 일정 횟수 살아남으면 Old 로 이동합니다.",
   "claims": [
     {"text":"JVM 힙은 Young/Old 세대로 분리된다", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"},
     {"text":"객체 생존 횟수에 따라 Old 로 승격된다", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"gc"}
@@ -129,6 +134,7 @@ QUESTION_REFERENCE_TYPE: GUIDE
 
 ```json
 {
+  "transcript": "선착순 쿠폰 발급에서 race condition 이 있었습니다. Redis 의 Lua 스크립트로 INCR + 발급 로직을 원자적으로 처리해서 중복 발급을 막았습니다.",
   "claims": [
     {"text":"Redis Lua 스크립트로 INCR+발급 원자적 처리", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"redis"}
   ],
@@ -162,6 +168,7 @@ QUESTION_REFERENCE_TYPE: GUIDE
 
 ```json
 {
+  "transcript": "주문 조회 API p95 가 800ms 였는데 Redis 캐시 도입 후 120ms 로 떨어졌습니다. TTL 5분 Cache-Aside 패턴 사용했고 stale read 허용 트레이드오프를 팀과 논의했습니다.",
   "claims": [
     {"text":"Redis 캐시 도입으로 p95 800→120ms 개선", "depth_score":5, "evidence_strength":"STRONG", "topic_tag":"caching"},
     {"text":"Cache-Aside + TTL 5분 + stale read 허용 정책", "depth_score":4, "evidence_strength":"STRONG", "topic_tag":"caching"}

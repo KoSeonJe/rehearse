@@ -62,6 +62,7 @@ public final class GeneratedAnswerAnalysisSchema {
         dimensionGapsSchema.put("properties", dimensionGapsProps);
 
         Map<String, Object> rootProps = new LinkedHashMap<>();
+        rootProps.put("transcript", Map.of("type", "string"));
         rootProps.put("claims", Map.of("type", "array", "items", claimItem));
         rootProps.put("dimension_gaps", dimensionGapsSchema);
         rootProps.put("weakest_dimension", Map.of("type", List.of("string", "null")));
@@ -74,7 +75,7 @@ public final class GeneratedAnswerAnalysisSchema {
         schema.put("type", "object");
         schema.put("additionalProperties", false);
         schema.put("required", List.of(
-                "claims", "dimension_gaps", "weakest_dimension",
+                "transcript", "claims", "dimension_gaps", "weakest_dimension",
                 "unstated_assumptions", "recommended_next_action"));
         schema.put("properties", rootProps);
         return schema;

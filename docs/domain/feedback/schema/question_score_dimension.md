@@ -1,6 +1,6 @@
 # feedback 스키마 — question_score_dimension
 
-> 대상 마이그레이션: `V36__add_question_score_tables.sql`
+> 최근 마이그레이션: `V52__add_status_to_question_score_dimension.sql`
 
 ## 테이블 목록
 
@@ -25,16 +25,20 @@ question_score 1행 산하의 dimension (예: `clarity`, `depth`, `fluency`, `co
 | `score` | INT | NULL | 점수 (rubric=1..3, nonverbal=루브릭별 정의) |
 | `observation` | TEXT | NULL | 관찰 노트 |
 | `evidence_quote` | TEXT | NULL | 근거 인용 (rubric scoring 강제 항목) |
+| `status` | VARCHAR(20) | NOT NULL, DEFAULT 'OK' | 평가 가능 여부 — `OK` / `NOT_EVALUABLE` |
 | `created_at` / `updated_at` | DATETIME(6) | NOT NULL | — |
 
 ### 불변 / 정책
 - `RubricScoringAdapter`: SCORE_MIN=1, SCORE_MAX=3 (out-of-range → null 저장)
 - `RubricScoringAdapter`: `evidence_quote` 누락 시 1회 schema retry, 재실패 시 score 무효화 (NA fallback)
 - 부모 question_score 삭제 시 CASCADE
+- `status=NOT_EVALUABLE` 인 row 는 무응답 turn 의 가짜 평가 방지용. score=null, observation=사유 텍스트로 저장
+- `status=OK` + score=null 조합은 `QuestionScorePersister` 에서 적재 스킵 (`DimensionScore.notApplicable` 경로)
 - (질문, 루브릭, dimension) 유일성은 부모 unique + `dimension_ref` 어플리케이션 레벨로 보장 (DB UNIQUE 없음 — 중복 INSERT 시 어플리케이션 책임)
 
 ### 마이그레이션 히스토리
 - `V36__add_question_score_tables.sql` — 신규 생성
+- `V52__add_status_to_question_score_dimension.sql` — `status` 컬럼 추가 (DEFAULT 'OK')
 
 ---
 
@@ -44,4 +48,6 @@ question_score 1행 산하의 dimension (예: `clarity`, `depth`, `fluency`, `co
 |----------------|------|------|
 | `com.rehearse.api.domain.feedback.score.entity.QuestionScore` | 부모 헤더 | persister |
 | `com.rehearse.api.infra.ai.adapter.RubricScoringAdapter` | LLM 결과 → dimension 매핑 + 검증 | persister |
+| `com.rehearse.api.domain.feedback.rubric.entity.DimensionScore` | status 포함 dimension 점수 VO — `notEvaluable()` 팩토리로 NOT_EVALUABLE 생성 | domain VO |
+| `com.rehearse.api.domain.feedback.score.entity.DimensionStatus` | OK / NOT_EVALUABLE 열거형 | enum |
 | `com.rehearse.api.domain.feedback.rubric.service.NonverbalScorePersister` | nonverbal 4개 dimension (fluency / confidence_tone / eye_contact_posture / composure) | persister |
