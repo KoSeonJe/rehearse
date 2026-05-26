@@ -72,7 +72,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @MockitoBean private RubricScorer rubricScorer;
 
     private static final AnswerAnalysis SAMPLE_ANALYSIS = new AnswerAnalysis(
-            List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
+            "", List.of(), Map.of(), null, List.of(), RecommendedNextAction.CLARIFICATION);
 
     @BeforeEach
     void resetCollector() {
@@ -155,7 +155,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     void analyzerSkip_publishesEventAndSkipsWriter() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         AnswerAnalysis skipAnalysis = new AnswerAnalysis(
-                List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
+                "", List.of(), Map.of(), null, List.of(), RecommendedNextAction.SKIP);
         given(audioTurnAnalyzer.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
                 .willReturn(skipAnalysis);
         given(rubricScorer.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any(), any()))

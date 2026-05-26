@@ -9,6 +9,7 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
@@ -123,6 +124,85 @@ class RubricScorerTest {
 
             assertAllNotEvaluable(result, "technical_depth");
             verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("transcript fallback (FE 텍스트 부실 시 analysis.transcript 로 복구)")
+    class TranscriptFallback {
+
+        @Test
+        @DisplayName("FE 텍스트 빈 문자열 + transcript 정상 → 정상 채점 (LLM 호출)")
+        void should_score_when_userAnswerEmpty_butTranscriptPresent() {
+            givenRubric(List.of("technical_depth"));
+            RubricScoringResult adapterResult =
+                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
+            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview, "",
+                    analysisWithTranscript("이것은 충분히 긴 음성 전사 텍스트입니다."));
+
+            assertThat(result).isSameAs(adapterResult);
+            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("FE 텍스트 + transcript 모두 비면 전 차원 NOT_EVALUABLE")
+        void should_notEvaluable_when_bothEmpty() {
+            givenRubric(List.of("technical_depth"));
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview, "",
+                    analysisWithTranscript(""));
+
+            assertAllNotEvaluable(result, "technical_depth");
+            verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("FE 텍스트 정상 + transcript 빈 문자열 → userAnswer 우선, 정상 채점")
+        void should_score_when_userAnswerPresent_butTranscriptEmpty() {
+            givenRubric(List.of("technical_depth"));
+            RubricScoringResult adapterResult =
+                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
+            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview, "정상적인 답변 텍스트",
+                    analysisWithTranscript(""));
+
+            assertThat(result).isSameAs(adapterResult);
+            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("FE 텍스트 3자 이하 + transcript 정상 → transcript fallback, 정상 채점")
+        void should_score_when_userAnswerShort_butTranscriptPresent() {
+            givenRubric(List.of("technical_depth"));
+            RubricScoringResult adapterResult =
+                    new RubricScoringResult(RUBRIC_ID, List.of("technical_depth"), Map.of(), null);
+            given(adapter.adapt(any(), any(), any(), any(), any(), any(), any())).willReturn(adapterResult);
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview, "잘",
+                    analysisWithTranscript("이것은 충분히 긴 음성 전사 텍스트입니다."));
+
+            assertThat(result).isSameAs(adapterResult);
+            verify(adapter).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        @Test
+        @DisplayName("회귀 - FE 텍스트 3자 이하 + AnswerAnalysis.empty() → 전 차원 NOT_EVALUABLE")
+        void should_notEvaluable_when_userAnswerShort_andAnalysisEmpty() {
+            givenRubric(List.of("technical_depth"));
+
+            RubricScoringResult result = scorer.score(question, questionSet, interview, "안녕",
+                    AnswerAnalysis.empty());
+
+            assertAllNotEvaluable(result, "technical_depth");
+            verify(adapter, never()).adapt(any(), any(), any(), any(), any(), any(), any());
+        }
+
+        private AnswerAnalysis analysisWithTranscript(String transcript) {
+            return new AnswerAnalysis(transcript, List.of(), Map.of(), null, List.of(),
+                    RecommendedNextAction.CLARIFICATION);
         }
     }
 

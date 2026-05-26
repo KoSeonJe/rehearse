@@ -23,6 +23,7 @@ class GeneratedAnswerAnalysisTest {
         rawGaps.put("experience_concreteness", 3);
 
         GeneratedAnswerAnalysis dto = new GeneratedAnswerAnalysis(
+                "전사 텍스트",
                 List.of(),
                 rawGaps,
                 "technical_depth",
