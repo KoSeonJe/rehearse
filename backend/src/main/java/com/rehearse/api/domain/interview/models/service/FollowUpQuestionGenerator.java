@@ -12,7 +12,6 @@ public interface FollowUpQuestionGenerator {
 
     GeneratedFollowUp generate(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     );
 }

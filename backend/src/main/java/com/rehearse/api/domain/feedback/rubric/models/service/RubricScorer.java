@@ -12,7 +12,6 @@ public interface RubricScorer {
 
     RubricScoringResult score(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,

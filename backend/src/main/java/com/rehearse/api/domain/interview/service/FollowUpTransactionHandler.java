@@ -135,15 +135,14 @@ public class FollowUpTransactionHandler {
     @Transactional
     public void publishAnswerAnalysisCompletedEvent(
             Long interviewId, FollowUpContext context,
-            AnswerAnalysis analysis, String userAnswer, Long questionId
+            AnswerAnalysis analysis, Long questionId
     ) {
         try {
             Interview interview = interviewFinder.findById(interviewId);
             AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
                     interviewId, interview.getUserId(),
                     questionId, context.questionSetId(),
-                    userAnswer, analysis,
-                    context.level()
+                    analysis, context.level()
             );
             eventPublisher.publishEvent(event);
         } catch (Exception e) {

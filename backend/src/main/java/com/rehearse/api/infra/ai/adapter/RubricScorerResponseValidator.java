@@ -16,7 +16,7 @@ public class RubricScorerResponseValidator {
             Integer score,
             String observation,
             String evidenceQuote,
-            String userAnswer
+            String transcript
     ) {
         if (score == null && isNotEvaluableSentinel(observation)) {
             return ValidationResult.passed();
@@ -33,9 +33,9 @@ public class RubricScorerResponseValidator {
         if (evidenceQuote == null || evidenceQuote.isBlank() || NO_RELATED_UTTERANCE.equals(evidenceQuote.trim())) {
             return ValidationResult.passed();
         }
-        String normalizedAnswer = normalize(userAnswer);
+        String normalizedTranscript = normalize(transcript);
         String normalizedQuote = normalize(evidenceQuote);
-        if (!normalizedAnswer.contains(normalizedQuote)) {
+        if (!normalizedTranscript.contains(normalizedQuote)) {
             return ValidationResult.violated(Violation.EVIDENCE_NOT_IN_USER_ANSWER, "evidence_quote");
         }
         return ValidationResult.passed();

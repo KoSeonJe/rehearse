@@ -16,9 +16,8 @@ public class FollowUpQuestionService {
 
     public GeneratedFollowUp write(
             String mainQuestion,
-            String userAnswer,
             AnswerAnalysis analysis
     ) {
-        return followUpQuestionGenerator.generate(mainQuestion, userAnswer, analysis);
+        return followUpQuestionGenerator.generate(mainQuestion, analysis);
     }
 }

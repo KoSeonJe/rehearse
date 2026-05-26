@@ -45,10 +45,10 @@ public class FollowUpService {
         boolean isResumeTrack = isResumeTrack(context.currentMainQuestionType());
         AnswerAnalysis analysis = audioTurnAnalysisService.analyze(
                 id, audioFile, request.getQuestionContent(), context.mainReferenceType(), isResumeTrack);
-        String answerText = request.getAnswerText();
+        String answerText = analysis.transcript();
 
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
-                id, context, analysis, answerText, context.currentMainQuestionId());
+                id, context, analysis, context.currentMainQuestionId());
 
         if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
             log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
@@ -81,7 +81,7 @@ public class FollowUpService {
             AnswerAnalysis analysis, String answerText
     ) {
         GeneratedFollowUp stepB = followUpQuestionService.write(
-                request.getQuestionContent(), answerText, analysis);
+                request.getQuestionContent(), analysis);
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
@@ -103,7 +103,7 @@ public class FollowUpService {
                 stepB.type(), analysis.weakestDimension(), analysis.dimensionGaps(),
                 stepB.targetClaimIdx(), exhausted);
 
-        return buildAnswerResponse(stepB, saveResult.question(), exhausted);
+        return buildAnswerResponse(stepB, saveResult.question(), answerText, exhausted);
     }
 
     private static boolean isResumeTrack(QuestionType mainType) {
@@ -112,14 +112,15 @@ public class FollowUpService {
                 || mainType == QuestionType.RESUME_FOLLOWUP;
     }
 
-    private static FollowUpResponse buildAnswerResponse(GeneratedFollowUp followUp, Question savedQuestion, boolean exhausted) {
+    private static FollowUpResponse buildAnswerResponse(
+            GeneratedFollowUp followUp, Question savedQuestion, String answerText, boolean exhausted) {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
                 .question(followUp.question())
                 .ttsQuestion(followUp.ttsQuestion())
                 .reason(followUp.reason())
                 .type(followUp.type())
-                .answerText(followUp.answerText())
+                .answerText(answerText)
                 .bestAnswer(savedQuestion.getBestAnswer())
                 .skip(false)
                 .presentToUser(true)

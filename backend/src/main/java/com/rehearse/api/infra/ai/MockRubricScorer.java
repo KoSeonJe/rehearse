@@ -33,7 +33,6 @@ public class MockRubricScorer implements RubricScorer {
     @Override
     public RubricScoringResult score(
             Question question,
-            String userAnswer,
             AnswerAnalysis analysis,
             Rubric rubric,
             List<String> dimensionsToScore,
