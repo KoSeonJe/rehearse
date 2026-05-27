@@ -28,7 +28,7 @@ import java.util.Map;
 @ConditionalOnExpression("!'${openai.api-key:}'.isEmpty()")
 public class OpenAiFollowUpQuestionGeneratorClient {
 
-    private static final String CALL_TYPE = "follow_up_generator_v3";
+    private static final String CALL_TYPE = "follow_up_generator";
 
     private final RestClient restClient;
     private final OpenAiFollowUpQuestionGeneratorProperties properties;
