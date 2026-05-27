@@ -3,6 +3,7 @@ package com.rehearse.api.domain.interview.service;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.interview.models.service.AudioTurnAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedTurnAnalysis;
@@ -30,16 +31,16 @@ public class AudioTurnAnalysisService {
             MultipartFile audioFile,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
         validate(interviewId, audioFile);
         try {
-            GeneratedTurnAnalysis raw = audioTurnAnalyzer.analyze(audioFile, mainQuestion, questionReferenceType, isResumeTrack);
+            GeneratedTurnAnalysis raw = audioTurnAnalyzer.analyze(audioFile, mainQuestion, questionReferenceType, category);
             return raw.toDomain();
         } catch (AudioChatFallbackRequiredException e) {
             log.warn("[AudioTurnAnalysisService] audio chat 실패 → text-only fallback. interviewId={}", interviewId);
             aiCallMetrics.incrementFollowUpSkip("audio_chat_fallback_to_stt");
-            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType, isResumeTrack);
+            return textFallbackTurnAnalyzer.analyze(interviewId, audioFile, mainQuestion, questionReferenceType, category);
         }
     }
 

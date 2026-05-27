@@ -1,5 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -35,9 +36,11 @@ public class AudioTurnAnalyzerPromptBuilder {
 
     public String buildUserPromptText(
             String mainQuestion,
-            ReferenceType questionReferenceType
+            ReferenceType questionReferenceType,
+            QuestionCategory category
     ) {
         StringBuilder sb = new StringBuilder();
+        sb.append("CATEGORY: ").append(category.name()).append("\n");
         sb.append("<<<MAIN_QUESTION>>>\n")
           .append(mainQuestion != null ? mainQuestion : "(없음)")
           .append("\n<<<END_MAIN_QUESTION>>>\n");

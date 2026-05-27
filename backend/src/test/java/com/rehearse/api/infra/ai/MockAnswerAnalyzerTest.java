@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.models.service.AnswerAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.adapter.ClaudeAnswerAnalyzer;
 import com.rehearse.api.infra.ai.adapter.OpenAiAnswerAnalyzer;
@@ -35,7 +36,7 @@ class MockAnswerAnalyzerTest {
     void analyze_returnsMockAnalysis() {
         MockAnswerAnalyzer mock = new MockAnswerAnalyzer();
 
-        GeneratedAnswerAnalysis result = mock.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
+        GeneratedAnswerAnalysis result = mock.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT);
 
         assertThat(result.weakestDimension()).isEqualTo("depth");
         assertThat(result.dimensionGaps()).containsKeys("clarity", "depth", "evidence");

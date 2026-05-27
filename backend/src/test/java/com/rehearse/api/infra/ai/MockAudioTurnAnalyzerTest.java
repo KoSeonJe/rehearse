@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.models.service.AudioTurnAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.adapter.OpenAiAudioTurnAnalyzer;
 import com.rehearse.api.infra.ai.client.OpenAiAudioTurnAnalyzerClient;
@@ -32,7 +33,7 @@ class MockAudioTurnAnalyzerTest {
         MockAudioTurnAnalyzer mock = new MockAudioTurnAnalyzer();
         MultipartFile audio = new MockMultipartFile("audio", "a.wav", "audio/wav", new byte[]{1});
 
-        assertThatThrownBy(() -> mock.analyze(audio, "Q", ReferenceType.MODEL_ANSWER, false))
+        assertThatThrownBy(() -> mock.analyze(audio, "Q", ReferenceType.MODEL_ANSWER, QuestionCategory.CONCEPT))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 

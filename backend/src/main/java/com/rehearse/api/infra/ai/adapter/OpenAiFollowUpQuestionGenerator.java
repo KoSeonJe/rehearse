@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.client.OpenAiFollowUpQuestionGeneratorClient;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -24,10 +25,11 @@ public class OpenAiFollowUpQuestionGenerator implements FollowUpQuestionGenerato
     @Override
     public GeneratedFollowUp generate(
             String mainQuestion,
-            AnswerAnalysis analysis
+            AnswerAnalysis analysis,
+            QuestionCategory category
     ) {
         FollowUpQuestionPromptBuilder.PromptPair prompt = promptBuilder.build(
-                mainQuestion, analysis);
+                mainQuestion, analysis, category);
         String content = client.call(prompt.system(), prompt.user());
         return aiResponseParser.parseJsonResponse(content, GeneratedFollowUp.class);
     }

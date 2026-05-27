@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.models.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 
 /**
@@ -12,6 +13,7 @@ public interface FollowUpQuestionGenerator {
 
     GeneratedFollowUp generate(
             String mainQuestion,
-            AnswerAnalysis analysis
+            AnswerAnalysis analysis,
+            QuestionCategory category
     );
 }

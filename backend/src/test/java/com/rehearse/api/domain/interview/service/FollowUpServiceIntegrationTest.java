@@ -17,6 +17,7 @@ import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.event.AnswerAnalysisCompletedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
@@ -48,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
+
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -84,7 +85,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_OPENER → analyzer 1회 호출 + 이벤트 발행 + QuestionScore 적재 + follow-up 미생성")
     void resumeOpener_publishesEvent_persistsScore_andSkipsFollowUp() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_OPENER);
-        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
                 .willReturn(analysisOf("원문 답변", RecommendedNextAction.CLARIFICATION));
         given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
@@ -98,8 +99,8 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(response.getSkipReason()).isEqualTo("resume_opener_skip");
         assertThat(response.getAnswerText()).isEqualTo("원문 답변");
         verify(audioTurnAnalysisService, times(1))
-                .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionService, never()).write(any(), any());
+                .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class));
+        verify(followUpQuestionService, never()).write(any(), any(), any(QuestionCategory.class));
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -121,11 +122,11 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("RESUME_MAIN 일반 답변 → analyzer + 이벤트 + 채점 + follow-up 생성")
     void resumeMain_followsUpAndPersistsScore() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
-        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
                 .willReturn(analysisOf("정상 답변", RecommendedNextAction.CLARIFICATION));
         given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionService.write(any(), any()))
+        given(followUpQuestionService.write(any(), any(), any(QuestionCategory.class)))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
 
@@ -137,8 +138,8 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(response.isSkip()).isFalse();
         assertThat(response.getQuestion()).isEqualTo("심화 질문");
         verify(audioTurnAnalysisService, times(1))
-                .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean());
-        verify(followUpQuestionService, times(1)).write(any(), any());
+                .analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class));
+        verify(followUpQuestionService, times(1)).write(any(), any(), any(QuestionCategory.class));
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -157,7 +158,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     void analyzerSkip_publishesEventAndSkipsWriter() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
         AnswerAnalysis skipAnalysis = analysisOf("부족 답변", RecommendedNextAction.SKIP);
-        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
                 .willReturn(skipAnalysis);
         given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
@@ -169,7 +170,7 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         assertThat(response.isSkip()).isTrue();
         assertThat(response.getSkipReason()).isEqualTo("analyzer_recommend_skip");
-        verify(followUpQuestionService, never()).write(any(), any());
+        verify(followUpQuestionService, never()).write(any(), any(), any(QuestionCategory.class));
 
         Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
             assertThat(eventCollector.events()).hasSize(1);
@@ -186,11 +187,11 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("후속질문 답변 턴 → 방금 답변된 후속질문 ID로 채점 (메인질문 채점 미발생)")
     void followUpAnswer_persistsScoreUnderFollowUpQuestionId() {
         Fixture fixture = persistResumeFixtureWithFollowUp(QuestionType.RESUME_MAIN, QuestionType.RESUME_FOLLOWUP);
-        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
                 .willReturn(analysisOf("후속 답변", RecommendedNextAction.CLARIFICATION));
         given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionService.write(any(), any()))
+        given(followUpQuestionService.write(any(), any(), any(QuestionCategory.class)))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문2", "TTS", "이유", "claim", "best", null, 0));
 
@@ -213,11 +214,11 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
     @DisplayName("메인 + 후속 2턴 연속 → 서로 다른 question_id 로 2행 적재 (중복/누락 없음)")
     void mainThenFollowUp_persistsTwoScoresWithDistinctQuestionIds() {
         Fixture fixture = persistResumeFixture(QuestionType.RESUME_MAIN);
-        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), anyBoolean()))
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
                 .willReturn(analysisOf("정상 답변", RecommendedNextAction.CLARIFICATION));
         given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
                 .willReturn(rubricResult());
-        given(followUpQuestionService.write(any(), any()))
+        given(followUpQuestionService.write(any(), any(), any(QuestionCategory.class)))
                 .willReturn(new GeneratedFollowUp(
                         false, null, "심화 질문", "TTS", "이유", "claim", "best", null, 0));
 

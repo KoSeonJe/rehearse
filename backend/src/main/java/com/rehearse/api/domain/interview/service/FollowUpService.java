@@ -12,6 +12,7 @@ import com.rehearse.api.domain.interview.dto.FollowUpResponse;
 import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -42,9 +43,9 @@ public class FollowUpService {
 
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
-        boolean isResumeTrack = isResumeTrack(context.currentMainQuestionType());
+        QuestionCategory category = context.currentMainQuestionType().category();
         AnswerAnalysis analysis = audioTurnAnalysisService.analyze(
-                id, audioFile, request.getQuestionContent(), context.mainReferenceType(), isResumeTrack);
+                id, audioFile, request.getQuestionContent(), context.mainReferenceType(), category);
         String answerText = analysis.transcript();
 
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
@@ -59,7 +60,7 @@ public class FollowUpService {
         if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
             return handleAnalyzerSkip(id, context, request, analysis, answerText);
         }
-        return generateAndSaveFollowUp(id, context, request, analysis, answerText);
+        return generateAndSaveFollowUp(id, context, request, analysis, answerText, category);
     }
 
     private FollowUpResponse handleAnalyzerSkip(
@@ -78,10 +79,10 @@ public class FollowUpService {
 
     private FollowUpResponse generateAndSaveFollowUp(
             Long id, FollowUpContext context, FollowUpRequest request,
-            AnswerAnalysis analysis, String answerText
+            AnswerAnalysis analysis, String answerText, QuestionCategory category
     ) {
         GeneratedFollowUp stepB = followUpQuestionService.write(
-                request.getQuestionContent(), analysis);
+                request.getQuestionContent(), analysis, category);
 
         if (stepB.isSkipped()) {
             log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
@@ -104,12 +105,6 @@ public class FollowUpService {
                 stepB.targetClaimIdx(), exhausted);
 
         return buildAnswerResponse(stepB, saveResult.question(), answerText, exhausted);
-    }
-
-    private static boolean isResumeTrack(QuestionType mainType) {
-        return mainType == QuestionType.RESUME_OPENER
-                || mainType == QuestionType.RESUME_MAIN
-                || mainType == QuestionType.RESUME_FOLLOWUP;
     }
 
     private static FollowUpResponse buildAnswerResponse(

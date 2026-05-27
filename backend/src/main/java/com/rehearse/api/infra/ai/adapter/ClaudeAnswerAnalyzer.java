@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.models.service.AnswerAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.client.ClaudeAnswerAnalyzerClient;
@@ -30,9 +31,9 @@ public class ClaudeAnswerAnalyzer implements AnswerAnalyzer {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
-        AnswerAnalysisPromptBuilder.PromptPair prompt = promptBuilder.build(mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
+        AnswerAnalysisPromptBuilder.PromptPair prompt = promptBuilder.build(mainQuestion, questionReferenceType, userAnswer, category);
         String systemPrompt = JSON_OBJECT_INSTRUCTION + "\n\n" + prompt.system();
         String content = client.call(systemPrompt, prompt.user());
         return aiResponseParser.parseJsonResponse(content, GeneratedAnswerAnalysis.class);

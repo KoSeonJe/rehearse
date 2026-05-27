@@ -28,7 +28,7 @@ import java.util.List;
 @ConditionalOnExpression("!'${claude.api-key:}'.isEmpty()")
 public class ClaudeFollowUpQuestionGeneratorClient {
 
-    private static final String CALL_TYPE = "follow_up_generator_v3";
+    private static final String CALL_TYPE = "follow_up_generator";
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
     private final RestClient restClient;

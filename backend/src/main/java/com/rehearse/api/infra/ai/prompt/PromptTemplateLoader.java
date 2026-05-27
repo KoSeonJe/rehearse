@@ -13,11 +13,15 @@ import org.springframework.stereotype.Component;
 public class PromptTemplateLoader {
 
     public static final String ANSWER_ANALYZER = "answer_analyzer";
-    public static final String FOLLOW_UP_GENERATOR_V3 = "follow_up_generator_v3";
+    public static final String FOLLOW_UP_CONCEPT = "follow_up_concept";
+    public static final String FOLLOW_UP_EXPERIENCE = "follow_up_experience";
+    public static final String FOLLOW_UP_RESUME = "follow_up_resume";
 
     private static final Map<String, String> TEMPLATE_PATHS = Map.of(
             ANSWER_ANALYZER, "/prompts/template/answer-analyzer.txt",
-            FOLLOW_UP_GENERATOR_V3, "/prompts/template/follow-up-generator-v3.txt"
+            FOLLOW_UP_CONCEPT, "/prompts/template/follow-up-concept.txt",
+            FOLLOW_UP_EXPERIENCE, "/prompts/template/follow-up-experience.txt",
+            FOLLOW_UP_RESUME, "/prompts/template/follow-up-resume.txt"
     );
 
     private static final String GLOBAL_CORE = """

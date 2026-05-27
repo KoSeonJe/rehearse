@@ -38,4 +38,12 @@ public enum QuestionType {
     public boolean isResume() {
         return this == RESUME_OPENER || this == RESUME_MAIN || this == RESUME_FOLLOWUP;
     }
+
+    public QuestionCategory category() {
+        return switch (this) {
+            case TECH_MAIN, TECH_FOLLOWUP -> QuestionCategory.CONCEPT;
+            case BEHAVIORAL_MAIN, BEHAVIORAL_FOLLOWUP -> QuestionCategory.EXPERIENCE;
+            case RESUME_OPENER, RESUME_MAIN, RESUME_FOLLOWUP -> QuestionCategory.RESUME;
+        };
+    }
 }

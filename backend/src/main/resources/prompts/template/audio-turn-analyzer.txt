@@ -8,10 +8,11 @@
 ## 처리 단계
 1. 첨부된 오디오를 한국어로 정확히 전사 → `answer_text`
 2. 전사 결과를 답변으로 간주하고 차원 기반 분석 → `answer_analysis`
+   - 사용자 메시지의 `CATEGORY:` 라벨에 맞는 dimension_gaps 키 집합만 사용 (아래 규칙).
    - "잘 모르겠다" / "패스" / "다음 질문" / 잡담 등도 모두 답변으로 처리. 별도 분기 없음.
    - 답변 시도가 빈약한 경우 `claims=[]`, dimension_gaps 대부분 ≥2, `recommended_next_action="CLARIFICATION"` 으로 기록.
 
-## 평가 차원 (verbal 10종)
+## 평가 차원 (총 10종, 카테고리별 사용 키 다름)
 
 각 차원에 대해 답변의 부족 정도(gap)를 0~3 정수로 평가:
 - 0: 부족 없음
@@ -19,20 +20,28 @@
 - 2: 상당히 부족
 - 3: 거의 부재
 
-| dimension id | 의미 |
-|--------------|------|
-| `problem_framing` | 전제·제약·엣지케이스 확인 |
-| `technical_depth` | 원리·트레이드오프·대안 인지 |
-| `reasoning_communication` | 사고 과정 단계적 언어화 |
-| `conceptual_accuracy` | 개념 설명의 기술적 정확성 |
-| `practical_application` | 실무 사용 맥락·주의점·흔한 실수 |
-| `experience_concreteness` | 수치·본인 기여·Learnings |
-| `collaboration_awareness` | 팀·이해관계자 관점 |
-| `recovery_from_gaps` | 모르는 걸 만났을 때 대처 |
-| `factual_consistency` | (Resume 전용) 이력서 claim 과 답변 일치 |
-| `chain_depth` | (Resume 전용) 심화 답변 깊이 (L1 What → L4 Tradeoff) |
+| dimension id | 의미 | 카테고리 |
+|--------------|------|----------|
+| `problem_framing` | 질문 받고 전제·제약·엣지케이스 확인 | EXPERIENCE / RESUME |
+| `technical_depth` | 원리·트레이드오프·대안 인지 | CONCEPT / RESUME |
+| `reasoning_communication` | 사고 과정 단계적 언어화 | CONCEPT / EXPERIENCE / RESUME |
+| `conceptual_accuracy` | 개념 설명의 기술적 정확성 | CONCEPT / RESUME |
+| `practical_application` | 실무 사용 맥락·주의점·흔한 실수 이해 | CONCEPT / RESUME |
+| `experience_concreteness` | 수치·본인 기여·Learnings (CARL 의 L) | EXPERIENCE / RESUME |
+| `collaboration_awareness` | 팀·이해관계자 관점 고려 | EXPERIENCE / RESUME |
+| `recovery_from_gaps` | 모르는 걸 만났을 때 대처 | CONCEPT / RESUME |
+| `factual_consistency` | 이력서 claim 과 답변 일치 | RESUME 전용 |
+| `chain_depth` | 심화 답변 깊이 (L1 What → L2 How → L3 Why → L4 Tradeoff) | RESUME 전용 |
 
-`factual_consistency`, `chain_depth` 는 이력서 기반 질문에서만 평가. CS·경험 일반 질문은 키 자체 생략.
+## 카테고리별 dimension_gaps 키 집합 (strict schema 강제)
+
+사용자 메시지의 `CATEGORY:` 라벨에 따라 다음 키 집합 그대로 사용:
+
+- `CATEGORY: CONCEPT` → 5개 키: `technical_depth`, `reasoning_communication`, `conceptual_accuracy`, `practical_application`, `recovery_from_gaps`
+- `CATEGORY: EXPERIENCE` → 4개 키: `problem_framing`, `reasoning_communication`, `experience_concreteness`, `collaboration_awareness`
+- `CATEGORY: RESUME` → 10개 키: `problem_framing`, `technical_depth`, `reasoning_communication`, `conceptual_accuracy`, `practical_application`, `experience_concreteness`, `collaboration_awareness`, `recovery_from_gaps`, `factual_consistency`, `chain_depth`
+
+`dimension_gaps` 객체는 위 키 집합과 정확히 일치하는 키만 포함하고 (그 외 키 절대 추가 금지), 각 값은 0~3 정수 (null 금지). 평가 정보가 부족하면 0 으로 둔다.
 
 ## Answer Analysis
 
@@ -47,7 +56,7 @@
 - `topic_tag`: 한 단어 주제 태그
 
 ### dimension_gaps (객체)
-평가 대상 dimension id 만 키로, 값은 0~3 정수.
+위 "카테고리별 dimension_gaps 키 집합" 규칙 그대로. 0~3 정수만 사용.
 
 ### weakest_dimension (string)
 `dimension_gaps` 중 값이 가장 큰 dimension id 1개. 모든 gap=0 이면 null. 동률 시 우선순위 = `technical_depth` > `conceptual_accuracy` > `experience_concreteness` > `reasoning_communication` > `practical_application` > 그 외.
@@ -82,7 +91,8 @@
 
 ## few-shot 예시
 
-### 예시 1 (구조적 답변, technical_depth gap=2)
+### 예시 1 (CONCEPT 카테고리, 구조적 답변, technical_depth gap=2)
+CATEGORY: CONCEPT
 <<<MAIN_QUESTION>>>
 JVM 가비지 컬렉션의 동작 방식을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
@@ -100,9 +110,10 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
     ],
     "dimension_gaps": {
       "technical_depth": 2,
-      "conceptual_accuracy": 0,
       "reasoning_communication": 1,
-      "practical_application": 2
+      "conceptual_accuracy": 0,
+      "practical_application": 2,
+      "recovery_from_gaps": 0
     },
     "weakest_dimension": "technical_depth",
     "unstated_assumptions": ["GC 알고리즘별 차이는 본 답변에서 다루지 않음"],
@@ -111,7 +122,8 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 }
 ```
 
-### 예시 2 (포기성 발화)
+### 예시 2 (CONCEPT 카테고리, 포기성 발화)
+CATEGORY: CONCEPT
 <<<MAIN_QUESTION>>>
 B-Tree와 B+Tree의 차이점을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
@@ -126,7 +138,9 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
     "claims": [],
     "dimension_gaps": {
       "technical_depth": 3,
+      "reasoning_communication": 2,
       "conceptual_accuracy": 3,
+      "practical_application": 2,
       "recovery_from_gaps": 1
     },
     "weakest_dimension": "technical_depth",
@@ -136,7 +150,8 @@ QUESTION_REFERENCE_TYPE: MODEL_ANSWER
 }
 ```
 
-### 예시 3 (GUIDE 모드, experience 양호)
+### 예시 3 (RESUME 카테고리, 경험 답변 강함)
+CATEGORY: RESUME
 <<<MAIN_QUESTION>>>
 프로젝트에서 캐시를 도입한 경험을 설명해주세요.
 <<<END_MAIN_QUESTION>>>
@@ -153,10 +168,16 @@ QUESTION_REFERENCE_TYPE: GUIDE
       {"text":"Cache-Aside + TTL 5분 + stale read 허용 정책", "depth_score":4, "evidence_strength":"STRONG", "topic_tag":"caching"}
     ],
     "dimension_gaps": {
+      "problem_framing": 1,
       "technical_depth": 1,
+      "reasoning_communication": 1,
+      "conceptual_accuracy": 0,
+      "practical_application": 1,
       "experience_concreteness": 0,
       "collaboration_awareness": 1,
-      "practical_application": 1
+      "recovery_from_gaps": 0,
+      "factual_consistency": 0,
+      "chain_depth": 1
     },
     "weakest_dimension": "collaboration_awareness",
     "unstated_assumptions": ["캐시 히트율 측정은 했으나 답변에는 미언급"],
@@ -165,7 +186,8 @@ QUESTION_REFERENCE_TYPE: GUIDE
 }
 ```
 
-### 예시 4 (Resume 트랙)
+### 예시 4 (RESUME 카테고리, factual_consistency / chain_depth 평가)
+CATEGORY: RESUME
 <<<MAIN_QUESTION>>>
 이력서에 Redis Lua 스크립트로 쿠폰 동시성 제어를 했다고 적으셨는데, 어떤 문제를 풀었는지 설명해주세요.
 <<<END_MAIN_QUESTION>>>
@@ -181,10 +203,16 @@ QUESTION_REFERENCE_TYPE: GUIDE
       {"text":"Redis Lua 스크립트로 INCR+발급 원자적 처리", "depth_score":3, "evidence_strength":"WEAK", "topic_tag":"redis"}
     ],
     "dimension_gaps": {
+      "problem_framing": 1,
       "technical_depth": 2,
+      "reasoning_communication": 1,
+      "conceptual_accuracy": 0,
+      "practical_application": 1,
+      "experience_concreteness": 2,
+      "collaboration_awareness": 1,
+      "recovery_from_gaps": 0,
       "factual_consistency": 0,
-      "chain_depth": 2,
-      "experience_concreteness": 2
+      "chain_depth": 2
     },
     "weakest_dimension": "technical_depth",
     "unstated_assumptions": ["Lua 가 Redis 안에서 single-thread 로 실행된다는 점을 전제"],

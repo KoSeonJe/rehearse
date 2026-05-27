@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai.prompt;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Claim;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class FollowUpQuestionPromptBuilder {
 
-    private static final String CALL_TYPE = PromptTemplateLoader.FOLLOW_UP_GENERATOR_V3;
     private static final int USER_CAP = 1400;
 
     private final PromptTemplateLoader templateLoader;
@@ -22,16 +22,26 @@ public class FollowUpQuestionPromptBuilder {
 
     public PromptPair build(
             String mainQuestion,
-            AnswerAnalysis analysis
+            AnswerAnalysis analysis,
+            QuestionCategory category
     ) {
-        String system = templateLoader.system(CALL_TYPE);
+        String callType = callTypeOf(category);
+        String system = templateLoader.system(callType);
         String user = buildUserFragment(mainQuestion, analysis);
 
         int estimated = tokenEstimator.estimate(user);
         if (estimated > USER_CAP) {
-            log.warn("[{}] user fragment cap 초과(절단 안 함): estimated={}, cap={}", CALL_TYPE, estimated, USER_CAP);
+            log.warn("[{}] user fragment cap 초과(절단 안 함): estimated={}, cap={}", callType, estimated, USER_CAP);
         }
         return new PromptPair(system, user);
+    }
+
+    private static String callTypeOf(QuestionCategory category) {
+        return switch (category) {
+            case CONCEPT -> PromptTemplateLoader.FOLLOW_UP_CONCEPT;
+            case EXPERIENCE -> PromptTemplateLoader.FOLLOW_UP_EXPERIENCE;
+            case RESUME -> PromptTemplateLoader.FOLLOW_UP_RESUME;
+        };
     }
 
     private String buildUserFragment(String mainQuestion, AnswerAnalysis analysis) {

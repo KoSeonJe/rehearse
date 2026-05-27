@@ -3,6 +3,7 @@ package com.rehearse.api.infra.ai.adapter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.client.ClaudeFollowUpQuestionGeneratorClient;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
@@ -54,11 +55,11 @@ class ClaudeFollowUpQuestionGeneratorTest {
     @Test
     @DisplayName("system prompt 앞에 JSON 강제 지시문이 prepend 된다")
     void generate_prependsJsonInstructionToSystemPrompt() {
-        when(promptBuilder.build(any(), any()))
+        when(promptBuilder.build(any(), any(), any()))
                 .thenReturn(new FollowUpQuestionPromptBuilder.PromptPair("base-sys", "usr"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        adapter.generate("Q", SAMPLE_ANALYSIS);
+        adapter.generate("Q", SAMPLE_ANALYSIS, QuestionCategory.EXPERIENCE);
 
         ArgumentCaptor<String> sysCaptor = ArgumentCaptor.forClass(String.class);
         verify(client).call(sysCaptor.capture(), any());
@@ -71,11 +72,11 @@ class ClaudeFollowUpQuestionGeneratorTest {
     @Test
     @DisplayName("user prompt 는 변경 없이 전달된다")
     void generate_userPromptPassedThrough() {
-        when(promptBuilder.build(any(), any()))
+        when(promptBuilder.build(any(), any(), any()))
                 .thenReturn(new FollowUpQuestionPromptBuilder.PromptPair("sys", "user-content"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        adapter.generate("Q", SAMPLE_ANALYSIS);
+        adapter.generate("Q", SAMPLE_ANALYSIS, QuestionCategory.EXPERIENCE);
 
         ArgumentCaptor<String> userCaptor = ArgumentCaptor.forClass(String.class);
         verify(client).call(any(), userCaptor.capture());
@@ -85,11 +86,11 @@ class ClaudeFollowUpQuestionGeneratorTest {
     @Test
     @DisplayName("정상 JSON 응답을 GeneratedFollowUp 으로 매핑한다")
     void generate_mapsValidJson() {
-        when(promptBuilder.build(any(), any()))
+        when(promptBuilder.build(any(), any(), any()))
                 .thenReturn(new FollowUpQuestionPromptBuilder.PromptPair("sys", "usr"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        GeneratedFollowUp result = adapter.generate("Q", SAMPLE_ANALYSIS);
+        GeneratedFollowUp result = adapter.generate("Q", SAMPLE_ANALYSIS, QuestionCategory.EXPERIENCE);
 
         assertThat(result.question()).contains("근거");
     }

@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -70,13 +71,14 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("PromptBuilder system + user 결과를 Client.call 에 전달하고 정상 JSON 을 GeneratedTurnAnalysis 로 매핑한다")
     void analyze_passesPromptsAndMapsJson() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys-prompt");
-        when(promptBuilder.buildUserPromptText(eq("주요 질문"), eq(ReferenceType.MODEL_ANSWER)))
+        when(promptBuilder.buildUserPromptText(eq("주요 질문"), eq(ReferenceType.MODEL_ANSWER), eq(QuestionCategory.CONCEPT)))
                 .thenReturn("user-prompt");
         MultipartFile audio = audioFile();
         when(client.call(eq("sys-prompt"), eq("user-prompt"), eq(audio))).thenReturn(VALID_JSON);
 
-        GeneratedTurnAnalysis result = adapter.analyze(audio, "주요 질문", ReferenceType.MODEL_ANSWER, false);
+        GeneratedTurnAnalysis result = adapter.analyze(audio, "주요 질문", ReferenceType.MODEL_ANSWER, QuestionCategory.CONCEPT);
 
+        verify(promptBuilder).buildUserPromptText(eq("주요 질문"), eq(ReferenceType.MODEL_ANSWER), eq(QuestionCategory.CONCEPT));
         verify(client).call(eq("sys-prompt"), eq("user-prompt"), eq(audio));
         assertThat(result.answerAnalysis()).isNotNull();
         assertThat(result.toDomain().weakestDimension()).isEqualTo("depth");
@@ -87,10 +89,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("claims 는 채웠지만 transcript 가 blank 면 AudioChatFallbackRequiredException 으로 STT fallback 트리거")
     void analyze_blankTranscript_throwsFallbackSignal() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenReturn(BLANK_TRANSCRIPT_JSON);
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, QuestionCategory.CONCEPT))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -98,10 +100,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("Client 가 PARSE_FAILED BusinessException 던지면 rethrow — 응답 구조 결함은 text fallback 도 위험")
     void analyze_parseFailed_rethrows() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, QuestionCategory.RESUME))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
@@ -111,10 +113,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("Client 가 CLIENT_ERROR BusinessException 던지면 AudioChatFallbackRequiredException 으로 변환")
     void analyze_clientError_throwsFallbackSignal() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, QuestionCategory.RESUME))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -122,10 +124,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("Client 가 RetryableApiException (5xx 누적) 던지면 AudioChatFallbackRequiredException 으로 변환")
     void analyze_retryableApiException_throwsFallbackSignal() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new RetryableApiException("upstream 5xx"));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, QuestionCategory.RESUME))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -133,10 +135,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("Client 가 RestClientException (네트워크 오류) 던지면 AudioChatFallbackRequiredException 으로 변환")
     void analyze_restClientException_throwsFallbackSignal() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenThrow(new ResourceAccessException("connection reset"));
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.GUIDE, QuestionCategory.RESUME))
                 .isInstanceOf(AudioChatFallbackRequiredException.class);
     }
 
@@ -144,10 +146,10 @@ class OpenAiAudioTurnAnalyzerTest {
     @DisplayName("Client 응답이 깨진 JSON 이면 PARSE_FAILED 가 던져진다 (parseJsonResponse 위임)")
     void analyze_malformedJson_throwsParseFailed() {
         when(promptBuilder.buildSystemPrompt()).thenReturn("sys");
-        when(promptBuilder.buildUserPromptText(any(), any())).thenReturn("usr");
+        when(promptBuilder.buildUserPromptText(any(), any(), any())).thenReturn("usr");
         when(client.call(any(), any(), any())).thenReturn("not a json");
 
-        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, false))
+        assertThatThrownBy(() -> adapter.analyze(audioFile(), "Q", ReferenceType.MODEL_ANSWER, QuestionCategory.CONCEPT))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
