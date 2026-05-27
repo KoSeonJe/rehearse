@@ -242,6 +242,36 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
         assertThat(finalQuestions).hasSize(3);
     }
 
+    @Test
+    @DisplayName("후속 2개 한도 도달 후 추가 답변 → 채점 이벤트 발행 + 새 후속 미생성 + skip:true")
+    void followUpExhausted_publishesScoreEventButSkipsNewFollowUp() {
+        Fixture fixture = persistResumeFixtureWithTwoFollowUps();
+        given(audioTurnAnalysisService.analyze(eq(fixture.interviewId), any(MultipartFile.class), any(), any(), any(QuestionCategory.class)))
+                .willReturn(analysisOf("마지막 후속 답변", RecommendedNextAction.CLARIFICATION));
+        given(rubricScoringService.score(any(Question.class), any(QuestionSet.class), any(Interview.class), any()))
+                .willReturn(rubricResult());
+
+        FollowUpResponse response = followUpService.generateFollowUp(
+                fixture.interviewId, fixture.userId,
+                request(fixture.questionSetId),
+                audio());
+
+        assertThat(response.isSkip()).isTrue();
+        assertThat(response.getSkipReason()).isEqualTo("followup_exhausted");
+        assertThat(response.getAnswerText()).isEqualTo("마지막 후속 답변");
+        verify(followUpQuestionService, never()).write(any(), any(), any(QuestionCategory.class));
+
+        Awaitility.await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            assertThat(eventCollector.events()).hasSize(1);
+            List<QuestionScore> scores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(fixture.interviewId);
+            assertThat(scores).hasSize(1);
+        });
+
+        List<Question> finalQuestions = questionRepository
+                .findByQuestionSetIdOrderByOrderIndex(fixture.questionSetId);
+        assertThat(finalQuestions).hasSize(3);
+    }
+
     private FollowUpRequest request(Long questionSetId) {
         FollowUpRequest req = new FollowUpRequest();
         org.springframework.test.util.ReflectionTestUtils.setField(req, "questionSetId", questionSetId);
@@ -324,6 +354,52 @@ class FollowUpServiceIntegrationTest extends ServiceIntegrationSupport {
 
         return new Fixture(user.getId(), interview.getId(), questionSet.getId(),
                 mainQuestion.getId(), followUpQuestion.getId());
+    }
+
+    private Fixture persistResumeFixtureWithTwoFollowUps() {
+        User user = userRepository.saveAndFlush(User.builder()
+                .email("followup-exhausted@example.com")
+                .name("테스터")
+                .provider(OAuthProvider.GITHUB)
+                .providerId("github-exhausted")
+                .role(UserRole.USER)
+                .build());
+
+        Interview interview = TestFixtures.createInterview(
+                user.getId(), Position.BACKEND, InterviewLevel.JUNIOR, List.of(InterviewType.RESUME_BASED));
+        interview.completeQuestionGeneration();
+        interview.updateStatus(InterviewStatus.IN_PROGRESS);
+        interviewRepository.saveAndFlush(interview);
+
+        QuestionSet questionSet = TestFixtures.createQuestionSet(interview, InterviewType.RESUME_BASED, 0);
+        Question mainQuestion = Question.builder()
+                .questionType(QuestionType.RESUME_MAIN)
+                .questionText("이력서 기반 메인 질문")
+                .ttsText("TTS")
+                .bestAnswer("best")
+                .orderIndex(0)
+                .build();
+        Question followUp1 = Question.builder()
+                .questionType(QuestionType.RESUME_FOLLOWUP)
+                .questionText("후속 질문 1")
+                .ttsText("TTS")
+                .bestAnswer("best")
+                .orderIndex(1)
+                .build();
+        Question followUp2 = Question.builder()
+                .questionType(QuestionType.RESUME_FOLLOWUP)
+                .questionText("후속 질문 2")
+                .ttsText("TTS")
+                .bestAnswer("best")
+                .orderIndex(2)
+                .build();
+        questionSet.addQuestion(mainQuestion);
+        questionSet.addQuestion(followUp1);
+        questionSet.addQuestion(followUp2);
+        questionSetRepository.saveAndFlush(questionSet);
+
+        return new Fixture(user.getId(), interview.getId(), questionSet.getId(),
+                followUp2.getId(), followUp2.getId());
     }
 
     private record Fixture(Long userId, Long interviewId, Long questionSetId, Long questionId, Long followUpQuestionId) {}

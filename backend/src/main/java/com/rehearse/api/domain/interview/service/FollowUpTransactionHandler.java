@@ -53,7 +53,6 @@ public class FollowUpTransactionHandler {
         Optional<Question> currentMainQuestion = findCurrentMainQuestion(questionSet);
         Long currentMainQuestionId = currentMainQuestion.map(Question::getId).orElse(null);
         QuestionType currentMainQuestionType = currentMainQuestion.map(Question::getQuestionType).orElse(null);
-        standardFollowUpPolicy.assertCanContinue(interview, questionSet, currentMainQuestionId);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
         Long answeredQuestionId = findAnsweredQuestionId(questionSet);
@@ -92,6 +91,13 @@ public class FollowUpTransactionHandler {
                 .max(Comparator.comparingInt(Question::getOrderIndex))
                 .map(Question::getId)
                 .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isFollowUpExhausted(Long questionSetId, Long currentMainQuestionId) {
+        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+        return standardFollowUpPolicy.isFollowUpExhausted(questionSet, currentMainQuestionId);
     }
 
     @Transactional

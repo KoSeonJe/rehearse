@@ -51,6 +51,13 @@ public class FollowUpService {
         followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
                 id, context, analysis, context.answeredQuestionId());
 
+        if (followUpTransactionHandler.isFollowUpExhausted(context.questionSetId(), context.currentMainQuestionId())) {
+            log.info("후속질문 한도 도달 → 채점만 진행, follow-up 생성 skip. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("followup_exhausted");
+            return FollowUpResponse.aiSkip(answerText, "followup_exhausted");
+        }
+
         if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
             log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
                     id, request.getQuestionSetId());
