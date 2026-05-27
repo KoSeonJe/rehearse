@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.context.metrics.ContextEngineeringMetrics;
@@ -19,7 +20,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -57,61 +57,61 @@ class ResilientAnswerAnalyzerTest {
     @Test
     @DisplayName("OpenAI 성공 시 Claude 호출 없음")
     void analyze_openAiSuccess_claudeNotCalled() {
-        when(openAi.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenReturn(sample("depth"));
+        when(openAi.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenReturn(sample("depth"));
 
-        GeneratedAnswerAnalysis result = resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
+        GeneratedAnswerAnalysis result = resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT);
 
         assertThat(result.weakestDimension()).isEqualTo("depth");
-        verify(claude, never()).analyze(anyLong(), any(), any(), any(), anyBoolean());
+        verify(claude, never()).analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class));
     }
 
     @Test
     @DisplayName("OpenAI RetryableApiException 발생 시 Claude fallback")
     void analyze_openAiRetryable_claudeFallback() {
-        when(openAi.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenThrow(new RetryableApiException("타임아웃"));
-        when(claude.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenReturn(sample("evidence"));
+        when(openAi.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenThrow(new RetryableApiException("타임아웃"));
+        when(claude.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenReturn(sample("evidence"));
 
-        GeneratedAnswerAnalysis result = resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
+        GeneratedAnswerAnalysis result = resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT);
 
         assertThat(result.weakestDimension()).isEqualTo("evidence");
-        verify(claude, times(1)).analyze(anyLong(), any(), any(), any(), anyBoolean());
+        verify(claude, times(1)).analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class));
     }
 
     @Test
     @DisplayName("CLIENT_ERROR (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void analyze_clientError_noFallback() {
-        when(openAi.analyze(anyLong(), any(), any(), any(), anyBoolean()))
+        when(openAi.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class)))
                 .thenThrow(new BusinessException(AiErrorCode.CLIENT_ERROR));
 
-        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false))
+        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.CLIENT_ERROR);
 
-        verify(claude, never()).analyze(anyLong(), any(), any(), any(), anyBoolean());
+        verify(claude, never()).analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class));
     }
 
     @Test
     @DisplayName("PARSE_FAILED (non-retryable) 는 fallback 시도 없이 즉시 throw")
     void analyze_parseFailed_noFallback() {
-        when(openAi.analyze(anyLong(), any(), any(), any(), anyBoolean()))
+        when(openAi.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class)))
                 .thenThrow(new BusinessException(AiErrorCode.PARSE_FAILED));
 
-        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false))
+        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);
 
-        verify(claude, never()).analyze(anyLong(), any(), any(), any(), anyBoolean());
+        verify(claude, never()).analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class));
     }
 
     @Test
     @DisplayName("OpenAI + Claude 모두 실패 시 SERVICE_UNAVAILABLE")
     void analyze_bothFail_serviceUnavailable() {
-        when(openAi.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenThrow(new RetryableApiException("OpenAI 실패"));
-        when(claude.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenThrow(new RetryableApiException("Claude 실패"));
+        when(openAi.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenThrow(new RetryableApiException("OpenAI 실패"));
+        when(claude.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenThrow(new RetryableApiException("Claude 실패"));
 
-        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false))
+        assertThatThrownBy(() -> resilient.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.SERVICE_UNAVAILABLE);
@@ -121,12 +121,12 @@ class ResilientAnswerAnalyzerTest {
     @DisplayName("OpenAI 미설정 (null) + Claude 존재 시 Claude 직접 호출")
     void analyze_openAiNull_directlyCallClaude() {
         ResilientAnswerAnalyzer claudeOnly = new ResilientAnswerAnalyzer(null, claude, metrics);
-        when(claude.analyze(anyLong(), any(), any(), any(), anyBoolean())).thenReturn(sample("clarity"));
+        when(claude.analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class))).thenReturn(sample("clarity"));
 
-        GeneratedAnswerAnalysis result = claudeOnly.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
+        GeneratedAnswerAnalysis result = claudeOnly.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT);
 
         assertThat(result.weakestDimension()).isEqualTo("clarity");
-        verify(claude, times(1)).analyze(anyLong(), any(), any(), any(), anyBoolean());
+        verify(claude, times(1)).analyze(anyLong(), any(), any(), any(), any(QuestionCategory.class));
     }
 
     @Test

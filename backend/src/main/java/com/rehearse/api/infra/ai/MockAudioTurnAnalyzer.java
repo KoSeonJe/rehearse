@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.domain.interview.models.service.AudioTurnAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.adapter.OpenAiAudioTurnAnalyzer;
 import com.rehearse.api.infra.ai.dto.GeneratedTurnAnalysis;
@@ -27,7 +28,7 @@ public class MockAudioTurnAnalyzer implements AudioTurnAnalyzer {
             MultipartFile audio,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            boolean isResumeTrack
+            QuestionCategory category
     ) throws AudioChatFallbackRequiredException {
         throw new AudioChatFallbackRequiredException("Mock 환경 — audio chat 미지원");
     }

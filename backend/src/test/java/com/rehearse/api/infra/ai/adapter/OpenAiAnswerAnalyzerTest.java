@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -15,7 +16,6 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,11 +49,11 @@ class OpenAiAnswerAnalyzerTest {
     @Test
     @DisplayName("PromptBuilder.build 결과 (system + user) 를 Client.call 에 그대로 전달한다")
     void analyze_passesPromptPairToClient() {
-        when(promptBuilder.build(eq("주요 질문"), eq(ReferenceType.MODEL_ANSWER), eq("내 답변"), eq(false)))
+        when(promptBuilder.build(eq("주요 질문"), eq(ReferenceType.MODEL_ANSWER), eq("내 답변"), eq(QuestionCategory.CONCEPT)))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("sys-p", "usr-p"));
         when(client.call(eq("sys-p"), eq("usr-p"))).thenReturn(VALID_JSON);
 
-        adapter.analyze(1L, "주요 질문", ReferenceType.MODEL_ANSWER, "내 답변", false);
+        adapter.analyze(1L, "주요 질문", ReferenceType.MODEL_ANSWER, "내 답변", QuestionCategory.CONCEPT);
 
         verify(client).call(eq("sys-p"), eq("usr-p"));
     }
@@ -61,11 +61,11 @@ class OpenAiAnswerAnalyzerTest {
     @Test
     @DisplayName("정상 JSON 응답을 GeneratedAnswerAnalysis 로 매핑한다")
     void analyze_mapsValidJson() {
-        when(promptBuilder.build(any(), any(), any(), anyBoolean()))
+        when(promptBuilder.build(any(), any(), any(), any(QuestionCategory.class)))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("sys", "usr"));
         when(client.call(any(), any())).thenReturn(VALID_JSON);
 
-        GeneratedAnswerAnalysis result = adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false);
+        GeneratedAnswerAnalysis result = adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT);
 
         assertThat(result.weakestDimension()).isEqualTo("depth");
         assertThat(result.dimensionGaps()).containsEntry("clarity", 2);
@@ -74,11 +74,11 @@ class OpenAiAnswerAnalyzerTest {
     @Test
     @DisplayName("Client 응답이 깨진 JSON 이면 PARSE_FAILED 가 던져진다")
     void analyze_malformedJson_throwsParseFailed() {
-        when(promptBuilder.build(any(), any(), any(), anyBoolean()))
+        when(promptBuilder.build(any(), any(), any(), any(QuestionCategory.class)))
                 .thenReturn(new AnswerAnalysisPromptBuilder.PromptPair("sys", "usr"));
         when(client.call(any(), any())).thenReturn("not a json");
 
-        assertThatThrownBy(() -> adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", false))
+        assertThatThrownBy(() -> adapter.analyze(1L, "Q", ReferenceType.MODEL_ANSWER, "A", QuestionCategory.CONCEPT))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(AiErrorCode.PARSE_FAILED);

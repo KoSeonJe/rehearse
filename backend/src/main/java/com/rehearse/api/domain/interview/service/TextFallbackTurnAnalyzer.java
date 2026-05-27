@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.SttService;
@@ -30,7 +31,7 @@ public class TextFallbackTurnAnalyzer {
             MultipartFile audioFile,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
         if (sttService == null) {
             log.error("[TextFallbackTurnAnalyzer] STT 서비스 미설정 — fallback 불가. interviewId={}", interviewId);
@@ -38,7 +39,7 @@ public class TextFallbackTurnAnalyzer {
         }
         String answerText = sttService.transcribe(audioFile);
         AnswerAnalysis analysis = answerAnalysisService.analyze(
-                interviewId, mainQuestion, questionReferenceType, answerText, isResumeTrack);
+                interviewId, mainQuestion, questionReferenceType, answerText, category);
         return analysis.withTranscript(answerText);
     }
 }

@@ -2,6 +2,7 @@ package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.models.service.AnswerAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.adapter.ClaudeAnswerAnalyzer;
 import com.rehearse.api.infra.ai.adapter.OpenAiAnswerAnalyzer;
@@ -30,7 +31,7 @@ public class MockAnswerAnalyzer implements AnswerAnalyzer {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
         return new GeneratedAnswerAnalysis(
                 userAnswer != null ? userAnswer : "",

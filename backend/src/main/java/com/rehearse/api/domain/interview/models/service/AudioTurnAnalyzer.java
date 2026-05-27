@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.models.service;
 
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.GeneratedTurnAnalysis;
 import com.rehearse.api.infra.ai.exception.AudioChatFallbackRequiredException;
@@ -18,6 +19,6 @@ public interface AudioTurnAnalyzer {
             MultipartFile audio,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            boolean isResumeTrack
+            QuestionCategory category
     ) throws AudioChatFallbackRequiredException;
 }

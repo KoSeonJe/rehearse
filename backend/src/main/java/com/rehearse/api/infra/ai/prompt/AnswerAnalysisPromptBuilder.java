@@ -1,5 +1,6 @@
 package com.rehearse.api.infra.ai.prompt;
 
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +21,11 @@ public class AnswerAnalysisPromptBuilder {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
         String personaDepthHint = PromptFormatters.toReferenceLabel(questionReferenceType);
         String system = templateLoader.system(CALL_TYPE);
-        String user = buildUserFragment(mainQuestion, userAnswer, personaDepthHint, isResumeTrack);
+        String user = buildUserFragment(mainQuestion, userAnswer, personaDepthHint, category);
 
         int estimated = tokenEstimator.estimate(user);
         if (estimated > USER_CAP) {
@@ -33,9 +34,8 @@ public class AnswerAnalysisPromptBuilder {
         return new PromptPair(system, user);
     }
 
-    private String buildUserFragment(String mainQuestion, String userAnswer, String personaDepthHint, boolean isResumeTrack) {
-        String trackLabel = isResumeTrack ? "RESUME" : "CS";
-        return "TRACK: " + trackLabel + "\n\n" +
+    private String buildUserFragment(String mainQuestion, String userAnswer, String personaDepthHint, QuestionCategory category) {
+        return "CATEGORY: " + category.name() + "\n\n" +
                "<<<MAIN_QUESTION>>>\n" + nz(mainQuestion) + "\n<<<END_MAIN_QUESTION>>>\n\n" +
                "<<<USER_ANSWER>>>\n" + nz(userAnswer) + "\n<<<END_USER_ANSWER>>>\n\n" +
                "PERSONA_DEPTH: " + nz(personaDepthHint) + "\n\n" +

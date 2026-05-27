@@ -2,6 +2,7 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.models.service.AnswerAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
 import lombok.RequiredArgsConstructor;
@@ -20,14 +21,14 @@ public class AnswerAnalysisService {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            boolean isResumeTrack
+            QuestionCategory category
     ) {
         if (interviewId == null) {
             throw new IllegalArgumentException("interviewId 는 null 일 수 없습니다.");
         }
 
         GeneratedAnswerAnalysis generated = answerAnalyzer.analyze(
-                interviewId, mainQuestion, questionReferenceType, userAnswer, isResumeTrack);
+                interviewId, mainQuestion, questionReferenceType, userAnswer, category);
         return generated.toDomain();
     }
 }

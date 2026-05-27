@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.models.service;
 
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.infra.ai.dto.GeneratedAnswerAnalysis;
 
@@ -15,6 +16,6 @@ public interface AnswerAnalyzer {
             String mainQuestion,
             ReferenceType questionReferenceType,
             String userAnswer,
-            boolean isResumeTrack
+            QuestionCategory category
     );
 }

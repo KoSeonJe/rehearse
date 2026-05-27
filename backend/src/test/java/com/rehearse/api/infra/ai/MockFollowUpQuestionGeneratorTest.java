@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.models.service.FollowUpQuestionGenerator;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.infra.ai.adapter.ClaudeFollowUpQuestionGenerator;
 import com.rehearse.api.infra.ai.adapter.OpenAiFollowUpQuestionGenerator;
 import com.rehearse.api.infra.ai.adapter.ResilientFollowUpQuestionGenerator;
@@ -42,7 +43,7 @@ class MockFollowUpQuestionGeneratorTest {
     void generate_returnsMockFollowUp() {
         MockFollowUpQuestionGenerator mock = new MockFollowUpQuestionGenerator();
 
-        GeneratedFollowUp result = mock.generate("Q", SAMPLE_ANALYSIS);
+        GeneratedFollowUp result = mock.generate("Q", SAMPLE_ANALYSIS, QuestionCategory.CONCEPT);
 
         assertThat(result.isSkipped()).isFalse();
         assertThat(result.question()).isNotBlank();

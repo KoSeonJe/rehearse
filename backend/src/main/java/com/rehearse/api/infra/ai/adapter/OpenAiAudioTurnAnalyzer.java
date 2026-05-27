@@ -1,6 +1,7 @@
 package com.rehearse.api.infra.ai.adapter;
 
 import com.rehearse.api.domain.interview.models.service.AudioTurnAnalyzer;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
 import com.rehearse.api.domain.question.entity.ReferenceType;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.AiResponseParser;
@@ -34,10 +35,10 @@ public class OpenAiAudioTurnAnalyzer implements AudioTurnAnalyzer {
             MultipartFile audio,
             String mainQuestion,
             ReferenceType questionReferenceType,
-            boolean isResumeTrack
+            QuestionCategory category
     ) throws AudioChatFallbackRequiredException {
         String systemPrompt = promptBuilder.buildSystemPrompt();
-        String userPrompt = promptBuilder.buildUserPromptText(mainQuestion, questionReferenceType);
+        String userPrompt = promptBuilder.buildUserPromptText(mainQuestion, questionReferenceType, category);
 
         try {
             String content = client.call(systemPrompt, userPrompt, audio);
