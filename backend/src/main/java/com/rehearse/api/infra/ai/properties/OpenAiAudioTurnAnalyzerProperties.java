@@ -13,7 +13,7 @@ public record OpenAiAudioTurnAnalyzerProperties(
 
     public OpenAiAudioTurnAnalyzerProperties {
         if (model == null || model.isBlank()) {
-            model = "gpt-5.4-mini-audio-preview";
+            model = "gpt-audio-mini";
         }
         if (timeoutMs <= 0) {
             timeoutMs = 60_000L;

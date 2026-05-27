@@ -40,12 +40,15 @@ public class StandardFollowUpPolicy implements InterviewTurnPolicy {
     }
 
     public void assertCanContinue(Interview interview, QuestionSet questionSet, Long currentMainQuestionId) {
-        long followUpCount = countFollowUpsForCurrentMain(questionSet, currentMainQuestionId);
-        int cap = resolveCap(questionSet, currentMainQuestionId);
-
-        if (followUpCount >= cap) {
+        if (isFollowUpExhausted(questionSet, currentMainQuestionId)) {
             throw new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED);
         }
+    }
+
+    public boolean isFollowUpExhausted(QuestionSet questionSet, Long currentMainQuestionId) {
+        long followUpCount = countFollowUpsForCurrentMain(questionSet, currentMainQuestionId);
+        int cap = resolveCap(questionSet, currentMainQuestionId);
+        return followUpCount >= cap;
     }
 
     public boolean shouldSkipFollowUp(QuestionSet questionSet, Long currentMainQuestionId) {
