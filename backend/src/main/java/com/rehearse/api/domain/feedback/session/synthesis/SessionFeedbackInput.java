@@ -38,7 +38,7 @@ public record SessionFeedbackInput(
     }
 
     public record NonverbalTurnAggregate(
-            Long turnId,
+            String turnLabel,
             Map<String, Integer> scores,
             double contextMultiplier
     ) {

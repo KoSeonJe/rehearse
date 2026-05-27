@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public record TurnScoreView(
-        Long turnId,
+        String turnLabel,
         String rubricId,
         List<String> scoredDimensions,
         Map<String, DimensionScore> dimensionScores,
