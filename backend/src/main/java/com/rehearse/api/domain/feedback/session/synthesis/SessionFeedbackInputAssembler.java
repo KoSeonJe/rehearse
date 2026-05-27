@@ -12,6 +12,9 @@ import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionR
 import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -31,12 +34,14 @@ public class SessionFeedbackInputAssembler {
     private final InterviewFinder interviewFinder;
     private final NonverbalImprovementActionsLoader nonverbalImprovementActionsLoader;
     private final RubricCatalog rubricCatalog;
+    private final QuestionSetRepository questionSetRepository;
 
     public SessionFeedbackInput assemble(Long interviewId) {
         Interview interview = interviewFinder.findById(interviewId);
         List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
         Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(allScores);
-        return assembleCore(interview, allScores, dimsByScoreId);
+        Map<Long, String> turnLabels = buildTurnLabels(interviewId);
+        return assembleCore(interview, allScores, dimsByScoreId, turnLabels);
     }
 
     public SessionFeedbackInput assembleWithDelivery(Long interviewId, String deliveryAnalysis,
@@ -44,15 +49,16 @@ public class SessionFeedbackInputAssembler {
         Interview interview = interviewFinder.findById(interviewId);
         List<QuestionScore> allScores = questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId);
         Map<Long, List<QuestionScoreDimension>> dimsByScoreId = loadDimensionsByScoreId(allScores);
+        Map<Long, String> turnLabels = buildTurnLabels(interviewId);
 
-        SessionFeedbackInput base = assembleCore(interview, allScores, dimsByScoreId);
+        SessionFeedbackInput base = assembleCore(interview, allScores, dimsByScoreId, turnLabels);
 
         List<QuestionScore> nonverbalScores = allScores.stream()
                 .filter(qs -> RubricIds.NONVERBAL.equals(qs.getRubricId()))
                 .toList();
 
         SessionFeedbackInput.NonverbalDeliveryAggregate resolvedNonverbalAggregate =
-                buildNonverbalAggregate(nonverbalScores, dimsByScoreId);
+                buildNonverbalAggregate(nonverbalScores, dimsByScoreId, turnLabels);
         String legacyNonverbalAggregateJson = resolvedNonverbalAggregate == null ? nonverbalAggregate : null;
         return new SessionFeedbackInput(
                 base.sessionMetadata(),
@@ -70,13 +76,14 @@ public class SessionFeedbackInputAssembler {
 
     private SessionFeedbackInput assembleCore(Interview interview,
                                               List<QuestionScore> allScores,
-                                              Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
+                                              Map<Long, List<QuestionScoreDimension>> dimsByScoreId,
+                                              Map<Long, String> turnLabels) {
         List<QuestionScore> rubricScores = allScores.stream()
                 .filter(qs -> !RubricIds.NONVERBAL.equals(qs.getRubricId()))
                 .toList();
 
         List<TurnScoreView> turnScores = rubricScores.stream()
-                .map(qs -> toTurnScoreView(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList())))
+                .map(qs -> toTurnScoreView(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList()), turnLabels))
                 .toList();
 
         List<TurnScoreView> okTurns = turnScores.stream()
@@ -104,13 +111,14 @@ public class SessionFeedbackInputAssembler {
 
     private SessionFeedbackInput.NonverbalDeliveryAggregate buildNonverbalAggregate(
             List<QuestionScore> nonverbalScores,
-            Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
+            Map<Long, List<QuestionScoreDimension>> dimsByScoreId,
+            Map<Long, String> turnLabels) {
         if (nonverbalScores.isEmpty()) {
             return null;
         }
 
         List<SessionFeedbackInput.NonverbalTurnAggregate> turns = nonverbalScores.stream()
-                .map(qs -> toNonverbalTurn(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList())))
+                .map(qs -> toNonverbalTurn(qs, dimsByScoreId.getOrDefault(qs.getId(), Collections.emptyList()), turnLabels))
                 .toList();
 
         Map<String, Double> averageScores = buildNonverbalAverageScores(turns);
@@ -134,13 +142,14 @@ public class SessionFeedbackInputAssembler {
     }
 
     private SessionFeedbackInput.NonverbalTurnAggregate toNonverbalTurn(QuestionScore qs,
-                                                                          List<QuestionScoreDimension> dims) {
+                                                                          List<QuestionScoreDimension> dims,
+                                                                          Map<Long, String> turnLabels) {
         Map<String, Integer> dimensionScores = new LinkedHashMap<>();
         for (QuestionScoreDimension dim : dims) {
             dimensionScores.put(toKoreanLabel(dim.getDimensionRef()), dim.getScore());
         }
         return new SessionFeedbackInput.NonverbalTurnAggregate(
-                qs.getQuestionId(),
+                turnLabels.get(qs.getQuestionId()),
                 dimensionScores,
                 1.0
         );
@@ -184,7 +193,9 @@ public class SessionFeedbackInputAssembler {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
     }
 
-    private TurnScoreView toTurnScoreView(QuestionScore qs, List<QuestionScoreDimension> dims) {
+    private TurnScoreView toTurnScoreView(QuestionScore qs, List<QuestionScoreDimension> dims,
+                                          Map<Long, String> turnLabels) {
+        String turnLabel = turnLabels.get(qs.getQuestionId());
         Map<String, DimensionScore> scores = dims.stream()
                 .collect(Collectors.toMap(
                         d -> toKoreanLabel(d.getDimensionRef()),
@@ -194,7 +205,7 @@ public class SessionFeedbackInputAssembler {
 
         if (scores.isEmpty()) {
             return new TurnScoreView(
-                    qs.getQuestionId(),
+                    turnLabel,
                     qs.getRubricId(),
                     Collections.emptyList(),
                     Collections.emptyMap(),
@@ -209,7 +220,7 @@ public class SessionFeedbackInputAssembler {
                 : TurnScoreView.TurnStatus.OK;
 
         return new TurnScoreView(
-                qs.getQuestionId(),
+                turnLabel,
                 qs.getRubricId(),
                 new ArrayList<>(scores.keySet()),
                 scores,
@@ -279,6 +290,29 @@ public class SessionFeedbackInputAssembler {
             return null;
         }
         return rubricCatalog.findRefByName(koreanLabel).orElse(koreanLabel);
+    }
+
+    private Map<Long, String> buildTurnLabels(Long interviewId) {
+        List<Question> questions = questionSetRepository.findByInterviewIdWithQuestions(interviewId).stream()
+                .sorted(Comparator.comparingInt(QuestionSet::getOrderIndex))
+                .flatMap(qs -> qs.getQuestions().stream()
+                        .sorted(Comparator.comparingInt(Question::getOrderIndex)))
+                .toList();
+
+        Map<Long, String> labels = new HashMap<>();
+        int mainOrder = 0;
+        int followUpOrder = 1;
+        for (Question question : questions) {
+            if (question.getQuestionType().isMain()) {
+                mainOrder++;
+                followUpOrder = 1;
+                labels.put(question.getId(), mainOrder + "-1");
+            } else if (question.getQuestionType().isFollowUp() && mainOrder > 0) {
+                followUpOrder++;
+                labels.put(question.getId(), mainOrder + "-" + followUpOrder);
+            }
+        }
+        return labels;
     }
 
     private Map<Long, List<QuestionScoreDimension>> loadDimensionsByScoreId(List<QuestionScore> scores) {

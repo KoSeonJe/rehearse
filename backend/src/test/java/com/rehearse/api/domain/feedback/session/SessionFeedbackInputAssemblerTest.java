@@ -15,7 +15,13 @@ import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
+import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionType;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
+import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,6 +49,9 @@ class SessionFeedbackInputAssemblerTest {
     @Mock
     private InterviewFinder interviewFinder;
 
+    @Mock
+    private QuestionSetRepository questionSetRepository;
+
     private Interview mockInterview;
 
     @BeforeEach
@@ -54,7 +63,8 @@ class SessionFeedbackInputAssemblerTest {
                 questionScoreDimensionRepository,
                 interviewFinder,
                 new NonverbalImprovementActionsLoader(),
-                rubricLoader
+                rubricLoader,
+                questionSetRepository
         );
         mockInterview = Interview.builder()
                 .userId(1L)
@@ -335,5 +345,157 @@ class SessionFeedbackInputAssemblerTest {
 
         assertThat(input.nonverbalAggregate()).isNull();
         assertThat(input.legacyNonverbalAggregateJson()).isEqualTo(legacyAggregate);
+    }
+
+    @Nested
+    @DisplayName("turnLabel 친화 표기 도출")
+    class TurnLabel {
+
+        @Test
+        @DisplayName("메인질문은 N-1, 그 후속질문은 N-2/N-3 으로 표기되고 다음 메인은 후속 카운터가 리셋된다")
+        void deriveLabels_mainAndFollowUps_withResetPerMain() {
+            Long interviewId = 50L;
+
+            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
+            addQuestion(questionSet, 100L, QuestionType.TECH_MAIN, 0);
+            addQuestion(questionSet, 101L, QuestionType.TECH_FOLLOWUP, 1);
+            addQuestion(questionSet, 102L, QuestionType.TECH_FOLLOWUP, 2);
+            addQuestion(questionSet, 103L, QuestionType.TECH_MAIN, 3);
+            addQuestion(questionSet, 104L, QuestionType.TECH_FOLLOWUP, 4);
+
+            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
+                    .willReturn(List.of(questionSet));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                    .willReturn(List.of(
+                            scoreWithDim(interviewId, 100L, 200L),
+                            scoreWithDim(interviewId, 101L, 201L),
+                            scoreWithDim(interviewId, 102L, 202L),
+                            scoreWithDim(interviewId, 103L, 203L),
+                            scoreWithDim(interviewId, 104L, 204L)
+                    ));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(
+                    List.of(200L, 201L, 202L, 203L, 204L)))
+                    .willReturn(List.of(
+                            dim(200L), dim(201L), dim(202L), dim(203L), dim(204L)
+                    ));
+
+            SessionFeedbackInput input = assembler.assemble(interviewId);
+
+            assertThat(input.turnScores())
+                    .extracting(TurnScoreView::turnLabel)
+                    .containsExactly("1-1", "1-2", "1-3", "2-1", "2-2");
+        }
+
+        @Test
+        @DisplayName("점수는 있지만 질문 목록에 없는 questionId 는 turnLabel 이 null 이다")
+        void deriveLabels_unknownQuestionId_fallsBackToNull() {
+            Long interviewId = 51L;
+
+            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
+            addQuestion(questionSet, 100L, QuestionType.TECH_MAIN, 0);
+
+            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
+                    .willReturn(List.of(questionSet));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                    .willReturn(List.of(
+                            scoreWithDim(interviewId, 100L, 200L),
+                            scoreWithDim(interviewId, 999L, 299L)
+                    ));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L, 299L)))
+                    .willReturn(List.of(dim(200L), dim(299L)));
+
+            SessionFeedbackInput input = assembler.assemble(interviewId);
+
+            assertThat(input.turnScores())
+                    .extracting(TurnScoreView::turnLabel)
+                    .containsExactly("1-1", null);
+        }
+
+        @Test
+        @DisplayName("QuestionSet 이 여러 개여도 메인 카운터는 인터뷰 전역 누적이라 set2 메인은 2-1 이다(세트별 리셋 아님)")
+        void deriveLabels_multipleQuestionSets_mainCounterIsGlobalAcrossSets() {
+            Long interviewId = 53L;
+
+            QuestionSet set1 = TestFixtures.createQuestionSet(mockInterview, InterviewType.CS_FUNDAMENTAL, 0);
+            addQuestion(set1, 100L, QuestionType.TECH_MAIN, 0);
+            addQuestion(set1, 101L, QuestionType.TECH_FOLLOWUP, 1);
+
+            QuestionSet set2 = TestFixtures.createQuestionSet(mockInterview, InterviewType.CS_FUNDAMENTAL, 1);
+            addQuestion(set2, 102L, QuestionType.TECH_MAIN, 0);
+
+            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
+                    .willReturn(List.of(set2, set1));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                    .willReturn(List.of(
+                            scoreWithDim(interviewId, 100L, 200L),
+                            scoreWithDim(interviewId, 101L, 201L),
+                            scoreWithDim(interviewId, 102L, 202L)
+                    ));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L, 201L, 202L)))
+                    .willReturn(List.of(dim(200L), dim(201L), dim(202L)));
+
+            SessionFeedbackInput input = assembler.assemble(interviewId);
+
+            assertThat(input.turnScores())
+                    .extracting(TurnScoreView::turnLabel)
+                    .containsExactly("1-1", "1-2", "2-1");
+        }
+
+        @Test
+        @DisplayName("선행 메인 없는 후속질문(비정상) 은 turnLabel 이 null 이다")
+        void deriveLabels_followUpWithoutPrecedingMain_isNull() {
+            Long interviewId = 52L;
+
+            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
+            addQuestion(questionSet, 100L, QuestionType.TECH_FOLLOWUP, 0);
+
+            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
+                    .willReturn(List.of(questionSet));
+            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
+                    .willReturn(List.of(scoreWithDim(interviewId, 100L, 200L)));
+            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L)))
+                    .willReturn(List.of(dim(200L)));
+
+            SessionFeedbackInput input = assembler.assemble(interviewId);
+
+            assertThat(input.turnScores())
+                    .extracting(TurnScoreView::turnLabel)
+                    .containsExactly((String) null);
+        }
+    }
+
+    private void addQuestion(QuestionSet questionSet, Long id, QuestionType type, int orderIndex) {
+        Question question = Question.builder()
+                .questionType(type)
+                .questionText("테스트 질문")
+                .orderIndex(orderIndex)
+                .build();
+        ReflectionTestUtils.setField(question, "id", id);
+        questionSet.addQuestion(question);
+    }
+
+    private QuestionScore scoreWithDim(Long interviewId, Long questionId, Long scoreId) {
+        QuestionScore score = QuestionScore.builder()
+                .interviewId(interviewId)
+                .questionId(questionId)
+                .rubricId("cs-v1")
+                .levelFlag("MID")
+                .build();
+        ReflectionTestUtils.setField(score, "id", scoreId);
+        return score;
+    }
+
+    private QuestionScoreDimension dim(Long scoreId) {
+        return QuestionScoreDimension.builder()
+                .questionScoreId(scoreId)
+                .dimensionRef("problem_framing")
+                .score(3)
+                .observation("명확함")
+                .evidenceQuote("증명")
+                .build();
     }
 }
