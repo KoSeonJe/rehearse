@@ -276,7 +276,7 @@ class SessionFeedbackParserTest {
                 new SessionFeedbackInput.NonverbalDeliveryAggregate(
                         "nonverbal_score",
                         List.of(new SessionFeedbackInput.NonverbalTurnAggregate(
-                                1L, Map.of("fluency", 2, "confidence_tone", 3, "eye_contact_posture", 1, "composure", 2), 1.0
+                                "1-1", Map.of("fluency", 2, "confidence_tone", 3, "eye_contact_posture", 1, "composure", 2), 1.0
                         )),
                         Map.of("fluency", 2.0, "confidence_tone", 3.0, "eye_contact_posture", 1.0, "composure", 2.0),
                         new SessionFeedbackInput.LowestDimension("eye_contact_posture", 1.0),

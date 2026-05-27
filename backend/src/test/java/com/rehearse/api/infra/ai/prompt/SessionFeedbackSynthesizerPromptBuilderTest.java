@@ -56,6 +56,35 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
     }
 
     @Test
+    @DisplayName("turnScores 직렬화에 친화 표기 turnLabel 만 노출되고 DB PK(turnId)는 노출되지 않는다")
+    void build_serializesTurnLabel_withoutDbPk() {
+        SessionFeedbackInput input = new SessionFeedbackInput(
+                metadata(),
+                List.of(new com.rehearse.api.domain.feedback.session.synthesis.TurnScoreView(
+                        "2-1",
+                        "cs-v1",
+                        Collections.emptyList(),
+                        Collections.emptyMap(),
+                        com.rehearse.api.domain.feedback.session.synthesis.TurnScoreView.TurnStatus.OK
+                )),
+                Collections.emptyMap(),
+                Collections.emptyList(),
+                null,
+                null,
+                null,
+                null,
+                "all turns scored",
+                InterviewLevel.MID
+        );
+
+        SessionFeedbackSynthesizerPromptBuilder.PromptPair pair = builder.build(input);
+        String prompt = pair.user();
+
+        assertThat(prompt).contains("\"turnLabel\":\"2-1\"");
+        assertThat(prompt).doesNotContain("\"turnId\"");
+    }
+
+    @Test
     @DisplayName("typed aggregate가 없고 legacy 문자열도 없으면 nonverbal placeholder는 null로 유지된다")
     void build_keepsNullForMissingNonverbalInput() {
         SessionFeedbackInput input = new SessionFeedbackInput(
@@ -195,7 +224,7 @@ class SessionFeedbackSynthesizerPromptBuilderTest {
         return new SessionFeedbackInput.NonverbalDeliveryAggregate(
                 "nonverbal_score",
                 List.of(new SessionFeedbackInput.NonverbalTurnAggregate(
-                        1L, Map.of("fluency", 2, "confidence_tone", 3, "eye_contact_posture", 1, "composure", 2), 1.0
+                        "1-1", Map.of("fluency", 2, "confidence_tone", 3, "eye_contact_posture", 1, "composure", 2), 1.0
                 )),
                 Map.of("fluency", 2.0, "confidence_tone", 3.0, "eye_contact_posture", 1.0, "composure", 2.0),
                 new SessionFeedbackInput.LowestDimension("eye_contact_posture", 1.0),
