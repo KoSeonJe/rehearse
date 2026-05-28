@@ -79,6 +79,7 @@ export const QuestionList = ({
             <li key={`${q.questionId}-${idx}`}>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onSeek(q.startMs)}
                 className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-colors ${
                   isActive ? 'bg-gray-50' : 'hover:bg-gray-50'

@@ -64,6 +64,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
         <div className="flex items-center gap-3 mb-4">
           <button
             type="button"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleSeek}
             aria-label={`${formatTime(feedback.startMs)} 구간으로 이동`}
             className="text-[13px] font-bold text-gray-900 tabular-nums rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand hover:text-brand transition-colors"

@@ -25,6 +25,7 @@ export const Desktop = ({ items, activeId, onSelect, className }: DesktopProps) 
         <button
           key={item.id}
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onSelect(item.id)}
           aria-current={isActive ? 'true' : undefined}
           className={cn(

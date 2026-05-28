@@ -98,6 +98,7 @@ export const useAnswerFlow = ({
     setPhase,
     setQuestionSetRecordingStartTime,
     addQuestionToSet,
+    setAutoTransitionMessage,
   } = useInterviewStore()
 
   const hasQuestionSets = !!interview?.questionSets?.length
@@ -190,6 +191,7 @@ export const useAnswerFlow = ({
 
     if (isLast || (isSetEnd && isLastSet)) {
       // 면접 종료 → finishing phase로 전환 (사용자가 [면접 종료하기] 클릭 대기)
+      const closingPhrase = pickRandom(CLOSING_PHRASES)
       pendingTtsActionRef.current = async () => {
         if (hasQuestionSets) {
           const currentSet = state.questionSets[state.currentQuestionSetIndex]
@@ -198,11 +200,14 @@ export const useAnswerFlow = ({
           })
         }
         setPhase('finishing')
+        setAutoTransitionMessage(null)
       }
-      tts.speak(pickRandom(CLOSING_PHRASES))
+      setAutoTransitionMessage(closingPhrase)
+      tts.speak(closingPhrase)
     } else if (isSetEnd && !isLastSet) {
       // 질문세트 전환
       const currentSet = state.questionSets[state.currentQuestionSetIndex]
+      const setPhrase = pickRandom(SET_TRANSITION_PHRASES)
       pendingTtsActionRef.current = async () => {
         let restartTime: number | undefined
         try {
@@ -215,15 +220,22 @@ export const useAnswerFlow = ({
           setQuestionSetRecordingStartTime(restartTime)
         }
         nextQuestion()
+        setAutoTransitionMessage(null)
       }
-      tts.speak(pickRandom(SET_TRANSITION_PHRASES))
+      setAutoTransitionMessage(setPhrase)
+      tts.speak(setPhrase)
     } else {
       // 같은 세트 내 다음 질문
-      pendingTtsActionRef.current = () => nextQuestion()
       const phrases = useSkipPhrase ? SKIP_TRANSITION_PHRASES : TRANSITION_PHRASES
-      tts.speak(pickRandom(phrases))
+      const nextPhrase = pickRandom(phrases)
+      pendingTtsActionRef.current = () => {
+        nextQuestion()
+        setAutoTransitionMessage(null)
+      }
+      setAutoTransitionMessage(nextPhrase)
+      tts.speak(nextPhrase)
     }
-  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime])
+  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime, setAutoTransitionMessage])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {

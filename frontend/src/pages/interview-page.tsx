@@ -80,7 +80,7 @@ const QuestionCaption = ({
         <div className="h-3 w-3 animate-spin rounded-full border border-foreground/30 border-t-transparent" />
         <span className="text-xs text-foreground/50">후속 질문 생성 중</span>
       </div>
-    ) : currentFollowUp ? (
+    ) : autoTransitionMessage ? null : currentFollowUp ? (
       <div className="pointer-events-auto rounded-xl bg-interview-stage/85 backdrop-blur-md ring-1 ring-white/5 px-5 py-3 text-center animate-fade-in">
         <p className="text-sm md:text-base font-medium leading-relaxed text-foreground line-clamp-3">
           {currentFollowUp.question}
