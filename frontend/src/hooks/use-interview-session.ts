@@ -451,6 +451,7 @@ export const useInterviewSession = ({
     if (state.phase === 'recording') return
 
     pendingTtsActionRef.current = null
+    useInterviewStore.getState().setAutoTransitionMessage(null)
     tts.stop()
     cancelFollowUp()
     audioCapture.stop()
@@ -468,6 +469,7 @@ export const useInterviewSession = ({
 
     // 0. 예약된 TTS onEnd 액션 제거 (뒤늦게 와도 실행되지 않도록)
     pendingTtsActionRef.current = null
+    useInterviewStore.getState().setAutoTransitionMessage(null)
 
     // 1. TTS 즉시 중단 (세대 가드에 의해 유령 발화 차단)
     tts.stop()
