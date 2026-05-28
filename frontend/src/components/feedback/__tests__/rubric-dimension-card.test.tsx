@@ -10,6 +10,7 @@ const buildDimension = (
   score: 2,
   observation: '발화가 매끄럽게 이어졌습니다.',
   evidenceQuote: '단어 선택이 자연스럽습니다',
+  status: 'OK',
   ...overrides,
 })
 

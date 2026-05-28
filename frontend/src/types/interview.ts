@@ -138,6 +138,7 @@ export interface TechnicalDimensionFeedback {
   score: number | null
   observation: string | null
   evidenceQuote: string | null
+  status: 'OK' | 'NOT_EVALUABLE' | null
 }
 
 export type RubricCategory = 'TECHNICAL' | 'EXPERIENCE' | 'BEHAVIORAL'
