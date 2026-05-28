@@ -1,6 +1,7 @@
 import type {
   NonverbalFeedback,
   RubricCategory,
+  TechnicalDimensionFeedback,
   TechnicalFeedback,
 } from '@/types/interview'
 import RubricDimensionCard from '@/components/feedback/rubric-dimension-card'
@@ -24,6 +25,11 @@ const FALLBACK_COPY: RubricCategoryCopy = {
 const OPENER_COPY = {
   emptyMessage: '이 단계는 채점 대상이 아닙니다.',
   secondary: '면접 도입 단계 답변은 점수 채점에 사용되지 않습니다.',
+} as const
+
+const INSUFFICIENT_ANSWER_COPY = {
+  message: '답변이 불충분해 평가할 수 없습니다.',
+  secondary: '답변 내용이 채점 기준을 충족하지 않아 항목별 평가가 생략되었습니다.',
 } as const
 
 const RESUME_OPENER_QUESTION_TYPE = 'RESUME_OPENER'
@@ -68,6 +74,28 @@ const VerbalSection = ({ technicalFeedback }: VerbalSectionProps) => {
     )
   }
 
+  // NOT_EVALUABLE 은 verbal 무응답 전용 — nonverbal 섹션은 미적용
+  const isNotEvaluable = (dimension: TechnicalDimensionFeedback): boolean =>
+    dimension.status === 'NOT_EVALUABLE'
+  const allNotEvaluable = technicalFeedback.dimensions.every(isNotEvaluable)
+
+  if (allNotEvaluable) {
+    return (
+      <div className="px-6 py-10 text-center">
+        <p className="text-[15px] font-bold text-gray-900">
+          {INSUFFICIENT_ANSWER_COPY.message}
+        </p>
+        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
+          {INSUFFICIENT_ANSWER_COPY.secondary}
+        </p>
+      </div>
+    )
+  }
+
+  const evaluableDimensions = technicalFeedback.dimensions.filter(
+    (dimension) => !isNotEvaluable(dimension),
+  )
+
   return (
     <div className="space-y-4 px-6 py-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -78,7 +106,7 @@ const VerbalSection = ({ technicalFeedback }: VerbalSectionProps) => {
       </div>
 
       <div className="space-y-3">
-        {technicalFeedback.dimensions.map((dimension) => (
+        {evaluableDimensions.map((dimension) => (
           <RubricDimensionCard key={dimension.dimension} dimension={dimension} />
         ))}
       </div>

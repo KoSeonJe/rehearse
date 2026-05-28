@@ -13,6 +13,7 @@ const buildTechnical = (overrides: Partial<TechnicalFeedback>): TechnicalFeedbac
       score: 3,
       observation: '세대별 GC 구조를 언급해 개념 정확도가 좋습니다.',
       evidenceQuote: 'young 영역과 old 영역을 나눠 관리',
+      status: 'OK',
     },
   ],
   ...overrides,
@@ -26,18 +27,21 @@ const buildNonverbal = (overrides?: Partial<NonverbalFeedback>): NonverbalFeedba
       score: 2,
       observation: '발화가 끊김 없이 이어졌습니다.',
       evidenceQuote: '단어 선택이 자연스러웠습니다',
+      status: 'OK',
     },
     {
       dimension: 'confidence_tone',
       score: 3,
       observation: '톤이 일관되어 자신감이 느껴졌습니다.',
       evidenceQuote: null,
+      status: 'OK',
     },
     {
       dimension: 'eye_contact_posture',
       score: 2,
       observation: '시선이 카메라를 향했습니다.',
       evidenceQuote: null,
+      status: 'OK',
     },
   ],
   ...overrides,
@@ -77,6 +81,7 @@ describe('ContentTab', () => {
               score: 1,
               observation: '구체 수치 / 결과가 부족합니다.',
               evidenceQuote: null,
+              status: 'OK',
             },
           ],
         })}
@@ -105,6 +110,7 @@ describe('ContentTab', () => {
               score: 2,
               observation: '협업 사례 묘사가 추상적입니다.',
               evidenceQuote: '팀과 잘 맞췄어요',
+              status: 'OK',
             },
           ],
         })}
@@ -214,12 +220,14 @@ describe('ContentTab', () => {
               score: 2,
               observation: '발화 매끄러움.',
               evidenceQuote: null,
+              status: 'OK',
             },
             {
               dimension: 'confidence_tone',
               score: 3,
               observation: '톤 안정.',
               evidenceQuote: null,
+              status: 'OK',
             },
           ],
         })}
@@ -261,6 +269,7 @@ describe('ContentTab', () => {
               score: 4,
               observation: '아키텍처 트레이드오프를 구체적으로 설명했습니다.',
               evidenceQuote: 'CQRS 적용으로 read 부하 분리',
+              status: 'OK',
             },
           ],
         })}
@@ -277,5 +286,103 @@ describe('ContentTab', () => {
       screen.getByText('아키텍처 트레이드오프를 구체적으로 설명했습니다.'),
     ).toBeInTheDocument()
     expect(screen.queryByText('이 단계는 채점 대상이 아닙니다.')).not.toBeInTheDocument()
+  })
+
+  it('전 차원 NOT_EVALUABLE → "답변이 불충분해 평가할 수 없습니다" 노출 + 기준 라벨 미노출', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildTechnical({
+          rubricCategory: 'TECHNICAL',
+          dimensions: [
+            {
+              dimension: 'conceptual_accuracy',
+              score: null,
+              observation: null,
+              evidenceQuote: null,
+              status: 'NOT_EVALUABLE',
+            },
+            {
+              dimension: 'technical_depth',
+              score: null,
+              observation: null,
+              evidenceQuote: null,
+              status: 'NOT_EVALUABLE',
+            },
+          ],
+        })}
+        nonverbalFeedback={null}
+        questionType="TECH_MAIN"
+      />,
+    )
+
+    expect(screen.getByText('답변이 불충분해 평가할 수 없습니다.')).toBeInTheDocument()
+    expect(screen.queryByText('개념 정확도')).not.toBeInTheDocument()
+    expect(screen.queryByText('기술 깊이')).not.toBeInTheDocument()
+    expect(screen.queryByText('평가 제외')).not.toBeInTheDocument()
+    expect(screen.queryByText('이 단계는 채점 대상이 아닙니다.')).not.toBeInTheDocument()
+  })
+
+  it('일부 OK + 일부 NOT_EVALUABLE → OK 차원만 노출, NOT_EVALUABLE 차원 미노출', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildTechnical({
+          rubricCategory: 'TECHNICAL',
+          dimensions: [
+            {
+              dimension: 'conceptual_accuracy',
+              score: 3,
+              observation: '개념 설명이 정확합니다.',
+              evidenceQuote: null,
+              status: 'OK',
+            },
+            {
+              dimension: 'technical_depth',
+              score: null,
+              observation: null,
+              evidenceQuote: null,
+              status: 'NOT_EVALUABLE',
+            },
+          ],
+        })}
+        nonverbalFeedback={null}
+        questionType="TECH_MAIN"
+      />,
+    )
+
+    expect(screen.getByText('기술 피드백')).toBeInTheDocument()
+    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
+    expect(screen.getByText('3점')).toBeInTheDocument()
+    expect(screen.queryByText('기술 깊이')).not.toBeInTheDocument()
+    expect(screen.queryByText('평가 제외')).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('답변이 불충분해 평가할 수 없습니다.'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('status === null → 기존 동작 유지 (필터링 없이 카드 노출)', () => {
+    render(
+      <ContentTab
+        technicalFeedback={buildTechnical({
+          rubricCategory: 'TECHNICAL',
+          dimensions: [
+            {
+              dimension: 'conceptual_accuracy',
+              score: 3,
+              observation: '개념 설명이 정확합니다.',
+              evidenceQuote: null,
+              status: null,
+            },
+          ],
+        })}
+        nonverbalFeedback={null}
+        questionType="TECH_MAIN"
+      />,
+    )
+
+    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
+    expect(screen.getByText('3점')).toBeInTheDocument()
+    expect(
+      screen.queryByText('답변이 불충분해 평가할 수 없습니다.'),
+    ).not.toBeInTheDocument()
   })
 })
