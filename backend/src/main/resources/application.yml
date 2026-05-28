@@ -53,6 +53,8 @@ ai:
       timeout-ms: ${RESUME_SKELETON_TIMEOUT_MS:60000}
       max-tokens: ${RESUME_SKELETON_MAX_TOKENS:12000}
       temperature: ${RESUME_SKELETON_TEMPERATURE:0.2}
+    question-generator:
+      temperature: ${RESUME_QUESTION_TEMPERATURE:0.7}
 
 rehearse:
   interview:
