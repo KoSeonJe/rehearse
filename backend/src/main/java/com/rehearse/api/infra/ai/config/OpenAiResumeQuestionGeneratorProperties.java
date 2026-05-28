@@ -21,6 +21,9 @@ public record OpenAiResumeQuestionGeneratorProperties(
         if (maxTokens <= 0) {
             maxTokens = 16_000;
         }
+        if (temperature <= 0) {
+            temperature = 0.7;
+        }
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://api.openai.com/v1/responses";
         }
