@@ -1,6 +1,6 @@
 # feedback 스키마 — question_score_dimension
 
-> 대상 마이그레이션: `V36__add_question_score_tables.sql`
+> 대상 마이그레이션: `V36__add_question_score_tables.sql`, `V54__rollback_score_system.sql`
 
 ## 테이블 목록
 
@@ -35,6 +35,7 @@ question_score 1행 산하의 dimension (예: `clarity`, `depth`, `fluency`, `co
 
 ### 마이그레이션 히스토리
 - `V36__add_question_score_tables.sql` — 신규 생성
+- `V54__rollback_score_system.sql` — 본 테이블 DROP (score 시스템 롤백, parent question_score 와 함께 제거)
 
 ---
 
