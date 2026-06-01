@@ -131,28 +131,58 @@ export interface QuestionsWithAnswersResponse {
   questions: QuestionWithAnswer[]
 }
 
-// 피드백 뷰어 타입 (Sprint 0 Task 10)
+// 피드백 뷰어 타입 (코멘트형 content/delivery — main 형태 복원)
 
-export interface TechnicalDimensionFeedback {
-  dimension: string
-  score: number | null
-  observation: string | null
-  evidenceQuote: string | null
-  status: 'OK' | 'NOT_EVALUABLE' | null
+export type FeedbackLevel = 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT'
+
+export interface AccuracyIssue {
+  claim: string
+  correction: string
 }
 
-export type RubricCategory = 'TECHNICAL' | 'EXPERIENCE' | 'BEHAVIORAL'
+export interface CoachingResponse {
+  structure: string | null
+  improvement: string | null
+}
 
-export interface TechnicalFeedback {
-  rubricCategory: RubricCategory | null
-  rubricId: string
-  levelFlag: string | null
-  dimensions: TechnicalDimensionFeedback[]
+export interface CommentBlock {
+  positive: string | null
+  negative: string | null
+  suggestion: string | null
+}
+
+export const isCommentBlockEmpty = (block: CommentBlock | null | undefined): boolean => {
+  if (block === null || block === undefined) return true
+  const fields = [block.positive, block.negative, block.suggestion]
+  return fields.every((v) => v === null || v === undefined || v.trim().length === 0)
+}
+
+export interface ContentFeedback {
+  verbalComment: CommentBlock | null
+  accuracyIssues: AccuracyIssue[]
+  coaching: CoachingResponse | null
 }
 
 export interface NonverbalFeedback {
-  rubricId: string
-  dimensions: TechnicalDimensionFeedback[]
+  eyeContactLevel: FeedbackLevel | null
+  postureLevel: FeedbackLevel | null
+  expressionLabel: string | null
+  nonverbalComment: CommentBlock | null
+}
+
+export interface VocalFeedback {
+  fillerWords: string | null
+  fillerWordCount: number | null
+  speechPace: string | null
+  toneConfidenceLevel: FeedbackLevel | null
+  emotionLabel: string | null
+  vocalComment: CommentBlock | null
+}
+
+export interface DeliveryFeedback {
+  nonverbal: NonverbalFeedback | null
+  vocal: VocalFeedback | null
+  attitudeComment: CommentBlock | null
 }
 
 export interface TimestampFeedback {
@@ -164,9 +194,9 @@ export interface TimestampFeedback {
   startMs: number
   endMs: number
   transcript: string | null
-  technicalFeedback: TechnicalFeedback | null
-  nonverbalFeedback: NonverbalFeedback | null
-  fillerWordCount: number | null
+  content: ContentFeedback | null
+  delivery: DeliveryFeedback | null
+  overallComment: CommentBlock | null
   isAnalyzed: boolean
 }
 
