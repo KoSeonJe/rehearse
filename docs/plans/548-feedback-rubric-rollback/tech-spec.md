@@ -191,7 +191,7 @@ ALTER TABLE timestamp_feedback
 
 - **제거 필드**: `technicalFeedback`, `nonverbalFeedback`(dimensions[]/score/observation/evidenceQuote/status), 최상위 `fillerWordCount`.
 - **유지 필드명**: `bestAnswer`, `questionType`(현행 enum 7종).
-- 세션 피드백 응답(`SessionFeedbackResponse`): `dimensionScores`/strength·gap 의 `dimension`/`levelGap` 필드는 BE 가 계속 직렬화하되 **FE 미렌더**(저블래스트), 입력 재설계로 값은 코멘트 기반. (필드 자체 제거는 비스코프.)
+- 세션 피드백 응답(`SessionFeedbackResponse`): `dimensionScores`/strength·gap 의 `dimension`/`levelGap` 필드는 **BE·FE 양쪽에서 물리 제거**됨 (PR2 구현 중 사용자 결정 — "rubric 관련 전부 제거". 당초 "직렬화 유지/제거 비스코프" 계획에서 변경).
 
 ### Error
 - 404: 피드백/질문세트 없음(기존 코드 유지).
