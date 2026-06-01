@@ -5,8 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record GapItem(
-        String dimension,
         String observation,
-        @JsonProperty("level_gap") String levelGap,
         @JsonProperty("concrete_action") String concreteAction
 ) {}

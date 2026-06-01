@@ -30,17 +30,15 @@ class OpenAiSessionFeedbackSynthesizerTest {
     private static final String VALID_JSON = """
             {
               "overall": {
-                "dimension_scores": {"문제 정의": 2.5, "기술 깊이": 2.0},
                 "level_assessment": "주니어 기대치 충족",
                 "narrative": "CS 개념에서는 안정적이지만 경험 질문에서는 보강이 필요합니다.",
                 "coverage": "all turns scored"
               },
               "strengths": [
-                {"dimension": "문제 정의", "observation": "turn 1에서 요구사항 분해", "why_matters": "구조적 사고"}
+                {"observation": "1-1 답변에서 요구사항 분해", "why_matters": "구조적 사고"}
               ],
               "gaps": [
-                {"dimension": "기술 깊이", "observation": "turn 2에서 트레이드오프 비교 부족",
-                 "level_gap": "미드 기대치 대비 부족", "concrete_action": "비교표 작성"}
+                {"observation": "2-1 답변에서 트레이드오프 비교 부족", "concrete_action": "비교표 작성"}
               ],
               "delivery": null,
               "week_plan": [
@@ -127,9 +125,7 @@ class OpenAiSessionFeedbackSynthesizerTest {
                 new SessionFeedbackInput.SessionMetadata(
                         1L, "BACKEND", "MID", List.of("CS_FUNDAMENTAL"), 2, 30),
                 Collections.emptyList(),
-                Collections.emptyMap(),
-                Collections.emptyList(),
-                null, null, null, null,
+                null, null,
                 "all turns scored",
                 InterviewLevel.MID
         );

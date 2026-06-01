@@ -22,7 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +41,7 @@ class SessionFeedbackPersistTxIntegrationTest extends ServiceIntegrationSupport 
 
     private static GeneratedSessionFeedback generatedFeedback() {
         return new GeneratedSessionFeedback(
-                new OverallSection(Map.of("clarity", 3.0), "L2", "총평", "all turns scored"),
+                new OverallSection("L2", "총평", "all turns scored"),
                 List.of(),
                 List.of(),
                 null,

@@ -43,11 +43,8 @@ public class SessionFeedbackSynthesizerPromptBuilder {
                 .replace("{{USER_LEVEL}}", input.userLevel() != null ? input.userLevel().name() : "MID")
                 .replace("{{COVERAGE}}", input.coverage() != null ? input.coverage() : "all turns scored")
                 .replace("{{TURN_SCORES_JSON}}", serialize(input.turnScores()))
-                .replace("{{SCORES_BY_CATEGORY_JSON}}", serialize(input.scoresByCategory()))
-                .replace("{{APPLIED_RUBRICS}}", serialize(input.appliedRubrics()))
                 .replace("{{DELIVERY_ANALYSIS_JSON}}", nullSafe(input.deliveryAnalysis()))
-                .replace("{{VISION_ANALYSIS_JSON}}", nullSafe(input.visionAnalysis()))
-                .replace("{{NONVERBAL_AGGREGATE_JSON}}", nonverbalAggregateJson(input));
+                .replace("{{VISION_ANALYSIS_JSON}}", nullSafe(input.visionAnalysis()));
     }
 
     private String serialize(Object obj) {
@@ -62,13 +59,6 @@ public class SessionFeedbackSynthesizerPromptBuilder {
 
     private String nullSafe(String value) {
         return value != null ? value : "null";
-    }
-
-    private String nonverbalAggregateJson(SessionFeedbackInput input) {
-        if (input.nonverbalAggregate() != null) {
-            return serialize(input.nonverbalAggregate());
-        }
-        return nullSafe(input.legacyNonverbalAggregateJson());
     }
 
     public record PromptPair(String system, String user) {

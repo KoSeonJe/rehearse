@@ -124,9 +124,7 @@ class MockSessionFeedbackSynthesizerTest {
                 new SessionFeedbackInput.SessionMetadata(
                         1L, "BACKEND", "MID", List.of("CS_FUNDAMENTAL"), 2, 30),
                 Collections.emptyList(),
-                Collections.emptyMap(),
-                Collections.emptyList(),
-                null, null, null, null,
+                null, null,
                 "all turns scored",
                 InterviewLevel.MID
         );
