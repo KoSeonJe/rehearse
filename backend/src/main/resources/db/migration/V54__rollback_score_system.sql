@@ -17,4 +17,4 @@ ALTER TABLE timestamp_feedback
     ADD COLUMN emotion_label         VARCHAR(20),
     ADD COLUMN eye_contact_level     VARCHAR(20),
     ADD COLUMN posture_level         VARCHAR(20),
-    ADD COLUMN expression_label      VARCHAR(20);
+    ADD COLUMN expression_label      VARCHAR(50);
