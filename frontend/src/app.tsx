@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { useAuthInterceptor } from '@/hooks/use-auth-interceptor'
 import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
+import { useAnalyticsInit } from '@/hooks/use-analytics-init'
+import { useAnalyticsPageview } from '@/hooks/use-analytics-pageview'
 import { HomePage } from '@/pages/home-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
@@ -30,6 +32,8 @@ export const App = () => {
   usePostLoginRedirect()
   useAuthInterceptor()
   useCrossTabSync()
+  useAnalyticsInit()
+  useAnalyticsPageview()
 
   return (
     <TooltipProvider>
