@@ -7,6 +7,8 @@ import { DeviceTestSection } from '@/components/interview/device-test-section'
 import { ErrorState } from '@/components/ui/error-state'
 import { useInterview, useUpdateInterviewStatus, useRetryQuestions } from '@/hooks/use-interviews'
 import { useDeviceTest } from '@/hooks/use-device-test'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT } from '@/constants/analytics'
 import {
   LEVEL_LABELS,
   INTERVIEW_TYPE_LABELS,
@@ -54,6 +56,7 @@ export const InterviewReadyPage = () => {
 
   const handleStartInterview = () => {
     if (!interview) return
+    trackEvent(ANALYTICS_EVENT.INTERVIEW_START)
     if (isResume) {
       navigate(`/interview/${interview.id}/conduct`, { replace: true })
       return

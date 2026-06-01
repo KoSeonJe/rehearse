@@ -3,6 +3,8 @@ import { Helmet } from 'react-helmet-async'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQueries, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api-client'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT, FEEDBACK_VIEWED_TRACKED_PREFIX } from '@/constants/analytics'
 import { useInterviewByPublicId } from '@/hooks/use-interviews'
 import { useQuestionSetFeedback, useQuestionsWithAnswers } from '@/hooks/use-question-sets'
 import { useFeedbackSync } from '@/hooks/use-feedback-sync'
@@ -379,6 +381,15 @@ export const InterviewFeedbackPage = () => {
     const timer = setTimeout(() => setIsSessionFeedbackOpen(true), 0)
     return () => clearTimeout(timer)
   }, [interview, sessionFeedback, sfLoading])
+
+  useEffect(() => {
+    if (!interview || !hasAnyCompleted) return
+    // TODO(seonje, 2026-06-01): GA 전환 추적용 localStorage 키 정리 메커니즘 부재 — 인터뷰 수만큼 누적. sessionStorage 이전 검토.
+    const key = `${FEEDBACK_VIEWED_TRACKED_PREFIX}${interview.id}`
+    if (localStorage.getItem(key)) return
+    localStorage.setItem(key, '1')
+    trackEvent(ANALYTICS_EVENT.FEEDBACK_VIEWED)
+  }, [interview, hasAnyCompleted])
 
   const completedQs = questionSets.filter(
     (qs) => qs.analysisStatus === 'COMPLETED' || qs.analysisStatus === 'PARTIAL',

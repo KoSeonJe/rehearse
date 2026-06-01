@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateInterview } from '@/hooks/use-interviews'
 import { ApiError } from '@/lib/api-client'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT } from '@/constants/analytics'
 import { POSITION_INTERVIEW_TYPES, POSITION_TECH_STACKS } from '@/constants/interview-labels'
 import { TOTAL_STEPS, MAX_FILE_SIZE } from '@/constants/setup'
 import type { Step } from '@/constants/setup'
@@ -200,6 +202,7 @@ export const useInterviewSetup = () => {
       },
       {
         onSuccess: (response) => {
+          trackEvent(ANALYTICS_EVENT.INTERVIEW_CREATE)
           navigate(`/interview/${response.data.id}/ready`, { replace: true })
         },
         onError: (error) => {

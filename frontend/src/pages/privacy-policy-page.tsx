@@ -181,7 +181,9 @@ export const PrivacyPolicyPage = () => {
               적용되어 XSS·CSRF 위험을 최소화합니다.
             </p>
             <p>
-              서비스는 광고 추적, 행동 분석, 제3자 마케팅 목적의 쿠키를 사용하지 않습니다.
+              서비스는 방문자 통계와 서비스 개선을 위해 Google Analytics 4를 사용하며, 이 과정에서{' '}
+              <code className="text-xs bg-surface px-1.5 py-0.5 rounded font-mono">_ga</code> 쿠키가 설정됩니다.
+              서비스는 광고 추적, 제3자 마케팅 목적의 쿠키는 사용하지 않습니다.
             </p>
           </Section>
 
