@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.question.service;
 
-import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
+import com.rehearse.api.domain.question.entity.RubricCategory;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;

@@ -1,6 +1,5 @@
 package com.rehearse.api.architecture;
 
-import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.service.FollowUpTransactionHandler;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -192,13 +191,13 @@ class ResumeArchitectureTest {
     }
 
     @Test
-    @DisplayName("RubricLoader.loadMapping 은 다시 만들 수 없다 (_mapping.yaml 라우팅 폐기)")
-    void deletedRubricLoaderMappingMethodMustNotResurface() {
-        noMethods()
-                .that().haveName("loadMapping").and().areDeclaredIn(RubricLoader.class)
-                .should().bePublic()
-                .orShould().beProtected()
-                .orShould().bePrivate()
+    @DisplayName("RubricLoader 클래스는 다시 만들 수 없다 (루브릭 채점 시스템 롤백)")
+    void deletedRubricLoaderClassMustNotResurface() {
+        noClasses()
+                .that().haveSimpleName("RubricLoader")
+                .or().haveSimpleName("RubricCatalog")
+                .or().haveSimpleName("RubricScoringService")
+                .should().resideInAnyPackage("..")
                 .allowEmptyShould(true)
                 .check(importedClasses);
     }

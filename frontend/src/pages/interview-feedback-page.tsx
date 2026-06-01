@@ -353,6 +353,9 @@ const QuestionSetSection = ({
   )
 }
 
+// PR1 동안 세션 피드백 생성이 BE 에서 임시 중립화됨 (데이터 없음). PR2 에서 true 로 복원.
+const IS_SESSION_FEEDBACK_ENABLED = false
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -371,9 +374,13 @@ export const InterviewFeedbackPage = () => {
     data: sessionFeedback,
     isLoading: sfLoading,
     isError: sfError,
-  } = useSessionFeedback(interview?.id ?? 0, hasAnyCompleted && !!interview)
+  } = useSessionFeedback(
+    interview?.id ?? 0,
+    IS_SESSION_FEEDBACK_ENABLED && hasAnyCompleted && !!interview,
+  )
 
   useEffect(() => {
+    if (!IS_SESSION_FEEDBACK_ENABLED) return
     if (!interview || !sessionFeedback || sfLoading) return
     const key = `seen-session-feedback-${interview.id}`
     if (localStorage.getItem(key)) return
@@ -501,19 +508,23 @@ export const InterviewFeedbackPage = () => {
           ))}
       </PageGrid>
 
-      <SessionFeedbackModal
-        isOpen={isSessionFeedbackOpen}
-        onClose={() => setIsSessionFeedbackOpen(false)}
-        data={sessionFeedback}
-        isLoading={sfLoading}
-        isError={sfError}
-      />
+      {IS_SESSION_FEEDBACK_ENABLED && (
+        <>
+          <SessionFeedbackModal
+            isOpen={isSessionFeedbackOpen}
+            onClose={() => setIsSessionFeedbackOpen(false)}
+            data={sessionFeedback}
+            isLoading={sfLoading}
+            isError={sfError}
+          />
 
-      {hasAnyCompleted && (
-        <CoachNoteFab
-          onClick={() => setIsSessionFeedbackOpen(true)}
-          isLoading={sfLoading && !sessionFeedback}
-        />
+          {hasAnyCompleted && (
+            <CoachNoteFab
+              onClick={() => setIsSessionFeedbackOpen(true)}
+              isLoading={sfLoading && !sessionFeedback}
+            />
+          )}
+        </>
       )}
     </div>
   )

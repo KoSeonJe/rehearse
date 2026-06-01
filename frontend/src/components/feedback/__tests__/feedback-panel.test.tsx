@@ -15,22 +15,17 @@ const baseFeedback: TimestampFeedback = {
   startMs: 0,
   endMs: 30000,
   transcript: '세대별 GC 가 동작합니다.',
-  technicalFeedback: {
-    rubricCategory: 'TECHNICAL',
-    rubricId: 'technical-v1',
-    levelFlag: 'MID_EXPECTATION_MET',
-    dimensions: [
-      {
-        dimension: 'conceptual_accuracy',
-        score: 3,
-        observation: '세대별 GC 개념을 정확히 설명했습니다.',
-        evidenceQuote: '세대별 GC 가 동작합니다',
-        status: 'OK',
-      },
-    ],
+  content: {
+    verbalComment: {
+      positive: '세대별 GC 개념을 정확히 설명했어요.',
+      negative: null,
+      suggestion: null,
+    },
+    accuracyIssues: [],
+    coaching: null,
   },
-  nonverbalFeedback: null,
-  fillerWordCount: null,
+  delivery: null,
+  overallComment: null,
   isAnalyzed: true,
 }
 
@@ -63,38 +58,60 @@ const renderPanel = (feedback: TimestampFeedback, onSeek: (ms: number) => void =
   )
 }
 
+const buildDelivery = (fillerWordCount: number | null): NonNullable<TimestampFeedback['delivery']> => ({
+  nonverbal: null,
+  vocal: {
+    fillerWords: '["음","어"]',
+    fillerWordCount,
+    speechPace: 'FAST',
+    toneConfidenceLevel: 'GOOD',
+    emotionLabel: 'CONFIDENT',
+    vocalComment: null,
+  },
+  attitudeComment: null,
+})
+
 describe('FeedbackPanel', () => {
-  it('fillerWordCount === 3 → "습관어 3회 감지" 노출', () => {
-    renderPanel({ ...baseFeedback, fillerWordCount: 3 })
+  it('Content/Delivery 2탭 노출', () => {
+    renderPanel({ ...baseFeedback, delivery: buildDelivery(null) })
 
-    expect(screen.getByText('습관어 3회 감지')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '내 답변은 어땠을까' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: '어떤 인상을 줬을까' })).toBeInTheDocument()
   })
 
-  it('fillerWordCount === 0 → 필러 배지 부재', () => {
-    renderPanel({ ...baseFeedback, fillerWordCount: 0 })
+  it('delivery 데이터 부재 → Delivery 탭 비활성', () => {
+    renderPanel({ ...baseFeedback, delivery: null })
 
-    expect(screen.queryByText(/습관어.*감지/)).not.toBeInTheDocument()
+    const deliveryTab = screen.getByRole('tab', { name: '어떤 인상을 줬을까' })
+    expect(deliveryTab).toBeDisabled()
   })
 
-  it('fillerWordCount === null → 필러 배지 부재', () => {
-    renderPanel({ ...baseFeedback, fillerWordCount: null })
+  it('Delivery 탭 클릭 → 습관어 감지 횟수 노출', async () => {
+    const user = userEvent.setup()
+    renderPanel({ ...baseFeedback, delivery: buildDelivery(3) })
 
-    expect(screen.queryByText(/습관어.*감지/)).not.toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: '어떤 인상을 줬을까' }))
+    expect(await screen.findByText('습관어가 3회 감지됐어요')).toBeInTheDocument()
   })
 
-  it('Tab 네비게이션 부재 (role="tab" 0개)', () => {
+  it('내 답변 영역 습관어 감지 횟수 — delivery.vocal.fillerWordCount 기반', () => {
+    renderPanel({ ...baseFeedback, delivery: buildDelivery(5) })
+
+    expect(screen.getByText('습관어 5회 감지')).toBeInTheDocument()
+  })
+
+  it('fillerWordCount === 0 → 내 답변 영역 습관어 표시 부재', () => {
+    renderPanel({ ...baseFeedback, delivery: buildDelivery(0) })
+
+    expect(screen.queryByText(/습관어 \d+회 감지/)).not.toBeInTheDocument()
+  })
+
+  it('차원 점수 카드(1~5점) 부재 — 루브릭 제거 확인', () => {
     renderPanel(baseFeedback)
 
-    expect(screen.queryAllByRole('tab')).toHaveLength(0)
-  })
-
-  it('ContentTab 단일 렌더 → verbal 차원 카드 노출', () => {
-    renderPanel(baseFeedback)
-
-    expect(screen.getByText('기술 피드백')).toBeInTheDocument()
-    expect(screen.getByText('개념 정확도')).toBeInTheDocument()
-    expect(screen.queryByText('conceptual_accuracy')).not.toBeInTheDocument()
-    expect(screen.getByText('3점')).toBeInTheDocument()
+    expect(screen.queryByText('3점')).not.toBeInTheDocument()
+    expect(screen.queryByText('기술 피드백')).not.toBeInTheDocument()
+    expect(screen.queryByText('개념 정확도')).not.toBeInTheDocument()
   })
 
   it('타임스탬프 버튼 클릭 / 키보드 (Enter / Space) 로 seek 동작', async () => {
@@ -116,27 +133,5 @@ describe('FeedbackPanel', () => {
     onSeek.mockClear()
     await user.keyboard(' ')
     expect(onSeek).toHaveBeenCalledWith(baseFeedback.startMs)
-  })
-
-  it('자유서술 텍스트 (긍정 / 부정 / 제안) 부재', () => {
-    renderPanel({
-      ...baseFeedback,
-      nonverbalFeedback: {
-        rubricId: 'nonverbal-v1',
-        dimensions: [
-          {
-            dimension: 'fluency',
-            score: 2,
-            observation: '발화 매끄러움.',
-            evidenceQuote: null,
-            status: 'OK',
-          },
-        ],
-      },
-    })
-
-    expect(screen.queryByText('잘한 점')).not.toBeInTheDocument()
-    expect(screen.queryByText('아쉬운 점')).not.toBeInTheDocument()
-    expect(screen.queryByText('이렇게 해보세요')).not.toBeInTheDocument()
   })
 })

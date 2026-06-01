@@ -1,21 +1,21 @@
 package com.rehearse.api.domain.feedback.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.rubric.RubricIds;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Builder
 public class TimestampFeedbackResponse {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final Long id;
     private final Long questionId;
@@ -25,54 +25,109 @@ public class TimestampFeedbackResponse {
     private final long startMs;
     private final long endMs;
     private final String transcript;
-    private final String fillerWords;
-    private final Integer fillerWordCount;
-    private final TechnicalFeedback technicalFeedback;
-    private final NonverbalRubricFeedback nonverbalFeedback;
+    private final ContentFeedback content;
+    private final DeliveryFeedback delivery;
+    private final CommentBlock overallComment;
     @JsonProperty("isAnalyzed")
     private final boolean isAnalyzed;
 
     @Getter
     @Builder
-    public static class TechnicalFeedback {
-        private final String rubricCategory;
-        private final String rubricId;
-        private final String levelFlag;
-        private final List<TechnicalDimensionFeedback> dimensions;
+    @Jacksonized
+    public static class CommentBlock {
+        private final String positive;
+        private final String negative;
+        private final String suggestion;
     }
 
     @Getter
     @Builder
-    public static class TechnicalDimensionFeedback {
-        private final String dimension;
-        private final Integer score;
-        private final String observation;
-        private final String evidenceQuote;
-        private final String status;
+    public static class ContentFeedback {
+        private final CommentBlock verbalComment;
+        private final List<AccuracyIssue> accuracyIssues;
+        private final CoachingResponse coaching;
     }
 
-    public record NonverbalRubricFeedback(
-            String rubricId,
-            List<TechnicalDimensionFeedback> dimensions
-    ) {
+    @Getter
+    @Builder
+    @Jacksonized
+    public static class AccuracyIssue {
+        private final String claim;
+        private final String correction;
     }
 
-    public static TimestampFeedbackResponse from(TimestampFeedback feedback,
-                                                  List<QuestionScore> questionScores,
-                                                  Map<Long, List<QuestionScoreDimension>> dimsByScoreId) {
+    @Getter
+    @Builder
+    public static class CoachingResponse {
+        private final String structure;
+        private final String improvement;
+    }
+
+    @Getter
+    @Builder
+    public static class DeliveryFeedback {
+        private final NonverbalFeedback nonverbal;
+        private final VocalFeedback vocal;
+        private final CommentBlock attitudeComment;
+    }
+
+    @Getter
+    @Builder
+    public static class NonverbalFeedback {
+        private final String eyeContactLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String postureLevel;
+        private final String expressionLabel;
+        private final CommentBlock nonverbalComment;
+    }
+
+    @Getter
+    @Builder
+    public static class VocalFeedback {
+        private final String fillerWords;           // JSON 배열 문자열
+        private final Integer fillerWordCount;
+        private final String speechPace;
+        private final String toneConfidenceLevel;   // GOOD / AVERAGE / NEEDS_IMPROVEMENT
+        private final String emotionLabel;
+        private final CommentBlock vocalComment;
+    }
+
+    public static TimestampFeedbackResponse from(TimestampFeedback feedback) {
         Question question = feedback.getQuestion();
 
-        TechnicalFeedback technicalFeedback = null;
-        NonverbalRubricFeedback nonverbalFeedback = null;
-        for (QuestionScore questionScore : questionScores) {
-            String rubricId = questionScore.getRubricId();
-            List<QuestionScoreDimension> dimensions = dimsByScoreId.getOrDefault(questionScore.getId(), List.of());
-            if (RubricIds.NONVERBAL.equals(rubricId)) {
-                nonverbalFeedback = toNonverbalRubricFeedback(questionScore, dimensions);
-            } else {
-                technicalFeedback = toTechnicalFeedback(question, questionScore, dimensions);
-            }
-        }
+        List<AccuracyIssue> accuracyIssues = parseAccuracyIssues(feedback.getAccuracyIssues());
+
+        CoachingResponse coaching = CoachingResponse.builder()
+                .structure(feedback.getCoachingStructure())
+                .improvement(feedback.getCoachingImprovement())
+                .build();
+
+        ContentFeedback content = ContentFeedback.builder()
+                .verbalComment(parseCommentBlock(feedback.getVerbalComment()))
+                .accuracyIssues(accuracyIssues)
+                .coaching(coaching)
+                .build();
+
+        NonverbalFeedback nonverbal = NonverbalFeedback.builder()
+                .eyeContactLevel(feedback.getEyeContactLevel())
+                .postureLevel(feedback.getPostureLevel())
+                .expressionLabel(feedback.getExpressionLabel())
+                .nonverbalComment(parseCommentBlock(feedback.getNonverbalComment()))
+                .build();
+
+        VocalFeedback vocal = VocalFeedback.builder()
+                .fillerWords(feedback.getFillerWords())
+                .fillerWordCount(feedback.getFillerWordCount())
+                .speechPace(feedback.getSpeechPace())
+                .toneConfidenceLevel(feedback.getToneConfidenceLevel())
+                .emotionLabel(feedback.getEmotionLabel())
+                .vocalComment(parseCommentBlock(feedback.getVocalComment()))
+                .build();
+
+        DeliveryFeedback delivery = DeliveryFeedback.builder()
+                .nonverbal(nonverbal)
+                .vocal(vocal)
+                .attitudeComment(parseCommentBlock(feedback.getAttitudeComment()))
+                .build();
 
         return TimestampFeedbackResponse.builder()
                 .id(feedback.getId())
@@ -83,51 +138,30 @@ public class TimestampFeedbackResponse {
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
-                .fillerWords(feedback.getFillerWords())
-                .fillerWordCount(feedback.getFillerWordCount())
-                .technicalFeedback(technicalFeedback)
-                .nonverbalFeedback(nonverbalFeedback)
+                .content(content)
+                .delivery(delivery)
+                .overallComment(parseCommentBlock(feedback.getOverallComment()))
                 .isAnalyzed(feedback.isAnalyzed())
                 .build();
     }
 
-    private static TechnicalFeedback toTechnicalFeedback(Question question,
-                                                          QuestionScore questionScore,
-                                                          List<QuestionScoreDimension> dimensions) {
-        if (questionScore == null || dimensions == null || dimensions.isEmpty()) {
-            return null;
+    static CommentBlock parseCommentBlock(String json) {
+        if (json == null || json.isBlank()) return null;
+        try {
+            return OBJECT_MAPPER.readValue(json, CommentBlock.class);
+        } catch (Exception e) {
+            return CommentBlock.builder().positive(json).build();
         }
-
-        String perspective = (question != null && question.getQuestionType() != null)
-                ? question.getQuestionType().rubricCategory().name()
-                : null;
-
-        return TechnicalFeedback.builder()
-                .rubricCategory(perspective)
-                .rubricId(questionScore.getRubricId())
-                .levelFlag(questionScore.getLevelFlag())
-                .dimensions(toDimensionFeedbacks(dimensions))
-                .build();
     }
 
-    private static NonverbalRubricFeedback toNonverbalRubricFeedback(QuestionScore questionScore,
-                                                                       List<QuestionScoreDimension> dimensions) {
-        if (questionScore == null || dimensions == null || dimensions.isEmpty()) {
-            return null;
+    private static List<AccuracyIssue> parseAccuracyIssues(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
         }
-        return new NonverbalRubricFeedback(questionScore.getRubricId(), toDimensionFeedbacks(dimensions));
-    }
-
-    private static List<TechnicalDimensionFeedback> toDimensionFeedbacks(List<QuestionScoreDimension> dimensions) {
-        return dimensions.stream()
-                .sorted(Comparator.comparing(QuestionScoreDimension::getDimensionRef))
-                .map(d -> TechnicalDimensionFeedback.builder()
-                        .dimension(d.getDimensionRef())
-                        .score(d.getScore())
-                        .observation(d.getObservation())
-                        .evidenceQuote(d.getEvidenceQuote())
-                        .status(d.getStatus() != null ? d.getStatus().name() : null)
-                        .build())
-                .toList();
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
     }
 }

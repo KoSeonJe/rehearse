@@ -60,14 +60,4 @@ class AiSchemaSpecTest {
         assertThat(csSpec.schema()).containsEntry("additionalProperties", false);
         assertThat(resumeSpec.schema()).containsEntry("additionalProperties", false);
     }
-
-    @Test
-    @DisplayName("GeneratedRubricScoringSchema.spec(dims) 은 dimension 리스트를 required 로 포함한다")
-    void generatedRubricScoringSchema_spec_withDimensions() {
-        List<String> dims = List.of("technical_depth", "reasoning_communication");
-        JsonSchemaSpec spec = GeneratedRubricScoringSchema.spec(dims);
-
-        assertThat(spec.name()).isEqualTo("rubric_score");
-        assertThat(spec.schema().get("required")).isEqualTo(dims);
-    }
 }

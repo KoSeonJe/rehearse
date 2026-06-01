@@ -1,27 +1,13 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.rehearse.api.domain.feedback.rubric.service.NonverbalImprovementActionsLoader;
-import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
-import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
-import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
-import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInputAssembler;
-import com.rehearse.api.domain.feedback.session.synthesis.TurnScoreView;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.service.InterviewFinder;
-import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.question.entity.QuestionSet;
-import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.question.repository.QuestionSetRepository;
-import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,43 +16,24 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
-import org.springframework.test.util.ReflectionTestUtils;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 
+// PR1 중립화 상태 검증. PR2(코멘트 기반 재설계) 시 입력 조립 테스트 재작성 예정.
 @ExtendWith(MockitoExtension.class)
+@DisplayName("SessionFeedbackInputAssembler - PR1 중립화")
 class SessionFeedbackInputAssemblerTest {
-
-    private SessionFeedbackInputAssembler assembler;
-
-    @Mock
-    private QuestionScoreRepository questionScoreRepository;
-
-    @Mock
-    private QuestionScoreDimensionRepository questionScoreDimensionRepository;
 
     @Mock
     private InterviewFinder interviewFinder;
 
-    @Mock
-    private QuestionSetRepository questionSetRepository;
-
-    private Interview mockInterview;
+    private SessionFeedbackInputAssembler assembler;
+    private Interview interview;
 
     @BeforeEach
     void setUp() {
-        RubricLoader rubricLoader = new RubricLoader();
-        ReflectionTestUtils.invokeMethod(rubricLoader, "init");
-        assembler = new SessionFeedbackInputAssembler(
-                questionScoreRepository,
-                questionScoreDimensionRepository,
-                interviewFinder,
-                new NonverbalImprovementActionsLoader(),
-                rubricLoader,
-                questionSetRepository
-        );
-        mockInterview = Interview.builder()
+        assembler = new SessionFeedbackInputAssembler(interviewFinder);
+        interview = Interview.builder()
                 .userId(1L)
                 .position(Position.BACKEND)
                 .level(InterviewLevel.MID)
@@ -76,100 +43,26 @@ class SessionFeedbackInputAssemblerTest {
     }
 
     @Test
-    @DisplayName("scoresJson이 비어있는 턴은 FAILED로 매핑되고 coverage에 반영된다")
-    void assemble_mapsEmptyScoresToFailedStatus() {
-        Long interviewId = 1L;
+    @DisplayName("assemble: 루브릭 점수 제거로 turnScores 없이 빈 입력을 반환한다")
+    void assemble_returnsEmptyInput() {
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
-        QuestionScore okScore = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(1L)
-                .rubricId("cs-v1")
-                .levelFlag("MID")
-                .build();
-        ReflectionTestUtils.setField(okScore, "id", 1L);
+        SessionFeedbackInput input = assembler.assemble(1L);
 
-        QuestionScore failedScore = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(2L)
-                .rubricId("cs-v1")
-                .levelFlag(null)
-                .build();
-        ReflectionTestUtils.setField(failedScore, "id", 2L);
-
-        QuestionScoreDimension dim = QuestionScoreDimension.builder()
-                .questionScoreId(okScore.getId())
-                .dimensionRef("problem_framing")
-                .score(3)
-                .observation("명확함")
-                .evidenceQuote("turn 1에서 증명")
-                .build();
-
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of(okScore, failedScore));
-        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(okScore.getId(), failedScore.getId())))
-                .willReturn(List.of(dim));
-
-        SessionFeedbackInput input = assembler.assemble(interviewId);
-
-        assertThat(input.turnScores()).hasSize(2);
-
-        TurnScoreView okTurn = input.turnScores().get(0);
-        assertThat(okTurn.status()).isEqualTo(TurnScoreView.TurnStatus.OK);
-        assertThat(okTurn.scoredDimensions()).containsExactly("문제 정의");
-        assertThat(okTurn.dimensionScores()).containsKey("문제 정의");
-        assertThat(okTurn.dimensionScores()).doesNotContainKey("problem_framing");
-
-        TurnScoreView failedTurn = input.turnScores().get(1);
-        assertThat(failedTurn.status()).isEqualTo(TurnScoreView.TurnStatus.FAILED);
-        assertThat(failedTurn.scoredDimensions()).isEmpty();
-
-        assertThat(input.coverage()).isEqualTo("1/2 turns scored");
-    }
-
-    @Test
-    @DisplayName("모든 턴이 OK이면 coverage는 'all turns scored'")
-    void assemble_allOkTurns_returnsAllTurnsScoredCoverage() {
-        Long interviewId = 2L;
-
-        QuestionScore score = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(1L)
-                .rubricId("cs-v1")
-                .levelFlag("MID")
-                .build();
-        ReflectionTestUtils.setField(score, "id", 10L);
-
-        QuestionScoreDimension dim = QuestionScoreDimension.builder()
-                .questionScoreId(score.getId())
-                .dimensionRef("problem_framing")
-                .score(2)
-                .observation("보통")
-                .evidenceQuote("turn 1")
-                .build();
-
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of(score));
-        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(score.getId())))
-                .willReturn(List.of(dim));
-
-        SessionFeedbackInput input = assembler.assemble(interviewId);
-
-        assertThat(input.coverage()).isEqualTo("all turns scored");
+        assertThat(input.turnScores()).isEmpty();
+        assertThat(input.scoresByCategory()).isEmpty();
+        assertThat(input.appliedRubrics()).isEmpty();
+        assertThat(input.nonverbalAggregate()).isNull();
+        assertThat(input.coverage()).isEqualTo("0/0 turns scored");
         assertThat(input.userLevel()).isEqualTo(InterviewLevel.MID);
     }
 
     @Test
-    @DisplayName("sessionMetadata는 타입 있는 record로 생성된다")
-    void assemble_createsTypedSessionMetadata() {
-        Long interviewId = 20L;
+    @DisplayName("assemble: 세션 메타데이터는 인터뷰 정보로 채워진다")
+    void assemble_fillsSessionMetadata() {
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of());
-
-        SessionFeedbackInput input = assembler.assemble(interviewId);
+        SessionFeedbackInput input = assembler.assemble(1L);
 
         assertThat(input.sessionMetadata().position()).isEqualTo("BACKEND");
         assertThat(input.sessionMetadata().level()).isEqualTo("MID");
@@ -179,323 +72,13 @@ class SessionFeedbackInputAssemblerTest {
     }
 
     @Test
-    @DisplayName("모든 dim 이 NOT_EVALUABLE 인 turn 은 TurnStatus.NOT_EVALUABLE 로 매핑되고 coverage 분자에서 제외된다")
-    void assemble_mapsAllNotEvaluableDimensions_toNotEvaluableStatus() {
-        Long interviewId = 30L;
+    @DisplayName("assembleWithDelivery: Delivery 인자와 무관하게 빈 입력을 반환한다")
+    void assembleWithDelivery_returnsEmptyInput() {
+        given(interviewFinder.findById(1L)).willReturn(interview);
 
-        QuestionScore okScore = QuestionScore.builder()
-                .interviewId(interviewId).questionId(1L).rubricId("cs-v1").levelFlag("MID").build();
-        ReflectionTestUtils.setField(okScore, "id", 30L);
+        SessionFeedbackInput input = assembler.assembleWithDelivery(1L, "{}", "{}", "{}");
 
-        QuestionScore notEvaluableScore = QuestionScore.builder()
-                .interviewId(interviewId).questionId(2L).rubricId("cs-v1").levelFlag("MID").build();
-        ReflectionTestUtils.setField(notEvaluableScore, "id", 31L);
-
-        QuestionScoreDimension okDim = QuestionScoreDimension.builder()
-                .questionScoreId(okScore.getId())
-                .dimensionRef("problem_framing").score(3).observation("명확함").evidenceQuote("turn 1")
-                .status(DimensionStatus.OK)
-                .build();
-        QuestionScoreDimension neDim1 = QuestionScoreDimension.builder()
-                .questionScoreId(notEvaluableScore.getId())
-                .dimensionRef("problem_framing").score(null).observation("관련 발언 없음").evidenceQuote(null)
-                .status(DimensionStatus.NOT_EVALUABLE)
-                .build();
-        QuestionScoreDimension neDim2 = QuestionScoreDimension.builder()
-                .questionScoreId(notEvaluableScore.getId())
-                .dimensionRef("technical_depth").score(null).observation("관련 발언 없음").evidenceQuote(null)
-                .status(DimensionStatus.NOT_EVALUABLE)
-                .build();
-
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of(okScore, notEvaluableScore));
-        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(okScore.getId(), notEvaluableScore.getId())))
-                .willReturn(List.of(okDim, neDim1, neDim2));
-
-        SessionFeedbackInput input = assembler.assemble(interviewId);
-
-        assertThat(input.turnScores()).hasSize(2);
-        assertThat(input.turnScores().get(0).status()).isEqualTo(TurnScoreView.TurnStatus.OK);
-        assertThat(input.turnScores().get(1).status()).isEqualTo(TurnScoreView.TurnStatus.NOT_EVALUABLE);
-        assertThat(input.coverage()).isEqualTo("1/2 turns scored");
-        assertThat(input.scoresByCategory().get("cs-v1")).containsOnlyKeys("문제 정의");
-    }
-
-    @Test
-    @DisplayName("DB nonverbal_score가 있으면 D11~D14 aggregate와 최저 차원 개선 액션을 Delivery 입력으로 사용한다")
-    void assembleWithDelivery_usesDbNonverbalScoresForTypedAggregate() {
-        Long interviewId = 3L;
-
-        QuestionScore contentScore = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(1L)
-                .rubricId("cs-v1")
-                .levelFlag("MID")
-                .build();
-        ReflectionTestUtils.setField(contentScore, "id", 100L);
-
-        QuestionScoreDimension contentDim = QuestionScoreDimension.builder()
-                .questionScoreId(contentScore.getId())
-                .dimensionRef("problem_framing")
-                .score(3)
-                .observation("명확함")
-                .evidenceQuote("turn 1")
-                .build();
-
-        QuestionScore nonverbalScore1 = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(1L)
-                .rubricId("nonverbal-v1")
-                .levelFlag(null)
-                .build();
-        ReflectionTestUtils.setField(nonverbalScore1, "id", 101L);
-
-        QuestionScore nonverbalScore2 = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(2L)
-                .rubricId("nonverbal-v1")
-                .levelFlag(null)
-                .build();
-        ReflectionTestUtils.setField(nonverbalScore2, "id", 102L);
-
-        QuestionScoreDimension nv1D11 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore1.getId())
-                .dimensionRef("fluency")
-                .score(2).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv1D12 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore1.getId())
-                .dimensionRef("confidence_tone")
-                .score(3).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv1D13 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore1.getId())
-                .dimensionRef("eye_contact_posture")
-                .score(1).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv1D14 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore1.getId())
-                .dimensionRef("composure")
-                .score(2).observation("").evidenceQuote("").build();
-
-        QuestionScoreDimension nv2D11 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore2.getId())
-                .dimensionRef("fluency")
-                .score(2).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv2D12 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore2.getId())
-                .dimensionRef("confidence_tone")
-                .score(2).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv2D13 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore2.getId())
-                .dimensionRef("eye_contact_posture")
-                .score(1).observation("").evidenceQuote("").build();
-        QuestionScoreDimension nv2D14 = QuestionScoreDimension.builder()
-                .questionScoreId(nonverbalScore2.getId())
-                .dimensionRef("composure")
-                .score(3).observation("").evidenceQuote("").build();
-
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of(contentScore, nonverbalScore1, nonverbalScore2));
-        given(questionScoreDimensionRepository.findByQuestionScoreIdIn(
-                List.of(contentScore.getId(), nonverbalScore1.getId(), nonverbalScore2.getId())))
-                .willReturn(List.of(contentDim, nv1D11, nv1D12, nv1D13, nv1D14, nv2D11, nv2D12, nv2D13, nv2D14));
-
-        SessionFeedbackInput input = assembler.assembleWithDelivery(
-                interviewId,
-                "{\"legacy\":\"delivery\"}",
-                "{\"legacy\":\"vision\"}",
-                "{\"legacy\":\"aggregate\"}"
-        );
-
-        SessionFeedbackInput.NonverbalDeliveryAggregate aggregate = input.nonverbalAggregate();
-
-        assertThat(aggregate.source()).isEqualTo("nonverbal_score");
-        assertThat(input.legacyNonverbalAggregateJson()).isNull();
-        assertThat(aggregate.turns()).hasSize(2);
-        assertThat(aggregate.turns().getFirst().scores()).containsEntry("시선", 1);
-        assertThat(aggregate.turns().getFirst().scores()).doesNotContainKey("eye_contact_posture");
-        assertThat(aggregate.averageScores()).containsEntry("유창함", 2.0);
-        assertThat(aggregate.averageScores()).containsEntry("시선", 1.0);
-        assertThat(aggregate.averageScores()).containsEntry("자신감", 2.5);
-        assertThat(aggregate.averageScores()).doesNotContainKey("fluency");
-        assertThat(aggregate.averageScores()).doesNotContainKey("confidence_tone");
-        assertThat(aggregate.lowestDimension().dimension()).isEqualTo("시선");
-        assertThat(aggregate.lowestDimension().averageScore()).isEqualTo(1.0);
-        assertThat(aggregate.recommendedActions().getFirst().dimension()).isEqualTo("시선");
-        assertThat(aggregate.recommendedActions().getFirst().actions().getFirst())
-                .contains("카메라를 보고 말하기");
-    }
-
-    @Test
-    @DisplayName("DB nonverbal_score가 없으면 기존 Lambda aggregate 문자열을 fallback으로 유지한다")
-    void assembleWithDelivery_fallsBackToLegacyAggregateWhenNoDbScores() {
-        Long interviewId = 4L;
-        String legacyAggregate = "{\"legacy\":\"aggregate\"}";
-
-        given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-        given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                .willReturn(List.of());
-
-        SessionFeedbackInput input = assembler.assembleWithDelivery(
-                interviewId,
-                null,
-                null,
-                legacyAggregate
-        );
-
+        assertThat(input.turnScores()).isEmpty();
         assertThat(input.nonverbalAggregate()).isNull();
-        assertThat(input.legacyNonverbalAggregateJson()).isEqualTo(legacyAggregate);
-    }
-
-    @Nested
-    @DisplayName("turnLabel 친화 표기 도출")
-    class TurnLabel {
-
-        @Test
-        @DisplayName("메인질문은 N-1, 그 후속질문은 N-2/N-3 으로 표기되고 다음 메인은 후속 카운터가 리셋된다")
-        void deriveLabels_mainAndFollowUps_withResetPerMain() {
-            Long interviewId = 50L;
-
-            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
-            addQuestion(questionSet, 100L, QuestionType.TECH_MAIN, 0);
-            addQuestion(questionSet, 101L, QuestionType.TECH_FOLLOWUP, 1);
-            addQuestion(questionSet, 102L, QuestionType.TECH_FOLLOWUP, 2);
-            addQuestion(questionSet, 103L, QuestionType.TECH_MAIN, 3);
-            addQuestion(questionSet, 104L, QuestionType.TECH_FOLLOWUP, 4);
-
-            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
-                    .willReturn(List.of(questionSet));
-            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                    .willReturn(List.of(
-                            scoreWithDim(interviewId, 100L, 200L),
-                            scoreWithDim(interviewId, 101L, 201L),
-                            scoreWithDim(interviewId, 102L, 202L),
-                            scoreWithDim(interviewId, 103L, 203L),
-                            scoreWithDim(interviewId, 104L, 204L)
-                    ));
-            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(
-                    List.of(200L, 201L, 202L, 203L, 204L)))
-                    .willReturn(List.of(
-                            dim(200L), dim(201L), dim(202L), dim(203L), dim(204L)
-                    ));
-
-            SessionFeedbackInput input = assembler.assemble(interviewId);
-
-            assertThat(input.turnScores())
-                    .extracting(TurnScoreView::turnLabel)
-                    .containsExactly("1-1", "1-2", "1-3", "2-1", "2-2");
-        }
-
-        @Test
-        @DisplayName("점수는 있지만 질문 목록에 없는 questionId 는 turnLabel 이 null 이다")
-        void deriveLabels_unknownQuestionId_fallsBackToNull() {
-            Long interviewId = 51L;
-
-            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
-            addQuestion(questionSet, 100L, QuestionType.TECH_MAIN, 0);
-
-            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
-                    .willReturn(List.of(questionSet));
-            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                    .willReturn(List.of(
-                            scoreWithDim(interviewId, 100L, 200L),
-                            scoreWithDim(interviewId, 999L, 299L)
-                    ));
-            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L, 299L)))
-                    .willReturn(List.of(dim(200L), dim(299L)));
-
-            SessionFeedbackInput input = assembler.assemble(interviewId);
-
-            assertThat(input.turnScores())
-                    .extracting(TurnScoreView::turnLabel)
-                    .containsExactly("1-1", null);
-        }
-
-        @Test
-        @DisplayName("QuestionSet 이 여러 개여도 메인 카운터는 인터뷰 전역 누적이라 set2 메인은 2-1 이다(세트별 리셋 아님)")
-        void deriveLabels_multipleQuestionSets_mainCounterIsGlobalAcrossSets() {
-            Long interviewId = 53L;
-
-            QuestionSet set1 = TestFixtures.createQuestionSet(mockInterview, InterviewType.CS_FUNDAMENTAL, 0);
-            addQuestion(set1, 100L, QuestionType.TECH_MAIN, 0);
-            addQuestion(set1, 101L, QuestionType.TECH_FOLLOWUP, 1);
-
-            QuestionSet set2 = TestFixtures.createQuestionSet(mockInterview, InterviewType.CS_FUNDAMENTAL, 1);
-            addQuestion(set2, 102L, QuestionType.TECH_MAIN, 0);
-
-            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
-                    .willReturn(List.of(set2, set1));
-            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                    .willReturn(List.of(
-                            scoreWithDim(interviewId, 100L, 200L),
-                            scoreWithDim(interviewId, 101L, 201L),
-                            scoreWithDim(interviewId, 102L, 202L)
-                    ));
-            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L, 201L, 202L)))
-                    .willReturn(List.of(dim(200L), dim(201L), dim(202L)));
-
-            SessionFeedbackInput input = assembler.assemble(interviewId);
-
-            assertThat(input.turnScores())
-                    .extracting(TurnScoreView::turnLabel)
-                    .containsExactly("1-1", "1-2", "2-1");
-        }
-
-        @Test
-        @DisplayName("선행 메인 없는 후속질문(비정상) 은 turnLabel 이 null 이다")
-        void deriveLabels_followUpWithoutPrecedingMain_isNull() {
-            Long interviewId = 52L;
-
-            QuestionSet questionSet = TestFixtures.createQuestionSet(mockInterview);
-            addQuestion(questionSet, 100L, QuestionType.TECH_FOLLOWUP, 0);
-
-            given(interviewFinder.findById(interviewId)).willReturn(mockInterview);
-            given(questionSetRepository.findByInterviewIdWithQuestions(interviewId))
-                    .willReturn(List.of(questionSet));
-            given(questionScoreRepository.findByInterviewIdOrderByQuestionIdAsc(interviewId))
-                    .willReturn(List.of(scoreWithDim(interviewId, 100L, 200L)));
-            given(questionScoreDimensionRepository.findByQuestionScoreIdIn(List.of(200L)))
-                    .willReturn(List.of(dim(200L)));
-
-            SessionFeedbackInput input = assembler.assemble(interviewId);
-
-            assertThat(input.turnScores())
-                    .extracting(TurnScoreView::turnLabel)
-                    .containsExactly((String) null);
-        }
-    }
-
-    private void addQuestion(QuestionSet questionSet, Long id, QuestionType type, int orderIndex) {
-        Question question = Question.builder()
-                .questionType(type)
-                .questionText("테스트 질문")
-                .orderIndex(orderIndex)
-                .build();
-        ReflectionTestUtils.setField(question, "id", id);
-        questionSet.addQuestion(question);
-    }
-
-    private QuestionScore scoreWithDim(Long interviewId, Long questionId, Long scoreId) {
-        QuestionScore score = QuestionScore.builder()
-                .interviewId(interviewId)
-                .questionId(questionId)
-                .rubricId("cs-v1")
-                .levelFlag("MID")
-                .build();
-        ReflectionTestUtils.setField(score, "id", scoreId);
-        return score;
-    }
-
-    private QuestionScoreDimension dim(Long scoreId) {
-        return QuestionScoreDimension.builder()
-                .questionScoreId(scoreId)
-                .dimensionRef("problem_framing")
-                .score(3)
-                .observation("명확함")
-                .evidenceQuote("증명")
-                .build();
     }
 }
