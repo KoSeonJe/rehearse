@@ -69,10 +69,6 @@ rehearse:
   answer-analyzer:
     # plan-02 Step A. 기본 ON, runtime toggle 없음 (Feature Flag 철거 정책)
     enabled: true
-  feedback-rubric:
-    family-version: v1
-    fallback-rubric: fallback-generic-v1
-    mode-aware: true
   feedback-synthesizer:
     delivery-timeout-minutes: 10
 

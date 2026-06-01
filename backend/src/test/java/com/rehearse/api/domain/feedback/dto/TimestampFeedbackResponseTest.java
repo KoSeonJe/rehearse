@@ -1,289 +1,109 @@
 package com.rehearse.api.domain.feedback.dto;
 
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
-import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.global.support.TestFixtures;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("타임스탬프 피드백 응답 DTO")
+@DisplayName("TimestampFeedbackResponse - 코멘트형 복원")
 class TimestampFeedbackResponseTest {
 
-    @Test
-    @DisplayName("응답 DTO가 삭제된 Lambda 자유서술 필드를 노출하지 않는다")
-    void timestampResponse_doesNotExposeLambdaContent() {
-        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredFields())
-                .map(field -> field.getName()))
-                .doesNotContain("content");
-
-        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredClasses())
-                .map(Class::getSimpleName))
-                .doesNotContain("ContentFeedback", "AccuracyIssue", "CoachingResponse");
-    }
-
-    @Test
-    @DisplayName("delivery/vocal/nonverbal legacy inner class 및 자유서술 필드를 응답에 노출하지 않는다")
-    void response_doesNotExpose_legacy_delivery_and_freetext() {
-        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredClasses())
-                .map(Class::getSimpleName))
-                .doesNotContain("CommentBlock", "DeliveryFeedback", "NonverbalFeedback", "VocalFeedback");
-
-        assertThat(Arrays.stream(TimestampFeedbackResponse.class.getDeclaredFields())
-                .map(field -> field.getName()))
-                .doesNotContain("delivery", "overallComment");
-    }
-
     @Nested
-    @DisplayName("technicalFeedback.rubricCategory 매핑")
-    class TechnicalRubricCategoryMapping {
+    @DisplayName("parseCommentBlock 메서드")
+    class ParseCommentBlock {
 
         @Test
-        @DisplayName("RESUME_OPENER 질문은 rubricCategory=EXPERIENCE 로 노출된다")
-        void rubricCategory_EXPERIENCE_when_RESUME_OPENER() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_OPENER);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore score = score(100L, 1L, "resume-v1", null);
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    100L, List.of(TestFixtures.createQuestionScoreDimension(100L, "experience_concreteness", 1, "vague"))
-            );
+        @DisplayName("정상적인 JSON 문자열을 CommentBlock으로 파싱한다")
+        void parseCommentBlock_정상_JSON() {
+            String json = "{\"positive\":\"좋음\",\"negative\":\"개선\",\"suggestion\":\"이렇게\"}";
 
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+            TimestampFeedbackResponse.CommentBlock block = TimestampFeedbackResponse.parseCommentBlock(json);
 
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getRubricCategory()).isEqualTo("EXPERIENCE");
+            assertThat(block).isNotNull();
+            assertThat(block.getPositive()).isEqualTo("좋음");
+            assertThat(block.getNegative()).isEqualTo("개선");
+            assertThat(block.getSuggestion()).isEqualTo("이렇게");
         }
 
         @Test
-        @DisplayName("RESUME_MAIN 질문은 rubricCategory=TECHNICAL 로 노출된다")
-        void rubricCategory_TECHNICAL_when_RESUME_MAIN() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore score = score(101L, 2L, "technical-v1", "L1");
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    101L, List.of(TestFixtures.createQuestionScoreDimension(101L, "clarity", 2, "ok"))
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
-
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getRubricCategory()).isEqualTo("TECHNICAL");
+        @DisplayName("null 또는 빈 문자열 입력 시 null을 반환한다")
+        void parseCommentBlock_null_반환() {
+            assertThat(TimestampFeedbackResponse.parseCommentBlock(null)).isNull();
+            assertThat(TimestampFeedbackResponse.parseCommentBlock("")).isNull();
+            assertThat(TimestampFeedbackResponse.parseCommentBlock("   ")).isNull();
         }
 
         @Test
-        @DisplayName("Question 메타가 null 이면 rubricCategory 는 null 로 노출된다")
-        void rubricCategory_null_when_question_null() {
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(null);
-            QuestionScore score = score(102L, 3L, "technical-v1", null);
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    102L, List.of(TestFixtures.createQuestionScoreDimension(102L, "clarity", 0, null))
-            );
+        @DisplayName("JSON이 아닌 레거시 raw 문자열은 positive 필드에 그대로 담긴다")
+        void parseCommentBlock_legacy_raw_문자열() {
+            String legacy = "✓ 잘했음\n△ 보완\n→ 이렇게";
 
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+            TimestampFeedbackResponse.CommentBlock block = TimestampFeedbackResponse.parseCommentBlock(legacy);
 
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getRubricCategory()).isNull();
+            assertThat(block).isNotNull();
+            assertThat(block.getPositive()).isEqualTo(legacy);
+            assertThat(block.getNegative()).isNull();
+            assertThat(block.getSuggestion()).isNull();
         }
     }
 
     @Nested
-    @DisplayName("verbal + nonverbal rubric 동시 노출")
-    class VerbalAndNonverbalAssembly {
+    @DisplayName("from 메서드 - content/delivery 변환")
+    class From {
 
         @Test
-        @DisplayName("verbal + nonverbal 두 rubric row 가 있으면 technicalFeedback / nonverbalFeedback 모두 적재된다")
-        void builds_both_technical_and_nonverbal_when_both_question_scores_present() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore verbal = score(200L, 10L, "technical-v1", "L1");
-            QuestionScore nonverbal = score(201L, 10L, "nonverbal-v1", null);
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    200L, List.of(TestFixtures.createQuestionScoreDimension(200L, "clarity", 2, "정리됨")),
-                    201L, List.of(
-                            TestFixtures.createQuestionScoreDimension(201L, "fluency", 2, "유창"),
-                            TestFixtures.createQuestionScoreDimension(201L, "confidence_tone", 1, "톤 흔들림"),
-                            TestFixtures.createQuestionScoreDimension(201L, "eye_contact_posture", 2, "안정")
-                    )
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(verbal, nonverbal), dims);
-
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getRubricId()).isEqualTo("technical-v1");
-            assertThat(response.getTechnicalFeedback().getDimensions()).hasSize(1);
-            assertThat(response.getNonverbalFeedback()).isNotNull();
-            assertThat(response.getNonverbalFeedback().rubricId()).isEqualTo("nonverbal-v1");
-            assertThat(response.getNonverbalFeedback().dimensions())
-                    .extracting(TimestampFeedbackResponse.TechnicalDimensionFeedback::getDimension)
-                    .containsExactly("confidence_tone", "eye_contact_posture", "fluency");
-        }
-
-        @Test
-        @DisplayName("nonverbal rubric row 만 있으면 nonverbalFeedback 만 적재되고 technicalFeedback 은 null 이다")
-        void builds_nonverbal_only_when_verbal_absent() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore nonverbal = score(300L, 11L, "nonverbal-v1", null);
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    300L, List.of(TestFixtures.createQuestionScoreDimension(300L, "fluency", 2, "유창"))
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(nonverbal), dims);
-
-            assertThat(response.getTechnicalFeedback()).isNull();
-            assertThat(response.getNonverbalFeedback()).isNotNull();
-            assertThat(response.getNonverbalFeedback().rubricId()).isEqualTo("nonverbal-v1");
-        }
-
-        @Test
-        @DisplayName("verbal rubric row 만 있으면 technicalFeedback 만 적재되고 nonverbalFeedback 은 null 이다")
-        void builds_technical_only_when_nonverbal_absent() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore verbal = score(400L, 12L, "technical-v1", "L1");
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    400L, List.of(TestFixtures.createQuestionScoreDimension(400L, "clarity", 2, "정리됨"))
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(verbal), dims);
-
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getNonverbalFeedback()).isNull();
-        }
-    }
-
-    @Nested
-    @DisplayName("dimension status 노출")
-    class DimensionStatusExposure {
-
-        @Test
-        @DisplayName("status=OK 차원은 status 필드가 'OK' 로 노출된다")
-        void status_OK_when_dimension_status_OK() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore score = score(500L, 20L, "resume-v1", "L1");
-            QuestionScoreDimension dim = QuestionScoreDimension.builder()
-                    .questionScoreId(500L).dimensionRef("clarity").score(2).observation("정리됨")
-                    .evidenceQuote("근거").status(DimensionStatus.OK)
+        @DisplayName("코멘트 컬럼을 content/delivery 구조로 변환한다")
+        void from_content_delivery_변환() {
+            TimestampFeedback feedback = TimestampFeedback.builder()
+                    .startMs(0)
+                    .endMs(1000)
+                    .transcript("답변 내용")
+                    .verbalComment("{\"positive\":\"논리적\",\"negative\":\"길다\",\"suggestion\":\"요약\"}")
+                    .eyeContactLevel("GOOD")
+                    .postureLevel("AVERAGE")
+                    .expressionLabel("자연스러움")
+                    .speechPace("적절")
+                    .toneConfidenceLevel("HIGH")
+                    .emotionLabel("자신감")
+                    .fillerWords("[\"음\",\"어\"]")
+                    .fillerWordCount(2)
+                    .accuracyIssues("[{\"claim\":\"A\",\"correction\":\"B\"}]")
+                    .coachingStructure("STAR")
+                    .coachingImprovement("두괄식")
+                    .overallComment("{\"positive\":\"전반적 양호\"}")
+                    .isAnalyzed(true)
                     .build();
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(500L, List.of(dim));
 
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback);
 
-            assertThat(response.getTechnicalFeedback().getDimensions().getFirst().getStatus()).isEqualTo("OK");
+            assertThat(response.getContent().getVerbalComment().getPositive()).isEqualTo("논리적");
+            assertThat(response.getContent().getAccuracyIssues()).hasSize(1);
+            assertThat(response.getContent().getAccuracyIssues().get(0).getClaim()).isEqualTo("A");
+            assertThat(response.getContent().getCoaching().getStructure()).isEqualTo("STAR");
+            assertThat(response.getDelivery().getNonverbal().getEyeContactLevel()).isEqualTo("GOOD");
+            assertThat(response.getDelivery().getVocal().getFillerWordCount()).isEqualTo(2);
+            assertThat(response.getDelivery().getVocal().getSpeechPace()).isEqualTo("적절");
+            assertThat(response.getOverallComment().getPositive()).isEqualTo("전반적 양호");
+            assertThat(response.isAnalyzed()).isTrue();
         }
 
         @Test
-        @DisplayName("status=NOT_EVALUABLE 차원은 status 필드가 'NOT_EVALUABLE' 로 노출되고 score 는 null 이다")
-        void status_NOT_EVALUABLE_when_dimension_notEvaluable() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore score = score(501L, 21L, "resume-v1", null);
-            QuestionScoreDimension dim = QuestionScoreDimension.builder()
-                    .questionScoreId(501L).dimensionRef("technical_depth")
-                    .score(null).observation("관련 발언 없음").evidenceQuote(null)
-                    .status(DimensionStatus.NOT_EVALUABLE)
+        @DisplayName("코멘트 컬럼이 모두 null이면 빈 구조를 반환한다")
+        void from_null_컬럼_빈_구조() {
+            TimestampFeedback feedback = TimestampFeedback.builder()
+                    .startMs(0)
+                    .endMs(1000)
+                    .isAnalyzed(false)
                     .build();
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(501L, List.of(dim));
 
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(score), dims);
+            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback);
 
-            TimestampFeedbackResponse.TechnicalDimensionFeedback feedbackDim =
-                    response.getTechnicalFeedback().getDimensions().getFirst();
-            assertThat(feedbackDim.getStatus()).isEqualTo("NOT_EVALUABLE");
-            assertThat(feedbackDim.getScore()).isNull();
+            assertThat(response.getContent().getVerbalComment()).isNull();
+            assertThat(response.getContent().getAccuracyIssues()).isEmpty();
+            assertThat(response.getDelivery().getNonverbal().getEyeContactLevel()).isNull();
+            assertThat(response.getOverallComment()).isNull();
         }
-    }
-
-    @Nested
-    @DisplayName("verbal rubricId 모두 technicalFeedback 매핑")
-    class VerbalRubricMapping {
-
-        @Test
-        @DisplayName("resume-v1 / experience-technical-v1 / concept-cs-fundamental-v1 / concept-lang-framework-v1 / experience-collaboration-v1 / fallback-generic-v1 모두 technicalFeedback 으로 적재된다")
-        void all_verbal_rubric_ids_map_to_technical_feedback() {
-            String[] verbalRubricIds = {
-                    "resume-v1",
-                    "experience-technical-v1",
-                    "concept-cs-fundamental-v1",
-                    "concept-lang-framework-v1",
-                    "experience-collaboration-v1",
-                    "fallback-generic-v1"
-            };
-
-            long idSeed = 600L;
-            for (String rubricId : verbalRubricIds) {
-                Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-                TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-                QuestionScore verbal = score(idSeed, 30L, rubricId, "L1");
-                Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                        idSeed, List.of(TestFixtures.createQuestionScoreDimension(idSeed, "clarity", 2, "ok"))
-                );
-
-                TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(verbal), dims);
-
-                assertThat(response.getTechnicalFeedback())
-                        .as("rubricId=%s 는 technicalFeedback 으로 적재되어야 한다", rubricId)
-                        .isNotNull();
-                assertThat(response.getTechnicalFeedback().getRubricId()).isEqualTo(rubricId);
-                assertThat(response.getNonverbalFeedback()).isNull();
-                idSeed++;
-            }
-        }
-
-        @Test
-        @DisplayName("nonverbal-v1 row 는 nonverbalFeedback 으로만 적재되고 technicalFeedback 은 null 이다")
-        void nonverbal_rubric_id_maps_only_to_nonverbal_feedback() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore nonverbal = score(700L, 31L, "nonverbal-v1", null);
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    700L, List.of(TestFixtures.createQuestionScoreDimension(700L, "fluency", 2, "유창"))
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(nonverbal), dims);
-
-            assertThat(response.getNonverbalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback()).isNull();
-        }
-
-        @Test
-        @DisplayName("미지 rubricId (legacy / 신규) 도 nonverbal-v1 이 아니면 technicalFeedback 으로 매핑된다")
-        void unknown_non_nonverbal_rubric_id_maps_to_technical_feedback() {
-            Question question = TestFixtures.createResumeQuestion(QuestionType.RESUME_MAIN);
-            TimestampFeedback feedback = TestFixtures.createTimestampFeedback(question);
-            QuestionScore unknown = score(800L, 32L, "future-rubric-v1", "L1");
-            Map<Long, List<QuestionScoreDimension>> dims = Map.of(
-                    800L, List.of(TestFixtures.createQuestionScoreDimension(800L, "clarity", 2, "ok"))
-            );
-
-            TimestampFeedbackResponse response = TimestampFeedbackResponse.from(feedback, List.of(unknown), dims);
-
-            assertThat(response.getTechnicalFeedback()).isNotNull();
-            assertThat(response.getTechnicalFeedback().getRubricId()).isEqualTo("future-rubric-v1");
-            assertThat(response.getNonverbalFeedback()).isNull();
-        }
-    }
-
-    private static QuestionScore score(Long id, Long questionId, String rubricId, String levelFlag) {
-        QuestionScore score = QuestionScore.builder()
-                .questionId(questionId)
-                .interviewId(1L)
-                .rubricId(rubricId)
-                .levelFlag(levelFlag)
-                .build();
-        ReflectionTestUtils.setField(score, "id", id);
-        return score;
     }
 }

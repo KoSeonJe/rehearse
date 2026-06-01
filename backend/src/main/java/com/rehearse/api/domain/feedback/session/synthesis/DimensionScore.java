@@ -1,8 +1,7 @@
-package com.rehearse.api.domain.feedback.rubric.entity;
+package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.rehearse.api.domain.feedback.score.entity.DimensionStatus;
 
 public record DimensionScore(
         Integer score,

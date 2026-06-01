@@ -1,8 +1,6 @@
 package com.rehearse.api.global.support;
 
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
@@ -110,30 +108,6 @@ public final class TestFixtures {
                 .endMs(1000)
                 .transcript("테스트 답변")
                 .isAnalyzed(true)
-                .build();
-    }
-
-    // ── QuestionScore ──
-
-    public static QuestionScore createQuestionScore(Long questionId, String rubricId, String levelFlag) {
-        return QuestionScore.builder()
-                .questionId(questionId)
-                .interviewId(1L)
-                .rubricId(rubricId)
-                .levelFlag(levelFlag)
-                .build();
-    }
-
-    public static QuestionScoreDimension createQuestionScoreDimension(Long questionScoreId,
-                                                                      String dimensionRef,
-                                                                      Integer score,
-                                                                      String observation) {
-        return QuestionScoreDimension.builder()
-                .questionScoreId(questionScoreId)
-                .dimensionRef(dimensionRef)
-                .score(score)
-                .observation(observation)
-                .evidenceQuote(null)
                 .build();
     }
 

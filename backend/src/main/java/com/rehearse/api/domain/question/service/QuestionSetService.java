@@ -7,10 +7,6 @@ import com.rehearse.api.domain.feedback.dto.QuestionSetFeedbackResponse;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.exception.FeedbackErrorCode;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScore;
-import com.rehearse.api.domain.feedback.score.entity.QuestionScoreDimension;
-import com.rehearse.api.domain.feedback.score.repository.QuestionScoreDimensionRepository;
-import com.rehearse.api.domain.feedback.score.repository.QuestionScoreRepository;
 import com.rehearse.api.domain.file.entity.FileMetadata;
 import com.rehearse.api.domain.file.entity.FileType;
 import com.rehearse.api.domain.file.repository.FileMetadataRepository;
@@ -35,8 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -49,8 +43,6 @@ public class QuestionSetService {
     private final QuestionRepository questionRepository;
     private final QuestionAnswerRepository answerRepository;
     private final QuestionSetFeedbackRepository feedbackRepository;
-    private final QuestionScoreRepository questionScoreRepository;
-    private final QuestionScoreDimensionRepository questionScoreDimensionRepository;
     private final FileMetadataRepository fileMetadataRepository;
     private final S3Service s3Service;
     private final S3KeyGenerator s3KeyGenerator;
@@ -142,36 +134,7 @@ public class QuestionSetService {
             fallbackUrl = s3Service.generateGetPresignedUrl(file.getS3Key());
         }
 
-        Map<Long, List<QuestionScore>> questionScoresByQuestionId = questionScoresByQuestionId(questionSet);
-        Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId =
-                dimensionsByQuestionScoreId(questionScoresByQuestionId);
-
-        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl,
-                questionScoresByQuestionId, dimensionsByQuestionScoreId);
-    }
-
-    private Map<Long, List<QuestionScore>> questionScoresByQuestionId(QuestionSet questionSet) {
-        if (questionSet.getInterview() == null || questionSet.getInterview().getId() == null) {
-            return Map.of();
-        }
-        return questionScoreRepository
-                .findByInterviewIdOrderByQuestionIdAsc(questionSet.getInterview().getId())
-                .stream()
-                .collect(Collectors.groupingBy(QuestionScore::getQuestionId));
-    }
-
-    private Map<Long, List<QuestionScoreDimension>> dimensionsByQuestionScoreId(
-            Map<Long, List<QuestionScore>> scoresByQuestionId) {
-        List<Long> scoreIds = scoresByQuestionId.values().stream()
-                .flatMap(List::stream)
-                .map(QuestionScore::getId)
-                .distinct()
-                .toList();
-        if (scoreIds.isEmpty()) {
-            return Map.of();
-        }
-        return questionScoreDimensionRepository.findByQuestionScoreIdIn(scoreIds).stream()
-                .collect(Collectors.groupingBy(QuestionScoreDimension::getQuestionScoreId));
+        return QuestionSetFeedbackResponse.from(feedback, streamingUrl, fallbackUrl);
     }
 
     public QuestionsWithAnswersResponse getQuestionsWithAnswers(Long questionSetId) {

@@ -1,7 +1,5 @@
 package com.rehearse.api.domain.question.entity;
 
-import com.rehearse.api.domain.feedback.rubric.entity.RubricCategory;
-
 public enum QuestionType {
     TECH_MAIN(ReferenceType.MODEL_ANSWER, RubricCategory.TECHNICAL),
     TECH_FOLLOWUP(ReferenceType.MODEL_ANSWER, RubricCategory.TECHNICAL),

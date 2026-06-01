@@ -1,4 +1,4 @@
-package com.rehearse.api.domain.feedback.rubric.entity;
+package com.rehearse.api.domain.question.entity;
 
 public enum RubricCategory {
     TECHNICAL,

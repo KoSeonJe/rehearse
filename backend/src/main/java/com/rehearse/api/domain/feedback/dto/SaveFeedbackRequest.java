@@ -3,8 +3,6 @@ package com.rehearse.api.domain.feedback.dto;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -38,48 +36,37 @@ public class SaveFeedbackRequest {
         @NotNull private Long endMs;
         private String transcript;
 
+        private CommentBlock verbalComment;
+        private CommentBlock nonverbalComment;
+        private CommentBlock overallComment;
+        private CommentBlock vocalComment;
+        private CommentBlock attitudeComment;
+
         private Integer fillerWordCount;
+        private String expressionLabel;
+
+        // 3단계 라벨 (GOOD / AVERAGE / NEEDS_IMPROVEMENT)
+        private String eyeContactLevel;
+        private String postureLevel;
+        private String toneConfidenceLevel;
+
+        // 음성 특성
         private List<String> fillerWords;
+        private String speechPace;
+        private String emotionLabel;
 
-        @Valid
-        private NonverbalScore nonverbalScore;
-        private String difficulty;
-        private String resumeMode;
+        // 기술 피드백
+        private String accuracyIssues;  // JSON: [{"claim":"...","correction":"..."}]
+        private String coachingStructure;
+        private String coachingImprovement;
     }
 
     @Getter
     @NoArgsConstructor
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class NonverbalScore {
-        @Valid private AreaScore vocal;
-        @Valid private AreaScore vision;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class AreaScore {
-        @Valid private List<DimensionScoreItem> dimensions;
-    }
-
-    @Getter
-    @NoArgsConstructor
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public static class DimensionScoreItem {
-        @JsonProperty("dimension_ref")
-        @NotBlank
-        private String dimensionRef;
-
-        @NotNull
-        @Min(1)
-        @Max(3)
-        private Integer score;
-
-        @NotBlank
-        private String observation;
-
-        @JsonProperty("evidence_quote")
-        @NotBlank
-        private String evidenceQuote;
+    public static class CommentBlock {
+        private String positive;
+        private String negative;
+        private String suggestion;
     }
 }

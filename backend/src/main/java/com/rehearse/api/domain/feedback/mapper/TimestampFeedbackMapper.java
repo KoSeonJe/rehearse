@@ -24,10 +24,33 @@ public class TimestampFeedbackMapper {
                 .startMs(item.getStartMs())
                 .endMs(item.getEndMs())
                 .transcript(item.getTranscript())
+                .verbalComment(serializeCommentBlock(item.getVerbalComment()))
                 .fillerWordCount(item.getFillerWordCount())
+                .eyeContactLevel(item.getEyeContactLevel())
+                .postureLevel(item.getPostureLevel())
+                .expressionLabel(item.getExpressionLabel())
+                .nonverbalComment(serializeCommentBlock(item.getNonverbalComment()))
+                .overallComment(serializeCommentBlock(item.getOverallComment()))
                 .isAnalyzed(true)
                 .fillerWords(toJson(item.getFillerWords()))
+                .speechPace(item.getSpeechPace())
+                .toneConfidenceLevel(item.getToneConfidenceLevel())
+                .emotionLabel(item.getEmotionLabel())
+                .vocalComment(serializeCommentBlock(item.getVocalComment()))
+                .accuracyIssues(item.getAccuracyIssues())
+                .coachingStructure(item.getCoachingStructure())
+                .coachingImprovement(item.getCoachingImprovement())
+                .attitudeComment(serializeCommentBlock(item.getAttitudeComment()))
                 .build();
+    }
+
+    String serializeCommentBlock(SaveFeedbackRequest.CommentBlock block) {
+        if (block == null) return null;
+        try {
+            return objectMapper.writeValueAsString(block);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("CommentBlock 직렬화 실패", e);
+        }
     }
 
     String toJson(List<String> list) {

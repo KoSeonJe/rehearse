@@ -1,61 +1,32 @@
 package com.rehearse.api.domain.feedback.session;
 
-import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
+import com.rehearse.api.domain.feedback.session.event.DeliveryEnrichmentRequestedEvent;
 import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
-import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.BDDMockito.then;
-import static org.mockito.BDDMockito.willDoNothing;
-import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.times;
+import java.time.LocalDateTime;
 
-@ExtendWith(MockitoExtension.class)
+import static org.assertj.core.api.Assertions.assertThatCode;
+
+// PR1 중립화: 리스너가 세션 피드백 생성을 호출하지 않고 예외 없이 이벤트를 흡수한다.
+// PR2(코멘트 기반 재설계) 시 생성 재활성 + 실패 처리 테스트 재작성 예정.
+@DisplayName("SessionFeedbackEventListener - PR1 중립화")
 class SessionFeedbackEventListenerTest {
 
-    @Mock private SessionFeedbackService sessionFeedbackService;
-    @Mock private AiCallMetrics aiCallMetrics;
-
-    @InjectMocks
-    private SessionFeedbackEventListener listener;
+    private final SessionFeedbackEventListener listener = new SessionFeedbackEventListener();
 
     @Test
-    @DisplayName("정상_케이스_synthesizePreliminary_1회_호출")
-    void on_calls_synthesizePreliminary_once_on_success() {
-        willDoNothing().given(sessionFeedbackService).synthesizePreliminary(1L);
-
-        listener.on(new InterviewCompletedEvent(1L, java.time.LocalDateTime.now()));
-
-        then(sessionFeedbackService).should(times(1)).synthesizePreliminary(1L);
-        then(sessionFeedbackService).should(times(0)).recordSynthesisFailure(1L, "PARSE_FAILED");
+    @DisplayName("InterviewCompletedEvent 수신 시 예외 없이 skip 한다")
+    void on_interviewCompleted_doesNothing() {
+        assertThatCode(() -> listener.on(new InterviewCompletedEvent(1L, LocalDateTime.now())))
+                .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("parse_실패_시_recordSynthesisFailure_PARSE_FAILED_호출")
-    void on_records_parse_failure_when_parse_exception_thrown() {
-        willThrow(new SessionFeedbackParseException("파싱 실패"))
-                .given(sessionFeedbackService).synthesizePreliminary(2L);
-
-        listener.on(new InterviewCompletedEvent(2L, java.time.LocalDateTime.now()));
-
-        then(sessionFeedbackService).should(times(1)).recordSynthesisFailure(2L, "PARSE_FAILED");
-        then(aiCallMetrics).should(times(1)).incrementSynthesizerFailure("PARSE_FAILED");
-    }
-
-    @Test
-    @DisplayName("일반_예외_시_INTERNAL_ERROR_카운터_증가")
-    void on_records_internal_error_when_generic_exception_thrown() {
-        willThrow(new RuntimeException("예상치 못한 오류"))
-                .given(sessionFeedbackService).synthesizePreliminary(3L);
-
-        listener.on(new InterviewCompletedEvent(3L, java.time.LocalDateTime.now()));
-
-        then(sessionFeedbackService).should(times(1)).recordSynthesisFailure(3L, "INTERNAL_ERROR");
-        then(aiCallMetrics).should(times(1)).incrementSynthesizerFailure("INTERNAL_ERROR");
+    @DisplayName("DeliveryEnrichmentRequestedEvent 수신 시 예외 없이 skip 한다")
+    void on_deliveryEnrichmentRequested_doesNothing() {
+        assertThatCode(() -> listener.on(new DeliveryEnrichmentRequestedEvent(2L)))
+                .doesNotThrowAnyException();
     }
 }

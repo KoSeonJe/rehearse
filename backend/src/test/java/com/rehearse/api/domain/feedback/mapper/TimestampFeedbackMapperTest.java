@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
-import java.util.Arrays;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,9 +24,8 @@ class TimestampFeedbackMapperTest {
     class ToEntity {
 
         @Test
-        @DisplayName("TimestampFeedbackItem을 TimestampFeedback 엔티티로 변환한다")
+        @DisplayName("TimestampFeedbackItem을 코멘트 컬럼 포함 TimestampFeedback 엔티티로 변환한다")
         void toEntity_validItem_createsEntity() {
-            // given
             Question question = Question.builder()
                     .questionType(QuestionType.TECH_MAIN)
                     .questionText("질문입니다")
@@ -35,17 +33,18 @@ class TimestampFeedbackMapperTest {
                     .build();
 
             SaveFeedbackRequest.TimestampFeedbackItem item = createTimestampFeedbackItem(
-                    1000L, 5000L, "답변 내용", 2, List.of("음", "어"));
+                    1000L, 5000L, "답변 내용", 2, "GOOD", "AVERAGE", "적절", List.of("음", "어"));
 
-            // when
             TimestampFeedback result = mapper.toEntity(item, question);
 
-            // then
             assertThat(result.getQuestion()).isSameAs(question);
             assertThat(result.getStartMs()).isEqualTo(1000L);
             assertThat(result.getEndMs()).isEqualTo(5000L);
             assertThat(result.getTranscript()).isEqualTo("답변 내용");
             assertThat(result.getFillerWordCount()).isEqualTo(2);
+            assertThat(result.getEyeContactLevel()).isEqualTo("GOOD");
+            assertThat(result.getPostureLevel()).isEqualTo("AVERAGE");
+            assertThat(result.getSpeechPace()).isEqualTo("적절");
             assertThat(result.isAnalyzed()).isTrue();
             assertThat(result.getFillerWords()).isEqualTo("[\"음\",\"어\"]");
         }
@@ -53,58 +52,36 @@ class TimestampFeedbackMapperTest {
         @Test
         @DisplayName("question이 null이어도 정상 변환된다")
         void toEntity_nullQuestion_createsEntity() {
-            // given
             SaveFeedbackRequest.TimestampFeedbackItem item = createTimestampFeedbackItem(
-                    0L, 3000L, null, null, null);
+                    0L, 3000L, null, null, null, null, null, null);
 
-            // when
             TimestampFeedback result = mapper.toEntity(item, null);
 
-            // then
             assertThat(result.getQuestion()).isNull();
             assertThat(result.getStartMs()).isZero();
             assertThat(result.getEndMs()).isEqualTo(3000L);
         }
+    }
+
+    @Nested
+    @DisplayName("serializeCommentBlock 메서드")
+    class SerializeCommentBlock {
 
         @Test
-        @DisplayName("plan-13 legacy Lambda content fields are ignored")
-        void toEntity_legacyLambdaContentFields_ignoresContent() throws Exception {
-            // given
-            String json = """
-                    {
-                      "questionSetComment": "음성 전달 분석 완료",
-                      "isVerbalCompleted": true,
-                      "isNonverbalCompleted": true,
-                      "timestampFeedbacks": [
-                        {
-                          "startMs": 0,
-                          "endMs": 1000,
-                          "transcript": "캐시를 먼저 확인합니다",
-                          "verbalComment": {"positive": "legacy"},
-                          "accuracyIssues": "[{\\"claim\\":\\"x\\",\\"correction\\":\\"y\\"}]",
-                          "coachingStructure": "legacy structure",
-                          "coachingImprovement": "legacy improvement",
-                          "fillerWordCount": 0
-                        }
-                      ]
-                    }
-                    """;
-            ObjectMapper objectMapper = new ObjectMapper();
-            SaveFeedbackRequest request = objectMapper.readValue(json, SaveFeedbackRequest.class);
+        @DisplayName("CommentBlock을 JSON 문자열로 직렬화한다")
+        void serializeCommentBlock_validBlock_returnsJson() {
+            SaveFeedbackRequest.CommentBlock block = new SaveFeedbackRequest.CommentBlock();
+            ReflectionTestUtils.setField(block, "positive", "좋은 답변입니다");
 
-            // when
-            TimestampFeedback result = mapper.toEntity(request.getTimestampFeedbacks().getFirst(), null);
+            String result = mapper.serializeCommentBlock(block);
 
-            // then
-            assertThat(result.getTranscript()).isEqualTo("캐시를 먼저 확인합니다");
-            assertThat(Arrays.stream(TimestampFeedback.class.getDeclaredFields())
-                    .map(field -> field.getName()))
-                    .doesNotContain(
-                            "verbalComment",
-                            "accuracyIssues",
-                            "coachingStructure",
-                            "coachingImprovement"
-                    );
+            assertThat(result).contains("좋은 답변입니다");
+        }
+
+        @Test
+        @DisplayName("null이면 null을 반환한다")
+        void serializeCommentBlock_null_returnsNull() {
+            assertThat(mapper.serializeCommentBlock(null)).isNull();
         }
     }
 
@@ -115,27 +92,21 @@ class TimestampFeedbackMapperTest {
         @Test
         @DisplayName("List<String>을 JSON 배열 문자열로 변환한다")
         void toJson_validList_returnsJsonArray() {
-            // when
             String result = mapper.toJson(List.of("음", "어"));
 
-            // then
             assertThat(result).isEqualTo("[\"음\",\"어\"]");
         }
 
         @Test
         @DisplayName("null이면 null을 반환한다")
         void toJson_null_returnsNull() {
-            // when & then
             assertThat(mapper.toJson(null)).isNull();
         }
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // 헬퍼
-    // ─────────────────────────────────────────────────────────────
-
     private SaveFeedbackRequest.TimestampFeedbackItem createTimestampFeedbackItem(
             Long startMs, Long endMs, String transcript, Integer fillerWordCount,
+            String eyeContactLevel, String postureLevel, String speechPace,
             List<String> fillerWords) {
 
         SaveFeedbackRequest.TimestampFeedbackItem item = new SaveFeedbackRequest.TimestampFeedbackItem();
@@ -143,6 +114,9 @@ class TimestampFeedbackMapperTest {
         ReflectionTestUtils.setField(item, "endMs", endMs);
         ReflectionTestUtils.setField(item, "transcript", transcript);
         ReflectionTestUtils.setField(item, "fillerWordCount", fillerWordCount);
+        ReflectionTestUtils.setField(item, "eyeContactLevel", eyeContactLevel);
+        ReflectionTestUtils.setField(item, "postureLevel", postureLevel);
+        ReflectionTestUtils.setField(item, "speechPace", speechPace);
         ReflectionTestUtils.setField(item, "fillerWords", fillerWords);
         return item;
     }

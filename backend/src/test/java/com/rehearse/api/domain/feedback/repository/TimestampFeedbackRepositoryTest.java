@@ -17,56 +17,53 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @ActiveProfiles("test")
 @Import(JpaAuditingConfig.class)
-@DisplayName("타임스탬프 피드백 테이블 마이그레이션")
+@DisplayName("타임스탬프 피드백 테이블 마이그레이션 (V54 롤백)")
 class TimestampFeedbackRepositoryTest extends AbstractMySqlContainerTest {
 
-    private static final List<String> DROPPED_COLUMNS = List.of(
+    // V54 가 코멘트형 응답을 위해 재추가한 14개 컬럼
+    private static final List<String> RESTORED_COLUMNS = List.of(
+            "verbal_comment",
+            "accuracy_issues",
+            "coaching_structure",
+            "coaching_improvement",
             "nonverbal_comment",
+            "overall_comment",
             "vocal_comment",
             "attitude_comment",
-            "overall_comment",
-            "eye_contact_level",
-            "posture_level",
-            "expression_label",
             "speech_pace",
             "tone_confidence_level",
-            "emotion_label"
-    );
-
-    private static final List<String> RETAINED_COLUMNS = List.of(
-            "filler_word_count",
-            "filler_words",
-            "transcript"
+            "emotion_label",
+            "eye_contact_level",
+            "posture_level",
+            "expression_label"
     );
 
     @Autowired
     private EntityManager entityManager;
 
     @Test
-    @DisplayName("V48 마이그레이션 후 자유서술 4 + 원시 6 = 10개 컬럼이 모두 제거된다")
-    void flyway_v48_drops_10_columns() {
-        Number droppedCount = (Number) entityManager.createNativeQuery(
+    @DisplayName("V54 마이그레이션 후 코멘트형 14개 컬럼이 모두 재추가된다")
+    void flyway_v54_restores_14_columns() {
+        Number restoredCount = (Number) entityManager.createNativeQuery(
                         "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
                                 + "WHERE TABLE_SCHEMA = DATABASE() "
                                 + "AND TABLE_NAME = 'timestamp_feedback' "
                                 + "AND COLUMN_NAME IN (:cols)")
-                .setParameter("cols", DROPPED_COLUMNS)
+                .setParameter("cols", RESTORED_COLUMNS)
                 .getSingleResult();
 
-        assertThat(droppedCount.longValue()).isZero();
+        assertThat(restoredCount.longValue()).isEqualTo(RESTORED_COLUMNS.size());
     }
 
     @Test
-    @DisplayName("filler 컬럼 2종과 transcript 컬럼은 V48 이후에도 유지된다")
-    void filler_and_transcript_columns_remain() {
-        Number retainedCount = (Number) entityManager.createNativeQuery(
-                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS "
+    @DisplayName("V54 마이그레이션 후 루브릭 점수 테이블(question_score*)이 제거된다")
+    void flyway_v54_drops_question_score_tables() {
+        Number tableCount = (Number) entityManager.createNativeQuery(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES "
                                 + "WHERE TABLE_SCHEMA = DATABASE() "
-                                + "AND TABLE_NAME = 'timestamp_feedback' "
-                                + "AND COLUMN_NAME IN (:cols)")
-                .setParameter("cols", RETAINED_COLUMNS)
+                                + "AND TABLE_NAME IN ('question_score', 'question_score_dimension')")
                 .getSingleResult();
 
-        assertThat(retainedCount.longValue()).isEqualTo(RETAINED_COLUMNS.size());
+        assertThat(tableCount.longValue()).isZero();
     }
 }
