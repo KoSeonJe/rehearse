@@ -1,7 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { getDimensionLabel } from '@/lib/feedback/dimension-label'
 import type {
   SessionFeedbackData,
   SessionFeedbackGap,
@@ -17,51 +16,16 @@ interface SessionFeedbackModalProps {
   isError: boolean
 }
 
-const SectionHeader = ({ label, caption }: { label: string; caption?: string }) => (
-  <div className={caption ? 'mb-1' : 'mb-4'}>
+const SectionHeader = ({ label }: { label: string }) => (
+  <div className="mb-4">
     <p className="text-[11px] font-semibold tracking-[0.10em] uppercase text-brand">
       {label}
     </p>
-    {caption && (
-      <p className="text-[12px] text-muted-foreground mt-0.5 mb-4">{caption}</p>
-    )}
   </div>
 )
 
-const DimensionScoreRow = ({ name, score }: { name: string; score: number }) => {
-  const clamped = Math.max(1, Math.min(5, Math.round(score)))
-  return (
-    <div className="flex items-center justify-between gap-4 py-1.5 border-b border-border last:border-b-0 last:pb-0">
-      <span className="text-[13px] text-foreground/80 leading-none">
-        {getDimensionLabel(name)}
-      </span>
-      <div className="flex items-center gap-2.5">
-        <div className="flex items-center gap-1" aria-label={`${clamped}점 / 5점`}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <span
-              key={i}
-              className={
-                i < clamped
-                  ? 'h-1.5 w-1.5 rounded-full bg-brand'
-                  : 'h-1.5 w-1.5 rounded-full bg-border'
-              }
-            />
-          ))}
-        </div>
-        <div className="flex items-baseline gap-0.5">
-          <span className="text-[15px] font-bold text-foreground/40 tabular-nums min-w-[1rem] text-right">
-            {clamped}
-          </span>
-          <span className="text-[11px] text-muted-foreground">/5</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
   <div className="px-4 py-3 bg-brand-bg/40 rounded-md">
-    <p className="text-[14px] font-bold text-foreground mb-1.5">{getDimensionLabel(item.dimension)}</p>
     <p className="text-[14px] text-foreground/85 leading-[1.65]">{item.observation}</p>
     {item.whyMatters && (
       <p className="mt-1.5 text-[13px] text-muted-foreground leading-[1.60]">
@@ -73,17 +37,6 @@ const StrengthItem = ({ item }: { item: SessionFeedbackStrength }) => (
 
 const GapItem = ({ item }: { item: SessionFeedbackGap }) => (
   <div className="px-4 py-3 bg-accent-editorial-bg/60 rounded-md">
-    <div className="flex items-center gap-2 mb-1.5">
-      <p className="text-[14px] font-bold text-foreground">{getDimensionLabel(item.dimension)}</p>
-      {item.levelGap && (
-        <Badge
-          variant="outline"
-          className="bg-muted text-foreground font-mono text-[11px] border-0 px-1.5 py-0"
-        >
-          {item.levelGap}
-        </Badge>
-      )}
-    </div>
     <p className="text-[14px] text-foreground/80 leading-[1.65]">{item.observation}</p>
     {item.concreteAction && (
       <p className="mt-2 text-[13px] text-accent-editorial leading-[1.60] font-medium">
@@ -152,11 +105,6 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
     data.delivery &&
     (data.delivery.fillerWords || data.delivery.tonePattern || data.delivery.action)
 
-  const dimensionEntries =
-    data.overall?.dimensionScores
-      ? Object.entries(data.overall.dimensionScores)
-      : []
-
   return (
     <div className="space-y-8">
       {/* 이번 면접 한줄 평가 */}
@@ -181,24 +129,6 @@ const CompleteBody = ({ data }: { data: SessionFeedbackData }) => {
             )}
           </div>
         </section>
-      )}
-
-      {/* 이번 면접 분야별 점수 */}
-      {dimensionEntries.length > 0 && (
-        <>
-          <hr className="border-border" />
-          <section>
-            <SectionHeader
-              label="이번 면접 분야별 점수"
-              caption="5점 만점 · 면접 답변에서 평가한 분야별 평균"
-            />
-            <div>
-              {dimensionEntries.map(([name, score]) => (
-                <DimensionScoreRow key={name} name={name} score={score} />
-              ))}
-            </div>
-          </section>
-        </>
       )}
 
       {/* 잘한 점 */}

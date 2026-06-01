@@ -1,22 +1,18 @@
 export type SessionFeedbackStatus = 'PRELIMINARY' | 'COMPLETE'
 
 export interface SessionFeedbackOverall {
-  dimensionScores: Record<string, number> | null
   levelAssessment: string | null
   narrative: string | null
   coverage: string | null
 }
 
 export interface SessionFeedbackStrength {
-  dimension: string
   observation: string
   whyMatters: string | null
 }
 
 export interface SessionFeedbackGap {
-  dimension: string
   observation: string
-  levelGap: string | null
   concreteAction: string | null
 }
 
