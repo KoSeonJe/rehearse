@@ -8,27 +8,19 @@ const baseData: SessionFeedbackData = {
   interviewId: 100,
   status: 'COMPLETE',
   overall: {
-    dimensionScores: {
-      problem_framing: 4,
-      confidence_tone: 3,
-      composure: 5,
-    },
     levelAssessment: 'Mid 수준',
     narrative: '전반적으로 안정적인 답변이었습니다.',
     coverage: '5문항 중 5문항 답변',
   },
   strengths: [
     {
-      dimension: 'confidence_tone',
       observation: '자신감 있는 어조를 유지했습니다.',
       whyMatters: '신뢰도 상승',
     },
   ],
   gaps: [
     {
-      dimension: 'eye_contact_posture',
       observation: '시선 처리가 불안정합니다.',
-      levelGap: '−0.5단계',
       concreteAction: '카메라 렌즈를 의식적으로 응시',
     },
   ],
@@ -42,10 +34,10 @@ const baseData: SessionFeedbackData = {
   updatedAt: new Date().toISOString(),
 }
 
-const renderModal = (data: SessionFeedbackData) =>
+const renderModal = (data: SessionFeedbackData, isOpen = true) =>
   render(
     <SessionFeedbackModal
-      isOpen
+      isOpen={isOpen}
       onClose={() => {}}
       data={data}
       isLoading={false}
@@ -53,41 +45,42 @@ const renderModal = (data: SessionFeedbackData) =>
     />,
   )
 
-describe('SessionFeedbackModal — dimension 라벨 친화 표기', () => {
-  it('분야별 점수 영역에서 영어 ref 대신 한국어 라벨을 노출', () => {
+describe('SessionFeedbackModal — 서술형 렌더', () => {
+  it('isOpen 이면 코치 노트 모달을 노출', () => {
     renderModal(baseData)
-    expect(screen.getByText('문제 정의')).toBeInTheDocument()
-    expect(screen.getAllByText('자신감').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('차분함')).toBeInTheDocument()
-    expect(screen.queryByText('problem_framing')).not.toBeInTheDocument()
-    expect(screen.queryByText('confidence_tone')).not.toBeInTheDocument()
-    expect(screen.queryByText('composure')).not.toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByText('코치 노트')).toBeInTheDocument()
   })
 
-  it('잘한 점 (StrengthItem) 의 dimension 도 한국어로 노출', () => {
+  it('한줄 평가의 레벨/서술/커버리지를 노출', () => {
     renderModal(baseData)
-    // 점수 row + Strength 카드 양쪽에서 노출 → 2개 이상
-    expect(screen.getAllByText('자신감').length).toBeGreaterThanOrEqual(2)
-    expect(screen.queryByText('confidence_tone')).not.toBeInTheDocument()
+    expect(screen.getByText('Mid 수준')).toBeInTheDocument()
+    expect(screen.getByText('전반적으로 안정적인 답변이었습니다.')).toBeInTheDocument()
+    expect(screen.getByText('5문항 중 5문항 답변')).toBeInTheDocument()
   })
 
-  it('개선할 점 (GapItem) 의 dimension 도 한국어로 노출', () => {
+  it('잘한 점을 제목 없이 observation 본문 + whyMatters 보조줄로 렌더', () => {
     renderModal(baseData)
-    expect(screen.getByText('시선')).toBeInTheDocument()
-    expect(screen.queryByText('eye_contact_posture')).not.toBeInTheDocument()
+    expect(screen.getByText('잘한 점')).toBeInTheDocument()
+    expect(screen.getByText('자신감 있는 어조를 유지했습니다.')).toBeInTheDocument()
+    expect(screen.getByText('신뢰도 상승')).toBeInTheDocument()
   })
 
-  it('알 수 없는 dimension 키는 fallback 으로 원본 노출', () => {
-    const dataWithUnknown: SessionFeedbackData = {
-      ...baseData,
-      overall: {
-        ...baseData.overall!,
-        dimensionScores: { custom_unknown_dim: 2 },
-      },
-      strengths: null,
-      gaps: null,
-    }
-    renderModal(dataWithUnknown)
-    expect(screen.getByText('custom_unknown_dim')).toBeInTheDocument()
+  it('개선할 점을 제목 없이 observation 본문 + concreteAction 화살표줄로 렌더', () => {
+    renderModal(baseData)
+    expect(screen.getByText('개선할 점')).toBeInTheDocument()
+    expect(screen.getByText('시선 처리가 불안정합니다.')).toBeInTheDocument()
+    expect(screen.getByText('→ 카메라 렌즈를 의식적으로 응시')).toBeInTheDocument()
+  })
+
+  it('차원별 점수 섹션을 노출하지 않음', () => {
+    renderModal(baseData)
+    expect(screen.queryByText('이번 면접 분야별 점수')).not.toBeInTheDocument()
+    expect(screen.queryByText('/5')).not.toBeInTheDocument()
+  })
+
+  it('isOpen 이 false 면 모달을 노출하지 않음', () => {
+    renderModal(baseData, false)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
