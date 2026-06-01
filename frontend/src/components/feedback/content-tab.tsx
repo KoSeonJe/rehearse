@@ -1,182 +1,88 @@
-import type {
-  NonverbalFeedback,
-  RubricCategory,
-  TechnicalDimensionFeedback,
-  TechnicalFeedback,
-} from '@/types/interview'
-import RubricDimensionCard from '@/components/feedback/rubric-dimension-card'
+import { Fragment, type ReactNode } from 'react'
+import { isCommentBlockEmpty, type ContentFeedback } from '@/types/interview'
+import StructuredComment from '@/components/feedback/structured-comment'
+import AccuracyIssues from '@/components/feedback/accuracy-issues'
+import CoachingCard from '@/components/feedback/coaching-card'
 
 interface ContentTabProps {
-  technicalFeedback: TechnicalFeedback | null
-  nonverbalFeedback: NonverbalFeedback | null
-  questionType: string | null
+  content: ContentFeedback | null
 }
 
-interface RubricCategoryCopy {
-  title: string
-  emptyMessage: string
-}
-
-const FALLBACK_COPY: RubricCategoryCopy = {
-  title: '기술 피드백',
-  emptyMessage: '해당 턴은 평가 대상이 아닙니다.',
-}
-
-const OPENER_COPY = {
-  emptyMessage: '이 단계는 채점 대상이 아닙니다.',
-  secondary: '면접 도입 단계 답변은 점수 채점에 사용되지 않습니다.',
-} as const
-
-const INSUFFICIENT_ANSWER_COPY = {
-  message: '답변이 불충분해 평가할 수 없습니다.',
-  secondary: '답변 내용이 채점 기준을 충족하지 않아 항목별 평가가 생략되었습니다.',
-} as const
-
-const RESUME_OPENER_QUESTION_TYPE = 'RESUME_OPENER'
-const NONVERBAL_DIMENSION_COUNT = 3
-
-const resolveCopy = (rubricCategory: RubricCategory | null): RubricCategoryCopy => {
-  switch (rubricCategory) {
-    case 'TECHNICAL':
-      return { title: '기술 피드백', emptyMessage: '기술 피드백은 아직 준비 중입니다.' }
-    case 'EXPERIENCE':
-      return { title: '경험 평가', emptyMessage: '경험 평가는 아직 준비 중입니다.' }
-    case 'BEHAVIORAL':
-      return { title: '경험/협업', emptyMessage: '경험/협업 피드백은 아직 준비 중입니다.' }
-    case null:
-      return FALLBACK_COPY
-    default:
-      return FALLBACK_COPY
-  }
-}
-
-interface VerbalSectionProps {
-  technicalFeedback: TechnicalFeedback | null
-}
-
-const VerbalSection = ({ technicalFeedback }: VerbalSectionProps) => {
-  const copy = resolveCopy(technicalFeedback?.rubricCategory ?? null)
-  const isCardable =
-    technicalFeedback !== null &&
-    technicalFeedback.dimensions.length > 0 &&
-    (technicalFeedback.rubricCategory === 'TECHNICAL' ||
-      technicalFeedback.rubricCategory === 'EXPERIENCE' ||
-      technicalFeedback.rubricCategory === 'BEHAVIORAL')
-
-  if (!isCardable) {
+const ContentTab = ({ content }: ContentTabProps) => {
+  if (content === null) {
     return (
       <div className="px-6 py-10 text-center">
-        <p className="text-[15px] font-bold text-gray-900">{copy.emptyMessage}</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-          답변 내용 분석이 완료되면 이 구간에 표시됩니다.
-        </p>
+        <p className="text-[15px] text-gray-300">AI가 분석하고 있어요</p>
       </div>
     )
   }
 
-  // NOT_EVALUABLE 은 verbal 무응답 전용 — nonverbal 섹션은 미적용
-  const isNotEvaluable = (dimension: TechnicalDimensionFeedback): boolean =>
-    dimension.status === 'NOT_EVALUABLE'
-  const allNotEvaluable = technicalFeedback.dimensions.every(isNotEvaluable)
+  const hasVerbalComment = !isCommentBlockEmpty(content.verbalComment)
+  const hasAccuracyIssues = content.accuracyIssues.length > 0
+  const hasCoaching =
+    content.coaching !== null &&
+    (content.coaching.structure !== null || content.coaching.improvement !== null)
 
-  if (allNotEvaluable) {
+  if (!hasVerbalComment && !hasAccuracyIssues && !hasCoaching) {
     return (
       <div className="px-6 py-10 text-center">
-        <p className="text-[15px] font-bold text-gray-900">
-          {INSUFFICIENT_ANSWER_COPY.message}
-        </p>
-        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-          {INSUFFICIENT_ANSWER_COPY.secondary}
-        </p>
+        <p className="text-[15px] text-gray-300">내용 분석 정보가 없습니다</p>
       </div>
     )
   }
 
-  const evaluableDimensions = technicalFeedback.dimensions.filter(
-    (dimension) => !isNotEvaluable(dimension),
-  )
+  const sections: ReactNode[] = []
 
-  return (
-    <div className="space-y-4 px-6 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[15px] font-bold text-gray-900">{copy.title}</p>
-        <span className="font-tabular text-[12px] font-medium text-gray-400">
-          {technicalFeedback.rubricId}
-        </span>
-      </div>
-
-      <div className="space-y-3">
-        {evaluableDimensions.map((dimension) => (
-          <RubricDimensionCard key={dimension.dimension} dimension={dimension} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-interface NonverbalSectionProps {
-  nonverbalFeedback: NonverbalFeedback | null
-}
-
-const NonverbalSection = ({ nonverbalFeedback }: NonverbalSectionProps) => {
-  if (nonverbalFeedback === null) {
-    return (
-      <div className="space-y-2 px-6 py-6">
-        <p className="text-[15px] font-bold text-gray-900">비언어 평가</p>
-        <p className="text-[13px] leading-relaxed text-gray-400">
-          분석 실패 — 점수 없음
+  if (hasVerbalComment && content.verbalComment !== null) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">답변 내용을 분석했어요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          기술적으로 맞게 답변했는지, 빠진 내용은 없는지 살펴봤어요.
         </p>
-      </div>
+        <StructuredComment
+          block={content.verbalComment}
+          positiveLabel="잘한 점"
+          negativeLabel="아쉬운 점"
+          suggestionLabel="이렇게 말하면 더 좋아요"
+        />
+      </div>,
     )
   }
 
-  const isPartial = nonverbalFeedback.dimensions.length < NONVERBAL_DIMENSION_COUNT
-
-  return (
-    <div className="space-y-4 px-6 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[15px] font-bold text-gray-900">비언어 평가</p>
-        <span className="font-tabular text-[12px] font-medium text-gray-400">
-          {nonverbalFeedback.rubricId}
-        </span>
-      </div>
-
-      {isPartial && (
-        <p className="text-[13px] leading-relaxed text-gray-400">
-          이번 답변 비언어 분석 일부 실패
+  if (hasAccuracyIssues) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">틀린 내용이 있었어요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          면접관이 바로 알아챌 수 있는 부분이에요. 꼭 정정해두세요.
         </p>
-      )}
+        <AccuracyIssues issues={content.accuracyIssues} />
+      </div>,
+    )
+  }
 
-      <div className="space-y-3">
-        {nonverbalFeedback.dimensions.map((dimension) => (
-          <RubricDimensionCard key={dimension.dimension} dimension={dimension} />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-const ContentTab = ({
-  technicalFeedback,
-  nonverbalFeedback,
-  questionType,
-}: ContentTabProps) => {
-  if (questionType === RESUME_OPENER_QUESTION_TYPE) {
-    return (
-      <div className="px-6 py-10 text-center">
-        <p className="text-[15px] font-bold text-gray-900">{OPENER_COPY.emptyMessage}</p>
-        <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-          {OPENER_COPY.secondary}
+  if (hasCoaching && content.coaching !== null) {
+    sections.push(
+      <div className="px-6 py-6">
+        <p className="text-[15px] font-bold text-gray-900 mb-1">다음엔 이렇게 해보세요</p>
+        <p className="text-[13px] text-gray-400 mb-4">
+          같은 내용이라도 전달 방식을 바꾸면 훨씬 좋은 답변이 됩니다.
         </p>
-      </div>
+        <CoachingCard coaching={content.coaching} />
+      </div>,
     )
   }
 
   return (
-    <div className="divide-y divide-gray-100">
-      <VerbalSection technicalFeedback={technicalFeedback} />
-      <NonverbalSection nonverbalFeedback={nonverbalFeedback} />
-    </div>
+    <>
+      {sections.map((section, idx) => (
+        <Fragment key={idx}>
+          {idx > 0 && <div className="mx-6 border-t border-gray-100" />}
+          {section}
+        </Fragment>
+      ))}
+    </>
   )
 }
 
