@@ -1,6 +1,6 @@
 # feedback 스키마 — timestamp_feedback
 
-> 대상 마이그레이션: `V4`, `V5`, `V13`, `V16`, `V18`, `V34`, `V41`
+> 대상 마이그레이션: `V4`, `V5`, `V13`, `V16`, `V18`, `V34`, `V41`, `V54`
 
 ## 테이블 목록
 
@@ -34,6 +34,10 @@ QuestionSetFeedback 산하 1턴 (= 질문 1개 답변 1개) 단위 피드백. ro
 | `overall_comment` | TEXT (JSON `CommentBlock`) | NULL | 종합 코멘트 |
 | `vocal_comment` | TEXT (JSON `CommentBlock`) | NULL | 음성 코멘트 |
 | `attitude_comment` | TEXT | NULL | 태도 코멘트 (V18) |
+| `verbal_comment` | TEXT | NULL | 언어 코멘트 (V34 제거 → V54 재추가) |
+| `accuracy_issues` | TEXT | NULL | 정확도 이슈 (V34 제거 → V54 재추가) |
+| `coaching_structure` | VARCHAR(500) | NULL | 코칭 구조 (V34 제거 → V54 재추가) |
+| `coaching_improvement` | VARCHAR(500) | NULL | 코칭 개선 방향 (V34 제거 → V54 재추가) |
 | `filler_words` | TEXT (JSON array) | NULL | 필러 단어 목록 |
 | `speech_pace` | VARCHAR(10) | NULL | 발화 속도 라벨 |
 | `emotion_label` | VARCHAR(20) | NULL | 감정 라벨 |
@@ -57,8 +61,9 @@ QuestionSetFeedback 산하 1턴 (= 질문 1개 답변 1개) 단위 피드백. ro
 - `V13__add_vocal_columns_to_timestamp_feedback.sql` — filler_words / speech_pace / tone_confidence / emotion_label / vocal_comment
 - `V16__rubric_perspective_levels.sql` — eye/posture/tone level VARCHAR 화 + 점수 컬럼 제거
 - `V18__add_attitude_comment.sql` — attitude_comment
-- `V34__drop_legacy_comment_columns.sql` — verbal_comment / accuracy_issues / coaching_* 제거
+- `V34__drop_legacy_comment_columns.sql` — verbal_comment / accuracy_issues / coaching_* 제거 (V54 에서 재추가)
 - `V41__feedback_integrity_patch.sql` — ON DELETE CASCADE + level CHECK 제약
+- `V54__rollback_score_system.sql` — verbal_comment / accuracy_issues / coaching_structure / coaching_improvement 재추가 (Content/Delivery 2탭 롤백)
 
 ---
 
