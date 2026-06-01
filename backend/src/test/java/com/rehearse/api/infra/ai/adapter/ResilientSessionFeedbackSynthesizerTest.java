@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -49,9 +48,9 @@ class ResilientSessionFeedbackSynthesizerTest {
 
     private GeneratedSessionFeedback sample(String narrative) {
         return new GeneratedSessionFeedback(
-                new OverallSection(Map.of("문제 정의", 2.5), "주니어", narrative, "all turns scored"),
-                List.of(new StrengthItem("문제 정의", "obs", "matters")),
-                List.of(new GapItem("기술 깊이", "obs", "gap", "action")),
+                new OverallSection("주니어", narrative, "all turns scored"),
+                List.of(new StrengthItem("obs", "matters")),
+                List.of(new GapItem("obs", "action")),
                 null,
                 List.of(new WeekPlanItem(1, "topic", List.of("r"), "p"))
         );
@@ -145,9 +144,7 @@ class ResilientSessionFeedbackSynthesizerTest {
                 new SessionFeedbackInput.SessionMetadata(
                         1L, "BACKEND", "MID", List.of("CS_FUNDAMENTAL"), 2, 30),
                 Collections.emptyList(),
-                Collections.emptyMap(),
-                Collections.emptyList(),
-                null, null, null, null,
+                null, null,
                 "all turns scored",
                 InterviewLevel.MID
         );

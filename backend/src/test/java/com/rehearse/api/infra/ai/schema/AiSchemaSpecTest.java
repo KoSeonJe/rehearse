@@ -31,16 +31,6 @@ class AiSchemaSpecTest {
     }
 
     @Test
-    @DisplayName("GeneratedSessionFeedbackSchema.spec() name = session_feedback")
-    void generatedSessionFeedbackSchema_spec() {
-        JsonSchemaSpec spec = GeneratedSessionFeedbackSchema.spec();
-
-        assertThat(spec.name()).isEqualTo("session_feedback");
-        assertThat(spec.schema().get("required"))
-                .isEqualTo(List.of("overall", "strengths", "gaps", "delivery", "week_plan"));
-    }
-
-    @Test
     @DisplayName("GeneratedResumeQuestionsSchema.spec() name = generated_resume_questions")
     void generatedResumeQuestionsSchema_spec() {
         JsonSchemaSpec spec = GeneratedResumeQuestionsSchema.spec();

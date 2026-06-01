@@ -21,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -125,9 +124,9 @@ class SessionFeedbackPersistenceServiceTest {
 
     private GeneratedSessionFeedback samplePayload() {
         return new GeneratedSessionFeedback(
-                new OverallSection(Map.of("clarity", 4.0), "MID", "전반 코멘트", "FULL"),
-                List.of(new StrengthItem("clarity", "강점 관찰", "왜 중요한가")),
-                List.of(new GapItem("structure", "개선 관찰", "L3→L4", "구체 액션")),
+                new OverallSection("MID", "전반 코멘트", "FULL"),
+                List.of(new StrengthItem("강점 관찰", "왜 중요한가")),
+                List.of(new GapItem("개선 관찰", "구체 액션")),
                 new DeliverySection("음...", "차분함", "필러 줄이기"),
                 List.of(new WeekPlanItem(1, "주차1 토픽", List.of("리소스1"), "실습"))
         );

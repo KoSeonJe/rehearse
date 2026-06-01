@@ -1,17 +1,14 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
-import java.util.List;
-import java.util.Map;
-
 public record TurnScoreView(
         String turnLabel,
-        String rubricId,
-        List<String> scoredDimensions,
-        Map<String, DimensionScore> dimensionScores,
-        TurnStatus status
+        String verbalComment,
+        String accuracyIssues,
+        String coachingStructure,
+        String coachingImprovement,
+        String nonverbalComment,
+        String vocalComment,
+        String attitudeComment,
+        String overallComment
 ) {
-
-    public enum TurnStatus {
-        OK, NOT_EVALUABLE, FAILED
-    }
 }

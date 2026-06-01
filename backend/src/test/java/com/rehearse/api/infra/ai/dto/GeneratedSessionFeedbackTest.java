@@ -7,7 +7,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class GeneratedSessionFeedbackTest {
 
     private OverallSection overall() {
-        return new OverallSection(Map.of("clarity", 0.7), "L2", "narr", "cov");
+        return new OverallSection("L2", "narr", "cov");
     }
 
     private DeliverySection delivery() {

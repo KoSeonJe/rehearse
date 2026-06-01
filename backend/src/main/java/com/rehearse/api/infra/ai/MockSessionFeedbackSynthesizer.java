@@ -15,7 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -30,17 +29,15 @@ public class MockSessionFeedbackSynthesizer implements SessionFeedbackSynthesize
     @Override
     public GeneratedSessionFeedback synthesize(SessionFeedbackInput input) {
         OverallSection overall = new OverallSection(
-                Map.of("문제 정의", 2.5),
                 "Mock 레벨 평가 — API 키 미설정 환경 fallback",
                 "Mock 세션 피드백 narrative",
                 input.coverage() != null ? input.coverage() : "all turns scored"
         );
         List<StrengthItem> strengths = List.of(
-                new StrengthItem("문제 정의", "turn 1에서 요구사항 분해", "Mock 강점")
+                new StrengthItem("1-1 답변에서 요구사항 분해", "Mock 강점")
         );
         List<GapItem> gaps = List.of(
-                new GapItem("기술 깊이", "turn 2에서 트레이드오프 비교 부족",
-                        "미드 레벨 대비 부족", "비교표 작성 연습")
+                new GapItem("2-1 답변에서 트레이드오프 비교 부족", "비교표 작성 연습")
         );
         List<WeekPlanItem> weekPlan = List.of(
                 new WeekPlanItem(1, "Mock 학습 주제", List.of("Mock 자료"), "Mock 실습")
