@@ -11,7 +11,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 LAMBDA_DIR="$PROJECT_DIR/lambda"
 COMMON_DIR="$LAMBDA_DIR/common"
-RUBRIC_SRC_DIR="$PROJECT_DIR/backend/src/main/resources/rubric"
 REGION="ap-northeast-2"
 ACCOUNT_ID="776735194358"
 ALIAS_NAME="live"
@@ -79,13 +78,6 @@ package_function() {
 
   # common 모듈 인라인
   cp "$COMMON_DIR/retry.py" "$tmp_dir/retry.py"
-
-  # rubric YAML 동봉 (analysis 함수 전용 — Lambda prompt 가 인용)
-  if [ "$name" = "analysis" ]; then
-    mkdir -p "$tmp_dir/rubric"
-    cp "$RUBRIC_SRC_DIR/_dimensions.yaml" "$tmp_dir/rubric/"
-    cp "$RUBRIC_SRC_DIR/nonverbal-rubric.yaml" "$tmp_dir/rubric/"
-  fi
 
   # ZIP 생성
   (cd "$tmp_dir" && zip -qr "$src_dir/source.zip" . -x "*.pyc" "__pycache__/*" "requirements.txt" "tests/*")

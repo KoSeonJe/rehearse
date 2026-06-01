@@ -3,7 +3,6 @@ set -euo pipefail
 
 LAMBDA_DIR="$(cd "$(dirname "$0")" && pwd)"
 COMMON_DIR="$LAMBDA_DIR/common"
-RUBRIC_SRC_DIR="$LAMBDA_DIR/../backend/src/main/resources/rubric"
 
 validate_python() {
   local dir="$1"
@@ -53,13 +52,6 @@ deploy_function() {
 
   # common 모듈 인라인 (최신 버전 덮어쓰기)
   cp "$COMMON_DIR/retry.py" "$tmp_dir/retry.py"
-
-  # rubric YAML 동봉 (analysis 함수 전용 — Lambda prompt 가 인용)
-  if [ "$name" = "analysis" ]; then
-    mkdir -p "$tmp_dir/rubric"
-    cp "$RUBRIC_SRC_DIR/_dimensions.yaml" "$tmp_dir/rubric/"
-    cp "$RUBRIC_SRC_DIR/nonverbal-rubric.yaml" "$tmp_dir/rubric/"
-  fi
 
   # 배포 전 검증
   validate_python "$tmp_dir" "$name"
