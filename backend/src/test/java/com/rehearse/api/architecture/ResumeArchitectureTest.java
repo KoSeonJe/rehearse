@@ -3,7 +3,6 @@ package com.rehearse.api.architecture;
 import com.rehearse.api.domain.feedback.rubric.service.RubricLoader;
 import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.service.FollowUpTransactionHandler;
-import com.rehearse.api.domain.resume.entity.ResumeSkeleton;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -205,13 +204,24 @@ class ResumeArchitectureTest {
     }
 
     @Test
-    @DisplayName("ResumeSkeleton.priorityIds 는 다시 만들 수 없다 (InterviewPlan 우선순위 폐기)")
-    void deletedResumeSkeletonPriorityIdsMethodMustNotResurface() {
-        noMethods()
-                .that().haveName("priorityIds").and().areDeclaredIn(ResumeSkeleton.class)
-                .should().bePublic()
-                .orShould().beProtected()
-                .orShould().bePrivate()
+    @DisplayName("삭제된 ResumeSkeleton 추출 파이프라인 클래스는 다시 만들 수 없다 (#549 dead island 제거)")
+    void deletedResumeSkeletonExtractionPipelineClassesMustNotResurface() {
+        noClasses()
+                .that().haveSimpleName("ResumeSkeleton")
+                .or().haveSimpleName("ResumeSkeletonEntity")
+                .or().haveSimpleName("ResumeSkeletonExtractor")
+                .or().haveSimpleName("ResumeExtractionService")
+                .or().haveSimpleName("ResumeIngestionService")
+                .or().haveSimpleName("ResumeSkeletonSampler")
+                .or().haveSimpleName("ResumeSkeletonPersister")
+                .or().haveSimpleName("ResumeSkeletonRepository")
+                .or().haveSimpleName("MockResumeSkeletonExtractor")
+                .or().haveSimpleName("OpenAiResumeSkeletonExtractor")
+                .or().haveSimpleName("OpenAiResumeExtractorClient")
+                .or().haveSimpleName("OpenAiResumeExtractorRestClientConfig")
+                .or().haveSimpleName("OpenAiResumeSkeletonProperties")
+                .or().haveSimpleName("GeneratedResumeSkeleton")
+                .should().resideInAnyPackage("..")
                 .allowEmptyShould(true)
                 .check(importedClasses);
     }
