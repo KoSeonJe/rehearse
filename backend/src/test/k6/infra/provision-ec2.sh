@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# loadtest 전용 EC2(t4g.small, arm64 AL2023) 프로비저닝.
+# loadtest 전용 EC2(t4g.medium, arm64 AL2023) 프로비저닝. (인스턴스 타입은 config.env LOADTEST_INSTANCE_TYPE)
 #
 # ★ 2단계 게이트 ★
 #   기본 = plan 출력만 (run-instances 미실행). 비용 발생 작업.
