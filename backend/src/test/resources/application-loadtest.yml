@@ -1,3 +1,8 @@
+server:
+  tomcat:
+    threads:
+      max: 200
+
 spring:
   threads:
     virtual:
@@ -24,9 +29,41 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # jar 단독 부팅 시 oauth2Login 자동설정이 ClientRegistration 빈을 요구 → 더미 등록 (loadtest 는 OAuth 플로우 미사용)
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: loadtest-dummy-github-client-id
+            client-secret: loadtest-dummy-github-client-secret
+            scope: read:user,user:email
+          google:
+            client-id: loadtest-dummy-google-client-id
+            client-secret: loadtest-dummy-google-client-secret
+            scope: email,profile
+
 # CORS
 cors:
   allowed-origins: http://localhost:5173
+
+# JWT — loadtest 전용 더미. secret 은 BASE64 디코딩 후 HS256 키로 사용되므로 32바이트+ base64 필수
+jwt:
+  secret: bG9hZHRlc3RKd3RTZWNyZXRLZXlOb3RBUmVhbFNlY3JldE1pbmltdW0zMkNoYXJz
+  expiration-ms: 604800000
+
+# 외부 의존 비활성 — 부하 변수 통제 + jar 단독 부팅
+aws:
+  enabled: false
+
+google:
+  tts:
+    enabled: false
+
+app:
+  frontend-url: http://localhost:3000
+  admin:
+    password: loadtest-dummy-admin-password
 
 # 외부 API → Mock Server (localhost:9090)
 claude:
@@ -59,7 +96,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, metrics, info
+        include: health, metrics, info, prometheus
   endpoint:
     health:
       show-details: always

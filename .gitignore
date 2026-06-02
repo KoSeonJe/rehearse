@@ -75,3 +75,6 @@ lambda/**/*.zip
 
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/
+
+# === loadtest EC2 인프라 설정 (키/계정 식별자 포함) ===
+backend/src/test/k6/infra/config.env

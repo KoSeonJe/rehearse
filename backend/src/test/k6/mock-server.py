@@ -1,3 +1,4 @@
+# DEPRECATED(2026-06-02): Mock AI 표준은 WireMock(docker-compose-loadtest.yml + wiremock-stubs/)으로 단일화됨. 본 스크립트는 더 이상 사용하지 않음.
 """Claude + Whisper API Mock Server for load testing.
 
 Usage: python3 mock-server.py [port]
