@@ -35,7 +35,7 @@ BEGIN
   DECLARE i INT DEFAULT 1;
   WHILE i <= 50000 DO
     INSERT INTO question_set (interview_id, category, order_index, created_at, updated_at, version)
-    VALUES (i, 'CS', 0, NOW(6), NOW(6), 0);
+    VALUES (i, 'CS_FUNDAMENTAL', 0, NOW(6), NOW(6), 0);
     IF i % 5000 = 0 THEN
       COMMIT;
     END IF;
