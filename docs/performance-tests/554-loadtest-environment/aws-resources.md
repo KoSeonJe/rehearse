@@ -36,7 +36,7 @@ aws ec2 start-instances --region ap-northeast-2 --instance-ids i-07ca3e9cda9c81b
 aws ec2 stop-instances --region ap-northeast-2 --instance-ids i-07ca3e9cda9c81ba0 i-0df37cc60c287b2bf
 ```
 
-- 비용: t4g.small ~$0.021/hr×2 = ~$0.042/hr (running). 중지 시 EBS gp3 20GB×2 ≈ ~$3.2/mo 만.
+- 비용: EC2#1 t4g.medium ~$0.042/hr + EC2#2 t4g.small ~$0.021/hr ≈ ~$0.063/hr (running). 중지 시 EBS gp3 20GB×2 ≈ ~$3.2/mo 만.
 
 ## 해소 — EC2#1 OOM (사이징, 2026-06-02 완료)
 

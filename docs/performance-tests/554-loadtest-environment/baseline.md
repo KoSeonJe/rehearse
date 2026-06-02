@@ -154,7 +154,7 @@ k6 run --env SCENARIO=A \
 
 | # | 항목 | 실측 | 판정 |
 |---|------|------|------|
-| A1 | app health (`http://43.201.35.210:8080/actuator/health`) | HTTP 200, `status=UP`, db UP(MySQL) | PASS |
+| A1 | app health (`http://13.125.243.87:8080/actuator/health`) | HTTP 200, `status=UP`, db UP(MySQL) | PASS |
 | A2 | app boot | `Started RehearseApiApplication in 27.8s` (17:19) | PASS |
 | A3 | prometheus endpoint | 472 메트릭 라인, hikaricp/jvm/http_server_requests 노출 | PASS |
 | A4 | node_exporter `:9100` | cpu/meminfo 메트릭 응답 | PASS |
