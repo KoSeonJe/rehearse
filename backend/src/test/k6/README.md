@@ -1,20 +1,21 @@
 # 부하테스트 실행 가이드
 
+> **Mock AI 표준 = WireMock** (compose-native). `mock-server.py` 는 deprecated — 사용 금지.
+> Claude stub 3초 / Whisper stub 1초 지연(`wiremock-stubs/mappings/`).
+
 ## 사전 준비
 
 ```bash
-# 1. Docker MySQL 시작
-docker run -d --name mysql-loadtest \
-  -p 3306:3306 \
-  -e MYSQL_ROOT_PASSWORD=loadtest \
-  -e MYSQL_DATABASE=rehearse_loadtest \
-  mysql:8.0
+# 1. 부하 격리 인프라 기동 (MySQL loadtest + WireMock)
+docker compose -f backend/src/test/k6/docker-compose-loadtest.yml up -d
 
-# MySQL ready 대기 (~30초)
-until docker exec mysql-loadtest mysqladmin ping -h localhost -u root -ploadtest 2>/dev/null; do sleep 2; done
+# MySQL ready 대기
+until docker exec rehearse-loadtest-db mysqladmin ping -h localhost 2>/dev/null; do sleep 2; done
 
-# 2. Mock API 서버 시작 (Claude 2초, Whisper 1초 지연)
-python3 backend/src/test/k6/mock-server.py &
+# 2. (선택) 관측 스택 기동 (Prometheus + Grafana + node_exporter)
+docker compose -f backend/src/test/k6/observability/docker-compose-observability.yml up -d
+#   - Prometheus: http://127.0.0.1:9091
+#   - Grafana:    http://127.0.0.1:3000 (admin / loadtest)
 
 # 3. Backend 시작 (loadtest 프로필)
 cd backend
@@ -102,6 +103,7 @@ curl -s http://localhost:8080/actuator/metrics/resilience4j.ratelimiter.availabl
 ## 정리
 
 ```bash
-docker rm -f mysql-loadtest
-pkill -f mock-server.py
+# 컨테이너 종료 (볼륨 보존 — -v 금지)
+docker compose -f backend/src/test/k6/observability/docker-compose-observability.yml down
+docker compose -f backend/src/test/k6/docker-compose-loadtest.yml down
 ```
