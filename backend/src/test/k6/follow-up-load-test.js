@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { check, sleep } from 'k6';
 import { Rate, Trend, Counter } from 'k6/metrics';
 import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.1/index.js';
+import { issueLoadTestJwt, dummyWebmBytes } from './_auth.js';
 
 // ── 커스텀 메트릭 ──
 const errorRate = new Rate('error_rate');
@@ -38,13 +39,19 @@ export const options = {
   // threshold는 설정하지 않음 — 병목 발견이 목적이므로 에러를 허용
 };
 
+// ── 인증 토큰 / 더미 오디오 (전 VU 공유) ──
+export function setup() {
+  return { token: issueLoadTestJwt() };
+}
+
+const AUDIO_BUFFER = dummyWebmBytes();
+
 // ── 요청 ──
-export default function () {
+export default function (data) {
   // VU+iteration 기반 유니크 interview 할당 (후속질문 2개 제한 고려)
   const interviewId = ((__VU - 1) * 30 + Math.floor(__ITER / 2)) % MAX_INTERVIEW_ID + 1;
   const questionSetId = interviewId;
 
-  const boundary = '----k6boundary' + Math.random().toString(36).substr(2);
   const requestJson = JSON.stringify({
     questionSetId: questionSetId,
     questionContent: '정렬 알고리즘의 종류와 각각의 시간복잡도를 설명해주세요.',
@@ -52,16 +59,14 @@ export default function () {
     previousExchanges: [],
   });
 
-  const body =
-    `--${boundary}\r\n` +
-    `Content-Disposition: form-data; name="request"\r\n` +
-    `Content-Type: application/json\r\n\r\n` +
-    `${requestJson}\r\n` +
-    `--${boundary}--\r\n`;
+  const body = {
+    request: http.file(requestJson, 'request.json', 'application/json'),
+    audio: http.file(AUDIO_BUFFER, 'dummy.webm', 'audio/webm'),
+  };
 
   const params = {
     headers: {
-      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      Authorization: `Bearer ${data.token}`,
     },
     timeout: '120s',
   };
