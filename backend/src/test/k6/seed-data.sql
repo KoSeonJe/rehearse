@@ -6,15 +6,21 @@ SET autocommit = 0;
 SET unique_checks = 0;
 SET foreign_key_checks = 0;
 
--- 1. interview 50,000건
+-- 0. 부하용 면접 소유자 user 1건 (id=1 고정). validateOwner(userId) 통과용
+INSERT INTO users (id, email, name, profile_image, provider, provider_id, role, created_at, updated_at)
+VALUES (1, 'loadtest@rehearse.local', 'loadtest-user', NULL, 'GITHUB', 'loadtest-provider-id', 'USER', NOW(6), NOW(6))
+ON DUPLICATE KEY UPDATE email = email;
+COMMIT;
+
+-- 1. interview 50,000건 (소유자 user_id=1)
 DELIMITER ;;
 DROP PROCEDURE IF EXISTS seed_interviews;;
 CREATE PROCEDURE seed_interviews()
 BEGIN
   DECLARE i INT DEFAULT 1;
   WHILE i <= 50000 DO
-    INSERT INTO interview (position, level, duration_minutes, status, question_generation_status, public_id, created_at, updated_at)
-    VALUES ('BACKEND', 'JUNIOR', 30, 'IN_PROGRESS', 'COMPLETED', UUID(), NOW(6), NOW(6));
+    INSERT INTO interview (user_id, position, level, duration_minutes, status, question_generation_status, public_id, created_at, updated_at)
+    VALUES (1, 'BACKEND', 'JUNIOR', 30, 'IN_PROGRESS', 'COMPLETED', UUID(), NOW(6), NOW(6));
     IF i % 5000 = 0 THEN
       COMMIT;
     END IF;

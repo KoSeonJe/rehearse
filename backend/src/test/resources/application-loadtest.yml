@@ -74,10 +74,25 @@ openai:
   api:
     url: http://localhost:9090/v1/audio/transcriptions
 
+# OpenAI primary 경로 (follow-up generator + audio turn analyzer) → WireMock chat completions
+ai:
+  followup:
+    generator:
+      openai:
+        base-url: http://localhost:9090/v1/chat/completions
+  audio:
+    turn-analyzer:
+      openai:
+        base-url: http://localhost:9090/v1/chat/completions
+
 # Resilience4j — GPT-4o Tier 1 기준 (500 RPM = ~8 req/s)
 resilience4j:
   ratelimiter:
     instances:
+      openai-api:
+        limitForPeriod: ${RATELIMITER_LIMIT:8}
+        limitRefreshPeriod: 1s
+        timeoutDuration: ${RATELIMITER_TIMEOUT:60s}
       claude-api:
         limitForPeriod: ${RATELIMITER_LIMIT:8}
         limitRefreshPeriod: 1s

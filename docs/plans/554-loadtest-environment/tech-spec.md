@@ -11,7 +11,7 @@
 ## Scope (이 spec의 경계)
 
 **In-scope** — 3 실험이 공유하는 **영속 환경 기반**:
-- 전용 EC2 `t4g.small` (ARM64) — 관리형, start/stop 가능, terminate 는 사용자만.
+- 전용 EC2 `t4g.medium` (ARM64) — 관리형, start/stop 가능, terminate 는 사용자만.
 - `loadtest` Spring 프로파일 EC2 적용 + 베이스라인 설정값 고정·노출 (HikariCP / Tomcat thread / JVM heap).
 - 관측 스택: Prometheus + Grafana + node_exporter (docker-compose, ARM64) + scrape config.
 - Mock AI provider (고정 지연) — 변수 통제용.
@@ -42,15 +42,15 @@
   - "connection, thread 도 부하테스트 대상" → 환경은 3실험 공통 기반.
   - 인스턴스 = t4g.small, start/stop 가능, A 비교군 코드는 브랜치 전용.
 - **추정/미확인**:
-  - t4g.small = ARM64(Graviton2) / 2 vCPU / 2GB RAM → 모든 docker 이미지 arm64 태그, JVM arm64, (영상실험 시) ffmpeg arm64.
-  - 2GB RAM → JVM heap + 관측 스택 컨테이너 공존 시 빠듯. heap 상한 + 컨테이너 메모리 제한 명시 필요.
+  - t4g.medium = ARM64(Graviton2) / 2 vCPU / 4GB RAM → 모든 docker 이미지 arm64 태그, JVM arm64, (영상실험 시) ffmpeg arm64.
+  - 4GB RAM → JVM heap + 관측 스택 컨테이너 공존 시 빠듯. heap 상한 + 컨테이너 메모리 제한 명시 필요.
   - 단일 호스트 배치(EC2 1대에 app+mysql+mock+관측) = 커넥션/스레드 경합 실측에 오히려 적합(실험 목적과 정합).
 
 ## Trade-offs
 
 ### Trade-off 1 — 환경 영속성 (채택: 관리형 영속 EC2 + start/stop)
 
-#### Option A (채택): 영속 t4g.small, start/stop 로 비용 통제
+#### Option A (채택): 영속 t4g.medium, start/stop 로 비용 통제
 - 장점: 3실험 재사용, 베이스라인 설정 1회 고정 → 실험 간 일관성. dev/prod 와 동일 운영 모델.
 - 단점: 인스턴스 상시 보유(중지 상태 EBS 비용 소액). start/stop 운영 필요.
 - 사유: 사용자 명시 + 3실험 공유 + 체인(실험1 B = 실험2 baseline) → 환경 재구축 반복 낭비 제거.
@@ -81,7 +81,7 @@
 ## Architecture
 
 ```
-[전용 EC2 t4g.small — ARM64, 관리형 loadtest 환경]
+[전용 EC2 t4g.medium — ARM64, 관리형 loadtest 환경]
 ┌─────────────────────────────────────────────────────────┐
 │ Spring Boot (profile=loadtest)  :8080                    │
 │   - actuator/prometheus (HikariCP·Tomcat·JVM 메트릭)      │
@@ -118,7 +118,7 @@ start/stop: aws ec2 start-instances / stop-instances (terminate 금지 — 사�
 
 | 설정 | 값 | 근거 |
 |------|-----|------|
-| EC2 | t4g.small (ARM64, 2vCPU, 2GB) | 사용자 결정 |
+| EC2 | t4g.medium (ARM64, 2vCPU, 4GB) | 사용자 결정 |
 | HikariCP pool | max=10 / min=5 | 기존 loadtest.yml. connection.md 핵심 해석 근거 |
 | Tomcat thread pool | 200 (기본 명시) | thread.md p95 해석 근거 |
 | JVM heap | `-Xmx768m` (아래 검산표 참조) | 추정 — implement 시 검산 |
@@ -144,7 +144,7 @@ start/stop: aws ec2 start-instances / stop-instances (terminate 금지 — 사�
 
 ## Verification (완료 판정)
 
-- [ ] **EC2 기동**: t4g.small(arm64 AL2023) 기동 + start/stop 스크립트 동작(`aws ec2 start/stop-instances`).
+- [ ] **EC2 기동**: t4g.medium(arm64 AL2023) 기동 + start/stop 스크립트 동작(`aws ec2 start/stop-instances`).
 - [ ] **app 배포·구동**: loadtest 프로파일 jar EC2 구동 + `GET /actuator/health` 200.
 - [ ] **prometheus 엔드포인트**: `GET /actuator/prometheus` 200 + HikariCP/Tomcat/JVM 메트릭 노출 확인(exposure 보강 반영).
 - [ ] **관측 스택 기동**: prometheus+grafana+node_exporter compose `up` (arm64) → Prometheus 에서 app target + node target 둘 다 `UP`.
@@ -165,7 +165,7 @@ start/stop: aws ec2 start-instances / stop-instances (terminate 금지 — 사�
 - Mock 두 갈래 병존(WireMock 3s/1s + mock-server.py 2s).
 
 ### Post (구현 후)
-- 영속 t4g.small EC2 + start/stop 스크립트.
+- 영속 t4g.medium EC2 + start/stop 스크립트.
 - 관측 스택 compose(arm64) + prometheus.yml scrape config + Grafana 대시보드 정의.
 - exposure 에 `prometheus` 추가(loadtest 프로파일 한정).
 - WireMock 단일 표준(claude 3s/whisper 1s) + `mock-server.py` dead 처리.
@@ -188,7 +188,7 @@ start/stop: aws ec2 start-instances / stop-instances (terminate 금지 — 사�
   - **Task 1 — `backend`**: `application-loadtest.yml` exposure 에 `prometheus` 추가 + 베이스라인 설정값(Tomcat thread, `-Xmx` 주입 지점) 명시. loadtest 프로파일 한정. (소규모 설정 PR)
   - **Task 2 — `sre-engineer`**: 관측 스택 compose(arm64: prometheus+grafana+node_exporter) + prometheus.yml(app+node scrape) + Grafana 대시보드 JSON.
   - **Task 3 — `sre-engineer`**: WireMock 을 Mock 표준으로 확정 — claude stub 3000ms 유지 확인 + compose 와이어링 정리 + `mock-server.py` dead 처리(README 참조 제거). (지연 변경 = stub JSON)
-  - **Task 4 — `sre-engineer`**: EC2 t4g.small 프로비저닝 스크립트(arm64 AL2023 + docker) + start/stop 스크립트 + 배포(jar scp/구동) 스크립트.
+  - **Task 4 — `sre-engineer`**: EC2 t4g.medium 프로비저닝 스크립트(arm64 AL2023 + docker) + start/stop 스크립트 + 배포(jar scp/구동) 스크립트.
   - **Task 5 — `sre-engineer`**: 환경 smoke 검증(actuator/prometheus + 관측 target UP + Mock 지연 + k6 1회) + 베이스라인 표 문서화.
 
 ### 실행 주체 / 승인 게이트 (Blocking)

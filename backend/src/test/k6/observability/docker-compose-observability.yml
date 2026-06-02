@@ -5,7 +5,7 @@
 #   - node-exporter 는 본 compose 에 없음 — EC2#1 측 docker-compose-loadtest.yml 로 이동.
 # SG sg-0c988c0e70ccdb142 가 3000(grafana)/9091(prometheus) 를 0.0.0.0/0 으로 노출 →
 #   0.0.0.0 bind. Grafana 접속: http://<EC2#2_퍼블릭IP>:3000 (admin / loadtest).
-# 모든 이미지 arm64 (t4g.small = Graviton2).
+# 모든 이미지 arm64 (EC2#2 관측 = t4g.small, Graviton2).
 #
 # 기동:  docker compose -f docker-compose-observability.yml up -d
 

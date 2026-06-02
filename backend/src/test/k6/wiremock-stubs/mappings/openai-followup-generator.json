@@ -1,0 +1,37 @@
+{
+  "priority": 2,
+  "request": {
+    "method": "POST",
+    "urlPath": "/v1/chat/completions",
+    "bodyPatterns": [
+      { "contains": "response_format" }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "fixedDelayMilliseconds": 3000,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "id": "chatcmpl-followup-stub",
+      "object": "chat.completion",
+      "model": "gpt-5.4-mini",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "{\"skip\":false,\"question\":\"퀵정렬이 최악의 경우 O(n^2)이 되는 상황과 이를 회피하는 방법을 설명해주세요.\",\"reason\":\"답변에서 제시한 알고리즘의 효율성 검증\",\"type\":\"DEEP_DIVE\",\"best_answer\":\"피벗을 무작위 선택하거나 median-of-three 기법으로 최악 케이스를 회피합니다.\",\"target_claim_idx\":0}"
+          },
+          "finish_reason": "stop"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 100,
+        "completion_tokens": 50,
+        "total_tokens": 150
+      }
+    }
+  }
+}

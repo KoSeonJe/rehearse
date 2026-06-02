@@ -2,7 +2,7 @@
 # 관측 스택(Prometheus/Grafana)은 전용 EC2#2 로 분리(OOM fallback, 사용자 결정).
 # EC2#1 에는 측정 대상(app+mysql+wiremock)과 node_exporter 만 상주 — 관측 오버헤드 off-host.
 # node_exporter 는 0.0.0.0:9100 bind → 동일 VPC 의 EC2#2 Prometheus 가 EC2#1 사설IP:9100 으로 scrape.
-# 모든 이미지 arm64 (t4g.small = Graviton2).
+# 모든 이미지 arm64 (EC2#1 = t4g.medium, Graviton2).
 
 services:
   mysql-loadtest:
