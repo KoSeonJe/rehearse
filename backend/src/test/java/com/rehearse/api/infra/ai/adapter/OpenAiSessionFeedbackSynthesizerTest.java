@@ -56,7 +56,7 @@ class OpenAiSessionFeedbackSynthesizerTest {
     void setUp() {
         client = mock(OpenAiSessionFeedbackSynthesizerClient.class);
         promptBuilder = mock(SessionFeedbackSynthesizerPromptBuilder.class);
-        parser = new SessionFeedbackParser(new ObjectMapper());
+        parser = new SessionFeedbackParser(new ObjectMapper(), new com.rehearse.api.infra.ai.AiResponseParser(new ObjectMapper()));
         adapter = new OpenAiSessionFeedbackSynthesizer(client, promptBuilder, parser);
     }
 

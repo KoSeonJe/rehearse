@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.session.synthesis;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class SessionFeedbackParser {
     );
 
     private final ObjectMapper objectMapper;
+    private final AiResponseParser aiResponseParser;
 
     public GeneratedSessionFeedback parse(String json, SessionFeedbackInput input) {
         GeneratedSessionFeedback payload = deserialize(json);
@@ -34,7 +36,7 @@ public class SessionFeedbackParser {
 
     private GeneratedSessionFeedback deserialize(String json) {
         try {
-            return objectMapper.readValue(json, GeneratedSessionFeedback.class);
+            return objectMapper.readValue(aiResponseParser.extractJson(json), GeneratedSessionFeedback.class);
         } catch (com.fasterxml.jackson.databind.exc.ValueInstantiationException e) {
             Throwable cause = e.getCause();
             String causeMsg = cause != null ? cause.getMessage() : e.getMessage();

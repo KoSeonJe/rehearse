@@ -56,7 +56,7 @@ class ClaudeSessionFeedbackSynthesizerTest {
     void setUp() {
         client = mock(ClaudeSessionFeedbackSynthesizerClient.class);
         promptBuilder = mock(SessionFeedbackSynthesizerPromptBuilder.class);
-        parser = new SessionFeedbackParser(new ObjectMapper());
+        parser = new SessionFeedbackParser(new ObjectMapper(), new com.rehearse.api.infra.ai.AiResponseParser(new ObjectMapper()));
         adapter = new ClaudeSessionFeedbackSynthesizer(client, promptBuilder, parser);
     }
 

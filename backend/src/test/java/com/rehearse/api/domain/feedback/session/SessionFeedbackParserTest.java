@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.feedback.session;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseException;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackParser;
@@ -21,7 +22,7 @@ class SessionFeedbackParserTest {
 
     @BeforeEach
     void setUp() {
-        parser = new SessionFeedbackParser(new ObjectMapper());
+        parser = new SessionFeedbackParser(new ObjectMapper(), new AiResponseParser(new ObjectMapper()));
     }
 
     private SessionFeedbackInput emptyInput() {
@@ -78,6 +79,14 @@ class SessionFeedbackParserTest {
     @DisplayName("추상 표현 없는 유효한 JSON은 정상 파싱 (false-positive 회귀)")
     void parse_succeeds_when_no_abstract_phrases() {
         String json = validPayloadJson("CS 개념에선 탄탄하지만 경험 질문에서 구체화 부족한 패턴.");
+        assertThatCode(() -> parser.parse(json, emptyInput()))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("코드펜스로 감싼 응답도 정상 파싱한다")
+    void parse_succeeds_when_wrapped_in_code_fence() {
+        String json = "```json\n" + validPayloadJson("CS 개념에선 탄탄하지만 경험 질문에서 구체화 부족한 패턴.") + "\n```";
         assertThatCode(() -> parser.parse(json, emptyInput()))
                 .doesNotThrowAnyException();
     }

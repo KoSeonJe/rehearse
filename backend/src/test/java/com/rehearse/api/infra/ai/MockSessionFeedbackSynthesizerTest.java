@@ -7,6 +7,7 @@ import com.rehearse.api.domain.feedback.session.models.service.SessionFeedbackSy
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackParser;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.adapter.ClaudeSessionFeedbackSynthesizer;
 import com.rehearse.api.infra.ai.adapter.OpenAiSessionFeedbackSynthesizer;
 import com.rehearse.api.infra.ai.adapter.ResilientSessionFeedbackSynthesizer;
@@ -56,7 +57,7 @@ class MockSessionFeedbackSynthesizerTest {
                         HttpClientAutoConfiguration.class,
                         RestClientAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
-                .withBean(SessionFeedbackParser.class, () -> new SessionFeedbackParser(new ObjectMapper()))
+                .withBean(SessionFeedbackParser.class, () -> new SessionFeedbackParser(new ObjectMapper(), new AiResponseParser(new ObjectMapper())))
                 .withBean(SimpleMeterRegistry.class, () -> reg)
                 .withBean(ContextEngineeringMetrics.class, () -> new ContextEngineeringMetrics(reg))
                 .withBean(AiCallMetrics.class, () -> new AiCallMetrics(reg, new ContextEngineeringMetrics(reg)))
