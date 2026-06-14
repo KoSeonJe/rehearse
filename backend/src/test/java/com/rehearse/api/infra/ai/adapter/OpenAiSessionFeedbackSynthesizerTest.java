@@ -5,6 +5,7 @@ import com.rehearse.api.domain.feedback.session.exception.SessionFeedbackParseEx
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackInput;
 import com.rehearse.api.domain.feedback.session.synthesis.SessionFeedbackParser;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
+import com.rehearse.api.infra.ai.AiResponseParser;
 import com.rehearse.api.infra.ai.client.OpenAiSessionFeedbackSynthesizerClient;
 import com.rehearse.api.infra.ai.dto.GeneratedSessionFeedback;
 import com.rehearse.api.infra.ai.prompt.SessionFeedbackSynthesizerPromptBuilder;
@@ -56,7 +57,8 @@ class OpenAiSessionFeedbackSynthesizerTest {
     void setUp() {
         client = mock(OpenAiSessionFeedbackSynthesizerClient.class);
         promptBuilder = mock(SessionFeedbackSynthesizerPromptBuilder.class);
-        parser = new SessionFeedbackParser(new ObjectMapper());
+        ObjectMapper objectMapper = new ObjectMapper();
+        parser = new SessionFeedbackParser(objectMapper, new AiResponseParser(objectMapper));
         adapter = new OpenAiSessionFeedbackSynthesizer(client, promptBuilder, parser);
     }
 
