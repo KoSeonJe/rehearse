@@ -22,7 +22,8 @@ class SessionFeedbackParserTest {
 
     @BeforeEach
     void setUp() {
-        parser = new SessionFeedbackParser(new ObjectMapper(), new AiResponseParser(new ObjectMapper()));
+        ObjectMapper objectMapper = new ObjectMapper();
+        parser = new SessionFeedbackParser(objectMapper, new AiResponseParser(objectMapper));
     }
 
     private SessionFeedbackInput emptyInput() {

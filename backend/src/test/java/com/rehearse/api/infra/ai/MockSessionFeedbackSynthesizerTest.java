@@ -57,7 +57,10 @@ class MockSessionFeedbackSynthesizerTest {
                         HttpClientAutoConfiguration.class,
                         RestClientAutoConfiguration.class))
                 .withBean(ObjectMapper.class, ObjectMapper::new)
-                .withBean(SessionFeedbackParser.class, () -> new SessionFeedbackParser(new ObjectMapper(), new AiResponseParser(new ObjectMapper())))
+                .withBean(SessionFeedbackParser.class, () -> {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    return new SessionFeedbackParser(objectMapper, new AiResponseParser(objectMapper));
+                })
                 .withBean(SimpleMeterRegistry.class, () -> reg)
                 .withBean(ContextEngineeringMetrics.class, () -> new ContextEngineeringMetrics(reg))
                 .withBean(AiCallMetrics.class, () -> new AiCallMetrics(reg, new ContextEngineeringMetrics(reg)))
