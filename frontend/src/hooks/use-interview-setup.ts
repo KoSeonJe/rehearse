@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCreateInterview } from '@/hooks/use-interviews'
 import { ApiError } from '@/lib/api-client'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT } from '@/constants/analytics'
 import { POSITION_INTERVIEW_TYPES, POSITION_TECH_STACKS } from '@/constants/interview-labels'
 import { TOTAL_STEPS, MAX_FILE_SIZE } from '@/constants/setup'
 import type { Step } from '@/constants/setup'
@@ -41,7 +43,7 @@ export const useInterviewSetup = () => {
       case 1:
         return position !== null
       case 2:
-        return true
+        return techStack !== null
       case 3:
         return level !== null
       case 4:
@@ -50,8 +52,28 @@ export const useInterviewSetup = () => {
         if (interviewTypes.length === 0) return false
         if (interviewTypes.includes('RESUME_BASED') && !resumeFile) return false
         return true
+      default:
+        return false
     }
-  }, [position, level, durationMinutes, interviewTypes, resumeFile])
+  }, [position, techStack, level, durationMinutes, interviewTypes, resumeFile])
+
+  const disabledHint = useCallback((step: Step): string => {
+    switch (step) {
+      case 1:
+        return '직무를 먼저 선택해주세요'
+      case 2:
+        return '기술 스택을 선택해주세요'
+      case 3:
+        return '경력 수준을 선택해주세요'
+      case 4:
+        return '면접 시간을 선택해주세요'
+      case 5:
+        if (interviewTypes.includes('RESUME_BASED') && !resumeFile) {
+          return '이력서 PDF를 업로드해주세요'
+        }
+        return '면접 유형을 하나 이상 선택해주세요'
+    }
+  }, [interviewTypes, resumeFile])
 
   const isSubmitStep = currentStep === TOTAL_STEPS
 
@@ -84,6 +106,8 @@ export const useInterviewSetup = () => {
     setDurationMinutes(minutes)
   }, [])
 
+  const isOtherTypesDisabled = interviewTypes.includes('RESUME_BASED')
+
   const handleTypeToggle = useCallback((type: InterviewType) => {
     setInterviewTypes((prev) => {
       if (prev.includes(type)) {
@@ -95,6 +119,18 @@ export const useInterviewSetup = () => {
         }
         return next
       }
+
+      // RESUME_BASED 활성화: 기존 선택 모두 해제하고 단독 선택
+      if (type === 'RESUME_BASED') {
+        setCsSubTopics([])
+        return ['RESUME_BASED']
+      }
+
+      // 다른 타입 선택 시 RESUME_BASED가 이미 활성화면 토글 차단
+      if (prev.includes('RESUME_BASED')) {
+        return prev
+      }
+
       return [...prev, type]
     })
   }, [])
@@ -166,6 +202,7 @@ export const useInterviewSetup = () => {
       },
       {
         onSuccess: (response) => {
+          trackEvent(ANALYTICS_EVENT.INTERVIEW_CREATE)
           navigate(`/interview/${response.data.id}/ready`, { replace: true })
         },
         onError: (error) => {
@@ -192,8 +229,10 @@ export const useInterviewSetup = () => {
     dragOver,
     isLoading,
     isSubmitStep,
+    isOtherTypesDisabled,
     totalSteps: TOTAL_STEPS,
     canNext,
+    disabledHint,
     handleNext,
     handlePrev,
     handlePositionSelect,

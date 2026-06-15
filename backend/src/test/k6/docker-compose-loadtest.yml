@@ -1,7 +1,15 @@
+# loadtest 측정 대상 호스트(EC2#1) compose — mysql + wiremock + node_exporter.
+# 관측 스택(Prometheus/Grafana)은 전용 EC2#2 로 분리(OOM fallback, 사용자 결정).
+# EC2#1 에는 측정 대상(app+mysql+wiremock)과 node_exporter 만 상주 — 관측 오버헤드 off-host.
+# node_exporter 는 0.0.0.0:9100 bind → 동일 VPC 의 EC2#2 Prometheus 가 EC2#1 사설IP:9100 으로 scrape.
+# 모든 이미지 arm64 (EC2#1 = t4g.medium, Graviton2).
+
 services:
   mysql-loadtest:
     image: mysql:8.0
     container_name: rehearse-loadtest-db
+    platform: linux/arm64
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: loadtest
       MYSQL_DATABASE: rehearse_loadtest
@@ -9,7 +17,7 @@ services:
       - "3306:3306"
     tmpfs:
       - /var/lib/mysql
-    command: --max-connections=500 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --max-connections=500 --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --innodb-buffer-pool-size=128M
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
@@ -19,8 +27,31 @@ services:
   wiremock:
     image: wiremock/wiremock:3.12.1
     container_name: rehearse-wiremock
+    platform: linux/arm64
+    restart: unless-stopped
     ports:
       - "9090:8080"
     volumes:
       - ./wiremock-stubs:/home/wiremock
     command: --global-response-templating --container-threads 1000 --max-request-journal-entries 0 --async-response-enabled true
+
+  node-exporter:
+    image: prom/node-exporter:v1.8.2
+    container_name: rehearse-node-exporter
+    platform: linux/arm64
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+      - '--collector.disable-defaults'
+      - '--collector.cpu'
+      - '--collector.meminfo'
+      - '--collector.loadavg'
+      - '--collector.filesystem'
+      - '--collector.netdev'
+      - '--web.listen-address=0.0.0.0:9100'
+    pid: host
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    mem_limit: 32m

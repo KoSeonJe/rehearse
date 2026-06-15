@@ -2,16 +2,19 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import com.rehearse.api.domain.interview.event.InterviewCompletedEvent;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +24,7 @@ public class InterviewCompletionService {
 
     private final InterviewRepository interviewRepository;
     private final QuestionSetRepository questionSetRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Scheduled(fixedDelay = 30_000)
     @Transactional
@@ -43,11 +47,12 @@ public class InterviewCompletionService {
                     continue;
                 }
 
-                freshInterview.completeWithComment(summary.toComment());
                 freshInterview.updateStatus(InterviewStatus.COMPLETED);
 
                 log.info("면접 완료 처리: interviewId={}, completed={}, partial={}, skipped={}",
                         interviewId, summary.completed, summary.partial, summary.skipped);
+
+                eventPublisher.publishEvent(new InterviewCompletedEvent(interviewId, LocalDateTime.now()));
             }
         }
     }
@@ -55,11 +60,6 @@ public class InterviewCompletionService {
     private record CompletionSummary(long total, long completed, long partial, long skipped) {
         boolean isAllResolved() {
             return completed + partial + skipped == total && (completed + partial) > 0;
-        }
-
-        String toComment() {
-            return String.format("전체 %d개 질문세트 중 %d개 완료, %d개 부분완료, %d개 건너뜀",
-                    total, completed, partial, skipped);
         }
     }
 

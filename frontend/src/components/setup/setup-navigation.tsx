@@ -6,27 +6,10 @@ interface SetupNavigationProps {
   canNext: boolean
   isLoading: boolean
   serverError: string | null
+  getDisabledHint: (step: Step) => string
   onNext: () => void
   onPrev: () => void
   onSubmit: () => void
-}
-
-/** 스텝별 '다음 단계' 비활성화 사유를 제공하는 copy.
- *  E4 walkthrough fix: disabled 상태를 링크처럼 보이게 두지 말고
- *  "왜" 진행 불가한지 사용자에게 힌트를 제공한다. */
-const getDisabledHint = (step: Step): string => {
-  switch (step) {
-    case 1:
-      return '직무를 먼저 선택해주세요'
-    case 2:
-      return '기술 스택을 선택해주세요'
-    case 3:
-      return '경력 수준을 선택해주세요'
-    case 4:
-      return '면접 시간을 선택해주세요'
-    case 5:
-      return '면접 유형을 하나 이상 선택해주세요'
-  }
 }
 
 export const SetupNavigation = ({
@@ -35,6 +18,7 @@ export const SetupNavigation = ({
   canNext,
   isLoading,
   serverError,
+  getDisabledHint,
   onNext,
   onPrev,
   onSubmit,

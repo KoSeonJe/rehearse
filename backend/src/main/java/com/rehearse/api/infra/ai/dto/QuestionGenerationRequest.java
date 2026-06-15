@@ -13,7 +13,6 @@ public record QuestionGenerationRequest(
     InterviewLevel level,
     Set<InterviewType> interviewTypes,
     Set<String> csSubTopics,
-    String resumeText,
     Integer durationMinutes,
     TechStack techStack
 ) {}

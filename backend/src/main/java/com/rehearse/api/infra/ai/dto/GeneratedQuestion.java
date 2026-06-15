@@ -1,21 +1,28 @@
 package com.rehearse.api.infra.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Getter
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GeneratedQuestion {
+public record GeneratedQuestion(
+        String content,
+        @JsonProperty("tts_content") String ttsContent,
+        String category,
+        int order,
+        @JsonProperty("evaluation_criteria") String evaluationCriteria,
+        @JsonProperty("question_category") String questionCategory,
+        @JsonProperty("best_answer") String bestAnswer,
+        String followUpStrategy
+) {
 
-    private String content;
-    private String ttsContent;
-    private String category;
-    private int order;
-    private String evaluationCriteria;
-    private String questionCategory;
-    private String modelAnswer;
-    private String referenceType;
-    private String followUpStrategy;
+    public GeneratedQuestion {
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException(
+                    "GeneratedQuestion.content 는 비어있을 수 없습니다.");
+        }
+        if (questionCategory == null || questionCategory.isBlank()) {
+            throw new IllegalArgumentException(
+                    "GeneratedQuestion.questionCategory 는 비어있을 수 없습니다.");
+        }
+    }
 }

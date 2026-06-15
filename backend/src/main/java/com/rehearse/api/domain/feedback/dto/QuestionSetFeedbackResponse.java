@@ -1,7 +1,6 @@
 package com.rehearse.api.domain.feedback.dto;
 
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
-import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +17,7 @@ public class QuestionSetFeedbackResponse {
     private final List<TimestampFeedbackResponse> timestampFeedbacks;
 
     public static QuestionSetFeedbackResponse from(QuestionSetFeedback feedback,
-                                                     String streamingUrl, String fallbackUrl) {
+                                                   String streamingUrl, String fallbackUrl) {
         List<TimestampFeedbackResponse> timestamps = feedback.getTimestampFeedbacks().stream()
                 .map(TimestampFeedbackResponse::from)
                 .toList();

@@ -1,5 +1,5 @@
 /**
- * a11y Smoke Tests — 14 Pages
+ * a11y Smoke Tests — 16 Pages
  *
  * axe-core로 각 페이지를 렌더하고 critical/serious 위반이 없는지 검사합니다.
  * - critical/serious 위반 → 테스트 실패
@@ -144,6 +144,7 @@ vi.mock('@/hooks/use-interview-setup', () => ({
     isLoading: false,
     isSubmitStep: false,
     canNext: vi.fn(() => false),
+    disabledHint: vi.fn(() => ''),
     goNext: vi.fn(),
     goPrev: vi.fn(),
     handlePositionSelect: vi.fn(),
@@ -181,6 +182,11 @@ vi.mock('@/hooks/use-service-feedback', () => ({
   useSubmitFeedback: () => ({ mutate: vi.fn(), isPending: false }),
   useSubmitServiceFeedback: () => ({ mutate: vi.fn(), isPending: false }),
   useVerifyAdminPassword: () => ({ mutate: vi.fn(), isPending: false }),
+}))
+
+vi.mock('@/hooks/use-admin-question-pool', () => ({
+  useAdminQuestionPools: () => ({ data: undefined, isLoading: true }),
+  useCreateAdminQuestionPool: () => ({ mutate: vi.fn(), isPending: false }),
 }))
 
 // Interview session / media / store
@@ -350,7 +356,9 @@ import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { ReviewListPage } from '@/pages/review-list-page'
 import { AboutPage } from '@/pages/about-page'
+import { AdminHomePage } from '@/pages/admin-home-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
+import { AdminQuestionPoolPage } from '@/pages/admin-question-pool-page'
 import { FaqPage } from '@/pages/faq-page'
 import { NotFoundPage } from '@/pages/not-found-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
@@ -359,7 +367,7 @@ import { AiMockInterviewGuidePage } from '@/pages/guide/ai-mock-interview-page'
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
-describe('a11y smoke — 14 pages', () => {
+describe('a11y smoke — 16 pages', () => {
   afterEach(() => {
     vi.clearAllMocks()
   })
@@ -434,6 +442,20 @@ describe('a11y smoke — 14 pages', () => {
       <AdminFeedbacksPage />,
       '/admin/feedbacks',
       '/admin/feedbacks',
+    )
+    await assertA11y(container)
+  })
+
+  it('admin-home: critical/serious 위반 0건', async () => {
+    const { container } = renderPage(<AdminHomePage />, '/admin', '/admin')
+    await assertA11y(container)
+  })
+
+  it('admin-question-pool: critical/serious 위반 0건', async () => {
+    const { container } = renderPage(
+      <AdminQuestionPoolPage />,
+      '/admin/question-pool',
+      '/admin/question-pool',
     )
     await assertA11y(container)
   })

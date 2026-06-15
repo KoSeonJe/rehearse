@@ -81,58 +81,6 @@ class InterviewFinderTest {
     }
 
     @Nested
-    @DisplayName("findByIdAndValidateOwner 메서드")
-    class FindByIdAndValidateOwner {
-
-        @Test
-        @DisplayName("findByIdAndValidateOwner - 정상: 면접 소유자이면 Interview를 반환한다")
-        void findByIdAndValidateOwner_validOwner_returnsInterview() {
-            // given
-            Interview interview = TestFixtures.createInterview(); // userId = 1L
-            ReflectionTestUtils.setField(interview, "id", 1L);
-            given(interviewRepository.findByIdWithElementCollections(1L)).willReturn(Optional.of(interview));
-
-            // when
-            Interview result = interviewFinder.findByIdAndValidateOwner(1L, 1L);
-
-            // then
-            assertThat(result).isEqualTo(interview);
-        }
-
-        @Test
-        @DisplayName("findByIdAndValidateOwner - 예외: 면접이 존재하지 않으면 NOT_FOUND BusinessException이 발생한다")
-        void findByIdAndValidateOwner_notExists_throwsBusinessException() {
-            // given
-            given(interviewRepository.findByIdWithElementCollections(999L)).willReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> interviewFinder.findByIdAndValidateOwner(999L, 1L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException be = (BusinessException) ex;
-                        assertThat(be.getCode()).isEqualTo("INTERVIEW_001");
-                    });
-        }
-
-        @Test
-        @DisplayName("findByIdAndValidateOwner - 예외: 소유자가 다르면 FORBIDDEN BusinessException이 발생한다")
-        void findByIdAndValidateOwner_differentOwner_throwsForbiddenException() {
-            // given
-            Interview interview = TestFixtures.createInterview(); // userId = 1L
-            ReflectionTestUtils.setField(interview, "id", 1L);
-            given(interviewRepository.findByIdWithElementCollections(1L)).willReturn(Optional.of(interview));
-
-            // when & then: 다른 userId(2L)로 접근
-            assertThatThrownBy(() -> interviewFinder.findByIdAndValidateOwner(1L, 2L))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException be = (BusinessException) ex;
-                        assertThat(be.getCode()).isEqualTo("INTERVIEW_008");
-                    });
-        }
-    }
-
-    @Nested
     @DisplayName("findByPublicId 메서드")
     class FindByPublicId {
 

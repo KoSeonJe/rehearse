@@ -1,0 +1,53 @@
+package com.rehearse.api.infra.ai.schema;
+
+import com.rehearse.api.infra.ai.dto.JsonSchemaSpec;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@DisplayName("infra/ai/schema 클래스들의 spec() 진입점 검증")
+class AiSchemaSpecTest {
+
+    @Test
+    @DisplayName("GeneratedQuestionsWrapperSchema.spec() 는 NAME 과 build() 결과를 묶는다")
+    void generatedQuestionsWrapperSchema_spec_combinesNameAndBuild() {
+        JsonSchemaSpec spec = GeneratedQuestionsWrapperSchema.spec();
+
+        assertThat(spec.name()).isEqualTo("generated_questions");
+        assertThat(spec.schema()).containsEntry("additionalProperties", false);
+        assertThat(spec.schema().get("required")).isEqualTo(List.of("questions"));
+    }
+
+    @Test
+    @DisplayName("GeneratedFollowUpSchema.spec() 는 단일 NAME 으로 두 호출 site 가 공유한다")
+    void generatedFollowUpSchema_spec_sharedName() {
+        JsonSchemaSpec spec = GeneratedFollowUpSchema.spec();
+
+        assertThat(spec.name()).isEqualTo("generated_follow_up");
+        assertThat(spec.schema()).containsEntry("additionalProperties", false);
+    }
+
+    @Test
+    @DisplayName("GeneratedResumeQuestionsSchema.spec() name = generated_resume_questions")
+    void generatedResumeQuestionsSchema_spec() {
+        JsonSchemaSpec spec = GeneratedResumeQuestionsSchema.spec();
+
+        assertThat(spec.name()).isEqualTo("generated_resume_questions");
+        assertThat(spec.schema().get("required")).isEqualTo(List.of("openers", "mains"));
+    }
+
+    @Test
+    @DisplayName("GeneratedAnswerAnalysisSchema.spec(false) name = answer_analysis_cs, spec(true) = answer_analysis_resume")
+    void generatedAnswerAnalysisSchema_spec_perTrack() {
+        JsonSchemaSpec csSpec = GeneratedAnswerAnalysisSchema.spec(false);
+        JsonSchemaSpec resumeSpec = GeneratedAnswerAnalysisSchema.spec(true);
+
+        assertThat(csSpec.name()).isEqualTo("answer_analysis_cs");
+        assertThat(resumeSpec.name()).isEqualTo("answer_analysis_resume");
+        assertThat(csSpec.schema()).containsEntry("additionalProperties", false);
+        assertThat(resumeSpec.schema()).containsEntry("additionalProperties", false);
+    }
+}

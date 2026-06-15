@@ -61,13 +61,13 @@ public class TimestampFeedback {
     private String fillerWords;  // JSON 배열 문자열 예: ["음", "어"]
 
     @Column(length = 10)
-    private String speechPace;  // "빠름" / "적절" / "느림"
+    private String speechPace;
 
     @Column(length = 20)
     private String toneConfidenceLevel;  // GOOD / AVERAGE / NEEDS_IMPROVEMENT
 
     @Column(length = 20)
-    private String emotionLabel;  // "자신감" / "긴장" / "평온" / "불안"
+    private String emotionLabel;
 
     @Column(columnDefinition = "TEXT")
     private String vocalComment;

@@ -1,6 +1,6 @@
 package com.rehearse.api.domain.interview.service;
 
-import com.rehearse.api.domain.analysis.repository.QuestionSetAnalysisRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetAnalysisRepository;
 import com.rehearse.api.domain.feedback.repository.QuestionSetFeedbackRepository;
 import com.rehearse.api.domain.feedback.repository.TimestampFeedbackRepository;
 import com.rehearse.api.domain.interview.entity.Interview;
@@ -9,8 +9,8 @@ import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
 import com.rehearse.api.domain.question.repository.QuestionAnswerRepository;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -23,8 +23,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Collections;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -64,7 +62,7 @@ class InterviewDeletionServiceTest {
         void deleteInterview_success() {
             // given
             Interview interview = createMockInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                     .willReturn(Collections.emptyList());
 
@@ -88,7 +86,7 @@ class InterviewDeletionServiceTest {
             QuestionSet questionSet = mock(QuestionSet.class);
             List<QuestionSet> questionSets = List.of(questionSet);
 
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L)).willReturn(questionSets);
 
             // when
@@ -110,7 +108,7 @@ class InterviewDeletionServiceTest {
             Interview interview = createMockInterview();
             ReflectionTestUtils.setField(interview, "status",
                     com.rehearse.api.domain.interview.entity.InterviewStatus.COMPLETED);
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdOrderByOrderIndex(1L))
                     .willReturn(Collections.emptyList());
 
@@ -131,6 +129,7 @@ class InterviewDeletionServiceTest {
                 .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
+        ReflectionTestUtils.setField(interview, "userId", 1L);
         return interview;
     }
 }

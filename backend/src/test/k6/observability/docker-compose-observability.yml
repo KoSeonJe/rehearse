@@ -1,0 +1,54 @@
+# 관측 전용 EC2#2 compose — Prometheus + Grafana 만.
+# 측정 대상(app+mysql+wiremock+node_exporter)은 전용 EC2#1 에 분리(OOM fallback, 사용자 결정).
+# Prometheus 가 EC2#1 의 사설IP:8080(/actuator/prometheus) + 사설IP:9100(node_exporter) 를 scrape.
+#   - scrape target 은 prometheus.yml 에 EC2#1 사설IP 로 명시(동일 VPC, stop/start 불변).
+#   - node-exporter 는 본 compose 에 없음 — EC2#1 측 docker-compose-loadtest.yml 로 이동.
+# SG sg-0c988c0e70ccdb142 가 3000(grafana)/9091(prometheus) 를 0.0.0.0/0 으로 노출 →
+#   0.0.0.0 bind. Grafana 접속: http://<EC2#2_퍼블릭IP>:3000 (admin / loadtest).
+# 모든 이미지 arm64 (EC2#2 관측 = t4g.small, Graviton2).
+#
+# 기동:  docker compose -f docker-compose-observability.yml up -d
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: rehearse-prometheus
+    platform: linux/arm64
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+      - '--storage.tsdb.retention.size=256MB'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9091:9090"
+    mem_limit: 256m
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: rehearse-grafana
+    platform: linux/arm64
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-loadtest}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    mem_limit: 128m
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+  grafana-data:

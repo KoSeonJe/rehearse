@@ -4,8 +4,8 @@ import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
@@ -130,7 +130,7 @@ class ReviewBookmarkQueryServiceTest {
             // then
             assertThat(result).hasSize(1);
             assertThat(result.get(0).questionText()).isNull();
-            assertThat(result.get(0).modelAnswer()).isNull();
+            assertThat(result.get(0).bestAnswer()).isNull();
         }
     }
 
@@ -175,7 +175,7 @@ class ReviewBookmarkQueryServiceTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.RESUME_BASED)
+                .category(InterviewType.RESUME_BASED)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 1L);
@@ -187,9 +187,9 @@ class ReviewBookmarkQueryServiceTest {
         ReflectionTestUtils.setField(qsf, "id", 1L);
 
         Question question = Question.builder()
-                .questionType(QuestionType.MAIN)
+                .questionType(QuestionType.TECH_MAIN)
                 .questionText("자기소개를 해주세요.")
-                .modelAnswer("모범 답변입니다.")
+                .bestAnswer("모범 답변입니다.")
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(question, "id", 1L);
@@ -199,7 +199,6 @@ class ReviewBookmarkQueryServiceTest {
                 .startMs(0L)
                 .endMs(5000L)
                 .transcript("안녕하세요.")
-                .coachingImprovement("더 자세히 설명하세요.")
                 .isAnalyzed(true)
                 .build();
         ReflectionTestUtils.setField(tsf, "id", bookmarkId * 10);
@@ -231,7 +230,7 @@ class ReviewBookmarkQueryServiceTest {
 
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         ReflectionTestUtils.setField(qs, "id", 1L);

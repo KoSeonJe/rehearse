@@ -43,6 +43,7 @@ export const MobileSheet = ({
               <button
                 key={item.id}
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   onSelect(item.id)
                   setOpen(false)

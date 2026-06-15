@@ -11,13 +11,13 @@ import { Character } from '@/components/ui/character'
 import { Button } from '@/components/ui/button'
 import { PROGRESS_STEPS, getProgressIndex, getProgressLabel } from '@/constants/analysis-progress'
 
-interface ModelAnswerSectionProps {
+interface BestAnswerSectionProps {
   interviewId: number
   questionSetId: number
   category: string
 }
 
-const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswerSectionProps) => {
+const BestAnswerSection = ({ interviewId, questionSetId, category }: BestAnswerSectionProps) => {
   const { data } = useQuestionsWithAnswers(interviewId, questionSetId, true)
   const questions = data?.data?.questions ?? []
 
@@ -29,8 +29,8 @@ const ModelAnswerSection = ({ interviewId, questionSetId, category }: ModelAnswe
       {questions.map((q) => (
         <div key={q.questionId} className="rounded-2xl bg-card border border-border p-5">
           <p className="text-sm font-bold text-text-primary mb-2">{q.questionText}</p>
-          {q.modelAnswer ? (
-            <p className="text-sm text-text-secondary leading-relaxed">{q.modelAnswer}</p>
+          {q.bestAnswer ? (
+            <p className="text-sm text-text-secondary leading-relaxed">{q.bestAnswer}</p>
           ) : (
             <p className="text-sm text-text-tertiary italic">모범답변이 없습니다</p>
           )}
@@ -336,7 +336,7 @@ export const InterviewAnalysisPage = () => {
                 const status = statuses[idx]
                 if (status?.analysisStatus === 'SKIPPED') return null
                 return (
-                  <ModelAnswerSection
+                  <BestAnswerSection
                     key={qs.id}
                     interviewId={interview.id}
                     questionSetId={qs.id}

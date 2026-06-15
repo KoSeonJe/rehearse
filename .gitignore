@@ -29,19 +29,14 @@ Thumbs.db
 # === 디자인 검토용 스크린샷 (루트에만 금지 — frontend/public/images 는 허용) ===
 /*.png
 
-# === OMC (세션/상태는 로컬 전용) ===
-**/.omc/sessions/
-**/.omc/state/
-**/.omc/project-memory.json
-
 # === Claude Code (로컬 전용) ===
-**/.claude/skills/
 skills-lock.json
-**/.claude/agents/
 **/.claude/worktrees/
 **/.claude/settings.local.json
 **/.claude/docs/
 **/.claude/.claude/
+**/.claude/scheduled_tasks.lock
+**/.claude/launch.json
 
 # === 개인 문서 ===
 docs/resume/
@@ -72,20 +67,14 @@ lambda/**/*.zip
 .claude/*
 !.claude/rules/
 !.claude/rules/**
+!.claude/agents/
+!.claude/agents/**
 !.claude/skills/
-.claude/skills/*
-!.claude/skills/shadcn/
-!.claude/skills/shadcn/**
+!.claude/skills/**
 .claude.local.md
-
-# === 부하테스트 ===
-docs/plans/virtual-thread-migration/k6-reports/
-docs/plans/virtual-thread-migration/load-test-plan-v2.md
-docs/plans/virtual-thread-migration/load-test-results-v2.md
-
-# === 미완성 계획 문서 ===
-docs/plans/partial-failure-retry/
-docs/plans/sprint-2/
 
 # === Seed 변환 중간 산출물 ===
 scripts/seed/out/
+
+# === loadtest EC2 인프라 설정 (키/계정 식별자 포함) ===
+backend/src/test/k6/infra/config.env

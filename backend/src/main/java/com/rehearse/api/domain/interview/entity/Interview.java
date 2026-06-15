@@ -1,6 +1,7 @@
 package com.rehearse.api.domain.interview.entity;
 
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
+import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.BatchSize;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @Entity
 @Table(name = "interview")
 @Getter
+@Slf4j
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 public class Interview {
@@ -54,11 +57,12 @@ public class Interview {
     @BatchSize(size = 100)
     private Set<InterviewType> interviewTypes = new HashSet<>();
 
-    @ElementCollection
+    @ElementCollection(targetClass = CsSubTopic.class)
     @CollectionTable(name = "interview_cs_sub_topics", joinColumns = @JoinColumn(name = "interview_id"))
+    @Enumerated(EnumType.STRING)
     @Column(name = "cs_sub_topic", length = 50)
     @BatchSize(size = 100)
-    private Set<String> csSubTopics = new HashSet<>();
+    private Set<CsSubTopic> csSubTopics = new HashSet<>();
 
     @Column(nullable = false)
     private Integer durationMinutes;
@@ -78,8 +82,11 @@ public class Interview {
     @Column(columnDefinition = "TEXT")
     private String failureReason;
 
-    @Column(columnDefinition = "TEXT")
-    private String overallComment;
+    @Column(name = "question_gen_retry_count", nullable = false)
+    private int questionGenRetryCount;
+
+    @Column(name = "question_gen_last_retried_at")
+    private LocalDateTime questionGenLastRetriedAt;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -98,7 +105,7 @@ public class Interview {
 
     @Builder
     public Interview(Long userId, Position position, String positionDetail, InterviewLevel level,
-                     List<InterviewType> interviewTypes, List<String> csSubTopics,
+                     List<InterviewType> interviewTypes, List<CsSubTopic> csSubTopics,
                      Integer durationMinutes, TechStack techStack) {
         this.userId = userId;
         this.position = position;
@@ -116,12 +123,19 @@ public class Interview {
         return Collections.unmodifiableSet(interviewTypes);
     }
 
-    public Set<String> getCsSubTopics() {
+    public Set<CsSubTopic> getCsSubTopics() {
         return Collections.unmodifiableSet(csSubTopics);
     }
 
     public TechStack getEffectiveTechStack() {
         return techStack != null ? techStack : TechStack.getDefaultForPosition(this.position);
+    }
+
+    public InterviewTrack getTrack() {
+        if (interviewTypes.contains(InterviewType.RESUME_BASED)) {
+            return InterviewTrack.RESUME;
+        }
+        return InterviewTrack.CS;
     }
 
     public void startQuestionGeneration() {
@@ -143,6 +157,11 @@ public class Interview {
         this.failureReason = null;
     }
 
+    public void recordRetryAttempt() {
+        this.questionGenRetryCount++;
+        this.questionGenLastRetriedAt = LocalDateTime.now();
+    }
+
     public void updateStatus(InterviewStatus newStatus) {
         if (!this.status.canTransitionTo(newStatus)) {
             throw new IllegalStateException(
@@ -152,12 +171,11 @@ public class Interview {
     }
 
     public void validateOwner(Long userId) {
-        if (this.userId != null && !this.userId.equals(userId)) {
-            throw new BusinessException(InterviewErrorCode.FORBIDDEN);
+        if (this.userId == null || !this.userId.equals(userId)) {
+            log.warn("면접 접근 권한 검증 실패 — interviewId={}, ownerUserId={}, requesterUserId={}",
+                    this.id, this.userId, userId);
+            throw new BusinessException(InterviewErrorCode.NOT_FOUND);
         }
     }
 
-    public void completeWithComment(String comment) {
-        this.overallComment = comment;
-    }
 }

@@ -1,0 +1,47 @@
+package com.rehearse.api.domain.interview.event;
+
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
+import com.rehearse.api.domain.question.service.QuestionGenerationService;
+import com.rehearse.api.domain.question.service.QuestionGenerationTransactionHandler;
+import com.rehearse.api.global.config.AsyncConfig;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.List;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class QuestionGenerationEventHandler {
+
+    private final QuestionGenerationService questionGenerationService;
+    private final QuestionGenerationTransactionHandler transactionHandler;
+
+    @Async(AsyncConfig.VT_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleQuestionGenerationEvent(QuestionGenerationRequestedEvent event) {
+        try {
+            questionGenerationService.generateQuestions(
+                    event.interviewId(), event.userId(), event.position(), event.level(),
+                    event.interviewTypes(), toCsSubTopicNames(event.csSubTopics()),
+                    event.resumePdfBytes(), event.resumeFileHash(),
+                    event.durationMinutes(), event.techStack());
+        } catch (Exception e) {
+            log.error("질문 생성 비동기 작업 실패: interviewId={}", event.interviewId(), e);
+            String reason = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
+            transactionHandler.failGeneration(event.interviewId(),
+                    reason != null ? reason : "알 수 없는 오류");
+        }
+    }
+
+    private List<String> toCsSubTopicNames(List<CsSubTopic> csSubTopics) {
+        if (csSubTopics == null) {
+            return List.of();
+        }
+        return csSubTopics.stream().map(CsSubTopic::name).toList();
+    }
+}

@@ -2,9 +2,6 @@ name: Backend CI
 
 on:
   pull_request:
-    paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci.yml'
 
 concurrency:
   group: backend-ci-${{ github.ref }}
@@ -12,21 +9,28 @@ concurrency:
 
 jobs:
   test:
-    name: Test
+    name: Backend CI
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - '.github/workflows/backend-ci.yml'
+
       - name: Set up JDK 21
+        if: steps.filter.outputs.backend == 'true'
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Cache Gradle
+        if: steps.filter.outputs.backend == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -36,6 +40,22 @@ jobs:
           restore-keys: gradle-
 
       - name: Run tests
-        run: ./gradlew test --no-daemon
+        if: steps.filter.outputs.backend == 'true'
+        working-directory: backend
+        run: ./gradlew test --no-daemon --stacktrace --info
         env:
           SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: |
+            backend/build/reports/tests/test/
+            backend/build/test-results/test/
+          retention-days: 7
+
+      - name: No backend changes — skipping
+        if: steps.filter.outputs.backend != 'true'
+        run: echo "No backend changes detected; reporting success."

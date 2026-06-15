@@ -1,11 +1,13 @@
 package com.rehearse.api.global.config;
 
 import com.rehearse.api.domain.feedback.dto.SaveFeedbackRequest;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.analysis.entity.ConvertStatus;
+import com.rehearse.api.domain.feedback.service.FeedbackService;
+import com.rehearse.api.domain.question.dto.UpdateConvertStatusRequest;
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.ConvertStatus;
 import com.rehearse.api.domain.question.entity.QuestionAnswer;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.service.InternalQuestionSetService;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.question.service.InternalQuestionSetService;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.repository.UserRepository;
 import com.rehearse.api.global.common.ApiResponse;
@@ -35,6 +37,7 @@ public class DevController {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final InternalQuestionSetService internalQuestionSetService;
+    private final FeedbackService feedbackService;
     private final ObjectMapper objectMapper;
 
     @Value("${app.frontend-url}")
@@ -141,7 +144,7 @@ public class DevController {
         transitProgress(questionSetId, AnalysisStatus.FINALIZING, delayMs);
 
         SaveFeedbackRequest feedbackRequest = buildMockFeedback(answers);
-        internalQuestionSetService.saveFeedback(questionSetId, feedbackRequest);
+        feedbackService.saveFeedback(questionSetId, feedbackRequest);
 
         internalQuestionSetService.updateConvertStatus(questionSetId,
                 buildConvertCompleted(interviewId, questionSetId));
@@ -154,19 +157,19 @@ public class DevController {
 
         var request = objectMapper.convertValue(
                 Map.of("status", status.name()),
-                com.rehearse.api.domain.questionset.dto.UpdateProgressRequest.class
+                com.rehearse.api.domain.question.dto.UpdateProgressRequest.class
         );
         internalQuestionSetService.updateProgress(questionSetId, request);
     }
 
-    private com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest buildConvertCompleted(
+    private UpdateConvertStatusRequest buildConvertCompleted(
             Long interviewId, Long questionSetId) {
         return objectMapper.convertValue(
                 Map.of(
                         "status", ConvertStatus.COMPLETED.name(),
                         "streamingS3Key", String.format("interviews/mp4/2026/01/01/%d/%d/000000000000.mp4", interviewId, questionSetId)
                 ),
-                com.rehearse.api.domain.analysis.dto.UpdateConvertStatusRequest.class
+                UpdateConvertStatusRequest.class
         );
     }
 
@@ -174,32 +177,13 @@ public class DevController {
         List<Map<String, Object>> timestampFeedbacks = new ArrayList<>();
 
         for (QuestionAnswer answer : answers) {
-            Map<String, Object> commentBlock = Map.of(
-                    "positive", "명확하고 구조적인 답변입니다.",
-                    "negative", "구체적인 사례가 부족합니다.",
-                    "suggestion", "실무 경험을 추가하면 더 좋은 답변이 됩니다."
-            );
-
             timestampFeedbacks.add(Map.ofEntries(
                     Map.entry("questionId", answer.getQuestion().getId()),
                     Map.entry("startMs", answer.getStartMs()),
                     Map.entry("endMs", answer.getEndMs()),
                     Map.entry("transcript", "[DEV] 시뮬레이션된 음성 인식 결과입니다. 실제 Lambda에서는 Whisper STT가 처리합니다."),
-                    Map.entry("verbalComment", commentBlock),
-                    Map.entry("nonverbalComment", commentBlock),
-                    Map.entry("overallComment", commentBlock),
-                    Map.entry("vocalComment", commentBlock),
                     Map.entry("fillerWordCount", 2),
-                    Map.entry("fillerWords", List.of("음", "어")),
-                    Map.entry("speechPace", "적절"),
-                    Map.entry("toneConfidenceLevel", "GOOD"),
-                    Map.entry("emotionLabel", "자신감"),
-                    Map.entry("eyeContactLevel", "GOOD"),
-                    Map.entry("postureLevel", "GOOD"),
-                    Map.entry("expressionLabel", "CONFIDENT"),
-                    Map.entry("accuracyIssues", "[]"),
-                    Map.entry("coachingStructure", "개념→원리→적용 순서로 구조화했습니다."),
-                    Map.entry("coachingImprovement", "실무 경험을 추가하면 더 깊이 있는 답변이 됩니다.")
+                    Map.entry("fillerWords", List.of("음", "어"))
             ));
         }
 

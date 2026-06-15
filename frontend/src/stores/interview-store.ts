@@ -10,8 +10,6 @@ import type {
   UploadState,
 } from '@/types/interview'
 
-export const MAX_FOLLOWUP_ROUNDS = 2
-
 export type InterviewPhase = 'preparing' | 'greeting' | 'ready' | 'recording' | 'paused' | 'finishing' | 'completed'
 
 interface InterviewState {
@@ -36,8 +34,6 @@ interface InterviewState {
 
   followUpHistory: Map<number, FollowUpExchange[]>
   currentFollowUp: FollowUpResponse | null
-  followUpRound: number
-  followUpTranscriptOffset: number
   isFollowUpLoading: boolean
 
   questionSetRecordingStartTime: number | null
@@ -45,6 +41,10 @@ interface InterviewState {
   greetingCompleted: boolean
   autoTransitionMessage: string | null
   interviewEvents: InterviewEvent[]
+
+  // 면접 시간 (durationMinutes) 만료 여부. InterviewTimer 가 onTimeExpired 시 true 로 set.
+  // 답변 도중 만료된 경우 즉시 종료하지 않고 다음 답변 제출 시점에 follow-up payload 로 terminate 신호.
+  isTimeOverdue: boolean
 }
 
 interface InterviewActions {
@@ -73,6 +73,7 @@ interface InterviewActions {
   setFollowUpLoading: (loading: boolean) => void
   setAutoTransitionMessage: (msg: string | null) => void
   addInterviewEvent: (event: InterviewEvent) => void
+  setTimeOverdue: (overdue: boolean) => void
   reset: () => void
 }
 
@@ -106,8 +107,6 @@ const initialState: InterviewState = {
 
   followUpHistory: new Map(),
   currentFollowUp: null,
-  followUpRound: 0,
-  followUpTranscriptOffset: 0,
   isFollowUpLoading: false,
 
   questionSetRecordingStartTime: null,
@@ -115,6 +114,8 @@ const initialState: InterviewState = {
   greetingCompleted: false,
   autoTransitionMessage: null,
   interviewEvents: [],
+
+  isTimeOverdue: false,
 }
 
 export const useInterviewStore = create<InterviewState & InterviewActions>()((set, get) => ({
@@ -125,7 +126,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       questionIndex: index,
       startTime: 0,
       endTime: 0,
-      transcripts: [],
     }))
 
     const startIdx = startQuestionSetIndex ?? 0
@@ -192,19 +192,10 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
 
   completeInterview: () => set({ phase: 'completed' }),
 
-  setCurrentFollowUp: (followUp) => {
-    if (followUp !== null) {
-      const state = get()
-      const currentAnswer = state.answers[state.currentQuestionIndex]
-      const offset = currentAnswer?.transcripts.filter((t) => t.isFinal).length ?? 0
-      set({ currentFollowUp: followUp, followUpTranscriptOffset: offset })
-    } else {
-      set({ currentFollowUp: followUp })
-    }
-  },
+  setCurrentFollowUp: (followUp) => set({ currentFollowUp: followUp }),
 
   completeFollowUpRound: (answerText) => {
-    const { currentQuestionIndex, currentFollowUp, followUpHistory, followUpRound } = get()
+    const { currentQuestionIndex, currentFollowUp, followUpHistory } = get()
     if (!currentFollowUp) return
 
     const history = new Map(followUpHistory)
@@ -213,18 +204,20 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
       ...existing,
       {
         question: currentFollowUp.question,
-        answer: answerText,
+        answerText,
         type: currentFollowUp.type,
+        followUpType: currentFollowUp.type,
       },
     ])
     set({
       followUpHistory: history,
-      followUpRound: followUpRound + 1,
       currentFollowUp: null,
     })
   },
 
-  resetFollowUpState: () => set({ currentFollowUp: null, followUpRound: 0, followUpTranscriptOffset: 0 }),
+  resetFollowUpState: () => set({
+    currentFollowUp: null,
+  }),
 
   setFollowUpLoading: (loading) => set({ isFollowUpLoading: loading }),
 
@@ -245,8 +238,6 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
         currentQuestionSetIndex: currentQuestionSetIndex + 1,
         followUpHistory: new Map(),
         currentFollowUp: null,
-        followUpRound: 0,
-        followUpTranscriptOffset: 0,
         questionSetRecordingStartTime: null,
       })
     }
@@ -279,6 +270,8 @@ export const useInterviewStore = create<InterviewState & InterviewActions>()((se
     const { interviewEvents } = get()
     set({ interviewEvents: [...interviewEvents, event] })
   },
+
+  setTimeOverdue: (overdue) => set({ isTimeOverdue: overdue }),
 
   reset: () => {
     const prevUrl = get().videoBlobUrl

@@ -2,7 +2,6 @@ package com.rehearse.api.domain.question.dto;
 
 import com.rehearse.api.domain.question.entity.Question;
 import com.rehearse.api.domain.question.entity.QuestionType;
-import com.rehearse.api.domain.question.entity.ReferenceType;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,8 +13,7 @@ public class QuestionDetailResponse {
     private final QuestionType questionType;
     private final String questionText;
     private final String ttsText;
-    private final String modelAnswer;
-    private final ReferenceType referenceType;
+    private final String bestAnswer;
     private final int orderIndex;
 
     public static QuestionDetailResponse from(Question question) {
@@ -24,8 +22,7 @@ public class QuestionDetailResponse {
                 .questionType(question.getQuestionType())
                 .questionText(question.getQuestionText())
                 .ttsText(question.getTtsText())
-                .modelAnswer(question.getModelAnswer())
-                .referenceType(question.getReferenceType())
+                .bestAnswer(question.getBestAnswer())
                 .orderIndex(question.getOrderIndex())
                 .build();
     }

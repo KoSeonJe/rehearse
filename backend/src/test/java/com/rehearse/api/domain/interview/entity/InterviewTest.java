@@ -1,5 +1,6 @@
 package com.rehearse.api.domain.interview.entity;
 
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -324,7 +325,7 @@ class InterviewTest {
         }
 
         @Test
-        @DisplayName("소유자 ID가 불일치하면 BusinessException이 발생한다")
+        @DisplayName("소유자 ID가 불일치하면 INTERVIEW_NOT_FOUND BusinessException이 발생한다")
         void validateOwner_differentUserId_throwsBusinessException() {
             // given
             Interview interview = createDefaultInterview();
@@ -332,64 +333,73 @@ class InterviewTest {
 
             // when & then
             assertThatThrownBy(() -> interview.validateOwner(999L))
-                    .isInstanceOf(BusinessException.class);
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
         }
 
         @Test
-        @DisplayName("userId가 null이면 어떤 사용자도 예외가 발생하지 않는다")
-        void validateOwner_nullUserId_doesNotThrow() {
+        @DisplayName("ownerUserId가 null이면 어떤 요청자도 INTERVIEW_NOT_FOUND로 거부된다")
+        void validateOwner_ownerUserIdNull_throwsInterviewNotFound() {
             // given
             Interview interview = createDefaultInterview();
             ReflectionTestUtils.setField(interview, "userId", null);
 
             // when & then
-            interview.validateOwner(999L);
+            assertThatThrownBy(() -> interview.validateOwner(999L))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
+        }
+
+        @Test
+        @DisplayName("요청자 userId가 null이면 INTERVIEW_NOT_FOUND로 거부된다")
+        void validateOwner_requesterUserIdNull_throwsInterviewNotFound() {
+            // given
+            Interview interview = createDefaultInterview();
+            ReflectionTestUtils.setField(interview, "userId", 1L);
+
+            // when & then
+            assertThatThrownBy(() -> interview.validateOwner(null))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getCode())
+                    .isEqualTo(InterviewErrorCode.NOT_FOUND.getCode());
         }
     }
 
     @Nested
-    @DisplayName("completeWithComment 메서드")
-    class CompleteWithComment {
+    @DisplayName("recordRetryAttempt 메서드")
+    class RecordRetryAttempt {
 
         @Test
-        @DisplayName("코멘트가 정상적으로 저장된다")
-        void completeWithComment_validComment_savesComment() {
+        @DisplayName("최초 호출 시 카운터가 1로 증가하고 시각이 기록된다")
+        void recordRetryAttempt_initial_incrementsCounterAndSetsTimestamp() {
             // given
             Interview interview = createDefaultInterview();
-            String comment = "전반적으로 잘 답변하셨습니다.";
+            assertThat(interview.getQuestionGenRetryCount()).isZero();
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNull();
 
             // when
-            interview.completeWithComment(comment);
+            interview.recordRetryAttempt();
 
             // then
-            assertThat(interview.getOverallComment()).isEqualTo(comment);
+            assertThat(interview.getQuestionGenRetryCount()).isEqualTo(1);
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNotNull();
         }
 
         @Test
-        @DisplayName("null 코멘트도 저장된다")
-        void completeWithComment_nullComment_savesNull() {
+        @DisplayName("두 번 연속 호출하면 카운터가 2로 증가한다")
+        void recordRetryAttempt_calledTwice_incrementsToTwo() {
             // given
             Interview interview = createDefaultInterview();
 
             // when
-            interview.completeWithComment(null);
+            interview.recordRetryAttempt();
+            interview.recordRetryAttempt();
 
             // then
-            assertThat(interview.getOverallComment()).isNull();
-        }
-
-        @Test
-        @DisplayName("기존 코멘트가 새 코멘트로 덮어씌워진다")
-        void completeWithComment_existingComment_overwritesWithNewComment() {
-            // given
-            Interview interview = createDefaultInterview();
-            ReflectionTestUtils.setField(interview, "overallComment", "이전 코멘트");
-
-            // when
-            interview.completeWithComment("새 코멘트");
-
-            // then
-            assertThat(interview.getOverallComment()).isEqualTo("새 코멘트");
+            assertThat(interview.getQuestionGenRetryCount()).isEqualTo(2);
+            assertThat(interview.getQuestionGenLastRetriedAt()).isNotNull();
         }
     }
 

@@ -2,11 +2,11 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.entity.*;
 import com.rehearse.api.domain.interview.repository.InterviewRepository;
-import com.rehearse.api.domain.analysis.entity.AnalysisStatus;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
-import com.rehearse.api.domain.analysis.entity.QuestionSetAnalysis;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.question.entity.QuestionSetAnalysis;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
@@ -36,6 +37,9 @@ class InterviewCompletionServiceTest {
 
     @Mock
     private QuestionSetRepository questionSetRepository;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Nested
     @DisplayName("checkAndCompleteInterviews 메서드")
@@ -61,7 +65,6 @@ class InterviewCompletionServiceTest {
 
             // then
             assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-            assertThat(interview.getOverallComment()).contains("완료");
         }
 
         @Test
@@ -137,7 +140,6 @@ class InterviewCompletionServiceTest {
 
             // then
             assertThat(interview.getStatus()).isEqualTo(InterviewStatus.COMPLETED);
-            assertThat(interview.getOverallComment()).contains("완료");
         }
     }
 
@@ -159,7 +161,7 @@ class InterviewCompletionServiceTest {
     private QuestionSet createQuestionSetWithAnalysis(Long id, Interview interview, AnalysisStatus status) {
         QuestionSet qs = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(id.intValue())
                 .build();
         ReflectionTestUtils.setField(qs, "id", id);

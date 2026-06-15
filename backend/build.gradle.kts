@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.rehearse"
-version = "0.1.5"
+version = "0.1.6"
 
 java {
     toolchain {
@@ -29,6 +29,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    runtimeOnly("io.micrometer:micrometer-registry-prometheus")
 
     // Database
     runtimeOnly("com.h2database:h2")
@@ -68,9 +69,6 @@ dependencies {
     implementation(platform("com.google.cloud:libraries-bom:26.59.0"))
     implementation("com.google.cloud:google-cloud-texttospeech")
 
-    // PDF
-    implementation("org.apache.pdfbox:pdfbox:3.0.4")
-
     // .env 파일 로드
     implementation("me.paulschwarz:spring-dotenv:4.0.0")
 
@@ -83,10 +81,27 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.3")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.3")
 
+    // Caffeine (in-memory cache for runtime session state)
+    implementation("com.github.ben-manes.caffeine:caffeine")
+
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+
+    // WireMock (HTTP mock server for OpenAI/Claude API contract tests)
+    testImplementation("org.wiremock:wiremock-standalone:3.9.1")
+
+    // Testcontainers
+    testImplementation("org.testcontainers:junit-jupiter:1.20.4")
+    testImplementation("org.testcontainers:mysql:1.20.4")
+    testImplementation("com.mysql:mysql-connector-j")
+
+    // ArchUnit — context engineering 계층 규칙 정적 검증
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.3.0")
+
+    // REST Assured — Live LLM E2E (manual run, OPENAI_API_KEY 환경변수 필요)
+    testImplementation("io.rest-assured:rest-assured:5.5.0")
 }
 
 tasks.withType<Test> {

@@ -74,6 +74,7 @@ export const InterviewSetupPage = () => {
             resumeFile={setup.resumeFile}
             dragOver={setup.dragOver}
             isLoading={setup.isLoading}
+            isOtherTypesDisabled={setup.isOtherTypesDisabled}
             fileInputRef={setup.fileInputRef}
             onTypeToggle={setup.handleTypeToggle}
             onCsSubTopicToggle={setup.handleCsSubTopicToggle}
@@ -89,6 +90,7 @@ export const InterviewSetupPage = () => {
           currentStep={setup.currentStep}
           isSubmitStep={setup.isSubmitStep}
           canNext={setup.canNext(setup.currentStep)}
+          getDisabledHint={setup.disabledHint}
           isLoading={setup.isLoading}
           serverError={setup.serverError}
           onNext={setup.handleNext}

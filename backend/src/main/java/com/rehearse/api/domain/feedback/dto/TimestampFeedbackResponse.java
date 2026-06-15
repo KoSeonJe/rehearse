@@ -21,7 +21,7 @@ public class TimestampFeedbackResponse {
     private final Long questionId;
     private final String questionType;
     private final String questionText;
-    private final String modelAnswer;
+    private final String bestAnswer;
     private final long startMs;
     private final long endMs;
     private final String transcript;
@@ -50,6 +50,7 @@ public class TimestampFeedbackResponse {
 
     @Getter
     @Builder
+    @Jacksonized
     public static class AccuracyIssue {
         private final String claim;
         private final String correction;
@@ -133,7 +134,7 @@ public class TimestampFeedbackResponse {
                 .questionId(question != null ? question.getId() : null)
                 .questionType(question != null ? question.getQuestionType().name() : null)
                 .questionText(question != null ? question.getQuestionText() : null)
-                .modelAnswer(question != null ? question.getModelAnswer() : null)
+                .bestAnswer(question != null ? question.getBestAnswer() : null)
                 .startMs(feedback.getStartMs())
                 .endMs(feedback.getEndMs())
                 .transcript(feedback.getTranscript())
@@ -149,7 +150,6 @@ public class TimestampFeedbackResponse {
         try {
             return OBJECT_MAPPER.readValue(json, CommentBlock.class);
         } catch (Exception e) {
-            // legacy ✓△→ 또는 손상된 문자열 → positive에만 raw 입력
             return CommentBlock.builder().positive(json).build();
         }
     }

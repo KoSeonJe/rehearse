@@ -39,8 +39,7 @@ public class QuestionGenerationPromptBuilder {
     }
 
     public String buildSystemPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
-        ResolvedProfile profile = personaResolver.resolve(req.position(), effectiveStack);
+        ResolvedProfile profile = personaResolver.resolve(req.position(), req.techStack());
 
         String typeGuide = profile.interviewTypeGuideMap().entrySet().stream()
             .filter(e -> req.interviewTypes().stream().anyMatch(t -> t.name().equals(e.getKey())))
@@ -58,27 +57,21 @@ public class QuestionGenerationPromptBuilder {
 
         String levelGuide = LevelGuideProvider.get(req.level());
 
-        String resumeBlock = (req.resumeText() != null && !req.resumeText().isBlank())
-            ? "## 이력서 활용\nRESUME_BASED 질문은 이력서의 프로젝트, 기술, 성과를 구체적으로 언급하여 생성하되, 성능 수치 외에도 의사결정 과정·장애 대응·팀 협업·테스트 전략·유지보수성 등 다양한 관점에서 질문하세요."
-            : "";
-
         return template
             .replace("{FULL_PERSONA}", profile.fullPersona())
             .replace("{BASE_EVALUATION_PERSPECTIVE}", profile.evaluationPerspective())
             .replace("{FILTERED_INTERVIEW_TYPE_GUIDE}", typeGuide)
             .replace("{CONDITIONAL_CS_SUBTOPIC_BLOCK}", csBlock)
-            .replace("{SINGLE_LEVEL_GUIDE}", levelGuide)
-            .replace("{CONDITIONAL_RESUME_BLOCK}", resumeBlock);
+            .replace("{SINGLE_LEVEL_GUIDE}", levelGuide);
     }
 
     public String buildUserPrompt(QuestionGenerationRequest req) {
-        TechStack effectiveStack = resolveEffectiveStack(req.position(), req.techStack());
         int questionCount = QuestionCountCalculator.calculate(
             req.durationMinutes(), req.interviewTypes().size());
 
         StringBuilder sb = new StringBuilder();
         sb.append("직무: ").append(positionKorean(req.position()))
-          .append(" (").append(effectiveStack.getDisplayName()).append(")\n");
+          .append(" (").append(req.techStack().getDisplayName()).append(")\n");
         sb.append("레벨: ").append(levelKorean(req.level())).append("\n");
         sb.append("유형: ").append(typesKorean(req.interviewTypes())).append("\n");
         sb.append("질문 수: ").append(questionCount).append("개\n");
@@ -90,17 +83,10 @@ public class QuestionGenerationPromptBuilder {
                 sb.append("CS 세부: 자료구조, 운영체제, 네트워크, 데이터베이스\n");
             }
         }
-        if (req.resumeText() != null && !req.resumeText().isBlank()) {
-            sb.append("이력서:\n").append(req.resumeText()).append("\n");
-        }
 
         sb.append("세션: ").append(UUID.randomUUID()).append("\n");
         sb.append("중복 없는 새 관점의 질문을 생성하세요.");
         return sb.toString();
-    }
-
-    private static TechStack resolveEffectiveStack(Position position, TechStack techStack) {
-        return techStack != null ? techStack : TechStack.getDefaultForPosition(position);
     }
 
     private static String positionKorean(Position p) {

@@ -1,39 +1,34 @@
 package com.rehearse.api.infra.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Getter
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GeneratedFollowUp {
+public record GeneratedFollowUp(
+        Boolean skip,
+        @JsonProperty("skip_reason") String skipReason,
+        String question,
+        @JsonProperty("tts_question") String ttsQuestion,
+        String reason,
+        String type,
+        @JsonProperty("best_answer") String bestAnswer,
+        @JsonProperty("answer_text") String answerText,
+        @JsonProperty("target_claim_idx") Integer targetClaimIdx
+) {
 
-    private Boolean skip;
-    private String skipReason;
-    private String question;
-    private String ttsQuestion;
-    private String reason;
-    private String type;
-    private String modelAnswer;
-    private String answerText;
+    public GeneratedFollowUp {
+        boolean skipped = Boolean.TRUE.equals(skip);
+        if (!skipped && (question == null || question.isBlank())) {
+            throw new IllegalArgumentException(
+                    "GeneratedFollowUp.question 은 skip=false 일 때 비어있을 수 없습니다.");
+        }
+    }
 
-    /** AI가 답변 불충분으로 후속질문 생성을 건너뛰도록 신호한 경우 true. */
     public boolean isSkipped() {
         return Boolean.TRUE.equals(skip);
     }
 
-    /** Jackson 역직렬화 후 answerText를 추가한 새 인스턴스를 반환한다 (불변 복사). */
-    public GeneratedFollowUp withAnswerText(String answerText) {
-        GeneratedFollowUp copy = new GeneratedFollowUp();
-        copy.skip = this.skip;
-        copy.skipReason = this.skipReason;
-        copy.question = this.question;
-        copy.ttsQuestion = this.ttsQuestion;
-        copy.reason = this.reason;
-        copy.type = this.type;
-        copy.modelAnswer = this.modelAnswer;
-        copy.answerText = answerText;
-        return copy;
+    public static GeneratedFollowUp skipped(String reason) {
+        return new GeneratedFollowUp(true, reason, null, null, null, null, null, null, null);
     }
 }

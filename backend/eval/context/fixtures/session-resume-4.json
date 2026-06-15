@@ -1,0 +1,22 @@
+{
+  "interview_id": 2004,
+  "level": "MID",
+  "track": "RESUME",
+  "call_type": "resume_playground_opener",
+  "runtimeState": {
+    "currentLevel": "L1",
+    "playgroundTurns": 0,
+    "coveredClaims": [],
+    "activeChain": [],
+    "chainStateTracker": {
+      "currentChainId": null,
+      "consecutiveStayCount": 0
+    }
+  },
+  "focusHints": {
+    "projectInfo": "프로젝트명: 결제 시스템 리뉴얼. 기간: 2024.10~2025.05. 역할: 백엔드 리드 (3인 팀 주도). 스택: Spring Boot 3, Redis (Redisson 분산락), Kafka, MySQL 8. 성과: PG 이중화로 결제 성공률 96.2% → 99.4%, p99 latency 410ms → 180ms.",
+    "projectName": "결제 시스템 리뉴얼",
+    "openerQuestion": "결제 시스템 리뉴얼 프로젝트에서 본인이 주도한 핵심 의사결정 한 가지를 자유롭게 이야기해주세요."
+  },
+  "exchanges": []
+}

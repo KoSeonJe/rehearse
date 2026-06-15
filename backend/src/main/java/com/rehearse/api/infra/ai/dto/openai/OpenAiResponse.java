@@ -48,5 +48,21 @@ public class OpenAiResponse {
 
         @JsonProperty("total_tokens")
         private int totalTokens;
+
+        @JsonProperty("prompt_tokens_details")
+        private PromptTokensDetails promptTokensDetails;
+
+        /** cached_tokens 는 null일 수 있으므로 안전하게 0 반환. */
+        public int getCachedTokens() {
+            return promptTokensDetails != null ? promptTokensDetails.getCachedTokens() : 0;
+        }
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class PromptTokensDetails {
+        @JsonProperty("cached_tokens")
+        private int cachedTokens;
     }
 }

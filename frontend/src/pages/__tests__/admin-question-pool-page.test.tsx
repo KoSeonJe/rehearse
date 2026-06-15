@@ -1,0 +1,281 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { HelmetProvider } from 'react-helmet-async'
+import { AdminQuestionPoolPage } from '../admin-question-pool-page'
+
+const mutate = vi.fn()
+const updateMutate = vi.fn()
+const updateMutateAsync = vi.fn()
+const deactivateMutate = vi.fn()
+const bulkDeactivateMutate = vi.fn()
+const mockUseAdminQuestionPools = vi.fn()
+
+vi.mock('@/hooks/use-admin-question-pool', () => ({
+  useAdminQuestionPools: (...args: unknown[]) => mockUseAdminQuestionPools(...args),
+  useCreateAdminQuestionPool: () => ({ mutate, isPending: false }),
+  useUpdateAdminQuestionPool: () => ({ mutate: updateMutate, mutateAsync: updateMutateAsync, isPending: false }),
+  useDeactivateAdminQuestionPool: () => ({ mutate: deactivateMutate, isPending: false }),
+  useBulkDeactivateAdminQuestionPools: () => ({ mutate: bulkDeactivateMutate, isPending: false }),
+}))
+
+const renderPage = () =>
+  render(
+    <HelmetProvider>
+      <AdminQuestionPoolPage />
+    </HelmetProvider>,
+  )
+
+describe('AdminQuestionPoolPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    updateMutateAsync.mockResolvedValue({})
+    mockUseAdminQuestionPools.mockReturnValue({
+      data: {
+        data: {
+          content: [
+            {
+              id: 1,
+              cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
+              content: '프로세스와 스레드의 차이는 무엇인가요?',
+              ttsContent: '프로세스와 스레드의 차이는 무엇인가요?',
+              category: '운영체제',
+              bestAnswer: '프로세스는 독립 주소 공간을 가집니다.',
+              isActive: true,
+              createdAt: '2026-05-16T10:30:00',
+            },
+            {
+              id: 2,
+              cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
+              content: 'JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?',
+              ttsContent: 'JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?',
+              category: 'JPA',
+              bestAnswer: '영속성 컨텍스트는 엔티티를 식별자 기준으로 관리합니다.',
+              isActive: false,
+              createdAt: '2026-05-16T11:30:00',
+            },
+          ],
+          totalElements: 2,
+          totalPages: 1,
+          size: 20,
+          number: 0,
+        },
+      },
+      isLoading: false,
+    })
+  })
+
+  it('질문 풀 목록을 렌더한다', () => {
+    renderPage()
+
+    expect(screen.getByRole('heading', { name: '질문 풀 관리' })).toBeInTheDocument()
+    expect(screen.getAllByText('JUNIOR:CS_FUNDAMENTAL')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('운영체제')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0]).toBeInTheDocument()
+    expect(screen.getAllByText('프로세스는 독립 주소 공간을 가집니다.')[0]).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: '세부 주제' })).toHaveClass('whitespace-nowrap')
+    expect(screen.getByRole('columnheader', { name: '상태' })).toHaveClass('whitespace-nowrap')
+    expect(screen.getByRole('cell', { name: '활성' })).toHaveClass('whitespace-nowrap')
+    expect(screen.getByRole('columnheader', { name: '선택' }).firstElementChild).toHaveClass('sr-only')
+  })
+
+  it('검색 버튼을 누르면 입력한 필터로 목록을 다시 조회한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.type(screen.getByLabelText('캐시 키'), 'JUNIOR')
+    await user.type(screen.getByLabelText('세부 주제'), '운영체제')
+    await user.type(screen.getByLabelText('검색어'), '스레드')
+    await user.selectOptions(screen.getByLabelText('활성 상태'), 'true')
+    await user.click(screen.getByRole('button', { name: '검색' }))
+
+    expect(mockUseAdminQuestionPools).toHaveBeenLastCalledWith(
+      {
+        cacheKey: 'JUNIOR',
+        category: '운영체제',
+        isActive: 'true',
+        keyword: '스레드',
+      },
+      0,
+      20,
+    )
+  })
+
+  it('선택한 조건으로 cacheKey를 자동 생성해 새 질문 생성 요청을 보낸다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: '새 질문 추가' }))
+    await user.selectOptions(screen.getByLabelText('면접 유형'), 'LANGUAGE_FRAMEWORK')
+    await user.selectOptions(screen.getByLabelText('레벨'), 'JUNIOR')
+    await user.selectOptions(screen.getByLabelText('직무'), 'BACKEND')
+    await user.selectOptions(screen.getByLabelText('기술스택'), 'JAVA_SPRING')
+    await user.selectOptions(screen.getAllByLabelText('세부 주제')[1], 'JPA')
+    expect(screen.getByLabelText('생성될 캐시 키')).toHaveValue('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK')
+
+    await user.type(screen.getByLabelText('질문 본문'), '가상 메모리를 설명해주세요.')
+    await user.type(screen.getByLabelText('모범답안'), '가상 메모리는 보조기억장치를 활용합니다.')
+    await user.click(screen.getByRole('button', { name: '추가' }))
+
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
+        content: '가상 메모리를 설명해주세요.',
+        ttsContent: '',
+        category: 'JPA',
+        bestAnswer: '가상 메모리는 보조기억장치를 활용합니다.',
+      },
+      expect.any(Object),
+    )
+  })
+
+  it('세부 주제에서 기타를 선택하면 직접 입력한 값을 생성 요청에 보낸다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: '새 질문 추가' }))
+    await user.selectOptions(screen.getAllByLabelText('세부 주제')[1], 'OTHER')
+    await user.type(screen.getByLabelText('직접 입력할 세부 주제'), '컴파일러')
+    await user.type(screen.getByLabelText('질문 본문'), '컴파일 과정을 설명해주세요.')
+    await user.click(screen.getByRole('button', { name: '추가' }))
+
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: '컴파일러',
+        content: '컴파일 과정을 설명해주세요.',
+      }),
+      expect.any(Object),
+    )
+  })
+
+  it('공통 유형은 직무와 기술스택 없이 레벨과 유형만으로 cacheKey를 만든다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getByRole('button', { name: '새 질문 추가' }))
+
+    expect(screen.getByLabelText('생성될 캐시 키')).toHaveValue('JUNIOR:CS_FUNDAMENTAL')
+    expect(screen.queryByLabelText('직무')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('기술스택')).not.toBeInTheDocument()
+  })
+
+  it('질문 풀 행을 클릭하면 전체 내용을 상세 모달에 표시한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+
+    const dialog = screen.getByRole('dialog', { name: '질문 상세' })
+    expect(within(dialog).getByText('JUNIOR:CS_FUNDAMENTAL')).toBeInTheDocument()
+    expect(within(dialog).getByText('운영체제')).toBeInTheDocument()
+    expect(within(dialog).getAllByText('프로세스와 스레드의 차이는 무엇인가요?')).toHaveLength(2)
+    expect(within(dialog).getByText('프로세스는 독립 주소 공간을 가집니다.')).toBeInTheDocument()
+    expect(within(dialog).getByText('활성')).toBeInTheDocument()
+  })
+
+  it('상세 모달에서 긴 캐시 키를 전체 폭에서 줄바꿈 가능하게 표시한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?')[0])
+
+    const dialog = screen.getByRole('dialog', { name: '질문 상세' })
+    const cacheKey = within(dialog).getByText('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK')
+    expect(cacheKey.closest('div')).toHaveClass('sm:col-span-2')
+    expect(cacheKey).toHaveClass('break-all')
+  })
+
+  it('상세 모달에서 질문 풀 row를 수정한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+    await user.click(screen.getByRole('button', { name: '수정' }))
+    await user.clear(screen.getByLabelText('수정 질문 본문'))
+    await user.type(screen.getByLabelText('수정 질문 본문'), '스레드와 프로세스의 차이를 설명해주세요.')
+    await user.click(screen.getByRole('button', { name: '저장' }))
+
+    expect(updateMutate).toHaveBeenCalledWith(
+      {
+        id: 1,
+        request: expect.objectContaining({
+          content: '스레드와 프로세스의 차이를 설명해주세요.',
+          cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
+          category: '운영체제',
+          isActive: true,
+        }),
+      },
+      expect.any(Object),
+    )
+  })
+
+  it('상세 모달에서 단일 질문 풀 row를 비활성으로 변경한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('프로세스와 스레드의 차이는 무엇인가요?')[0])
+    await user.click(screen.getByRole('button', { name: '비활성으로 변경' }))
+
+    expect(updateMutate).toHaveBeenCalledWith(
+      {
+        id: 1,
+        request: expect.objectContaining({
+          cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
+          isActive: false,
+        }),
+      },
+      expect.any(Object),
+    )
+  })
+
+  it('상세 모달에서 비활성 질문 풀 row를 활성으로 변경한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByText('JPA 영속성 컨텍스트의 1차 캐시는 어떻게 동작하나요?')[0])
+    await user.click(screen.getByRole('button', { name: '활성으로 변경' }))
+
+    expect(updateMutate).toHaveBeenCalledWith(
+      {
+        id: 2,
+        request: expect.objectContaining({
+          cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
+          isActive: true,
+        }),
+      },
+      expect.any(Object),
+    )
+  })
+
+  it('선택한 질문 풀 row를 일괄 비활성으로 변경한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByLabelText('JUNIOR:CS_FUNDAMENTAL 선택')[0])
+    await user.selectOptions(screen.getByLabelText('선택 상태 변경'), 'false')
+
+    expect(updateMutateAsync).toHaveBeenCalledWith({
+      id: 1,
+      request: expect.objectContaining({
+        cacheKey: 'JUNIOR:CS_FUNDAMENTAL',
+        isActive: false,
+      }),
+    })
+  })
+
+  it('선택한 질문 풀 row를 일괄 활성으로 변경한다', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.click(screen.getAllByLabelText('BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK 선택')[0])
+    await user.selectOptions(screen.getByLabelText('선택 상태 변경'), 'true')
+
+    expect(updateMutateAsync).toHaveBeenCalledWith({
+      id: 2,
+      request: expect.objectContaining({
+        cacheKey: 'BACKEND:JUNIOR:JAVA_SPRING:LANGUAGE_FRAMEWORK',
+        isActive: true,
+      }),
+    })
+  })
+})

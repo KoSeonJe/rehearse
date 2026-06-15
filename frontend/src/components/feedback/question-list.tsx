@@ -1,4 +1,5 @@
 import type { QuestionWithAnswer, TimestampFeedback } from '@/types/interview'
+import { isFollowupQuestionType } from '@/utils/question-type'
 
 interface QuestionListProps {
   questions: QuestionWithAnswer[]
@@ -43,7 +44,7 @@ export const QuestionList = ({
     followupCounter: number
   }>(
     (acc, q) => {
-      const isFollowup = q.questionType === 'FOLLOWUP'
+      const isFollowup = isFollowupQuestionType(q.questionType)
       if (!isFollowup) {
         const nextMain = acc.mainCounter + 1
         return {
@@ -78,6 +79,7 @@ export const QuestionList = ({
             <li key={`${q.questionId}-${idx}`}>
               <button
                 type="button"
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => onSeek(q.startMs)}
                 className={`w-full text-left flex items-start gap-3 p-3 rounded-xl transition-colors ${
                   isActive ? 'bg-gray-50' : 'hover:bg-gray-50'

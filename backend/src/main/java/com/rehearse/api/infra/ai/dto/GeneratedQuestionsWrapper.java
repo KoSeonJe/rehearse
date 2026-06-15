@@ -1,15 +1,19 @@
 package com.rehearse.api.infra.ai.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-@Getter
-@NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GeneratedQuestionsWrapper {
+public record GeneratedQuestionsWrapper(
+        List<GeneratedQuestion> questions
+) {
 
-    private List<GeneratedQuestion> questions;
+    public GeneratedQuestionsWrapper {
+        if (questions == null || questions.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "GeneratedQuestionsWrapper.questions 는 비어있을 수 없습니다.");
+        }
+        questions = List.copyOf(questions);
+    }
 }

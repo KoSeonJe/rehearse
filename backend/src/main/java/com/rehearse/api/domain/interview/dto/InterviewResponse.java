@@ -1,8 +1,8 @@
 package com.rehearse.api.domain.interview.dto;
 
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.dto.QuestionSetResponse;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.dto.QuestionSetResponse;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -22,7 +22,7 @@ public class InterviewResponse {
     private final String positionDetail;
     private final InterviewLevel level;
     private final List<InterviewType> interviewTypes;
-    private final List<String> csSubTopics;
+    private final List<CsSubTopic> csSubTopics;
     private final InterviewStatus status;
     private final QuestionGenerationStatus questionGenerationStatus;
     private final String failureReason;

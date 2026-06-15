@@ -113,6 +113,7 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://api.rehearse.co.kr
+          VITE_GA4_MEASUREMENT_ID: ${{ secrets.VITE_GA4_MEASUREMENT_ID }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4

@@ -52,9 +52,16 @@ export interface Question {
 
 // 질문세트 관련 타입 (Sprint 0 파이프라인)
 
-export type QuestionType = 'MAIN' | 'FOLLOWUP'
-
-export type ReferenceType = 'RESUME' | 'CS' | 'TECH' | 'BEHAVIORAL' | 'SYSTEM_DESIGN'
+// BE com.rehearse.api.domain.question.entity.QuestionType 와 정확히 일치.
+// 표준 트랙 (BEHAVIORAL / TECH 계열) 과 RESUME 트랙이 각자 다른 enum 으로 직렬화된다.
+export type QuestionType =
+  | 'TECH_MAIN'
+  | 'TECH_FOLLOWUP'
+  | 'BEHAVIORAL_MAIN'
+  | 'BEHAVIORAL_FOLLOWUP'
+  | 'RESUME_OPENER'
+  | 'RESUME_MAIN'
+  | 'RESUME_FOLLOWUP'
 
 export type AnalysisStatus = 'PENDING' | 'PENDING_UPLOAD' | 'EXTRACTING' | 'ANALYZING' | 'FINALIZING' | 'COMPLETED' | 'PARTIAL' | 'FAILED' | 'SKIPPED'
 
@@ -67,8 +74,7 @@ export interface QuestionDetail {
   questionType: QuestionType
   questionText: string
   ttsText?: string | null
-  modelAnswer: string | null
-  referenceType: ReferenceType
+  bestAnswer: string | null
   orderIndex: number
 }
 
@@ -116,7 +122,7 @@ export interface QuestionWithAnswer {
   questionId: number
   questionType: string
   questionText: string
-  modelAnswer: string | null
+  bestAnswer: string | null
   startMs: number | null
   endMs: number | null
 }
@@ -125,7 +131,7 @@ export interface QuestionsWithAnswersResponse {
   questions: QuestionWithAnswer[]
 }
 
-// 피드백 뷰어 타입 (Sprint 0 Task 10)
+// 피드백 뷰어 타입 (코멘트형 content/delivery — main 형태 복원)
 
 export type FeedbackLevel = 'GOOD' | 'AVERAGE' | 'NEEDS_IMPROVEMENT'
 
@@ -184,7 +190,7 @@ export interface TimestampFeedback {
   questionId: number | null
   questionType: string | null
   questionText: string | null
-  modelAnswer: string | null
+  bestAnswer: string | null
   startMs: number
   endMs: number
   transcript: string | null
@@ -257,19 +263,25 @@ export interface ApiErrorResponse {
 
 // 후속 질문 관련 타입
 
-export type FollowUpType = 'DEEP_DIVE' | 'CLARIFICATION' | 'CHALLENGE' | 'APPLICATION'
+export type FollowUpType =
+  | 'DEEP_DIVE'
+  | 'CLARIFICATION'
+  | 'CHALLENGE'
+  | 'APPLICATION'
 
 export interface FollowUpExchange {
   question: string
-  answer: string
+  answerText: string
   type: FollowUpType
+  followUpType?: FollowUpType
 }
 
 export interface FollowUpRequest {
   questionSetId: number
   questionContent: string
-  answerText?: string
-  previousExchanges?: Array<{ question: string; answer: string }>
+  previousExchanges?: Array<{ question: string; answerText: string; followUpType?: FollowUpType }>
+  // 사용자 시간 만료 후 답변 완료 시점에 면접 종료 의사 신호 — BE 가 followUpExhausted=true 응답
+  terminate?: boolean
 }
 
 export interface FollowUpResponse {
@@ -279,32 +291,18 @@ export interface FollowUpResponse {
   reason: string
   type: FollowUpType
   answerText?: string
-  modelAnswer?: string | null
-  /**
-   * AI가 답변 불충분("모르겠다", 공백 등)으로 꼬리질문 생성을 포기한 경우 true.
-   * skip=true일 때 BE는 questionId/question/reason/type/modelAnswer를 null로 내려보내지만,
-   * 이 경우 클라이언트는 해당 응답을 store에 저장하지 않고 즉시 다음 메인 질문으로 진행해야 한다.
-   * 따라서 위 필드들은 skip=false 케이스 기준으로 non-null로 선언되어 있으며, skip 분기 이후에는 접근하지 말 것.
-   */
+  bestAnswer?: string | null
   skip: boolean
   skipReason?: string | null
+  followUpExhausted?: boolean
 }
 
 // 면접 진행 관련 타입
-
-export interface TranscriptSegment {
-  questionIndex: number
-  text: string
-  startTime: number
-  endTime: number
-  isFinal: boolean
-}
 
 export interface QuestionAnswer {
   questionIndex: number
   startTime: number
   endTime: number
-  transcripts: TranscriptSegment[]
 }
 
 // 대시보드 목록/통계 타입

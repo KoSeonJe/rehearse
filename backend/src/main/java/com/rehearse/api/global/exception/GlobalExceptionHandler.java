@@ -1,11 +1,15 @@
 package com.rehearse.api.global.exception;
 
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.global.common.ErrorResponse;
 import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,6 +45,39 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    protected ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException e, HttpServletRequest request) {
+
+        if (isCsSubTopicEnumViolation(e)) {
+            log.warn("CS 세부 주제 enum 위반: uri={}, message={}",
+                    request.getRequestURI(), e.getMostSpecificCause().getMessage());
+            ErrorResponse response = ErrorResponse.of(
+                    InterviewErrorCode.CS_SUB_TOPIC_INVALID.getStatus().value(),
+                    InterviewErrorCode.CS_SUB_TOPIC_INVALID.getCode(),
+                    InterviewErrorCode.CS_SUB_TOPIC_INVALID.getMessage());
+            return ResponseEntity.status(InterviewErrorCode.CS_SUB_TOPIC_INVALID.getStatus()).body(response);
+        }
+
+        log.warn("요청 본문 파싱 실패: uri={}", request.getRequestURI());
+
+        ErrorResponse response = ErrorResponse.of(
+                HttpStatus.BAD_REQUEST.value(),
+                "MESSAGE_NOT_READABLE",
+                "요청 본문을 해석할 수 없습니다.");
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    private boolean isCsSubTopicEnumViolation(HttpMessageNotReadableException e) {
+        Throwable cause = e.getMostSpecificCause();
+        if (!(cause instanceof InvalidFormatException ife)) {
+            return false;
+        }
+        return ife.getPath().stream()
+                .anyMatch(ref -> "csSubTopics".equals(ref.getFieldName()));
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     protected ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatch(
             MethodArgumentTypeMismatchException e, HttpServletRequest request) {
@@ -69,16 +106,40 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(response);
     }
 
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    protected ResponseEntity<ErrorResponse> handleAuthorizationDenied(
+            AuthorizationDeniedException e, HttpServletRequest request) {
+
+        log.warn("Authorization denied: uri={}", request.getRequestURI());
+
+        ErrorResponse response = ErrorResponse.of(
+                HttpStatus.FORBIDDEN.value(),
+                "AUTH_003",
+                "권한이 없습니다.");
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    private static final String SERVER_ERROR_GENERIC_MESSAGE = "서버 내부 오류가 발생했습니다.";
+
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ErrorResponse> handleBusinessException(
             BusinessException e, HttpServletRequest request) {
 
-        log.warn("Business exception: uri={}, message={}", request.getRequestURI(), e.getMessage());
+        boolean is5xx = e.getStatus().is5xxServerError();
+        if (is5xx) {
+            log.error("Business exception 5xx: uri={}, code={}, message={}",
+                    request.getRequestURI(), e.getCode(), e.getMessage(), e);
+        } else {
+            log.warn("Business exception: uri={}, code={}, message={}",
+                    request.getRequestURI(), e.getCode(), e.getMessage());
+        }
 
+        String clientMessage = is5xx ? SERVER_ERROR_GENERIC_MESSAGE : e.getMessage();
         ErrorResponse response = ErrorResponse.of(
                 e.getStatus().value(),
                 e.getCode(),
-                e.getMessage());
+                clientMessage);
 
         return ResponseEntity.status(e.getStatus()).body(response);
     }

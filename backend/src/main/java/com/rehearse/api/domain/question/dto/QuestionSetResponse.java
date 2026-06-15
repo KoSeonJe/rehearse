@@ -1,0 +1,38 @@
+package com.rehearse.api.domain.question.dto;
+
+import com.rehearse.api.domain.question.entity.AnalysisStatus;
+import com.rehearse.api.domain.question.entity.QuestionSet;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.List;
+
+@Getter
+@Builder
+public class QuestionSetResponse {
+
+    private final Long id;
+    private final String category;
+    private final int orderIndex;
+    private final AnalysisStatus analysisStatus;
+    private final String failureReason;
+    private final List<QuestionDetailResponse> questions;
+
+    public static QuestionSetResponse from(QuestionSet questionSet) {
+        List<QuestionDetailResponse> questionDetails = questionSet.getQuestions().stream()
+                .map(QuestionDetailResponse::from)
+                .toList();
+
+        AnalysisStatus status = questionSet.getEffectiveAnalysisStatus();
+        String failureReason = questionSet.getAnalysisFailureReason();
+
+        return QuestionSetResponse.builder()
+                .id(questionSet.getId())
+                .category(questionSet.getCategory().name())
+                .orderIndex(questionSet.getOrderIndex())
+                .analysisStatus(status)
+                .failureReason(failureReason)
+                .questions(questionDetails)
+                .build();
+    }
+}

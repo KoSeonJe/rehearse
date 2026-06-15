@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT } from '@/constants/analytics'
 
 const STORAGE_KEY = 'oauth_redirect'
 
@@ -16,6 +18,10 @@ export const usePostLoginRedirect = () => {
     if (!target) return
 
     localStorage.removeItem(STORAGE_KEY)
+
+    if (isAuthenticated) {
+      trackEvent(ANALYTICS_EVENT.LOGIN)
+    }
 
     if (isAuthenticated && target !== location.pathname) {
       navigate(target, { replace: true })

@@ -7,6 +7,8 @@ import { DeviceTestSection } from '@/components/interview/device-test-section'
 import { ErrorState } from '@/components/ui/error-state'
 import { useInterview, useUpdateInterviewStatus, useRetryQuestions } from '@/hooks/use-interviews'
 import { useDeviceTest } from '@/hooks/use-device-test'
+import { trackEvent } from '@/lib/analytics-client'
+import { ANALYTICS_EVENT } from '@/constants/analytics'
 import {
   LEVEL_LABELS,
   INTERVIEW_TYPE_LABELS,
@@ -43,9 +45,18 @@ export const InterviewReadyPage = () => {
   const canStart = allPassed && isQuestionReady
 
   const isResume = interview?.status === 'IN_PROGRESS'
+  const isResumeBased = interview?.interviewTypes.includes('RESUME_BASED') ?? false
+
+  const GENERATING_LABEL = isResumeBased
+    ? '이력서를 분석하고 첫 질문을 준비하고 있어요...'
+    : 'AI가 면접 질문을 생성하고 있어요...'
+  const GENERATING_SUB_LABEL = isResumeBased
+    ? '이력서 내용을 바탕으로 맞춤 질문을 준비합니다 · 1분 내외 소요'
+    : null
 
   const handleStartInterview = () => {
     if (!interview) return
+    trackEvent(ANALYTICS_EVENT.INTERVIEW_START)
     if (isResume) {
       navigate(`/interview/${interview.id}/conduct`, { replace: true })
       return
@@ -154,10 +165,17 @@ export const InterviewReadyPage = () => {
             <div className="rounded-2xl border border-border bg-surface/50 p-5">
               {isQuestionGenerating && (
                 <div className="flex items-center gap-3">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
-                  <span className="text-sm font-bold text-text-secondary">
-                    AI가 면접 질문을 생성하고 있어요...
-                  </span>
+                  <div className="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm font-bold text-text-secondary">
+                      {GENERATING_LABEL}
+                    </span>
+                    {GENERATING_SUB_LABEL && (
+                      <span className="text-xs text-text-tertiary">
+                        {GENERATING_SUB_LABEL}
+                      </span>
+                    )}
+                  </div>
                 </div>
               )}
               {isQuestionReady && (

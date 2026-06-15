@@ -2,16 +2,21 @@ package com.rehearse.api.domain.interview.service;
 
 import static org.springframework.transaction.annotation.Propagation.*;
 
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
+import com.rehearse.api.domain.interview.entity.BlockReason;
+import com.rehearse.api.domain.interview.entity.RecommendedNextAction;
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.entity.InterviewTrack;
 import com.rehearse.api.domain.interview.dto.FollowUpRequest;
 import com.rehearse.api.domain.interview.dto.FollowUpResponse;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
+import com.rehearse.api.domain.question.entity.QuestionCategory;
+import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.global.exception.BusinessException;
-import com.rehearse.api.infra.ai.AiClient;
-import com.rehearse.api.infra.ai.dto.FollowUpGenerationRequest;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
-import com.rehearse.api.infra.ai.exception.AiErrorCode;
+import com.rehearse.api.infra.ai.metrics.AiCallMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,8 +29,11 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional(readOnly = true)
 public class FollowUpService {
 
-    private final AiClient aiClient;
+    private final AudioTurnAnalysisService audioTurnAnalysisService;
+    private final FollowUpQuestionService followUpQuestionService;
     private final FollowUpTransactionHandler followUpTransactionHandler;
+    private final StandardFollowUpPolicy standardFollowUpPolicy;
+    private final AiCallMetrics aiCallMetrics;
 
     @Transactional(propagation = NOT_SUPPORTED)
     public FollowUpResponse generateFollowUp(Long id, Long userId, FollowUpRequest request, MultipartFile audioFile) {
@@ -33,57 +41,92 @@ public class FollowUpService {
             throw new BusinessException(InterviewErrorCode.ANSWER_TEXT_REQUIRED);
         }
 
-        // Phase 1: DB 조회 + 검증 (짧은 readOnly 트랜잭션)
         FollowUpContext context = followUpTransactionHandler.loadFollowUpContext(id, userId, request.getQuestionSetId());
 
-        // Phase 2: GPT-audio 호출 — STT + 후속질문 한 번에 (트랜잭션 없음)
-        FollowUpGenerationRequest followUpReq = new FollowUpGenerationRequest(
-                context.position(),
-                context.effectiveTechStack(),
-                context.level(),
-                request.getQuestionContent(),
-                null,
-                request.getNonVerbalSummary(),
-                request.getPreviousExchanges(),
-                context.mainReferenceType()
-        );
-        GeneratedFollowUp followUp = aiClient.generateFollowUpWithAudio(audioFile, followUpReq);
+        QuestionCategory category = context.currentMainQuestionType().category();
+        AnswerAnalysis analysis = audioTurnAnalysisService.analyze(
+                id, audioFile, request.getQuestionContent(), context.mainReferenceType(), category);
+        String answerText = analysis.transcript();
 
-        // Phase 3a: AI가 답변 불충분으로 스킵 신호를 보낸 경우 저장하지 않고 skip 응답 반환
-        if (followUp.isSkipped()) {
-            log.info("후속 질문 스킵: interviewId={}, questionSetId={}, reason={}",
-                    id, request.getQuestionSetId(), followUp.getSkipReason());
-            return FollowUpResponse.builder()
-                    .answerText(followUp.getAnswerText())
-                    .skip(true)
-                    .skipReason(followUp.getSkipReason())
-                    .build();
-        }
+        followUpTransactionHandler.publishAnswerAnalysisCompletedEvent(
+                id, context, analysis, context.answeredQuestionId());
 
-        // Phase 3b: non-skip인데 필수 필드가 비어있으면 스키마 위반 — DB 저장 전에 빠르게 실패
-        // (AI가 드물게 프롬프트 스키마를 어기는 경우 NOT NULL 제약 위반으로 500이 뜨는 것을 방지)
-        if (followUp.getQuestion() == null || followUp.getQuestion().isBlank()) {
-            log.warn("AI 응답 스키마 위반: skip=false인데 question이 비어있음. interviewId={}, questionSetId={}",
+        if (followUpTransactionHandler.isFollowUpExhausted(context.questionSetId(), context.currentMainQuestionId())) {
+            log.info("후속질문 한도 도달 → 채점만 진행, follow-up 생성 skip. interviewId={}, questionSetId={}",
                     id, request.getQuestionSetId());
-            throw new BusinessException(AiErrorCode.PARSE_FAILED);
+            aiCallMetrics.incrementFollowUpSkip("followup_exhausted");
+            return FollowUpResponse.aiSkip(answerText, "followup_exhausted");
         }
 
-        // Phase 3c: 결과 저장 (짧은 write 트랜잭션)
-        Question savedQuestion = followUpTransactionHandler.saveFollowUpResult(
-                context.questionSetId(), followUp, context.nextOrderIndex());
+        if (context.currentMainQuestionType() == QuestionType.RESUME_OPENER) {
+            log.info("RESUME_OPENER → follow-up 생성 skip. interviewId={}, questionSetId={}",
+                    id, request.getQuestionSetId());
+            aiCallMetrics.incrementFollowUpSkip("opener_skip");
+            return FollowUpResponse.aiSkip(answerText, "resume_opener_skip");
+        }
+        if (analysis.recommendedNextAction() == RecommendedNextAction.SKIP) {
+            return handleAnalyzerSkip(id, context, request, analysis, answerText);
+        }
+        return generateAndSaveFollowUp(id, context, request, analysis, answerText, category);
+    }
 
-        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}",
-                id, request.getQuestionSetId(), savedQuestion.getId(), followUp.getType());
+    private FollowUpResponse handleAnalyzerSkip(
+            Long id, FollowUpContext context, FollowUpRequest request,
+            AnswerAnalysis analysis, String answerText
+    ) {
+        log.info("Analyzer SKIP 권고 → Step B 미호출. interviewId={}, questionSetId={}",
+                id, request.getQuestionSetId());
+        aiCallMetrics.incrementFollowUpSkip("analyzer_skip");
+        int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+        log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
+                id, InterviewTrack.CS.logLabel(),
+                BlockReason.ANALYZER_SKIP.logValue(), turnIndex);
+        return FollowUpResponse.aiSkip(answerText, "analyzer_recommend_skip");
+    }
 
+    private FollowUpResponse generateAndSaveFollowUp(
+            Long id, FollowUpContext context, FollowUpRequest request,
+            AnswerAnalysis analysis, String answerText, QuestionCategory category
+    ) {
+        GeneratedFollowUp stepB = followUpQuestionService.write(
+                request.getQuestionContent(), analysis, category);
+
+        if (stepB.isSkipped()) {
+            log.info("Step B 가 skip 반환: interviewId={}, questionSetId={}, reason={}",
+                    id, request.getQuestionSetId(), stepB.skipReason());
+            aiCallMetrics.incrementFollowUpSkip("step_b_skip");
+            int turnIndex = request.getPreviousExchanges() == null ? 0 : request.getPreviousExchanges().size();
+            log.warn("[진행차단진단] interviewId={} track={} stage=followup reason={} turnIndex={}",
+                    id, InterviewTrack.CS.logLabel(),
+                    BlockReason.STEP_B_SKIP.logValue(), turnIndex);
+            return FollowUpResponse.aiSkip(answerText, stepB.skipReason());
+        }
+
+        FollowUpSaveResult saveResult = followUpTransactionHandler.saveFollowUpResult(
+                context.questionSetId(), stepB);
+        boolean exhausted = saveResult.newFollowUpCount() >= context.maxFollowUpRounds();
+
+        log.info("REALTIME 후속 질문 생성 완료: interviewId={}, questionSetId={}, questionId={}, type={}, weakestDimension={}, dimensionGaps={}, target_claim_idx={}, exhausted={}",
+                id, request.getQuestionSetId(), saveResult.question().getId(),
+                stepB.type(), analysis.weakestDimension(), analysis.dimensionGaps(),
+                stepB.targetClaimIdx(), exhausted);
+
+        return buildAnswerResponse(stepB, saveResult.question(), answerText, exhausted);
+    }
+
+    private static FollowUpResponse buildAnswerResponse(
+            GeneratedFollowUp followUp, Question savedQuestion, String answerText, boolean exhausted) {
         return FollowUpResponse.builder()
                 .questionId(savedQuestion.getId())
-                .question(followUp.getQuestion())
-                .ttsQuestion(followUp.getTtsQuestion())
-                .reason(followUp.getReason())
-                .type(followUp.getType())
-                .answerText(followUp.getAnswerText())
-                .modelAnswer(savedQuestion.getModelAnswer())
+                .question(followUp.question())
+                .ttsQuestion(followUp.ttsQuestion())
+                .reason(followUp.reason())
+                .type(followUp.type())
+                .answerText(answerText)
+                .bestAnswer(savedQuestion.getBestAnswer())
                 .skip(false)
+                .presentToUser(true)
+                .followUpExhausted(exhausted)
                 .build();
     }
 }

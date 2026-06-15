@@ -3,12 +3,13 @@ package com.rehearse.api.domain.reviewbookmark.repository;
 import com.rehearse.api.domain.feedback.entity.QuestionSetFeedback;
 import com.rehearse.api.domain.feedback.entity.TimestampFeedback;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.reviewbookmark.entity.ReviewBookmark;
 import com.rehearse.api.domain.user.entity.OAuthProvider;
 import com.rehearse.api.domain.user.entity.User;
 import com.rehearse.api.domain.user.entity.UserRole;
 import com.rehearse.api.global.config.JpaAuditingConfig;
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +27,7 @@ import com.rehearse.api.domain.reviewbookmark.dto.BookmarkIdPair;
 import java.util.List;
 import java.util.Optional;
 
-import com.rehearse.api.domain.questionset.entity.QuestionSetCategory;
+import com.rehearse.api.domain.interview.entity.InterviewType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DataJpaTest
 @ActiveProfiles("test")
 @Import(JpaAuditingConfig.class)
-class ReviewBookmarkRepositoryTest {
+class ReviewBookmarkRepositoryTest extends AbstractMySqlContainerTest {
 
     @Autowired
     private ReviewBookmarkRepository reviewBookmarkRepository;
@@ -67,7 +68,7 @@ class ReviewBookmarkRepositoryTest {
 
         QuestionSet questionSet = QuestionSet.builder()
                 .interview(interview)
-                .category(QuestionSetCategory.CS_FUNDAMENTAL)
+                .category(InterviewType.CS_FUNDAMENTAL)
                 .orderIndex(0)
                 .build();
         entityManager.persist(questionSet);
@@ -217,7 +218,7 @@ class ReviewBookmarkRepositoryTest {
         }
 
         @Test
-        @DisplayName("ReviewBookmark를 먼저 삭제한 뒤 TimestampFeedback을 삭제하면 두 엔티티 모두 제거된다 (참조 무결성 순서 보장)")
+        @DisplayName("TimestampFeedback 삭제 시 ON DELETE CASCADE로 ReviewBookmark도 함께 삭제된다")
         void cascadeDelete_whenTimestampFeedbackDeleted_reviewBookmarkIsAlsoDeleted() {
             // given
             TimestampFeedback foundTsf = entityManager.find(TimestampFeedback.class, timestampFeedback.getId());
@@ -231,23 +232,17 @@ class ReviewBookmarkRepositoryTest {
             Long bookmarkId = bookmark.getId();
             Long tsfId = foundTsf.getId();
 
-            // H2 ddl-auto=create-drop builds schema from JPA annotations (no Flyway),
-            // so ON DELETE CASCADE from V22 SQL is absent. Simulate the cascade by
-            // deleting the bookmark first (referential integrity order), then the TSF.
-            entityManager.createNativeQuery(
-                    "DELETE FROM review_bookmark WHERE id = :id")
-                    .setParameter("id", bookmarkId)
-                    .executeUpdate();
-            entityManager.createNativeQuery(
-                    "DELETE FROM timestamp_feedback WHERE id = :id")
+            // DB 레벨 ON DELETE CASCADE 검증: native SQL로 TSF 삭제 → review_bookmark 자동 cascade
+            entityManager.createNativeQuery("DELETE FROM timestamp_feedback WHERE id = :id")
                     .setParameter("id", tsfId)
                     .executeUpdate();
-            entityManager.flush();
             entityManager.clear();
 
             // when & then
-            ReviewBookmark deleted = entityManager.find(ReviewBookmark.class, bookmarkId);
-            assertThat(deleted).isNull();
+            ReviewBookmark deletedBookmark = entityManager.find(ReviewBookmark.class, bookmarkId);
+            TimestampFeedback deletedTsf = entityManager.find(TimestampFeedback.class, tsfId);
+            assertThat(deletedBookmark).isNull();
+            assertThat(deletedTsf).isNull();
         }
     }
 

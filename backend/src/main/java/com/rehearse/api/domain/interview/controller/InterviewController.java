@@ -6,10 +6,10 @@ import com.rehearse.api.domain.interview.service.InterviewCreationService;
 import com.rehearse.api.domain.interview.service.InterviewDeletionService;
 import com.rehearse.api.domain.interview.service.InterviewQueryService;
 import com.rehearse.api.domain.interview.service.InterviewService;
+import com.rehearse.api.domain.interview.validation.AudioValidator;
 import com.rehearse.api.global.common.ApiResponse;
-import com.rehearse.api.global.config.AsyncConfig;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -24,6 +24,7 @@ import java.util.concurrent.Executor;
 
 @RestController
 @RequestMapping("/api/v1/interviews")
+@RequiredArgsConstructor
 public class InterviewController {
 
     private final InterviewCreationService interviewCreationService;
@@ -31,22 +32,8 @@ public class InterviewController {
     private final InterviewService interviewService;
     private final InterviewDeletionService interviewDeletionService;
     private final FollowUpService followUpService;
+    private final AudioValidator audioValidator;
     private final Executor vtExecutor;
-
-    public InterviewController(
-            InterviewCreationService interviewCreationService,
-            InterviewQueryService interviewQueryService,
-            InterviewService interviewService,
-            InterviewDeletionService interviewDeletionService,
-            FollowUpService followUpService,
-            @Qualifier(AsyncConfig.VT_EXECUTOR) Executor vtExecutor) {
-        this.interviewCreationService = interviewCreationService;
-        this.interviewQueryService = interviewQueryService;
-        this.interviewService = interviewService;
-        this.interviewDeletionService = interviewDeletionService;
-        this.followUpService = followUpService;
-        this.vtExecutor = vtExecutor;
-    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<InterviewResponse>> createInterview(
@@ -63,14 +50,14 @@ public class InterviewController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         int safeSize = Math.min(Math.max(size, 1), 100);
-        Page<InterviewListResponse> response = interviewService.getInterviews(userId, PageRequest.of(page, safeSize));
+        Page<InterviewListResponse> response = interviewQueryService.getInterviews(userId, PageRequest.of(page, safeSize));
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @GetMapping("/stats")
     public ResponseEntity<ApiResponse<InterviewStatsResponse>> getStats(
             @AuthenticationPrincipal Long userId) {
-        InterviewStatsResponse response = interviewService.getStats(userId);
+        InterviewStatsResponse response = interviewQueryService.getStats(userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -83,8 +70,10 @@ public class InterviewController {
     }
 
     @GetMapping("/by-public-id/{publicId}")
-    public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(@PathVariable String publicId) {
-        InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId);
+    public ResponseEntity<ApiResponse<InterviewResponse>> getInterviewByPublicId(
+            @AuthenticationPrincipal Long userId,
+            @PathVariable String publicId) {
+        InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId, userId);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
@@ -103,6 +92,9 @@ public class InterviewController {
             @PathVariable Long id,
             @Valid @RequestPart("request") FollowUpRequest request,
             @RequestPart(value = "audio", required = false) MultipartFile audioFile) {
+        if (audioFile != null && !audioFile.isEmpty()) {
+            audioValidator.validate(audioFile);
+        }
         return CompletableFuture.supplyAsync(
                 () -> followUpService.generateFollowUp(id, userId, request, audioFile),
                 vtExecutor

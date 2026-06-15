@@ -33,13 +33,13 @@ export const CtaSection = ({ onNavigate }: CtaSectionProps) => {
               id="cta-heading"
               className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] text-brand-foreground"
             >
-              지금 시작하면,<br />
-              제품 방향을 함께 정합니다.
+              당신의 피드백으로,<br />
+              같이 만들어갑니다.
             </h2>
             <p className="mt-6 max-w-xl text-[16px] md:text-lg font-medium leading-[1.75] text-brand-foreground/80">
               <span className="text-brand-foreground font-semibold">베타 전 기능 무료</span>. 이력서만 있으면 3분 뒤 첫 면접이 시작되고, 질문이 자동 생성됩니다.
               <br className="hidden md:block" />
-              쓰면서 불편한 점을 남겨주시면 다음 업데이트에 반영해요 — 만들어지는 제품을 같이 다듬는 피드백이 환영입니다.
+              쓰면서 불편한 점을 남겨주시면 다음 업데이트에 반영해요 — 작은 피드백 하나도 언제나 환영입니다.
             </p>
 
             <ul className="mt-10 divide-y divide-brand-foreground/15 border-t border-brand-foreground/20" aria-label="시작 전 체크리스트">

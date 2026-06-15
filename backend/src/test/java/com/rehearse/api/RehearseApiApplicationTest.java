@@ -1,5 +1,6 @@
 package com.rehearse.api;
 
+import com.rehearse.api.global.support.AbstractMySqlContainerTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -8,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 @DisplayName("RehearseApiApplication - 스프링 컨텍스트 로딩")
-class RehearseApiApplicationTest {
+class RehearseApiApplicationTest extends AbstractMySqlContainerTest {
 
     @Test
     @DisplayName("애플리케이션 컨텍스트가 예외 없이 로드된다")

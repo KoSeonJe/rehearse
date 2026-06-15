@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom'
 import { usePostLoginRedirect } from '@/hooks/use-post-login-redirect'
 import { useAuthInterceptor } from '@/hooks/use-auth-interceptor'
 import { useCrossTabSync } from '@/hooks/use-cross-tab-sync'
+import { useAnalyticsInit } from '@/hooks/use-analytics-init'
+import { useAnalyticsPageview } from '@/hooks/use-analytics-pageview'
 import { HomePage } from '@/pages/home-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { InterviewSetupPage } from '@/pages/interview-setup-page'
@@ -10,7 +12,9 @@ import { InterviewPage } from '@/pages/interview-page'
 import { InterviewAnalysisPage } from '@/pages/interview-analysis-page'
 import { InterviewFeedbackPage } from '@/pages/interview-feedback-page'
 import { ReviewListPage } from '@/pages/review-list-page'
+import { AdminHomePage } from '@/pages/admin-home-page'
 import { AdminFeedbacksPage } from '@/pages/admin-feedbacks-page'
+import { AdminQuestionPoolPage } from '@/pages/admin-question-pool-page'
 import { PrivacyPolicyPage } from '@/pages/privacy-policy-page'
 import { AboutPage } from '@/pages/about-page'
 import { FaqPage } from '@/pages/faq-page'
@@ -28,6 +32,8 @@ export const App = () => {
   usePostLoginRedirect()
   useAuthInterceptor()
   useCrossTabSync()
+  useAnalyticsInit()
+  useAnalyticsPageview()
 
   return (
     <TooltipProvider>
@@ -46,7 +52,9 @@ export const App = () => {
         </Route>
 
         <Route element={<PasswordProtectedRoute />}>
+          <Route path="/admin" element={<AdminHomePage />} />
           <Route path="/admin/feedbacks" element={<AdminFeedbacksPage />} />
+          <Route path="/admin/question-pool" element={<AdminQuestionPoolPage />} />
         </Route>
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/about" element={<AboutPage />} />

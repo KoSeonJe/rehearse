@@ -5,9 +5,16 @@ import DeliveryTab from '@/components/feedback/delivery-tab'
 import BookmarkToggleButton from '@/components/feedback/bookmark-toggle-button'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 
+type FeedbackTab = 'content' | 'delivery'
+
 const ANSWER_TYPE_LABELS: Record<string, string> = {
-  MAIN: '원본 답변',
-  FOLLOWUP: '후속 질문',
+  TECH_MAIN: '원본 답변',
+  TECH_FOLLOWUP: '후속 질문',
+  BEHAVIORAL_MAIN: '원본 답변',
+  BEHAVIORAL_FOLLOWUP: '후속 질문',
+  RESUME_OPENER: '도입 질문',
+  RESUME_MAIN: '이력서 질문',
+  RESUME_FOLLOWUP: '이력서 꼬리질문',
 }
 
 const FILLER_WORDS = ['음', '어', '그', '아', '그러니까', '뭐', '이제', '약간', '좀']
@@ -26,8 +33,6 @@ const highlightFillers = (text: string): React.ReactNode[] => {
   )
 }
 
-type FeedbackTab = 'content' | 'delivery'
-
 interface FeedbackCardProps {
   feedback: TimestampFeedback
   question: QuestionWithAnswer | undefined
@@ -37,8 +42,10 @@ interface FeedbackCardProps {
 }
 
 const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTsfId }: FeedbackCardProps) => {
-  const [showModelAnswer, setShowModelAnswer] = useState(false)
+  const [showBestAnswer, setShowBestAnswer] = useState(false)
   const [activeTab, setActiveTab] = useState<FeedbackTab>('content')
+
+  const fillerWordCount = feedback.delivery?.vocal?.fillerWordCount ?? null
 
   const isDeliveryAvailable =
     feedback.delivery !== null &&
@@ -59,18 +66,25 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
     ? (ANSWER_TYPE_LABELS[feedback.questionType] ?? feedback.questionType)
     : null
 
+  const handleSeek = () => onSeek(feedback.startMs)
+
   return (
     <div
       data-feedback-id={feedback.id}
-      className="rounded-2xl bg-card overflow-hidden transition-colors cursor-pointer shadow-sm"
-      onClick={() => onSeek(feedback.startMs)}
+      className="rounded-2xl bg-card overflow-hidden shadow-sm"
     >
       {/* 헤더 */}
       <div className="px-6 pt-6 pb-5">
         <div className="flex items-center gap-3 mb-4">
-          <span className="text-[13px] font-bold text-gray-900 tabular-nums">
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={handleSeek}
+            aria-label={`${formatTime(feedback.startMs)} 구간으로 이동`}
+            className="text-[13px] font-bold text-gray-900 tabular-nums rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand hover:text-brand transition-colors"
+          >
             {formatTime(feedback.startMs)} — {formatTime(feedback.endMs)}
-          </span>
+          </button>
           {answerTypeLabel !== null && (
             <span className="text-[13px] text-gray-400">{answerTypeLabel}</span>
           )}
@@ -93,8 +107,8 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
       </div>
 
       {/* 답변 텍스트 + 모범답변 */}
-      {(feedback.transcript !== null || question?.modelAnswer) && (
-        <div className="mx-6 mb-4 flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+      {(feedback.transcript !== null || question?.bestAnswer) && (
+        <div className="mx-6 mb-4 flex flex-col gap-3">
           {feedback.transcript !== null && (
             <div className="rounded-xl bg-gray-50 p-5">
               <p className="text-[13px] font-bold text-gray-500 mb-2">내 답변</p>
@@ -103,31 +117,29 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
                   {highlightFillers(feedback.transcript)}
                 </p>
               </div>
-              {feedback.delivery?.vocal?.fillerWordCount !== null &&
-                feedback.delivery?.vocal?.fillerWordCount !== undefined &&
-                feedback.delivery.vocal.fillerWordCount > 0 && (
-                  <p className="mt-2 text-[13px] text-gray-400">
-                    습관어 {feedback.delivery.vocal.fillerWordCount}회 감지
-                  </p>
-                )}
+              {fillerWordCount !== null && fillerWordCount > 0 && (
+                <p className="mt-2 text-[13px] text-gray-400">
+                  습관어 {fillerWordCount}회 감지
+                </p>
+              )}
             </div>
           )}
-          {question?.modelAnswer && (
+          {question?.bestAnswer && (
             <div className="rounded-xl bg-blue-50 overflow-hidden">
               <button
-                onClick={() => setShowModelAnswer(!showModelAnswer)}
+                onClick={() => setShowBestAnswer(!showBestAnswer)}
                 className="w-full px-5 py-3 flex items-center justify-between"
               >
                 <span className="text-[13px] font-bold text-blue-500">모범 답변</span>
                 <span className="text-[13px] text-blue-400">
-                  {showModelAnswer ? '접기' : '펼치기'}
+                  {showBestAnswer ? '접기' : '펼치기'}
                 </span>
               </button>
-              {showModelAnswer && (
+              {showBestAnswer && (
                 <div className="px-5 pb-5">
                   <div className="max-h-48 overflow-y-auto">
                     <p className="text-[15px] leading-[1.8] text-blue-700/70">
-                      {question.modelAnswer}
+                      {question.bestAnswer}
                     </p>
                   </div>
                 </div>
@@ -138,11 +150,7 @@ const FeedbackCard = ({ feedback, question, onSeek, interviewId, bookmarkIdsByTs
       )}
 
       {/* 탭 */}
-      <Tabs
-        value={effectiveTab}
-        onValueChange={(v) => setActiveTab(v as FeedbackTab)}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <Tabs value={effectiveTab} onValueChange={(v) => setActiveTab(v as FeedbackTab)}>
         <TabsList className="w-full justify-start gap-4 rounded-none bg-transparent px-6 border-b border-gray-100 h-auto pb-0">
           <TabsTrigger
             value="content"

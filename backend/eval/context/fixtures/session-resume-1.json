@@ -1,0 +1,47 @@
+{
+  "interview_id": 2001,
+  "level": "MID",
+  "track": "RESUME",
+  "call_type": "resume_playground_opener",
+  "runtimeState": {
+    "currentLevel": "L1",
+    "playgroundTurns": 0,
+    "coveredClaims": [],
+    "activeChain": [],
+    "chainStateTracker": {
+      "currentChainId": null,
+      "consecutiveStayCount": 0
+    }
+  },
+  "focusHints": {
+    "projectInfo": "프로젝트명: 실시간 채팅 백엔드. 기간: 2025.03~2025.08. 역할: 메시지 브로커 도입 및 WebSocket 게이트웨이 설계. 스택: Spring Boot 3, Kafka, Redis, MySQL. 성과: 동시접속 1k → 12k 처리량 향상, p99 latency 320ms → 95ms.",
+    "openerQuestion": "실시간 채팅 백엔드 프로젝트에서 가장 인상 깊었던 기술적 의사결정 한 가지를 자유롭게 이야기해주세요."
+  },
+  "exchanges": [
+    {
+      "q": "이력서 잘 봤습니다. 첫 프로젝트인 실시간 채팅 백엔드부터 편하게 이야기 나눠볼까요? 어떤 배경에서 시작된 프로젝트였는지 짧게 소개 부탁드립니다.",
+      "a": "네, 사내 협업 도구를 자체 개발하기로 결정되면서 실시간 메시징 기능을 담당했습니다. 초기엔 단순 WebSocket 으로 시작했고 동시접속이 늘면서 브로커 도입을 검토했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "동시접속이 늘었다는 부분이 흥미로운데요, 어느 시점에 한계가 보였고 어떤 신호를 가장 먼저 감지하셨나요?",
+      "a": "동접 3k 부근에서 단일 인스턴스 메모리가 80% 를 넘기 시작했고 메시지 브로드캐스트 latency 가 300ms 를 넘는 순간이 잦아졌습니다. APM 의 p99 그래프 가팔라지는 게 첫 신호였습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "그 시점에 Kafka 를 선택한 이유가 따로 있었을까요? 다른 대안과 비교해보신 게 있다면 함께 듣고 싶습니다.",
+      "a": "Redis Pub/Sub 과 RabbitMQ 도 후보였는데 Redis 는 메시지 영속성이 없고 RabbitMQ 는 partition 단위 throughput 한계가 있어 Kafka 로 정했습니다. 사내 데이터 파이프라인이 이미 Kafka 였던 점도 운영 부담을 줄였습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "운영 부담 얘기가 나왔는데, Kafka 자체의 운영 학습 비용은 팀이 어떻게 흡수하셨나요?",
+      "a": "기존 데이터팀에서 운영 노하우를 받아왔고 채팅 도메인 전용 클러스터를 새로 구성했습니다. 컨슈머 lag 알람과 ISR 모니터링은 데이터팀 룰을 그대로 차용했습니다.",
+      "selectedPerspective": null
+    },
+    {
+      "q": "도입 이후 결과 지표는 어땠나요? 가장 개선이 컸다고 느낀 지표를 한두 개만 짚어주세요.",
+      "a": "동접 12k 까지 단일 클러스터로 안정 처리됐고 p99 latency 가 320ms 에서 95ms 로 떨어졌습니다. 무엇보다 인스턴스 추가 없이 confirm-only 컨슈머 그룹을 늘려 수평 확장한 게 만족스러웠습니다.",
+      "selectedPerspective": null
+    }
+  ]
+}

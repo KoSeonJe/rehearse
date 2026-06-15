@@ -1,9 +1,10 @@
 import { useCallback, type MutableRefObject } from 'react'
-import { useInterviewStore, MAX_FOLLOWUP_ROUNDS } from '@/stores/interview-store'
+import { useInterviewStore } from '@/stores/interview-store'
 import { useFollowUpQuestion } from '@/hooks/use-interviews'
 import { useS3Upload } from '@/hooks/use-s3-upload'
 import { apiClient } from '@/lib/api-client'
 import { saveVideoBlob, deleteVideoBlob } from '@/lib/video-storage'
+import { isMainQuestionType, resolveFollowUpQuestionType } from '@/utils/question-type'
 import type {
   InterviewEventType,
   ApiResponse,
@@ -97,21 +98,10 @@ export const useAnswerFlow = ({
     setPhase,
     setQuestionSetRecordingStartTime,
     addQuestionToSet,
+    setAutoTransitionMessage,
   } = useInterviewStore()
 
   const hasQuestionSets = !!interview?.questionSets?.length
-
-  // 현재 답변 텍스트 수집 — 후속질문 중엔 offset 이후 transcript만 반환
-  const getCurrentAnswerText = useCallback(() => {
-    const state = useInterviewStore.getState()
-    const currentAnswer = state.answers[state.currentQuestionIndex]
-    const offset = state.currentFollowUp !== null ? state.followUpTranscriptOffset : 0
-    return currentAnswer?.transcripts
-      .filter((t) => t.isFinal)
-      .slice(offset)
-      .map((t) => t.text)
-      .join(' ') ?? ''
-  }, [])
 
   // 질문세트 완료 시 업로드 파이프라인 (백그라운드)
   // 반환값: recorder.restart() 직후 타임스탬프 (세트 전환 시 타임라인 기준점)
@@ -187,7 +177,7 @@ export const useAnswerFlow = ({
     // questions는 모든 세트의 질문이 flat하게 들어있으므로,
     // 현재 세트까지의 질문 수 합산으로 경계를 판단
     const questionsBeforeCurrentSet = state.currentQuestionSetIndex
-    const mainQuestionCount = currentSet.questions.filter(q => q.questionType === 'MAIN').length
+    const mainQuestionCount = currentSet.questions.filter((q) => isMainQuestionType(q.questionType)).length
     const lastIndexInSet = questionsBeforeCurrentSet + mainQuestionCount - 1
     return state.currentQuestionIndex >= lastIndexInSet
   }, [hasQuestionSets])
@@ -201,6 +191,7 @@ export const useAnswerFlow = ({
 
     if (isLast || (isSetEnd && isLastSet)) {
       // 면접 종료 → finishing phase로 전환 (사용자가 [면접 종료하기] 클릭 대기)
+      const closingPhrase = pickRandom(CLOSING_PHRASES)
       pendingTtsActionRef.current = async () => {
         if (hasQuestionSets) {
           const currentSet = state.questionSets[state.currentQuestionSetIndex]
@@ -209,11 +200,14 @@ export const useAnswerFlow = ({
           })
         }
         setPhase('finishing')
+        setAutoTransitionMessage(null)
       }
-      tts.speak(pickRandom(CLOSING_PHRASES))
+      setAutoTransitionMessage(closingPhrase)
+      tts.speak(closingPhrase)
     } else if (isSetEnd && !isLastSet) {
       // 질문세트 전환
       const currentSet = state.questionSets[state.currentQuestionSetIndex]
+      const setPhrase = pickRandom(SET_TRANSITION_PHRASES)
       pendingTtsActionRef.current = async () => {
         let restartTime: number | undefined
         try {
@@ -226,15 +220,22 @@ export const useAnswerFlow = ({
           setQuestionSetRecordingStartTime(restartTime)
         }
         nextQuestion()
+        setAutoTransitionMessage(null)
       }
-      tts.speak(pickRandom(SET_TRANSITION_PHRASES))
+      setAutoTransitionMessage(setPhrase)
+      tts.speak(setPhrase)
     } else {
       // 같은 세트 내 다음 질문
-      pendingTtsActionRef.current = () => nextQuestion()
       const phrases = useSkipPhrase ? SKIP_TRANSITION_PHRASES : TRANSITION_PHRASES
-      tts.speak(pickRandom(phrases))
+      const nextPhrase = pickRandom(phrases)
+      pendingTtsActionRef.current = () => {
+        nextQuestion()
+        setAutoTransitionMessage(null)
+      }
+      setAutoTransitionMessage(nextPhrase)
+      tts.speak(nextPhrase)
     }
-  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime])
+  }, [pendingTtsActionRef, setPhase, nextQuestion, nextQuestionSet, tts, hasQuestionSets, isLastQuestionInSet, handleQuestionSetComplete, setQuestionSetRecordingStartTime, setAutoTransitionMessage])
 
   // 실제 답변 시작 로직
   const doStartAnswer = useCallback(() => {
@@ -281,9 +282,6 @@ export const useAnswerFlow = ({
     // 후속질문용 오디오 캡처 (await)
     const audioBlob = await audioCapture.stop()
 
-    // 현재 답변 텍스트 수집
-    const answerText = getCurrentAnswerText()
-
     // 질문세트가 있으면 답변 타임스탬프 기록
     if (hasQuestionSets) {
       const currentSetForTs = state.questionSets[state.currentQuestionSetIndex]
@@ -315,9 +313,7 @@ export const useAnswerFlow = ({
     // 후속질문에 대한 답변이었는지 기록 (히스토리 저장은 API 응답 후)
     const wasFollowUp = !!state.currentFollowUp
 
-    // 후속질문 라운드 확인
     const updatedState = useInterviewStore.getState()
-    const canDoMoreFollowUps = updatedState.followUpRound < MAX_FOLLOWUP_ROUNDS
     const isLastQuestion = state.currentQuestionIndex >= state.questions.length - 1
 
     // 현재 질문세트 ID 가져오기 — updatedState 사용으로 클로저 캡처 문제 방지
@@ -325,16 +321,22 @@ export const useAnswerFlow = ({
       ? updatedState.questionSets[updatedState.currentQuestionSetIndex]
       : undefined
 
-    const hasAnswer = answerText.trim() || (audioBlob && audioBlob.size > 0)
+    const hasAnswer = !!(audioBlob && audioBlob.size > 0)
 
-    if (canDoMoreFollowUps && hasAnswer && interview) {
+    // 시간 만료 후 첫 답변 완료 시점 → BE 에 종료 신호 강제.
+    // 빈 답변 / followUp 소진 케이스라도 terminate=true 동봉을 위해 BE 호출 필수.
+    const shouldTerminate = updatedState.isTimeOverdue
+    const shouldCallFollowUp = !!interview && (shouldTerminate || hasAnswer)
+
+    if (shouldCallFollowUp && interview) {
       // 후속질문 요청 → 응답 대기 → TTS로 읽기
       setFollowUpLoading(true)
       try {
         const history = updatedState.followUpHistory.get(state.currentQuestionIndex) ?? []
         const previousExchanges = history.map((e) => ({
           question: e.question,
-          answer: e.answer,
+          answerText: e.answerText,
+          followUpType: e.followUpType ?? e.type,
         }))
 
         const res = await followUpMutation.mutateAsync({
@@ -342,8 +344,8 @@ export const useAnswerFlow = ({
           data: {
             questionSetId: currentSet?.id ?? 0,
             questionContent: state.questions[state.currentQuestionIndex].content,
-            answerText,
             previousExchanges,
+            terminate: shouldTerminate,
           },
           audioBlob: audioBlob && audioBlob.size > 0 ? audioBlob : undefined,
         })
@@ -351,13 +353,9 @@ export const useAnswerFlow = ({
 
         // API 응답에서 Whisper STT 결과를 받아 히스토리에 저장
         if (wasFollowUp) {
-          completeFollowUpRound(res.data.answerText || answerText)
+          completeFollowUpRound(res.data.answerText ?? '')
         }
 
-        // AI가 답변 불충분으로 꼬리질문 생성을 포기한 경우
-        // - store에 꼬리질문을 저장하지 않음 (questionId/question이 null일 수 있음)
-        // - 자연스러운 전환 멘트로 다음 메인 질문 진행
-        // - 같은 메인 질문에 대해 재요청하지 않음 (무한 루프 방지)
         if (res.data.skip) {
           resetFollowUpState()
           transitionToNext(isLastQuestion, /* useSkipPhrase */ true)
@@ -366,14 +364,14 @@ export const useAnswerFlow = ({
 
         setCurrentFollowUp(res.data)
 
-        // 후속질문의 questionId를 QuestionSetData에 동적 추가 (답변 타임스탬프용)
         if (currentSet && res.data.questionId) {
+          const mainQ = currentSet.questions.find((q) => isMainQuestionType(q.questionType))
+          const followUpType = resolveFollowUpQuestionType(mainQ?.questionType, currentSet.category)
           addQuestionToSet(updatedState.currentQuestionSetIndex, {
             id: res.data.questionId,
-            questionType: 'FOLLOWUP',
+            questionType: followUpType,
             questionText: res.data.question,
-            modelAnswer: res.data.modelAnswer ?? null,
-            referenceType: 'CS',
+            bestAnswer: res.data.bestAnswer ?? null,
             orderIndex: currentSet.questions.length,
           })
         }
@@ -394,7 +392,7 @@ export const useAnswerFlow = ({
         console.error('[후속질문] 생성 실패:', err)
         // 실패 시에도 히스토리 기록 (빈 텍스트라도)
         if (wasFollowUp) {
-          completeFollowUpRound(answerText)
+          completeFollowUpRound('')
         }
         setFollowUpLoading(false)
         resetFollowUpState()
@@ -403,7 +401,7 @@ export const useAnswerFlow = ({
     } else {
       // 후속질문 라운드 종료 → 마지막 라운드 히스토리 저장
       if (wasFollowUp) {
-        completeFollowUpRound(answerText)
+        completeFollowUpRound('')
       }
       resetFollowUpState()
       transitionToNext(isLastQuestion)
@@ -411,7 +409,7 @@ export const useAnswerFlow = ({
   }, [
     stopRecording, audioCapture, tts, recordEvent,
     greetingPhaseRef, completeGreeting, pendingTtsActionRef,
-    getCurrentAnswerText, completeFollowUpRound, addAnswerTimestamp,
+    completeFollowUpRound, addAnswerTimestamp,
     setFollowUpLoading, setCurrentFollowUp, resetFollowUpState,
     followUpMutation, interview, transitionToNext, hasQuestionSets,
     addQuestionToSet, recorder, setQuestionSetRecordingStartTime,

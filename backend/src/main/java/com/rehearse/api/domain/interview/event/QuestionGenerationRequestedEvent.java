@@ -1,26 +1,25 @@
 package com.rehearse.api.domain.interview.event;
 
+import com.rehearse.api.domain.interview.entity.CsSubTopic;
 import com.rehearse.api.domain.interview.entity.InterviewLevel;
 import com.rehearse.api.domain.interview.entity.InterviewType;
 import com.rehearse.api.domain.interview.entity.Position;
 import com.rehearse.api.domain.interview.entity.TechStack;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 import java.util.List;
 
-@Getter
-@AllArgsConstructor
-public class QuestionGenerationRequestedEvent {
+public record QuestionGenerationRequestedEvent(
+        Long interviewId,
+        Long userId,
+        Position position,
+        String positionDetail,
+        InterviewLevel level,
+        List<InterviewType> interviewTypes,
+        List<CsSubTopic> csSubTopics,
+        byte[] resumePdfBytes,
+        String resumeFileHash,
+        Integer durationMinutes,
+        TechStack techStack
+) {
 
-    private final Long interviewId;
-    private final Long userId;
-    private final Position position;
-    private final String positionDetail;
-    private final InterviewLevel level;
-    private final List<InterviewType> interviewTypes;
-    private final List<String> csSubTopics;
-    private final String resumeText;
-    private final Integer durationMinutes;
-    private final TechStack techStack;
 }

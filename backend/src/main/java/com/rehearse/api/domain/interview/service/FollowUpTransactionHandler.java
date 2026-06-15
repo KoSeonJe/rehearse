@@ -1,36 +1,47 @@
 package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.FollowUpContext;
+import com.rehearse.api.domain.interview.dto.FollowUpSaveResult;
+import com.rehearse.api.domain.interview.entity.AnswerAnalysis;
 import com.rehearse.api.domain.interview.entity.Interview;
 import com.rehearse.api.domain.interview.entity.InterviewStatus;
+import com.rehearse.api.domain.interview.entity.InterviewType;
+import com.rehearse.api.domain.interview.event.AnswerAnalysisCompletedEvent;
 import com.rehearse.api.domain.interview.exception.InterviewErrorCode;
 import com.rehearse.api.domain.question.entity.Question;
-import com.rehearse.api.domain.questionset.entity.QuestionSet;
+import com.rehearse.api.domain.question.entity.QuestionSet;
 import com.rehearse.api.domain.question.entity.QuestionType;
 import com.rehearse.api.domain.question.entity.ReferenceType;
-import com.rehearse.api.domain.question.exception.QuestionErrorCode;
-import com.rehearse.api.domain.questionset.exception.QuestionSetErrorCode;
+import com.rehearse.api.domain.question.exception.QuestionSetErrorCode;
 import com.rehearse.api.domain.question.repository.QuestionRepository;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import com.rehearse.api.infra.ai.dto.GeneratedFollowUp;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
+import java.util.Optional;
+
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class FollowUpTransactionHandler {
 
-    private static final int MAX_FOLLOWUP_ROUNDS = 2;
-
     private final InterviewFinder interviewFinder;
     private final QuestionSetRepository questionSetRepository;
     private final QuestionRepository questionRepository;
+    private final StandardFollowUpPolicy standardFollowUpPolicy;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public FollowUpContext loadFollowUpContext(Long interviewId, Long userId, Long questionSetId) {
-        Interview interview = interviewFinder.findByIdAndValidateOwner(interviewId, userId);
+        Interview interview = interviewFinder.findById(interviewId);
+        interview.validateOwner(userId);
 
         if (interview.getStatus() != InterviewStatus.IN_PROGRESS) {
             throw new BusinessException(InterviewErrorCode.NOT_IN_PROGRESS);
@@ -39,60 +50,120 @@ public class FollowUpTransactionHandler {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
-        validateFollowUpRoundLimit(questionSet);
+        Optional<Question> currentMainQuestion = findCurrentMainQuestion(questionSet);
+        Long currentMainQuestionId = currentMainQuestion.map(Question::getId).orElse(null);
+        QuestionType currentMainQuestionType = currentMainQuestion.map(Question::getQuestionType).orElse(null);
         int nextOrderIndex = questionSet.getQuestions().size();
         ReferenceType mainReferenceType = resolveMainReferenceType(questionSet);
+        Long answeredQuestionId = findAnsweredQuestionId(questionSet);
 
         return new FollowUpContext(
                 interview.getPosition(),
                 interview.getEffectiveTechStack(),
                 interview.getLevel(),
                 questionSetId,
+                answeredQuestionId,
+                currentMainQuestionId,
+                currentMainQuestionType,
                 nextOrderIndex,
-                mainReferenceType
+                mainReferenceType,
+                standardFollowUpPolicy.getMaxFollowUpRounds()
         );
     }
 
-    /**
-     * 메인 질문의 referenceType을 추출해 후속질문 프롬프트 모드 분기에 사용한다.
-     * MODEL_ANSWER → CS 개념 설명형 메인 질문 → CONCEPT 모드
-     * GUIDE        → 이력서·경험 기반 메인 질문 → EXPERIENCE 모드
-     * 메인 질문이 없거나 referenceType이 null인 엣지 케이스는 안전한 기본값(MODEL_ANSWER)으로 폴백한다.
-     * 경험 전제 프레이밍이 안 나가는 쪽이 어색함보다 덜 위험하기 때문.
-     */
     private ReferenceType resolveMainReferenceType(QuestionSet questionSet) {
+        InterviewType category = questionSet.getCategory();
+        return findCurrentMainQuestion(questionSet)
+                .map(q -> q.getQuestionType().referenceType())
+                .orElseGet(() -> category == InterviewType.BEHAVIORAL
+                        ? ReferenceType.GUIDE
+                        : ReferenceType.MODEL_ANSWER);
+    }
+
+    private Optional<Question> findCurrentMainQuestion(QuestionSet questionSet) {
         return questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.MAIN)
-                .findFirst()
-                .map(Question::getReferenceType)
-                .filter(rt -> rt != null)
-                .orElse(ReferenceType.MODEL_ANSWER);
+                .filter(q -> !q.getQuestionType().isFollowUp())
+                .reduce((first, second) -> second);
+    }
+
+    private Long findAnsweredQuestionId(QuestionSet questionSet) {
+        return questionSet.getQuestions().stream()
+                .max(Comparator.comparingInt(Question::getOrderIndex))
+                .map(Question::getId)
+                .orElse(null);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isFollowUpExhausted(Long questionSetId, Long currentMainQuestionId) {
+        QuestionSet questionSet = questionSetRepository.findById(questionSetId)
+                .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
+        return standardFollowUpPolicy.isFollowUpExhausted(questionSet, currentMainQuestionId);
     }
 
     @Transactional
-    public Question saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp, int orderIndex) {
+    public FollowUpSaveResult saveFollowUpResult(Long questionSetId, GeneratedFollowUp followUp) {
         QuestionSet questionSet = questionSetRepository.findById(questionSetId)
                 .orElseThrow(() -> new BusinessException(QuestionSetErrorCode.NOT_FOUND));
 
+        int orderIndex = questionSet.getQuestions().size();
+        QuestionType followUpType = resolveFollowUpType(questionSet);
+
         Question followUpQuestion = Question.builder()
-                .questionType(QuestionType.FOLLOWUP)
-                .questionText(followUp.getQuestion())
-                .ttsText(followUp.getTtsQuestion())
-                .modelAnswer(followUp.getModelAnswer())
+                .questionType(followUpType)
+                .questionText(followUp.question())
+                .ttsText(followUp.ttsQuestion())
+                .bestAnswer(followUp.bestAnswer())
                 .orderIndex(orderIndex)
                 .build();
 
         questionSet.addQuestion(followUpQuestion);
-        return questionRepository.save(followUpQuestion);
+        try {
+            Question saved = questionRepository.saveAndFlush(followUpQuestion);
+            int newFollowUpCount = (int) questionSet.getQuestions().stream()
+                    .filter(q -> q.getQuestionType().isFollowUp())
+                    .count();
+            return new FollowUpSaveResult(saved, newFollowUpCount);
+        } catch (DataIntegrityViolationException e) {
+            log.warn("follow-up 중복 삽입 차단 (unique constraint): questionSetId={}, orderIndex={}",
+                    questionSetId, orderIndex);
+            throw new BusinessException(InterviewErrorCode.FOLLOWUP_DUPLICATE);
+        }
     }
 
-    private void validateFollowUpRoundLimit(QuestionSet questionSet) {
-        long followUpCount = questionSet.getQuestions().stream()
-                .filter(q -> q.getQuestionType() == QuestionType.FOLLOWUP)
-                .count();
+    private QuestionType resolveFollowUpType(QuestionSet questionSet) {
+        QuestionType mainType = findCurrentMainQuestion(questionSet)
+                .map(Question::getQuestionType)
+                .orElse(null);
+        if (mainType == QuestionType.TECH_MAIN) {
+            return QuestionType.TECH_FOLLOWUP;
+        }
+        if (mainType == QuestionType.BEHAVIORAL_MAIN) {
+            return QuestionType.BEHAVIORAL_FOLLOWUP;
+        }
+        if (mainType == QuestionType.RESUME_MAIN) {
+            return QuestionType.RESUME_FOLLOWUP;
+        }
+        return questionSet.getCategory() == InterviewType.BEHAVIORAL
+                ? QuestionType.BEHAVIORAL_FOLLOWUP
+                : QuestionType.TECH_FOLLOWUP;
+    }
 
-        if (followUpCount >= MAX_FOLLOWUP_ROUNDS) {
-            throw new BusinessException(QuestionErrorCode.MAX_FOLLOWUP_EXCEEDED);
+    @Transactional
+    public void publishAnswerAnalysisCompletedEvent(
+            Long interviewId, FollowUpContext context,
+            AnswerAnalysis analysis, Long questionId
+    ) {
+        try {
+            Interview interview = interviewFinder.findById(interviewId);
+            AnswerAnalysisCompletedEvent event = AnswerAnalysisCompletedEvent.of(
+                    interviewId, interview.getUserId(),
+                    questionId, context.questionSetId(),
+                    analysis, context.level()
+            );
+            eventPublisher.publishEvent(event);
+        } catch (Exception e) {
+            log.warn("AnswerAnalysisCompletedEvent 발행 실패. interviewId={}, reason={}",
+                    interviewId, e.getMessage());
         }
     }
 }

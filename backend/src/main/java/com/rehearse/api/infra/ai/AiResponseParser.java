@@ -1,12 +1,15 @@
 package com.rehearse.api.infra.ai;
 
 import com.rehearse.api.global.exception.BusinessException;
+import com.rehearse.api.infra.ai.dto.ChatResponse;
 import com.rehearse.api.infra.ai.exception.AiErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import java.util.function.Supplier;
 
 @Slf4j
 @Component
@@ -22,6 +25,23 @@ public class AiResponseParser {
         } catch (JsonProcessingException e) {
             log.error("AI 응답 JSON 파싱 실패: {}", text, e);
             throw new BusinessException(AiErrorCode.PARSE_FAILED);
+        }
+    }
+
+    public <T> T parseWithRetry(String text, Class<T> clazz, Supplier<ChatResponse> retryCall) {
+        try {
+            String json = extractJson(text);
+            return objectMapper.readValue(json, clazz);
+        } catch (JsonProcessingException firstEx) {
+            log.warn("AI 응답 1차 파싱 실패, 재호출 시도: {}", firstEx.getMessage());
+            try {
+                ChatResponse retryResponse = retryCall.get();
+                String retryJson = extractJson(retryResponse.content());
+                return objectMapper.readValue(retryJson, clazz);
+            } catch (JsonProcessingException secondEx) {
+                log.error("AI 응답 2차 파싱도 실패: {}", secondEx.getMessage());
+                throw new BusinessException(AiErrorCode.PARSE_FAILED);
+            }
         }
     }
 

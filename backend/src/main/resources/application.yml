@@ -15,8 +15,12 @@ spring:
         format_sql: true
         default_batch_fetch_size: 100
 
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+
 server:
   port: 8080
+  shutdown: graceful
   tomcat:
     max-connections: 8192
     accept-count: 100
@@ -41,11 +45,43 @@ app:
   admin:
     password: ${ADMIN_PASSWORD}
 
+ai:
+  resume:
+    question-generator:
+      temperature: ${RESUME_QUESTION_TEMPERATURE:0.7}
+
+rehearse:
+  interview:
+    policy:
+      standard:
+        max-follow-up-rounds: 2
+    retry:
+      max-attempts: 5
+      cooldown-seconds: 30
+    audio:
+      max-bytes: 10485760
+      max-duration-seconds: 300
+      mime-whitelist:
+        - audio/webm
+        - audio/mp4
+        - audio/mpeg
+        - audio/wav
+  answer-analyzer:
+    # plan-02 Step A. 기본 ON, runtime toggle 없음 (Feature Flag 철거 정책)
+    enabled: true
+  feedback-synthesizer:
+    delivery-timeout-minutes: 10
+
 management:
   endpoints:
     web:
       exposure:
-        include: health, info
+        include: health, info, prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+

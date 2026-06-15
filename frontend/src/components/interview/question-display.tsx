@@ -18,6 +18,8 @@ const FOLLOW_UP_TYPE_LABELS: Record<string, string> = {
   APPLICATION: '적용',
 }
 
+const FOLLOW_UP_TYPE_LABEL_FALLBACK = '안내'
+
 export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, isFollowUpLoading }: QuestionDisplayProps) => {
   return (
     <div className="sticky top-20 z-10 space-y-3">
@@ -57,7 +59,7 @@ export const QuestionDisplay = ({ question, currentIndex, totalCount, followUp, 
               후속 질문
             </Badge>
             <Badge className="rounded-badge bg-info/10 text-info border-transparent hover:bg-info/10">
-              {FOLLOW_UP_TYPE_LABELS[followUp.type] ?? followUp.type}
+              {FOLLOW_UP_TYPE_LABELS[followUp.type] ?? FOLLOW_UP_TYPE_LABEL_FALLBACK}
             </Badge>
           </div>
           <p className="text-base leading-relaxed font-medium text-text-primary">{followUp.question}</p>

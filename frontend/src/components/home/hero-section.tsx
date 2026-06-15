@@ -37,14 +37,14 @@ export const HeroSection = ({ onNavigate, isAuthenticated }: HeroSectionProps) =
             id="hero-heading"
             className="text-[2.5rem] leading-[1.1] font-bold tracking-[-0.03em] text-foreground md:text-5xl lg:text-[3.75rem]"
           >
-            다음 면접에서 뭘 고칠지,
+            긴장은 빼고,
             <br className="hidden md:block" />{' '}
-            30분이면 보입니다.
+            말하면서 연습하세요.
           </h1>
           <p className="mt-7 max-w-md text-[17px] md:text-lg font-medium leading-[1.7] text-muted-foreground">
             이력서 한 장이면 맞춤 질문이 시작되고,
             <br className="hidden md:block" />{' '}
-            녹화한 답변을 <span className="text-foreground font-semibold">초 단위 타임스탬프</span>로 짚어드려요.
+            답변은 <span className="text-foreground font-semibold">초 단위 타임스탬프</span>로 짚어드려요.
           </p>
           <div className="mt-10 flex flex-wrap items-center gap-5">
             <Button

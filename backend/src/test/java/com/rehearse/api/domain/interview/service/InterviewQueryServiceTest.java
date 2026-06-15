@@ -2,7 +2,8 @@ package com.rehearse.api.domain.interview.service;
 
 import com.rehearse.api.domain.interview.dto.InterviewResponse;
 import com.rehearse.api.domain.interview.entity.*;
-import com.rehearse.api.domain.questionset.repository.QuestionSetRepository;
+import com.rehearse.api.domain.interview.repository.InterviewRepository;
+import com.rehearse.api.domain.question.repository.QuestionSetRepository;
 import com.rehearse.api.global.exception.BusinessException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +31,9 @@ class InterviewQueryServiceTest {
     private InterviewFinder interviewFinder;
 
     @Mock
+    private InterviewRepository interviewRepository;
+
+    @Mock
     private QuestionSetRepository questionSetRepository;
 
     @Nested
@@ -40,7 +44,7 @@ class InterviewQueryServiceTest {
         @DisplayName("존재하지 않는 면접 세션 조회 시 BusinessException이 발생한다")
         void getInterview_notFound() {
             // given
-            given(interviewFinder.findByIdAndValidateOwner(999L, 1L))
+            given(interviewFinder.findById(999L))
                     .willThrow(new BusinessException(HttpStatus.NOT_FOUND, "INTERVIEW_001", "면접 세션을 찾을 수 없습니다."));
 
             // when & then
@@ -57,8 +61,8 @@ class InterviewQueryServiceTest {
         @DisplayName("면접 세션 조회 성공")
         void getInterview_success() {
             // given
-            Interview interview = createMockInterview();
-            given(interviewFinder.findByIdAndValidateOwner(1L, 1L)).willReturn(interview);
+            Interview interview = createMockInterview(1L);
+            given(interviewFinder.findById(1L)).willReturn(interview);
             given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
 
             // when
@@ -70,9 +74,55 @@ class InterviewQueryServiceTest {
             assertThat(response.getStatus()).isEqualTo(InterviewStatus.READY);
             assertThat(response.getQuestionGenerationStatus()).isEqualTo(QuestionGenerationStatus.PENDING);
         }
+
+        @Test
+        @DisplayName("소유자가 다른 면접 세션 조회 시 INTERVIEW_NOT_FOUND BusinessException이 발생한다")
+        void getInterview_differentOwner_notFound() {
+            // given: userId=1L 소유 면접을 userId=2L 로 조회 (정보 누출 방지 차원에서 NOT_FOUND 응답)
+            Interview interview = createMockInterview(1L);
+            given(interviewFinder.findById(1L)).willReturn(interview);
+
+            // when & then
+            assertThatThrownBy(() -> interviewQueryService.getInterview(1L, 2L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
+        }
     }
 
-    private Interview createMockInterview() {
+    @Nested
+    @DisplayName("getInterviewByPublicId 메서드")
+    class GetInterviewByPublicId {
+
+        @Test
+        @DisplayName("본인 publicId 조회 성공")
+        void getInterviewByPublicId_owner_success() {
+            Interview interview = createMockInterview(1L);
+            String publicId = "test-public-uuid";
+            ReflectionTestUtils.setField(interview, "publicId", publicId);
+            given(interviewFinder.findByPublicId(publicId)).willReturn(interview);
+            given(questionSetRepository.findByInterviewIdWithQuestions(1L)).willReturn(List.of());
+
+            InterviewResponse response = interviewQueryService.getInterviewByPublicId(publicId, 1L);
+
+            assertThat(response.getId()).isEqualTo(1L);
+            assertThat(response.getInterviewTypes()).containsExactly(InterviewType.CS_FUNDAMENTAL);
+        }
+
+        @Test
+        @DisplayName("타 유저 publicId 조회 시 INTERVIEW_NOT_FOUND 예외")
+        void getInterviewByPublicId_otherUser_notFound() {
+            String publicId = "test-public-uuid";
+            Interview interview = createMockInterview(1L);
+            ReflectionTestUtils.setField(interview, "publicId", publicId);
+            given(interviewFinder.findByPublicId(publicId)).willReturn(interview);
+
+            assertThatThrownBy(() -> interviewQueryService.getInterviewByPublicId(publicId, 2L))
+                    .isInstanceOf(BusinessException.class)
+                    .satisfies(ex -> assertThat(((BusinessException) ex).getCode()).isEqualTo("INTERVIEW_001"));
+        }
+    }
+
+    private Interview createMockInterview(Long userId) {
         Interview interview = Interview.builder()
                 .position(Position.BACKEND)
                 .level(InterviewLevel.JUNIOR)
@@ -80,6 +130,7 @@ class InterviewQueryServiceTest {
                 .durationMinutes(30)
                 .build();
         ReflectionTestUtils.setField(interview, "id", 1L);
+        ReflectionTestUtils.setField(interview, "userId", userId);
         return interview;
     }
 }
