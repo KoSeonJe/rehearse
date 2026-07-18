@@ -98,7 +98,7 @@ describe('analytics-client', () => {
     expect(dataLayerEntries()).toContainEqual(['event', 'sign_up', { method: 'github' }])
   })
 
-  it('trackPageview는 page_path와 함께 page_view 이벤트를 전송한다', async () => {
+  it('trackPageview는 page_location(전체 URL)과 함께 page_view 이벤트를 전송한다', async () => {
     setMeasurementId(MEASUREMENT_ID)
     const { initGA4, trackPageview } = await importFreshModule()
 
