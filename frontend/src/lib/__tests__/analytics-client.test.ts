@@ -18,6 +18,8 @@ const setWebdriver = (value: boolean) => {
   })
 }
 
+const dataLayerEntries = (): unknown[][] => (window.dataLayer ?? []).map((entry) => Array.from(entry))
+
 beforeEach(() => {
   setWebdriver(false)
   document.head.innerHTML = ''
@@ -59,7 +61,19 @@ describe('analytics-client', () => {
 
     const script = document.head.querySelector('script')
     expect(script?.getAttribute('src')).toContain(MEASUREMENT_ID)
-    expect(window.dataLayer).toContainEqual(['config', MEASUREMENT_ID, { send_page_view: false }])
+    expect(dataLayerEntries()).toContainEqual(['config', MEASUREMENT_ID, { send_page_view: false }])
+  })
+
+  it('dataLayer 항목을 배열이 아닌 arguments 객체로 push 한다 (gtag.js 커맨드 인식 조건)', async () => {
+    setMeasurementId(MEASUREMENT_ID)
+    const { initGA4 } = await importFreshModule()
+
+    initGA4()
+
+    const configEntry = (window.dataLayer ?? []).find((entry) => Array.from(entry)[0] === 'config')
+    expect(configEntry).toBeDefined()
+    expect(Object.prototype.toString.call(configEntry)).toBe('[object Arguments]')
+    expect(Array.isArray(configEntry)).toBe(false)
   })
 
   it('initGA4를 두 번 호출해도 스크립트는 1회만 주입한다', async () => {
@@ -81,16 +95,20 @@ describe('analytics-client', () => {
 
     initGA4()
     trackEvent('sign_up', { method: 'github' })
-    expect(window.dataLayer).toContainEqual(['event', 'sign_up', { method: 'github' }])
+    expect(dataLayerEntries()).toContainEqual(['event', 'sign_up', { method: 'github' }])
   })
 
-  it('trackPageview는 page_path와 함께 page_view 이벤트를 전송한다', async () => {
+  it('trackPageview는 page_location(전체 URL)과 함께 page_view 이벤트를 전송한다', async () => {
     setMeasurementId(MEASUREMENT_ID)
     const { initGA4, trackPageview } = await importFreshModule()
 
     initGA4()
     trackPageview('/dashboard')
 
-    expect(window.dataLayer).toContainEqual(['event', 'page_view', { page_path: '/dashboard' }])
+    expect(dataLayerEntries()).toContainEqual([
+      'event',
+      'page_view',
+      { page_location: `${window.location.origin}/dashboard` },
+    ])
   })
 })
