@@ -263,7 +263,7 @@ jobs:
           echo "Public health check failed"
           exit 1
 
-      - name: Restart Nginx on config change
+      - name: Recreate Nginx/Certbot on config change
         if: needs.changes.outputs.nginx == 'true'
         uses: appleboy/ssh-action@v1
         with:
@@ -272,4 +272,4 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/rehearse/backend
-            docker compose restart nginx
+            docker compose --env-file .env up -d nginx certbot

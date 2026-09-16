@@ -76,6 +76,8 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    # 24h 주기 self-reload 로 갱신된 인증서 반영. 호스트 cron 의존 제거.
+    command: "/bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
     image: certbot/certbot
@@ -83,9 +85,9 @@ services:
     volumes:
       - certbot-conf-prod:/etc/letsencrypt
       - certbot-www-prod:/var/www/certbot
-    # certbot은 renew만 수행. nginx reload는 host cron이 담당(plan-14 참조).
-    # docker.sock 마운트 회피, 권한 경계 명확.
+    # certbot 은 renew 만 수행. reload 는 nginx 가 자체 루프로 담당 (docker.sock 마운트 회피).
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+    restart: unless-stopped
 
 volumes:
   mysql_data_prod:

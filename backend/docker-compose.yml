@@ -63,6 +63,8 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+    # 24h 주기 self-reload 로 갱신된 인증서 반영. 호스트 cron 의존 제거.
+    command: "/bin/sh -c 'while :; do sleep 24h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
 
   certbot:
     image: certbot/certbot
@@ -71,6 +73,7 @@ services:
       - certbot-conf:/etc/letsencrypt
       - certbot-www:/var/www/certbot
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done'"
+    restart: unless-stopped
 
 volumes:
   mysql_data:
